@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
-} from 'src/gaant/types/RunGroupPanelQuery';
+} from 'src/gantt/types/RunGroupPanelQuery';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
 import {RunComponentFragments, RunElapsed, RunTime} from 'src/runs/RunUtils';

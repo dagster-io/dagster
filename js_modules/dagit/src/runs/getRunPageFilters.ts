@@ -8,7 +8,7 @@ import {getRunFilterProviders} from 'src/runs/getRunFilterProviders';
  *
  * `steps`
  *   - string (selection syntax)
- *   - Initializes step selection in Gaant chart
+ *   - Initializes step selection in Gantt chart
  * `logs`
  *   - string (comma-separated foo:bar tokens or free text)
  *   - Initializes log filter input

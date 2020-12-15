@@ -2,9 +2,9 @@ import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {GaantChartLayout} from 'src/gaant/Constants';
-import {GaantChartMode} from 'src/gaant/GaantChart';
-import {buildLayout} from 'src/gaant/GaantChartLayout';
+import {GanttChartLayout} from 'src/gantt/Constants';
+import {GanttChartMode} from 'src/gantt/GanttChart';
+import {buildLayout} from 'src/gantt/GanttChartLayout';
 import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from 'src/partitions/types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from 'src/partitions/types/PartitionRunMatrixRunFragment';
 import {StepEventStatus} from 'src/types/globalTypes';
@@ -47,7 +47,7 @@ function byStartTimeAsc(a: PartitionRunMatrixRunFragment, b: PartitionRunMatrixR
 }
 
 function buildMatrixData(
-  layout: GaantChartLayout,
+  layout: GanttChartLayout,
   partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[],
   options: DisplayOptions,
 ) {
@@ -172,14 +172,14 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
     return cachedMatrixData.current.result;
   }
 
-  // Filter the pipeline's structure and build the flat gaant layout for the left hand side
+  // Filter the pipeline's structure and build the flat gantt layout for the left hand side
   const solidsFiltered = filterByQuery(
     inputs.solidHandles.map((h) => h.solid),
     inputs.stepQuery,
   );
-  const layout = buildLayout({nodes: solidsFiltered.all, mode: GaantChartMode.FLAT});
+  const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
 
-  // Build the matrix of step + partition squares - presorted to match the gaant layout
+  // Build the matrix of step + partition squares - presorted to match the gantt layout
   const result = buildMatrixData(layout, inputs.partitions, inputs.options);
   cachedMatrixData.current = {result, inputs};
   return result;

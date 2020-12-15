@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {CSS_DURATION, GaantViewport, LEFT_INSET} from 'src/gaant/Constants';
+import {CSS_DURATION, GanttViewport, LEFT_INSET} from 'src/gantt/Constants';
 
 const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
 const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
@@ -60,23 +60,23 @@ const TICK_CONFIG = [
   },
 ];
 
-interface GaantChartTimescaleProps {
+interface GanttChartTimescaleProps {
   scale: number;
-  viewport: GaantViewport;
+  viewport: GanttViewport;
   layoutSize: {width: number; height: number};
   nowMs: number;
   startMs: number;
   highlightedMs: number[];
 }
 
-export const GaantChartTimescale = ({
+export const GanttChartTimescale = ({
   scale,
   viewport,
   nowMs,
   startMs,
   highlightedMs,
   layoutSize,
-}: GaantChartTimescaleProps) => {
+}: GanttChartTimescaleProps) => {
   const transform = `translate(${LEFT_INSET - viewport.left}px)`;
   const ticks: React.ReactChild[] = [];
   const lines: React.ReactChild[] = [];

@@ -9,11 +9,11 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {IRunMetadataDict, IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
 import {
-  GaantChart,
-  GaantChartMode,
+  GanttChart,
+  GanttChartMode,
   queryStringToSelection,
   QueuedState,
-} from 'src/gaant/GaantChart';
+} from 'src/gantt/GanttChart';
 import {LogFilter, LogsProvider} from 'src/runs/LogsProvider';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {LogsToolbar} from 'src/runs/LogsToolbar';
@@ -212,9 +212,9 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
   const onHideNonMatches = (checked: boolean) => setHideNonMatches(checked);
 
-  const gaant = (metadata: IRunMetadataDict) => {
+  const gantt = (metadata: IRunMetadataDict) => {
     if (logsLoading) {
-      return <GaantChart.LoadingState runId={runId} />;
+      return <GanttChart.LoadingState runId={runId} />;
     }
 
     if (run?.status === 'QUEUED') {
@@ -223,9 +223,9 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
     if (run?.executionPlan) {
       return (
-        <GaantChart
+        <GanttChart
           options={{
-            mode: GaantChartMode.WATERFALL_TIMED,
+            mode: GanttChartMode.WATERFALL_TIMED,
           }}
           toolbarLeftActions={
             <FirstOrSecondPanelToggle axis={'vertical'} container={splitPanelContainer} />
@@ -262,10 +262,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         <SplitPanelContainer
           ref={splitPanelContainer}
           axis={'vertical'}
-          identifier="run-gaant"
+          identifier="run-gantt"
           firstInitialPercent={35}
           firstMinSize={40}
-          first={gaant(metadata)}
+          first={gantt(metadata)}
           second={
             <LogsContainer>
               <LogsToolbar

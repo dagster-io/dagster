@@ -4,7 +4,7 @@ import * as React from 'react';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {IRunMetadataDict} from 'src/RunMetadataProvider';
-import {setHighlightedGaantChartTime} from 'src/gaant/GaantChart';
+import {setHighlightedGanttChartTime} from 'src/gantt/GanttChart';
 import {CellTruncationProvider} from 'src/runs/CellTruncationProvider';
 import {
   EventTypeColumn,
@@ -197,8 +197,8 @@ const StructuredMemoizedContent: React.FunctionComponent<{
 }> = React.memo(({node, metadata, highlighted}) => (
   <Row
     level={LogLevel.INFO}
-    onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
-    onMouseLeave={() => setHighlightedGaantChartTime(null)}
+    onMouseEnter={() => setHighlightedGanttChartTime(node.timestamp)}
+    onMouseLeave={() => setHighlightedGanttChartTime(null)}
     highlighted={highlighted}
   >
     <SolidColumn stepKey={'stepKey' in node && node.stepKey} />
@@ -251,8 +251,8 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
 }> = React.memo(({node, highlighted}) => (
   <Row
     level={node.level}
-    onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
-    onMouseLeave={() => setHighlightedGaantChartTime(null)}
+    onMouseEnter={() => setHighlightedGanttChartTime(node.timestamp)}
+    onMouseLeave={() => setHighlightedGanttChartTime(null)}
     highlighted={highlighted}
   >
     <SolidColumn stepKey={node.stepKey} />

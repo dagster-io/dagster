@@ -1,47 +1,47 @@
 import {GraphQueryItem} from 'src/GraphQueryImpl';
 import {IStepState} from 'src/RunMetadataProvider';
 
-export type IGaantNode = GraphQueryItem;
+export type IGanttNode = GraphQueryItem;
 
-export interface GaantViewport {
+export interface GanttViewport {
   left: number; // Note: pixel values
   top: number;
   width: number;
   height: number;
 }
 
-export interface GaantChartPlacement {
+export interface GanttChartPlacement {
   key: string; // A React-friendly unique key like `step:retry-1`
   width: number;
   x: number; // Note: This is a pixel value
   y: number; // Note: This is a "row number" not a pixel value
 }
 
-export interface GaantChartBox extends GaantChartPlacement {
+export interface GanttChartBox extends GanttChartPlacement {
   state: IStepState | undefined;
-  children: GaantChartBox[];
-  node: IGaantNode;
+  children: GanttChartBox[];
+  node: IGanttNode;
   root: boolean;
 }
 
-export interface GaantChartMarker extends GaantChartPlacement {}
+export interface GanttChartMarker extends GanttChartPlacement {}
 
-export interface GaantChartLayout {
-  boxes: GaantChartBox[];
+export interface GanttChartLayout {
+  boxes: GanttChartBox[];
 
   // only present in timescaled layout
-  markers: GaantChartMarker[];
+  markers: GanttChartMarker[];
 }
 
-export interface GaantChartLayoutOptions {
-  mode: GaantChartMode;
+export interface GanttChartLayoutOptions {
+  mode: GanttChartMode;
   zoom: number; // 1 => 100
   hideWaiting: boolean;
   hideTimedMode: boolean;
   hideUnselectedSteps: boolean;
 }
 
-export enum GaantChartMode {
+export enum GanttChartMode {
   FLAT = 'flat',
   WATERFALL = 'waterfall',
   WATERFALL_TIMED = 'waterfall-timed',
@@ -63,8 +63,8 @@ export const BOX_DOT_MARGIN_Y = (BOX_HEIGHT - BOX_DOT_SIZE) / 2;
 export const LINE_SIZE = 2;
 export const CSS_DURATION = 100;
 
-export const DEFAULT_OPTIONS: GaantChartLayoutOptions = {
-  mode: GaantChartMode.WATERFALL,
+export const DEFAULT_OPTIONS: GanttChartLayoutOptions = {
+  mode: GanttChartMode.WATERFALL,
   hideWaiting: false,
   hideTimedMode: false,
   zoom: 1,

@@ -11,7 +11,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
 import {formatElapsedTime} from 'src/Util';
-import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';
+import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
 import {LaunchPipelineExecution} from 'src/runs/types/LaunchPipelineExecution';

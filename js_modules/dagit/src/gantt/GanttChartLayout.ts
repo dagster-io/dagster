@@ -5,19 +5,19 @@ import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
   BOX_WIDTH,
-  GaantChartBox,
-  GaantChartLayout,
-  GaantChartLayoutOptions,
-  GaantChartMarker,
-  GaantChartMode,
-  IGaantNode,
+  GanttChartBox,
+  GanttChartLayout,
+  GanttChartLayoutOptions,
+  GanttChartMarker,
+  GanttChartMode,
+  IGanttNode,
   LEFT_INSET,
   FLAT_INSET_FROM_PARENT,
-} from 'src/gaant/Constants';
+} from 'src/gantt/Constants';
 
 export interface BuildLayoutParams {
-  nodes: IGaantNode[];
-  mode: GaantChartMode;
+  nodes: IGanttNode[];
+  mode: GanttChartMode;
 }
 
 const ROUNDING_GRADIENT = 'linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))';
@@ -26,10 +26,10 @@ export const buildLayout = (params: BuildLayoutParams) => {
   const {nodes, mode} = params;
 
   // Step 1: Place the nodes that have no dependencies into the layout.
-  const hasNoDependencies = (g: IGaantNode) =>
+  const hasNoDependencies = (g: IGanttNode) =>
     !g.inputs.some((i) => i.dependsOn.some((s) => nodes.find((o) => o.name === s.solid.name)));
 
-  const boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map((node) => ({
+  const boxes: GanttChartBox[] = nodes.filter(hasNoDependencies).map((node) => ({
     node: node,
     key: node.name,
     state: undefined,
@@ -49,7 +49,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
 
   // Step 3: Assign X values (pixels) to each box by traversing the graph from the
   // roots onward and pushing things to the right as we go.
-  const deepen = (box: GaantChartBox, x: number) => {
+  const deepen = (box: GanttChartBox, x: number) => {
     if (box.x >= x) {
       // If this box is already further to the right than required by it's parent,
       // we can safely stop traversing this branch of the graph.
@@ -60,11 +60,11 @@ export const buildLayout = (params: BuildLayoutParams) => {
   };
   roots.forEach((box) => deepen(box, LEFT_INSET));
 
-  const parents: {[name: string]: GaantChartBox[]} = {};
-  const boxesByY: {[y: string]: GaantChartBox[]} = {};
+  const parents: {[name: string]: GanttChartBox[]} = {};
+  const boxesByY: {[y: string]: GanttChartBox[]} = {};
 
   // Step 4: Assign Y values (row numbers not pixel values)
-  // First put each box on it's own line. We know this will generate a fine gaant viz
+  // First put each box on it's own line. We know this will generate a fine gantt viz
   // because we sorted the boxes array as we built it.
   boxes.forEach((box, idx) => {
     box.y = idx;
@@ -120,7 +120,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     }
   }
 
-  if (mode === GaantChartMode.FLAT) {
+  if (mode === GanttChartMode.FLAT) {
     // Now that we've inlined chains of boxes where possible, flatten everything back out onto the
     // Y axis. Doing this after inlining ensures that children are close to their parents in the
     // resulting tree rather than placed randomly before their mutual dependents.
@@ -156,11 +156,11 @@ export const buildLayout = (params: BuildLayoutParams) => {
     }
   }
 
-  return {boxes, markers: []} as GaantChartLayout;
+  return {boxes, markers: []} as GanttChartLayout;
 };
 
 const ensureChildrenAfterParentInArray = (
-  boxes: GaantChartBox[],
+  boxes: GanttChartBox[],
   childIdx: number,
   parentIdx: number,
 ) => {
@@ -175,10 +175,10 @@ const ensureChildrenAfterParentInArray = (
   }
 };
 
-const addChildren = (boxes: GaantChartBox[], box: GaantChartBox, params: BuildLayoutParams) => {
+const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLayoutParams) => {
   const idx = boxes.indexOf(box);
   const seen: string[] = [];
-  const added: GaantChartBox[] = [];
+  const added: GanttChartBox[] = [];
 
   for (const out of box.node.outputs) {
     for (const dep of out.dependedBy) {
@@ -193,7 +193,7 @@ const addChildren = (boxes: GaantChartBox[], box: GaantChartBox, params: BuildLa
       seen.push(depNode.name);
 
       const depBoxIdx = boxes.findIndex((r) => r.node === depNode);
-      let depBox: GaantChartBox;
+      let depBox: GanttChartBox;
 
       if (depBoxIdx === -1) {
         depBox = {
@@ -237,11 +237,11 @@ export const boxStyleFor = (
   state: IStepState | undefined,
   context: {
     metadata: IRunMetadataDict;
-    options: {mode: GaantChartMode};
+    options: {mode: GanttChartMode};
   },
 ) => {
   // Not running and not viewing waterfall? We always use a nice blue
-  if (!context.metadata.firstLogAt && context.options.mode !== GaantChartMode.WATERFALL_TIMED) {
+  if (!context.metadata.firstLogAt && context.options.mode !== GanttChartMode.WATERFALL_TIMED) {
     return {background: `${ROUNDING_GRADIENT}, #2491eb`};
   }
 
@@ -265,10 +265,10 @@ export const boxStyleFor = (
 // This requires special logic because (for easy graph travesal), boxes.children references
 // other elements of the boxes array. A basic deepClone would replicate these into
 // copies rather than references.
-const cloneLayout = ({boxes, markers}: GaantChartLayout): GaantChartLayout => {
+const cloneLayout = ({boxes, markers}: GanttChartLayout): GanttChartLayout => {
   const map = new WeakMap();
   const nextMarkers = markers.map((m) => ({...m}));
-  const nextBoxes: GaantChartBox[] = [];
+  const nextBoxes: GanttChartBox[] = [];
   for (const box of boxes) {
     const next = {...box};
     nextBoxes.push(next);
@@ -282,10 +282,10 @@ const cloneLayout = ({boxes, markers}: GaantChartLayout): GaantChartLayout => {
 };
 
 const positionAndSplitBoxes = (
-  boxes: GaantChartBox[],
+  boxes: GanttChartBox[],
   metadata: IRunMetadataDict,
   positionFor: (
-    box: GaantChartBox,
+    box: GanttChartBox,
     run?: IStepAttempt | null,
     runIdx?: number,
   ) => {width: number; x: number},
@@ -305,7 +305,7 @@ const positionAndSplitBoxes = (
       continue;
     }
 
-    const runBoxes: GaantChartBox[] = [];
+    const runBoxes: GanttChartBox[] = [];
     meta.attempts.forEach((run, runIdx) => {
       runBoxes.push({
         ...box,
@@ -332,10 +332,10 @@ const positionAndSplitBoxes = (
 /** Traverse the graph from the root and place boxes that still have x=0 locations.
 (Unstarted or skipped boxes) so that they appear downstream of running boxes
 we have position / time data for. */
-const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedX: number) => {
+const positionUntimedBoxes = (boxes: GanttChartBox[], earliestAllowedX: number) => {
   const unstarted = boxes.filter((box) => box.x === 0);
 
-  const visit = (box: GaantChartBox, parentX: number) => {
+  const visit = (box: GanttChartBox, parentX: number) => {
     if (box.x === 0) {
       // If we are visiting the box for the first time (by traversing the tree from
       // another starting box), starting another pass using it as the root is unnecessary.
@@ -355,30 +355,30 @@ const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedX: number) 
     }
   };
 
-  let box: GaantChartBox | undefined;
+  let box: GanttChartBox | undefined;
   while ((box = unstarted.shift())) {
     visit(box, earliestAllowedX);
   }
 };
 
 export const adjustLayoutWithRunMetadata = (
-  layout: GaantChartLayout,
-  options: GaantChartLayoutOptions,
+  layout: GanttChartLayout,
+  options: GanttChartLayoutOptions,
   metadata: IRunMetadataDict,
   scale: number,
   nowMs: number,
-): GaantChartLayout => {
+): GanttChartLayout => {
   // Clone the layout into a new set of JS objects so that React components can do shallow
   // comparison between the old set and the new set and code below can traverse + mutate
   // in place.
   let {boxes} = cloneLayout(layout);
-  const markers: GaantChartMarker[] = [];
+  const markers: GanttChartMarker[] = [];
 
   // Move and size boxes based on the run metadata. Note that we don't totally invalidate
   // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
   // step ordering, etc. should obey the constraints we already planned for). We just push
   // boxes around on their existing rows.
-  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
+  if (options.mode === GanttChartMode.WATERFALL_TIMED) {
     const firstLogAt = metadata.firstLogAt || nowMs;
     const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt) * scale;
     const widthForMs = ({start, end}: {start: number; end?: number}) =>
@@ -426,12 +426,12 @@ export const adjustLayoutWithRunMetadata = (
     if (options.hideWaiting) {
       boxes = boxes.filter((b) => !!metadata.steps[b.node.name]?.state);
     }
-  } else if (options.mode === GaantChartMode.WATERFALL) {
+  } else if (options.mode === GanttChartMode.WATERFALL) {
     positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
       x: box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
     }));
-  } else if (options.mode === GaantChartMode.FLAT) {
+  } else if (options.mode === GanttChartMode.FLAT) {
     positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
       x: box.x + (runIdx ? (2 + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
@@ -446,7 +446,7 @@ export const adjustLayoutWithRunMetadata = (
 /**
  * Returns a set of query presets that highlight interesting slices of the visualization.
  */
-export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GaantChartLayout) => {
+export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GanttChartLayout) => {
   if (layout.boxes.length === 0) {
     return;
   }

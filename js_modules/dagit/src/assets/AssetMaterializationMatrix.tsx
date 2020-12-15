@@ -12,7 +12,7 @@ import {
   AssetQuery_assetOrError_Asset_assetMaterializations,
   AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
 } from 'src/assets/types/AssetQuery';
-import {useViewport} from 'src/gaant/useViewport';
+import {useViewport} from 'src/gantt/useViewport';
 import {
   GridColumn,
   GridScrollContainer,

@@ -1,7 +1,7 @@
 import animate from 'amator';
 import * as React from 'react';
 
-import {GaantViewport} from 'src/gaant/Constants';
+import {GanttViewport} from 'src/gantt/Constants';
 
 /**
  * useViewport is a React hook that exposes a viewport (top/left/width/height)
@@ -113,7 +113,7 @@ export const useViewport = () => {
   }, []);
 
   return {
-    viewport: {...offset, ...size} as GaantViewport,
+    viewport: {...offset, ...size} as GanttViewport,
     containerProps: {
       ref: setRef,
       onScroll,

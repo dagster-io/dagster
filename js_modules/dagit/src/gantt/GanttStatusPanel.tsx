@@ -4,12 +4,12 @@ import styled from 'styled-components/macro';
 
 import {IRunMetadataDict, IStepState} from 'src/RunMetadataProvider';
 import {formatElapsedTime} from 'src/Util';
-import {GaantChartMode} from 'src/gaant/Constants';
-import {boxStyleFor} from 'src/gaant/GaantChartLayout';
-import {RunGroupPanel} from 'src/gaant/RunGroupPanel';
+import {GanttChartMode} from 'src/gantt/Constants';
+import {boxStyleFor} from 'src/gantt/GanttChartLayout';
+import {RunGroupPanel} from 'src/gantt/RunGroupPanel';
 import {StepSelection} from 'src/runs/StepSelection';
 
-interface GaantStatusPanelProps {
+interface GanttStatusPanelProps {
   metadata: IRunMetadataDict;
   selection: StepSelection;
   runId: string;
@@ -20,7 +20,7 @@ interface GaantStatusPanelProps {
   onDoubleClickStep?: (step: string) => void;
 }
 
-export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = ({
+export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = ({
   runId,
   nowMs,
   metadata,
@@ -107,7 +107,7 @@ const StepItem: React.FunctionComponent<{
           style={{
             ...boxStyleFor(metadata.steps[name]?.state, {
               metadata,
-              options: {mode: GaantChartMode.WATERFALL_TIMED},
+              options: {mode: GanttChartMode.WATERFALL_TIMED},
             }),
           }}
         />

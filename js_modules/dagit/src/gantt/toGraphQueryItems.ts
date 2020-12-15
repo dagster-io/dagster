@@ -1,17 +1,17 @@
 import {weakmapMemoize} from 'src/Util';
-import {IGaantNode} from 'src/gaant/Constants';
-import {GaantChartExecutionPlanFragment} from 'src/gaant/types/GaantChartExecutionPlanFragment';
+import {IGanttNode} from 'src/gantt/Constants';
+import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
 
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that
  * can be used as the input to the "solid query" filtering algorithm. The idea
  * is that this data structure is generic, but it's really a fake solid tree.
  */
-export const toGraphQueryItems = weakmapMemoize((plan: GaantChartExecutionPlanFragment) => {
-  const nodeTable: {[key: string]: IGaantNode} = {};
+export const toGraphQueryItems = weakmapMemoize((plan: GanttChartExecutionPlanFragment) => {
+  const nodeTable: {[key: string]: IGanttNode} = {};
 
   for (const step of plan.steps) {
-    const node: IGaantNode = {
+    const node: IGanttNode = {
       name: step.key,
       inputs: [],
       outputs: [],

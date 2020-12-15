@@ -20,8 +20,8 @@ import {PipelineRunTag} from 'src/LocalStorage';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {LaunchButton} from 'src/execute/LaunchButton';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
-import {GaantChartMode} from 'src/gaant/GaantChart';
-import {buildLayout} from 'src/gaant/GaantChartLayout';
+import {GanttChartMode} from 'src/gantt/GanttChart';
+import {buildLayout} from 'src/gantt/GanttChartLayout';
 import {
   GridColumn,
   GridFloatingContainer,
@@ -266,7 +266,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       : partitionsWithLastRunSuccess
     : partitionNames;
   const solidsFiltered = filterByQuery(solids, query);
-  const layout = buildLayout({nodes: solidsFiltered.all, mode: GaantChartMode.FLAT});
+  const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
   const stepRows = layout.boxes.map((box) => ({
     x: box.x,
     name: box.node.name,

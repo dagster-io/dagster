@@ -6,7 +6,7 @@ import styled from 'styled-components/macro';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {OptionsDivider} from 'src/VizComponents';
-import {useViewport} from 'src/gaant/useViewport';
+import {useViewport} from 'src/gantt/useViewport';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionRunListForStep} from 'src/partitions/PartitionRunListForStep';
 import {

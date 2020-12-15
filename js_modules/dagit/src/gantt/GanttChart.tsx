@@ -21,54 +21,54 @@ import {
   BOX_SPACING_X,
   CSS_DURATION,
   DEFAULT_OPTIONS,
-  GaantChartBox,
-  GaantChartLayout,
-  GaantChartLayoutOptions,
-  GaantChartMode,
-  GaantChartPlacement,
-  GaantViewport,
+  GanttChartBox,
+  GanttChartLayout,
+  GanttChartLayoutOptions,
+  GanttChartMode,
+  GanttChartPlacement,
+  GanttViewport,
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
-} from 'src/gaant/Constants';
+} from 'src/gantt/Constants';
 import {
   BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
   interestingQueriesFor,
-} from 'src/gaant/GaantChartLayout';
-import {GaantChartModeControl} from 'src/gaant/GaantChartModeControl';
-import {GaantChartTimescale} from 'src/gaant/GaantChartTimescale';
-import {GaantStatusPanel} from 'src/gaant/GaantStatusPanel';
-import {ZoomSlider} from 'src/gaant/ZoomSlider';
-import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';
-import {GaantChartExecutionPlanFragment} from 'src/gaant/types/GaantChartExecutionPlanFragment';
-import {useViewport} from 'src/gaant/useViewport';
+} from 'src/gantt/GanttChartLayout';
+import {GanttChartModeControl} from 'src/gantt/GanttChartModeControl';
+import {GanttChartTimescale} from 'src/gantt/GanttChartTimescale';
+import {GanttStatusPanel} from 'src/gantt/GanttStatusPanel';
+import {ZoomSlider} from 'src/gantt/ZoomSlider';
+import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
+import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
+import {useViewport} from 'src/gantt/useViewport';
 import {StepSelection} from 'src/runs/StepSelection';
 
-export {GaantChartMode} from 'src/gaant/Constants';
+export {GanttChartMode} from 'src/gantt/Constants';
 
-const HIGHLIGHT_TIME_EVENT = 'gaant-highlight-time';
+const HIGHLIGHT_TIME_EVENT = 'gantt-highlight-time';
 
 let highlightTimer: NodeJS.Timeout;
 
 /**
- * Set or clear the highlighted time on the Gaant chart. Goal of this convenience
+ * Set or clear the highlighted time on the Gantt chart. Goal of this convenience
  * method is to make the implementation (via event dispatch) private to this file.
  */
-export function setHighlightedGaantChartTime(timestamp: null | string, debounced = true) {
+export function setHighlightedGanttChartTime(timestamp: null | string, debounced = true) {
   clearTimeout(highlightTimer);
 
   if (debounced) {
-    highlightTimer = setTimeout(() => setHighlightedGaantChartTime(timestamp, false), 100);
+    highlightTimer = setTimeout(() => setHighlightedGanttChartTime(timestamp, false), 100);
   } else {
     document.dispatchEvent(new CustomEvent(HIGHLIGHT_TIME_EVENT, {detail: timestamp}));
   }
 }
 
 export const queryStringToSelection = (
-  plan: GaantChartExecutionPlanFragment,
+  plan: GanttChartExecutionPlanFragment,
   query: string,
 ): string[] => {
   if (query && query !== '*') {
@@ -79,12 +79,12 @@ export const queryStringToSelection = (
   return [];
 };
 
-interface GaantChartProps {
+interface GanttChartProps {
   selection: StepSelection;
   focusedTime: number | null;
   runId: string;
-  plan: GaantChartExecutionPlanFragment;
-  options?: Partial<GaantChartLayoutOptions>;
+  plan: GanttChartExecutionPlanFragment;
+  options?: Partial<GanttChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
   toolbarLeftActions?: React.ReactChild;
@@ -93,16 +93,16 @@ interface GaantChartProps {
   onSetSelection: (selection: StepSelection) => void;
 }
 
-interface GaantChartState {
-  options: GaantChartLayoutOptions;
+interface GanttChartState {
+  options: GanttChartLayoutOptions;
 }
 
-export class GaantChart extends React.Component<GaantChartProps, GaantChartState> {
+export class GanttChart extends React.Component<GanttChartProps, GanttChartState> {
   static LoadingState: React.FunctionComponent<{runId: string}>;
 
   static fragments = {
-    GaantChartExecutionPlanFragment: gql`
-      fragment GaantChartExecutionPlanFragment on ExecutionPlan {
+    GanttChartExecutionPlanFragment: gql`
+      fragment GanttChartExecutionPlanFragment on ExecutionPlan {
         steps {
           key
           kind
@@ -126,10 +126,10 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
     `,
   };
 
-  _cachedLayout: GaantChartLayout | null = null;
+  _cachedLayout: GanttChartLayout | null = null;
   _cachedLayoutParams: BuildLayoutParams | null = null;
 
-  constructor(props: GaantChartProps) {
+  constructor(props: GanttChartProps) {
     super(props);
 
     this.state = {
@@ -152,7 +152,7 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
     return this._cachedLayout!;
   };
 
-  updateOptions = (changes: Partial<GaantChartLayoutOptions>) => {
+  updateOptions = (changes: Partial<GanttChartLayoutOptions>) => {
     this.setState({
       ...this.state,
       options: {...this.state.options, ...changes},
@@ -184,16 +184,16 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
     });
 
     return (
-      <GaantChartContainer>
+      <GanttChartContainer>
         <OptionsContainer>
           {this.props.toolbarLeftActions}
           {this.props.toolbarLeftActions && <OptionsDivider />}
-          <GaantChartModeControl
+          <GanttChartModeControl
             value={options.mode}
             onChange={(mode) => this.updateOptions({mode})}
             hideTimedMode={options.hideTimedMode}
           />
-          {options.mode === GaantChartMode.WATERFALL_TIMED && (
+          {options.mode === GanttChartMode.WATERFALL_TIMED && (
             <>
               <OptionsSpacer />
               <div style={{width: 200}}>
@@ -211,7 +211,7 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
           <div style={{flex: 1}} />
           {this.props.toolbarActions}
         </OptionsContainer>
-        <GaantChartInner
+        <GanttChartInner
           {...this.props}
           {...this.state}
           layout={layout}
@@ -224,20 +224,20 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
             })
           }
         />
-      </GaantChartContainer>
+      </GanttChartContainer>
     );
   }
 }
-type GaantChartInnerProps = GaantChartProps &
-  GaantChartState & {
+type GanttChartInnerProps = GanttChartProps &
+  GanttChartState & {
     graph: GraphQueryItem[];
-    layout: GaantChartLayout;
+    layout: GanttChartLayout;
     onUpdateQuery: (value: string) => void;
     onDoubleClickStep: (stepName: string) => void;
     onChange: () => void;
   };
 
-const GaantChartInner = (props: GaantChartInnerProps) => {
+const GanttChartInner = (props: GanttChartInnerProps) => {
   const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
@@ -346,8 +346,8 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
 
   const content = (
     <>
-      {options.mode === GaantChartMode.WATERFALL_TIMED && measurementComplete && (
-        <GaantChartTimescale
+      {options.mode === GanttChartMode.WATERFALL_TIMED && measurementComplete && (
+        <GanttChartTimescale
           scale={scale}
           viewport={viewport}
           layoutSize={layoutSize}
@@ -359,7 +359,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
       <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
         <div style={{position: 'relative', ...layoutSize}}>
           {measurementComplete && (
-            <GaantChartViewportContents
+            <GanttChartViewportContents
               options={options}
               metadata={metadata || EMPTY_RUN_METADATA}
               layout={layout}
@@ -396,12 +396,12 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
 
   return metadata ? (
     <SplitPanelContainer
-      identifier="gaant-split"
+      identifier="gantt-split"
       axis="horizontal"
       first={content}
       firstInitialPercent={70}
       second={
-        <GaantStatusPanel
+        <GanttStatusPanel
           {...props}
           nowMs={nowMs}
           metadata={metadata}
@@ -414,19 +414,19 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   );
 };
 
-interface GaantChartViewportContentsProps {
-  options: GaantChartLayoutOptions;
+interface GanttChartViewportContentsProps {
+  options: GanttChartLayoutOptions;
   metadata: IRunMetadataDict;
-  layout: GaantChartLayout;
+  layout: GanttChartLayout;
   hoveredStep: string | null;
   focusedSteps: string[];
-  viewport: GaantViewport;
+  viewport: GanttViewport;
   setHoveredNodeName: (name: string | null) => void;
   onDoubleClickStep: (step: string) => void;
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = (
+const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportContentsProps> = (
   props,
 ) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
@@ -445,7 +445,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
   // are others at the same X so wide "tracks" show you where data is being collected.
   const verticalLinesAtXCoord: {[x: string]: number} = {};
 
-  if (options.mode !== GaantChartMode.FLAT) {
+  if (options.mode !== GanttChartMode.FLAT) {
     layout.boxes.forEach((box) => {
       box.children.forEach((child, childIdx) => {
         const bounds = boundsForLine(box, child);
@@ -459,7 +459,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         verticalLinesAtXCoord[bounds.maxX] = overlapAtXCoord + 1;
 
         items.push(
-          <GaantLine
+          <GanttLine
             darkened={
               (focusedSteps?.includes(box.node.name) || hoveredStep) === box.node.name ||
               (focusedSteps?.includes(child.node.name) || hoveredStep) === child.node.name
@@ -507,7 +507,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     );
   });
 
-  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
+  if (options.mode === GanttChartMode.WATERFALL_TIMED) {
     // Note: We sort the markers from left to right so that they're added to the DOM in that
     // order and a long one doesn't make ones "behind it" unclickable.
     layout.markers
@@ -547,10 +547,10 @@ interface Bounds {
 }
 
 /**
- * Returns the top left + bottom right bounds for the provided Gaant chart box
+ * Returns the top left + bottom right bounds for the provided Gantt chart box
  * so that the box can be drawn and tested for intersection with the viewport.
  */
-const boundsForBox = (a: GaantChartPlacement): Bounds => {
+const boundsForBox = (a: GanttChartPlacement): Bounds => {
   return {
     minX: a.x,
     minY: a.y * BOX_HEIGHT,
@@ -560,11 +560,11 @@ const boundsForBox = (a: GaantChartPlacement): Bounds => {
 };
 
 /**
- * Returns the top left + bottom right bounds for the line between two Gaant
+ * Returns the top left + bottom right bounds for the line between two Gantt
  * chart boxes. The boxes do not need to be provided in left -> right order.
- * @param a: GaantChartBox
+ * @param a: GanttChartBox
  */
-const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
+const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
   if (b.y < a.y) {
     [a, b] = [b, a];
   }
@@ -594,10 +594,10 @@ const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
 };
 
 /**
- * Renders a line on the Gaant visualization using a thin horizontal <div> and
+ * Renders a line on the Gantt visualization using a thin horizontal <div> and
  * a thin vertical <div> as necessary.
  */
-const GaantLine = React.memo(
+const GanttLine = React.memo(
   ({
     minX,
     minY,
@@ -654,7 +654,7 @@ const GaantLine = React.memo(
 // Note: It is much faster to use standard CSS class selectors here than make
 // each box and line a styled-component because all styled components register
 // listeners for the "theme" React context.
-const GaantChartContainer = styled.div`
+const GanttChartContainer = styled.div`
   height: 100%;
   position: relative;
   display: flex;
@@ -746,16 +746,16 @@ const GraphQueryInputContainer = styled.div`
   white-space: nowrap;
 `;
 
-GaantChart.LoadingState = ({runId}: {runId: string}) => (
-  <GaantChartContainer>
+GanttChart.LoadingState = ({runId}: {runId: string}) => (
+  <GanttChartContainer>
     <OptionsContainer />
     <SplitPanelContainer
-      identifier="gaant-split"
+      identifier="gantt-split"
       axis="horizontal"
       first={<NonIdealState icon={<Spinner size={24} />} />}
       firstInitialPercent={70}
       second={
-        <GaantStatusPanel
+        <GanttStatusPanel
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
           runId={runId}
@@ -763,14 +763,14 @@ GaantChart.LoadingState = ({runId}: {runId: string}) => (
         />
       }
     />
-  </GaantChartContainer>
+  </GanttChartContainer>
 );
 
 export const QueuedState = ({runId}: {runId: string}) => (
-  <GaantChartContainer>
+  <GanttChartContainer>
     <OptionsContainer />
     <SplitPanelContainer
-      identifier="gaant-split"
+      identifier="gantt-split"
       axis="horizontal"
       first={
         <NonIdealState
@@ -781,7 +781,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
       }
       firstInitialPercent={70}
       second={
-        <GaantStatusPanel
+        <GanttStatusPanel
           metadata={EMPTY_RUN_METADATA}
           selection={{keys: [], query: '*'}}
           runId={runId}
@@ -789,5 +789,5 @@ export const QueuedState = ({runId}: {runId: string}) => (
         />
       }
     />
-  </GaantChartContainer>
+  </GanttChartContainer>
 );

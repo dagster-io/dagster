@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RunMetadataProvider} from 'src/RunMetadataProvider';
-import {GaantChart} from 'src/gaant/GaantChart';
+import {GanttChart} from 'src/gantt/GanttChart';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 
@@ -61,14 +61,14 @@ export const RunFragments = {
           }
         }
         artifactsPersisted
-        ...GaantChartExecutionPlanFragment
+        ...GanttChartExecutionPlanFragment
       }
       stepKeysToExecute
       ...RunFragmentForRepositoryMatch
     }
 
     ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
-    ${GaantChart.fragments.GaantChartExecutionPlanFragment}
+    ${GanttChart.fragments.GanttChartExecutionPlanFragment}
     ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
   `,
   RunPipelineRunEventFragment: gql`
