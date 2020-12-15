@@ -1,16 +1,18 @@
 import {gql} from '@apollo/client';
-import {Checkbox, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
+import {Checkbox, Colors, Icon, NonIdealState, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {ROOT_SERVER_URI} from 'src/DomUtils';
 import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/RunMetadataProvider';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/VizComponents';
+import {WebsocketStatusContext} from 'src/WebsocketStatus';
 import {
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
@@ -46,6 +48,8 @@ import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
 import {useViewport} from 'src/gantt/useViewport';
 import {StepSelection} from 'src/runs/StepSelection';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 
 export {GanttChartMode} from 'src/gantt/Constants';
 
@@ -241,8 +245,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
-  const [nowMs, setNowMs] = React.useState<number>(Date.now());
+  const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
   const {options, metadata, selection} = props;
+
+  const websocketStatus = React.useContext(WebsocketStatusContext);
+  const websocketOpen = websocketStatus === WebSocket.OPEN;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -266,9 +273,10 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   // Because renders can happen "out of band" of our update interval, we set a timer for
   // "time until the next interval after the current nowMs".
   React.useEffect(() => {
-    if (scale === 0) {
+    if (scale === 0 || !websocketOpen) {
       return;
     }
+
     if (metadata?.exitedAt) {
       if (nowMs !== metadata.exitedAt) {
         setNowMs(metadata.exitedAt);
@@ -278,11 +286,12 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
 
     // time required for 2px shift in viz, but not more rapid than our CSS animation duration
     const renderInterval = Math.max(CSS_DURATION, 2 / scale);
+    const now = Date.now();
 
-    const timeUntilIntervalElasped = renderInterval - (Date.now() - nowMs);
-    const timeout = setTimeout(() => setNowMs(Date.now()), timeUntilIntervalElasped);
+    const timeUntilIntervalElasped = renderInterval - (now - nowMs);
+    const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, metadata, nowMs]);
+  }, [scale, metadata, nowMs, websocketOpen]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.
@@ -375,6 +384,32 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       </div>
 
       <GraphQueryInputContainer>
+        {!websocketOpen ? (
+          <WebsocketWarning>
+            <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
+              <Group
+                direction="row"
+                spacing={8}
+                background={`${Colors.ORANGE3}26`}
+                padding={{vertical: 8, horizontal: 12}}
+                alignItems="flex-start"
+              >
+                <Icon
+                  icon="warning-sign"
+                  color={Colors.ORANGE2}
+                  iconSize={14}
+                  style={{display: 'block', position: 'relative', top: '2px'}}
+                />
+                <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
+                  <strong>Lost connection to Dagit server.</strong>
+                  <span>
+                    {` Verify that your instance is responding to requests at ${ROOT_SERVER_URI} and reload the page.`}
+                  </span>
+                </div>
+              </Group>
+            </Box>
+          </WebsocketWarning>
+        ) : null}
         <GraphQueryInput
           items={props.graph}
           value={props.selection.query}
@@ -735,6 +770,13 @@ const GanttChartContainer = styled.div`
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
+`;
+
+const WebsocketWarning = styled.div`
+  position: absolute;
+  bottom: 100%;
+  color: ${Colors.ORANGE2};
+  width: 100%;
 `;
 
 const GraphQueryInputContainer = styled.div`
