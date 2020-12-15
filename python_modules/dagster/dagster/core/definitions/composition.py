@@ -272,13 +272,29 @@ class CallableNode:
             return None
 
         if len(self.node_def.output_defs) == 1:
-            output_name = self.node_def.output_defs[0].name
-            return InvokedSolidOutputHandle(resolved_node_name, output_name)
+            output_def = self.node_def.output_defs[0]
+            output_name = output_def.name
+            if output_def.is_dynamic:
+                return InvokedSolidDynamicOutputWrapper(resolved_node_name, output_name)
+            else:
+                return InvokedSolidOutputHandle(resolved_node_name, output_name)
 
-        outputs = [output_def.name for output_def in self.node_def.output_defs]
-        return namedtuple("_{node_def}_outputs".format(node_def=self.node_def.name), outputs)(
-            **{output: InvokedSolidOutputHandle(resolved_node_name, output) for output in outputs}
-        )
+        outputs = [output_def for output_def in self.node_def.output_defs]
+        invoked_output_handles = {}
+        for output_def in outputs:
+            if output_def.is_dynamic:
+                invoked_output_handles[output_def.name] = InvokedSolidDynamicOutputWrapper(
+                    resolved_node_name, output_def.name
+                )
+            else:
+                invoked_output_handles[output_def.name] = InvokedSolidOutputHandle(
+                    resolved_node_name, output_def.name
+                )
+
+        return namedtuple(
+            "_{node_def}_outputs".format(node_def=self.node_def.name),
+            " ".join([output_def.name for output_def in outputs]),
+        )(**invoked_output_handles)
 
     def _process_argument_node(self, solid_name, output_node, input_name, input_bindings, arg_desc):
 
@@ -322,6 +338,13 @@ class CallableNode:
                     options=output_node._fields,
                 )
             )
+        elif isinstance(output_node, InvokedSolidDynamicOutputWrapper):
+            raise DagsterInvalidDefinitionError(
+                f"In {current_context().source} {current_context().name}, received the dynamic output "
+                f"{output_node.output_name} from solid {output_node.solid_name} directly. Dynamic "
+                "output must be unpacked by invoking forEach."
+            )
+
         elif isinstance(output_node, CallableNode) or isinstance(output_node, NodeDefinition):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received an un-invoked solid for input "
@@ -435,6 +458,67 @@ class InvokedSolidOutputHandle:
         )
 
 
+class InvokedSolidDynamicOutputWrapper:
+    """
+    The return value for a dynamic output when invoking a solid in a composition function.
+    Must be unwrapped by invoking forEach.
+    """
+
+    def __init__(self, solid_name, output_name):
+        self.solid_name = check.str_param(solid_name, "solid_name")
+        self.output_name = check.str_param(output_name, "output_name")
+
+    def forEach(self, fn):
+        check.is_callable(fn)
+        fn(InvokedSolidOutputHandle(self.solid_name, self.output_name))
+
+    def __iter__(self):
+        raise DagsterInvariantViolationError(
+            'Attempted to iterate over an {cls}. This object represents the dynamic output "{out}" '
+            'from the solid "{solid}". Use the "forEach" method on this object to create '
+            "downstream dependencies that will be cloned for each DynamicOutput "
+            "that is resolved at runtime.".format(
+                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+            )
+        )
+
+    def __getitem__(self, idx):
+        raise DagsterInvariantViolationError(
+            'Attempted to index in to an {cls}. This object represents the dynamic output "{out}" '
+            'from the solid "{solid}". Use the "forEach" method on this object to create '
+            "downstream dependencies that will be cloned for each DynamicOutput "
+            "that is resolved at runtime.".format(
+                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+            )
+        )
+
+    def alias(self, _):
+        raise DagsterInvariantViolationError(
+            "In {source} {name}, attempted to call alias method for {cls}. This object "
+            'represents the dynamic output "{out}" from the already invoked solid "{solid}". Consider '
+            "checking the location of parentheses.".format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                solid=self.solid_name,
+                out=self.output_name,
+            )
+        )
+
+    def with_hooks(self, _):
+        raise DagsterInvariantViolationError(
+            "In {source} {name}, attempted to call hook method for {cls}. This object "
+            'represents the dynamic output "{out}" from the already invoked solid "{solid}". Consider '
+            "checking the location of parentheses.".format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                solid=self.solid_name,
+                out=self.output_name,
+            )
+        )
+
+
 class InputMappingNode:
     def __init__(self, input_def):
         self.input_def = input_def
@@ -508,6 +592,13 @@ def composite_mapping_from_output(output, output_defs, solid_name):
             )
 
         return output_mapping_dict
+
+    elif isinstance(output, InvokedSolidDynamicOutputWrapper):
+        raise DagsterInvalidDefinitionError(
+            f"In @composite_solid {solid_name}, received the dynamic output "
+            f"{output.output_name} from solid {output.solid_name} directly. Dynamic "
+            "output must be unpacked by invoking PLACEHOLDER before mapping."
+        )
 
     # error
     if output is not None:

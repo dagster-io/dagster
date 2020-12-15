@@ -1,11 +1,5 @@
 import pytest
-from dagster import (
-    DagsterInvalidDefinitionError,
-    OutputDefinition,
-    composite_solid,
-    pipeline,
-    solid,
-)
+from dagster import DagsterInvalidDefinitionError, composite_solid, pipeline, solid
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
@@ -25,23 +19,25 @@ def add(_, x, y):
     return x + y
 
 
-def test_composite():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Definition types must align",
-    ):
+# preserved for conversation purposes - this pattern cant really be expressed without "map" or a direct unpacking function
+#
+# def test_composite():
+#     with pytest.raises(
+#         DagsterInvalidDefinitionError, match="Definition types must align",
+#     ):
 
-        @composite_solid(output_defs=[OutputDefinition()])
-        def _should_fail():
-            return dynamic_solid()
+#         @composite_solid(output_defs=[OutputDefinition()])
+#         def _should_fail():
+#             return dynamic_solid()
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=" must be a DynamicOutputDefinition since it is downstream of dynamic output",
-    ):
+#     with pytest.raises(
+#         DagsterInvalidDefinitionError,
+#         match=" must be a DynamicOutputDefinition since it is downstream of dynamic output",
+#     ):
 
-        @composite_solid(output_defs=[OutputDefinition()])
-        def _should_fail():
-            return echo(dynamic_solid())
+#         @composite_solid(output_defs=[OutputDefinition()])
+#         def _should_fail():
+#             return echo(dynamic_solid())
 
 
 def test_fan_in():
@@ -52,7 +48,10 @@ def test_fan_in():
 
         @pipeline
         def _should_fail():
-            echo([dynamic_solid()])
+            numbers = []
+            # pylint: disable=no-member
+            dynamic_solid().forEach(numbers.append)
+            echo(numbers)
 
 
 def test_multi_direct():
@@ -62,7 +61,12 @@ def test_multi_direct():
 
         @pipeline
         def _should_fail():
-            add(dynamic_solid(), dynamic_solid())
+            def _add(x):
+                # pylint: disable=no-member
+                dynamic_solid().forEach(lambda y: add(x, y))
+
+            # pylint: disable=no-member
+            dynamic_solid().forEach(_add)
 
 
 def test_multi_indirect():
@@ -72,22 +76,28 @@ def test_multi_indirect():
 
         @pipeline
         def _should_fail():
-            x = echo(dynamic_solid())
-            add(dynamic_solid(), x)
+            def _add(x):
+                # pylint: disable=no-member
+                dynamic_solid().forEach(lambda y: add(x, y))
+
+            # pylint: disable=no-member
+            dynamic_solid().forEach(lambda z: _add(echo(z)))
 
 
-def test_multi_composite_out():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
-    ):
+# same as commented out case above
+#
+# def test_multi_composite_out():
+#     with pytest.raises(
+#         DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
+#     ):
 
-        @composite_solid(output_defs=[DynamicOutputDefinition()])
-        def composed_echo():
-            return echo(dynamic_solid())
+#         @composite_solid(output_defs=[DynamicOutputDefinition()])
+#         def composed_echo():
+#             return echo(dynamic_solid())
 
-        @pipeline
-        def _should_fail():
-            add(composed_echo(), dynamic_solid())
+#         @pipeline
+#         def _should_fail():
+#             add(composed_echo(), dynamic_solid())
 
 
 def test_multi_composite_in():
@@ -98,12 +108,13 @@ def test_multi_composite_in():
 
         @composite_solid
         def composed_add(a):
-            add(a, dynamic_solid())
+            # pylint: disable=no-member
+            dynamic_solid().forEach(lambda b: add(a, b))
 
         @pipeline
         def _should_fail():
-            y = echo(dynamic_solid())
-            composed_add(y)
+            # pylint: disable=no-member
+            dynamic_solid().forEach(lambda x: composed_add(echo(x)))
 
 
 def test_direct_dep():
@@ -114,7 +125,8 @@ def test_direct_dep():
 
     @pipeline
     def _is_fine():
-        dynamic_add(dynamic_solid())
+        # pylint: disable=no-member
+        dynamic_solid().forEach(dynamic_add)
 
     with pytest.raises(
         DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
@@ -122,4 +134,5 @@ def test_direct_dep():
 
         @pipeline
         def _should_fail():
-            echo(dynamic_add(dynamic_solid()))
+            # pylint: disable=no-member
+            dynamic_solid().forEach(lambda x: dynamic_add(x).forEach(echo))
