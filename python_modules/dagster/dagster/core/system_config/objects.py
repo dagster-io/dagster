@@ -191,14 +191,6 @@ def run_config_storage_field_backcompat(run_config):
 
     intermediate_storage_dict = {}
     if run_config.get("storage"):
-        warnings.warn(
-            (
-                'the "storage" entry in the run config is deprecated and will removed in the '
-                'dagster 0.11.0 release. Please use "intermediate_storage" instead and update '
-                "the corresponding `system_storage_defs` argument in `ModeDefinition` to "
-                "`intermediate_storage_defs`."
-            )
-        )
         intermediate_storage_dict = {
             "intermediate_storage": run_config.get("intermediate_storage")
             or run_config.get("storage")
@@ -350,6 +342,14 @@ class IntermediateStorageConfig(
     def from_dict(config=None):
         check.opt_dict_param(config, "config", key_type=str)
         if config:
+            warnings.warn(
+                (
+                    'The "storage" and "intermediate_storage" entries in the run config are deprecated, '
+                    "and will removed in 0.11.0. Loading inputs and storing outputs are now handled "
+                    'by "object managers", which are resources that can be configured via '
+                    'the "object_manager" resource key.'
+                )
+            )
             intermediate_storage_name, intermediate_storage_config = ensure_single_item(config)
             return IntermediateStorageConfig(
                 intermediate_storage_name, intermediate_storage_config.get("config")

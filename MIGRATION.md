@@ -4,6 +4,47 @@ When new releases include breaking changes or deprecations, this document descri
 
 # Migrating to 0.10.0
 
+## Deprecation: Intermediate Storage
+
+We have deprecated "intermediate storage". Loading inputs and storing outputs are now handled by
+"object managers", which serve the same purpose as intermediate storages but offer you better
+control over how inputs are loaded and outputs are handled.
+
+- We have deprecated the field `"storage"` and `"intermediate_storage"` on run config.
+
+  For example, if your run config looks like this:
+  ```python
+  @pipeline
+  def my_pipeline():
+      ...
+
+  execute_pipeline(my_pipeline, run_config={"intermediate_storage": {"filesystem": {"base_dir": ...}}})
+  # or
+  execute_pipeline(my_pipeline, run_config={"storage": {"filesystem": {"base_dir": ...}}})
+  ```
+
+  It is recommended to use the built-in object managers like `fs_object_manager`, which is a resource:
+
+  ```python
+  @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": fs_object_manager})])
+  def my_pipeline():
+      ...
+
+  execute_pipeline(
+      my_pipeline, run_config={"resources": {"object_manager": {"config": {"base_dir": ...}}}}
+  )
+  ```
+
+- We have deprecated `IntermediateStorageDefinition` and `@intermediate_storage`.
+
+  For example, if you have custom intermediate storages to handle get intermediate for inputs and
+  set intermediate for outputs. It is recommended to build your own object manager using `@object_manager`
+  or `ObjectManagerDefinition`.
+
+
+- We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
+  new Object Managers.
+
 ## Removal: Removed `input_hydration_config` and `output_materialization_config`
 
 Use `dagster_type_loader` instead of `input_hydration_config` and `dagster_type_materializer` instead of `output_materialization_config`.
@@ -21,22 +62,18 @@ We have removed the property `config_field` on definition classes. Use `config_s
 
 ## Removal: System Storage
 
-We have removed "system storage", i.e. `SystemStorageDefinition` and `@system_storage`, which we
-deprecated in 0.9.0 as described [here](##deprecation-system_storage_defs).
+We have removed "system storage", i.e. `SystemStorageDefinition` and `@system_storage`, in favor of
+"intermediate storage", which we deprecated in 0.9.0 as described [here](##deprecation-system_storage_defs).
+
+Please note that "intermediate storage" is also deprecated and will be removed in 0.11.0, so it is
+recommended to follow the migration instruction about the deprecation of intermediate storage
+[here](##deprecation-intermediate-storage).
 
 - We have removed the argument `system_storage_defs` to the `ModeDefinition`, which we deprecated in
   0.9.0, in favor of `intermediate_storage_defs`, as described [here](##deprecation-system_storage_defs).
 
 - We have removed the built-in system storages, e.g. `default_system_storage_defs`, which we
   deprecated in 0.9.0.
-
-- We have deprecated the field `"storage"` on run config, in favor of `"intermediate_storage"`.
-
-  For example, if your run config yaml look like this:
-  `{"storage": {"filesystem": {}}}` or `{"storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}`
-
-  it is recommended to make it look like this:
-  `{"intermediate_storage": {"filesystem": {}}}` or `{"intermediate_storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}`
 
 - As we have removed the system storages, if you are using file managers which live inside system
   storages, you should update it to be configured on resources via the `"file_manager"` resource key.

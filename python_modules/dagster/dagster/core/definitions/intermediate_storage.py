@@ -1,3 +1,4 @@
+import warnings
 from functools import update_wrapper
 
 from dagster import check
@@ -33,6 +34,11 @@ class IntermediateStorageDefinition(ConfigurableDefinition):
         intermediate_storage_creation_fn=None,
         description=None,
     ):
+        warnings.warn(
+            "IntermediateStorageDefinition and @intermediate_storage are deprecated in 0.10.0 and "
+            "will be removed in 0.11.0. Use ObjectManagerDefinition and @object_manager instead, "
+            "which gives you better control over how inputs and outputs are handled and loaded."
+        )
         self._name = check_valid_name(name)
         self._is_persistent = check.bool_param(is_persistent, "is_persistent")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)

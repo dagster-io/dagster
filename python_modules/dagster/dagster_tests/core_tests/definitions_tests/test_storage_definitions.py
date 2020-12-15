@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from dagster import (
     ModeDefinition,
@@ -123,3 +125,37 @@ def test_intermediate_storage_dict_config_configured():
         test_intermediate_storage_configured, {"test_intermediate_storage": None}
     )
     assert it["ran"]
+
+
+def test_intermediate_storage_deprecation_warning():
+    # Deprecation warning on intermediate storage defs
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "IntermediateStorageDefinition and @intermediate_storage are deprecated in 0.10.0 and will be removed in 0.11.0."
+        ),
+    ):
+
+        @intermediate_storage(required_resource_keys=set())
+        def _(init_context):
+            return create_mem_system_intermediate_store(init_context)
+
+    @pipeline
+    def empty_pipeline():
+        pass
+
+    # Deprecation warning on intermediate storage config
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'The "storage" and "intermediate_storage" entries in the run config are deprecated'
+        ),
+    ):
+        execute_pipeline(empty_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})
+
+    # No warnings if no intermediate storage configured or created
+    with pytest.warns(None) as record:
+
+        execute_pipeline(empty_pipeline)
+
+    assert len(record) == 0
