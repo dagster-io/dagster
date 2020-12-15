@@ -340,15 +340,15 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
 
     const {resources, solids, ...rest} = this.getRootCompositeChildren();
 
-    const itemsIn = (parents: string[], names: string[]) => {
-      const boxes = names
-        .map((name) => {
+    const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
+      const boxes = items
+        .map((item) => {
           // If a solid selection is in use, discard anything not in it.
-          if (solidSelection?.length && !solidSelection?.includes(name)) {
+          if (solidSelection?.length && !solidSelection?.includes(item.name)) {
             return null;
           }
 
-          const path = [...parents, name];
+          const path = [...parents, item.name];
           const pathKey = path.join('.');
           const pathErrors = errorsAndPaths
             .filter((e) => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`))
@@ -362,34 +362,34 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
           const isMissing = path.some((_, idx) =>
             missingNodes.includes(path.slice(0, idx + 1).join('.')),
           );
-
           if (errorsOnly && !isInvalid) {
             return false;
           }
-          const state = isMissing
-            ? 'missing'
-            : isInvalid
-            ? 'invalid'
-            : isPresent
-            ? 'present'
-            : 'none';
+          const state =
+            isMissing && item.isRequired
+              ? 'missing'
+              : isInvalid
+              ? 'invalid'
+              : isPresent
+              ? 'present'
+              : 'none';
 
           return (
             <Tooltip
               position={Position.BOTTOM}
               content={stateToHint[state].title}
               intent={stateToHint[state].intent}
-              key={name}
+              key={item.name}
             >
               <Item
-                key={name}
+                key={item.name}
                 state={state}
                 onClick={() => {
                   const first = pathErrors.find(isValidationError);
                   onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
                 }}
               >
-                {name}
+                {item.name}
               </Item>
             </Tooltip>
           );
@@ -442,28 +442,23 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
               <RuntimeAndResourcesSection>
                 <Section>
                   <SectionTitle>Runtime</SectionTitle>
-                  <ItemSet>{itemsIn([], Object.keys(rest))}</ItemSet>
+                  <ItemSet>
+                    {itemsIn(
+                      [],
+                      Object.keys(rest).map((name) => ({name, isRequired: false})),
+                    )}
+                  </ItemSet>
                 </Section>
                 {(resources?.fields.length || 0) > 0 && (
                   <Section>
                     <SectionTitle>Resources</SectionTitle>
-                    <ItemSet>
-                      {itemsIn(
-                        ['resources'],
-                        (resources?.fields || []).map((f) => f.name),
-                      )}
-                    </ItemSet>
+                    <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
                   </Section>
                 )}
               </RuntimeAndResourcesSection>
               <Section>
                 <SectionTitle>Solids</SectionTitle>
-                <ItemSet>
-                  {itemsIn(
-                    ['solids'],
-                    (solids?.fields || []).map((f) => f.name),
-                  )}
-                </ItemSet>
+                <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
               </Section>
               <div style={{height: 50}} />
             </div>

@@ -11,7 +11,6 @@ import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import 'codemirror/keymap/sublime';
 import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/material.css';
 import 'src/configeditor/codemirror-yaml/lint'; // Patch lint
 import 'src/configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
@@ -70,6 +69,11 @@ const CodeMirrorShimStyle = createGlobalStyle`
     bottom: 0;
     height: initial;
     font-family: ${FontFamily.monospace};
+
+    /* Note: Theme overrides */
+    &.cm-s-default .cm-comment {
+      color: #999;
+    }
   }
 
   .CodeMirror-hint,
@@ -205,18 +209,13 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               },
               keyMap: 'sublime',
               extraKeys: {
-                'Cmd-Space': (editor: any) =>
-                  editor.showHint({
-                    completeSingle: true,
-                  }),
-                'Ctrl-Space': (editor: any) =>
-                  editor.showHint({
-                    completeSingle: true,
-                  }),
-                'Alt-Space': (editor: any) =>
-                  editor.showHint({
-                    completeSingle: true,
-                  }),
+                'Cmd-Space': (editor: any) => editor.showHint({completeSingle: true}),
+                'Ctrl-A': (editor: any) => {
+                  editor.execCommand('goLineStartSmart');
+                },
+                'Ctrl-E': (editor: any) => editor.execCommand('goLineEnd'),
+                'Ctrl-Space': (editor: any) => editor.showHint({completeSingle: true}),
+                'Alt-Space': (editor: any) => editor.showHint({completeSingle: true}),
                 'Shift-Tab': (editor: any) => editor.execCommand('indentLess'),
                 Tab: (editor: any) => editor.execCommand('indentMore'),
                 // Persistent search box in Query Editor
