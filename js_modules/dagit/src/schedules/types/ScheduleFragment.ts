@@ -65,11 +65,6 @@ export interface ScheduleFragment_scheduleState_runs {
   status: PipelineRunStatus;
 }
 
-export interface ScheduleFragment_scheduleState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface ScheduleFragment_scheduleState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -89,7 +84,7 @@ export interface ScheduleFragment_scheduleState_ticks {
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: ScheduleFragment_scheduleState_ticks_runs[];
+  runIds: string[];
   error: ScheduleFragment_scheduleState_ticks_error | null;
 }
 

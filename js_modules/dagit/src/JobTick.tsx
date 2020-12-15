@@ -26,7 +26,7 @@ import {ButtonLink} from 'src/ui/ButtonLink';
 
 export const TickTag: React.FunctionComponent<{
   tick: TickTagFragment;
-  jobType: JobType;
+  jobType?: JobType;
 }> = ({tick, jobType}) => {
   const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
@@ -37,7 +37,7 @@ export const TickTag: React.FunctionComponent<{
         </Tag>
       );
     case JobTickStatus.SUCCESS:
-      if (!tick.runs.length) {
+      if (!tick.runIds.length) {
         return (
           <Tag minimal={true} intent={Intent.PRIMARY}>
             Requested
@@ -48,7 +48,7 @@ export const TickTag: React.FunctionComponent<{
         <>
           <Tag minimal={true} intent={Intent.PRIMARY} interactive={true}>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
-              {tick.runs.length} Requested
+              {tick.runIds.length} Requested
             </ButtonLink>
           </Tag>
           <Dialog
@@ -58,7 +58,7 @@ export const TickTag: React.FunctionComponent<{
             title={`Launched runs`}
           >
             <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
-              {open && <RunList runIds={tick.runs.map((x) => x.id)} />}
+              {open && <RunList runIds={tick.runIds} />}
             </Box>
             <div className={Classes.DIALOG_FOOTER}>
               <div className={Classes.DIALOG_FOOTER_ACTIONS}>
@@ -103,7 +103,11 @@ export const TickTag: React.FunctionComponent<{
           <LinkButton
             onClick={() =>
               showCustomAlert({
-                title: jobType === JobType.SCHEDULE ? 'Schedule Response' : 'Sensor Response',
+                title: jobType
+                  ? jobType === JobType.SCHEDULE
+                    ? 'Schedule Response'
+                    : 'Sensor Response'
+                  : 'Python Error',
                 body: <PythonErrorInfo error={error} />,
               })
             }
@@ -167,9 +171,7 @@ export const TICK_TAG_FRAGMENT = gql`
     status
     timestamp
     skipReason
-    runs {
-      id
-    }
+    runIds
     error {
       ...PythonErrorFragment
     }

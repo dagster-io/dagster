@@ -6059,6 +6059,13 @@ chartjs-color@^2.1.0:
     chartjs-color-string "^0.6.0"
     color-convert "^1.9.3"
 
+chartjs-plugin-zoom@^0.7.7:
+  version "0.7.7"
+  resolved "https://registry.yarnpkg.com/chartjs-plugin-zoom/-/chartjs-plugin-zoom-0.7.7.tgz#b25989bd6183cc51d5bb9293c20b4b7942555584"
+  integrity sha512-8fOHPPiZTT2+K0w278TQWYs/DtPg06s1OpTqdXxPpdfH7QQbl6Io/WuE1FjPehDWVCxpe3tSTts+dPbxgq2Z5g==
+  dependencies:
+    hammerjs "^2.0.8"
+
 check-types@^11.1.1:
   version "11.1.2"
   resolved "https://registry.yarnpkg.com/check-types/-/check-types-11.1.2.tgz#86a7c12bf5539f6324eb0e70ca8896c0e38f3e2f"
@@ -9715,6 +9722,11 @@ gzip-size@^4.1.0:
   dependencies:
     duplexer "^0.1.1"
     pify "^3.0.0"
+
+hammerjs@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/hammerjs/-/hammerjs-2.0.8.tgz#04ef77862cff2bb79d30f7692095930222bf60f1"
+  integrity sha1-BO93hiz/K7edMPdpIJWTAiK/YPE=
 
 handle-thing@^2.0.0:
   version "2.0.1"

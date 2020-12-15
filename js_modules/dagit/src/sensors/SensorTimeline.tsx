@@ -84,7 +84,7 @@ export const SensorTimeline: React.FC<{
   );
 };
 
-const REFRESH_INTERVAL = 20;
+const REFRESH_INTERVAL = 100;
 
 const TickTimelineGraph: React.FC<{
   ticks: SensorTick[];

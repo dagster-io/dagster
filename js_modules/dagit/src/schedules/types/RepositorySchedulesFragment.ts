@@ -65,11 +65,6 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
   status: PipelineRunStatus;
 }
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -89,7 +84,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: RepositorySchedulesFragment_schedules_scheduleState_ticks_runs[];
+  runIds: string[];
   error: RepositorySchedulesFragment_schedules_scheduleState_ticks_error | null;
 }
 

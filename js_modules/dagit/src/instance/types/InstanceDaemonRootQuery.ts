@@ -102,11 +102,6 @@ export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnectio
   status: PipelineRunStatus;
 }
 
-export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -126,7 +121,7 @@ export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnectio
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_runs[];
+  runIds: string[];
   error: InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error | null;
 }
 
@@ -204,11 +199,6 @@ export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnectio
   status: PipelineRunStatus;
 }
 
-export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -228,7 +218,7 @@ export interface InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnectio
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_runs[];
+  runIds: string[];
   error: InstanceDaemonRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error | null;
 }
 
@@ -344,11 +334,6 @@ export interface InstanceDaemonRootQuery_unloadableJobStatesOrError_JobStates_re
   status: PipelineRunStatus;
 }
 
-export interface InstanceDaemonRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface InstanceDaemonRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -368,7 +353,7 @@ export interface InstanceDaemonRootQuery_unloadableJobStatesOrError_JobStates_re
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: InstanceDaemonRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs[];
+  runIds: string[];
   error: InstanceDaemonRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error | null;
 }
 

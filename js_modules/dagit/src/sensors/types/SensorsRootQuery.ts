@@ -64,11 +64,6 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_run
   status: PipelineRunStatus;
 }
 
-export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -88,7 +83,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_tic
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_runs[];
+  runIds: string[];
   error: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error | null;
 }
 
@@ -156,11 +151,6 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_r
   status: PipelineRunStatus;
 }
 
-export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -180,7 +170,7 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_t
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs[];
+  runIds: string[];
   error: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error | null;
 }
 

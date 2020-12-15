@@ -51,11 +51,6 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
   status: PipelineRunStatus;
 }
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -75,7 +70,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_runs[];
+  runIds: string[];
   error: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error | null;
 }
 

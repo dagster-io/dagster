@@ -90,11 +90,6 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
   status: PipelineRunStatus;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -114,7 +109,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_runs[];
+  runIds: string[];
   error: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error | null;
 }
 

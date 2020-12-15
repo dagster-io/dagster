@@ -5,6 +5,7 @@ import * as React from 'react';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {ScheduleTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
@@ -93,6 +94,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                 countdownStatus={countdownStatus}
                 onRefresh={() => onRefresh()}
               />
+              <ScheduleTickHistory repoAddress={repoAddress} schedule={scheduleOrError} />
               <SchedulePreviousRuns
                 repoAddress={repoAddress}
                 schedule={scheduleOrError}

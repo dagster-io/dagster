@@ -20,6 +20,7 @@
     "amator": "^1.1.0",
     "ansi-to-react": "^5.1.0",
     "chart.js": "^2.9.3",
+    "chartjs-plugin-zoom": "^0.7.7",
     "codemirror": "^5.58.2",
     "color": "^3.1.2",
     "cronstrue": "^1.84.0",

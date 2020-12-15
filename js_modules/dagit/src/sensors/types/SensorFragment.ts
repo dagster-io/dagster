@@ -47,11 +47,6 @@ export interface SensorFragment_sensorState_runs {
   status: PipelineRunStatus;
 }
 
-export interface SensorFragment_sensorState_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface SensorFragment_sensorState_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -71,7 +66,7 @@ export interface SensorFragment_sensorState_ticks {
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: SensorFragment_sensorState_ticks_runs[];
+  runIds: string[];
   error: SensorFragment_sensorState_ticks_error | null;
 }
 

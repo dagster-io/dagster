@@ -5,6 +5,7 @@ import * as React from 'react';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {SensorTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {SensorDetails} from 'src/sensors/SensorDetails';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
@@ -92,6 +93,7 @@ export const SensorRoot: React.FC<{
                 daemonHealth={instance.daemonHealth.daemonStatus.healthy}
                 onSelectRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
               />
+              <SensorTickHistory repoAddress={repoAddress} sensor={sensorOrError} />
               <SensorPreviousRuns
                 repoAddress={repoAddress}
                 sensor={sensorOrError}

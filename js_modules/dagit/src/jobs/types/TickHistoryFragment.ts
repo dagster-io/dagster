@@ -4,31 +4,31 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus } from "./globalTypes";
+import { JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
-// GraphQL fragment: TickTagFragment
+// GraphQL fragment: TickHistoryFragment
 // ====================================================
 
-export interface TickTagFragment_error_cause {
+export interface TickHistoryFragment_error_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface TickTagFragment_error {
+export interface TickHistoryFragment_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: TickTagFragment_error_cause | null;
+  cause: TickHistoryFragment_error_cause | null;
 }
 
-export interface TickTagFragment {
+export interface TickHistoryFragment {
   __typename: "JobTick";
   id: string;
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
-  error: TickTagFragment_error | null;
+  error: TickHistoryFragment_error | null;
 }

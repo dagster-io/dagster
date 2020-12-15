@@ -42,11 +42,6 @@ export interface JobStateFragment_runs {
   status: PipelineRunStatus;
 }
 
-export interface JobStateFragment_ticks_runs {
-  __typename: "PipelineRun";
-  id: string;
-}
-
 export interface JobStateFragment_ticks_error_cause {
   __typename: "PythonError";
   message: string;
@@ -66,7 +61,7 @@ export interface JobStateFragment_ticks {
   status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
-  runs: JobStateFragment_ticks_runs[];
+  runIds: string[];
   error: JobStateFragment_ticks_error | null;
 }
 
