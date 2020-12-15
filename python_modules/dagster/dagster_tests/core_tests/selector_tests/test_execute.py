@@ -8,7 +8,7 @@ from dagster import (
     reexecute_pipeline_iterator,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter
 
@@ -179,8 +179,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
     assert result_multi_overlap.result_for_solid("multiply_two").output_value() == 6
 
     with pytest.raises(
-        DagsterInvalidSubsetError,
-        match=re.escape("No qualified steps to execute found for step_selection"),
+        DagsterExecutionStepNotFoundError, match="Can not build subset plan from unknown step: a",
     ):
         reexecute_pipeline(
             foo_pipeline,

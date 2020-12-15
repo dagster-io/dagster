@@ -13,7 +13,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance, is_memoized_run
-from dagster.core.selector import parse_step_selection
+from dagster.core.selector import parse_items_from_selection, parse_step_selection
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
@@ -475,11 +475,13 @@ def reexecute_pipeline(
 
         # resolve step selection DSL queries using parent execution plan snapshot
         if step_selection:
-            parent_execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                parent_pipeline_run.execution_plan_snapshot_id
-            )
+            full_plan = create_execution_plan(pipeline, parent_pipeline_run.run_config, mode)
+            step_keys = parse_items_from_selection(step_selection)
+            # resolve execution plan with any resolved dynamic step keys
+            resolved_plan = full_plan.build_subset_plan(step_keys)
+            # parse selection using all step deps
             step_keys_to_execute = parse_step_selection(
-                parent_execution_plan_snapshot.step_deps, step_selection
+                resolved_plan.get_all_step_deps(), step_selection
             )
         else:
             step_keys_to_execute = None

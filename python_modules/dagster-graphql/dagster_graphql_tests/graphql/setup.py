@@ -55,6 +55,7 @@ from dagster.core.host_representation import RepositoryLocation, RepositoryLocat
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
+from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
@@ -797,6 +798,35 @@ def retry_multi_input_early_terminate_pipeline():
     sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
+@pipeline
+def dynamic_pipeline():
+    @solid
+    def multiply_by_two(context, y):
+        context.log.info("multiply_by_two is returning " + str(y * 2))
+        return y * 2
+
+    @solid
+    def multiply_inputs(context, y, ten, should_fail):
+        current_run = context.instance.get_run_by_id(context.run_id)
+        if should_fail:
+            if y == 2 and current_run.parent_run_id is None:
+                raise Exception()
+        context.log.info("multiply_inputs is returning " + str(y * ten))
+        return y * ten
+
+    @solid
+    def emit_ten(_):
+        return 10
+
+    @solid(output_defs=[DynamicOutputDefinition()])
+    def emit(_):
+        for i in range(3):
+            yield DynamicOutput(value=i, mapping_key=str(i))
+
+    # pylint: disable=no-member
+    emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
+
+
 def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
     selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
     return {
@@ -1113,6 +1143,7 @@ def test_repo():
             spew_pipeline,
             tagged_pipeline,
             chained_failure_pipeline,
+            dynamic_pipeline,
         ]
         + define_schedules()
         + define_sensors()
