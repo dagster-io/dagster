@@ -199,6 +199,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     let errors = <></>;
     if (result?.__typename == 'PythonError' || result?.__typename == 'PartitionSetNotFoundError') {
       errors = <PythonErrorInfo error={result} />;
+    } else if (result?.__typename === 'InvalidStepError') {
+      errors = <div>{`Invalid step: ${result.invalidStepKey}`}</div>;
+    } else if (result?.__typename === 'InvalidOutputError') {
+      errors = <div>{`Invalid output: ${result.invalidOutputName} for ${result.stepKey}`}</div>;
     } else if (result && 'errors' in result) {
       errors = (
         <>
@@ -682,6 +686,25 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PythonError {
         message
         stack
+      }
+      ... on InvalidStepError {
+        invalidStepKey
+      }
+      ... on InvalidOutputError {
+        stepKey
+        invalidOutputName
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PipelineRunConflict {
+        message
+      }
+      ... on ConflictingExecutionParamsError {
+        message
+      }
+      ... on PresetNotFoundError {
+        message
       }
       ... on PipelineConfigValidationInvalid {
         pipelineName
