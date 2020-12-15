@@ -58,7 +58,7 @@ export const SensorsRoot = (props: Props) => {
               );
             }
             return (
-              <Group direction="vertical" spacing={20}>
+              <Group direction="column" spacing={20}>
                 <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
                 <UnloadableJobs
                   jobStates={unloadableJobStatesOrError.results}

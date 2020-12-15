@@ -20,7 +20,7 @@ export const TimestampDisplay = (props: Props) => {
   );
 
   return (
-    <Group direction="horizontal" spacing={8} alignItems="center">
+    <Group direction="row" spacing={8} alignItems="center">
       <div>{timestampString}</div>
       {timezone && timezone !== userTimezone ? (
         <TimestampTooltip

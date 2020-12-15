@@ -59,8 +59,8 @@ export const SensorDetails = (props: Props) => {
   const latestTick = ticks.length ? ticks[0] : null;
 
   return (
-    <Group direction="vertical" spacing={12}>
-      <Group alignItems="center" direction="horizontal" spacing={8}>
+    <Group direction="column" spacing={12}>
+      <Group alignItems="center" direction="row" spacing={8}>
         <Heading>{name}</Heading>
         <Box margin={{left: 4}}>
           <Switch
@@ -88,7 +88,7 @@ export const SensorDetails = (props: Props) => {
           {
             key: 'Latest tick',
             value: latestTick ? (
-              <Group direction="horizontal" spacing={8} alignItems="center">
+              <Group direction="row" spacing={8} alignItems="center">
                 <TimestampDisplay timestamp={latestTick.timestamp} />
                 <TickTag tick={latestTick} jobType={JobType.SENSOR} />
               </Group>

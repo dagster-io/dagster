@@ -18,7 +18,7 @@ export const TopNav = (props: TopNavProps) => {
     const {text, href, icon} = breadcrumb;
     const isLast = lastBreadcrumb === ii;
     const content = (
-      <Group direction="horizontal" spacing={2} alignItems="center">
+      <Group direction="row" spacing={2} alignItems="center">
         {icon ? (
           <BreadcrumbIcon
             icon={icon}

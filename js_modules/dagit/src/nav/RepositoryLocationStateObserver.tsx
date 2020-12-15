@@ -86,9 +86,9 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
   }, [locations, refetch]);
 
   return totalMessages > 0 ? (
-    <Group background={Colors.GRAY5} direction="vertical" spacing={0}>
+    <Group background={Colors.GRAY5} direction="column" spacing={0}>
       {updatedLocations.length > 0 ? (
-        <Group padding={{vertical: 8, horizontal: 12}} direction="horizontal" spacing={8}>
+        <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
           <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
           <Caption color={Colors.DARK_GRAY3}>
             {updatedLocations.length == 1
@@ -112,7 +112,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
       ) : null}
 
       {filteredErroredLocations.length > 0 ? (
-        <Group padding={{vertical: 8, horizontal: 12}} direction="horizontal" spacing={8}>
+        <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
           <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
           <Caption color={Colors.DARK_GRAY3}>
             An error occurred in a repository location.{' '}

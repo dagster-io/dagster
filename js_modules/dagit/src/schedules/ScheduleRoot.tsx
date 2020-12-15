@@ -86,7 +86,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
         return (
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
-            <Group direction="vertical" spacing={24} padding={{vertical: 20, horizontal: 24}}>
+            <Group direction="column" spacing={24} padding={{vertical: 20, horizontal: 24}}>
               <ScheduleDetails
                 repoAddress={repoAddress}
                 schedule={scheduleOrError}

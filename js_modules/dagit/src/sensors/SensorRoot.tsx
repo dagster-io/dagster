@@ -66,7 +66,7 @@ export const SensorRoot = (props: Props) => {
         return (
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
-            <Group direction="vertical" spacing={24} padding={{vertical: 20, horizontal: 24}}>
+            <Group direction="column" spacing={24} padding={{vertical: 20, horizontal: 24}}>
               <SensorDetails repoAddress={repoAddress} sensor={sensorOrError} />
               <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} />
             </Group>

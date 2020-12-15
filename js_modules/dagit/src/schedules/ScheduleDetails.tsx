@@ -99,8 +99,8 @@ export const ScheduleDetails: React.FC<{
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-      <Group direction="vertical" spacing={12}>
-        <Group alignItems="center" direction="horizontal" spacing={4}>
+      <Group direction="column" spacing={12}>
+        <Group alignItems="center" direction="row" spacing={4}>
           <Heading>{name}</Heading>
           <Box margin={{left: 12}}>
             <Switch
@@ -115,7 +115,7 @@ export const ScheduleDetails: React.FC<{
             />
           </Box>
           {futureTicks.results.length && running ? (
-            <Group direction="horizontal" spacing={4}>
+            <Group direction="row" spacing={4}>
               <div>Next tick:</div>
               <TimestampDisplay
                 timestamp={futureTicks.results[0].timestamp}
@@ -129,7 +129,7 @@ export const ScheduleDetails: React.FC<{
             {
               key: 'Latest tick',
               value: latestTick ? (
-                <Group direction="horizontal" spacing={8} alignItems="center">
+                <Group direction="row" spacing={8} alignItems="center">
                   <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
                   <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
                 </Group>
@@ -148,7 +148,7 @@ export const ScheduleDetails: React.FC<{
             {
               key: 'Schedule',
               value: cronSchedule ? (
-                <Group direction="horizontal" spacing={8}>
+                <Group direction="row" spacing={8}>
                   <span>{humanCronString(cronSchedule)}</span>
                   <Code>({cronSchedule})</Code>
                 </Group>
@@ -185,7 +185,7 @@ export const ScheduleDetails: React.FC<{
         />
       </Group>
       <Box margin={{top: 4}}>
-        <Group direction="vertical" spacing={8} alignItems="flex-end">
+        <Group direction="column" spacing={8} alignItems="flex-end">
           <RefreshableCountdown
             refreshing={countdownRefreshing}
             seconds={seconds}

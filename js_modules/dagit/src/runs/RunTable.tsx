@@ -156,7 +156,7 @@ const RunRow: React.FunctionComponent<{
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
       <td style={{width: '100%'}}>
-        <Group direction="vertical" spacing={4}>
+        <Group direction="column" spacing={4}>
           <div>{run.pipelineName}</div>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
         </Group>

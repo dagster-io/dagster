@@ -99,7 +99,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
 
   return (
     <Page>
-      <Group direction="vertical" spacing={8}>
+      <Group direction="column" spacing={8}>
         <Heading>Runs</Heading>
         <Box
           border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
@@ -125,7 +125,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                   underline="never"
                   onClick={() => setStatusFilter(Array.from(queuedStatuses))}
                 >
-                  <Group direction="horizontal" spacing={4} alignItems="center">
+                  <Group direction="row" spacing={4} alignItems="center">
                     <div>Queued</div>
                     <CountTag
                       loading={queryResult.loading}
@@ -147,7 +147,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                   underline="never"
                   onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
                 >
-                  <Group direction="horizontal" spacing={4} alignItems="center">
+                  <Group direction="row" spacing={4} alignItems="center">
                     <div>In progress</div>
                     <CountTag
                       loading={queryResult.loading}

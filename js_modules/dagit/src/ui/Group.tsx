@@ -4,7 +4,7 @@ import styled, {css} from 'styled-components';
 import {Box} from 'src/ui/Box';
 import {AlignItems, DirectionalSpacing, FlexProperties, Spacing} from 'src/ui/types';
 
-type Direction = 'horizontal' | 'vertical';
+type Direction = 'row' | 'column';
 
 interface Props {
   alignItems?: AlignItems;
@@ -15,9 +15,9 @@ interface Props {
   spacing: Spacing;
 }
 
-const flexDirection = (direction: Direction) => (direction === 'horizontal' ? 'row' : 'column');
+const flexDirection = (direction: Direction) => (direction === 'row' ? 'row' : 'column');
 const childMargin = (direction: Direction, spacing: Spacing) =>
-  direction === 'horizontal' ? {left: spacing} : {top: spacing};
+  direction === 'row' ? {left: spacing} : {top: spacing};
 
 export const Group: React.FC<Props> = (props) => {
   const {alignItems, children, direction, spacing, ...rest} = props;
@@ -62,7 +62,7 @@ type InnerProps = {
 
 const marginAdjustment = (props: InnerProps) => {
   const {direction, spacing} = props;
-  return direction === 'horizontal'
+  return direction === 'row'
     ? css`
         margin-left: -${spacing}px;
       `

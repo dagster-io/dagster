@@ -25,7 +25,7 @@ export const InstanceDetails: React.FC = () => {
   });
 
   return data ? (
-    <Group direction="vertical" spacing={12}>
+    <Group direction="column" spacing={12}>
       <Subheading>{`Dagster ${data.version}`}</Subheading>
       <YamlShimStyle />
       <HighlightedCodeBlock value={data.instance.info} language="yaml" />

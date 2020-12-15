@@ -14,13 +14,13 @@ export default {
   component: Group,
 } as Meta;
 
-export const Horizontal = () => {
+export const Row = () => {
   const spacings: Spacing[] = [0, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64];
   return (
-    <Group spacing={12} direction="vertical">
+    <Group spacing={12} direction="column">
       {spacings.map((spacing) => (
         <Box background={Colors.LIGHT_GRAY4} padding={8} key={`${spacing}`}>
-          <Group direction="horizontal" spacing={spacing}>
+          <Group direction="row" spacing={spacing}>
             <ExampleText>
               <strong>{spacing}</strong>
             </ExampleText>
@@ -36,13 +36,13 @@ export const Horizontal = () => {
   );
 };
 
-export const Vertical = () => {
+export const Column = () => {
   const spacings: Spacing[] = [4, 8, 12, 16, 32, 48, 64];
   return (
-    <Group spacing={12} direction="vertical">
+    <Group spacing={12} direction="column">
       {spacings.map((spacing) => (
         <Box background={Colors.LIGHT_GRAY4} padding={12} key={`${spacing}`}>
-          <Group direction="vertical" spacing={spacing}>
+          <Group direction="column" spacing={spacing}>
             <ExampleText>
               <strong>{spacing}</strong>
             </ExampleText>
@@ -58,13 +58,13 @@ export const Vertical = () => {
   );
 };
 
-export const AlignItemsVertical = () => {
+export const AlignItemsColumn = () => {
   const alignments: AlignItems[] = ['center', 'flex-start', 'flex-end'];
   return (
-    <Group spacing={12} direction="vertical">
+    <Group spacing={12} direction="column">
       {alignments.map((alignment) => (
         <Box background={Colors.LIGHT_GRAY4} padding={12} key={alignment}>
-          <Group direction="vertical" alignItems={alignment} spacing={8}>
+          <Group direction="column" alignItems={alignment} spacing={8}>
             <ExampleText>
               <strong>{alignment}</strong>
             </ExampleText>
@@ -85,13 +85,13 @@ export const EmptyChildren = () => {
   };
 
   return (
-    <Group direction="vertical" spacing={12}>
+    <Group direction="column" spacing={12}>
       <Body>
         In the group below, two children are empty: one inline <Code>null</Code>, and one component
         that renders to <Code>null</Code>. Upon inspection of the DOM, note that both are given{' '}
         <Code>display: none</Code>.
       </Body>
-      <Group background={Colors.LIGHT_GRAY5} padding={12} direction="vertical" spacing={8}>
+      <Group background={Colors.LIGHT_GRAY5} padding={12} direction="column" spacing={8}>
         <ExampleText>China</ExampleText>
         <ExampleText>France</ExampleText>
         {null}

@@ -16,12 +16,12 @@ export const InstanceHealthPage = (props: Props) => {
   const {data} = queryData;
 
   return (
-    <Group direction="vertical" spacing={32}>
-      <Group direction="vertical" spacing={16}>
+    <Group direction="column" spacing={32}>
+      <Group direction="column" spacing={16}>
         <Subheading id="repository-locations">Repository locations</Subheading>
         <RepositoryLocationsList />
       </Group>
-      <Group direction="vertical" spacing={16}>
+      <Group direction="column" spacing={16}>
         <Subheading>Daemon statuses</Subheading>
         {data?.instance ? <DaemonList daemonHealth={data.instance.daemonHealth} /> : null}
       </Group>

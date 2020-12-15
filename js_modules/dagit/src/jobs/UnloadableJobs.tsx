@@ -40,7 +40,7 @@ export const UnloadableJobs: React.FunctionComponent<{
     ) : null;
   }
   return (
-    <Group direction="vertical" spacing={8}>
+    <Group direction="column" spacing={8}>
       <Box
         flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
         padding={{bottom: 12}}
@@ -202,7 +202,7 @@ const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
         />
       </td>
       <td>
-        <Group direction="horizontal" spacing={8} alignItems="center">
+        <Group direction="row" spacing={8} alignItems="center">
           {name}
           <ButtonLink
             onClick={() => {
@@ -277,7 +277,7 @@ const ScheduleStateRow: React.FunctionComponent<{
         />
       </td>
       <td>
-        <Group direction="horizontal" spacing={8} alignItems="center">
+        <Group direction="row" spacing={8} alignItems="center">
           <div>{name}</div>
           <ButtonLink
             onClick={() => {

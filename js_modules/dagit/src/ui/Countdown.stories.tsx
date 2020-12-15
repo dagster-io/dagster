@@ -31,8 +31,8 @@ export const FiveSeconds = () => {
   };
 
   return (
-    <Group direction="vertical" spacing={12}>
-      <Group direction="horizontal" spacing={8}>
+    <Group direction="column" spacing={12}>
+      <Group direction="row" spacing={8}>
         <Button onClick={() => setStatus('counting')}>Set counting</Button>
         <Button onClick={() => setStatus('idle')}>Set idle</Button>
       </Group>

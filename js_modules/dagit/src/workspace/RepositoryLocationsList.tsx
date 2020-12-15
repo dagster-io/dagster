@@ -71,7 +71,7 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
   const {reloading, onClick} = useRepositoryLocationReload(location, () => onReload(location));
   return (
     <ButtonLink onClick={onClick}>
-      <Group direction="horizontal" spacing={4} alignItems="center">
+      <Group direction="row" spacing={4} alignItems="center">
         Reload
         {reloading ? <Spinner size={12} /> : null}
       </Group>

@@ -119,7 +119,7 @@ export const DeletionDialog = (props: Props) => {
     switch (state.step) {
       case 'initial':
         return (
-          <Group direction="vertical" spacing={8}>
+          <Group direction="column" spacing={8}>
             <div>{`${count} ${count === 1 ? 'run' : 'runs'} will be deleted.`}</div>
             <div>
               Deleting runs will not prevent them from continuing to execute, and may result in
@@ -149,7 +149,7 @@ export const DeletionDialog = (props: Props) => {
       case 'completed':
         const value = count > 0 ? state.deletion.completed / count : 1;
         return (
-          <Group direction="vertical" spacing={8}>
+          <Group direction="column" spacing={8}>
             <div>Deleting…</div>
             <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
             {state.step === 'deleting' ? (
@@ -211,9 +211,9 @@ export const DeletionDialog = (props: Props) => {
     const successCount = state.deletion.completed - errorCount;
 
     return (
-      <Group direction="vertical" spacing={8}>
+      <Group direction="column" spacing={8}>
         {successCount ? (
-          <Group direction="horizontal" spacing={8} alignItems="flex-start">
+          <Group direction="row" spacing={8} alignItems="flex-start">
             <Icon icon="tick-circle" iconSize={16} color={Colors.GREEN3} />
             <div>{`Successfully deleted ${successCount} ${
               successCount === 1 ? 'run' : 'runs'
@@ -221,15 +221,15 @@ export const DeletionDialog = (props: Props) => {
           </Group>
         ) : null}
         {errorCount ? (
-          <Group direction="vertical" spacing={8}>
-            <Group direction="horizontal" spacing={8} alignItems="flex-start">
+          <Group direction="column" spacing={8}>
+            <Group direction="row" spacing={8} alignItems="flex-start">
               <Icon icon="warning-sign" iconSize={16} color={Colors.GOLD3} />
               <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
             </Group>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Group direction="horizontal" spacing={8}>
+                  <Group direction="row" spacing={8}>
                     <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Group>
@@ -254,7 +254,7 @@ export const DeletionDialog = (props: Props) => {
       onClose={onClose}
     >
       <div className={Classes.DIALOG_BODY}>
-        <Group direction="vertical" spacing={24}>
+        <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
         </Group>

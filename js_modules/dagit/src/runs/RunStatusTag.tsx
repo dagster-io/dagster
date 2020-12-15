@@ -43,7 +43,7 @@ export const RunStatusTag = (props: {status: IRunStatus}) => {
     case 'STARTED':
       return (
         <StatusTag minimal intent="primary">
-          <Group direction="horizontal" spacing={4} alignItems="center">
+          <Group direction="row" spacing={4} alignItems="center">
             <Spinner size={10} />
             <div>Started</div>
           </Group>

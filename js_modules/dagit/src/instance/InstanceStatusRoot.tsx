@@ -40,8 +40,8 @@ export const InstanceStatusRoot = (props: Props) => {
 
   return (
     <Page>
-      <Group direction="vertical" spacing={24}>
-        <Group direction="vertical" spacing={12}>
+      <Group direction="column" spacing={24}>
+        <Group direction="column" spacing={12}>
           <Heading>Instance details</Heading>
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
@@ -52,7 +52,7 @@ export const InstanceStatusRoot = (props: Props) => {
                 id="health"
                 title={
                   <Link to="/instance/health">
-                    <Group direction="horizontal" spacing={8}>
+                    <Group direction="row" spacing={8}>
                       <div>Health</div>
                     </Group>
                   </Link>
@@ -62,7 +62,7 @@ export const InstanceStatusRoot = (props: Props) => {
                 id="config"
                 title={
                   <Link to="/instance/config">
-                    <Group direction="horizontal" spacing={8}>
+                    <Group direction="row" spacing={8}>
                       <div>Configuration</div>
                     </Group>
                   </Link>

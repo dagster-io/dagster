@@ -214,7 +214,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     }
 
     const message = (
-      <Group direction="vertical" spacing={4}>
+      <Group direction="column" spacing={4}>
         <div>An unexpected error occurred. This backfill was not launched.</div>
         {errors ? (
           <ButtonLink

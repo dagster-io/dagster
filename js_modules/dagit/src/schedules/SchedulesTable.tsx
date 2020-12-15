@@ -233,7 +233,7 @@ const ScheduleRow: React.FC<{
         <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
       </td>
       <td>
-        <Group direction="horizontal" spacing={2} alignItems="center">
+        <Group direction="row" spacing={2} alignItems="center">
           <div>{`Mode: ${mode}`}</div>
           {schedule.partitionSet ? (
             <Popover

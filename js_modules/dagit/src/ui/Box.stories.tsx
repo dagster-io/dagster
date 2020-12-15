@@ -23,7 +23,7 @@ export default {
 export const Padding = () => {
   const spacings: Spacing[] = [0, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64];
   return (
-    <Group spacing={2} direction="horizontal">
+    <Group spacing={2} direction="row">
       {spacings.map((spacing) => (
         <Box key={`${spacing}`} background={Colors.LIGHT_GRAY2} padding={spacing}>
           {spacing}
@@ -37,11 +37,11 @@ export const BorderSides = () => {
   const sides: BorderSide[] = ['all', 'horizontal', 'vertical', 'top', 'right', 'bottom', 'left'];
   const widths: BorderWidth[] = [1, 2];
   return (
-    <Group direction="vertical" spacing={16}>
+    <Group direction="column" spacing={16}>
       {widths.map((width) => (
-        <Group spacing={8} direction="vertical" key={`width-${width}`}>
+        <Group spacing={8} direction="column" key={`width-${width}`}>
           <div>{`Width ${width}:`}</div>
-          <Group spacing={8} direction="horizontal">
+          <Group spacing={8} direction="row">
             {sides.map((side) => (
               <Box
                 key={side}
@@ -65,11 +65,11 @@ export const FlexDirections = () => {
   const alignItems: AlignItems[] = ['stretch', 'center', 'flex-start', 'flex-end'];
 
   return (
-    <Group direction="vertical" spacing={16}>
+    <Group direction="column" spacing={16}>
       <div>Flex direction:</div>
-      <Group spacing={24} direction="horizontal">
+      <Group spacing={24} direction="row">
         {directions.map((direction) => (
-          <Group key={direction} direction="vertical" spacing={12}>
+          <Group key={direction} direction="column" spacing={12}>
             <ExampleText>{direction}</ExampleText>
             <Box background={Colors.LIGHT_GRAY5} flex={{direction}} padding={8}>
               <Box padding={12} background={Colors.BLUE1} />
@@ -82,9 +82,9 @@ export const FlexDirections = () => {
         ))}
       </Group>
       <div>Align items:</div>
-      <Group spacing={24} direction="horizontal">
+      <Group spacing={24} direction="row">
         {alignItems.map((alignment) => (
-          <Group key={alignment} direction="vertical" spacing={12}>
+          <Group key={alignment} direction="column" spacing={12}>
             <ExampleText>{alignment}</ExampleText>
             <Box
               background={Colors.LIGHT_GRAY5}
@@ -115,11 +115,11 @@ export const JustifyContent = () => {
   ];
 
   return (
-    <Group direction="vertical" spacing={16}>
+    <Group direction="column" spacing={16}>
       <div>Justify content:</div>
-      <Group spacing={24} direction="vertical">
+      <Group spacing={24} direction="column">
         {justifyContent.map((option) => (
-          <Group key={option} direction="vertical" spacing={12}>
+          <Group key={option} direction="column" spacing={12}>
             <ExampleText>{option}</ExampleText>
             <Box
               background={Colors.LIGHT_GRAY5}

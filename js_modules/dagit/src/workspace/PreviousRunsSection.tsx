@@ -28,7 +28,7 @@ export const PreviousRunsSection = (props: Props) => {
   };
 
   return (
-    <Group direction="vertical" spacing={4}>
+    <Group direction="column" spacing={4}>
       <Box
         padding={{bottom: 12}}
         border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}

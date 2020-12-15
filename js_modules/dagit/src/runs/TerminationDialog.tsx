@@ -126,7 +126,7 @@ export const TerminationDialog = (props: Props) => {
       case 'completed':
         const value = count > 0 ? state.termination.completed / count : 1;
         return (
-          <Group direction="vertical" spacing={8}>
+          <Group direction="column" spacing={8}>
             <div>Terminating…</div>
             <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
             {state.step === 'terminating' ? (
@@ -181,17 +181,17 @@ export const TerminationDialog = (props: Props) => {
     const successCount = state.termination.completed - errorCount;
 
     return (
-      <Group direction="vertical" spacing={8}>
+      <Group direction="column" spacing={8}>
         {successCount ? (
-          <Group direction="horizontal" spacing={8} alignItems="flex-start">
+          <Group direction="row" spacing={8} alignItems="flex-start">
             <Icon icon="tick-circle" iconSize={16} color={Colors.GREEN3} />
             <div>{`Successfully requested termination for ${successCount}
               ${successCount === 1 ? 'run' : `runs`}.`}</div>
           </Group>
         ) : null}
         {errorCount ? (
-          <Group direction="vertical" spacing={8}>
-            <Group direction="horizontal" spacing={8} alignItems="flex-start">
+          <Group direction="column" spacing={8}>
+            <Group direction="row" spacing={8} alignItems="flex-start">
               <Icon icon="warning-sign" iconSize={16} color={Colors.GOLD3} />
               <div>{`Could not request termination for ${errorCount} ${
                 errorCount === 1 ? 'run' : 'runs'
@@ -200,7 +200,7 @@ export const TerminationDialog = (props: Props) => {
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Group direction="horizontal" spacing={8}>
+                  <Group direction="row" spacing={8}>
                     <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Group>
@@ -225,7 +225,7 @@ export const TerminationDialog = (props: Props) => {
       onClose={onClose}
     >
       <div className={Classes.DIALOG_BODY}>
-        <Group direction="vertical" spacing={24}>
+        <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
         </Group>

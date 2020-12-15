@@ -30,7 +30,7 @@ export const InstanceJobsRoot = () => {
   return (
     <Page>
       <PageHeader text="Scheduler" />
-      <Group direction="vertical" spacing={12}>
+      <Group direction="column" spacing={12}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {(result) => {
             const {scheduler, repositoriesOrError, unloadableJobStatesOrError} = result;
@@ -51,7 +51,7 @@ export const InstanceJobsRoot = () => {
             );
 
             const scheduleDefinitionsSection = hasSchedules ? (
-              <Group direction="vertical" spacing={12}>
+              <Group direction="column" spacing={12}>
                 <Box
                   flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
                   padding={{bottom: 8}}
@@ -61,7 +61,7 @@ export const InstanceJobsRoot = () => {
                   <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 </Box>
                 {repositoriesOrError.nodes.map((repository) => (
-                  <Group direction="vertical" spacing={12} key={repository.name}>
+                  <Group direction="column" spacing={12} key={repository.name}>
                     <strong>{`${repository.name}@${repository.location.name}`}</strong>
                     <SchedulesTable
                       repoAddress={{name: repository.name, location: repository.location.name}}
@@ -73,7 +73,7 @@ export const InstanceJobsRoot = () => {
             ) : null;
 
             const sensorDefinitionsSection = hasSensors ? (
-              <Group direction="vertical" spacing={12}>
+              <Group direction="column" spacing={12}>
                 <Box
                   flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
                   padding={{bottom: 12}}
@@ -83,7 +83,7 @@ export const InstanceJobsRoot = () => {
                 </Box>
                 {repositoriesOrError.nodes.map((repository) =>
                   repository.sensors.length ? (
-                    <Group direction="vertical" spacing={12} key={repository.name}>
+                    <Group direction="column" spacing={12} key={repository.name}>
                       <strong>{`${repository.name}@${repository.location.name}`}</strong>
                       <SensorsTable
                         repoAddress={{name: repository.name, location: repository.location.name}}
@@ -96,7 +96,7 @@ export const InstanceJobsRoot = () => {
             ) : null;
 
             return (
-              <Group direction="vertical" spacing={32}>
+              <Group direction="column" spacing={32}>
                 <SchedulerInfo schedulerOrError={scheduler} />
                 {scheduleDefinitionsSection}
                 {sensorDefinitionsSection}

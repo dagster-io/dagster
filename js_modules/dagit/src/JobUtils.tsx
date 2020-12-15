@@ -18,7 +18,7 @@ export const JobRunStatus: React.FC<{
   }
   const run = jobState.runs[0];
   return (
-    <Group direction="horizontal" spacing={4} padding={2} alignItems="center">
+    <Group direction="row" spacing={4} padding={2} alignItems="center">
       <RunStatus status={run.status} />
       <a href={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
         {titleForRun({runId: run.runId})}

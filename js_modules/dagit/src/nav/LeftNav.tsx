@@ -79,7 +79,7 @@ const LeftNavRepositorySection = () => {
         <Group
           background={Colors.GOLD5}
           padding={{vertical: 8, horizontal: 12}}
-          direction="horizontal"
+          direction="row"
           spacing={8}
         >
           <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
