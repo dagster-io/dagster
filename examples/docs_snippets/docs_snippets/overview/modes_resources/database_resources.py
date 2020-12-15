@@ -1,3 +1,4 @@
+# sqlite_start
 from dagster import IntSource, StringSource, resource
 from sqlalchemy import create_engine
 
@@ -13,6 +14,14 @@ def sqlite_database(_):
     return SQLiteDatabase()
 
 
+# sqlite_end
+
+# postgres_start
+@resource
+def postgres_dialect(_):
+    return "postgresql"
+
+
 @resource(
     config_schema={
         "hostname": StringSource,
@@ -20,7 +29,8 @@ def sqlite_database(_):
         "username": StringSource,
         "password": StringSource,
         "db_name": StringSource,
-    }
+    },
+    required_resource_keys={"dialect"},
 )
 def postgres_database(init_context):
     class PostgresDatabase:
@@ -33,9 +43,13 @@ def postgres_database(init_context):
 
         def execute_query(self, query):
             engine = create_engine(
-                f"postgresql://{self.username}:{self.password}@{self.hostname}:{self.port}/{self.db_name}"
+                f"{init_context.resources.dialect}://{self.username}:{self.password}@"
+                "{self.hostname}:{self.port}/{self.db_name}"
             )
             with engine.connect() as conn:
                 conn.execute(query)
 
     return PostgresDatabase(init_context.resource_config)
+
+
+# postgres_end

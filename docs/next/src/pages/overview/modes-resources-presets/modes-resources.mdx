@@ -36,13 +36,27 @@ After including the resource key in its set of required_resource_keys, the body 
 
 ## Defining Resources
 
-`sqlite_database` and `postgres_database`, in the <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition" /> above, are <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" />s. Each describes how to instantiate a resource, given run config. Here's what it looks like to define these resources:
+`sqlite_database` and `postgres_database`, in the <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition" /> above, are <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" />s. Each describes how to instantiate a resource, given run config. Here's what it looks like to define the `sqlite_database` resource:
 
 ```python literalinclude caption=database_resources.py
 file:/docs_snippets/docs_snippets/overview/modes_resources/database_resources.py
+startAfter:sqlite_start
+endBefore:sqlite_end
 ```
 
 The <PyObject module="dagster" object="resource" displayText="@resource" /> decorator decorates a function that returns a resource. The resource itself is a plain old python object - it doesn't need to inherit any particular interface or implement any particular functionality. ResourceDefinitions may have a config schema, which enables customizing them at runtime.
+
+## Resource to Resource Dependencies
+
+Resources can depend upon other resources. If a resource key is included in the `required_resource_keys` set provided to the resource definition, then the resource initializer can access a required resource via the "resources" attribute of its context object.
+
+Let's say that we want our postgres resource to be able to use multiple dialects. We can provide the dialect as a resource to the postgres resource. Here's what it looks like to have a resource with dependencies:
+
+```python literalinclude caption=database_resources.py
+file:/docs_snippets/docs_snippets/overview/modes_resources/database_resources.py
+startAfter:postgres_start
+endBefore:postgres_end
+```
 
 ## Selecting a Mode
 
