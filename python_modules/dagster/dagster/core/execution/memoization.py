@@ -120,7 +120,9 @@ def output_handles_from_event_logs(event_logs):
 
         output_handles_from_previous_run.add(
             StepOutputHandle(
-                record.dagster_event.step_key, record.dagster_event.event_specific_data.value_name
+                record.dagster_event.step_key,
+                record.dagster_event.event_specific_data.value_name,
+                record.dagster_event.event_specific_data.mapping_key,
             )
         )
 

@@ -100,7 +100,7 @@ def parse_clause(clause):
             return len(part)
         return None
 
-    token_matching = re.compile(r"^(\*?\+*)?([.\w\d_-]+)(\+*\*?)?$").search(clause.strip())
+    token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(clause.strip())
     # return None if query is invalid
     parts = token_matching.groups() if token_matching is not None else []
     if len(parts) != 3:
@@ -113,7 +113,18 @@ def parse_clause(clause):
     return (up_depth, item_name, down_depth)
 
 
-def clause_to_subset(traverser, graph, clause):
+def parse_items_from_selection(selection):
+    items = []
+    for clause in selection:
+        parts = parse_clause(clause)
+        if parts is None:
+            continue
+        _u, item, _d = parts
+        items.append(item)
+    return items
+
+
+def clause_to_subset(graph, clause):
     """Take a selection query and return a list of the selected and qualified items.
 
     Args:
@@ -176,12 +187,11 @@ def parse_solid_selection(pipeline_def, solid_selection):
     check.list_param(solid_selection, "solid_selection", of_type=str)
 
     graph = generate_dep_graph(pipeline_def)
-    traverser = Traverser(graph=graph)
     solids_set = set()
 
     # loop over clauses
     for clause in solid_selection:
-        subset = clause_to_subset(traverser, graph, clause)
+        subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
                 "No qualified solids to execute found for solid_selection={requested}".format(
@@ -220,12 +230,11 @@ def parse_step_selection(step_deps, step_selection):
 
     # generate dep graph
     graph = {"upstream": step_deps, "downstream": downstream_deps}
-    traverser = Traverser(graph=graph)
     steps_set = set()
 
     # loop over clauses
     for clause in step_selection:
-        subset = clause_to_subset(traverser, graph, clause)
+        subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
                 "No qualified steps to execute found for step_selection={requested}".format(

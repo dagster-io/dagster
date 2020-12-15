@@ -829,6 +829,7 @@ class DagsterEvent(
                     EventMetadataEntry.path(object_store_operation_result.key, label="key")
                 ],
                 version=object_store_operation_result.version,
+                mapping_key=object_store_operation_result.mapping_key,
             ),
             message=message,
         )
@@ -977,9 +978,14 @@ class AssetStoreOperationData(
 
 @whitelist_for_serdes
 class ObjectStoreOperationResultData(
-    namedtuple("_ObjectStoreOperationResultData", "op value_name metadata_entries address version")
+    namedtuple(
+        "_ObjectStoreOperationResultData",
+        "op value_name metadata_entries address version mapping_key",
+    )
 ):
-    def __new__(cls, op, value_name, metadata_entries, address=None, version=None):
+    def __new__(
+        cls, op, value_name, metadata_entries, address=None, version=None, mapping_key=None
+    ):
         return super(ObjectStoreOperationResultData, cls).__new__(
             cls,
             op=check.opt_str_param(op, "op"),
@@ -987,6 +993,7 @@ class ObjectStoreOperationResultData(
             metadata_entries=check.opt_list_param(metadata_entries, "metadata_entries"),
             address=check.opt_str_param(address, "address"),
             version=check.opt_str_param(version, "version"),
+            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
 
 

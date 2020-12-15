@@ -49,7 +49,6 @@ def test_fan_in():
         @pipeline
         def _should_fail():
             numbers = []
-            # pylint: disable=no-member
             dynamic_solid().forEach(numbers.append)
             echo(numbers)
 

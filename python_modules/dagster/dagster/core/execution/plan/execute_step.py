@@ -407,7 +407,9 @@ def _set_objects(step_context, step_output, step_output_handle, output):
         yield DagsterEvent.object_store_operation(
             step_context,
             ObjectStoreOperation.serializable(
-                materializations, value_name=step_output_handle.output_name
+                materializations,
+                value_name=step_output_handle.output_name,
+                mapping_key=step_output_handle.mapping_key,
             ),
         )
     else:

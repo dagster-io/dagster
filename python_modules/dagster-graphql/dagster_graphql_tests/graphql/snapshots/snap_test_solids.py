@@ -260,6 +260,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'emit'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'emit'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'emit_failed_expectation'
                 },
                 'invocations': [
@@ -301,6 +317,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'emit_successful_expectation_no_metadata'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'emit_ten'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'emit_ten'
                         }
                     }
                 ]
@@ -461,6 +493,38 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'multi'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'multiply_by_two'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multiply_by_two'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'multiply_inputs'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multiply_inputs'
                         }
                     }
                 ]

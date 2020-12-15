@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Set
 
-from dagster.core.selector.subset_selector import Traverser, clause_to_subset, parse_clause
+from dagster.core.selector.subset_selector import clause_to_subset, parse_clause
 from lakehouse.asset import Asset
 from lakehouse.errors import LakehouseAssetQueryError
 
@@ -21,11 +21,7 @@ class QueryableAssetSet:
         if queried_asset_path not in self._assets_by_path_str.keys():
             raise LakehouseAssetQueryError(f"{queried_asset_path} does not exist in set of assets.")
 
-        traverser = Traverser(graph=self._dep_graph)
-        return [
-            self._assets_by_path_str[pstr]
-            for pstr in clause_to_subset(traverser, self._dep_graph, query)
-        ]
+        return [self._assets_by_path_str[pstr] for pstr in clause_to_subset(self._dep_graph, query)]
 
 
 def generate_dep_graph(assets) -> Dict[str, Dict[str, Set[str]]]:

@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
@@ -327,6 +328,9 @@ class ExternalExecutionPlan:
 
     def has_step(self, key):
         check.str_param(key, "key")
+        handle = StepHandle.parse_from_key(key)
+        if isinstance(handle, ResolvedFromDynamicStepHandle):
+            return handle.unresolved_form.to_key() in self._step_index
         return key in self._step_index
 
     def get_step_by_key(self, key):
