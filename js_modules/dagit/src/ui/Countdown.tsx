@@ -31,6 +31,7 @@ export const useCountdown = (config: Config) => {
 
   const clearToken = React.useCallback(() => {
     token.current && clearInterval(token.current);
+    token.current = null;
   }, []);
 
   React.useEffect(() => {
@@ -41,6 +42,8 @@ export const useCountdown = (config: Config) => {
         setRemainingTime((current) => Math.max(0, current - interval));
       }, interval);
     }
+
+    return () => clearToken();
   }, [clearToken, duration, interval, status]);
 
   React.useEffect(() => {
