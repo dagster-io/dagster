@@ -15,7 +15,7 @@ from dagster.core.storage.asset_store import versioned_filesystem_asset_store
     version="create_string_version",
     config_schema={"input_str": Field(String)},
     output_defs=[
-        OutputDefinition(name="created_string", asset_store_key="object_manager", asset_metadata={})
+        OutputDefinition(name="created_string", manager_key="object_manager", asset_metadata={})
     ],
 )
 def create_string_1_asset(context):
@@ -27,7 +27,7 @@ def create_string_1_asset(context):
     version="take_string_version",
     config_schema={"input_str": Field(String)},
     output_defs=[
-        OutputDefinition(name="taken_string", asset_store_key="object_manager", asset_metadata={})
+        OutputDefinition(name="taken_string", manager_key="object_manager", asset_metadata={})
     ],
 )
 def take_string_1_asset(context, _string_input):

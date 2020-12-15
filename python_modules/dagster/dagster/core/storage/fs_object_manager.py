@@ -41,12 +41,12 @@ def fs_object_manager(init_context):
             solid_b(solid_a())
 
 
-    2. Specify asset store on :py:class:`OutputDefinition`, which allows the user to set different
-    asset stores on different step outputs.
+    2. Specify object manager on :py:class:`OutputDefinition`, which allows the user to set
+    different object managers on different step outputs.
 
     .. code-block:: python
 
-        @solid(output_defs=[OutputDefinition(asset_store_key="my_object_manager")])
+        @solid(output_defs=[OutputDefinition(manager_key="my_object_manager")])
         def solid_a(context, df):
             return df
 
@@ -66,11 +66,11 @@ def fs_object_manager(init_context):
 
 
 class PickledObjectFilesystemObjectManager(ObjectManager):
-    """Built-in filesystem asset store that stores and retrieves values using pickling.
+    """Built-in filesystem object manager that stores and retrieves values using pickling.
 
     Args:
-        base_dir (Optional[str]): base directory where all the step outputs which use this asset
-            store will be stored in.
+        base_dir (Optional[str]): base directory where all the step outputs which use this object
+            manager will be stored in.
     """
 
     def __init__(self, base_dir=None):
@@ -111,12 +111,12 @@ class PickledObjectFilesystemObjectManager(ObjectManager):
 
 
 class CustomPathPickledObjectFilesystemObjectManager(ObjectManager):
-    """Built-in filesystem asset store that stores and retrieves values using pickling and
+    """Built-in filesystem object managerthat stores and retrieves values using pickling and
     allow users to specify file path for outputs.
 
     Args:
-        base_dir (Optional[str]): base directory where all the step outputs which use this asset
-            store will be stored in.
+        base_dir (Optional[str]): base directory where all the step outputs which use this object
+            manager will be stored in.
     """
 
     def __init__(self, base_dir=None):
@@ -179,7 +179,7 @@ def custom_path_fs_object_manager(init_context):
         @solid(
             output_defs=[
                 OutputDefinition(
-                    asset_store_key="object_manager", metadata={"path": "path/to/sample_output"}
+                    manager_key="object_manager", metadata={"path": "path/to/sample_output"}
                 )
             ]
         )

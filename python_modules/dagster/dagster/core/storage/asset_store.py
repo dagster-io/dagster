@@ -176,7 +176,7 @@ def fs_asset_store(init_context):
 
     .. code-block:: python
 
-        @solid(output_defs=[OutputDefinition(asset_store_key="my_asset_store")])
+        @solid(output_defs=[OutputDefinition(manager_key="my_asset_store")])
         def solid_a(context, df):
             return df
 
@@ -262,7 +262,7 @@ def custom_path_fs_asset_store(init_context):
         @solid(
             output_defs=[
                 OutputDefinition(
-                    asset_store_key="object_manager", asset_metadata={"path": "path/to/sample_output"}
+                    manager_key="object_manager", asset_metadata={"path": "path/to/sample_output"}
                 )
             ]
         )

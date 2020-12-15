@@ -204,15 +204,15 @@ def _check_intra_process_pipeline(pipeline):
         )
 
 
-def _all_outputs_non_mem_asset_stores(pipeline_def, mode_def):
-    """Returns true if every output definition in the pipeline uses an asset store that's not
-    the mem_asset_store.
+def _all_outputs_non_mem_object_managers(pipeline_def, mode_def):
+    """Returns true if every output definition in the pipeline uses an object manager that's not
+    the mem_object_manager.
 
     If true, this indicates that it's OK to execute steps in their own processes, because their
     outputs will be available to other processes.
     """
     # pylint: disable=comparison-with-callable
-    from dagster.core.storage.asset_store import mem_asset_store
+    from dagster.core.storage.mem_object_manager import mem_object_manager
 
     output_defs = [
         output_def
@@ -220,19 +220,18 @@ def _all_outputs_non_mem_asset_stores(pipeline_def, mode_def):
         for output_def in solid_def.output_defs
     ]
     for output_def in output_defs:
-        if mode_def.resource_defs[output_def.asset_store_key] == mem_asset_store:
+        if mode_def.resource_defs[output_def.manager_key] == mem_object_manager:
             return False
 
     return True
 
 
 def _check_persistent_storage_requirement(pipeline_def, mode_def, intermediate_storage_def):
-    """We prefer to store outputs with asset stores, but will fall back to intermediate storage
-    if an asset store isn't set and will fall back to system storage if neither an asset
-    store nor an intermediate storage are set.
+    """We prefer to store outputs with object managers, but will fall back to intermediate storage
+    if an object manager isn't set.
     """
     if not (
-        _all_outputs_non_mem_asset_stores(pipeline_def, mode_def)
+        _all_outputs_non_mem_object_managers(pipeline_def, mode_def)
         or (intermediate_storage_def and intermediate_storage_def.is_persistent)
     ):
         raise DagsterUnmetExecutorRequirementsError(
@@ -240,8 +239,8 @@ def _check_persistent_storage_requirement(pipeline_def, mode_def, intermediate_s
             "includes solid outputs that will not be stored somewhere where other processes can"
             "retrieve them. "
             "Please make sure that your pipeline definition includes a ModeDefinition whose "
-            'resource_keys assign the "object_manager" key to an AssetStore resource '
-            "that stores outputs outside of the process, such as the fs_asset_store."
+            'resource_keys assign the "object_manager" key to an ObjectManager resource '
+            "that stores outputs outside of the process, such as the fs_object_manager."
         )
 
 

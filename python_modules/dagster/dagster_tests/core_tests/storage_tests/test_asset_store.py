@@ -194,7 +194,7 @@ def test_asset_store_multi_materialization():
     def dummy_asset_store(_):
         return DummyAssetStore()
 
-    @solid(output_defs=[OutputDefinition(asset_store_key="store")])
+    @solid(output_defs=[OutputDefinition(manager_key="store")])
     def solid_a(_context):
         return 1
 
@@ -216,7 +216,7 @@ def test_asset_store_multi_materialization():
 
 
 def test_different_asset_stores():
-    @solid(output_defs=[OutputDefinition(asset_store_key="store")],)
+    @solid(output_defs=[OutputDefinition(manager_key="store")],)
     def solid_a(_context):
         return 1
 

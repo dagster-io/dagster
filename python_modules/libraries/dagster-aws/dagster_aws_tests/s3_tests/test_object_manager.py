@@ -35,13 +35,13 @@ def define_inty_pipeline():
     def test_s3_resource(_):
         return construct_s3_client(max_attempts=5)
 
-    @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="object_manager"))
+    @lambda_solid(output_def=OutputDefinition(Int, manager_key="object_manager"))
     def return_one():
         return 1
 
     @lambda_solid(
         input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, asset_store_key="object_manager"),
+        output_def=OutputDefinition(Int, manager_key="object_manager"),
     )
     def add_one(num):
         return num + 1

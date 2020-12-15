@@ -18,19 +18,19 @@ def train(df):
 local_asset_store = fs_asset_store.configured({"base_dir": "uncommitted/intermediates/"})
 
 
-@solid(output_defs=[OutputDefinition(asset_store_key="fs_asset_store")])
+@solid(output_defs=[OutputDefinition(manager_key="fs_asset_store")])
 def call_api(_):
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-@solid(output_defs=[OutputDefinition(asset_store_key="fs_asset_store")])
+@solid(output_defs=[OutputDefinition(manager_key="fs_asset_store")])
 def parse_df(context, df):
     context.log.info("{}".format(df))
     result_df = df[:5]
     return result_df
 
 
-@solid(output_defs=[OutputDefinition(asset_store_key="fs_asset_store")])
+@solid(output_defs=[OutputDefinition(manager_key="fs_asset_store")])
 def train_model(context, df):
     context.log.info("{}".format(df))
     model = train(df)

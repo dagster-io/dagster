@@ -23,9 +23,7 @@ local_asset_store = custom_path_fs_asset_store.configured(
 
 @solid(
     output_defs=[
-        OutputDefinition(
-            asset_store_key="fs_asset_store", asset_metadata={"path": "call_api_output"}
-        )
+        OutputDefinition(manager_key="fs_asset_store", asset_metadata={"path": "call_api_output"})
     ]
 )
 def call_api(_):
@@ -34,9 +32,7 @@ def call_api(_):
 
 @solid(
     output_defs=[
-        OutputDefinition(
-            asset_store_key="fs_asset_store", asset_metadata={"path": "parse_df_output"}
-        )
+        OutputDefinition(manager_key="fs_asset_store", asset_metadata={"path": "parse_df_output"})
     ]
 )
 def parse_df(context, df):
@@ -48,7 +44,7 @@ def parse_df(context, df):
 @solid(
     output_defs=[
         OutputDefinition(
-            asset_store_key="fs_asset_store", asset_metadata={"path": "train_model_output"}
+            manager_key="fs_asset_store", asset_metadata={"path": "train_model_output"}
         )
     ]
 )

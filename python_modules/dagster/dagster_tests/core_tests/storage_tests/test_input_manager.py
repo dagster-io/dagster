@@ -1,7 +1,7 @@
 from dagster import (
-    AssetStore,
     InputDefinition,
     ModeDefinition,
+    ObjectManager,
     OutputDefinition,
     PythonObjectDagsterType,
     execute_pipeline,
@@ -73,25 +73,23 @@ def test_configurable_root_input_manager():
     )
 
 
-def test_override_asset_store():
-    asset_metadata = {"name": 5}
+def test_override_object_manager():
+    metadata = {"name": 5}
 
-    class MyAssetStore(AssetStore):
-        def set_asset(self, context, obj):
+    class MyObjectManager(ObjectManager):
+        def handle_output(self, context, obj):
             pass
 
-        def get_asset(self, context):
+        def load_input(self, context):
             assert False, "should not be called"
 
     @resource
-    def my_asset_store(_):
-        return MyAssetStore()
+    def my_object_manager(_):
+        return MyObjectManager()
 
     @solid(
         output_defs=[
-            OutputDefinition(
-                name="my_output", asset_store_key="my_asset_store", asset_metadata=asset_metadata
-            )
+            OutputDefinition(name="my_output", manager_key="my_object_manager", metadata=metadata)
         ]
     )
     def solid1(_):
@@ -104,7 +102,7 @@ def test_override_asset_store():
     @input_manager
     def spark_table_loader(context, _resource_config):
         output = context.upstream_output
-        assert output.metadata == asset_metadata
+        assert output.metadata == metadata
         assert output.name == "my_output"
         assert output.step_key == "solid1"
         assert context.pipeline_name == "my_pipeline"
@@ -114,7 +112,10 @@ def test_override_asset_store():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"my_asset_store": my_asset_store, "spark_loader": spark_table_loader}
+                resource_defs={
+                    "my_object_manager": my_object_manager,
+                    "spark_loader": spark_table_loader,
+                }
             )
         ]
     )

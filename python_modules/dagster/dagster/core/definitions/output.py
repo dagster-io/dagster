@@ -38,7 +38,6 @@ class OutputDefinition:
         name=None,
         description=None,
         is_required=None,
-        asset_store_key=None,
         asset_metadata=None,
         manager_key=None,
         metadata=None,
@@ -48,7 +47,7 @@ class OutputDefinition:
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
         self._manager_key = check.opt_str_param(
-            asset_store_key, "asset_store_key", default=manager_key or "object_manager"
+            manager_key, "manager_key", default="object_manager"
         )
         self._metadata = asset_metadata or metadata
 
@@ -74,10 +73,6 @@ class OutputDefinition:
 
     @property
     def manager_key(self):
-        return self._manager_key
-
-    @property
-    def asset_store_key(self):
         return self._manager_key
 
     @property

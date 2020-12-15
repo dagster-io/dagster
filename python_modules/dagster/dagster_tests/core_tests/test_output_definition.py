@@ -9,6 +9,6 @@ def test_output_definition():
     assert output_definiton_none.optional is False
 
 
-def test_asset_store_key_default_value():
-    output_def = OutputDefinition(asset_store_key=None)
-    assert output_def.asset_store_key == "object_manager"
+def test_manager_key_default_value():
+    output_def = OutputDefinition(manager_key=None)
+    assert output_def.manager_key == "object_manager"
