@@ -28,7 +28,8 @@ def emit(_):
 
 @pipeline
 def dynamic_pipeline():
-    multiply_by_two(multiply_inputs(emit(), emit_ten()))
+    numbers = emit()
+    numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
 
 
 def test_map():
