@@ -110,13 +110,6 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.asset_store import (
-    AssetStore,
-    AssetStoreContext,
-    custom_path_fs_asset_store,
-    fs_asset_store,
-    mem_asset_store,
-)
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_object_manager import custom_path_fs_object_manager, fs_object_manager
 from dagster.core.storage.init import InitIntermediateStorageContext
@@ -227,7 +220,6 @@ __all__ = [
     "SolidExecutionContext",
     "HookContext",
     "TypeCheckContext",
-    "AssetStoreContext",
     "InputContext",
     "OutputContext",
     "PipelineRun",
@@ -319,11 +311,6 @@ __all__ = [
     "hourly_schedule",
     "monthly_schedule",
     "weekly_schedule",
-    # asset store
-    "AssetStore",
-    "mem_asset_store",
-    "fs_asset_store",
-    "custom_path_fs_asset_store",
     # object managers
     "ObjectManager",
     "ObjectManagerDefinition",

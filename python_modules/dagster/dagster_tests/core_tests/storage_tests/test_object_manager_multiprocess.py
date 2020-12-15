@@ -1,7 +1,7 @@
 from dagster import (
     ModeDefinition,
     execute_pipeline,
-    fs_asset_store,
+    fs_object_manager,
     pipeline,
     reconstructable,
     seven,
@@ -20,16 +20,16 @@ def solid_b(_context, _df):
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition("local", resource_defs={"object_manager": fs_asset_store})])
-def asset_pipeline():
+@pipeline(mode_defs=[ModeDefinition("local", resource_defs={"object_manager": fs_object_manager})])
+def my_pipeline():
     solid_b(solid_a())
 
 
-def test_asset_store_with_multi_process_executor():
+def test_object_manager_with_multi_process_executor():
     with instance_for_test() as instance:
         with seven.TemporaryDirectory() as tmpdir_path:
             result = execute_pipeline(
-                reconstructable(asset_pipeline),
+                reconstructable(my_pipeline),
                 run_config={
                     "execution": {"multiprocess": {}},
                     "resources": {"object_manager": {"config": {"base_dir": tmpdir_path}}},

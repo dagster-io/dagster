@@ -14,7 +14,7 @@ These APIs make it easy separate code that's responsible for logical data transf
 
 ## Object managers
 
-<PyObject module="dagster" object="ObjectManager" />s are user-provided objects that know how to both load solid inputs and store solid outputs.  For example, an ObjectManager might store and load objects from files on a filesystem.  Each solid output can have its own ObjectManager, or multiple solid outputs can share an ObjectManager.  The ObjectManager that's used for handling a particular solid output is automatically used for loading it in subsequent solids.
+<PyObject module="dagster" object="ObjectManager" />s are user-provided objects that know how to both load solid inputs and store solid outputs.  For example, an ObjectManager might store and load objects from files on a filesystem.  Each solid output can have its own ObjectManager, or multiple solid outputs can share an ObjectManager. The ObjectManager that's used for handling a particular solid output is automatically used for loading it in subsequent solids.
 
 <p/>
 
