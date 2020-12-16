@@ -15,7 +15,7 @@ export const TimestampDisplay = (props: Props) => {
   const [userTimezone] = React.useContext(TimezoneContext);
 
   const timestampString = timestampToString(
-    {unix: timestamp, format: 'MMM DD, h:mm A z'},
+    {unix: timestamp, format: 'MMM D, YYYY, h:mm A z'},
     timezone || userTimezone,
   );
 
@@ -25,7 +25,7 @@ export const TimestampDisplay = (props: Props) => {
       {timezone && timezone !== userTimezone ? (
         <TimestampTooltip
           content={timestampToString(
-            {unix: timestamp, format: 'MMM DD, h:mm A z'},
+            {unix: timestamp, format: 'MMM D, YYYY, h:mm A z'},
             browserTimezone(),
           )}
         >

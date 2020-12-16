@@ -10,6 +10,19 @@ type TimestampProps = ({ms: number} | {unix: number}) & {
   format?: string;
 };
 
+const defaultTimeFormat = (m: moment.Moment, timezone: string) => {
+  if (timezone === 'UTC') {
+    return 'YYYY-MM-DD HH:mm';
+  }
+
+  const now = moment(Date.now());
+  if (timezone !== 'Automatic') {
+    now.tz(timezone);
+  }
+
+  return m.year() === now.year() ? 'MMM D, h:mm A' : 'MMM D, YYYY, h:mm A';
+};
+
 // This helper is here so that we can swap out Moment in the future as needed and
 // encourage use of the same default format string across the app.
 export function timestampToString(time: TimestampProps, timezone: string) {
@@ -17,9 +30,8 @@ export function timestampToString(time: TimestampProps, timezone: string) {
   if (timezone !== 'Automatic') {
     m = m.tz(timezone);
   }
-  const defaultFormat = timezone === 'UTC' ? 'YYYY-MM-DD HH:mm' : 'MMM DD, h:mm A';
 
-  return m.format(time.format || defaultFormat);
+  return m.format(time.format || defaultTimeFormat(m, timezone));
 }
 
 export const Timestamp: React.FunctionComponent<TimestampProps> = (props) => {
