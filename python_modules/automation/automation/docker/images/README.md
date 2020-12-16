@@ -28,7 +28,7 @@ in the `INTEGRATION_IMAGE_VERSION` variable.
 
 ### Publishing new integration images
 
-1. Update the git hash in `images/buildkite-integration-snapshot-builder/Dockerfile`.
+1. Update the git hash in `images/buildkite-integration-snapshot-builder/Dockerfile`. This can be a git hash of a local commit, but you need to push a branch to github first so that Docker can download it.
 2. Ensure you are authed for ECR, e.g. by running
    `aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin 968703565975.dkr.ecr.us-west-1.amazonaws.com`.
 3. Run: `dagster-image build-all --name buildkite-integration-snapshot-builder --dagster-version 0.9.20`
@@ -37,7 +37,7 @@ in the `INTEGRATION_IMAGE_VERSION` variable.
 5. Then run `dagster-image build-all --name buildkite-integration --dagster-version 0.9.20` with
    the appropriate version set.
 6. Then run `dagster-image push-all --name buildkite-integration`
-7. Update `INTEGRATION_IMAGE_VERSION` and put up a diff with these planned changes.
+7. Update `INTEGRATION_IMAGE_VERSION` in .buildkite/defines.py and put up a diff with these planned changes.
 
 ### Publishing new unit images
 
@@ -45,7 +45,7 @@ Similarly we have a similar system for the unit test images. These are more
 modest and require less build times so we have not pushed the process
 to a pipeline in buildkite.
 
-1. Update the git hash in `images/buildkite-unit-snapshot-builder/Dockerfile`
+1. Update the git hash in `images/buildkite-unit-snapshot-builder/Dockerfile`. This can be a git hash of a local commit, but you need to push a branch to github first so that Docker can download it.
 2. Run, with the appropriate Dagster version,
    `dagster-image build-all --name buildkite-unit-snapshot-builder --dagster-version 0.9.20`
 3. Run: `dagster-image snapshot -t unit`
@@ -54,4 +54,4 @@ to a pipeline in buildkite.
 5. Then run `dagster-image push-all --name buildkite-unit`
 6. Next you have to update the Dockerfile in `dagster-test` manually with the value in
    `UNIT_IMAGE_VERSION` in the `FROM` directive.
-7. Update `UNIT_IMAGE_VERSION` and put up a diff with these planned changes.
+7. Update `UNIT_IMAGE_VERSION` in .buildkite/defines.py and put up a diff with these planned changes.
