@@ -11,7 +11,7 @@ import { ObjectStoreOperationType } from "./globalTypes";
 // ====================================================
 
 export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineStartEvent" | "PipelineEnqueuedEvent" | "PipelineDequeuedEvent" | "PipelineStartingEvent" | "PipelineCancelingEvent" | "PipelineCanceledEvent" | "PipelineSuccessEvent" | "AssetStoreOperationEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "HookErroredEvent";
+  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineStartEvent" | "PipelineEnqueuedEvent" | "PipelineDequeuedEvent" | "PipelineStartingEvent" | "PipelineCancelingEvent" | "PipelineCanceledEvent" | "PipelineSuccessEvent" | "AssetStoreOperationEvent" | "StepExpectationResultEvent" | "StepMaterializationEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "HookErroredEvent";
   message: string;
   timestamp: string;
   stepKey: string | null;
@@ -24,139 +24,6 @@ export interface RunMetadataProviderMessageFragment_EngineEvent {
   stepKey: string | null;
   markerStart: string | null;
   markerEnd: string | null;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry" | "EventIntMetadataEntry";
-  label: string;
-  description: string | null;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
-  label: string;
-  description: string | null;
-  path: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
-  label: string;
-  description: string | null;
-  jsonString: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
-  label: string;
-  description: string | null;
-  url: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
-  label: string;
-  description: string | null;
-  text: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
-  label: string;
-  description: string | null;
-  mdStr: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
-  label: string;
-  description: string | null;
-  module: string;
-  name: string;
-}
-
-export type RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries = RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry | RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry | RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry | RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventUrlMetadataEntry | RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventTextMetadataEntry | RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry | RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry;
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization {
-  __typename: "Materialization";
-  label: string;
-  description: string | null;
-  metadataEntries: RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries[];
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
-  __typename: "StepMaterializationEvent";
-  message: string;
-  timestamp: string;
-  stepKey: string | null;
-  materialization: RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry" | "EventIntMetadataEntry";
-  label: string;
-  description: string | null;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
-  label: string;
-  description: string | null;
-  path: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
-  label: string;
-  description: string | null;
-  jsonString: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
-  label: string;
-  description: string | null;
-  url: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
-  label: string;
-  description: string | null;
-  text: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
-  label: string;
-  description: string | null;
-  mdStr: string;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
-  label: string;
-  description: string | null;
-  module: string;
-  name: string;
-}
-
-export type RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries = RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry | RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry | RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry | RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventUrlMetadataEntry | RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTextMetadataEntry | RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventMarkdownMetadataEntry | RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPythonArtifactMetadataEntry;
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult {
-  __typename: "ExpectationResult";
-  success: boolean;
-  label: string;
-  description: string | null;
-  metadataEntries: RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries[];
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent {
-  __typename: "StepExpectationResultEvent";
-  message: string;
-  timestamp: string;
-  stepKey: string | null;
-  expectationResult: RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult;
 }
 
 export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
@@ -232,4 +99,4 @@ export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent {
   operationResult: RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_EngineEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_StepExpectationResultEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent;
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_EngineEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent;
