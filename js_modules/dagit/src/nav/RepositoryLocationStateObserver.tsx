@@ -2,8 +2,6 @@ import {ApolloClient, gql} from '@apollo/client';
 import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
 import {LocationStateChangeSubscription} from 'src/nav/types/LocationStateChangeSubscription';
@@ -11,7 +9,7 @@ import {LocationStateChangeEventType} from 'src/types/globalTypes';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
-import {useNetworkedRepositoryLocations} from 'src/workspace/WorkspaceContext';
+import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 
 const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   subscription LocationStateChangeSubscription {
@@ -31,18 +29,10 @@ interface StateObserverProps {
 }
 
 export const RepositoryLocationStateObserver = ({client}: StateObserverProps) => {
-  const {locations, refetch} = useNetworkedRepositoryLocations();
+  const {locations, refetch} = React.useContext(WorkspaceContext);
   const [updatedLocations, setUpdatedLocations] = useState<string[]>([]);
   const [erroredLocations, setErroredLocations] = useState<string[]>([]);
   const totalMessages = updatedLocations.length + erroredLocations.length;
-
-  const networkedErrorLocations = locations
-    .filter((location) => location.__typename === 'RepositoryLocationLoadFailure')
-    .map((location) => location.name);
-
-  const filteredErroredLocations = erroredLocations.filter(
-    (locationName) => !networkedErrorLocations.includes(locationName),
-  );
 
   useEffect(() => {
     const onHandleMessages = (
@@ -55,8 +45,8 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
 
       switch (eventType) {
         case LocationStateChangeEventType.LOCATION_ERROR:
+          refetch();
           setUpdatedLocations((s) => s.filter((name) => name !== locationName));
-          setErroredLocations((s) => [...s, locationName]);
           return;
         case LocationStateChangeEventType.LOCATION_UPDATED:
           const matchingRepositoryLocation = locations.find((n) => n.name == locationName);
@@ -68,8 +58,6 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
             setUpdatedLocations((s) => [...s, locationName]);
           }
           return;
-        default:
-          refetch();
       }
     };
 
@@ -110,27 +98,6 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
           </Caption>
         </Group>
       ) : null}
-
-      {filteredErroredLocations.length > 0 ? (
-        <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
-          <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
-          <Caption color={Colors.DARK_GRAY3}>
-            An error occurred in a repository location.{' '}
-            <DetailLink to="/instance/health#repository-locations">View details</DetailLink>
-          </Caption>
-        </Group>
-      ) : null}
     </Group>
   ) : null;
 };
-
-const DetailLink = styled(Link)`
-  color: ${Colors.DARK_GRAY3};
-  text-decoration: underline;
-
-  && :hover,
-  :active,
-  :visited {
-    color: ${Colors.DARK_GRAY1};
-  }
-`;

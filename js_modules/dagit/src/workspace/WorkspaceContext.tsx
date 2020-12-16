@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
@@ -8,7 +8,6 @@ import {RepositorySelector} from 'src/types/globalTypes';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 import {RepoAddress} from 'src/workspace/types';
-import {RepositoryLocationsQuery} from 'src/workspace/types/RepositoryLocationsQuery';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoryLocationsOrError_PythonError,
@@ -40,6 +39,7 @@ type WorkspaceState = {
     path: string;
   };
   repoPath: string | null;
+  refetch: () => Promise<ApolloQueryResult<RootRepositoriesQuery>>;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
@@ -114,15 +114,6 @@ export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-const REPOSITORY_LOCATIONS_QUERY = gql`
-  query RepositoryLocationsQuery {
-    repositoryLocationsOrError {
-      ...RepositoryLocationsFragment
-    }
-  }
-  ${REPOSITORY_LOCATIONS_FRAGMENT}
-`;
-
 const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
@@ -162,24 +153,6 @@ const useLocalStorageState = (options: DagsterRepoOption[]) => {
   return [repoForKey, setRepo] as [typeof repoForKey, typeof setRepo];
 };
 
-export const useNetworkedRepositoryLocations = () => {
-  const {data, loading, refetch} = useQuery<RepositoryLocationsQuery>(REPOSITORY_LOCATIONS_QUERY, {
-    fetchPolicy: 'no-cache',
-  });
-
-  const locations = React.useMemo(() => {
-    return data?.repositoryLocationsOrError.__typename === 'RepositoryLocationConnection'
-      ? data?.repositoryLocationsOrError.nodes
-      : [];
-  }, [data]);
-
-  return {
-    loading,
-    locations,
-    refetch,
-  };
-};
-
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
@@ -189,7 +162,7 @@ const useWorkspaceState = () => {
   const match = useRouteMatch<{repoPath: string}>(['/workspace/:repoPath']);
   const repoPath: string | null = match?.params?.repoPath || null;
 
-  const {data, loading} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
+  const {data, loading, refetch} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
@@ -262,6 +235,7 @@ const useWorkspaceState = () => {
   }, [activeRepo, localStorageRepo, setLocalStorageRepo]);
 
   return {
+    refetch,
     loading,
     error,
     locations,

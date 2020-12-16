@@ -7,8 +7,8 @@ import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
-import {useNetworkedRepositoryLocations} from 'src/workspace/WorkspaceContext';
-import {RepositoryLocationsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RepositoryLocationsQuery';
+import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
+import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RootRepositoriesQuery';
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
   props,
@@ -80,7 +80,7 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
 };
 
 export const RepositoryLocationsList = () => {
-  const {locations, loading, refetch} = useNetworkedRepositoryLocations();
+  const {locations, loading} = React.useContext(WorkspaceContext);
   const [reloading, setReloading] = React.useState<string | null>(null);
 
   if (loading && !locations.length) {
@@ -93,11 +93,6 @@ export const RepositoryLocationsList = () => {
 
   const onReload = async (name: string) => {
     setReloading(name);
-    // This is to prevent a race condition with resetting the apollo store. By delaying the refetch,
-    // we make sure that the store isn't being reset while a query is being made.
-    setTimeout(() => {
-      refetch();
-    }, 100);
     setReloading(null);
   };
 
