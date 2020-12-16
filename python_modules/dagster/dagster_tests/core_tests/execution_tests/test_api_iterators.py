@@ -124,6 +124,64 @@ def test_execute_run_iterator():
         ):
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
 
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+        ).with_status(PipelineRunStatus.CANCELED)
+
+        events = list(
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        )
+
+        assert len(events) == 1
+        assert (
+            events[0].message
+            == "Not starting execution since the run was canceled before execution could start"
+        )
+
+
+def test_execute_canceled_state():
+    def event_callback(_record):
+        pass
+
+    with instance_for_test() as instance:
+        pipeline_def = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+        ).with_status(PipelineRunStatus.CANCELED)
+
+        execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+
+        logs = instance.all_logs(pipeline_run.run_id)
+
+        assert len(logs) == 1
+        assert (
+            "Not starting execution since the run was canceled before execution could start"
+            in logs[0].message
+        )
+
+        iter_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+        ).with_status(PipelineRunStatus.CANCELED)
+
+        iter_events = list(
+            execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
+        )
+
+        assert len(iter_events) == 1
+        assert (
+            "Not starting execution since the run was canceled before execution could start"
+            in iter_events[0].message
+        )
+
 
 def test_execute_run_bad_state():
     records = []

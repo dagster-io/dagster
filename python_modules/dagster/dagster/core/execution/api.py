@@ -54,6 +54,17 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
+
+    if pipeline_run.status == PipelineRunStatus.CANCELED:
+        # This can happen if the run was force-terminated while it was starting
+        def gen_execute_on_cancel():
+            yield instance.report_engine_event(
+                "Not starting execution since the run was canceled before execution could start",
+                pipeline_run,
+            )
+
+        return gen_execute_on_cancel()
+
     check.invariant(
         pipeline_run.status == PipelineRunStatus.NOT_STARTED
         or pipeline_run.status == PipelineRunStatus.STARTING,
@@ -128,6 +139,14 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
+
+    if pipeline_run.status == PipelineRunStatus.CANCELED:
+        instance.report_engine_event(
+            "Not starting execution since the run was canceled before execution could start",
+            pipeline_run,
+        )
+        return
+
     check.invariant(
         pipeline_run.status == PipelineRunStatus.NOT_STARTED
         or pipeline_run.status == PipelineRunStatus.STARTING,
