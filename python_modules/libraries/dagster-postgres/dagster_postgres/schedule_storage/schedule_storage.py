@@ -4,7 +4,13 @@ from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlSchedu
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
-from ..utils import create_pg_connection, pg_config, pg_statement_timeout, pg_url_from_config
+from ..utils import (
+    create_pg_connection,
+    pg_config,
+    pg_statement_timeout,
+    pg_url_from_config,
+    retry_pg_creation_fn,
+)
 
 
 class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
@@ -36,7 +42,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
         with self.connect() as conn:
-            ScheduleStorageSqlMetadata.create_all(conn)
+            retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout

@@ -19,7 +19,13 @@ from dagster.serdes import (
 )
 
 from ..pynotify import await_pg_notifications
-from ..utils import create_pg_connection, pg_config, pg_statement_timeout, pg_url_from_config
+from ..utils import (
+    create_pg_connection,
+    pg_config,
+    pg_statement_timeout,
+    pg_url_from_config,
+    retry_pg_creation_fn,
+)
 
 CHANNEL_NAME = "run_events"
 
@@ -58,7 +64,7 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         self._secondary_index_cache = {}
 
         with self.connect() as conn:
-            SqlEventLogStorageMetadata.create_all(conn)
+            retry_pg_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout

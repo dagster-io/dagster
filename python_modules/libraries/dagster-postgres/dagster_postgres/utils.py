@@ -3,6 +3,7 @@ import time
 from contextlib import contextmanager
 
 import psycopg2
+import psycopg2.errorcodes
 import six
 import sqlalchemy
 from dagster import Field, IntSource, Selector, StringSource, check
@@ -52,6 +53,42 @@ def get_conn_string(username, password, hostname, db_name, port="5432"):
     )
 
 
+def retry_pg_creation_fn(fn, retry_limit=5, retry_wait=0.2):
+    # Retry logic to recover from the case where two processes are creating
+    # tables at the same time using sqlalchemy
+
+    check.callable_param(fn, "fn")
+    check.int_param(retry_limit, "retry_limit")
+    check.numeric_param(retry_wait, "retry_wait")
+
+    while True:
+        try:
+            return fn()
+        except (
+            psycopg2.ProgrammingError,
+            psycopg2.IntegrityError,
+            sqlalchemy.exc.ProgrammingError,
+            sqlalchemy.exc.IntegrityError,
+        ) as exc:
+            # Only programming error we want to retry on is the DuplicateTable error
+            if (
+                isinstance(exc, sqlalchemy.exc.ProgrammingError)
+                and exc.orig
+                and exc.orig.pgcode != psycopg2.errorcodes.DUPLICATE_TABLE
+            ) or (
+                isinstance(exc, psycopg2.ProgrammingError)
+                and exc.pgcode != psycopg2.errorcodes.DUPLICATE_TABLE
+            ):
+                raise
+
+            logging.warning("Retrying failed database creation")
+            if retry_limit == 0:
+                six.raise_from(DagsterPostgresException("too many retries for DB creation"), exc)
+
+        time.sleep(retry_wait)
+        retry_limit -= 1
+
+
 def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
     """Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
     Intended to be used anywhere we connect to PG, to gracefully handle transient connection issues.
@@ -68,6 +105,7 @@ def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
             # These are broad, we may want to list out specific exceptions to capture
             psycopg2.DatabaseError,
             psycopg2.OperationalError,
+            sqlalchemy.exc.DatabaseError,
             sqlalchemy.exc.OperationalError,
         ) as exc:
             logging.warning("Retrying failed database connection")
