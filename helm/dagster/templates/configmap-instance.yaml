@@ -41,8 +41,8 @@ data:
           {{- end }}
           {{- end }}
     {{- else }}
-      module: dagster_cron.cron_scheduler
-      class: SystemCronScheduler
+      module: dagster.core.scheduler
+      class: DagsterDaemonScheduler
     {{- end }}
 
     schedule_storage:

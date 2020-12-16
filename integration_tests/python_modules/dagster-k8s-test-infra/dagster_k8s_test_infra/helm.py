@@ -344,11 +344,12 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 "failureThreshold": 3,
             },
         },
-        "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
+        "scheduler": {"k8sEnabled": True, "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
+        "dagsterDaemon": {"enabled": False},
     }
 
     with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
@@ -382,11 +383,12 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
         },
         "celery": {"enabled": False},
         "k8sRunLauncher": {"enabled": True, "jobNamespace": namespace},
-        "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
+        "scheduler": {"k8sEnabled": True, "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
+        "dagsterDaemon": {"enabled": False},
     }
 
     with _helm_chart_helper(
@@ -468,11 +470,12 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                 "worker_concurrency": 1,
             },
         },
-        "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
+        "scheduler": {"k8sEnabled": True, "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
+        "dagsterDaemon": {"enabled": False},
     }
 
     with _helm_chart_helper(
@@ -542,7 +545,7 @@ def helm_chart_for_run_coordinator(namespace, docker_image, should_cleanup=True)
                 "worker_concurrency": 1,
             },
         },
-        "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
+        "scheduler": {"k8sEnabled": True, "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
@@ -550,6 +553,7 @@ def helm_chart_for_run_coordinator(namespace, docker_image, should_cleanup=True)
         "dagsterDaemon": {
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "queuedRunCoordinator": {"enabled": True},
         },
     }
 
