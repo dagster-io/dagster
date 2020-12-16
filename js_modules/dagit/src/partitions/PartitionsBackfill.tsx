@@ -498,7 +498,11 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           <LaunchBackfillButton
             partitionNames={selected}
             partitionSetName={partitionSet.name}
-            reexecutionSteps={!options.fromFailure ? stepRows.map((step) => step.name) : undefined}
+            reexecutionSteps={
+              !options.fromFailure && solidsFiltered.all.length < solids.length
+                ? stepRows.map((step) => step.name)
+                : undefined
+            }
             fromFailure={options.fromFailure}
             tags={tags}
             onSuccess={onSuccess}
