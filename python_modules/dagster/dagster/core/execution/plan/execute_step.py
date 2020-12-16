@@ -17,6 +17,8 @@ from dagster.core.definitions.events import (
     ObjectStoreOperation,
 )
 from dagster.core.errors import (
+    DagsterExecutionHandleOutputError,
+    DagsterExecutionLoadInputError,
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
@@ -383,7 +385,17 @@ def _set_objects(step_context, step_output, step_output_handle, output):
     output_def = step_output.output_def
     output_manager = step_context.get_output_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
-    materializations = output_manager.handle_output(output_context, output.value)
+    with user_code_error_boundary(
+        DagsterExecutionHandleOutputError,
+        control_flow_exceptions=[Failure, RetryRequested],
+        msg_fn=lambda: f"""Error occurred during the the handling of step output:
+        step key: "{step_context.step.key}"
+        output name: "{output_context.name}"
+        """,
+        step_key=step_context.step.key,
+        output_name=output_context.name,
+    ):
+        materializations = output_manager.handle_output(output_context, output.value)
 
     # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
     if isinstance(materializations, ObjectStoreOperation):
@@ -512,4 +524,15 @@ def _load_input_values(step_context):
         if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
 
-        yield step_input.name, step_input.source.load_input_object(step_context)
+        with user_code_error_boundary(
+            DagsterExecutionLoadInputError,
+            control_flow_exceptions=[Failure, RetryRequested],
+            msg_fn=lambda: f"""Error occurred during the loading of a step input:
+                step key: "{step_context.step.key}"
+                input name: "{step_input.name}"
+            """,  # pylint: disable=cell-var-from-loop
+            step_key=step_context.step.key,
+            input_name=step_input.name,
+        ):
+
+            yield step_input.name, step_input.source.load_input_object(step_context)
