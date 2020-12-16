@@ -131,6 +131,7 @@ from dagster.core.storage.system_storage import (
     default_intermediate_storage_defs,
     fs_intermediate_storage,
     mem_intermediate_storage,
+    object_manager_from_intermediate_storage,
 )
 from dagster.core.types.config_schema import dagster_type_loader, dagster_type_materializer
 from dagster.core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
@@ -231,6 +232,7 @@ __all__ = [
     "fs_intermediate_storage",
     "in_process_executor",
     "mem_intermediate_storage",
+    "object_manager_from_intermediate_storage",
     "multiprocess_executor",
     "reconstructable",
     "reexecute_pipeline_iterator",

@@ -1,12 +1,18 @@
 from dagster import check
 from dagster.config import Field
+from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
 from dagster.core.definitions.intermediate_storage import (
     intermediate_storage as intermediate_storage_fn,
 )
-from dagster.core.storage.type_storage import TypeStoragePluginRegistry
+from dagster.core.storage.object_manager import object_manager
+from dagster.core.storage.type_storage import (
+    TypeStoragePluginRegistry,
+    construct_type_storage_plugin_registry,
+)
+from dagster.core.system_config.objects import EnvironmentConfig
 
 from .init import InitIntermediateStorageContext
-from .intermediate_storage import ObjectStoreIntermediateStorage
+from .intermediate_storage import IntermediateStorageAdapter, ObjectStoreIntermediateStorage
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
 
 
@@ -98,3 +104,64 @@ Framework authors seeking to add their own intermediate storage definitions can 
         intermediate_storage_defs=default_intermediate_storage_defs + [custom_intermediate_storage_def]
     )
 """
+
+
+def object_manager_from_intermediate_storage(intermediate_storage_def):
+    """Define an :py:class:`ObjectManagerDefinition` from an existing :py:class:`IntermediateStorageDefinition`.
+
+    This method is used to adapt an existing user-defined intermediate storage to a object manager
+    resource, for example:
+
+    .. code-block:: python
+
+        my_object_manager_def = object_manager_from_intermediate_storage(my_intermediate_storage_def)
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_object_manager_def})])
+        def my_pipeline():
+            ...
+
+
+    Args:
+        intermediate_storage_def (IntermediateStorageDefinition): The intermediate storage definition
+            to be converted to an object manager definition.
+
+    Returns:
+        ObjectManagerDefinition
+    """
+
+    check.inst_param(
+        intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition
+    )
+
+    @object_manager
+    def _object_manager(init_context):
+        pipeline_run = init_context.pipeline_run
+        instance = init_context.instance_for_backwards_compat
+        pipeline_def = init_context.pipeline_def_for_backwards_compat
+        # depend on InitResourceContext.instance_for_backwards_compat and pipeline_def_for_backwards_compat
+        environment_config = EnvironmentConfig.build(
+            pipeline_def, pipeline_run.run_config, mode=pipeline_run.mode
+        )
+        mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
+
+        intermediate_storage_context = InitIntermediateStorageContext(
+            pipeline_def=pipeline_def,
+            mode_def=mode_def,
+            intermediate_storage_def=intermediate_storage_def,
+            pipeline_run=pipeline_run,
+            instance=instance,
+            environment_config=environment_config,
+            type_storage_plugin_registry=construct_type_storage_plugin_registry(
+                pipeline_def, intermediate_storage_def
+            ),
+            resources=init_context.resources,
+            intermediate_storage_config=environment_config.intermediate_storage.intermediate_storage_config,
+        )
+
+        intermediate_storage = intermediate_storage_def.intermediate_storage_creation_fn(
+            intermediate_storage_context
+        )
+
+        return IntermediateStorageAdapter(intermediate_storage)
+
+    return _object_manager

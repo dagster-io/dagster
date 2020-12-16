@@ -63,7 +63,13 @@ class Manager:
         self.resource_manager = None
 
     def _setup_resources(
-        self, execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
+        self,
+        execution_plan,
+        environment_config,
+        pipeline_run,
+        log_manager,
+        resource_keys_to_init,
+        instance,
     ):
         """
         Drop-in replacement for
@@ -71,7 +77,12 @@ class Manager:
         `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it
         """
         generator = resource_initialization_event_generator(
-            execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
+            execution_plan,
+            environment_config,
+            pipeline_run,
+            log_manager,
+            resource_keys_to_init,
+            instance,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
             generator, ScopedResourcesBuilder

@@ -191,6 +191,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
                 context_creation_data.pipeline_run,
                 log_manager,
                 context_creation_data.resource_keys_to_init,
+                instance,
             )
             yield from resources_manager.generate_setup_events()
             scoped_resources_builder = check.inst(

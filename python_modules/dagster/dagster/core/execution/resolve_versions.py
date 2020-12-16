@@ -4,6 +4,7 @@ from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.system import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.asset_store import AssetStoreContext
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.backcompat import experimental
 
 from .plan.inputs import join_and_hash
@@ -170,7 +171,13 @@ def resolve_memoized_execution_plan(execution_plan):
             else {}
         )
         resource_def = mode_def.resource_defs[manager_key]
-        resource_context = InitResourceContext(resource_config, resource_def, "")
+        resource_context = InitResourceContext(
+            resource_config,
+            resource_def,
+            pipeline_run=PipelineRun(
+                pipeline_name=pipeline_def.name, run_id="", mode=environment_config.mode
+            ),
+        )
         object_manager = resource_def.resource_fn(resource_context)
         context = get_output_context(execution_plan, environment_config, step_output_handle, None)
         if not object_manager.has_asset(AssetStoreContext.from_output_context(context)):
