@@ -1,9 +1,7 @@
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.system import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.asset_store import AssetStoreContext
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.backcompat import experimental
 
@@ -141,46 +139,43 @@ def resolve_memoized_execution_plan(execution_plan):
     """
         Returns:
             ExecutionPlan: Execution plan configured to only run unmemoized steps.
-        """
-    # pylint: disable=comparison-with-callable
+    """
 
     pipeline_def = execution_plan.pipeline.get_definition()
-
-    step_output_versions = execution_plan.resolve_step_output_versions()
-    if all(version is None for version in step_output_versions.values()):
-        raise DagsterInvariantViolationError(
-            "While creating a memoized pipeline run, no steps have versions. At least one step "
-            "must have a version."
-        )
 
     environment_config = execution_plan.environment_config
     pipeline_def = execution_plan.pipeline.get_definition()
     mode_def = pipeline_def.get_mode_definition(environment_config.mode)
 
-    step_keys_to_execute = []
+    step_keys_to_execute = set()
 
-    for step_output_handle in step_output_versions.keys():
-        manager_key = execution_plan.get_manager_key(step_output_handle)
-        # TODO: https://github.com/dagster-io/dagster/issues/3302
-        # The following code block is HIGHLY experimental. It initializes an asset store outside of
-        # the resource initialization context, and will ignore any exit hooks defined for the asset
-        # store.
-        resource_config = (
-            environment_config.resources[manager_key]["config"]
-            if "config" in environment_config.resources[manager_key]
-            else {}
-        )
-        resource_def = mode_def.resource_defs[manager_key]
-        resource_context = InitResourceContext(
-            resource_config,
-            resource_def,
-            pipeline_run=PipelineRun(
-                pipeline_name=pipeline_def.name, run_id="", mode=environment_config.mode
-            ),
-        )
-        object_manager = resource_def.resource_fn(resource_context)
-        context = get_output_context(execution_plan, environment_config, step_output_handle, None)
-        if not object_manager.has_asset(AssetStoreContext.from_output_context(context)):
-            step_keys_to_execute.append(step_output_handle.step_key)
+    for step in execution_plan.steps:
+        for output_name in step.step_output_dict.keys():
+            step_output_handle = StepOutputHandle(step.key, output_name)
 
-    return execution_plan.build_subset_plan(step_keys_to_execute)
+            manager_key = execution_plan.get_manager_key(step_output_handle)
+            # TODO: https://github.com/dagster-io/dagster/issues/3302
+            # The following code block is HIGHLY experimental. It initializes an asset store outside of
+            # the resource initialization context, and will ignore any exit hooks defined for the asset
+            # store.
+            resource_config = (
+                environment_config.resources[manager_key]["config"]
+                if "config" in environment_config.resources[manager_key]
+                else {}
+            )
+            resource_def = mode_def.resource_defs[manager_key]
+            resource_context = InitResourceContext(
+                resource_config,
+                resource_def,
+                pipeline_run=PipelineRun(
+                    pipeline_name=pipeline_def.name, run_id="", mode=environment_config.mode
+                ),
+            )
+            object_manager = resource_def.resource_fn(resource_context)
+            context = get_output_context(
+                execution_plan, environment_config, step_output_handle, None
+            )
+            if not object_manager.has_output(context):
+                step_keys_to_execute.add(step_output_handle.step_key)
+
+    return execution_plan.build_subset_plan(list(step_keys_to_execute))

@@ -3,7 +3,6 @@ import pickle
 
 import pytest
 from dagster import (
-    Any,
     DagsterInstance,
     DagsterInvariantViolationError,
     ModeDefinition,
@@ -20,8 +19,6 @@ from dagster.core.definitions.events import AssetMaterialization, AssetStoreOper
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.storage.asset_store import (
     AssetStore,
-    AssetStoreContext,
-    VersionedPickledObjectFilesystemAssetStore,
     custom_path_fs_asset_store,
     fs_asset_store,
     mem_asset_store,
@@ -298,37 +295,6 @@ def get_fake_solid():
         pass
 
     return fake_solid
-
-
-def test_versioned_asset_store():
-    with seven.TemporaryDirectory() as temp_dir:
-        store = VersionedPickledObjectFilesystemAssetStore(temp_dir)
-        context = AssetStoreContext(
-            step_key="foo",
-            output_name="bar",
-            mapping_key=None,
-            asset_metadata={},
-            pipeline_name="fake",
-            solid_def=get_fake_solid(),
-            dagster_type=Any,
-            source_run_id=None,
-            version="version1",
-        )
-        store.set_asset(context, "cat")
-        assert store.has_asset(context)
-        assert store.get_asset(context) == "cat"
-        context_diff_version = AssetStoreContext(
-            step_key="foo",
-            output_name="bar",
-            mapping_key=None,
-            asset_metadata={},
-            pipeline_name="fake",
-            solid_def=get_fake_solid(),
-            dagster_type=Any,
-            source_run_id=None,
-            version="version2",
-        )
-        assert not store.has_asset(context_diff_version)
 
 
 def test_asset_store_optional_output():

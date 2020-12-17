@@ -27,36 +27,36 @@ from dagster.core.execution.resolve_versions import (
     resolve_memoized_execution_plan,
     resolve_resource_versions,
 )
-from dagster.core.storage.asset_store import VersionedAssetStore
+from dagster.core.storage.memoizable_object_manager import MemoizableObjectManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 
-class VersionedInMemoryAssetStore(VersionedAssetStore):
+class VersionedInMemoryObjectManager(MemoizableObjectManager):
     def __init__(self):
         self.values = {}
 
     def _get_keys(self, context):
-        return (context.step_key, context.output_name, context.version)
+        return (context.step_key, context.name, context.version)
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         keys = self._get_keys(context)
         self.values[keys] = obj
 
-    def get_asset(self, context):
-        keys = self._get_keys(context)
+    def load_input(self, context):
+        keys = self._get_keys(context.upstream_output)
         return self.values[keys]
 
-    def has_asset(self, context):
+    def has_output(self, context):
         keys = self._get_keys(context)
         return keys in self.values
 
 
-def asset_store_factory(asset_store):
+def object_manager_factory(object_manager):
     @resource
-    def _asset_store_resource(_):
-        return asset_store
+    def _object_manager_resource(_):
+        return object_manager
 
-    return _asset_store_resource
+    return _object_manager_resource
 
 
 def test_join_and_hash():
@@ -95,13 +95,15 @@ def versioned_solid_takes_input(_, intput):
     return 2 * intput
 
 
-def versioned_pipeline_factory(asset_store=None):
+def versioned_pipeline_factory(object_manager=None):
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 name="main",
                 resource_defs=(
-                    {"object_manager": asset_store_factory(asset_store)} if asset_store else {}
+                    {"object_manager": object_manager_factory(object_manager)}
+                    if object_manager
+                    else {}
                 ),
             )
         ],
@@ -118,13 +120,15 @@ def solid_takes_input(_, intput):
     return 2 * intput
 
 
-def partially_versioned_pipeline_factory(asset_store=None):
+def partially_versioned_pipeline_factory(object_manager=None):
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 name="main",
                 resource_defs=(
-                    {"object_manager": asset_store_factory(asset_store)} if asset_store else {}
+                    {"object_manager": object_manager_factory(object_manager)}
+                    if object_manager
+                    else {}
                 ),
             )
         ],
@@ -211,21 +215,8 @@ def no_version_pipeline():
     basic_takes_input_solid(basic_solid())
 
 
-def test_default_unmemoized_steps():
-    speculative_execution_plan = create_execution_plan(no_version_pipeline)
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=(
-            "While creating a memoized pipeline run, no steps have versions. At least one step "
-            "must have a version."
-        ),
-    ):
-        resolve_memoized_execution_plan(speculative_execution_plan)
-
-
 def test_resolve_memoized_execution_plan_no_stored_results():
-    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryAssetStore())
+    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryObjectManager())
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
     memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
@@ -237,14 +228,14 @@ def test_resolve_memoized_execution_plan_no_stored_results():
 
 
 def test_resolve_memoized_execution_plan_yes_stored_results():
-    asset_store = VersionedInMemoryAssetStore()
-    versioned_pipeline = versioned_pipeline_factory(asset_store)
+    object_manager = VersionedInMemoryObjectManager()
+    versioned_pipeline = versioned_pipeline_factory(object_manager)
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
     step_output_version = speculative_execution_plan.resolve_step_output_versions()[
         step_output_handle
     ]
-    asset_store.values[
+    object_manager.values[
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
@@ -263,16 +254,16 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
 
 
 def test_resolve_memoized_execution_plan_partial_versioning():
-    asset_store = VersionedInMemoryAssetStore()
+    object_manager = VersionedInMemoryObjectManager()
 
-    partially_versioned_pipeline = partially_versioned_pipeline_factory(asset_store)
+    partially_versioned_pipeline = partially_versioned_pipeline_factory(object_manager)
     speculative_execution_plan = create_execution_plan(partially_versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
 
     step_output_version = speculative_execution_plan.resolve_step_output_versions()[
         step_output_handle
     ]
-    asset_store.values[
+    object_manager.values[
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
