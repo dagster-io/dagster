@@ -211,10 +211,10 @@ def test_schedules_logs(gen_schedule_args):
             _instance.return_value = instance
             runner = CliRunner()
 
-            result = runner.invoke(schedule_logs_command, cli_args + ["foo_schedule"],)
+            result = runner.invoke(schedule_logs_command, cli_args + ["foo_schedule"])
 
             assert result.exit_code == 0
-            assert result.output.endswith("scheduler.log\n")
+            assert "scheduler.log" in result.output
 
 
 def test_check_repo_and_scheduler_no_external_schedules():

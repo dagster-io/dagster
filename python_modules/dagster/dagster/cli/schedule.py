@@ -1,3 +1,4 @@
+import glob
 import os
 
 import click
@@ -10,6 +11,7 @@ from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus
+from dagster.core.scheduler.scheduler import DagsterDaemonScheduler
 
 
 def create_schedule_cli_group():
@@ -371,12 +373,46 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     with DagsterInstance.get() as instance:
         with get_external_repository_from_kwargs(cli_args) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
+
+            if isinstance(instance.scheduler, DagsterDaemonScheduler):
+                return print_fn(
+                    "This command is deprecated for the DagsterDaemonScheduler. "
+                    "Logs for the DagsterDaemonScheduler written to the process output. "
+                    "For help troubleshooting the Daemon Scheduler, see "
+                    "https://docs.dagster.io/troubleshooting/schedules"
+                )
+
             logs_path = os.path.join(
                 instance.logs_path_for_schedule(
                     external_repo.get_external_schedule(schedule_name).get_external_origin_id()
                 )
             )
-            print_fn(logs_path)
+
+            logs_directory = os.path.dirname(logs_path)
+            result_files = glob.glob("{}/*.result".format(logs_directory))
+            most_recent_log = max(result_files, key=os.path.getctime) if result_files else None
+
+            output = ""
+
+            title = "Scheduler Logs:"
+            output += "{title}\n{sep}\n{info}\n".format(
+                title=title, sep="=" * len(title), info=logs_path,
+            )
+
+            title = (
+                "Schedule Execution Logs:"
+                "\nEvent logs from schedule execution. "
+                "Errors that caused schedule executions to not run or fail can be found here. "
+            )
+            most_recent_info = (
+                "\nMost recent execution log: {}".format(most_recent_log) if most_recent_log else ""
+            )
+            info = "All execution logs: {}{}".format(logs_directory, most_recent_info)
+            output += "\n{title}\n{sep}\n{info}\n".format(
+                title=title, sep="=" * len(title), info=info,
+            )
+
+            print_fn(output)
 
 
 @click.command(name="restart", help="Restart a running schedule")
