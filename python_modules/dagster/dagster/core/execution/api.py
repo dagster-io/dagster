@@ -18,7 +18,7 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
-from dagster.utils import delay_interrupts, merge_dicts
+from dagster.utils import capture_interrupts, merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -737,9 +737,9 @@ class _ExecuteRunWithPlanIterable:
         # Since interrupts can't be raised at arbitrary points safely, delay them until designated
         # checkpoints during the execution.
         # To be maximally certain that interrupts are always caught during an execution process,
-        # you can safely add an additional `with delay_interrupts()` at the very beginning of the
-        # process that performs the execution
-        with delay_interrupts():
+        # you can safely add an additional `with capture_interrupts()` at the very beginning of the
+        # process that performs the execution.
+        with capture_interrupts():
             yield from self.execution_context_manager.prepare_context()
             self.pipeline_context = self.execution_context_manager.get_context()
             generator_closed = False

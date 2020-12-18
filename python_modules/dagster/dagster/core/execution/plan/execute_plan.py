@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster.core.errors import (
     DagsterError,
+    DagsterExecutionInterruptedError,
     DagsterUserCodeExecutionError,
     HookExecutionError,
     user_code_error_boundary,
@@ -142,13 +143,17 @@ def _dagster_event_sequence_for_step(step_context, retries):
             case the original user exc_info is stashed on the exception
             as the original_exc_info property.
 
-        (4) User error:
+        (4) Execution interrupted:
+            The run was interrupted in the middle of execution (typically by a
+            termination request).
+
+        (5) User error:
             The framework raised a DagsterError that indicates a usage error
             or some other error not communicated by a user-thrown exception. For example,
             if the user yields an object out of a compute function that is not a
             proper event (not an Output, ExpectationResult, etc).
 
-        (5) Framework failure or interrupt:
+        (6) Framework failure:
             An unexpected error occurred. This is a framework error. Either there
             has been an internal error in the framework OR we have forgotten to put a
             user code error boundary around invoked user-space code. These terminate
@@ -237,14 +242,19 @@ def _dagster_event_sequence_for_step(step_context, retries):
             raise dagster_user_error.user_exception
 
     # case (4) in top comment
+    except (KeyboardInterrupt, DagsterExecutionInterruptedError) as interrupt_error:
+        yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
+        raise interrupt_error
+
+    # case (5) in top comment
     except DagsterError as dagster_error:
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
         if step_context.raise_on_error:
             raise dagster_error
 
-    # case (5) in top comment
-    except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
+    # case (6) in top comment
+    except Exception as unexpected_exception:  # pylint: disable=broad-except
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
         raise unexpected_exception
 

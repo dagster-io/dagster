@@ -9,7 +9,7 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.retries import Retries
 from dagster.core.storage.tags import PRIORITY_TAG
-from dagster.utils import pop_delayed_interrupts
+from dagster.utils import pop_captured_interrupt
 
 from .plan import ExecutionPlan
 
@@ -311,7 +311,7 @@ class ActiveExecution:
         self._interrupted = True
 
     def check_for_interrupts(self):
-        return pop_delayed_interrupts()
+        return pop_captured_interrupt()
 
     def mark_up_for_retry(self, step_key, at_time=None):
         check.invariant(

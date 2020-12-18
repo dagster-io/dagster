@@ -11,7 +11,7 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster.serdes import deserialize_value
-from dagster.utils import raise_interrupts_immediately
+from dagster.utils import raise_execution_interrupts
 from dagster_databricks import DatabricksJobRunner, databricks_step_main
 from dagster_pyspark.utils import build_pyspark_zip
 
@@ -122,9 +122,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
 
         try:
-            # If this is being called within a `delay_interrupts` context, allow interrupts while
+            # If this is being called within a `capture_interrupts` context, allow interrupts while
             # waiting for the  execution to complete, so that we can terminate slow or hanging steps
-            with raise_interrupts_immediately():
+            with raise_execution_interrupts():
                 self.databricks_runner.wait_for_run_to_complete(log, databricks_run_id)
         finally:
             if self.wait_for_logs:

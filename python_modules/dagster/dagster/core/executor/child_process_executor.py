@@ -9,7 +9,7 @@ from collections import namedtuple
 import six
 from dagster import check
 from dagster.seven import multiprocessing
-from dagster.utils import delay_interrupts
+from dagster.utils import capture_interrupts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -57,7 +57,7 @@ def _execute_command_in_child_process(event_queue, command):
 
     check.inst_param(command, "command", ChildProcessCommand)
 
-    with delay_interrupts():
+    with capture_interrupts():
         pid = os.getpid()
         event_queue.put(ChildProcessStartEvent(pid=pid))
         try:

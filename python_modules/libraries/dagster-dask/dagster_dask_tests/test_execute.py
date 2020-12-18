@@ -18,6 +18,7 @@ from dagster import (
 )
 from dagster.core.definitions.executor import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import (
     instance_for_test,
@@ -204,12 +205,15 @@ def test_dask_terminate():
                     interrupt_thread.start()
 
                 if result.event_type == DagsterEventType.STEP_FAILURE:
-                    assert "KeyboardInterrupt" in result.event_specific_data.error.message
+                    assert (
+                        "DagsterExecutionInterruptedError"
+                        in result.event_specific_data.error.message
+                    )
 
                 result_types.append(result.event_type)
 
             assert False
-        except KeyboardInterrupt:
+        except DagsterExecutionInterruptedError:
             pass
 
         interrupt_thread.join()

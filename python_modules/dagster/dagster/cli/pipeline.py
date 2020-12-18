@@ -49,7 +49,7 @@ from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import (
     DEFAULT_WORKSPACE_YAML_FILENAME,
-    delay_interrupts,
+    capture_interrupts,
     load_yaml_from_glob_list,
     merge_dicts,
 )
@@ -324,7 +324,7 @@ def execute_list_versions_command(instance, kwargs):
     ),
 )
 def pipeline_execute_command(**kwargs):
-    with delay_interrupts():
+    with capture_interrupts():
         with DagsterInstance.get() as instance:
             execute_execute_command(instance, kwargs)
 

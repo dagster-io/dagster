@@ -19,10 +19,9 @@ from dagster import (
 from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import (
-    check_received_delayed_interrupt,
-    delay_interrupts,
-    raise_delayed_interrupts,
-    raise_interrupts_immediately,
+    capture_interrupts,
+    check_captured_interrupt,
+    raise_execution_interrupts,
     safe_tempfile_path,
     send_interrupt,
 )
@@ -83,7 +82,7 @@ def test_single_proc_interrupt():
             ):
                 results.append(result.event_type)
             assert False  # should never reach
-        except KeyboardInterrupt:
+        except DagsterExecutionInterruptedError:
             pass
 
         assert DagsterEventType.STEP_FAILURE in results
@@ -165,8 +164,7 @@ def test_interrupt_resource_teardown():
         results = []
         try:
             # launch a pipeline that writes a file and loops infinitely
-            # next time the launched thread wakes up it will send a keyboard
-            # interrupt
+            # next time the launched thread wakes up it will send an interrupt
             for result in execute_pipeline_iterator(
                 write_a_file_pipeline,
                 run_config={
@@ -177,7 +175,7 @@ def test_interrupt_resource_teardown():
             ):
                 results.append(result.event_type)
             assert False  # should never reach
-        except KeyboardInterrupt:
+        except DagsterExecutionInterruptedError:
             pass
 
         assert DagsterEventType.STEP_FAILURE in results
@@ -188,27 +186,23 @@ def test_interrupt_resource_teardown():
 def _send_interrupt_to_self():
     os.kill(os.getpid(), signal.SIGINT)
     start_time = time.time()
-    while not check_received_delayed_interrupt():
+    while not check_captured_interrupt():
         time.sleep(1)
         if time.time() - start_time > 15:
             raise Exception("Timed out waiting for interrupt to be received")
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
-def test_delay_interrupt():
+def test_capture_interrupt():
     outer_interrupt = False
     inner_interrupt = False
 
-    try:
-        with delay_interrupts():
-            try:
-                _send_interrupt_to_self()
-            except KeyboardInterrupt:
-                inner_interrupt = True
-    except KeyboardInterrupt:
-        outer_interrupt = True
+    with capture_interrupts():
+        try:
+            _send_interrupt_to_self()
+        except:  # pylint: disable=bare-except
+            inner_interrupt = True
 
-    assert outer_interrupt
     assert not inner_interrupt
 
     # Verify standard interrupt handler is restored
@@ -225,12 +219,12 @@ def test_delay_interrupt():
     inner_interrupt = False
     # No exception if no signal thrown
     try:
-        with delay_interrupts():
+        with capture_interrupts():
             try:
                 time.sleep(5)
-            except KeyboardInterrupt:
+            except:  # pylint: disable=bare-except
                 inner_interrupt = True
-    except KeyboardInterrupt:
+    except:  # pylint: disable=bare-except
         outer_interrupt = True
 
     assert not outer_interrupt
@@ -238,11 +232,11 @@ def test_delay_interrupt():
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
-def test_raise_interrupts_immediately_no_op():
-    with raise_interrupts_immediately():
+def test_raise_execution_interrupts():
+    with raise_execution_interrupts():
         try:
             _send_interrupt_to_self()
-        except KeyboardInterrupt:
+        except DagsterExecutionInterruptedError:
             standard_interrupt = True
 
     assert standard_interrupt
@@ -254,14 +248,14 @@ def test_interrupt_inside_nested_delay_and_raise():
     interrupt_after_delay = False
 
     try:
-        with delay_interrupts():
-            with raise_interrupts_immediately():
+        with capture_interrupts():
+            with raise_execution_interrupts():
                 try:
                     _send_interrupt_to_self()
-                except KeyboardInterrupt:
+                except DagsterExecutionInterruptedError:
                     interrupt_inside_nested_raise = True
 
-    except KeyboardInterrupt:
+    except:  # pylint: disable=bare-except
         interrupt_after_delay = True
 
     assert interrupt_inside_nested_raise
@@ -269,58 +263,40 @@ def test_interrupt_inside_nested_delay_and_raise():
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
-def test_interrupt_after_nested_delay_and_raise():
+def test_no_interrupt_after_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
 
     try:
-        with delay_interrupts():
-            with raise_interrupts_immediately():
+        with capture_interrupts():
+            with raise_execution_interrupts():
                 try:
                     time.sleep(5)
-                except KeyboardInterrupt:
+                except:  # pylint: disable=bare-except
                     interrupt_inside_nested_raise = True
             _send_interrupt_to_self()
 
-    except KeyboardInterrupt:
+    except:  # pylint: disable=bare-except
         interrupt_after_delay = True
 
     assert not interrupt_inside_nested_raise
-    assert interrupt_after_delay
-
-
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
-def test_raise_delayed_interrupts():
-    interrupt_from_check = False
-    interrupt_after_delay = False
-    try:
-        with delay_interrupts():
-            _send_interrupt_to_self()
-            try:
-                raise_delayed_interrupts()
-            except KeyboardInterrupt:
-                interrupt_from_check = True
-    except KeyboardInterrupt:
-        interrupt_after_delay = True
-
-    assert interrupt_from_check
     assert not interrupt_after_delay
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
-def test_calling_raise_interrupts_immediately_also_raises_any_delayed_interrupts():
-    interrupt_from_raise_interrupts_immediately = False
+def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts():
+    interrupt_from_raise_execution_interrupts = False
     interrupt_after_delay = False
     try:
-        with delay_interrupts():
+        with capture_interrupts():
             _send_interrupt_to_self()
             try:
-                with raise_interrupts_immediately():
+                with raise_execution_interrupts():
                     pass
-            except KeyboardInterrupt:
-                interrupt_from_raise_interrupts_immediately = True
-    except KeyboardInterrupt:
+            except DagsterExecutionInterruptedError:
+                interrupt_from_raise_execution_interrupts = True
+    except:  # pylint: disable=bare-except
         interrupt_after_delay = True
 
-    assert interrupt_from_raise_interrupts_immediately
+    assert interrupt_from_raise_execution_interrupts
     assert not interrupt_after_delay

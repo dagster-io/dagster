@@ -31,7 +31,7 @@ from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.utils import ensure_gen, iterate_with_context, raise_interrupts_immediately
+from dagster.utils import ensure_gen, iterate_with_context, raise_execution_interrupts
 from dagster.utils.timing import time_execution_scope
 
 from .inputs import FanInStepInputValuesWrapper
@@ -486,7 +486,7 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
             return
 
         # Allow interrupts again during each step of the execution
-        for event in iterate_with_context(raise_interrupts_immediately, gen):
+        for event in iterate_with_context(raise_execution_interrupts, gen):
             yield event
 
 

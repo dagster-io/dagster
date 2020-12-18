@@ -191,11 +191,16 @@ class MultiprocessExecutor(Executor):
 
                 errs = {pid: err for pid, err in errors.items() if err}
 
+                # After termination starts, raise an interrupted exception once all subprocesses
+                # have finished cleaning up (and the only errors were from being interrupted)
                 if (
-                    errs
-                    and stopping
+                    stopping
+                    and (not active_iters)
                     and all(
-                        [err_info.cls_name == "KeyboardInterrupt" for err_info in errs.values()]
+                        [
+                            err_info.cls_name == "DagsterExecutionInterruptedError"
+                            for err_info in errs.values()
+                        ]
                     )
                 ):
                     yield DagsterEvent.engine_event(

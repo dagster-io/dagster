@@ -12,7 +12,7 @@ from dagster.core.execution.plan.external_step import (
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
-from dagster.utils import raise_interrupts_immediately
+from dagster.utils import raise_execution_interrupts
 from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
 from dagster_aws.emr.configs_spark import spark_config as get_spark_config
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
@@ -241,11 +241,11 @@ class EmrPySparkStepLauncher(StepLauncher):
         """
         done = False
         all_events = []
-        # If this is being called within a `delay_interrupts` context, allow interrupts
+        # If this is being called within a `capture_interrupts` context, allow interrupts
         # while waiting for the pyspark execution to complete, so that we can terminate slow or
         # hanging steps
         while not done:
-            with raise_interrupts_immediately():
+            with raise_execution_interrupts():
                 time.sleep(check_interval)  # AWS rate-limits us if we poll it too often
                 done = self.emr_job_runner.is_emr_step_complete(log, self.cluster_id, emr_step_id)
 

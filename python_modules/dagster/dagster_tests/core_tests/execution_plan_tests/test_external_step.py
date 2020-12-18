@@ -18,6 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
@@ -251,8 +252,7 @@ def test_interrupt_step_launcher(mode):
                     run_config=sleepy_run_config,
                 ):
                     results.append(result.event_type)
-                assert False
-            except KeyboardInterrupt:
+            except DagsterExecutionInterruptedError:
                 pass
 
             assert DagsterEventType.STEP_FAILURE in results

@@ -45,7 +45,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
-from dagster.utils import delay_interrupts, start_termination_thread
+from dagster.utils import capture_interrupts, start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .types import ExecuteExternalPipelineArgs
@@ -161,7 +161,7 @@ def _run_in_subprocess(
 def start_run_in_subprocess(
     serialized_execute_run_args, recon_pipeline, event_queue, termination_event
 ):
-    with delay_interrupts():
+    with capture_interrupts():
         _run_in_subprocess(
             serialized_execute_run_args,
             recon_pipeline,
