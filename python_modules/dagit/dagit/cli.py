@@ -147,7 +147,9 @@ def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, p
 @contextmanager
 def uploading_logging_thread():
     stop_event = threading.Event()
-    logging_thread = threading.Thread(target=upload_logs, args=([stop_event]))
+    logging_thread = threading.Thread(
+        target=upload_logs, args=([stop_event]), name="telemetry-upload"
+    )
     try:
         logging_thread.start()
         yield

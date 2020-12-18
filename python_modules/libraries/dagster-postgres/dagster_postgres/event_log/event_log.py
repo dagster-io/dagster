@@ -256,6 +256,7 @@ class PostgresEventWatcher:
                     self._dict_lock,
                     self._watcher_thread_exit,
                 ),
+                name="postgres-event-watch",
             )
             self._watcher_thread.daemon = True
             self._watcher_thread.start()

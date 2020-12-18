@@ -214,14 +214,18 @@ class DagsterApiServer(DagsterApiServicer):
         self.__last_heartbeat_time = time.time()
         if heartbeat:
             self.__heartbeat_thread = threading.Thread(
-                target=self._heartbeat_thread, args=(heartbeat_timeout,),
+                target=self._heartbeat_thread,
+                args=(heartbeat_timeout,),
+                name="grpc-server-heartbeat",
             )
             self.__heartbeat_thread.daemon = True
             self.__heartbeat_thread.start()
         else:
             self.__heartbeat_thread = None
 
-        self.__cleanup_thread = threading.Thread(target=self._cleanup_thread, args=(),)
+        self.__cleanup_thread = threading.Thread(
+            target=self._cleanup_thread, args=(), name="grpc-server-cleanup"
+        )
         self.__cleanup_thread.daemon = True
 
         self.__cleanup_thread.start()

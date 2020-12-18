@@ -200,7 +200,9 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
             self.heartbeat_shutdown_event = threading.Event()
 
             self.heartbeat_thread = threading.Thread(
-                target=client_heartbeat_thread, args=(self.client, self.heartbeat_shutdown_event)
+                target=client_heartbeat_thread,
+                args=(self.client, self.heartbeat_shutdown_event,),
+                name="grpc-client-heartbeat",
             )
             self.heartbeat_thread.daemon = True
             self.heartbeat_thread.start()
