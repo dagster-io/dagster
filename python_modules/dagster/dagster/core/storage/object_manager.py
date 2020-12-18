@@ -25,7 +25,6 @@ class ObjectManagerDefinition(
         config_schema=None,
         description=None,
         required_resource_keys=None,
-        _configured_config_mapping_fn=None,
         version=None,
         input_config_schema=None,
         output_config_schema=None,
@@ -47,6 +46,17 @@ class ObjectManagerDefinition(
     @property
     def output_config_schema(self):
         return self._output_config_schema
+
+    def copy_for_configured(self, name, description, config_schema, _):
+        check.invariant(name is None, "ResourceDefintions do not have names")
+        return ObjectManagerDefinition(
+            config_schema=config_schema,
+            description=description or self.description,
+            resource_fn=self.resource_fn,
+            required_resource_keys=self.required_resource_keys,
+            input_config_schema=self.input_config_schema,
+            output_config_schema=self.output_config_schema,
+        )
 
 
 class ObjectManager(InputManager, OutputManager):

@@ -28,8 +28,9 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
         resource_fn=None,
         config_schema=None,
         description=None,
-        version=None,
         output_config_schema=None,
+        required_resource_keys=None,
+        version=None,
     ):
         self._output_config_schema = convert_user_facing_definition_config_schema(
             output_config_schema
@@ -38,12 +39,23 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
+            required_resource_keys=required_resource_keys,
             version=version,
         )
 
     @property
     def output_config_schema(self):
         return self._output_config_schema
+
+    def copy_for_configured(self, name, description, config_schema, _):
+        check.invariant(name is None, "ResourceDefintions do not have names")
+        return OutputManagerDefinition(
+            config_schema=config_schema,
+            description=description or self.description,
+            resource_fn=self.resource_fn,
+            required_resource_keys=self.required_resource_keys,
+            output_config_schema=self.output_config_schema,
+        )
 
 
 class OutputManager(ABC):
@@ -64,7 +76,13 @@ class OutputManager(ABC):
         """
 
 
-def output_manager(config_schema=None, description=None, output_config_schema=None, version=None):
+def output_manager(
+    config_schema=None,
+    description=None,
+    output_config_schema=None,
+    required_resource_keys=None,
+    version=None,
+):
     """Define an output manager.
 
     The decorated function should accept a :py:class:`OutputContext` and resource config, and
@@ -77,6 +95,8 @@ def output_manager(config_schema=None, description=None, output_config_schema=No
         description (Optional[str]): A human-readable description of the resource.
         output_config_schema (Optional[ConfigSchema]): A schema for the output-level config. Each
             output that uses this output manager can be configured separately using this config.
+        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the output
+            manager.
         version (Optional[str]): (Experimental) the version of the output manager definition.
 
     **Examples:**
@@ -139,6 +159,7 @@ def output_manager(config_schema=None, description=None, output_config_schema=No
             description=description,
             version=version,
             output_config_schema=output_config_schema,
+            required_resource_keys=required_resource_keys,
         )(load_fn)
 
     return _wrap
@@ -155,13 +176,19 @@ class ResourceConfigPassthroughOutputManager(OutputManager):
 
 class _OutputManagerDecoratorCallable:
     def __init__(
-        self, config_schema=None, description=None, version=None, output_config_schema=None,
+        self,
+        config_schema=None,
+        description=None,
+        version=None,
+        output_config_schema=None,
+        required_resource_keys=None,
     ):
         #  type checks in definition
         self.config_schema = config_schema
         self.description = description
         self.version = version
         self.output_config_schema = output_config_schema
+        self.required_resource_keys = required_resource_keys
 
     def __call__(self, load_fn):
         check.callable_param(load_fn, "load_fn")
@@ -175,6 +202,7 @@ class _OutputManagerDecoratorCallable:
             description=self.description,
             version=self.version,
             output_config_schema=self.output_config_schema,
+            required_resource_keys=self.required_resource_keys,
         )
 
         update_wrapper(output_manager_def, wrapped=load_fn)

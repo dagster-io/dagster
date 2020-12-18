@@ -7,6 +7,7 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
+    OutputManagerDefinition,
     dagster_type_materializer,
     execute_pipeline,
     pipeline,
@@ -198,3 +199,25 @@ def test_type_materializer_and_nonconfigurable_output_manager():
 
     assert adict["result"] == 5
     assert adict["materialized"]
+
+
+def test_configured():
+    @output_manager(
+        config_schema={"base_dir": str},
+        description="abc",
+        output_config_schema={"format": str},
+        required_resource_keys={"r1", "r2"},
+        version="123",
+    )
+    def my_output_manager(_):
+        pass
+
+    configured_output_manager = my_output_manager.configured({"base_dir": "/a/b/c"})
+
+    assert isinstance(configured_output_manager, OutputManagerDefinition)
+    assert configured_output_manager.description == my_output_manager.description
+    assert configured_output_manager.output_config_schema == my_output_manager.output_config_schema
+    assert (
+        configured_output_manager.required_resource_keys == my_output_manager.required_resource_keys
+    )
+    assert configured_output_manager.version is None

@@ -1,5 +1,6 @@
 from dagster import (
     InputDefinition,
+    InputManagerDefinition,
     ModeDefinition,
     ObjectManager,
     OutputDefinition,
@@ -123,3 +124,25 @@ def test_override_object_manager():
         solid2(solid1())
 
     execute_pipeline(my_pipeline)
+
+
+def test_configured():
+    @input_manager(
+        config_schema={"base_dir": str},
+        description="abc",
+        input_config_schema={"format": str},
+        required_resource_keys={"r1", "r2"},
+        version="123",
+    )
+    def my_input_manager(_):
+        pass
+
+    configured_input_manager = my_input_manager.configured({"base_dir": "/a/b/c"})
+
+    assert isinstance(configured_input_manager, InputManagerDefinition)
+    assert configured_input_manager.description == my_input_manager.description
+    assert configured_input_manager.input_config_schema == my_input_manager.input_config_schema
+    assert (
+        configured_input_manager.required_resource_keys == my_input_manager.required_resource_keys
+    )
+    assert configured_input_manager.version is None

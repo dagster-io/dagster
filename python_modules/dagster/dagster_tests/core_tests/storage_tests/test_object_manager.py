@@ -6,6 +6,7 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     ModeDefinition,
+    ObjectManagerDefinition,
     OutputDefinition,
     execute_pipeline,
     pipeline,
@@ -312,9 +313,25 @@ def test_fan_in():
         execute_pipeline(my_pipeline)
 
 
-def get_fake_solid():
-    @solid
-    def fake_solid(_):
+def test_configured():
+    @object_manager(
+        config_schema={"base_dir": str},
+        description="abc",
+        output_config_schema={"path": str},
+        input_config_schema={"format": str},
+        required_resource_keys={"r1", "r2"},
+        version="123",
+    )
+    def an_object_manager(_):
         pass
 
-    return fake_solid
+    configured_object_manager = an_object_manager.configured({"base_dir": "/a/b/c"})
+
+    assert isinstance(configured_object_manager, ObjectManagerDefinition)
+    assert configured_object_manager.description == an_object_manager.description
+    assert configured_object_manager.output_config_schema == an_object_manager.output_config_schema
+    assert configured_object_manager.input_config_schema == an_object_manager.input_config_schema
+    assert (
+        configured_object_manager.required_resource_keys == an_object_manager.required_resource_keys
+    )
+    assert configured_object_manager.version is None
