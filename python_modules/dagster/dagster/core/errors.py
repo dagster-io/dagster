@@ -20,6 +20,7 @@ import traceback
 from contextlib import contextmanager
 
 from dagster import check
+from dagster.utils.interrupts import raise_interrupts_as
 from future.utils import raise_from
 
 
@@ -144,6 +145,12 @@ def _add_inner_exception_for_py2(msg, exc_info):
 
 
 @contextmanager
+def raise_execution_interrupts():
+    with raise_interrupts_as(DagsterExecutionInterruptedError):
+        yield
+
+
+@contextmanager
 def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **kwargs):
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
@@ -176,20 +183,22 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
     control_flow_exceptions = tuple(
         check.opt_list_param(control_flow_exceptions, "control_flow_exceptions")
     )
-    try:
-        yield
-    except control_flow_exceptions as cf:
-        # A control flow exception has occurred and should be propagated
-        raise cf
-    except DagsterError as de:
-        # The system has thrown an error that is part of the user-framework contract
-        raise de
-    except Exception as e:  # pylint: disable=W0703
-        # An exception has been thrown by user code and computation should cease
-        # with the error reported further up the stack
-        raise_from(
-            error_cls(msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
-        )
+
+    with raise_execution_interrupts():
+        try:
+            yield
+        except control_flow_exceptions as cf:
+            # A control flow exception has occurred and should be propagated
+            raise cf
+        except DagsterError as de:
+            # The system has thrown an error that is part of the user-framework contract
+            raise de
+        except Exception as e:  # pylint: disable=W0703
+            # An exception has been thrown by user code and computation should cease
+            # with the error reported further up the stack
+            raise_from(
+                error_cls(msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
+            )
 
 
 class DagsterUserCodeExecutionError(DagsterError):

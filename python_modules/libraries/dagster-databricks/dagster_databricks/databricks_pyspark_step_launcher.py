@@ -4,6 +4,7 @@ import pickle
 
 from dagster import Bool, Field, StringSource, check, resource, seven
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import log_step_event
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -11,7 +12,6 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster.serdes import deserialize_value
-from dagster.utils import raise_execution_interrupts
 from dagster_databricks import DatabricksJobRunner, databricks_step_main
 from dagster_pyspark.utils import build_pyspark_zip
 

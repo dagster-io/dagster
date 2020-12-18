@@ -2,13 +2,14 @@ import dask
 import dask.distributed
 from dagster import Executor, Field, Permissive, Selector, StringSource, check, seven
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
+from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
-from dagster.utils import frozentags, iterate_with_context, raise_execution_interrupts
+from dagster.utils import frozentags, iterate_with_context
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"

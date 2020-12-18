@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from dagster.utils import capture_interrupts, pop_captured_interrupt
+from dagster.utils.interrupts import capture_interrupts, pop_captured_interrupt
 
 POLLING_INTERVAL = 0.1
 

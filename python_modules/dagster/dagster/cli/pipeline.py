@@ -47,15 +47,11 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import (
-    DEFAULT_WORKSPACE_YAML_FILENAME,
-    capture_interrupts,
-    load_yaml_from_glob_list,
-    merge_dicts,
-)
+from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.indenting_printer import IndentingPrinter
+from dagster.utils.interrupts import capture_interrupts
 from tabulate import tabulate
 
 from .config_scaffolder import scaffold_pipeline_config

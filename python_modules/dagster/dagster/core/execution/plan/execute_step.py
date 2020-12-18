@@ -31,7 +31,7 @@ from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.utils import ensure_gen, iterate_with_context, raise_execution_interrupts
+from dagster.utils import ensure_gen, iterate_with_context
 from dagster.utils.timing import time_execution_scope
 
 from .inputs import FanInStepInputValuesWrapper
@@ -175,18 +175,18 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             step_context.for_type(step_input.dagster_type), step_input.dagster_type, input_value,
         )
 
-        yield _create_step_input_event(
-            step_context, input_name, type_check=type_check, success=type_check.success
-        )
+    yield _create_step_input_event(
+        step_context, input_name, type_check=type_check, success=type_check.success
+    )
 
-        if not type_check.success:
-            raise DagsterTypeCheckDidNotPass(
-                description='Type check failed for step input "{input_name}" - expected type "{dagster_type}".'.format(
-                    input_name=input_name, dagster_type=step_input.dagster_type.display_name,
-                ),
-                metadata_entries=type_check.metadata_entries,
-                dagster_type=step_input.dagster_type,
-            )
+    if not type_check.success:
+        raise DagsterTypeCheckDidNotPass(
+            description='Type check failed for step input "{input_name}" - expected type "{dagster_type}".'.format(
+                input_name=input_name, dagster_type=step_input.dagster_type.display_name,
+            ),
+            metadata_entries=type_check.metadata_entries,
+            dagster_type=step_input.dagster_type,
+        )
 
 
 def _create_step_output_event(step_context, step_output_handle, type_check, success, version):
@@ -229,22 +229,22 @@ def _type_checked_step_output_event_sequence(step_context, step_output_handle, o
     ):
         type_check = _do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
 
-        yield _create_step_output_event(
-            step_context,
-            step_output_handle,
-            type_check=type_check,
-            success=type_check.success,
-            version=version,
-        )
+    yield _create_step_output_event(
+        step_context,
+        step_output_handle,
+        type_check=type_check,
+        success=type_check.success,
+        version=version,
+    )
 
-        if not type_check.success:
-            raise DagsterTypeCheckDidNotPass(
-                description='Type check failed for step output "{output_name}" - expected type "{dagster_type}".'.format(
-                    output_name=output.output_name, dagster_type=dagster_type.display_name,
-                ),
-                metadata_entries=type_check.metadata_entries,
-                dagster_type=dagster_type,
-            )
+    if not type_check.success:
+        raise DagsterTypeCheckDidNotPass(
+            description='Type check failed for step output "{output_name}" - expected type "{dagster_type}".'.format(
+                output_name=output.output_name, dagster_type=dagster_type.display_name,
+            ),
+            metadata_entries=type_check.metadata_entries,
+            dagster_type=dagster_type,
+        )
 
 
 def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
@@ -465,29 +465,30 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, "evaluated_inputs", key_type=str)
 
-    with user_code_error_boundary(
-        DagsterExecutionStepExecutionError,
-        control_flow_exceptions=[Failure, RetryRequested],
-        msg_fn=lambda: """Error occurred during the execution of step:
-        step key: "{key}"
-        solid invocation: "{solid}"
-        solid definition: "{solid_def}"
-        """.format(
-            key=step_context.step.key,
-            solid_def=step_context.solid_def.name,
-            solid=step_context.solid.name,
-        ),
-        step_key=step_context.step.key,
-        solid_def_name=step_context.solid_def.name,
-        solid_name=step_context.solid.name,
-    ):
-        gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
-        if not gen:
-            return
+    gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
+    if not gen:
+        return
 
-        # Allow interrupts again during each step of the execution
-        for event in iterate_with_context(raise_execution_interrupts, gen):
-            yield event
+    for event in iterate_with_context(
+        lambda: user_code_error_boundary(
+            DagsterExecutionStepExecutionError,
+            control_flow_exceptions=[Failure, RetryRequested],
+            msg_fn=lambda: """Error occurred during the execution of step:
+            step key: "{key}"
+            solid invocation: "{solid}"
+            solid definition: "{solid_def}q"
+            """.format(
+                key=step_context.step.key,
+                solid_def=step_context.solid_def.name,
+                solid=step_context.solid.name,
+            ),
+            step_key=step_context.step.key,
+            solid_def_name=step_context.solid_def.name,
+            solid_name=step_context.solid.name,
+        ),
+        gen,
+    ):
+        yield event
 
 
 def _generate_error_boundary_msg_for_step_input(context, input_name):

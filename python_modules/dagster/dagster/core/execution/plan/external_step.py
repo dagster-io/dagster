@@ -10,13 +10,13 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
 )
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
+from dagster.core.errors import raise_execution_interrupts
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.utils import raise_execution_interrupts
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"

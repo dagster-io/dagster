@@ -9,7 +9,7 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.retries import Retries
 from dagster.core.storage.tags import PRIORITY_TAG
-from dagster.utils import pop_captured_interrupt
+from dagster.utils.interrupts import pop_captured_interrupt
 
 from .plan import ExecutionPlan
 

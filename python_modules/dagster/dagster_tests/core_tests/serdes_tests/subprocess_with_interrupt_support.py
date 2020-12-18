@@ -2,7 +2,7 @@
 import sys
 import time
 
-from dagster.utils import setup_windows_interrupt_support
+from dagster.utils.interrupts import setup_windows_interrupt_support
 
 if __name__ == "__main__":
     setup_windows_interrupt_support()

@@ -5,7 +5,8 @@ import sys
 import time
 
 from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster.utils import file_relative_path, setup_windows_interrupt_support
+from dagster.utils import file_relative_path
+from dagster.utils.interrupts import setup_windows_interrupt_support
 
 if __name__ == "__main__":
     setup_windows_interrupt_support()

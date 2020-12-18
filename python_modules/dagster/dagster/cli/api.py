@@ -52,9 +52,9 @@ from dagster.serdes import (
 )
 from dagster.serdes.ipc import ipc_write_stream
 from dagster.seven import nullcontext
-from dagster.utils import setup_windows_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
+from dagster.utils.interrupts import setup_windows_interrupt_support
 from dagster.utils.merger import merge_dicts
 
 

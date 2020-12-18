@@ -16,15 +16,10 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.core.errors import DagsterExecutionInterruptedError
+from dagster.core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster.core.test_utils import instance_for_test_tempdir
-from dagster.utils import (
-    capture_interrupts,
-    check_captured_interrupt,
-    raise_execution_interrupts,
-    safe_tempfile_path,
-    send_interrupt,
-)
+from dagster.utils import safe_tempfile_path, send_interrupt
+from dagster.utils.interrupts import capture_interrupts, check_captured_interrupt
 
 
 def _send_kbd_int(temp_files):

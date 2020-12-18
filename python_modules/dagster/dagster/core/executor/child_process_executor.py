@@ -9,8 +9,8 @@ from collections import namedtuple
 import six
 from dagster import check
 from dagster.seven import multiprocessing
-from dagster.utils import capture_interrupts
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.interrupts import capture_interrupts
 
 
 class ChildProcessEvent:

@@ -210,11 +210,14 @@ def single_resource_event_generator(context, resource_name, resource_def):
                     resource_or_gen = resource_def.resource_fn(context)
                     gen = ensure_gen(resource_or_gen)
                     resource = next(gen)
-                yield InitializedResource(resource, format_duration(timer_result.millis))
+                resource = InitializedResource(resource, format_duration(timer_result.millis))
             except StopIteration:
                 check.failed(
                     "Resource generator {name} must yield one item.".format(name=resource_name)
                 )
+
+        yield resource
+
     except DagsterUserCodeExecutionError as dagster_user_error:
         raise dagster_user_error
 
