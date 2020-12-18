@@ -183,7 +183,9 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
     (accum, run) => ({...accum, [run.id]: run.canTerminate}),
     {},
   );
+
   const selectedIDs = selected.map((run) => run.runId);
+  const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -232,8 +234,7 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
         onClose={closeDialogs}
         onComplete={onComplete}
         onTerminateInstead={() => setVisibleDialog('terminate')}
-        selectedIDs={selectedIDs}
-        terminatableIDs={unfinishedIDs}
+        selectedRuns={deletionMap}
       />
     </>
   );

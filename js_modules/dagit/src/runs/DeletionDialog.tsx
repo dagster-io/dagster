@@ -17,9 +17,10 @@ export interface Props {
   onClose: () => void;
   onComplete: () => void;
   onTerminateInstead: () => void;
-  selectedIDs: string[];
-  terminatableIDs: string[];
+  selectedRuns: SelectedRuns;
 }
+
+type SelectedRuns = {[id: string]: boolean};
 
 type Error =
   | Delete_deletePipelineRun_PythonError
@@ -28,25 +29,24 @@ type Error =
 
 type DeletionDialogState = {
   step: 'initial' | 'deleting' | 'completed';
+  frozenRuns: SelectedRuns;
   deletion: {completed: number; errors: {[id: string]: Error}};
 };
 
 type DeletionDialogAction =
-  | {type: 'reset'}
+  | {type: 'reset'; frozenRuns: SelectedRuns}
   | {type: 'start'}
   | {type: 'deletion-success'}
   | {type: 'deletion-error'; id: string; error: Error}
   | {type: 'complete'};
 
-const initialState: DeletionDialogState = {
-  step: 'initial',
-  deletion: {completed: 0, errors: {}},
+const initializeState = (frozenRuns: SelectedRuns): DeletionDialogState => {
+  return {
+    step: 'initial',
+    frozenRuns,
+    deletion: {completed: 0, errors: {}},
+  };
 };
-
-type Reducer = (
-  prevState: DeletionDialogState,
-  action: DeletionDialogAction,
-) => DeletionDialogState;
 
 const deletionDialogReducer = (
   prevState: DeletionDialogState,
@@ -54,7 +54,7 @@ const deletionDialogReducer = (
 ): DeletionDialogState => {
   switch (action.type) {
     case 'reset':
-      return initialState;
+      return initializeState(action.frozenRuns);
     case 'start':
       return {...prevState, step: 'deleting'};
     case 'deletion-success': {
@@ -83,25 +83,42 @@ const deletionDialogReducer = (
 };
 
 export const DeletionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, onTerminateInstead, selectedIDs} = props;
-  const [state, dispatch] = React.useReducer<Reducer>(deletionDialogReducer, initialState);
+  const {isOpen, onClose, onComplete, onTerminateInstead, selectedRuns} = props;
+  const frozenRuns = React.useRef<SelectedRuns>(selectedRuns);
 
-  const count = selectedIDs.length;
-  const terminatableCount = props.terminatableIDs.length;
+  const [state, dispatch] = React.useReducer(
+    deletionDialogReducer,
+    frozenRuns.current,
+    initializeState,
+  );
 
+  const runIDs = Object.keys(state.frozenRuns);
+  const count = runIDs.length;
+  const terminatableCount = runIDs.filter((id) => state.frozenRuns[id]).length;
+
+  // If the dialog is newly open, update state to match the frozen list.
   React.useEffect(() => {
     if (isOpen) {
-      dispatch({type: 'reset'});
+      dispatch({type: 'reset', frozenRuns: frozenRuns.current});
     }
   }, [isOpen]);
+
+  // If the dialog is not open, update the ref so that the frozen list will be entered
+  // into state the next time the dialog opens.
+  React.useEffect(() => {
+    if (!isOpen) {
+      frozenRuns.current = selectedRuns;
+    }
+  }, [isOpen, selectedRuns]);
 
   const [destroy] = useMutation<Delete>(DELETE_MUTATION);
 
   const mutate = async () => {
     dispatch({type: 'start'});
 
-    for (let ii = 0; ii < selectedIDs.length; ii++) {
-      const runId = selectedIDs[ii];
+    const runList = Object.keys(state.frozenRuns);
+    for (let ii = 0; ii < runList.length; ii++) {
+      const runId = runList[ii];
       const {data} = await destroy({variables: {runId}});
 
       if (data?.deletePipelineRun.__typename === 'DeletePipelineRunSuccess') {
