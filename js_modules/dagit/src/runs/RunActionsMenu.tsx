@@ -18,6 +18,7 @@ import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {DeletionDialog} from 'src/runs/DeletionDialog';
 import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from 'src/runs/RunFragments';
+import {doneStatuses} from 'src/runs/RunStatuses';
 import {
   CANCEL_MUTATION,
   DELETE_MUTATION,
@@ -176,8 +177,13 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
-  const terminatableIDs = selected.filter((r) => r.canTerminate).map((run) => run.runId);
-  const deletableIDs = selected.map((run) => run.runId);
+  const unfinishedRuns = selected.filter((r) => !doneStatuses.has(r?.status));
+  const unfinishedIDs = unfinishedRuns.map((r) => r.id);
+  const unfinishedMap = unfinishedRuns.reduce(
+    (accum, run) => ({...accum, [run.id]: run.canTerminate}),
+    {},
+  );
+  const selectedIDs = selected.map((run) => run.runId);
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -195,18 +201,16 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
           <Menu>
             <MenuItem
               icon="stop"
-              text={`Cancel ${terminatableIDs.length} ${
-                terminatableIDs.length === 1 ? 'run' : 'runs'
-              }`}
-              disabled={terminatableIDs.length === 0}
+              text={`Cancel ${unfinishedIDs.length} ${unfinishedIDs.length === 1 ? 'run' : 'runs'}`}
+              disabled={unfinishedIDs.length === 0}
               onClick={() => {
                 setVisibleDialog('terminate');
               }}
             />
             <MenuItem
               icon="trash"
-              text={`Delete ${deletableIDs.length} ${deletableIDs.length === 1 ? 'run' : 'runs'}`}
-              disabled={deletableIDs.length === 0}
+              text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
+              disabled={selectedIDs.length === 0}
               onClick={() => {
                 setVisibleDialog('delete');
               }}
@@ -221,15 +225,15 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
         isOpen={visibleDialog === 'terminate'}
         onClose={closeDialogs}
         onComplete={onComplete}
-        selectedIDs={terminatableIDs}
+        selectedRuns={unfinishedMap}
       />
       <DeletionDialog
         isOpen={visibleDialog === 'delete'}
         onClose={closeDialogs}
         onComplete={onComplete}
         onTerminateInstead={() => setVisibleDialog('terminate')}
-        selectedIDs={deletableIDs}
-        terminatableIDs={terminatableIDs}
+        selectedIDs={selectedIDs}
+        terminatableIDs={unfinishedIDs}
       />
     </>
   );

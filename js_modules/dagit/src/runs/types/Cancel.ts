@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { TerminatePipelinePolicy } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: Cancel
 // ====================================================
@@ -43,4 +45,5 @@ export interface Cancel {
 
 export interface CancelVariables {
   runId: string;
+  terminatePolicy?: TerminatePipelinePolicy | null;
 }

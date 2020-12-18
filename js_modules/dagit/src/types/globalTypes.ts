@@ -101,6 +101,11 @@ export enum StepKind {
   COMPUTE = "COMPUTE",
 }
 
+export enum TerminatePipelinePolicy {
+  MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY",
+  SAFE_TERMINATE = "SAFE_TERMINATE",
+}
+
 export interface AssetKeyInput {
   path: string[];
 }

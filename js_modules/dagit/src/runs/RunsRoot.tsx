@@ -10,6 +10,7 @@ import {CursorPaginationControls} from 'src/CursorControls';
 import {Loading} from 'src/Loading';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
@@ -30,18 +31,6 @@ import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
 
 const PAGE_SIZE = 25;
-
-const queuedStatuses = new Set([PipelineRunStatus.QUEUED]);
-const inProgressStatuses = new Set([
-  PipelineRunStatus.STARTED,
-  PipelineRunStatus.STARTING,
-  PipelineRunStatus.CANCELING,
-]);
-const doneStatuses = new Set([
-  PipelineRunStatus.FAILURE,
-  PipelineRunStatus.SUCCESS,
-  PipelineRunStatus.CANCELED,
-]);
 
 const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
   const statusTokens = new Set(

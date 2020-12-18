@@ -17,15 +17,34 @@ const Template: Story<TerminationDialogProps> = (props) => (
   </ApolloTestProvider>
 );
 
-export const Success = Template.bind({});
-Success.args = {
+const runIDs = [
+  faker.random.uuid().slice(0, 8),
+  faker.random.uuid().slice(0, 8),
+  faker.random.uuid().slice(0, 8),
+];
+
+export const ForceTerminationCheckbox = Template.bind({});
+ForceTerminationCheckbox.args = {
   isOpen: true,
   onClose: () => {
     console.log('Close!');
   },
-  selectedIDs: [
-    faker.random.uuid().slice(0, 8),
-    faker.random.uuid().slice(0, 8),
-    faker.random.uuid().slice(0, 8),
-  ],
+  selectedRuns: {
+    [runIDs[0]]: true,
+    [runIDs[1]]: false,
+    [runIDs[2]]: true,
+  },
+};
+
+export const ForceTerminationNoCheckbox = Template.bind({});
+ForceTerminationNoCheckbox.args = {
+  isOpen: true,
+  onClose: () => {
+    console.log('Close!');
+  },
+  selectedRuns: {
+    [runIDs[0]]: false,
+    [runIDs[1]]: false,
+    [runIDs[2]]: false,
+  },
 };

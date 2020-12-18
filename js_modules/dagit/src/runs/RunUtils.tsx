@@ -214,8 +214,8 @@ export const DELETE_MUTATION = gql`
 `;
 
 export const CANCEL_MUTATION = gql`
-  mutation Cancel($runId: String!) {
-    terminatePipelineExecution(runId: $runId) {
+  mutation Cancel($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
+    terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
       __typename
       ... on TerminatePipelineExecutionFailure {
         message
