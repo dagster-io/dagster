@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 import {Button, IconName, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -6,11 +5,14 @@ import * as React from 'react';
 import {SharedToaster} from 'src/DomUtils';
 import {IStepState} from 'src/RunMetadataProvider';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
-import {CANCEL_MUTATION, ReExecutionStyle} from 'src/runs/RunUtils';
+import {doneStatuses} from 'src/runs/RunStatuses';
+import {ReExecutionStyle} from 'src/runs/RunUtils';
 import {StepSelection} from 'src/runs/StepSelection';
-import {Cancel} from 'src/runs/types/Cancel';
+import {TerminationDialog, TerminationState} from 'src/runs/TerminationDialog';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
 
 // Descriptions of re-execute options
@@ -32,33 +34,51 @@ interface RunActionButtonsProps {
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
-const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
-  const [cancel] = useMutation<Cancel>(CANCEL_MUTATION);
-  const [inFlight, setInFlight] = React.useState(false);
-  return (
-    <Button
-      icon={IconNames.STOP}
-      small={true}
-      text="Terminate"
-      intent="warning"
-      disabled={inFlight}
-      onClick={async () => {
-        setInFlight(true);
-        const {data} = await cancel({
-          variables: {runId: run.runId},
+const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: boolean}> = ({
+  run,
+  isFinalStatus,
+}) => {
+  const [showDialog, setShowDialog] = React.useState<boolean>(false);
+  const closeDialog = React.useCallback(() => setShowDialog(false), []);
+
+  const onComplete = React.useCallback(
+    (terminationState: TerminationState) => {
+      const {errors} = terminationState;
+      const error = run?.id && errors[run.id];
+      if (error && 'message' in error) {
+        SharedToaster.show({
+          message: error.message,
+          icon: 'error',
+          intent: Intent.DANGER,
         });
-        const execution = data?.terminatePipelineExecution;
-        const message = execution && 'message' in execution ? execution.message : null;
-        if (message) {
-          SharedToaster.show({
-            message,
-            icon: 'error',
-            intent: Intent.DANGER,
-          });
-        }
-        setInFlight(false);
-      }}
-    />
+      }
+    },
+    [run?.id],
+  );
+
+  if (!run) {
+    return null;
+  }
+
+  return (
+    <>
+      {!isFinalStatus ? (
+        <Button
+          icon={IconNames.STOP}
+          small={true}
+          text="Terminate"
+          intent="warning"
+          disabled={showDialog}
+          onClick={() => setShowDialog(true)}
+        />
+      ) : null}
+      <TerminationDialog
+        isOpen={showDialog}
+        onClose={closeDialog}
+        onComplete={onComplete}
+        selectedRuns={{[run.id]: run.canTerminate}}
+      />
+    </>
   );
 };
 
@@ -76,10 +96,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
   const isSelectionFinished = selectionStates.every((stepState) =>
     [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState),
   );
-  const isFinalStatus =
-    run?.status === PipelineRunStatus.FAILURE ||
-    run?.status === PipelineRunStatus.SUCCESS ||
-    run?.status === PipelineRunStatus.CANCELED;
+  const isFinalStatus = !!(run && doneStatuses.has(run.status));
   const isFailedWithPlan =
     executionPlan &&
     run &&
@@ -148,23 +165,20 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
   const primary = isSelectionPresent && artifactsPersisted ? selected : full;
 
   return (
-    <>
-      <LaunchButtonDropdown
-        small={true}
-        primary={primary}
-        options={options}
-        title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
-        tooltip={pipelineError?.tooltip}
-        icon={pipelineError?.icon}
-        disabled={pipelineError?.disabled}
-      />
-      {run?.canTerminate && (
-        <>
-          <div style={{minWidth: 6}} />
-          <CancelRunButton run={run} />
-        </>
-      )}
-    </>
+    <Group direction="row" spacing={8}>
+      <Box flex={{direction: 'row'}}>
+        <LaunchButtonDropdown
+          small={true}
+          primary={primary}
+          options={options}
+          title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
+          tooltip={pipelineError?.tooltip}
+          icon={pipelineError?.icon}
+          disabled={pipelineError?.disabled}
+        />
+      </Box>
+      <CancelRunButton run={run} isFinalStatus={isFinalStatus} />
+    </Group>
   );
 };
 

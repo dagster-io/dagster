@@ -226,7 +226,7 @@ export const TerminationDialog = (props: Props) => {
               Cancel
             </Button>
             <Button intent="danger" onClick={mutate}>
-              {`${state.mustForce ? 'Force terminate' : 'Terminate'} ${`${count} ${
+              {`${state.mustForce ? 'Force termination for' : 'Terminate'} ${`${count} ${
                 count === 1 ? 'run' : 'runs'
               }`}`}
             </Button>
