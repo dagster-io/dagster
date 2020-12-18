@@ -336,7 +336,7 @@ const MaterializationContent: React.FunctionComponent<{
               label: 'asset_key',
               item: (
                 <>
-                  {materialization.assetKey.path.join('.')}
+                  {materialization.assetKey.path.join(' > ')}
                   {assetDashboardLink}
                 </>
               ),
