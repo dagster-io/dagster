@@ -188,6 +188,28 @@ class InstanceManagers:
 
         return MarkedManager(_sqlite_instance, [Marks.sqlite_instance, Marks.sync_run_launcher])
 
+    # Runs launched with this instance won't actually execute since the graphql test suite
+    # doesn't run the daemon process that launches queued runs
+    @staticmethod
+    def sqlite_instance_with_queued_run_coordinator():
+        @contextmanager
+        def _sqlite_instance():
+            with seven.TemporaryDirectory() as temp_dir:
+                with instance_for_test_tempdir(
+                    temp_dir,
+                    overrides={
+                        "run_coordinator": {
+                            "module": "dagster.core.run_coordinator.queued_run_coordinator",
+                            "class": "QueuedRunCoordinator",
+                        },
+                    },
+                ) as instance:
+                    yield instance
+
+        return MarkedManager(
+            _sqlite_instance, [Marks.sqlite_instance, Marks.queued_run_coordinator]
+        )
+
     @staticmethod
     def sqlite_instance_with_default_run_launcher():
         @contextmanager
@@ -360,6 +382,7 @@ class Marks:
     # Run launcher variants
     sync_run_launcher = pytest.mark.sync_run_launcher
     default_run_launcher = pytest.mark.default_run_launcher
+    queued_run_coordinator = pytest.mark.queued_run_coordinator
     readonly = pytest.mark.readonly
 
     # Repository Location marks
@@ -478,6 +501,14 @@ class GraphQLContextVariant:
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
             test_id="sqlite_with_default_run_launcher_in_process_env",
+        )
+
+    @staticmethod
+    def sqlite_with_queued_run_coordinator_managed_grpc_env():
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_queued_run_coordinator(),
+            EnvironmentManagers.managed_grpc(),
+            test_id="sqlite_with_queued_run_coordinator_managed_grpc_env",
         )
 
     @staticmethod
@@ -630,6 +661,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
+            GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_in_process_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),

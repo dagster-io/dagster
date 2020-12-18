@@ -53,11 +53,11 @@ def _force_mark_as_canceled(graphene_info, run_id):
             "computational resources created by the run may not have been fully cleaned up."
         )
         instance.report_run_canceled(reloaded_run, message=message)
-        reloaded_run = graphene_info.schema.type_named("PipelineRun")(
-            instance.get_run_by_id(run_id)
-        )
+        reloaded_run = instance.get_run_by_id(run_id)
 
-    return graphene_info.schema.type_named("TerminatePipelineExecutionSuccess")(reloaded_run)
+    return graphene_info.schema.type_named("TerminatePipelineExecutionSuccess")(
+        graphene_info.schema.type_named("PipelineRun")(reloaded_run)
+    )
 
 
 @capture_dauphin_error
