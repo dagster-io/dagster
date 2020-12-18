@@ -3,6 +3,7 @@ from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.utils import utc_datetime_from_timestamp
 
 from ..utils import (
     create_pg_connection,
@@ -92,7 +93,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             conn.execute(
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)
                 .values(  # pylint: disable=no-value-for-parameter
-                    timestamp=daemon_heartbeat.timestamp,
+                    timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type.value,
                     daemon_id=daemon_heartbeat.daemon_id,
                     info=daemon_heartbeat.info,
@@ -100,7 +101,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 .on_conflict_do_update(
                     index_elements=[DaemonHeartbeatsTable.c.daemon_type],
                     set_={
-                        "timestamp": daemon_heartbeat.timestamp,
+                        "timestamp": utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         "daemon_id": daemon_heartbeat.daemon_id,
                         "info": daemon_heartbeat.info,
                     },

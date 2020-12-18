@@ -6,7 +6,11 @@ import click
 import pendulum
 from dagster import __version__
 from dagster.core.instance import DagsterInstance
-from dagster.daemon.controller import DagsterDaemonController, all_daemons_healthy
+from dagster.daemon.controller import (
+    DagsterDaemonController,
+    all_daemons_healthy,
+    debug_daemon_heartbeats,
+)
 
 
 @click.command(
@@ -43,11 +47,25 @@ def wipe_command():
         click.echo("Daemon heartbeats wiped")
 
 
+@click.command(
+    name="heartbeat", help="Read and write a heartbeat",
+)
+def debug_heartbeat_command():
+    with DagsterInstance.get() as instance:
+        debug_daemon_heartbeats(instance)
+
+
+@click.group(commands={"heartbeat": debug_heartbeat_command})
+def debug_group():
+    "Daemon debugging utils"
+
+
 def create_dagster_daemon_cli():
     commands = {
         "run": run_command,
         "health-check": health_check_command,
         "wipe": wipe_command,
+        "debug": debug_group,
     }
 
     @click.group(commands=commands)

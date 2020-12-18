@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 
+import pendulum
 import six
 import sqlalchemy as db
 from dagster import check
@@ -20,7 +21,7 @@ from dagster.core.storage.tags import ROOT_RUN_ID_TAG
 from dagster.daemon.types import DaemonHeartbeat, DaemonType
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
-from dagster.utils import merge_dicts
+from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
@@ -541,7 +542,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             try:
                 conn.execute(
                     DaemonHeartbeatsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        timestamp=daemon_heartbeat.timestamp,
+                        timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_type=daemon_heartbeat.daemon_type.value,
                         daemon_id=daemon_heartbeat.daemon_id,
                         info=daemon_heartbeat.info,
@@ -554,7 +555,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                         DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type.value
                     )
                     .values(  # pylint: disable=no-value-for-parameter
-                        timestamp=daemon_heartbeat.timestamp,
+                        timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
                         info=daemon_heartbeat.info,
                     )
@@ -566,7 +567,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
             return {
                 DaemonType(row.daemon_type): DaemonHeartbeat(
-                    timestamp=row.timestamp,
+                    timestamp=pendulum.instance(row.timestamp).float_timestamp,
                     daemon_type=DaemonType(row.daemon_type),
                     daemon_id=row.daemon_id,
                     info=row.info,

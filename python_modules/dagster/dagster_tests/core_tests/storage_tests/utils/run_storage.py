@@ -895,7 +895,7 @@ class TestRunStorage:
 
         # test insert
         added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000),
+            timestamp=pendulum.from_timestamp(1000).float_timestamp,
             daemon_type=DaemonType.SENSOR,
             daemon_id=None,
             info=None,
@@ -907,7 +907,7 @@ class TestRunStorage:
 
         # test update
         second_added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(2000),
+            timestamp=pendulum.from_timestamp(2000).float_timestamp,
             daemon_type=DaemonType.SENSOR,
             daemon_id=None,
             info=None,
@@ -921,7 +921,7 @@ class TestRunStorage:
         self._skip_in_memory(storage)
 
         added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000),
+            timestamp=pendulum.from_timestamp(1000).float_timestamp,
             daemon_type=DaemonType.SENSOR,
             daemon_id=None,
             info=None,

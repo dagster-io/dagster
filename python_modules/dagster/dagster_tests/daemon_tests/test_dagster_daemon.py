@@ -133,21 +133,21 @@ def test_healthy():
             },
         }
     ) as instance:
-        init_time = pendulum.now("UTC")
-        beyond_tolerated_time = init_time + datetime.timedelta(seconds=100)
+        init_time = pendulum.now("UTC").float_timestamp
+        beyond_tolerated_time = init_time + 100
 
         controller = DagsterDaemonController(instance)
-        assert not all_daemons_healthy(instance, curr_time=init_time)
+        assert not all_daemons_healthy(instance, curr_time_seconds=init_time)
 
         controller.run_iteration(init_time)
-        assert all_daemons_healthy(instance, curr_time=init_time)
+        assert all_daemons_healthy(instance, curr_time_seconds=init_time)
 
-        assert not all_daemons_healthy(instance, curr_time=beyond_tolerated_time)
+        assert not all_daemons_healthy(instance, curr_time_seconds=beyond_tolerated_time)
 
 
 def test_healthy_with_different_daemons():
     with instance_for_test() as instance:
-        init_time = pendulum.now("UTC")
+        init_time = pendulum.now("UTC").float_timestamp
         controller = DagsterDaemonController(instance)
         controller.run_iteration(init_time)
 
@@ -159,4 +159,4 @@ def test_healthy_with_different_daemons():
             },
         }
     ) as instance:
-        assert not all_daemons_healthy(instance, curr_time=init_time)
+        assert not all_daemons_healthy(instance, curr_time_seconds=init_time)

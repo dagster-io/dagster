@@ -53,7 +53,7 @@ DaemonHeartbeatsTable = db.Table(
     RunStorageSqlMetadata,
     db.Column("daemon_type", db.String(255), unique=True, nullable=False),
     db.Column("daemon_id", db.String(255)),
-    db.Column("timestamp", db.DateTime, nullable=False),
+    db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
     db.Column("info", db.String),
 )
 
