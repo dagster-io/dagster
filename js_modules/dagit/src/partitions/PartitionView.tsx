@@ -40,12 +40,15 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     decode: (qs) => Number(qs.pageSize || 30),
   });
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
+  const [blockDialog, setBlockDialog] = React.useState(false);
   const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
     partitionSet.name,
     pageSize,
     runTags,
     repoAddress,
   );
+
+  const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
   const allStepKeys = {};
   partitions.forEach((partition) => {
@@ -62,6 +65,8 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   return (
     <div>
       <Dialog
+        canEscapeKeyClose={!blockDialog}
+        canOutsideClickClose={!blockDialog}
         onClose={() => setShowBackfillSetup(false)}
         style={{width: 800, background: Colors.WHITE}}
         title={`Launch ${partitionSet.name} backfill`}
@@ -76,6 +81,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
               setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
               setShowBackfillSetup(false);
             }}
+            onSubmit={onSubmit}
             repoAddress={repoAddress}
           />
         )}

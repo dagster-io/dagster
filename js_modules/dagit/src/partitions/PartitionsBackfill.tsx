@@ -33,6 +33,7 @@ import {
 import {LaunchPartitionBackfill} from 'src/partitions/types/LaunchPartitionBackfill';
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -116,8 +117,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   partitionSetName: string;
   pipelineName: string;
   onLaunch?: (backfillId: string, stepQuery: string) => void;
+  onSubmit: () => void;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, pipelineName, onLaunch, repoAddress}) => {
+}> = ({partitionSetName, pipelineName, onLaunch, onSubmit, repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
@@ -505,6 +507,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             }
             fromFailure={options.fromFailure}
             tags={tags}
+            onSubmit={onSubmit}
             onSuccess={onSuccess}
             onError={onError}
             repoAddress={repoAddress}
@@ -523,6 +526,7 @@ const LaunchBackfillButton: React.FC<{
   tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
   onError: (data: LaunchPartitionBackfill | null | undefined) => void;
+  onSubmit: () => void;
   repoAddress: RepoAddress;
 }> = ({
   partitionSetName,
@@ -532,18 +536,24 @@ const LaunchBackfillButton: React.FC<{
   tags,
   onSuccess,
   onError,
+  onSubmit,
   repoAddress,
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill] = useMutation<LaunchPartitionBackfill>(LAUNCH_PARTITION_BACKFILL_MUTATION);
+  const [launchBackfill, {loading}] = useMutation<LaunchPartitionBackfill>(
+    LAUNCH_PARTITION_BACKFILL_MUTATION,
+  );
+
   React.useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
     };
   }, [onSuccess]);
+
   const onLaunch = async () => {
+    onSubmit();
     const {data} = await launchBackfill({
       variables: {
         backfillParams: {
@@ -570,39 +580,41 @@ const LaunchBackfillButton: React.FC<{
     }
   };
 
-  const title = partitionNames.length
-    ? partitionNames.length === 1
-      ? 'Launch 1 run'
-      : `Launch ${partitionNames.length} runs`
-    : 'Launch';
-  const subtitle = reexecutionSteps
-    ? reexecutionSteps.length === 1
-      ? ' (1 selected step)'
-      : ` (${reexecutionSteps.length} selected steps)`
-    : '';
+  const count = partitionNames.length;
+  const reexecutionCount = reexecutionSteps?.length;
+
+  const title = () => {
+    if (loading) {
+      return `Submitting ${count} ${count === 1 ? 'run' : 'runs'}…`;
+    }
+
+    if (count) {
+      return `Submit ${count} ${count === 1 ? 'run' : 'runs'}`;
+    }
+
+    return 'Select partitions to submit';
+  };
+
+  const subtitle = () => {
+    return !loading && reexecutionCount
+      ? `(${reexecutionCount} selected ${reexecutionCount === 1 ? 'step' : 'steps'})`
+      : '';
+  };
+
+  const buttonTitle = [title(), subtitle()].join(' ');
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        marginTop: 10,
-      }}
-    >
+    <Box flex={{justifyContent: 'flex-end', alignItems: 'center'}} margin={{top: 12}}>
       <LaunchButton
+        runCount={count}
         config={{
-          title: `${title}${subtitle}`,
+          title: buttonTitle,
           icon: 'send-to',
-          disabled: !partitionNames.length,
-          tooltip: partitionNames.length
-            ? partitionNames.length === 1
-              ? 'Launch 1 run'
-              : `Launch ${partitionNames.length} runs`
-            : 'Select runs to launch',
+          disabled: !count || loading,
           onClick: onLaunch,
         }}
       />
-    </div>
+    </Box>
   );
 };
 

@@ -40,6 +40,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
   return (
     <div style={{marginRight: 20}}>
       <LaunchButton
+        runCount={1}
         config={{
           icon: 'send-to',
           onClick: onLaunch,

@@ -31,13 +31,13 @@ enum LaunchButtonStatus {
   Disabled = 'disabled',
 }
 
-function useLaunchButtonCommonState({disabled}: {disabled: boolean}) {
+function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; disabled: boolean}) {
   const websocketStatus = React.useContext(WebsocketStatusContext);
   const [starting, setStarting] = React.useState(false);
 
   const onConfigSelected = async (option: LaunchButtonConfiguration) => {
     setStarting(true);
-    await option.onClick();
+    option.onClick();
     setTimeout(() => {
       setStarting(false);
     }, 300);
@@ -58,8 +58,7 @@ function useLaunchButtonCommonState({disabled}: {disabled: boolean}) {
   if (starting) {
     status = LaunchButtonStatus.Starting;
     forced = {
-      title: 'Launching…',
-      tooltip: 'Pipeline execution is in progress…',
+      title: runCount === 1 ? 'Submitting run…' : `Submitting ${runCount} runs…`,
       disabled: true,
       icon: 'dagster-spinner',
     };
@@ -75,10 +74,12 @@ function useLaunchButtonCommonState({disabled}: {disabled: boolean}) {
 interface LaunchButtonProps {
   small?: boolean;
   config: LaunchButtonConfiguration;
+  runCount: number;
 }
 
-export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({config, small}) => {
+export const LaunchButton = ({config, runCount, small}: LaunchButtonProps) => {
   const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
+    runCount,
     disabled: config.disabled,
   });
   const onClick = () => {
@@ -109,9 +110,10 @@ interface LaunchButtonDropdownProps {
   disabled?: boolean;
   tooltip?: string;
   icon?: IconName | undefined;
+  runCount: number;
 }
 
-export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownProps> = ({
+export const LaunchButtonDropdown = ({
   title,
   small,
   primary,
@@ -119,9 +121,11 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
   disabled,
   icon,
   tooltip,
-}) => {
+  runCount,
+}: LaunchButtonDropdownProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
+    runCount,
     disabled: disabled || options.every((d) => d.disabled),
   });
 
@@ -211,7 +215,6 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
 
   return (
     <Tooltip
-      hoverOpenDelay={300}
       position={Position.LEFT}
       openOnTargetFocus={false}
       targetTagName="div"
