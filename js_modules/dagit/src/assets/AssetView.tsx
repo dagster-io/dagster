@@ -2,9 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import {Button, Tab, Tabs, ButtonGroup, Colors} from '@blueprintjs/core';
 import {uniq, flatMap} from 'lodash';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
-import {Header} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {Timestamp} from 'src/TimeComponents';
 import {AssetMaterializationMatrix} from 'src/assets/AssetMaterializationMatrix';
 import {AssetMaterializationTable} from 'src/assets/AssetMaterializationTable';
 import {AssetValueGraph} from 'src/assets/AssetValueGraph';
@@ -17,6 +18,11 @@ import {
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {MetadataEntry} from 'src/runs/MetadataEntry';
+import {titleForRun} from 'src/runs/RunUtils';
+import {Group} from 'src/ui/Group';
+import {MetadataTable} from 'src/ui/MetadataTable';
+import {Heading, Subheading} from 'src/ui/Text';
+import {FontFamily} from 'src/ui/styles';
 
 interface AssetKey {
   path: string[];
@@ -74,16 +80,48 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
     Object.keys(graphDataByMetadataLabel).slice(0, 4),
   );
 
+  const latest = asset.assetMaterializations[0];
+  const latestEvent = latest && latest.materializationEvent;
+
   return (
     <div>
-      <Header>Last Materialization Event</Header>
-      <AssetMaterializationTable
-        materializations={[asset.assetMaterializations[0]]}
-        isPartitioned={isPartitioned}
-      />
+      <Group direction="column" spacing={12}>
+        <Heading>{asset.key.path[asset.key.path.length - 1]}</Heading>
+        <MetadataTable
+          rows={[
+            latest.partition
+              ? {
+                  key: 'Latest partition',
+                  value: latest ? latest.partition : 'No materialization events',
+                }
+              : undefined,
+            {
+              key: 'Latest run',
+              value: latest ? (
+                <>
+                  <Link
+                    style={{fontFamily: FontFamily.monospace}}
+                    to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
+                  >
+                    {titleForRun({runId: latestEvent.runId})}
+                  </Link>
+                  <span> at </span>
+                  <Timestamp ms={Number(latestEvent.timestamp)} />
+                </>
+              ) : (
+                'No materialization events'
+              ),
+            },
+            ...latestEvent?.materialization.metadataEntries.map((entry) => ({
+              key: entry.label,
+              value: <MetadataEntry entry={entry} />,
+            })),
+          ].filter(Boolean)}
+        />
+      </Group>
 
       <div style={{display: 'flex', marginTop: 20}}>
-        <Header>Materializations over Time</Header>
+        <Subheading>Materializations over Time</Subheading>
         <div style={{flex: 1}} />
         <ButtonGroup>
           <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>

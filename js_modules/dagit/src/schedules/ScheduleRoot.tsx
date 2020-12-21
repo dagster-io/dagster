@@ -16,7 +16,7 @@ import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from 'src/schedules/types/ScheduleRootQuery';
-import {Group} from 'src/ui/Group';
+import {Page} from 'src/ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -86,7 +86,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
         return (
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
-            <Group direction="column" spacing={24} padding={{vertical: 20, horizontal: 24}}>
+            <Page>
               <ScheduleDetails
                 repoAddress={repoAddress}
                 schedule={scheduleOrError}
@@ -100,7 +100,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                 schedule={scheduleOrError}
                 runTab={runTab}
               />
-            </Group>
+            </Page>
           </ScrollContainer>
         );
       }}

@@ -130,7 +130,7 @@ const JobTickHistory = ({
   };
 
   return (
-    <Group direction="column" spacing={12}>
+    <Group direction="column" spacing={12} margin={{vertical: 20}}>
       <Subheading>Tick History</Subheading>
       <ButtonGroup>
         <StatusButton status={JobTickStatus.SUCCESS} />

@@ -13,6 +13,7 @@ import {SensorPreviousRuns} from 'src/sensors/SensorPreviousRuns';
 import {SensorTimeline} from 'src/sensors/SensorTimeline';
 import {SensorRootQuery} from 'src/sensors/types/SensorRootQuery';
 import {Group} from 'src/ui/Group';
+import {Page} from 'src/ui/Page';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -78,28 +79,30 @@ export const SensorRoot: React.FC<{
         return (
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
-            <Group direction="column" spacing={24} padding={{vertical: 20, horizontal: 24}}>
-              <SensorDetails
-                repoAddress={repoAddress}
-                sensor={sensorOrError}
-                daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                countdownDuration={INTERVAL}
-                countdownStatus={countdownStatus}
-                onRefresh={() => onRefresh()}
-              />
-              <SensorTimeline
-                repoAddress={repoAddress}
-                sensor={sensorOrError}
-                daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                onSelectRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-              />
-              <SensorTickHistory repoAddress={repoAddress} sensor={sensorOrError} />
-              <SensorPreviousRuns
-                repoAddress={repoAddress}
-                sensor={sensorOrError}
-                highlightedIds={selectedRunIds}
-              />
-            </Group>
+            <Page>
+              <Group direction="column" spacing={24}>
+                <SensorDetails
+                  repoAddress={repoAddress}
+                  sensor={sensorOrError}
+                  daemonHealth={instance.daemonHealth.daemonStatus.healthy}
+                  countdownDuration={INTERVAL}
+                  countdownStatus={countdownStatus}
+                  onRefresh={() => onRefresh()}
+                />
+                <SensorTimeline
+                  repoAddress={repoAddress}
+                  sensor={sensorOrError}
+                  daemonHealth={instance.daemonHealth.daemonStatus.healthy}
+                  onSelectRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                />
+                <SensorTickHistory repoAddress={repoAddress} sensor={sensorOrError} />
+                <SensorPreviousRuns
+                  repoAddress={repoAddress}
+                  sensor={sensorOrError}
+                  highlightedIds={selectedRunIds}
+                />
+              </Group>
+            </Page>
           </ScrollContainer>
         );
       }}
