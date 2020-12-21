@@ -1,0 +1,1116 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.0
+-- Dumped by pg_dump version 13.0
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    info character varying
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key character varying,
+    asset_key character varying
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: normalized_cereals; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.normalized_cereals (
+    id integer NOT NULL,
+    name character varying,
+    mfr character varying,
+    type character varying,
+    calories double precision,
+    protein double precision,
+    fat double precision,
+    sodium double precision,
+    fiber double precision,
+    carbo double precision,
+    sugars double precision,
+    potass double precision,
+    vitamins double precision,
+    shelf double precision,
+    weight double precision,
+    cups double precision,
+    rating double precision
+);
+
+
+ALTER TABLE public.normalized_cereals OWNER TO test;
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.normalized_cereals_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.normalized_cereals_id_seq OWNER TO test;
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.normalized_cereals_id_seq OWNED BY public.normalized_cereals.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key character varying,
+    value character varying
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name character varying,
+    status character varying(63),
+    run_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: schedule_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedule_ticks (
+    id integer NOT NULL,
+    schedule_origin_id character varying(255),
+    status character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedule_ticks OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedule_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedule_ticks_id_seq OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedule_ticks_id_seq OWNED BY public.schedule_ticks.id;
+
+
+--
+-- Name: schedules; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedules (
+    id integer NOT NULL,
+    schedule_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    schedule_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedules OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedules_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedules_id_seq OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedules_id_seq OWNED BY public.schedules.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: normalized_cereals id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.normalized_cereals ALTER COLUMN id SET DEFAULT nextval('public.normalized_cereals_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: schedule_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks ALTER COLUMN id SET DEFAULT nextval('public.schedule_ticks_id_seq'::regclass);
+
+
+--
+-- Name: schedules id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules ALTER COLUMN id SET DEFAULT nextval('public.schedules_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+c9159e740d7e
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, create_timestamp) FROM stdin;
+1	["cost_db_table"]	2020-12-22 19:55:24.427812
+2	["traffic_db_table"]	2020-12-22 19:55:33.700015
+3	["dashboards", "cost_dashboard"]	2020-12-22 19:55:34.269442
+4	["dashboards", "traffic_dashboard"]	2020-12-22 19:56:39.317239
+5	["model"]	2020-12-22 19:57:44.357557
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", info) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key) FROM stdin;
+1624	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["cost_db_table"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 7000.0}, "label": "persist_costs"}], "partition": "2020-12-08"}}, "event_type_value": "STEP_MATERIALIZATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Materialized value cost_db_table.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - STEP_MATERIALIZATION - Materialized value cost_db_table.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666924.419132, "user_message": "Materialized value cost_db_table."}	STEP_MATERIALIZATION	2020-12-22 19:55:24.419132	persist_costs	["cost_db_table"]
+1656	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 523.1808519747574}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Finished execution of step \\"build_traffic_dashboard\\" in 523ms.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - STEP_SUCCESS - Finished execution of step \\"build_traffic_dashboard\\" in 523ms.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666999.33118, "user_message": "Finished execution of step \\"build_traffic_dashboard\\" in 523ms."}	STEP_SUCCESS	2020-12-22 19:56:39.33118	build_traffic_dashboard	\N
+1625	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "persist_costs"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666924.429594, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:55:24.429594	persist_costs	\N
+1657	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "train_model", "solid_definition": "base_one_input", "step_key": "train_model"}, "message": "Started execution of step \\"train_model\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_model", "parent": null}, "step_key": "train_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - train_model - STEP_START - Started execution of step \\"train_model\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "train_model", "timestamp": 1608666999.3543732, "user_message": "Started execution of step \\"train_model\\"."}	STEP_START	2020-12-22 19:56:39.354373	train_model	\N
+1626	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_costs/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_costs/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666924.435771, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:24.435771	persist_costs	\N
+1658	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_model/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_model/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "train_model", "solid_definition": "base_one_input", "step_key": "train_model"}, "message": "Retrieved intermediate object for input _ in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_model", "parent": null}, "step_key": "train_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - train_model - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _ in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "train_model", "timestamp": 1608666999.362815, "user_message": "Retrieved intermediate object for input _ in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:56:39.362815	train_model	\N
+1627	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 7028.4497769898735}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Finished execution of step \\"persist_costs\\" in 7.03s.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - STEP_SUCCESS - Finished execution of step \\"persist_costs\\" in 7.03s.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666924.4421299, "user_message": "Finished execution of step \\"persist_costs\\" in 7.03s."}	STEP_SUCCESS	2020-12-22 19:55:24.44213	persist_costs	\N
+1659	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "train_model", "solid_definition": "base_one_input", "step_key": "train_model"}, "message": "Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_model", "parent": null}, "step_key": "train_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - train_model - STEP_INPUT - Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "train_model", "timestamp": 1608666999.36916, "user_message": "Got input \\"_\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:56:39.36916	train_model	\N
+1628	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Started execution of step \\"persist_traffic\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - STEP_START - Started execution of step \\"persist_traffic\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666924.466048, "user_message": "Started execution of step \\"persist_traffic\\"."}	STEP_START	2020-12-22 19:55:24.466048	persist_traffic	\N
+1660	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "train_model"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "train_model", "solid_definition": "base_one_input", "step_key": "train_model"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_model", "parent": null}, "step_key": "train_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - train_model - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "train_model", "timestamp": 1608667063.781069, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:57:43.781069	train_model	\N
+1629	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_traffic/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_traffic/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Retrieved intermediate object for input _ in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _ in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666924.474242, "user_message": "Retrieved intermediate object for input _ in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:24.474242	persist_traffic	\N
+1661	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/train_model/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/train_model/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "train_model", "solid_definition": "base_one_input", "step_key": "train_model"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_model", "parent": null}, "step_key": "train_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - train_model - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "train_model", "timestamp": 1608667063.791948, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:57:43.791948	train_model	\N
+1630	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - STEP_INPUT - Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666924.481046, "user_message": "Got input \\"_\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:55:24.481046	persist_traffic	\N
+1662	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 64420.483894995414}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "train_model", "solid_definition": "base_one_input", "step_key": "train_model"}, "message": "Finished execution of step \\"train_model\\" in 1m4s.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_model", "parent": null}, "step_key": "train_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - train_model - STEP_SUCCESS - Finished execution of step \\"train_model\\" in 1m4s.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "train_model", "timestamp": 1608667063.797806, "user_message": "Finished execution of step \\"train_model\\" in 1m4s."}	STEP_SUCCESS	2020-12-22 19:57:43.797806	train_model	\N
+1631	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["traffic_db_table"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 9200.0}, "label": "persist_traffic"}], "partition": "2020-12-08"}}, "event_type_value": "STEP_MATERIALIZATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Materialized value traffic_db_table.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - STEP_MATERIALIZATION - Materialized value traffic_db_table.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666933.6923678, "user_message": "Materialized value traffic_db_table."}	STEP_MATERIALIZATION	2020-12-22 19:55:33.692368	persist_traffic	["traffic_db_table"]
+1663	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Started execution of step \\"persist_model\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - STEP_START - Started execution of step \\"persist_model\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667063.82181, "user_message": "Started execution of step \\"persist_model\\"."}	STEP_START	2020-12-22 19:57:43.82181	persist_model	\N
+1632	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "persist_traffic"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666933.7016058, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:55:33.701606	persist_traffic	\N
+1664	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/train_model/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/train_model/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Retrieved intermediate object for input _ in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _ in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667063.829855, "user_message": "Retrieved intermediate object for input _ in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:57:43.829855	persist_model	\N
+1633	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_traffic/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_traffic/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666933.707916, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:33.707916	persist_traffic	\N
+1665	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - STEP_INPUT - Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667063.837975, "user_message": "Got input \\"_\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:57:43.837975	persist_model	\N
+1634	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 9227.311188005842}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_traffic", "solid_definition": "base_one_input", "step_key": "persist_traffic"}, "message": "Finished execution of step \\"persist_traffic\\" in 9.23s.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_traffic", "parent": null}, "step_key": "persist_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_traffic - STEP_SUCCESS - Finished execution of step \\"persist_traffic\\" in 9.23s.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_traffic", "timestamp": 1608666933.714611, "user_message": "Finished execution of step \\"persist_traffic\\" in 9.23s."}	STEP_SUCCESS	2020-12-22 19:55:33.714611	persist_traffic	\N
+1666	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["model"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"cost": 7000, "traffic": 9200}}, "label": "persist_model"}], "partition": "2020-12-08"}}, "event_type_value": "STEP_MATERIALIZATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Materialized value model.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - STEP_MATERIALIZATION - Materialized value model.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667064.350898, "user_message": "Materialized value model."}	STEP_MATERIALIZATION	2020-12-22 19:57:44.350898	persist_model	["model"]
+1635	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Started execution of step \\"build_cost_dashboard\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - STEP_START - Started execution of step \\"build_cost_dashboard\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666933.739378, "user_message": "Started execution of step \\"build_cost_dashboard\\"."}	STEP_START	2020-12-22 19:55:33.739378	build_cost_dashboard	\N
+1667	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "persist_model"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667064.359076, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:57:44.359076	persist_model	\N
+1636	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_costs/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_costs/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Retrieved intermediate object for input _ in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _ in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666933.7482061, "user_message": "Retrieved intermediate object for input _ in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:33.748206	build_cost_dashboard	\N
+1668	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_model/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_model/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667064.365171, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:57:44.365171	persist_model	\N
+1637	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - STEP_INPUT - Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666933.754719, "user_message": "Got input \\"_\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:55:33.754719	build_cost_dashboard	\N
+1669	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 524.0851900016423}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_model", "solid_definition": "base_one_input", "step_key": "persist_model"}, "message": "Finished execution of step \\"persist_model\\" in 524ms.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_model", "parent": null}, "step_key": "persist_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_model - STEP_SUCCESS - Finished execution of step \\"persist_model\\" in 524ms.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_model", "timestamp": 1608667064.370995, "user_message": "Finished execution of step \\"persist_model\\" in 524ms."}	STEP_SUCCESS	2020-12-22 19:57:44.370995	persist_model	\N
+1638	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["dashboards", "cost_dashboard"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "UrlMetadataEntryData", "url": "http://docs.dagster.io/cost"}, "label": "build_cost_dashboard"}], "partition": "2020-12-08"}}, "event_type_value": "STEP_MATERIALIZATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Materialized value dashboards cost_dashboard.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - STEP_MATERIALIZATION - Materialized value dashboards cost_dashboard.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666934.26312, "user_message": "Materialized value dashboards cost_dashboard."}	STEP_MATERIALIZATION	2020-12-22 19:55:34.26312	build_cost_dashboard	["dashboards", "cost_dashboard"]
+1670	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18688"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['ingest_costs', 'ingest_traffic', 'persist_costs', 'persist_traffic', 'build_cost_dashboard', 'build_model', 'build_traffic_dashboard', 'train_model', 'persist_model']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 18688) in 2m43s", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ENGINE_EVENT - Finished steps in process (pid: 18688) in 2m43s", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608667064.381969, "user_message": "Finished steps in process (pid: 18688) in 2m43s"}	ENGINE_EVENT	2020-12-22 19:57:44.381969	\N	\N
+1639	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "build_cost_dashboard"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666934.270924, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:55:34.270924	build_cost_dashboard	\N
+1607	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_STARTING", "logging_tags": {}, "message": null, "pid": null, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608666898.986248, "user_message": ""}	PIPELINE_STARTING	2020-12-22 19:54:58.986248	\N	\N
+1671	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of pipeline \\"longitudinal_pipeline\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - PIPELINE_SUCCESS - Finished execution of pipeline \\"longitudinal_pipeline\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608667064.387896, "user_message": "Finished execution of pipeline \\"longitudinal_pipeline\\"."}	PIPELINE_SUCCESS	2020-12-22 19:57:44.387896	\N	\N
+1640	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_cost_dashboard/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_cost_dashboard/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666934.277407, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:34.277407	build_cost_dashboard	\N
+1608	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18688"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for pipeline (pid: 18688).", "pid": null, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for pipeline (pid: 18688).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608666900.123899, "user_message": "Started process for pipeline (pid: 18688)."}	ENGINE_EVENT	2020-12-22 19:55:00.123899	\N	\N
+1672	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for pipeline exited (pid: 18688).", "pid": null, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for pipeline exited (pid: 18688).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608667064.406528, "user_message": "Process for pipeline exited (pid: 18688)."}	ENGINE_EVENT	2020-12-22 19:57:44.406528	\N	\N
+1641	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 523.1132539920509}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_cost_dashboard", "solid_definition": "base_one_input", "step_key": "build_cost_dashboard"}, "message": "Finished execution of step \\"build_cost_dashboard\\" in 523ms.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_cost_dashboard", "parent": null}, "step_key": "build_cost_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_cost_dashboard - STEP_SUCCESS - Finished execution of step \\"build_cost_dashboard\\" in 523ms.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_cost_dashboard", "timestamp": 1608666934.2837, "user_message": "Finished execution of step \\"build_cost_dashboard\\" in 523ms."}	STEP_SUCCESS	2020-12-22 19:55:34.2837	build_cost_dashboard	\N
+1609	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [object_manager].", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ENGINE_EVENT - Starting initialization of resources [object_manager].", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608666901.041621, "user_message": "Starting initialization of resources [object_manager]."}	ENGINE_EVENT	2020-12-22 19:55:01.041621	\N	\N
+1642	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Started execution of step \\"build_model\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - STEP_START - Started execution of step \\"build_model\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666934.306417, "user_message": "Started execution of step \\"build_model\\"."}	STEP_START	2020-12-22 19:55:34.306417	build_model	\N
+1610	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.01ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.asset_store", "name": "InMemoryAssetStore"}, "label": "object_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [object_manager].", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ENGINE_EVENT - Finished initialization of resources [object_manager].", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608666901.049406, "user_message": "Finished initialization of resources [object_manager]."}	ENGINE_EVENT	2020-12-22 19:55:01.049406	\N	\N
+1643	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_costs/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_costs/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_a", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Retrieved intermediate object for input _a in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _a in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666934.3161442, "user_message": "Retrieved intermediate object for input _a in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:34.316144	build_model	\N
+1611	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"longitudinal_pipeline\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - PIPELINE_START - Started execution of pipeline \\"longitudinal_pipeline\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608666901.056614, "user_message": "Started execution of pipeline \\"longitudinal_pipeline\\"."}	PIPELINE_START	2020-12-22 19:55:01.056614	\N	\N
+1644	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_traffic/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_traffic/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_b", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Retrieved intermediate object for input _b in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _b in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666934.322638, "user_message": "Retrieved intermediate object for input _b in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:34.322638	build_model	\N
+1612	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18688"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['ingest_costs', 'ingest_traffic', 'persist_costs', 'persist_traffic', 'build_cost_dashboard', 'build_model', 'build_traffic_dashboard', 'train_model', 'persist_model']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 18688)", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ENGINE_EVENT - Executing steps in process (pid: 18688)", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": null, "timestamp": 1608666901.073556, "user_message": "Executing steps in process (pid: 18688)"}	ENGINE_EVENT	2020-12-22 19:55:01.073556	\N	\N
+1645	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_a", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_a", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Got input \\"_a\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - STEP_INPUT - Got input \\"_a\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666934.3301919, "user_message": "Got input \\"_a\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:55:34.330192	build_model	\N
+1613	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_costs", "solid_definition": "base_no_input", "step_key": "ingest_costs"}, "message": "Started execution of step \\"ingest_costs\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_costs", "parent": null}, "step_key": "ingest_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_costs - STEP_START - Started execution of step \\"ingest_costs\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_costs", "timestamp": 1608666901.095466, "user_message": "Started execution of step \\"ingest_costs\\"."}	STEP_START	2020-12-22 19:55:01.095466	ingest_costs	\N
+1646	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_b", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_b", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Got input \\"_b\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - STEP_INPUT - Got input \\"_b\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666934.336967, "user_message": "Got input \\"_b\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:55:34.336967	build_model	\N
+1614	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "ingest_costs"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_costs", "solid_definition": "base_no_input", "step_key": "ingest_costs"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_costs", "parent": null}, "step_key": "ingest_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_costs - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_costs", "timestamp": 1608666908.10767, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:55:08.10767	ingest_costs	\N
+1647	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "build_model"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666998.749526, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:56:38.749526	build_model	\N
+1615	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_costs/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_costs/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_costs", "solid_definition": "base_no_input", "step_key": "ingest_costs"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_costs", "parent": null}, "step_key": "ingest_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_costs - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_costs", "timestamp": 1608666908.115123, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:08.115123	ingest_costs	\N
+1648	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_model/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_model/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666998.756136, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:56:38.756136	build_model	\N
+1616	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 7018.427522009006}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_costs", "solid_definition": "base_no_input", "step_key": "ingest_costs"}, "message": "Finished execution of step \\"ingest_costs\\" in 7.02s.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_costs", "parent": null}, "step_key": "ingest_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_costs - STEP_SUCCESS - Finished execution of step \\"ingest_costs\\" in 7.02s.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_costs", "timestamp": 1608666908.121127, "user_message": "Finished execution of step \\"ingest_costs\\" in 7.02s."}	STEP_SUCCESS	2020-12-22 19:55:08.121127	ingest_costs	\N
+1649	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 64417.477229988435}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_model", "solid_definition": "base_two_inputs", "step_key": "build_model"}, "message": "Finished execution of step \\"build_model\\" in 1m4s.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_model", "parent": null}, "step_key": "build_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_model - STEP_SUCCESS - Finished execution of step \\"build_model\\" in 1m4s.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_model", "timestamp": 1608666998.762052, "user_message": "Finished execution of step \\"build_model\\" in 1m4s."}	STEP_SUCCESS	2020-12-22 19:56:38.762052	build_model	\N
+1617	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_traffic", "solid_definition": "base_no_input", "step_key": "ingest_traffic"}, "message": "Started execution of step \\"ingest_traffic\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_traffic", "parent": null}, "step_key": "ingest_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_traffic - STEP_START - Started execution of step \\"ingest_traffic\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_traffic", "timestamp": 1608666908.144228, "user_message": "Started execution of step \\"ingest_traffic\\"."}	STEP_START	2020-12-22 19:55:08.144228	ingest_traffic	\N
+1650	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Started execution of step \\"build_traffic_dashboard\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - STEP_START - Started execution of step \\"build_traffic_dashboard\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666998.786407, "user_message": "Started execution of step \\"build_traffic_dashboard\\"."}	STEP_START	2020-12-22 19:56:38.786407	build_traffic_dashboard	\N
+1618	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "ingest_traffic"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_traffic", "solid_definition": "base_no_input", "step_key": "ingest_traffic"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_traffic", "parent": null}, "step_key": "ingest_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_traffic - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_traffic", "timestamp": 1608666917.356471, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:55:17.356471	ingest_traffic	\N
+1651	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_traffic/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/persist_traffic/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Retrieved intermediate object for input _ in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _ in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666998.7951841, "user_message": "Retrieved intermediate object for input _ in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:56:38.795184	build_traffic_dashboard	\N
+1619	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_traffic/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_traffic/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_traffic", "solid_definition": "base_no_input", "step_key": "ingest_traffic"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_traffic", "parent": null}, "step_key": "ingest_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_traffic - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_traffic", "timestamp": 1608666917.363838, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:17.363838	ingest_traffic	\N
+1652	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - STEP_INPUT - Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666998.8017228, "user_message": "Got input \\"_\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:56:38.801723	build_traffic_dashboard	\N
+1620	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 9217.57788900868}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "ingest_traffic", "solid_definition": "base_no_input", "step_key": "ingest_traffic"}, "message": "Finished execution of step \\"ingest_traffic\\" in 9.22s.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_traffic", "parent": null}, "step_key": "ingest_traffic", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - ingest_traffic - STEP_SUCCESS - Finished execution of step \\"ingest_traffic\\" in 9.22s.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "ingest_traffic", "timestamp": 1608666917.3699489, "user_message": "Finished execution of step \\"ingest_traffic\\" in 9.22s."}	STEP_SUCCESS	2020-12-22 19:55:17.369949	ingest_traffic	\N
+1653	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["dashboards", "traffic_dashboard"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "UrlMetadataEntryData", "url": "http://docs.dagster.io/traffic"}, "label": "build_traffic_dashboard"}], "partition": "2020-12-08"}}, "event_type_value": "STEP_MATERIALIZATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Materialized value dashboards traffic_dashboard.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - STEP_MATERIALIZATION - Materialized value dashboards traffic_dashboard.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666999.3111029, "user_message": "Materialized value dashboards traffic_dashboard."}	STEP_MATERIALIZATION	2020-12-22 19:56:39.311103	build_traffic_dashboard	["dashboards", "traffic_dashboard"]
+1621	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Started execution of step \\"persist_costs\\".", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - STEP_START - Started execution of step \\"persist_costs\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666917.3925838, "user_message": "Started execution of step \\"persist_costs\\"."}	STEP_START	2020-12-22 19:55:17.392584	persist_costs	\N
+1654	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "build_traffic_dashboard"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666999.318749, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2020-12-22 19:56:39.318749	build_traffic_dashboard	\N
+1622	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_costs/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/ingest_costs/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "_", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Retrieved intermediate object for input _ in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - OBJECT_STORE_OPERATION - Retrieved intermediate object for input _ in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666917.400604, "user_message": "Retrieved intermediate object for input _ in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:55:17.400604	persist_costs	\N
+1655	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_traffic_dashboard/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/Users/prha/dagster/storage/15d2d9b4-8c36-4c00-a9c5-8b233d673161/intermediates/build_traffic_dashboard/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "build_traffic_dashboard", "solid_definition": "base_one_input", "step_key": "build_traffic_dashboard"}, "message": "Stored intermediate object for output result in filesystem object store using pickle.", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "build_traffic_dashboard", "parent": null}, "step_key": "build_traffic_dashboard", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - build_traffic_dashboard - OBJECT_STORE_OPERATION - Stored intermediate object for output result in filesystem object store using pickle.", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "build_traffic_dashboard", "timestamp": 1608666999.325255, "user_message": "Stored intermediate object for output result in filesystem object store using pickle."}	OBJECT_STORE_OPERATION	2020-12-22 19:56:39.325255	build_traffic_dashboard	\N
+1623	15d2d9b4-8c36-4c00-a9c5-8b233d673161	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "_", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "_", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*", "pipeline": "longitudinal_pipeline", "solid": "persist_costs", "solid_definition": "base_one_input", "step_key": "persist_costs"}, "message": "Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pid": 18688, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "persist_costs", "parent": null}, "step_key": "persist_costs", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 15d2d9b4-8c36-4c00-a9c5-8b233d673161 - 18688 - persist_costs - STEP_INPUT - Got input \\"_\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "step_key": "persist_costs", "timestamp": 1608666917.4073558, "user_message": "Got input \\"_\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2020-12-22 19:55:17.407356	persist_costs	\N
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: normalized_cereals; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.normalized_cereals (id, name, mfr, type, calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating) FROM stdin;
+1	100% Bran	N	C	212.12121212121212	12.121212121212121	3.0303030303030303	393.93939393939394	30.303030303030305	15.151515151515152	18.18181818181818	848.4848484848485	75.75757575757575	3	3.0303030303030303	0.33	68.402973
+2	100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+3	All-Bran	K	C	212.12121212121212	12.121212121212121	3.0303030303030303	787.8787878787879	27.272727272727273	21.21212121212121	15.151515151515152	969.6969696969697	75.75757575757575	3	3.0303030303030303	0.33	59.425505
+4	All-Bran with Extra Fiber	K	C	100	8	0	280	28	16	0	660	50	3	2	0.5	93.704912
+5	Almond Delight	R	C	146.66666666666666	2.6666666666666665	2.6666666666666665	266.66666666666663	1.3333333333333333	18.666666666666664	10.666666666666666	-1.3333333333333333	33.33333333333333	3	1.3333333333333333	0.75	34.384843
+6	Apple Cinnamon Cheerios	G	C	146.66666666666666	2.6666666666666665	2.6666666666666665	240	2	14	13.333333333333332	93.33333333333333	33.33333333333333	1	1.3333333333333333	0.75	29.509541
+7	Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+8	Basic 4	G	C	173.33333333333331	4	2.6666666666666665	280	2.6666666666666665	24	10.666666666666666	133.33333333333331	33.33333333333333	3	1.7733333333333334	0.75	37.038562
+9	Bran Chex	R	C	134.32835820895522	2.9850746268656714	1.4925373134328357	298.5074626865671	5.970149253731343	22.388059701492537	8.955223880597014	186.56716417910445	37.31343283582089	1	1.4925373134328357	0.67	49.120253
+10	Bran Flakes	P	C	134.32835820895522	4.477611940298507	0	313.4328358208955	7.462686567164178	19.402985074626862	7.462686567164178	283.58208955223876	37.31343283582089	3	1.4925373134328357	0.67	53.313813
+11	Cap'n'Crunch	Q	C	160	1.3333333333333333	2.6666666666666665	293.3333333333333	0	16	16	46.666666666666664	33.33333333333333	2	1.3333333333333333	0.75	18.042851
+12	Cheerios	G	C	88	4.800000000000001	1.6	232	1.6	13.600000000000001	0.8	84	20	1	0.8	1.25	50.764999
+13	Cinnamon Toast Crunch	G	C	160	1.3333333333333333	4	280	0	17.333333333333332	12	60	33.33333333333333	2	1.3333333333333333	0.75	19.823573
+14	Clusters	G	C	220	6	4	280	4	26	14	210	50	3	2	0.5	40.400208
+15	Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+16	Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+17	Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+18	Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+19	Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+20	Cracklin' Oat Bran	K	C	220	6	6	280	8	20	14	320	50	3	2	0.5	40.448772
+21	Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+22	Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+23	Crispy Wheat & Raisins	G	C	133.33333333333331	2.6666666666666665	1.3333333333333333	186.66666666666666	2.6666666666666665	14.666666666666666	13.333333333333332	160	33.33333333333333	3	1.3333333333333333	0.75	36.176196
+24	Double Chex	R	C	133.33333333333331	2.6666666666666665	0	253.33333333333331	1.3333333333333333	24	6.666666666666666	106.66666666666666	33.33333333333333	3	1.3333333333333333	0.75	44.330856
+25	Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+26	Frosted Flakes	K	C	146.66666666666666	1.3333333333333333	0	266.66666666666663	1.3333333333333333	18.666666666666664	14.666666666666666	33.33333333333333	33.33333333333333	1	1.3333333333333333	0.75	31.435973
+27	Frosted Mini-Wheats	K	C	125	3.75	0	0	3.75	17.5	8.75	125	31.25	2	1.25	0.8	58.345141
+28	Fruit & Fibre Dates; Walnuts; and Oats	P	C	179.1044776119403	4.477611940298507	2.9850746268656714	238.8059701492537	7.462686567164178	17.91044776119403	14.925373134328357	298.5074626865671	37.31343283582089	3	1.8656716417910446	0.67	40.917047
+29	Fruitful Bran	K	C	179.1044776119403	4.477611940298507	0	358.2089552238806	7.462686567164178	20.8955223880597	17.91044776119403	283.58208955223876	37.31343283582089	3	1.9850746268656716	0.67	41.015492
+30	Fruity Pebbles	P	C	146.66666666666666	1.3333333333333333	1.3333333333333333	180	0	17.333333333333332	16	33.33333333333333	33.33333333333333	2	1.3333333333333333	0.75	28.025765
+31	Golden Crisp	P	C	113.63636363636364	2.272727272727273	0	51.13636363636364	0	12.500000000000002	17.045454545454547	45.45454545454546	28.40909090909091	1	1.1363636363636365	0.88	35.252444
+32	Golden Grahams	G	C	146.66666666666666	1.3333333333333333	1.3333333333333333	373.3333333333333	0	20	12	60	33.33333333333333	2	1.3333333333333333	0.75	23.804043
+33	Grape Nuts Flakes	P	C	113.63636363636364	3.409090909090909	1.1363636363636365	159.0909090909091	3.409090909090909	17.045454545454547	5.6818181818181825	96.5909090909091	28.40909090909091	3	1.1363636363636365	0.88	52.076897
+34	Grape-Nuts	P	C	440	12	0	680	12	68	12	360	100	3	4	0.25	53.371007
+35	Great Grains Pecan	P	C	363.6363636363636	9.09090909090909	9.09090909090909	227.27272727272728	9.09090909090909	39.39393939393939	12.121212121212121	303.030303030303	75.75757575757575	3	3.0303030303030303	0.33	45.811716
+36	Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+37	Honey Nut Cheerios	G	C	146.66666666666666	4	1.3333333333333333	333.3333333333333	2	15.333333333333332	13.333333333333332	120	33.33333333333333	1	1.3333333333333333	0.75	31.072217
+38	Honey-comb	P	C	82.70676691729322	0.7518796992481203	0	135.33834586466165	0	10.526315789473683	8.270676691729323	26.31578947368421	18.796992481203006	1	0.7518796992481203	1.33	28.742414
+39	Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+40	Just Right Fruit & Nut	K	C	186.66666666666666	4	1.3333333333333333	226.66666666666666	2.6666666666666665	26.666666666666664	12	126.66666666666666	133.33333333333331	3	1.7333333333333334	0.75	36.471512
+41	Kix	G	C	73.33333333333333	1.3333333333333333	0.6666666666666666	173.33333333333331	0	14	2	26.666666666666664	16.666666666666664	2	0.6666666666666666	1.5	39.241114
+42	Life	Q	C	149.25373134328356	5.970149253731343	2.9850746268656714	223.88059701492534	2.9850746268656714	17.91044776119403	8.955223880597014	141.79104477611938	37.31343283582089	2	1.4925373134328357	0.67	45.328074
+43	Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+44	Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+45	Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+46	Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+47	Mueslix Crispy Blend	K	C	238.8059701492537	4.477611940298507	2.9850746268656714	223.88059701492534	4.477611940298507	25.373134328358205	19.402985074626862	238.8059701492537	37.31343283582089	3	2.2388059701492535	0.67	30.313351
+48	Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+49	Nut&Honey Crunch	K	C	179.1044776119403	2.9850746268656714	1.4925373134328357	283.58208955223876	0	22.388059701492537	13.432835820895521	59.70149253731343	37.31343283582089	2	1.4925373134328357	0.67	29.924285
+50	Nutri-Grain Almond-Raisin	K	C	208.955223880597	4.477611940298507	2.9850746268656714	328.35820895522386	4.477611940298507	31.343283582089548	10.44776119402985	194.02985074626864	37.31343283582089	3	1.9850746268656716	0.67	40.69232
+51	Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+52	Oatmeal Raisin Crisp	G	C	260	6	4	340	3	27	20	240	50	3	2.5	0.5	30.450843
+53	Post Nat. Raisin Bran	P	C	179.1044776119403	4.477611940298507	1.4925373134328357	298.5074626865671	8.955223880597014	16.417910447761194	20.8955223880597	388.0597014925373	37.31343283582089	3	1.9850746268656716	0.67	37.840594
+54	Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+55	Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+56	Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+57	Quaker Oat Squares	Q	C	200	8	2	270	4	28	12	220	50	3	2	0.5	49.511874
+58	Quaker Oatmeal	Q	H	149.25373134328356	7.462686567164178	2.9850746268656714	0	4.029850746268656	-1.4925373134328357	-1.4925373134328357	164.17910447761193	0	1	1.4925373134328357	0.67	50.828392
+59	Raisin Bran	K	C	160	4	1.3333333333333333	280	6.666666666666666	18.666666666666664	16	320	33.33333333333333	2	1.7733333333333334	0.75	39.259197
+60	Raisin Nut Bran	G	C	200	6	4	280	5	21	16	280	50	3	2	0.5	39.7034
+61	Raisin Squares	K	C	180	4	0	0	4	30	12	220	50	3	2	0.5	55.333142
+62	Rice Chex	R	C	97.34513274336284	0.8849557522123894	0	212.38938053097345	0	20.353982300884958	1.7699115044247788	26.548672566371682	22.123893805309734	1	0.8849557522123894	1.13	41.998933
+63	Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+64	Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+65	Shredded Wheat 'n'Bran	N	C	134.32835820895522	4.477611940298507	0	0	5.970149253731343	28.35820895522388	0	208.955223880597	0	1	1.4925373134328357	0.67	74.472949
+66	Shredded Wheat spoon size	N	C	134.32835820895522	4.477611940298507	0	0	4.477611940298507	29.850746268656714	0	179.1044776119403	0	1	1.4925373134328357	0.67	72.801787
+67	Smacks	K	C	146.66666666666666	2.6666666666666665	1.3333333333333333	93.33333333333333	1.3333333333333333	12	20	53.33333333333333	33.33333333333333	2	1.3333333333333333	0.75	31.230054
+68	Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+69	Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+70	Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+71	Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+72	Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+73	Triples	G	C	146.66666666666666	2.6666666666666665	1.3333333333333333	333.3333333333333	0	28	4	80	33.33333333333333	3	1.3333333333333333	0.75	39.106174
+74	Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+75	Wheat Chex	R	C	149.25373134328356	4.477611940298507	1.4925373134328357	343.2835820895522	4.477611940298507	25.373134328358205	4.477611940298507	171.6417910447761	37.31343283582089	1	1.4925373134328357	0.67	49.787445
+76	Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+77	Wheaties Honey Gold	G	C	146.66666666666666	2.6666666666666665	1.3333333333333333	266.66666666666663	1.3333333333333333	21.333333333333332	10.666666666666666	80	33.33333333333333	1	1.3333333333333333	0.75	36.187559
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+8	15d2d9b4-8c36-4c00-a9c5-8b233d673161	dagster/solid_selection	*
+9	15d2d9b4-8c36-4c00-a9c5-8b233d673161	.dagster/grpc_info	{"host": "localhost", "socket": "/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, status, run_body, create_timestamp, update_timestamp) FROM stdin;
+4	15d2d9b4-8c36-4c00-a9c5-8b233d673161	080905473a698ce74ecaadcf7cc3c91a3db65cb3	longitudinal_pipeline	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "7293e986c3d0c85ea67e6ddfb211bfa85633fe67", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": null, "executable_path": "/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/bin/python3.6", "module_name": "dagster_test.toys.repo", "package_name": null, "python_file": null, "working_directory": null}, "location_name": "dagster_test.toys.repo"}, "repository_name": "toys_repository"}, "pipeline_name": "longitudinal_pipeline"}, "mode": "default", "parent_run_id": null, "pipeline_name": "longitudinal_pipeline", "pipeline_snapshot_id": "080905473a698ce74ecaadcf7cc3c91a3db65cb3", "root_run_id": null, "run_config": {"intermediate_storage": {"filesystem": {}}, "solids": {"build_cost_dashboard": {"config": {"materialization_key_list": ["dashboards", "cost_dashboard"], "materialization_url": "http://docs.dagster.io/cost", "partition": "2020-12-08"}}, "build_model": {"config": {"partition": "2020-12-08", "sleep": 64.4}}, "build_traffic_dashboard": {"config": {"materialization_key_list": ["dashboards", "traffic_dashboard"], "materialization_url": "http://docs.dagster.io/traffic", "partition": "2020-12-08"}}, "ingest_costs": {"config": {"error_rate": 0.024031427430173714, "partition": "2020-12-08", "sleep": 7}}, "ingest_traffic": {"config": {"error_rate": 0.0021663765137202194, "partition": "2020-12-08", "sleep": 9.200000000000001}}, "persist_costs": {"config": {"error_rate": 0.0012147041067183907, "materialization_key": "cost_db_table", "materialization_value": 7000, "partition": "2020-12-08", "sleep": 7}}, "persist_model": {"config": {"materialization_json": {"cost": 7000, "traffic": 9200}, "materialization_key": "model", "partition": "2020-12-08"}}, "persist_traffic": {"config": {"error_rate": 0.007649794903845018, "materialization_key": "traffic_db_table", "materialization_value": 9200, "partition": "2020-12-08", "sleep": 9.200000000000001}}, "train_model": {"config": {"partition": "2020-12-08", "sleep": 64.4}}}}, "run_id": "15d2d9b4-8c36-4c00-a9c5-8b233d673161", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmppw8twsmt\\"}", "dagster/solid_selection": "*"}}	2020-12-22 19:54:58.982397	2020-12-22 11:57:44.40375
+\.
+
+
+--
+-- Data for Name: schedule_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedule_ticks (id, schedule_origin_id, status, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: schedules; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedules (id, schedule_origin_id, repository_origin_id, status, schedule_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+1	080905473a698ce74ecaadcf7cc3c91a3db65cb3	\\x789ced5d6b6fdc3616fd2b83f9dc1a94448a62bfb969b23536b583d85d605107029fb65a8d342b69d2ba45fefb52af794be66846b29c4c80209186babaf7dc73c9cb97f8cfd4f77948d3d4f7a73f4ca61f82b90c8348de46749e3ec6d9f4bbc994c7910a1efc943fca19f5d3fa971f26ff6c3efba628775b145b7f9e86a15fcbc86ffbecc9ff433e15022ea3a72641774ff3428d5c8490294f827916c4912e102dc250df94d162e67fa6e142a6ab9b2a90a158bb7e083ecbc88fe84ce692f3d7e99be5db975741242a250a915b3afc5bff7c7179fddfe9175d36e534a4895f3d52bd23d3a5fc394de82cb7ab7e795efc3249e8d3c5ed239dcb0b680909a42d30c308d91059c04248002628f3b0ed7057492e85c30ec763fa3e48b349ac269d5ed709c9ea5e0d64c7f71a21fff1e3e541d8ff363d50914f6b9eca92207a38de03a598d321bb94d71762e50b0a247e8ce3b00302ddac2ddfb6b277796960e7ed9bcbf7971ff718baefa9dba244f1dc8f3737ef8ba79ae3f65d18d3c61aeef42094af5ba1b0baee118677ef6f2eef9ec1e12a1a1085fc652b0ceaab1e11b8ba7ecefe0f32990569aad5eca995faed537bfcaf296008c687b71f7fb9babdbdfacf5bfff6e7cb0f6fbb345b2546bf46da908b3c22bfbf95a1e4599c5c308904b23ce610e9b9143a1c295b4a4e15723c6e2997636c590c91011bf54dc04ea0fa41acf37fbdbebab93eacb6ad2bb9c355fbb4ed9da2a658d92800a00e968e07b0703027ca259cbb362198438a14a4167625e2ce28dcd355f7defdb3ac7e0fd76dc741ba1a5b9948092684116c09cba65c62406de179c0e19ea7ffba0eb4b000d846a3704f37cd7b774ed52e1caed98e6bcaa46765a30430cf0b892024f73565b66503173a88d9b60d31573a4c3ddb1d47ddd659f9de1db44a560f57aef451fd98c514b35c4c2525007b8052171344f4ff00c716131e7791d409bddd57dbbc57e8bbfce79554451761e6cf93f87320648e4c962ce4da2f85749fa6feef691cf96996e492fef9d2a85290fa89fcdf22480a618a86692ead4e9144905216ea9f6aec6b66143d1e411d421d2991741964403836424c4945900b2c8f00aa84aec000c9fd393edb647412d39e49a80e279769c0bc7dfff6cdddcdbe34f4f97cab560a0ad71114391402c6a0ad884ba9b0b1b091e41e252e72050404f7d540f4c8f8fb6a18e93e57fd7e9a485d4bc8b4baaa5c5f5c7dd17f3a32288872b5b84cd3fd24e21411e00a428183b1adf32d28251604022a1022085345b1232cd66f7c6c2131a37fe5a3637c912432caf29be0bb494f00cdb456412b444a29872aae748ded621d5f14eaa655314f619b5816950c484f4928cde3cc98d243c6d90b2762dde2acf6661bbdaa371970a3e26a4d8d5cc67e4a40861ca6e34239d0763c4b000190eea038aee5398213c2197175f66b778e9a5eed9a07fc8f507e8d9615c2b60dcbb363e3d03c79527f8ad07ce1118673689e43b39fd02c467d8c63f3e4a355a788cd171e5e3ac7e63936fb89cd72c4cf38384f3e54798ae07ce1e1ab73709e83b39fe0ac06148da3f3e443a127894e642baabbd6fadd8e2508b2f5a5ccf5d2fd6d49840d3d8c1186e31acb3c47e78b45a731d94d793528d915c7d4a2147b9ea24a7a966d01a83b9b8013d7e34c67b28ceb48ecb0d46954c3989dc7e15410caf429cde46c3f4d3c8f6896409d5e584ce30680602ef60465c4630c500b2981b0e4629c03f941e4cfe42c4e9e861aca37a6db9031a06c255da10477b5c308c4d4539ec45ce78b9802cb66100317310e471503e70aff9c8e3d978ee5ab668d43d3380a8608cdc22336b428871e514af7d4b0e5e9aa1542c8a8c41e248a792e756d09a135aab834a9afefa757d7ef6eeea71d6bed307ef043f959864de9778f4dcdfd54d007dd1c269db52ffeedd86f388c16a644bdfb78f5e6ee88257885560ea39459aee5ba8c72ddb6e970419e6549170a07b996652b811d87bfca446a49b83c97aac99b4f7de65e2aef2d59d135152993b5fd55b3b1c7cd0864ecaa4109d4dfa6835793856c732291a916bac389833b5466b438f5768813d18200a82067d221c0b6b0ceb711a21e92cce3d4731c2505a41c63302a5a98d42be002745d7e942471e227346b1a1c1e4582b6b3a243eb9b04340cfea6f963febe1c7b6d0df9eb3022d7fbb449c8e0fafb6190eed4311b9b795e8729739a3dbe6a5f64f2afddbafe3519b0484e9d910fab7fdb7cdb280dd0cd6616140f0cdf110217a863f3958652ce3b4e6b1e96120c9ba8988e9f8c2951e977b4a9a5463673b429a4833adab32890d8761d5bb8ccf688c724e50ed07d304a94a539883c00001997a3bbacf75de599c55adf8b62b56f11bde535ea3cabc01641287c1ea7992f68fac8629a34aca6a7803916875820ec3a9c60dbd29d5e0779c2d6dd57cff62c8599eb7177d085d07d03338bc59ec1ad6f178f2ca14a05fccc95adc9ab07a903288fa28625f2df2620155bce90e44db04cd2e04c923d889cebd86d44ce71b3c2446391af0d3805478c325de39c72d84cd77471c7abcb74fb98a591b62b01473692b6b0b9eb324481abfba94ae86e8b23a42b20948e166b480953f007a504c18439c2cea702a0722423b62440d99213c520d79d702589a4888f8a127d0f23257fc8c4cf62ad589c36ceedf65b2f6e6ebbecc8ee6a2767e38493f1466433861b736950861bd7ec6362b8294b9e6d307ba8178d87ebc639c81a2fb2f9623779eef42139b3b83066e0b07101b1ab88a730d7ad980d0564ae8ba8c2b62d2c65738115210cd8e3da51653492dd91f39bdbe1b7f9516c6f3dd7f93bdc3665d1a0dc36fedcc26be3f673dfafe8a1ba376ed5cd0863ec9a410963bc32fc65bec577a092834267dc4d1a53acf59b62309a4a5f04c9519365c6b80eeb6d26a98208016e03a018827955602947d9960584cc1b106821fc2df51775e599c64dabf08dd7661a92c214fe4149a1b8d0093263d2e58c01e22207502225f41ce25ad0b50486107ad6d7bcff77674ddf5f922ff62ee538f8eb44e3ec4605512693991481ee7c6a6171421f7643e0e06d52a3dc5516c60f0f3269986e318ec8519a96c8345e247c4f7f61449ff5bbdfbbbea04a800f9d40c8efaccdca1f2d65672efb0889eb33c0c78ba9343b42d0c66ce309e41c8bf8d6ccd61192d6e6833a4ae91a713a55084443b819cf1a8db349385d2b60940b19671dc3e642a69f311c532e64580d77f960640f2312c6634e863c32f5d8503cea7a12c8f4597654d79b871fac1df1b1d14d3535b7e31108394cd7ff6a3b0521afaaeb8d787e512657399d532e5bce02faa97c20d7efba2ebe7d26d08650b39381d6c4b686a708d279489fb6cffdd16ccff3852c8856e1b6b6abb909ebb5b76e1c0614c65468fdab83918ed9fabc5a34df2cef902f7d6cd9bdebdadf5a8e7ae90a727dac410bcaadc7bb6cc3bcc6e9fd489fe4a887bea0af4d6dc2bee18899aee02fcf2c6841bffd589963e03fe22887bef05f1adbe480bd67db7485bf3a95a005fcb6f36c8e81bef3310d7d017f15b5c27e1d678f7b5bd6aed0d702dbe15f2b65e482eb9bbb9feb96719f0f2a659a41ac0aecd1b20999a694a32b30ab0ca2059767d28c639879cc11157d917365ee5e2f94c98e9ce7e9f682678ba435c79173190919f1a7dbbaf47a8a53f431fd20fa1cf372275c21694fefe0362f78b52c57fb3888e68bcc2f946978f02a2fb1a6c5c683b5c57e7e6b31d706496d6ab9eea251e24df1f3cf3412e1926bd523bbdbe74b03f72f8afef2a948fbcb22ba47e36fcccac491f40b2d77c5346e62d1442c3b333bbdee9ef1a32f05e08ea166fab281f5ad5738b7bb3cfb332e5d9e36f97cb52ef8c55c3d4ae49e0d96fd1b794e01628b5651dca4d4ce0e9a97d6647d09fed74ead0df03bf36a7783cbd78edbfad684a361fb766ab2ad083b1ab96f2954d75bbdcec06d6fa95982f6e9cb4e374127acb37832af4ef89e648f349ba4c16c11ea5c3b9d3c24f19fd9637e86f172d6fcfb2c98c989b66d226846bfcf1e9378f1f0a8f5c84bd1e2e64a9c8ac330fe531342ff92060fb33810349cf045521e5d9a97a10f1be974dd85d2ca17363761fc8b2ef09354ad7d9f7276b855ccfba2c89aa07274db2fc6658ba77653fc6ff48367bbd4b97b9493cabe098fc358bf7d522db99994d85f4cbfdb5d8d53b0babe593d9f97ab67bc5b1df6b12af48ccbdaa6ca96cbcdd9efbacfe8cf68a43998946a25719cd5e7d2779bd2dab02e8ca387205b8820a2a15f47c5743da883a8f8ac48dad2a52c6ab69f5645d7fb933c9ecde334c8177a2cab8986fca8b5a7f9821130fa9d120defae1a962dbc1bb3d0aa0168f344d96eacd76aeb93219b7312877f23a46a724a9a57a5fc65cc2d873b0c5ad933594e4096fd594867d7af12952f3b34dc4815ce3c3cf370081ed23d4b614e269ced61f9e660d2aba479919faf2eff0fad5c7b74	PIPELINE
+2	7293e986c3d0c85ea67e6ddfb211bfa85633fe67	\\x789ce5575d6b1b3110fc2b41cfa1b83889e3be851068292581344fc1883d691d8be874e224414df07faff6acf37df8d26028c4871f6f35d2eeccac57f21be35c68708e73f6ed8cddfd4111bc2acc8306f368c0ba55e1d9f91983d2ab2508efb8c5d229e75146bc2f03c645ab2c6a6590bbb4832b5a6593ebc97c7279319bc2d5fc5ae0ec02058014cb99105331ff0a53995d5d8a6c4a09e28996bfe2da715f70accac078c63353e6059de7a270de11307dfb12964b2528922a6a2075a085c982d2b24270096e951550ca269e171275f399f6759131a84c83ac736c038bc4c051c96fef68fa1801a4e996850dfe43f40f42d55b24bcc41425f76b8ba414a16fcc9a960ce42416e3f411acf32542ce8be0e376be0223350ee5a214f715e87b85a1dd39581b254e094cd03a06d349759a125dd0beed1a45bb366c161b1225adbd27ffab32d42954179a903765fd8c0b5f6eef7f3d3cfdbe631baa0b3d48f0c095c7bc22b3d815f6a18e5b920708991856145ca1954c2aa6c61ea413abfc44e7e1a8acffb7140793cb8e815c3d4d863a7b371646ddd05b169fdbc7c7eef4e0dd306ad7f7191ddc012d95fad7f548a5e9d0f80f7ab49e22e35664f7db38d929d16d8dce88d87b898ed4ebde7d7eb256b7dffcc34e8ffde2eff2385da7fbd36dd0ecf10ff1bd17cec91ade79f176dceefdd11fa9d3bdd1f51772141c7c	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 5, true);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 1672, true);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.normalized_cereals_id_seq', 77, true);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 9, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 4, true);
+
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedule_ticks_id_seq', 1, false);
+
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedules_id_seq', 1, false);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 1, false);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: normalized_cereals normalized_cereals_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.normalized_cereals
+    ADD CONSTRAINT normalized_cereals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: schedule_ticks schedule_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks
+    ADD CONSTRAINT schedule_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_schedule_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_schedule_origin_id_key UNIQUE (schedule_origin_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: ix_schedule_ticks_schedule_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_schedule_ticks_schedule_origin_id ON public.schedule_ticks USING btree (schedule_origin_id);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

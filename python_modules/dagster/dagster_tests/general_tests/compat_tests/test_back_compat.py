@@ -221,7 +221,7 @@ def test_event_log_asset_key_migration():
             test_dir, "history", "runs", "722183e4-119f-4a00-853f-e1257be82ddb.db"
         )
         assert get_current_alembic_version(db_path) == "3b1e175a2be3"
-        assert "asset_key" not in set(get_sqlite3_columns(db_path, "event_log"))
+        assert "asset_key" not in set(get_sqlite3_columns(db_path, "event_logs"))
 
         # Make sure the schema is migrated
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
@@ -248,3 +248,19 @@ def test_object_store_operation_result_data_new_fields():
     """We added address and version fields to ObjectStoreOperationResultData.
     Make sure we can still deserialize old ObjectStoreOperationResultData without those fields."""
     instance_from_debug_payloads([file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")])
+
+
+def test_event_log_asset_partition_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_9_22_pre_asset_partition/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(
+            test_dir, "history", "runs", "1a1d3c4b-1284-4c74-830c-c8988bd4d779.db"
+        )
+        assert get_current_alembic_version(db_path) == "c34498c29964"
+        assert "partition" not in set(get_sqlite3_columns(db_path, "event_logs"))
+
+        # Make sure the schema is migrated
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        instance.upgrade()
+
+        assert "partition" in set(get_sqlite3_columns(db_path, "event_logs"))

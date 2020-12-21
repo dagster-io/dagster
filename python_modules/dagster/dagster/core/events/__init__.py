@@ -386,6 +386,12 @@ class DagsterEvent(
         return self.step_materialization_data.materialization.asset_key
 
     @property
+    def partition(self):
+        if self.event_type != DagsterEventType.STEP_MATERIALIZATION:
+            return None
+        return self.step_materialization_data.materialization.partition
+
+    @property
     def step_input_data(self):
         _assert_type("step_input_data", DagsterEventType.STEP_INPUT, self.event_type)
         return self.event_specific_data

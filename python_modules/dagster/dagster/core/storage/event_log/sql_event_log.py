@@ -16,14 +16,8 @@ from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import AssetAwareEventLogStorage, EventLogStorage
-from .migration import migrate_asset_key_data
+from .migration import REINDEX_DATA_MIGRATIONS, SECONDARY_INDEX_ASSET_KEY
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
-
-SECONDARY_INDEX_ASSET_KEY = "asset_key_table"
-
-REINDEX_DATA_MIGRATIONS = {
-    SECONDARY_INDEX_ASSET_KEY: migrate_asset_key_data,
-}
 
 
 class SqlEventLogStorage(EventLogStorage):
@@ -53,7 +47,7 @@ class SqlEventLogStorage(EventLogStorage):
                     print_fn("Skipping already reindexed summary: {}".format(migration_name))
                     continue
             print_fn("Starting reindex: {}".format(migration_name))
-            migration_fn(self, print_fn)
+            migration_fn()(self, print_fn)
             self.enable_secondary_index(migration_name)
             print_fn("Finished reindexing: {}".format(migration_name))
 
@@ -67,6 +61,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         dagster_event_type = None
         asset_key_str = None
+        partition = None
         step_key = event.step_key
 
         if event.is_dagster_event:
@@ -75,6 +70,8 @@ class SqlEventLogStorage(EventLogStorage):
             if event.dagster_event.asset_key:
                 check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
                 asset_key_str = event.dagster_event.asset_key.to_string()
+            if event.dagster_event.partition:
+                partition = event.dagster_event.partition
 
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -84,6 +81,7 @@ class SqlEventLogStorage(EventLogStorage):
             timestamp=utc_datetime_from_timestamp(event.timestamp),
             step_key=step_key,
             asset_key=asset_key_str,
+            partition=partition,
         )
 
     def store_asset_key(self, conn, event):

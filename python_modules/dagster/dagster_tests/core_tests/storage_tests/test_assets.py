@@ -248,6 +248,8 @@ def test_asset_key_structure():
         run_ids = asset_storage.get_asset_run_ids(asset_key)
         assert len(run_ids) == 1
 
+        asset_storage.upgrade()
+
         # check that backcompat events are merged with newly stored events
         run_id = "fake_run_id"
         asset_storage.store_event(_materialization_event_record(run_id, asset_key))

@@ -12,6 +12,7 @@ SqlEventLogStorageTable = db.Table(
     db.Column("timestamp", db.types.TIMESTAMP),
     db.Column("step_key", db.String),
     db.Column("asset_key", db.String),
+    db.Column("partition", db.String),
 )
 
 SecondaryIndexMigrationTable = db.Table(
@@ -34,3 +35,6 @@ AssetKeyTable = db.Table(
 db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
 db.Index("idx_step_key", SqlEventLogStorageTable.c.step_key)
 db.Index("idx_asset_key", SqlEventLogStorageTable.c.asset_key)
+db.Index(
+    "idx_asset_partition", SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition
+)
