@@ -114,12 +114,12 @@ GET_PARTITION_SET_STATUS_QUERY = """
     query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
         partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
             ...on PartitionSet {
-                status
-                partitionsOrError {
-                    ... on Partitions {
+                partitionStatusesOrError {
+                    ... on PartitionStatuses {
                         results {
-                            name
-                            status
+                            id
+                            partitionName
+                            runStatus
                         }
                     }
                 }
@@ -265,16 +265,15 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        partitions = result.data["partitionSetOrError"]["partitionsOrError"]["results"]
-        assert len(partitions) == 10
-        for partition in partitions:
-            if partition["name"] in ("2", "3"):
-                assert partition["status"] == "SUCCESS"
+        partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
+            "results"
+        ]
+        assert len(partitionStatuses) == 10
+        for partitionStatus in partitionStatuses:
+            if partitionStatus["partitionName"] in ("2", "3"):
+                assert partitionStatus["runStatus"] == "SUCCESS"
             else:
-                assert partition["status"] == "MISSING"
-
-        partition_set_status = result.data["partitionSetOrError"]["status"]
-        assert partition_set_status == "MISSING"
+                assert partitionStatus["runStatus"] is None
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -303,10 +302,9 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        partitions = result.data["partitionSetOrError"]["partitionsOrError"]["results"]
-        assert len(partitions) == 10
-        for partition in partitions:
-            assert partition["status"] == "SUCCESS"
-
-        partition_set_status = result.data["partitionSetOrError"]["status"]
-        assert partition_set_status == "SUCCESS"
+        partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
+            "results"
+        ]
+        assert len(partitionStatuses) == 10
+        for partitionStatus in partitionStatuses:
+            assert partitionStatus["runStatus"] == "SUCCESS"

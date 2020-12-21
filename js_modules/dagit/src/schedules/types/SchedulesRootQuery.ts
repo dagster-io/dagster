@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, PartitionRunStatus, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, PipelineRunStatus, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -14,27 +14,28 @@ export interface SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError";
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_PythonError {
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PythonError {
   __typename: "PythonError";
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions_results {
-  __typename: "Partition";
-  name: string;
-  status: PartitionRunStatus;
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
+  __typename: "PartitionStatus";
+  id: string;
+  partitionName: string;
+  runStatus: PipelineRunStatus | null;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions {
-  __typename: "Partitions";
-  results: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions_results[];
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses {
+  __typename: "PartitionStatuses";
+  results: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
 }
 
-export type SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError = SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_PythonError | SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions;
+export type SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError = SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PythonError | SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses;
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet {
   __typename: "PartitionSet";
   name: string;
-  partitionsOrError: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError;
+  partitionStatusesOrError: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {

@@ -4,33 +4,34 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PartitionRunStatus, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RepositorySchedulesFragment
 // ====================================================
 
-export interface RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_PythonError {
+export interface RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PythonError {
   __typename: "PythonError";
 }
 
-export interface RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions_results {
-  __typename: "Partition";
-  name: string;
-  status: PartitionRunStatus;
+export interface RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
+  __typename: "PartitionStatus";
+  id: string;
+  partitionName: string;
+  runStatus: PipelineRunStatus | null;
 }
 
-export interface RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions {
-  __typename: "Partitions";
-  results: RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions_results[];
+export interface RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses {
+  __typename: "PartitionStatuses";
+  results: RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
 }
 
-export type RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError = RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_PythonError | RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions;
+export type RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError = RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PythonError | RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses;
 
 export interface RepositorySchedulesFragment_schedules_partitionSet {
   __typename: "PartitionSet";
   name: string;
-  partitionsOrError: RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError;
+  partitionStatusesOrError: RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {

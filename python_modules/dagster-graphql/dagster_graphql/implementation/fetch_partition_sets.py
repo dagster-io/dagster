@@ -1,5 +1,3 @@
-from enum import Enum
-
 import yaml
 from dagster import check
 from dagster.core.host_representation import (
@@ -11,20 +9,14 @@ from dagster.core.host_representation import (
     RepositoryHandle,
     RepositorySelector,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, TagType, get_tag_type
 from graphql.execution.base import ResolveInfo
 
 from .utils import capture_dauphin_error
 
 
-class PartitionRunStatus(Enum):
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
-    MISSING = "MISSING"
-    PENDING = "PENDING"
-
-
+@capture_dauphin_error
 def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_name):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
@@ -101,6 +93,7 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
         return graphene_info.schema.type_named("PythonError")(result.error)
 
 
+@capture_dauphin_error
 def get_partition_tags(graphene_info, repository_handle, partition_set_name, partition_name):
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
@@ -122,6 +115,7 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
         return graphene_info.schema.type_named("PythonError")(result.error)
 
 
+@capture_dauphin_error
 def get_partitions(
     graphene_info, repository_handle, partition_set, cursor=None, limit=None, reverse=False
 ):
@@ -174,56 +168,34 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
     return items[max(start, 0) : end]
 
 
-def get_partition_status(graphene_info, repository_handle, partition_set_name, partition_name):
+@capture_dauphin_error
+def get_partition_set_partition_statuses(graphene_info, repository_handle, partition_set_name):
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
-    check.str_param(partition_name, "partition_name")
-
-    runs_filter = PipelineRunsFilter(
-        tags={PARTITION_SET_TAG: partition_set_name, PARTITION_NAME_TAG: partition_name,}
-    )
-
-    runs = graphene_info.context.instance.get_runs(runs_filter, limit=1)
-    if len(runs) == 0:
-        return PartitionRunStatus.MISSING
-
-    run = runs[0]
-    if run.status == PipelineRunStatus.FAILURE:
-        return PartitionRunStatus.FAILURE
-    if run.status == PipelineRunStatus.SUCCESS:
-        return PartitionRunStatus.SUCCESS
-    return PartitionRunStatus.PENDING
-
-
-def get_partition_set_status(graphene_info, repository_handle, partition_set_name):
-    check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.str_param(partition_set_name, "partition_set_name")
-
     result = graphene_info.context.get_external_partition_names(
         repository_handle, partition_set_name
     )
+    all_partition_set_runs = graphene_info.context.instance.get_runs(
+        PipelineRunsFilter(tags={PARTITION_SET_TAG: partition_set_name})
+    )
+    runs_by_partition = {}
+    for run in all_partition_set_runs:
+        partition_name = run.tags.get(PARTITION_NAME_TAG)
+        if not partition_name or partition_name in runs_by_partition:
+            # all_partition_set_runs is in descending order by creation time, we should ignore
+            # runs for the same partition if we've already considered the partition
+            continue
+        runs_by_partition[partition_name] = run
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
-        return graphene_info.schema.type_named("PythonError")(result.error)
-
-    partition_statuses = [
-        get_partition_status(graphene_info, repository_handle, partition_set_name, partition_name)
-        for partition_name in result.partition_names
-    ]
-
-    if any(
-        [partition_status == PartitionRunStatus.FAILURE for partition_status in partition_statuses]
-    ):
-        return PartitionRunStatus.FAILURE
-
-    if all(
-        [partition_status == PartitionRunStatus.SUCCESS for partition_status in partition_statuses]
-    ):
-        return PartitionRunStatus.SUCCESS
-
-    if any(
-        [partition_status == PartitionRunStatus.MISSING for partition_status in partition_statuses]
-    ):
-        return PartitionRunStatus.MISSING
-
-    return PartitionRunStatus.PENDING
+    return graphene_info.schema.type_named("PartitionStatuses")(
+        results=[
+            graphene_info.schema.type_named("PartitionStatus")(
+                id=partition_name,
+                partitionName=partition_name,
+                runStatus=runs_by_partition[partition_name].status
+                if runs_by_partition.get(partition_name)
+                else None,
+            )
+            for partition_name in result.partition_names
+        ]
+    )

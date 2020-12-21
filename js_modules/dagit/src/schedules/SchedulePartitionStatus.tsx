@@ -3,22 +3,38 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {StatusTable} from 'src/JobUtils';
-import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
-import {PartitionRunStatus} from 'src/types/globalTypes';
+import {assertUnreachable} from 'src/Util';
+import {
+  ScheduleFragment,
+  ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results,
+} from 'src/schedules/types/ScheduleFragment';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-const RUN_STATUSES = [
-  PartitionRunStatus.SUCCESS,
-  PartitionRunStatus.FAILURE,
-  PartitionRunStatus.MISSING,
-  PartitionRunStatus.PENDING,
-];
-const STATUS_LABELS = {
-  [PartitionRunStatus.SUCCESS]: 'Succeeded',
-  [PartitionRunStatus.FAILURE]: 'Failed',
-  [PartitionRunStatus.MISSING]: 'Missing',
-  [PartitionRunStatus.PENDING]: 'Pending',
+const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
+
+const calculateDisplayStatus = (
+  partition: ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results,
+) => {
+  switch (partition.runStatus) {
+    case null:
+      return 'Missing';
+    case PipelineRunStatus.SUCCESS:
+      return 'Succeeded';
+    case PipelineRunStatus.FAILURE:
+    case PipelineRunStatus.CANCELED:
+    case PipelineRunStatus.CANCELING:
+      return 'Failed';
+    case PipelineRunStatus.MANAGED:
+    case PipelineRunStatus.QUEUED:
+    case PipelineRunStatus.NOT_STARTED:
+    case PipelineRunStatus.STARTED:
+    case PipelineRunStatus.STARTING:
+      return 'Pending';
+    default:
+      return assertUnreachable(partition.runStatus);
+  }
 };
 
 export const SchedulePartitionStatus: React.FC<{
@@ -27,15 +43,16 @@ export const SchedulePartitionStatus: React.FC<{
 }> = ({repoAddress, schedule}) => {
   if (
     !schedule.partitionSet ||
-    schedule.partitionSet.partitionsOrError.__typename !== 'Partitions'
+    schedule.partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses'
   ) {
     return <div>&mdash;</div>;
   }
 
-  const partitions = schedule.partitionSet.partitionsOrError.results;
+  const partitions = schedule.partitionSet.partitionStatusesOrError.results;
   const partitionsByType = {};
   partitions.forEach((partition) => {
-    partitionsByType[partition.status] = [...(partitionsByType[partition.status] || []), partition];
+    const displayStatus = calculateDisplayStatus(partition);
+    partitionsByType[displayStatus] = [...(partitionsByType[displayStatus] || []), partition];
   });
 
   const partitionUrl = workspacePathFromAddress(
@@ -58,9 +75,9 @@ export const SchedulePartitionStatus: React.FC<{
           }
           return (
             <tr key={status}>
-              <td style={{width: 100}}>{STATUS_LABELS[status]}</td>
+              <td style={{width: 100}}>{status}</td>
               <td>
-                {status == PartitionRunStatus.FAILURE || status == PartitionRunStatus.MISSING ? (
+                {status == 'Failed' || status == 'Missing' ? (
                   <Link
                     to={`${partitionUrl}?showFailuresAndGapsOnly=true`}
                     style={{color: Colors.DARK_GRAY1}}

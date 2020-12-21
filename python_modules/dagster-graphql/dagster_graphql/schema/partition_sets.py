@@ -1,14 +1,13 @@
 from dagster import check
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import merge_dicts
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_partition_sets import (
-    PartitionRunStatus,
     get_partition_by_name,
     get_partition_config,
-    get_partition_set_status,
-    get_partition_status,
+    get_partition_set_partition_statuses,
     get_partition_tags,
     get_partitions,
 )
@@ -36,7 +35,7 @@ class DauphinPartition(dauphin.ObjectType):
         cursor=dauphin.String(),
         limit=dauphin.Int(),
     )
-    status = dauphin.NonNull("PartitionRunStatus")
+    status = dauphin.Field("PipelineRunStatus")
 
     def __init__(self, external_repository_handle, external_partition_set, partition_name):
         self._external_repository_handle = check.inst_param(
@@ -73,8 +72,8 @@ class DauphinPartition(dauphin.ObjectType):
     def resolve_runs(self, graphene_info, **kwargs):
         filters = kwargs.get("filter")
         partition_tags = {
-            "dagster/partition_set": self._external_partition_set.name,
-            "dagster/partition": self._partition_name,
+            PARTITION_SET_TAG: self._external_partition_set.name,
+            PARTITION_NAME_TAG: self._partition_name,
         }
         if filters is not None:
             filters = filters.to_selector()
@@ -89,14 +88,6 @@ class DauphinPartition(dauphin.ObjectType):
 
         return get_runs(
             graphene_info, runs_filter, cursor=kwargs.get("cursor"), limit=kwargs.get("limit")
-        )
-
-    def resolve_status(self, graphene_info):
-        return get_partition_status(
-            graphene_info,
-            self._external_repository_handle,
-            self._external_partition_set.name,
-            self._partition_name,
         )
 
 
@@ -122,7 +113,7 @@ class DauphinPartitionSet(dauphin.ObjectType):
         reverse=dauphin.Boolean(),
     )
     partition = dauphin.Field("Partition", partition_name=dauphin.NonNull(dauphin.String))
-    status = dauphin.NonNull("PartitionRunStatus")
+    partitionStatusesOrError = dauphin.NonNull("PartitionStatusesOrError")
 
     def __init__(self, external_repository_handle, external_partition_set):
         self._external_repository_handle = check.inst_param(
@@ -157,8 +148,8 @@ class DauphinPartitionSet(dauphin.ObjectType):
             partition_name,
         )
 
-    def resolve_status(self, graphene_info):
-        return get_partition_set_status(
+    def resolve_partitionStatusesOrError(self, graphene_info):
+        return get_partition_set_partition_statuses(
             graphene_info, self._external_repository_handle, self._external_partition_set.name
         )
 
@@ -214,4 +205,23 @@ class DauphinPartitionRunConfigOrError(dauphin.Union):
         types = (DauphinPartitionRunConfig, DauphinPythonError)
 
 
-DauphinPartitionRunStatus = dauphin.Enum.from_enum(PartitionRunStatus)
+class DauphinPartitionStatus(dauphin.ObjectType):
+    class Meta:
+        name = "PartitionStatus"
+
+    id = dauphin.NonNull(dauphin.String)
+    partitionName = dauphin.NonNull(dauphin.String)
+    runStatus = dauphin.Field("PipelineRunStatus")
+
+
+class DauphinPartitionStatuses(dauphin.ObjectType):
+    class Meta:
+        name = "PartitionStatuses"
+
+    results = dauphin.non_null_list("PartitionStatus")
+
+
+class DauphinPartitionStatusesOrError(dauphin.Union):
+    class Meta:
+        name = "PartitionStatusesOrError"
+        types = (DauphinPartitionStatuses, DauphinPythonError)
