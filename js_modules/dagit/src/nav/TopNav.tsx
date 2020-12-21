@@ -94,4 +94,6 @@ const Container = styled.div`
   flex: 0 0 auto;
   flex-wrap: wrap;
   padding: 2px 16px 0;
+  position: relative;
+  z-index: 1;
 `;
