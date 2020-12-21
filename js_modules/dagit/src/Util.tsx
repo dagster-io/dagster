@@ -40,28 +40,16 @@ function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
 }
 
-export function formatElapsedTime(msec: number) {
-  let text = '';
-
-  if (msec < 0) {
-    text = `0 msec`;
-  } else if (msec < 1000) {
-    // < 1 second, show "X msec"
-    text = `${Math.ceil(msec)} msec`;
-  } else {
-    // < 1 hour, show "42:12"
-    const sec = Math.round(msec / 1000) % 60;
-    const min = Math.floor(msec / 1000 / 60) % 60;
-    const hours = Math.floor(msec / 1000 / 60 / 60);
-
-    if (hours > 0) {
-      text = `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
-    } else {
-      text = `${min}:${twoDigit(sec)}`;
-    }
+export const formatElapsedTime = (msec: number) => {
+  if (msec < 1000) {
+    return `${Math.ceil(msec)}ms`;
   }
-  return text;
-}
+
+  const sec = Math.round(msec / 1000) % 60;
+  const min = Math.floor(msec / 1000 / 60) % 60;
+  const hours = Math.floor(msec / 1000 / 60 / 60);
+  return `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
+};
 
 export function breakOnUnderscores(str: string) {
   return str.replace(/_/g, '_\u200b');

@@ -10,10 +10,10 @@ import {filterByQuery} from 'src/GraphQueryImpl';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
-import {formatElapsedTime} from 'src/Util';
 import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
+import {TimeElapsed} from 'src/runs/TimeElapsed';
 import {LaunchPipelineExecution} from 'src/runs/types/LaunchPipelineExecution';
 import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
 import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
@@ -316,50 +316,6 @@ export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({run}) => {
 
   return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
 };
-
-class TimeElapsed extends React.Component<{
-  startUnix: number | null;
-  endUnix: number | null;
-}> {
-  _interval?: NodeJS.Timer;
-  _timeout?: NodeJS.Timer;
-
-  componentDidMount() {
-    if (this.props.endUnix) {
-      return;
-    }
-
-    // align to the next second and then update every second so the elapsed
-    // time "ticks" up. Our render method uses Date.now(), so all we need to
-    // do is force another React render. We could clone the time into React
-    // state but that is a bit messier.
-    setTimeout(() => {
-      this.forceUpdate();
-      this._interval = setInterval(() => this.forceUpdate(), 1000);
-    }, Date.now() % 1000);
-  }
-
-  componentWillUnmount() {
-    if (this._timeout) {
-      clearInterval(this._timeout);
-    }
-    if (this._interval) {
-      clearInterval(this._interval);
-    }
-  }
-
-  render() {
-    const start = this.props.startUnix ? this.props.startUnix * 1000 : 0;
-    const end = this.props.endUnix ? this.props.endUnix * 1000 : Date.now();
-
-    return (
-      <div>
-        <Icon icon="time" iconSize={13} style={{paddingBottom: 1}} />{' '}
-        {start ? formatElapsedTime(end - start) : ''}
-      </div>
-    );
-  }
-}
 
 export const RunComponentFragments = {
   RUN_TIME_FRAGMENT: gql`
