@@ -293,8 +293,8 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   mode: string;
   canTerminate: boolean;
   tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags[];
-  repositoryOrigin: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_repositoryOrigin | null;
   status: PipelineRunStatus;
+  repositoryOrigin: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_repositoryOrigin | null;
   stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats;
   assets: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets[];
 }

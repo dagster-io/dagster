@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { PipelineRunStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL fragment: RunActionMenuFragment
 // ====================================================
@@ -38,5 +40,6 @@ export interface RunActionMenuFragment {
   mode: string;
   canTerminate: boolean;
   tags: RunActionMenuFragment_tags[];
+  status: PipelineRunStatus;
   repositoryOrigin: RunActionMenuFragment_repositoryOrigin | null;
 }

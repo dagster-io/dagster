@@ -1,35 +1,22 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import {
-  Button,
-  Intent,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  Popover,
-  Position,
-  Tooltip,
-} from '@blueprintjs/core';
+import {Button, Menu, MenuDivider, MenuItem, Popover, Position, Tooltip} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {SharedToaster, ROOT_SERVER_URI} from 'src/DomUtils';
+import {ROOT_SERVER_URI} from 'src/DomUtils';
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {DeletionDialog} from 'src/runs/DeletionDialog';
 import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from 'src/runs/RunFragments';
 import {doneStatuses} from 'src/runs/RunStatuses';
 import {
-  CANCEL_MUTATION,
-  DELETE_MUTATION,
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   RunsQueryRefetchContext,
   getReexecutionVariables,
   handleLaunchResult,
 } from 'src/runs/RunUtils';
 import {TerminationDialog} from 'src/runs/TerminationDialog';
-import {Cancel} from 'src/runs/types/Cancel';
-import {Delete} from 'src/runs/types/Delete';
 import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
 import {PipelineEnvironmentYamlQuery} from 'src/runs/types/PipelineEnvironmentYamlQuery';
 import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
@@ -40,12 +27,12 @@ export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment | RunActionMenuFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
   });
-  const [cancel] = useMutation<Cancel>(CANCEL_MUTATION, {onCompleted: refetch});
-  const [destroy] = useMutation<Delete>(DELETE_MUTATION, {onCompleted: refetch});
+
   const [loadEnv, {called, loading, data}] = useLazyQuery<PipelineEnvironmentYamlQuery>(
     PIPELINE_ENVIRONMENT_YAML_QUERY,
     {
@@ -53,120 +40,126 @@ export const RunActionsMenu: React.FC<{
     },
   );
 
+  const closeDialogs = () => {
+    setVisibleDialog('none');
+  };
+
+  const onComplete = () => {
+    refetch();
+  };
+
   const pipelineRun =
     data?.pipelineRunOrError?.__typename === 'PipelineRun' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
 
   const repoMatch = useRepositoryForRun(pipelineRun);
+  const isFinished = doneStatuses.has(run.status);
 
   const infoReady = called ? !loading : false;
   return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem
-            text={loading ? 'Loading Configuration...' : 'View Configuration...'}
-            disabled={!runConfigYaml}
-            icon="share"
-            onClick={() =>
-              showCustomAlert({
-                title: 'Config',
-                body: <HighlightedCodeBlock value={runConfigYaml || ''} language="yaml" />,
-              })
-            }
-          />
-          <MenuDivider />
-          <>
-            <Tooltip
-              content={OPEN_PLAYGROUND_UNKNOWN}
-              position={Position.BOTTOM}
-              disabled={infoReady}
-              wrapperTagName="div"
-              targetTagName="div"
-            >
-              <MenuItem
-                text="Open in Playground..."
-                disabled={!infoReady}
-                icon="edit"
-                target="_blank"
-                href={`/workspace/pipelines/${run.pipelineName}/playground/setup?${qs.stringify({
-                  mode: run.mode,
-                  config: runConfigYaml,
-                  solidSelection: run.solidSelection,
-                })}`}
-              />
-            </Tooltip>
-            <Tooltip
-              content={REEXECUTE_PIPELINE_UNKNOWN}
-              position={Position.BOTTOM}
-              disabled={infoReady && !!repoMatch}
-              wrapperTagName="div"
-              targetTagName="div"
-            >
-              <MenuItem
-                text="Re-execute"
-                disabled={!infoReady || !repoMatch}
-                icon="repeat"
-                onClick={async () => {
-                  if (repoMatch && runConfigYaml) {
-                    const result = await reexecute({
-                      variables: getReexecutionVariables({
-                        run: {...run, runConfigYaml},
-                        style: {type: 'all'},
-                        repositoryLocationName: repoMatch.match.repositoryLocation.name,
-                        repositoryName: repoMatch.match.repository.name,
-                      }),
-                    });
-                    handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});
-                  }
-                }}
-              />
-            </Tooltip>
+    <>
+      <Popover
+        content={
+          <Menu>
             <MenuItem
-              text="Cancel"
-              icon="stop"
-              disabled={!run.canTerminate}
-              onClick={async () => {
-                const result = await cancel({variables: {runId: run.runId}});
-                showToastFor(
-                  result.data?.terminatePipelineExecution,
-                  `Run ${run.runId} canceled.`,
-                  `Something went wrong when trying to cancel Run ${run.runId}`,
-                );
-              }}
+              text={loading ? 'Loading Configuration...' : 'View Configuration...'}
+              disabled={!runConfigYaml}
+              icon="share"
+              onClick={() =>
+                showCustomAlert({
+                  title: 'Config',
+                  body: <HighlightedCodeBlock value={runConfigYaml || ''} language="yaml" />,
+                })
+              }
             />
             <MenuDivider />
-          </>
-          <MenuItem
-            text="Download Debug File"
-            icon="download"
-            download
-            href={`${ROOT_SERVER_URI}/download_debug/${run.runId}`}
-          />
-          <MenuItem
-            text="Delete"
-            icon="trash"
-            disabled={run.canTerminate}
-            onClick={async () => {
-              const result = await destroy({variables: {runId: run.runId}});
-              showToastFor(
-                result.data?.deletePipelineRun,
-                `Run ${run.runId} deleted.`,
-                `Something went wrong when trying to delete Run ${run.runId}`,
-              );
-            }}
-          />
-        </Menu>
-      }
-      position={'bottom'}
-      onOpening={() => {
-        if (!called) {
-          loadEnv();
+            <>
+              <Tooltip
+                content={OPEN_PLAYGROUND_UNKNOWN}
+                position={Position.BOTTOM}
+                disabled={infoReady}
+                wrapperTagName="div"
+                targetTagName="div"
+              >
+                <MenuItem
+                  text="Open in Playground..."
+                  disabled={!infoReady}
+                  icon="edit"
+                  target="_blank"
+                  href={`/workspace/pipelines/${run.pipelineName}/playground/setup?${qs.stringify({
+                    mode: run.mode,
+                    config: runConfigYaml,
+                    solidSelection: run.solidSelection,
+                  })}`}
+                />
+              </Tooltip>
+              <Tooltip
+                content={REEXECUTE_PIPELINE_UNKNOWN}
+                position={Position.BOTTOM}
+                disabled={infoReady && !!repoMatch}
+                wrapperTagName="div"
+                targetTagName="div"
+              >
+                <MenuItem
+                  text="Re-execute"
+                  disabled={!infoReady || !repoMatch}
+                  icon="repeat"
+                  onClick={async () => {
+                    if (repoMatch && runConfigYaml) {
+                      const result = await reexecute({
+                        variables: getReexecutionVariables({
+                          run: {...run, runConfigYaml},
+                          style: {type: 'all'},
+                          repositoryLocationName: repoMatch.match.repositoryLocation.name,
+                          repositoryName: repoMatch.match.repository.name,
+                        }),
+                      });
+                      handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});
+                    }
+                  }}
+                />
+              </Tooltip>
+              {isFinished ? null : (
+                <MenuItem
+                  icon="stop"
+                  text="Terminate"
+                  onClick={() => setVisibleDialog('terminate')}
+                />
+              )}
+              <MenuDivider />
+            </>
+            <MenuItem
+              text="Download Debug File"
+              icon="download"
+              download
+              href={`${ROOT_SERVER_URI}/download_debug/${run.runId}`}
+            />
+            <MenuItem icon="trash" text="Delete" onClick={() => setVisibleDialog('delete')} />
+          </Menu>
         }
-      }}
-    >
-      <Button minimal={true} icon="more" />
-    </Popover>
+        position={'bottom'}
+        onOpening={() => {
+          if (!called) {
+            loadEnv();
+          }
+        }}
+      >
+        <Button minimal={true} icon="more" />
+      </Popover>
+      <TerminationDialog
+        isOpen={visibleDialog === 'terminate'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={{[run.id]: run.canTerminate}}
+      />
+      <DeletionDialog
+        isOpen={visibleDialog === 'delete'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        onTerminateInstead={() => setVisibleDialog('terminate')}
+        selectedRuns={{[run.id]: run.canTerminate}}
+      />
+    </>
   );
 });
 
@@ -242,32 +235,6 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
 
 const OPEN_PLAYGROUND_UNKNOWN =
   'Playground is unavailable because the pipeline is not present in the current repository.';
-
-function showToastFor(
-  possibleError: {__typename: string; message?: string} | null | undefined,
-  successMessage: string,
-  genericErrorMessage: string,
-) {
-  if (!possibleError) {
-    SharedToaster.show({
-      message: genericErrorMessage,
-      icon: 'error',
-      intent: Intent.DANGER,
-    });
-  } else if ('message' in possibleError) {
-    SharedToaster.show({
-      message: possibleError.message,
-      icon: 'error',
-      intent: Intent.DANGER,
-    });
-  } else {
-    SharedToaster.show({
-      message: successMessage,
-      icon: 'confirm',
-      intent: Intent.SUCCESS,
-    });
-  }
-}
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
 const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`

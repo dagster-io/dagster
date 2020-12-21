@@ -393,6 +393,7 @@ export const RunComponentFragments = {
         key
         value
       }
+      status
       repositoryOrigin {
         ...RepositoryOriginFragment
       }

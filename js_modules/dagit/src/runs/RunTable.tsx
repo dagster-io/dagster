@@ -122,6 +122,7 @@ RunTable.fragments = {
       pipelineSnapshotId
       pipelineName
       solidSelection
+      status
       tags {
         key
         value
