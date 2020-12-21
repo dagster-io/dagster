@@ -196,7 +196,9 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
           <Menu>
             <MenuItem
               icon="stop"
-              text={`Cancel ${unfinishedIDs.length} ${unfinishedIDs.length === 1 ? 'run' : 'runs'}`}
+              text={`Terminate ${unfinishedIDs.length} ${
+                unfinishedIDs.length === 1 ? 'run' : 'runs'
+              }`}
               disabled={unfinishedIDs.length === 0}
               onClick={() => {
                 setVisibleDialog('terminate');

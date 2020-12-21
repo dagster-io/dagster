@@ -3,13 +3,13 @@ import {Checkbox, Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blu
 import * as React from 'react';
 
 import {NavigationBlock} from 'src/runs/NavitationBlock';
-import {CANCEL_MUTATION} from 'src/runs/RunUtils';
+import {TERMINATE_MUTATION} from 'src/runs/RunUtils';
 import {
-  Cancel,
-  Cancel_terminatePipelineExecution_PipelineRunNotFoundError,
-  Cancel_terminatePipelineExecution_PythonError,
-  Cancel_terminatePipelineExecution_TerminatePipelineExecutionFailure,
-} from 'src/runs/types/Cancel';
+  Terminate,
+  Terminate_terminatePipelineExecution_PipelineRunNotFoundError,
+  Terminate_terminatePipelineExecution_PythonError,
+  Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure,
+} from 'src/runs/types/Terminate';
 import {TerminatePipelinePolicy} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
@@ -24,9 +24,9 @@ export interface Props {
 }
 
 type Error =
-  | Cancel_terminatePipelineExecution_TerminatePipelineExecutionFailure
-  | Cancel_terminatePipelineExecution_PipelineRunNotFoundError
-  | Cancel_terminatePipelineExecution_PythonError
+  | Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure
+  | Terminate_terminatePipelineExecution_PipelineRunNotFoundError
+  | Terminate_terminatePipelineExecution_PythonError
   | undefined;
 
 export type TerminationState = {completed: number; errors: {[id: string]: Error}};
@@ -124,7 +124,7 @@ export const TerminationDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [terminate] = useMutation<Cancel>(CANCEL_MUTATION);
+  const [terminate] = useMutation<Terminate>(TERMINATE_MUTATION);
   const policy = state.mustForce
     ? TerminatePipelinePolicy.MARK_AS_CANCELED_IMMEDIATELY
     : TerminatePipelinePolicy.SAFE_TERMINATE;
