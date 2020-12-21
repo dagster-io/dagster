@@ -6,7 +6,6 @@ import ReactMarkdown from 'react-markdown';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
 import {copyValue} from 'src/DomUtils';
 import {assertUnreachable} from 'src/Util';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
@@ -115,21 +114,17 @@ export class MetadataEntry extends React.Component<{
 
       case 'EventJsonMetadataEntry':
         return (
-          <MetadataEntryAction
-            title="Show full value"
-            onClick={() =>
-              showCustomAlert({
-                body: (
-                  <div style={{whiteSpace: 'pre-wrap'}}>
-                    {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
-                  </div>
-                ),
-                title: 'Value',
-              })
-            }
+          <MetadataEntryModalAction
+            label={entry.label}
+            copyContent={() => entry.jsonString}
+            content={() => (
+              <div style={{whiteSpace: 'pre-wrap'}}>
+                {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
+              </div>
+            )}
           >
             [Show JSON]
-          </MetadataEntryAction>
+          </MetadataEntryModalAction>
         );
 
       case 'EventUrlMetadataEntry':
@@ -146,7 +141,15 @@ export class MetadataEntry extends React.Component<{
       case 'EventTextMetadataEntry':
         return entry.text;
       case 'EventMarkdownMetadataEntry':
-        return <MarkdownMetadataLink title={entry.label} mdStr={entry.mdStr} />;
+        return (
+          <MetadataEntryModalAction
+            label={entry.label}
+            copyContent={() => entry.mdStr}
+            content={() => <ReactMarkdown source={entry.mdStr} />}
+          >
+            [Show Markdown]
+          </MetadataEntryModalAction>
+        );
       case 'EventPythonArtifactMetadataEntry':
         return (
           <PythonArtifactLink
@@ -182,52 +185,42 @@ const PythonArtifactLink = ({
   </>
 );
 
-class MarkdownMetadataLink extends React.Component<{
-  title: string;
-  mdStr: string;
-}> {
-  state = {isExpanded: false};
-  onView = () => {
-    this.setState({isExpanded: true});
-  };
-  onClose = () => {
-    this.setState({isExpanded: false});
-  };
-
-  render() {
-    const {mdStr, title} = this.props;
-    const {isExpanded} = this.state;
-    return (
-      <>
-        <MetadataEntryAction onClick={this.onView}>[Show Markdown]</MetadataEntryAction>
-        {isExpanded && (
-          <Dialog
-            icon="info-sign"
-            usePortal={true}
-            style={{width: 'auto', maxWidth: '80vw'}}
-            title={title}
-            onClose={this.onClose}
-            isOpen={true}
-          >
-            <MarkdownMetadataExpanded>
-              <ReactMarkdown source={mdStr} />
-            </MarkdownMetadataExpanded>
-
-            <div className={Classes.DIALOG_FOOTER}>
-              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-                <Button intent="primary" autoFocus={true} onClick={this.onClose}>
-                  Close
-                </Button>
-              </div>
+const MetadataEntryModalAction: React.FunctionComponent<{
+  label: string;
+  content: () => React.ReactNode;
+  copyContent: () => string;
+}> = (props) => {
+  const [isExpanded, setExpanded] = React.useState(false);
+  return (
+    <>
+      <MetadataEntryAction onClick={() => setExpanded(true)}>{props.children}</MetadataEntryAction>
+      {isExpanded && (
+        <Dialog
+          icon="info-sign"
+          usePortal={true}
+          style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
+          title={props.label}
+          onClose={() => setExpanded(false)}
+          isOpen={true}
+        >
+          <MetadataEntryModalContent>{props.content()}</MetadataEntryModalContent>
+          <div className={Classes.DIALOG_FOOTER}>
+            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+              <Button onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>
+                Copy
+              </Button>
+              <Button intent="primary" autoFocus={true} onClick={() => setExpanded(false)}>
+                Close
+              </Button>
             </div>
-          </Dialog>
-        )}
-      </>
-    );
-  }
-}
+          </div>
+        </Dialog>
+      )}
+    </>
+  );
+};
 
-const MarkdownMetadataExpanded = styled.div`
+const MetadataEntryModalContent = styled.div`
   font-size: 13px;
   overflow: auto;
   max-height: 500px;
