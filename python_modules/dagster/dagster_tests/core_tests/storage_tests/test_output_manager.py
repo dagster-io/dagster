@@ -67,37 +67,6 @@ def test_configurable_output_manager():
     assert adict["result"] == ("a", 5)
 
 
-@pytest.mark.xfail(
-    reason="""This test fails during the intermediate state we're in where output managers have
-        been introduced, but they haven't yet been consolidated with asset stores. After the
-        consolidation, there will be no more asset store attached to the output of my_solid."""
-)
-def test_output_manager_no_input_manager():
-    adict = {}
-
-    @output_manager
-    def my_output_manager(_context, _resource_config, obj):
-        adict["result"] = obj
-
-    @solid(output_defs=[OutputDefinition(manager_key="my_output_manager")])
-    def my_solid(_):
-        return 5
-
-    @solid
-    def my_downstream_solid(_, input1):
-        return input1 + 1
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"my_output_manager": my_output_manager})]
-        )
-        def my_pipeline():
-            my_downstream_solid(my_solid())
-
-        assert my_pipeline
-
-
 def test_separate_output_manager_input_manager():
     adict = {}
 
@@ -232,7 +201,8 @@ def test_configured():
 
 
 def test_output_manager_with_failure():
-    _called = False
+    _called_input_manager = False
+    _called_solid = False
 
     @output_manager
     def should_fail(_, _resource_config, _obj):
@@ -243,15 +213,29 @@ def test_output_manager_with_failure():
             ],
         )
 
+    @input_manager
+    def should_not_enter(_):
+        _called_input_manager = True
+
     @solid(output_defs=[OutputDefinition(manager_key="should_fail")])
     def emit_str(_):
         return "emit"
 
-    @solid(input_defs=[InputDefinition(name="_input_str", dagster_type=str)])
+    @solid(
+        input_defs=[
+            InputDefinition(name="_input_str", dagster_type=str, manager_key="should_not_enter")
+        ]
+    )
     def should_not_call(_, _input_str):
-        _called = True
+        _called_solid = True
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"should_fail": should_fail})])
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"should_fail": should_fail, "should_not_enter": should_not_enter}
+            )
+        ]
+    )
     def simple():
         should_not_call(emit_str())
 
@@ -272,7 +256,7 @@ def test_output_manager_with_failure():
         assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
         assert failure_data.user_failure_data.metadata_entries[0].description == "description"
 
-        assert not _called
+        assert not _called_input_manager and not _called_solid
 
 
 def test_output_manager_with_retries():
@@ -352,3 +336,35 @@ def test_output_manager_with_retries():
         step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["should_not_execute"])
         assert len(step_stats_3) == 0
         assert _called == False
+
+
+def test_output_manager_no_input_manager():
+    @output_manager
+    def output_manager_alone(_):
+        raise NotImplementedError()
+
+    @solid(output_defs=[OutputDefinition(name="output_alone", manager_key="output_manager_alone")])
+    def emit_str(_):
+        raise NotImplementedError()
+
+    @solid(input_defs=[InputDefinition("_str_input")])
+    def ingest_str(_, _str_input):
+        raise NotImplementedError()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Input "_str_input" of solid "ingest_str" is connected to output "output_alone" of '
+        'solid "emit_str". In mode "default", that output does not have an output manager that '
+        "knows how to load inputs, so we don't know how to load the input. To address this, "
+        "assign an InputManager to this input or assign an ObjectManager to the upstream output.",
+    ):
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition(
+                    "default", resource_defs={"output_manager_alone": output_manager_alone}
+                )
+            ]
+        )
+        def _should_fail():
+            ingest_str(emit_str())

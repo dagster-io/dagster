@@ -9,6 +9,8 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
+from dagster.core.storage.input_manager import IInputManagerDefinition
+from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
 from dagster.core.utils import str_format_set
 from dagster.utils.backcompat import experimental_arg_warning
@@ -221,7 +223,7 @@ class PipelineDefinition(GraphDefinition):
         )
 
         # Validate unsatisfied inputs can be materialized from config
-        _validate_inputs(self._dependency_structure, self._solid_dict)
+        _validate_inputs(self._dependency_structure, self._solid_dict, self._mode_definitions)
 
         # Recursively explore all nodes in the this pipeline
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
@@ -719,10 +721,31 @@ def _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type
                         )
 
 
-def _validate_inputs(dependency_structure, solid_dict):
+def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
     for solid in solid_dict.values():
         for handle in solid.input_handles():
-            if not dependency_structure.has_deps(handle):
+            if dependency_structure.has_deps(handle):
+                if not handle.input_def.manager_key:
+                    for mode_def in mode_definitions:
+                        for source_output_handle in dependency_structure.get_deps_list(handle):
+                            output_manager_key = source_output_handle.output_def.manager_key
+                            output_manager_def = mode_def.resource_defs[output_manager_key]
+                            # TODO: remove the IOutputManagerDefinition check when asset store
+                            # API is removed.
+                            if isinstance(
+                                output_manager_def, IOutputManagerDefinition
+                            ) and not isinstance(output_manager_def, IInputManagerDefinition):
+                                raise DagsterInvalidDefinitionError(
+                                    f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
+                                    f'connected to output "{source_output_handle.output_def.name}" '
+                                    f'of solid "{source_output_handle.solid.name}". In mode '
+                                    f'"{mode_def.name}", that output does not have an output '
+                                    f"manager that knows how to load inputs, so we don't know how "
+                                    f"to load the input. To address this, assign an InputManager "
+                                    f"to this input or assign an ObjectManager to the upstream "
+                                    "output."
+                                )
+            else:
                 if (
                     not handle.input_def.dagster_type.loader
                     and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
