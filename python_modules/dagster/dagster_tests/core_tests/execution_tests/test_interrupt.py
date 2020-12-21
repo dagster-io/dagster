@@ -66,7 +66,11 @@ def test_single_proc_interrupt():
         # launch a thread the waits until the file is written to launch an interrupt
         Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
 
-        results = []
+        result_types = []
+        result_messages = []
+
+        received_interrupt = False
+
         try:
             # launch a pipeline that writes a file and loops infinitely
             # next time the launched thread wakes up it will send a keyboard
@@ -75,13 +79,24 @@ def test_single_proc_interrupt():
                 write_a_file_pipeline,
                 run_config={"solids": {"write_a_file": {"config": {"tempfile": success_tempfile}}}},
             ):
-                results.append(result.event_type)
+                result_types.append(result.event_type)
+                result_messages.append(result.message)
             assert False  # should never reach
         except DagsterExecutionInterruptedError:
-            pass
+            received_interrupt = True
 
-        assert DagsterEventType.STEP_FAILURE in results
-        assert DagsterEventType.PIPELINE_CANCELED in results
+        assert received_interrupt
+
+        assert DagsterEventType.STEP_FAILURE in result_types
+        assert DagsterEventType.PIPELINE_FAILURE in result_types
+
+        assert any(
+            [
+                "Execution was interrupted unexpectedly. "
+                "No user initiated termination request was found, treating as failure." in message
+                for message in result_messages
+            ]
+        )
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
@@ -98,6 +113,9 @@ def test_interrupt_multiproc():
             Thread(target=_send_kbd_int, args=([file_1, file_2, file_3, file_4],)).start()
 
             results = []
+
+            received_interrupt = False
+
             try:
                 # launch a pipeline that writes a file and loops infinitely
                 # next time the launched thread wakes up it will send a keyboard
@@ -118,13 +136,14 @@ def test_interrupt_multiproc():
                 ):
                     results.append(result)
                 assert False  # should never reach
-            except (DagsterExecutionInterruptedError, KeyboardInterrupt):
-                pass
+            except DagsterExecutionInterruptedError:
+                received_interrupt = True
 
+            assert received_interrupt
             assert [result.event_type for result in results].count(
                 DagsterEventType.STEP_FAILURE
             ) == 4
-            assert DagsterEventType.PIPELINE_CANCELED in [result.event_type for result in results]
+            assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
 
 
 def test_interrupt_resource_teardown():
@@ -157,6 +176,7 @@ def test_interrupt_resource_teardown():
         Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
 
         results = []
+        received_interrupt = False
         try:
             # launch a pipeline that writes a file and loops infinitely
             # next time the launched thread wakes up it will send an interrupt
@@ -171,10 +191,11 @@ def test_interrupt_resource_teardown():
                 results.append(result.event_type)
             assert False  # should never reach
         except DagsterExecutionInterruptedError:
-            pass
+            received_interrupt = True
 
+        assert received_interrupt
         assert DagsterEventType.STEP_FAILURE in results
-        assert DagsterEventType.PIPELINE_CANCELED in results
+        assert DagsterEventType.PIPELINE_FAILURE in results
         assert "A" in cleaned
 
 

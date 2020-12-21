@@ -245,6 +245,8 @@ def test_interrupt_step_launcher(mode):
 
             results = []
 
+            received_interrupt = False
+
             try:
                 for result in execute_pipeline_iterator(
                     pipeline=reconstructable(define_sleepy_pipeline),
@@ -253,10 +255,12 @@ def test_interrupt_step_launcher(mode):
                 ):
                     results.append(result.event_type)
             except DagsterExecutionInterruptedError:
-                pass
+                received_interrupt = True
+
+            assert received_interrupt
 
             assert DagsterEventType.STEP_FAILURE in results
-            assert DagsterEventType.PIPELINE_CANCELED in results
+            assert DagsterEventType.PIPELINE_FAILURE in results
 
             interrupt_thread.join()
 

@@ -191,6 +191,7 @@ def test_dask_terminate():
 
     interrupt_thread = None
     result_types = []
+    received_interrupt = False
 
     with instance_for_test() as instance:
         try:
@@ -214,12 +215,14 @@ def test_dask_terminate():
 
             assert False
         except DagsterExecutionInterruptedError:
-            pass
+            received_interrupt = True
+
+        assert received_interrupt
 
         interrupt_thread.join()
 
         assert DagsterEventType.STEP_FAILURE in result_types
-        assert DagsterEventType.PIPELINE_CANCELED in result_types
+        assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
 def test_existing_scheduler():

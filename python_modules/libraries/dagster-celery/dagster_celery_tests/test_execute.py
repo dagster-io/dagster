@@ -122,6 +122,7 @@ def test_terminate_pipeline_on_celery(rabbitmq):
                 results = []
                 result_types = []
                 interrupt_thread = None
+                received_interrupt = False
 
                 try:
                     for result in execute_pipeline_iterator(
@@ -140,9 +141,11 @@ def test_terminate_pipeline_on_celery(rabbitmq):
 
                     assert False
                 except DagsterExecutionInterruptedError:
-                    pass
+                    received_interrupt = True
 
                 interrupt_thread.join()
+
+                assert received_interrupt
 
                 # At least one step succeeded (the one that was running when the interrupt fired)
                 assert DagsterEventType.STEP_SUCCESS in result_types
@@ -158,7 +161,7 @@ def test_terminate_pipeline_on_celery(rabbitmq):
                 assert len(revoke_steps) > 0
 
             # The overall pipeline failed
-            assert DagsterEventType.PIPELINE_CANCELED in result_types
+            assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
 def test_execute_eagerly_on_celery():

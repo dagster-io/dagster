@@ -19,13 +19,9 @@ from dagster.cli.workspace.cli_target import (
     python_origin_target_argument,
     repository_target_argument,
 )
-from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import (
-    create_execution_plan,
-    execute_plan_iterator,
-    execute_run_iterator,
-)
+from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation.external import ExternalPipeline
@@ -44,6 +40,7 @@ from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
+from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -139,29 +136,8 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
     setup_windows_interrupt_support()
 
     try:
-        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
+        for event in core_execute_run(recon_pipeline, pipeline_run, instance):
             write_stream_fn(event)
-    except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        write_stream_fn(
-            instance.report_engine_event(
-                message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
-            )
-        )
-        pipeline_run = instance.get_run_by_id(pipeline_run_id)
-        if pipeline_run and (not pipeline_run.is_finished):
-            write_stream_fn(instance.report_run_canceled(pipeline_run))
-    except Exception:  # pylint: disable=broad-except
-        write_stream_fn(
-            instance.report_engine_event(
-                "An exception was thrown during execution that is likely a framework error, "
-                "rather than an error in user code.",
-                pipeline_run,
-                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-            )
-        )
-        pipeline_run = instance.get_run_by_id(pipeline_run_id)
-        if pipeline_run and (not pipeline_run.is_finished):
-            write_stream_fn(instance.report_run_failed(pipeline_run))
     finally:
         instance.report_engine_event(
             "Process for pipeline exited (pid: {pid}).".format(pid=pid), pipeline_run,

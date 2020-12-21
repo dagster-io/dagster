@@ -699,7 +699,16 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan):
         raise  # finally block will run before this is re-raised
     finally:
         if pipeline_canceled_info:
-            event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info,)
+            reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
+            if reloaded_run and reloaded_run.status == PipelineRunStatus.CANCELING:
+                event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
+            else:
+                event = DagsterEvent.pipeline_failure(
+                    pipeline_context,
+                    "Execution was interrupted unexpectedly. "
+                    "No user initiated termination request was found, treating as failure.",
+                    pipeline_canceled_info,
+                )
         elif pipeline_exception_info:
             event = DagsterEvent.pipeline_failure(
                 pipeline_context,
