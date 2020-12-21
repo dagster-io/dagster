@@ -1,7 +1,6 @@
 version: "3.7"
 
-# Supply DAGSTER_GIT_COMMIT to "docker-compose build --build-arg" to build
-# against a different git hash than origin/master
+# Build these services with ./build.sh to access the dagster/dagit code from master
 
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
@@ -34,7 +33,7 @@ services:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_DB: "postgres_db"
-      DAGSTER_CURRENT_IMAGE: "deploy_docker_docker_example_pipelines"
+      DAGSTER_CURRENT_IMAGE: "${COMPOSE_PROJECT_NAME}_docker_example_pipelines"
     networks:
       - docker_example_network
 

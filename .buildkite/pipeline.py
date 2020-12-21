@@ -78,7 +78,8 @@ def dbt_example_extra_cmds_fn(_):
 
 def deploy_docker_example_extra_cmds_fn(_):
     return [
-        "pushd examples/deploy_docker",
+        "pushd examples/deploy_docker/from_source",
+        "./build.sh",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         network_buildkite_container("docker_example_network"),
         connect_sibling_docker_container(

@@ -11,7 +11,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @contextmanager
-def docker_service_up(docker_compose_file, git_commit):
+def docker_service_up(docker_compose_file):
     if IS_BUILDKITE:
         yield  # buildkite pipeline handles the service
         return
@@ -22,26 +22,23 @@ def docker_service_up(docker_compose_file, git_commit):
     except subprocess.CalledProcessError:
         pass
 
-    build_process = subprocess.Popen(
-        [
-            "docker-compose",
-            "-f",
-            docker_compose_file,
-            "build",
-            "--build-arg",
-            "DAGSTER_GIT_COMMIT={git_commit}".format(git_commit=git_commit),
-        ],
-    )
-
+    build_process = subprocess.Popen([file_relative_path(docker_compose_file, "./build.sh")])
     build_process.wait()
+    assert build_process.returncode == 0
 
-    up_process = subprocess.Popen(["docker-compose", "-f", docker_compose_file, "up", "--no-start"])
+    env_file = file_relative_path(docker_compose_file, ".env")
 
+    up_process = subprocess.Popen(
+        ["docker-compose", "--env-file", env_file, "-f", docker_compose_file, "up", "--no-start"]
+    )
     up_process.wait()
+    assert up_process.returncode == 0
 
-    start_process = subprocess.Popen(["docker-compose", "-f", docker_compose_file, "start"])
-
+    start_process = subprocess.Popen(
+        ["docker-compose", "--env-file", env_file, "-f", docker_compose_file, "start"]
+    )
     start_process.wait()
+    assert start_process.returncode == 0
 
     try:
         yield
@@ -102,8 +99,7 @@ mutation($executionParams: ExecutionParams!) {
 
 
 def test_deploy_docker():
-    # To test this locally, push your local change to a git branch and reference it here
-    with docker_service_up(file_relative_path(__file__, "../docker-compose.yml"), "origin/master"):
+    with docker_service_up(file_relative_path(__file__, "../from_source/docker-compose.yml")):
         # Wait for server to wake up
 
         start_time = time.time()
