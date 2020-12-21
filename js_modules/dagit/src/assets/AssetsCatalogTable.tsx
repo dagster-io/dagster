@@ -72,10 +72,11 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}>
                     <p>
                       There are no {prefixPath.length ? 'matching ' : 'known '}
                       materialized assets with {prefixPath.length ? 'the ' : 'a '}
-                      specified asset key. Any asset keys that have been specified with a{' '}
-                      <code>Materialization</code> during a pipeline run will appear here. See the{' '}
+                      specified asset key. Any asset keys that have been specified with an{' '}
+                      <code>AssetMaterialization</code> during a pipeline run will appear here. See
+                      the{' '}
                       <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
-                        Materialization documentation
+                        AssetMaterialization documentation
                       </a>{' '}
                       for more information.
                     </p>
