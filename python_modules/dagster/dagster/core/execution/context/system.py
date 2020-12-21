@@ -22,6 +22,7 @@ from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.output_manager import OutputManager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
@@ -601,6 +602,8 @@ def get_output_context(
         solid_def=step.solid.definition,
         dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
         log_manager=log_manager,
-        version=_step_output_version(execution_plan, step_output_handle),
+        version=_step_output_version(execution_plan, step_output_handle)
+        if MEMOIZED_RUN_TAG in execution_plan.pipeline.get_definition().tags
+        else None,
         step_context=step_context,
     )

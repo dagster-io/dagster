@@ -104,7 +104,8 @@ def versioned_pipeline_factory(asset_store=None):
                     {"object_manager": asset_store_factory(asset_store)} if asset_store else {}
                 ),
             )
-        ]
+        ],
+        tags={MEMOIZED_RUN_TAG: "true"},
     )
     def versioned_pipeline():
         versioned_solid_takes_input(versioned_solid_no_input())
@@ -126,7 +127,8 @@ def partially_versioned_pipeline_factory(asset_store=None):
                     {"object_manager": asset_store_factory(asset_store)} if asset_store else {}
                 ),
             )
-        ]
+        ],
+        tags={MEMOIZED_RUN_TAG: "true"},
     )
     def partially_versioned_pipeline():
         solid_takes_input(versioned_solid_no_input())

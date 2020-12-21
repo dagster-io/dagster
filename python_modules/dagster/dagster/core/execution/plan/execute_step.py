@@ -32,6 +32,7 @@ from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context
 from dagster.utils.timing import time_execution_scope
@@ -346,7 +347,11 @@ def _create_step_events_for_output(step_context, output):
         step_key=step.key, output_name=output.output_name, mapping_key=mapping_key
     )
 
-    version = step_context.execution_plan.resolve_step_output_versions().get(step_output_handle)
+    version = (
+        step_context.execution_plan.resolve_step_output_versions().get(step_output_handle)
+        if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
+        else None
+    )
 
     for output_event in _type_checked_step_output_event_sequence(
         step_context, step_output_handle, output, version
