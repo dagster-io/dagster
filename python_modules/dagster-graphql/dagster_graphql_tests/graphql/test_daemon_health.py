@@ -1,4 +1,5 @@
 import pytest
+from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.daemon.types import DaemonHeartbeat, DaemonType
 from dagster.utils.error import SerializableErrorInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
@@ -73,6 +74,8 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
             )
         )
         results = execute_dagster_graphql(graphql_context, INDIVIDUAL_DAEMON_QUERY)
+
+        scheduler_required = isinstance(graphql_context.instance.scheduler, DagsterDaemonScheduler)
         assert results.data == {
             "instance": {
                 "daemonHealth": {
@@ -90,8 +93,8 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                     },
                     "scheduler": {
                         "daemonType": "SCHEDULER",
-                        "required": False,
-                        "healthy": None,
+                        "required": scheduler_required,
+                        "healthy": False if scheduler_required else None,
                         "lastHeartbeatTime": None,
                     },
                 }
@@ -102,14 +105,16 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
         if graphql_context.instance.is_ephemeral:
             pytest.skip("The daemon isn't compatible with an in-memory instance")
         results = execute_dagster_graphql(graphql_context, ALL_DAEMON_QUERY)
+        scheduler_required = isinstance(graphql_context.instance.scheduler, DagsterDaemonScheduler)
+
         assert results.data == {
             "instance": {
                 "daemonHealth": {
                     "allDaemonStatuses": [
                         {
                             "daemonType": "SCHEDULER",
-                            "required": False,
-                            "healthy": None,
+                            "required": scheduler_required,
+                            "healthy": False if scheduler_required else None,
                             "lastHeartbeatTime": None,
                         },
                         {

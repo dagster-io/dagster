@@ -36,7 +36,7 @@ def test_run_coordinator_instance():
 
         daemons = controller.daemons
 
-        assert len(daemons) == 2
+        assert len(daemons) == 3
         assert any(isinstance(daemon, QueuedRunCoordinatorDaemon) for daemon in daemons)
 
 

@@ -145,7 +145,13 @@ class InstanceRef(
             ),
         )
 
-        scheduler_data = configurable_class_data_or_default(config_value, "scheduler", None,)
+        scheduler_data = configurable_class_data_or_default(
+            config_value,
+            "scheduler",
+            ConfigurableClassData(
+                "dagster.core.scheduler", "DagsterDaemonScheduler", yaml.dump({}),
+            ),
+        )
 
         run_coordinator_data = configurable_class_data_or_default(
             config_value,
