@@ -19,7 +19,6 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.interrupts import capture_interrupts
 
@@ -402,7 +401,6 @@ def reexecute_pipeline(
     tags=None,
     instance=None,
     raise_on_error=True,
-    step_keys_to_execute=None,
 ):
     """Reexecute an existing pipeline run.
 
@@ -442,9 +440,6 @@ def reexecute_pipeline(
     For the asynchronous version, see :py:func:`reexecute_pipeline_iterator`.
     """
 
-    step_selection = canonicalize_backcompat_args(
-        step_selection, "step_selection", step_keys_to_execute, "step_keys_to_execute", "0.10.0",
-    )
     check.opt_list_param(step_selection, "step_selection", of_type=str)
 
     check.str_param(parent_run_id, "parent_run_id")
@@ -538,9 +533,6 @@ def reexecute_pipeline_iterator(
       Iterator[DagsterEvent]: The stream of events resulting from pipeline reexecution.
     """
 
-    step_selection = canonicalize_backcompat_args(
-        step_selection, "step_selection", step_keys_to_execute, "step_keys_to_execute", "0.10.0",
-    )
     check.opt_list_param(step_selection, "step_selection", of_type=str)
 
     check.str_param(parent_run_id, "parent_run_id")

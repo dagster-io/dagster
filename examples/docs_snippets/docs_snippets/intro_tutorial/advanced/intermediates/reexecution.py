@@ -62,7 +62,7 @@ if __name__ == "__main__":
     reexecution_result = reexecute_pipeline(
         reexecution_pipeline,
         parent_run_id=result.run_id,
-        step_keys_to_execute=["sort_by_calories"],
+        step_selection=["sort_by_calories"],
         instance=instance,
         run_config=run_config,
     )

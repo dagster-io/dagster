@@ -16,6 +16,7 @@
 - The `.compute` suffix is no longer applied to all step keys.
 - `SolidExecutionResult.compute_output_event_dict` changed to `SolidExecutionResult.compute_output_events_dict`
 - Eliminated `pipeline_def` property from `InitResourceContext`.
+- Removed the argument `step_keys_to_execute` to the `reexecute_pipeline` and `reexecute_pipeline_iterator`.
 
 ## 0.9.22.post0
 

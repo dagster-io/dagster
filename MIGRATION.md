@@ -94,6 +94,12 @@ recommended to follow the migration instruction about the deprecation of interme
       return context.resources.file_manager.write_data(data_bytes)
   ```
 
+## Removal: `step_keys_to_execute`
+
+We have removed the argument `step_keys_to_execute` to the `reexecute_pipeline` and `reexecute_pipeline_iterator`,
+in favor of `step_selection`, which additionally accepts the Dagster selection syntax, for example,
+`*solid_a+` represents `solid_a`, all of its upstream steps, its direct downstream steps.
+
 # Migrating to 0.9.0
 
 ## Removal: `config` argument
