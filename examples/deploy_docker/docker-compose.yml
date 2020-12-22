@@ -1,0 +1,93 @@
+version: "3.7"
+
+services:
+  # This service runs the postgres DB used by dagster for run storage, schedule storage,
+  # and event log storage.
+  docker_example_postgresql:
+    image: postgres:11
+    container_name: docker_example_postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres_user"
+      POSTGRES_PASSWORD: "postgres_password"
+      POSTGRES_DB: "postgres_db"
+    networks:
+      - docker_example_network
+
+  # This service runs the gRPC server that loads and executes your pipelines, in both dagit
+  # and dagster-daemon. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
+  # run launcher to use this same image when launching runs in a new container as well.
+  # Multiple containers like this can be deployed separately - each just needs to run on
+  # its own port, and have its own entry in the workspace.yaml file that's loaded by dagit.
+  docker_example_pipelines:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_pipelines
+    container_name: docker_example_pipelines
+    ports:
+      - "4000:4000"
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+      DAGSTER_CURRENT_IMAGE: "${COMPOSE_PROJECT_NAME}_docker_example_pipelines"
+    networks:
+      - docker_example_network
+
+  # This service runs dagit, which loads the pipelines from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from dagit will be put on
+  # a queue and later dequeued and launched by dagster-daemon.
+  docker_example_dagit:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_dagster
+    entrypoint:
+      - dagit
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    container_name: docker_example_dagit
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    networks:
+      - docker_example_network
+    depends_on:
+      - docker_example_postgresql
+      - docker_example_pipelines
+
+  # This service runs the dagster-daemon process, which is responsible for taking runs
+  # off of the queue and launching them, as well as creating runs from schedules or sensors.
+  docker_example_daemon:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_dagster
+    entrypoint:
+      - dagster-daemon
+      - run
+    container_name: docker_example_daemon
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    volumes: # Make docker client accessible so we can launch containers using host docker
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - docker_example_network
+    depends_on:
+      - docker_example_postgresql
+      - docker_example_pipelines
+
+networks:
+  docker_example_network:
+    driver: bridge
+    name: docker_example_network
