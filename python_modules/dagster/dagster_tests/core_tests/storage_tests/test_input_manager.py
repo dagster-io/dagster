@@ -10,13 +10,14 @@ from dagster import (
     OutputDefinition,
     PythonObjectDagsterType,
     execute_pipeline,
+    fs_object_manager,
+    input_manager,
     pipeline,
     resource,
     solid,
 )
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.instance import InstanceRef
-from dagster.core.storage.input_manager import input_manager
 
 
 def test_validate_inputs():
@@ -147,7 +148,6 @@ def test_configured():
 
     assert isinstance(configured_input_manager, InputManagerDefinition)
     assert configured_input_manager.description == my_input_manager.description
-    assert configured_input_manager.input_config_schema == my_input_manager.input_config_schema
     assert (
         configured_input_manager.required_resource_keys == my_input_manager.required_resource_keys
     )
@@ -271,3 +271,35 @@ def test_input_manager_with_retries():
         step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_3"])
         assert len(step_stats_3) == 0
         assert _called == False
+
+
+def test_fan_in():
+    with seven.TemporaryDirectory() as tmpdir_path:
+        object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
+
+        @solid
+        def input_solid1(_):
+            return 1
+
+        @solid
+        def input_solid2(_):
+            return 2
+
+        @solid(input_defs=[InputDefinition("input1", manager_key="input_manager")])
+        def solid1(_, input1):
+            assert input1 == [1, 2]
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={
+                        "object_manager": object_manager,
+                        "input_manager": object_manager,
+                    }
+                )
+            ]
+        )
+        def my_pipeline():
+            solid1(input1=[input_solid1(), input_solid2()])
+
+        execute_pipeline(my_pipeline)

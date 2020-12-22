@@ -327,7 +327,7 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
     def required_resource_keys(self):
         resource_keys = set()
         for source in self.sources:
-            resource_keys.union(source.required_resource_keys())
+            resource_keys = resource_keys.union(source.required_resource_keys())
         return resource_keys
 
     def compute_version(self, step_versions):
