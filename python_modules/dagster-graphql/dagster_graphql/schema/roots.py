@@ -67,6 +67,7 @@ from dagster_graphql.implementation.utils import (
     capture_dauphin_error,
     pipeline_selector_from_graphql,
 )
+from dagster_graphql.schema.errors import DauphinPythonError
 from dagster_graphql.schema.external import get_location_state_change_observable
 
 from .config_types import to_dauphin_config_type
@@ -988,21 +989,25 @@ class DauphinDaemonStatus(dauphin.ObjectType):
     required = dauphin.NonNull(dauphin.Boolean)
     healthy = dauphin.Boolean()
     lastHeartbeatTime = dauphin.Float()
+    lastHeartbeatError = dauphin.Field("PythonError")
 
     def __init__(self, daemon_status):
 
         check.inst_param(daemon_status, "daemon_status", DaemonStatus)
 
-        if daemon_status.last_heartbeat is None:
-            last_heartbeat_time = None
-        else:
+        last_heartbeat_time = None
+        last_heartbeat_error = None
+        if daemon_status.last_heartbeat:
             last_heartbeat_time = daemon_status.last_heartbeat.timestamp
+            if daemon_status.last_heartbeat.error:
+                last_heartbeat_error = DauphinPythonError(daemon_status.last_heartbeat.error)
 
         super(DauphinDaemonStatus, self).__init__(
             daemonType=daemon_status.daemon_type,
             required=daemon_status.required,
             healthy=daemon_status.healthy,
             lastHeartbeatTime=last_heartbeat_time,
+            lastHeartbeatError=last_heartbeat_error,
         )
 
 

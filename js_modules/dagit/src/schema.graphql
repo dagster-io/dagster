@@ -866,6 +866,7 @@ type DaemonStatus {
   required: Boolean!
   healthy: Boolean
   lastHeartbeatTime: Float
+  lastHeartbeatError: PythonError
 }
 
 enum DaemonType {
