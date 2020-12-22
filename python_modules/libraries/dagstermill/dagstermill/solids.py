@@ -22,6 +22,7 @@ from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
+from dagster.utils.error import serializable_error_info_from_exc_info
 from future.utils import raise_from
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
@@ -190,10 +191,10 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                             executed_notebook_materialization_path = (
                                 executed_notebook_file_handle.path_desc
                             )
-                    except Exception as exc_inner:  # pylint: disable=broad-except
+                    except Exception:  # pylint: disable=broad-except
                         compute_context.log.warning(
                             "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
-                                exc=exc_inner
+                                exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
                             )
                         )
                         executed_notebook_materialization_path = executed_notebook_path
@@ -235,10 +236,10 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                         fd, mode="wb", ext="ipynb"
                     )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
-            except Exception as exc:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 compute_context.log.warning(
                     "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
-                        exc=str(exc)
+                        exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
                     )
                 )
                 executed_notebook_materialization_path = executed_notebook_path

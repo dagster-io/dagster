@@ -208,8 +208,6 @@ def test_notebook_dag():
         assert result.result_for_solid("mult_two").output_value() == 6
 
 
-# https://github.com/dagster-io/dagster/issues/3401
-@pytest.mark.skip
 @pytest.mark.notebook_test
 def test_error_notebook():
     with pytest.raises(PapermillExecutionError) as exc:
@@ -303,8 +301,6 @@ def test_resources_notebook():
             assert msgs[3] == "Hello, notebook!"
 
 
-# https://github.com/dagster-io/dagster/issues/3401
-@pytest.mark.skip
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
     result = None
