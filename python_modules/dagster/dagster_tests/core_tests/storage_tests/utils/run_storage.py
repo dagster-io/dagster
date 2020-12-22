@@ -928,5 +928,3 @@ class TestRunStorage:
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()
-
-        assert storage.get_daemon_heartbeats() == {}

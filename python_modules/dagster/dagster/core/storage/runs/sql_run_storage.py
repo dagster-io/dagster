@@ -578,7 +578,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def wipe_daemon_heartbeats(self):
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
+            DaemonHeartbeatsTable.drop(conn)  # pylint: disable=no-value-for-parameter
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
