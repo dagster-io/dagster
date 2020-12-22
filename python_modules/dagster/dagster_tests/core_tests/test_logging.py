@@ -113,7 +113,6 @@ def test_multiline_logging_complex():
         "dagster_event": DagsterEvent(
             event_type_value="STEP_FAILURE",
             pipeline_name="error_monster",
-            step_key="start.materialization.output.result.0",
             solid_handle=SolidHandle("start", None),
             step_kind_value="MATERIALIZATION_THUNK",
             logging_tags={

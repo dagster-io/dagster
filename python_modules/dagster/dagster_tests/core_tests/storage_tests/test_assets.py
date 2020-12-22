@@ -271,7 +271,6 @@ def _materialization_event_record(run_id, asset_key):
         dagster_event=DagsterEvent(
             DagsterEventType.STEP_MATERIALIZATION.value,
             "my_pipeline",
-            step_key="my_step_key",
             event_specific_data=StepMaterializationData(AssetMaterialization(asset_key=asset_key)),
         ),
     )

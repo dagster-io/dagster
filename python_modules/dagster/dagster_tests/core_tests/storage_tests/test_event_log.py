@@ -8,6 +8,7 @@ from contextlib import contextmanager
 import pytest
 import sqlalchemy
 from dagster.core.definitions import AssetMaterialization, ExpectationResult
+from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import (
     DagsterEvent,
@@ -17,6 +18,7 @@ from dagster.core.events import (
     StepMaterializationData,
 )
 from dagster.core.events.log import DagsterEventRecord
+from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
@@ -411,8 +413,10 @@ def _stats_records(run_id):
     ]
 
 
-def _event_record(run_id, step_key, timestamp, event_type, event_specific_data=None):
+def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data=None):
     pipeline_name = "pipeline_name"
+    solid_handle = SolidHandle(solid_name, None)
+    step_handle = StepHandle(solid_handle)
     return DagsterEventRecord(
         None,
         "",
@@ -420,12 +424,13 @@ def _event_record(run_id, step_key, timestamp, event_type, event_specific_data=N
         "",
         run_id,
         timestamp,
-        step_key=step_key,
+        step_key=step_handle.to_key(),
         pipeline_name=pipeline_name,
         dagster_event=DagsterEvent(
             event_type.value,
             pipeline_name,
-            step_key=step_key,
+            solid_handle=solid_handle,
+            step_handle=step_handle,
             event_specific_data=event_specific_data,
         ),
     )

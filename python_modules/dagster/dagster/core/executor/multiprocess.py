@@ -164,7 +164,7 @@ class MultiprocessExecutor(Executor):
                                     "unexpectedly exited with code {exit_code}"
                                 ).format(step_key=key, exit_code=crash.exit_code),
                                 EngineEventData.engine_error(serializable_error),
-                                step_key=key,
+                                step_handle=active_execution.get_step_by_key(key).handle,
                             )
                             step_failure_event = DagsterEvent.step_failure_event(
                                 step_context=pipeline_context.for_step(
@@ -245,7 +245,7 @@ class MultiprocessExecutor(Executor):
             step_context,
             "Launching subprocess for {}".format(step.key),
             EngineEventData(marker_start=DELEGATE_MARKER),
-            step_key=step.key,
+            step_handle=step.handle,
         )
 
         for ret in execute_child_process_command(command):

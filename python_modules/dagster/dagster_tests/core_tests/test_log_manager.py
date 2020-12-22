@@ -13,7 +13,6 @@ def test_construct_log_string_for_event():
     step_output_event = DagsterEvent(
         event_type_value="STEP_OUTPUT",
         pipeline_name="my_pipeline",
-        step_key="solid2",
         solid_handle=SolidHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
@@ -55,7 +54,6 @@ def test_construct_log_string_with_error():
     step_failure_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
         pipeline_name="my_pipeline",
-        step_key="solid2",
         solid_handle=SolidHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},

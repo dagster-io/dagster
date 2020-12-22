@@ -3,8 +3,10 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.serdes import whitelist_for_serdes
 
 
+@whitelist_for_serdes
 class StepHandle(namedtuple("_StepHandle", "solid_handle")):
     """A reference to an ExecutionStep that was determined statically"""
 
@@ -46,6 +48,7 @@ class UnresolvedStepHandle(namedtuple("_UnresolvedStepHandle", "solid_handle")):
         return ResolvedFromDynamicStepHandle(self.solid_handle, map_key)
 
 
+@whitelist_for_serdes
 class ResolvedFromDynamicStepHandle(
     namedtuple("_ResolvedFromDynamicStepHandle", "solid_handle mapping_key")
 ):
