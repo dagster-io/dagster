@@ -24,7 +24,7 @@ I.e. an ObjectManager handles the teal boxes:
   <img src="/assets/images/overview/object-managers/object-managers.png" />
 </p>
 
-The default ObjectManager, <PyObject module="dagster" object="mem_object_manager" />, stores outputs in memory, but this only works for the single process executor.  Dagster provides out-of-the-box ObjectManagers that pickle objects and save them to a local filesystem, Amazon S3, Azure ADLS, or GCS.
+The default ObjectManager, <PyObject module="dagster" object="mem_object_manager" />, stores outputs in memory, but this only works for the single process executor.  Dagster provides out-of-the-box ObjectManagers that pickle objects and save them. These are <PyObject module="dagster" object="fs_object_manager"/>, <PyObject module="dagster_aws.s3" object="s3_object_manager"/>, <PyObject module="dagster_azure.adls2" object="adls2_object_manager"/>, or <PyObject module="dagster_gcp.gcs" object="gcs_object_manager"/>.
 
 ObjectManagers are [resources](/overview/modes-resources-presets/modes-resources), which means users can supply different ObjectManagers for the same solid outputs in different situations.  For example, you might use an in-memory ObjectManager for unit-testing a pipeline and an S3ObjectManager in production.
 
