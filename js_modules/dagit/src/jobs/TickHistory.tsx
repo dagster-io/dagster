@@ -348,23 +348,7 @@ const TickTable = ({ticks}: {ticks: JobHistoryFragment_ticks[]}) => (
   </Table>
 );
 
-export const TICK_HISTORY_FRAGMENT = gql`
-  fragment TickHistoryFragment on JobTick {
-    id
-    status
-    timestamp
-    skipReason
-    runIds
-    error {
-      ...PythonErrorFragment
-    }
-    ...TickTagFragment
-  }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${TICK_TAG_FRAGMENT}
-`;
-
-export const JOB_HISTORY_FRAGMENT = gql`
+const JOB_HISTORY_FRAGMENT = gql`
   fragment JobHistoryFragment on JobState {
     id
     ticks {
@@ -383,7 +367,7 @@ export const JOB_HISTORY_FRAGMENT = gql`
   ${TICK_TAG_FRAGMENT}
 `;
 
-export const SCHEDULE_TICK_HISTORY_QUERY = gql`
+const SCHEDULE_TICK_HISTORY_QUERY = gql`
   query ScheduleTickHistoryQuery($scheduleSelector: ScheduleSelector!) {
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       __typename
@@ -399,7 +383,7 @@ export const SCHEDULE_TICK_HISTORY_QUERY = gql`
   ${JOB_HISTORY_FRAGMENT}
 `;
 
-export const SENSOR_TICK_HISTORY_QUERY = gql`
+const SENSOR_TICK_HISTORY_QUERY = gql`
   query SensorTickHistoryQuery($sensorSelector: SensorSelector!) {
     sensorOrError(sensorSelector: $sensorSelector) {
       __typename

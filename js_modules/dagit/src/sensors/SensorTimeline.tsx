@@ -230,7 +230,7 @@ const TickTimelineGraph: React.FC<{
   return <Line data={graphData} height={30} options={options} key="100%" />;
 };
 
-export const SENSOR_TIMELINE_QUERY = gql`
+const SENSOR_TIMELINE_QUERY = gql`
   query SensorTimelineQuery($sensorSelector: SensorSelector!) {
     sensorOrError(sensorSelector: $sensorSelector) {
       __typename
