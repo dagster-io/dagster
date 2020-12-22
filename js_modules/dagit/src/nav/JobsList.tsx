@@ -9,6 +9,7 @@ import {ShortcutHandler} from 'src/ShortcutHandler';
 import {JobsListQuery} from 'src/nav/types/JobsListQuery';
 import {JobStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {BorderSetting} from 'src/ui/types';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
@@ -149,17 +150,27 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
         </ButtonGroup>
       </Header>
       <Items>
-        <Box
-          border={{width: 1, side: 'bottom', color: Colors.DARK_GRAY4}}
-          padding={12}
-          margin={{top: 0, bottom: 12, horizontal: 12}}
-        >
-          {items.length ? (
-            <Item to={workspacePath(repoName, repoLocation, `/${type}`)}>All {type}</Item>
-          ) : (
-            <div>No {type} found</div>
-          )}
-        </Box>
+        {items.length ? (
+          <Item to={workspacePath(repoName, repoLocation, `/${type}`)}>
+            <Box
+              border={{width: 1, side: 'bottom', color: Colors.DARK_GRAY4}}
+              padding={{top: 4, bottom: 12, horizontal: 4}}
+              margin={{bottom: 4, horizontal: 8}}
+            >
+              <Group direction="row" spacing={8} alignItems="center">
+                <Icon icon={type === 'schedules' ? 'time' : 'automatic-updates'} iconSize={14} />
+                <div>View all {type}</div>
+              </Group>
+            </Box>
+          </Item>
+        ) : (
+          <Box
+            padding={{top: 4, horizontal: 12}}
+            style={{fontSize: '13px', color: Colors.LIGHT_GRAY3}}
+          >
+            No {type} found
+          </Box>
+        )}
         {items.map((p) => {
           const isFocused = p.label === focused;
           const isSelected = p.label === selector;

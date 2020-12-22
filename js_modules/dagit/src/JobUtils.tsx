@@ -1,5 +1,7 @@
 import {gql} from '@apollo/client';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {TICK_TAG_FRAGMENT} from 'src/JobTick';
@@ -9,20 +11,21 @@ import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
 import {JobStateFragment} from 'src/types/JobStateFragment';
 import {Group} from 'src/ui/Group';
+import {FontFamily} from 'src/ui/styles';
 
 export const JobRunStatus: React.FC<{
   jobState: JobStateFragment;
 }> = ({jobState}) => {
   if (!jobState.runs.length) {
-    return <div>&mdash;</div>;
+    return <span style={{color: Colors.GRAY4}}>None</span>;
   }
   const run = jobState.runs[0];
   return (
-    <Group direction="row" spacing={4} padding={2} alignItems="center">
+    <Group direction="row" spacing={4} alignItems="center">
       <RunStatus status={run.status} />
-      <a href={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
-        {titleForRun({runId: run.runId})}
-      </a>
+      <Link to={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
+        <span style={{fontFamily: FontFamily.monospace}}>{titleForRun({runId: run.runId})}</span>
+      </Link>
     </Group>
   );
 };
@@ -62,30 +65,16 @@ export const JOB_STATE_FRAGMENT = gql`
 `;
 
 export const StatusTable = styled.table`
-  width: 100%;
-  padding: 0;
-  margin-top: 4px;
-  border-top: 1px solid #dbc5ad;
-  border-left: 1px solid #dbc5ad;
+  font-size: 13px;
   border-spacing: 0;
-  background: #fffaf5;
-  td:first-child {
-    color: #a88860;
-  }
-  tbody > tr {
-    margin: 0;
-    padding: 0;
-  }
-  tbody > tr > th,
-  tbody > tr > td {
-    padding: 2px;
-    border-bottom: 1px solid #dbc5ad;
-    border-right: 1px solid #dbc5ad;
-    vertical-align: top;
-    box-shadow: none !important;
+
+  &&&&& tbody > tr > td {
+    background: transparent;
+    box-shadow: none;
+    padding: 1px 0;
   }
 
-  tbody > tr > th {
-    padding: 4px 2px;
+  &&&&& tbody > tr > td:first-child {
+    color: ${Colors.GRAY2};
   }
 `;

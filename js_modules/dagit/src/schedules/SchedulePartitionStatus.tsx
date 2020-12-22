@@ -9,6 +9,7 @@ import {
   ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results,
 } from 'src/schedules/types/ScheduleFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Group} from 'src/ui/Group';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
@@ -45,7 +46,7 @@ export const SchedulePartitionStatus: React.FC<{
     !schedule.partitionSet ||
     schedule.partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses'
   ) {
-    return <div>&mdash;</div>;
+    return <span style={{color: Colors.GRAY4}}>None</span>;
   }
 
   const partitions = schedule.partitionSet.partitionStatusesOrError.results;
@@ -60,38 +61,34 @@ export const SchedulePartitionStatus: React.FC<{
     `/pipelines/${schedule.pipelineName}/partitions`,
   );
   return (
-    <StatusTable>
-      <tbody>
-        <tr>
-          <th colSpan={2}>
-            <Link style={{color: Colors.GRAY3}} to={partitionUrl}>
-              {schedule.partitionSet.name}
-            </Link>
-          </th>
-        </tr>
-        {RUN_STATUSES.map((status) => {
-          if (!(status in partitionsByType)) {
-            return null;
-          }
-          return (
-            <tr key={status}>
-              <td style={{width: 100}}>{status}</td>
-              <td>
-                {status == 'Failed' || status == 'Missing' ? (
-                  <Link
-                    to={`${partitionUrl}?showFailuresAndGapsOnly=true`}
-                    style={{color: Colors.DARK_GRAY1}}
-                  >
-                    {partitionsByType[status].length}
-                  </Link>
-                ) : (
-                  partitionsByType[status].length
-                )}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </StatusTable>
+    <Group direction="column" spacing={4}>
+      <Link to={partitionUrl}>{schedule.partitionSet.name}</Link>
+      <StatusTable>
+        <tbody>
+          {RUN_STATUSES.map((status) => {
+            if (!(status in partitionsByType)) {
+              return null;
+            }
+            return (
+              <tr key={status}>
+                <td style={{width: '100px'}}>{status}</td>
+                <td>
+                  {status == 'Failed' || status == 'Missing' ? (
+                    <Link
+                      to={`${partitionUrl}?showFailuresAndGapsOnly=true`}
+                      style={{color: Colors.DARK_GRAY1}}
+                    >
+                      {partitionsByType[status].length}
+                    </Link>
+                  ) : (
+                    partitionsByType[status].length
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </StatusTable>
+    </Group>
   );
 };

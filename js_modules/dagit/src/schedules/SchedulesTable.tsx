@@ -9,7 +9,6 @@ import {
   Popover,
   PopoverInteractionKind,
   Position,
-  Switch,
   Tag,
   Tooltip,
 } from '@blueprintjs/core';
@@ -31,14 +30,14 @@ import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {StartSchedule} from 'src/schedules/types/StartSchedule';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {JobStatus, JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
+import {SwitchWithoutLabel} from 'src/ui/SwitchWithoutLabel';
 import {Table} from 'src/ui/Table';
 import {Code} from 'src/ui/Text';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-export const SchedulesTable: React.FunctionComponent<{
+export const SchedulesTable: React.FC<{
   schedules: ScheduleFragment[];
   repoAddress: RepoAddress;
 }> = ({repoAddress, schedules}) => {
@@ -59,33 +58,44 @@ export const SchedulesTable: React.FunctionComponent<{
     <Table striped style={{width: '100%'}}>
       <thead>
         <tr>
-          <th style={{maxWidth: '60px'}}></th>
-          <th>Schedule Name</th>
-          <th>Pipeline</th>
+          <th style={{width: '60px'}}></th>
+          <th style={{width: '300px'}}>Schedule Name</th>
           <th style={{width: '150px'}}>Schedule</th>
           <th style={{width: '120px'}}>
-            <Box flex={{direction: 'row', alignItems: 'center'}}>
+            <Group direction="row" spacing={8} alignItems="center">
               Last Tick
-              <Tooltip position={'right'} content={lastTick} wrapperTagName="div">
-                <Icon icon={IconNames.INFO_SIGN} style={{marginLeft: 10}} iconSize={15} />
+              <Tooltip position="top" content={lastTick}>
+                <Icon
+                  icon={IconNames.INFO_SIGN}
+                  iconSize={12}
+                  style={{position: 'relative', top: '-2px'}}
+                />
               </Tooltip>
-            </Box>
+            </Group>
           </th>
           <th>
-            <Box flex={{direction: 'row', alignItems: 'center'}}>
+            <Group direction="row" spacing={8} alignItems="center">
               Last Run
-              <Tooltip position={'right'} content={lastRun} wrapperTagName="div">
-                <Icon icon={IconNames.INFO_SIGN} style={{marginLeft: 10}} iconSize={15} />
+              <Tooltip position="top" content={lastRun}>
+                <Icon
+                  icon={IconNames.INFO_SIGN}
+                  iconSize={12}
+                  style={{position: 'relative', top: '-2px'}}
+                />
               </Tooltip>
-            </Box>
+            </Group>
           </th>
           <th>
-            <Box flex={{direction: 'row', alignItems: 'center'}}>
+            <Group direction="row" spacing={8} alignItems="center">
               Partition Status
-              <Tooltip position={'right'} content={partitionStatus} wrapperTagName="div">
-                <Icon icon={IconNames.INFO_SIGN} style={{marginLeft: 10}} iconSize={15} />
+              <Tooltip position="top" content={partitionStatus}>
+                <Icon
+                  icon={IconNames.INFO_SIGN}
+                  iconSize={12}
+                  style={{position: 'relative', top: '-2px'}}
+                />
               </Tooltip>
-            </Box>
+            </Group>
           </th>
           <th>Execution Params</th>
         </tr>
@@ -191,8 +201,8 @@ const ScheduleRow: React.FC<{
 
   return (
     <tr key={name}>
-      <td style={{width: 60}}>
-        <Switch
+      <td>
+        <SwitchWithoutLabel
           checked={status === JobStatus.RUNNING}
           large={true}
           disabled={toggleOffInFlight || toggleOnInFlight}
@@ -203,23 +213,33 @@ const ScheduleRow: React.FC<{
         {errorDisplay(status, runningScheduleCount)}
       </td>
       <td>
-        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
+        <Group direction="column" spacing={4}>
+          <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
+          <Group direction="row" spacing={4} alignItems="center">
+            <Icon
+              icon="diagram-tree"
+              color={Colors.GRAY2}
+              iconSize={12}
+              style={{position: 'relative', top: '-2px'}}
+            />
+            <span style={{fontSize: '13px'}}>
+              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
+                {pipelineName}
+              </Link>
+            </span>
+          </Group>
+        </Group>
       </td>
       <td>
-        <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
-          {pipelineName}
-        </Link>
-      </td>
-      <td style={{maxWidth: 150}}>
         {cronSchedule ? (
           <Tooltip position={'bottom'} content={cronSchedule}>
             {humanCronString(cronSchedule)}
           </Tooltip>
         ) : (
-          <div>&mdash;</div>
+          <span style={{color: Colors.GRAY4}}>None</span>
         )}
       </td>
-      <td style={{maxWidth: 120}}>
+      <td>
         {latestTick ? (
           <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
         ) : (

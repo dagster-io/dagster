@@ -56,7 +56,7 @@ export const SensorsRoot = (props: Props) => {
               );
             } else {
               return (
-                <Group direction="row" spacing={20}>
+                <Group direction="column" spacing={20}>
                   <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
                   <UnloadableSensors sensorStates={unloadableJobStatesOrError.results} />
                 </Group>
