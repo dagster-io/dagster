@@ -493,7 +493,7 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
             msg_fn=lambda: """Error occurred during the execution of step:
             step key: "{key}"
             solid invocation: "{solid}"
-            solid definition: "{solid_def}q"
+            solid definition: "{solid_def}"
             """.format(
                 key=step_context.step.key,
                 solid_def=step_context.solid_def.name,
@@ -539,5 +539,6 @@ def _load_input_values(step_context):
             step_key=step_context.step.key,
             input_name=step_input.name,
         ):
+            input_value = step_input.source.load_input_object(step_context)
 
-            yield step_input.name, step_input.source.load_input_object(step_context)
+        yield step_input.name, input_value
