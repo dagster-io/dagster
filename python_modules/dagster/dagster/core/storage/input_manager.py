@@ -121,7 +121,7 @@ def input_manager(
 
         @input_manager(input_config_schema={"path": str})
         def csv_loader(context, _resource_config):
-            return read_csv(context.input_config["path"])
+            return read_csv(context.config["path"])
     """
 
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):

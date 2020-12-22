@@ -100,7 +100,7 @@ class FromRootInputManager(
         load_input_context = step_context.for_input_manager(
             self.input_def.name,
             self.config_data,
-            input_metadata=self.input_def.metadata,
+            metadata=self.input_def.metadata,
             dagster_type=self.input_def.dagster_type,
         )
         return loader.load_input(load_input_context)

@@ -3,7 +3,7 @@ from dagster import InputDefinition, execute_pipeline, file_relative_path, lambd
 from dagster_pandas import DataFrame
 
 
-def test_basic_pd_df_input_metadata():
+def test_basic_pd_df_metadata():
     @lambda_solid
     def return_num_csv():
         return pd.read_csv(file_relative_path(__file__, "num.csv"))

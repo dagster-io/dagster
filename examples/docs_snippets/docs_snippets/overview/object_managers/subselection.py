@@ -27,8 +27,8 @@ class MyObjectManager(ObjectManager):
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
     def load_input(self, context):
-        if "table_name" in context.input_config:
-            table_name = context.input_config["table_name"]
+        if "table_name" in context.config:
+            table_name = context.config["table_name"]
         else:
             table_name = context.upstream_output.name
 

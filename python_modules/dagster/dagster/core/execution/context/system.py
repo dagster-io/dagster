@@ -305,14 +305,14 @@ class SystemStepExecutionContext(SystemExecutionContext):
         )
 
     def for_input_manager(
-        self, input_name, input_config, input_metadata, dagster_type, source_handle=None,
+        self, name, config, metadata, dagster_type, source_handle=None,
     ):
         return InputContext(
             pipeline_name=self.pipeline_def.name,
-            input_name=input_name,
+            name=name,
             solid_def=self.solid_def,
-            input_config=input_config,
-            input_metadata=input_metadata,
+            config=config,
+            metadata=metadata,
             upstream_output=self.get_output_context(source_handle) if source_handle else None,
             dagster_type=dagster_type,
             log_manager=self._log_manager,
@@ -500,18 +500,18 @@ class OutputContext(
 class InputContext(
     namedtuple(
         "_InputContext",
-        "input_name pipeline_name solid_def input_config input_metadata upstream_output dagster_type log step_context",
+        "name pipeline_name solid_def config metadata upstream_output dagster_type log step_context",
     )
 ):
     """
     The ``context`` object available to the load method of :py:class:`InputManager`.
 
     Attributes:
-        input_name (Optional[str]): The name of the input that we're loading.
+        name (Optional[str]): The name of the input that we're loading.
         pipeline_name (str): The name of the pipeline.
         solid_def (Optional[SolidDefinition]): The definition of the solid that's loading the input.
-        input_config (Optional[Any]): The config attached to the input that we're loading.
-        input_metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
+        config (Optional[Any]): The config attached to the input that we're loading.
+        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
@@ -523,10 +523,10 @@ class InputContext(
         cls,
         pipeline_name,
         # This will be None when called from calling SolidExecutionResult.output_value
-        input_name=None,
+        name=None,
         solid_def=None,
-        input_config=None,
-        input_metadata=None,
+        config=None,
+        metadata=None,
         upstream_output=None,
         dagster_type=None,
         log_manager=None,
@@ -536,11 +536,11 @@ class InputContext(
 
         return super(InputContext, cls).__new__(
             cls,
-            input_name=check.opt_str_param(input_name, "input_name"),
+            name=check.opt_str_param(name, "name"),
             pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             solid_def=check.opt_inst_param(solid_def, "solid_def", SolidDefinition),
-            input_config=input_config,
-            input_metadata=input_metadata,
+            config=config,
+            metadata=metadata,
             upstream_output=check.opt_inst_param(upstream_output, "upstream_output", OutputContext),
             dagster_type=check.inst_param(
                 resolve_dagster_type(dagster_type), "dagster_type", DagsterType

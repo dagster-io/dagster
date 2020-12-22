@@ -60,7 +60,7 @@ def test_configurable_root_input_manager():
     @input_manager(config_schema={"base_dir": str}, input_config_schema={"value": int})
     def my_configurable_csv_loader(context, resource_config):
         assert resource_config["base_dir"] == "abc"
-        return context.input_config["value"]
+        return context.config["value"]
 
     @solid(input_defs=[InputDefinition("input1", manager_key="my_loader")])
     def solid1(_, input1):

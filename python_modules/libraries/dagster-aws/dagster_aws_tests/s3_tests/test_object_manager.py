@@ -94,8 +94,8 @@ def test_s3_object_manager_execution(mock_s3_bucket):
     context = InputContext(
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("return_one"),
-        input_config={},
-        input_metadata={},
+        config={},
+        metadata={},
         upstream_output=OutputContext(
             step_key=step_output_handle.step_key,
             name=step_output_handle.output_name,
@@ -122,8 +122,8 @@ def test_s3_object_manager_execution(mock_s3_bucket):
     context = InputContext(
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("add_one"),
-        input_config={},
-        input_metadata={},
+        config={},
+        metadata={},
         upstream_output=OutputContext(
             step_key=step_output_handle.step_key,
             name=step_output_handle.output_name,
