@@ -33,6 +33,8 @@ S3
             bucket: my-bucket
             key: my-key
 
+.. autodata:: dagster_aws.s3.s3_object_manager
+  :annotation: ObjectManagerDefinition
 
 
 Redshift
