@@ -119,7 +119,7 @@ def test_result_output():
         assert result.result_for_solid("solid_b").output_value() == 1
 
 
-def test_default_object_manager_reexecution():
+def test_fs_object_manager_reexecution():
     with seven.TemporaryDirectory() as tmpdir_path:
         default_asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
         pipeline_def = define_pipeline(default_asset_store, {})
@@ -143,6 +143,12 @@ def test_default_object_manager_reexecution():
         )
         assert len(get_asset_events) == 1
         assert get_asset_events[0].event_specific_data.step_key == "solid_a"
+
+
+def test_can_reexecute():
+    pipeline_def = define_pipeline(fs_object_manager, {})
+    plan = create_execution_plan(pipeline_def)
+    assert plan.artifacts_persisted
 
 
 def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
