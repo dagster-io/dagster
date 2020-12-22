@@ -15,5 +15,3 @@ Dagstermill
     :members:
 
 .. autoclass:: DagstermillError
-
-.. autoclass:: DagstermillExecutionError

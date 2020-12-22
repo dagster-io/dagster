@@ -158,9 +158,7 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
     errors are wrapped in an exception derived from DagsterUserCodeExecutionError,
     and that the original stack trace of the user error is preserved, so that it
     can be reported without confusing framework code in the stack trace, if a
-    tool author wishes to do so. This has been especially help in a notebooking
-    context.
-
+    tool author wishes to do so.
 
     Examples:
 
@@ -168,12 +166,9 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
 
         with user_code_error_boundary(
             # Pass a class that inherits from DagsterUserCodeExecutionError
-            DagstermillExecutionError,
+            DagsterExecutionStepExecutionError,
             # Pass a function that produces a message
-            lambda: 'Error occurred during the execution of Dagstermill solid '
-            '{solid_name}: {notebook_path}'.format(
-                solid_name=name, notebook_path=notebook_path
-            ),
+            "Error occurred during step execution"
         ):
             call_user_provided_function()
 

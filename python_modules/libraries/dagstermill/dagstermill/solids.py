@@ -23,13 +23,12 @@ from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
 from dagster.utils.error import serializable_error_info_from_exc_info
-from future.utils import raise_from
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 from papermill.parameterize import _find_first_tagged_cell_index
 
 from .engine import DagstermillNBConvertEngine
-from .errors import DagstermillError, DagstermillExecutionError
+from .errors import DagstermillError
 from .serialize import read_value, write_value
 from .translator import RESERVED_INPUT_NAMES, DagsterTranslator
 
@@ -182,7 +181,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                         log_output=True,
                     )
 
-                except Exception as exc:  # pylint: disable=broad-except
+                except Exception:  # pylint: disable=broad-except
                     try:
                         with open(executed_notebook_path, "rb") as fd:
                             executed_notebook_file_handle = compute_context.resources.file_manager.write(
@@ -209,17 +208,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                             )
                         ],
                     )
-                    raise_from(
-                        DagstermillExecutionError(
-                            "Error occurred during the execution of Dagstermill solid "
-                            "{solid_name}: {notebook_path}".format(
-                                solid_name=name, notebook_path=notebook_path
-                            ),
-                            user_exception=exc,
-                            original_exc_info=sys.exc_info(),
-                        ),
-                        exc,
-                    )
+                    raise
 
             system_compute_context.log.debug(
                 "Notebook execution complete for {name} at {executed_notebook_path}.".format(
