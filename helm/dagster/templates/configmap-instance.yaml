@@ -139,3 +139,17 @@ data:
       config:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
     {{- end }}
+
+    {{- $computeLogManagerType := .Values.computeLogManager.type }}
+    {{- if $computeLogManagerType }}
+    compute_logs:
+      {{- if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.azure" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "GCSComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.gcs" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "S3ComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.s3" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
+      {{- end }}
+    {{- end }}

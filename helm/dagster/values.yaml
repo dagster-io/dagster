@@ -88,6 +88,50 @@ dagit:
     failureThreshold: 12
 
 ####################################################################################################
+# Compute Log Manager: Configuration for the compute log manager
+####################################################################################################
+computeLogManager:
+  # Type can be one of [
+  #   AzureBlobComputeLogManager,
+  #   GCSComputeLogManager,
+  #   S3ComputeLogManager,
+  #   CustomComputeLogManager,
+  # ]
+  type: ~
+  config:
+    # This configuration will only be used if the AzureBlobComputeLogManager is selected
+    azureBlobComputeLogManager:
+      storageAccount: ~
+      container: ~
+      secretKey: ~
+      localDir: ~
+      prefix: ~
+
+    # This configuration will only be used if the GCSComputeLogManager is selected
+    gcsComputeLogManager:
+      bucket: ~
+      localDir: ~
+      prefix: ~
+
+    # This configuration will only be used if the S3ComputeLogManager is selected
+    s3ComputeLogManager:
+      bucket: ~
+      localDir: ~
+      prefix: ~
+      useSsl: ~
+      verify: ~
+      verifyCertPath: ~
+      endpointUrl: ~
+
+    # This configuration will only be used if the CustomComputeLogManager is selected.
+    # Using this setting requires a custom Dagit image that defines the user specified
+    # compute log manager in an installed python module.
+    customComputeLogManager:
+      module: ~
+      class: ~
+      config: {}
+
+####################################################################################################
 # User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
 # each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
 # GRPC server that Dagit/Dagster communicates with to get repository information and the current
