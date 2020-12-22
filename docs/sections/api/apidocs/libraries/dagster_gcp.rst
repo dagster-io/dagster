@@ -41,3 +41,6 @@ GCS
 
 .. autodata:: gcs_resource
   :annotation: ResourceDefinition
+
+.. autodata:: dagster_gcp.gcs.gcs_object_manager
+  :annotation: ObjectManagerDefinition
