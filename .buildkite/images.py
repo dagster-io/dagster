@@ -8,7 +8,7 @@ def publish_test_images():
     """
     tests = []
     for version in SupportedPythons:
-        key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
+        key = _test_image_step(version)
         tests.append(
             StepBuilder("test images {version}".format(version=version), key=key)
             # these run commands are coupled to the way the test-image-builder is built
@@ -43,7 +43,7 @@ def publish_test_images():
             .build()
         )
 
-        key = "dagster-core-test-images-{version}".format(version=TOX_MAP[version])
+        key = _core_test_image_step(version)
         tests.append(
             StepBuilder("core test images {version}".format(version=version), key=key)
             # these run commands are coupled to the way the test-image-builder is built
@@ -79,5 +79,17 @@ def publish_test_images():
     return tests
 
 
+def _test_image_step(version):
+    return "dagster-test-images-{version}".format(version=TOX_MAP[version])
+
+
 def test_image_depends_fn(version):
-    return ["dagster-test-images-{version}".format(version=TOX_MAP[version])]
+    return [_test_image_step(version)]
+
+
+def _core_test_image_step(version):
+    return "dagster-core-test-images-{version}".format(version=TOX_MAP[version])
+
+
+def core_test_image_depends_fn(version):
+    return [_core_test_image_step(version)]

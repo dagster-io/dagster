@@ -2,7 +2,7 @@ import os
 
 import yaml
 from defines import TOX_MAP, SupportedPython, SupportedPythons
-from images import publish_test_images, test_image_depends_fn
+from images import core_test_image_depends_fn, publish_test_images, test_image_depends_fn
 from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
 from utils import (
@@ -274,7 +274,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "python_modules/dagster",
         extra_cmds_fn=dagster_extra_cmds_fn,
         env_vars=["AWS_ACCOUNT_ID"],
-        depends_on_fn=test_image_depends_fn,
+        depends_on_fn=core_test_image_depends_fn,
         tox_env_suffixes=[
             "-api_tests",
             "-cli_tests",
