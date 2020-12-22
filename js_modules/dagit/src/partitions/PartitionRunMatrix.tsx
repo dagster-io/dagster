@@ -1,13 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Checkbox, Colors, Dialog, Button, Classes} from '@blueprintjs/core';
+import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {TokenizingFieldValue} from 'src/TokenizingField';
-import {OptionsDivider} from 'src/VizComponents';
 import {useViewport} from 'src/gantt/useViewport';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
+import {PartitionProgress} from 'src/partitions/PartitionProgress';
 import {PartitionRunListForStep} from 'src/partitions/PartitionRunListForStep';
 import {
   GridColumn,
@@ -30,6 +30,8 @@ import {
   DisplayOptions,
   StatusSquareFinalColor,
 } from 'src/partitions/useMatrixData';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -180,46 +182,87 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
           </div>
         </div>
       </Dialog>
-      <OptionsContainer>
-        <strong>Run Matrix</strong>
-        <div style={{width: 10}} />
-        <Checkbox
-          label="Show Previous States"
-          checked={options.showPrevious}
-          onChange={() => setOptions({...options, showPrevious: !options.showPrevious})}
-          style={{marginBottom: 0, height: 20}}
-        />
-        <OptionsDivider />
-        <Checkbox
-          label="Only Show Failures and Gaps"
-          checked={options.showFailuresAndGapsOnly}
-          onChange={() =>
-            setOptions({...options, showFailuresAndGapsOnly: !options.showFailuresAndGapsOnly})
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 4}}
+      >
+        <Group direction="row" alignItems="center" spacing={12}>
+          <strong>Run Matrix</strong>
+          <RunTagsTokenizingField
+            runs={partitions.reduce((a, b) => [...a, ...b.runs], [])}
+            onChange={props.setRunTags}
+            tokens={props.runTags}
+          />
+          {props.runTags.length ? (
+            <PartitionProgress
+              pipelineName={props.pipelineName}
+              repoAddress={props.repoAddress}
+              runTags={props.runTags}
+            />
+          ) : null}
+        </Group>
+        <Popover
+          position="bottom-left"
+          content={
+            <Menu>
+              <MenuItem
+                text="Show previous status"
+                icon={
+                  <Icon
+                    icon="tick"
+                    color={options.showPrevious ? Colors.GRAY1 : Colors.LIGHT_GRAY3}
+                  />
+                }
+                onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
+                shouldDismissPopover={false}
+              />
+              <MenuItem
+                text="Only show failures and gaps"
+                icon={
+                  <Icon
+                    icon="tick"
+                    color={options.showFailuresAndGapsOnly ? Colors.GRAY1 : Colors.LIGHT_GRAY3}
+                  />
+                }
+                onClick={() =>
+                  setOptions({
+                    ...options,
+                    showFailuresAndGapsOnly: !options.showFailuresAndGapsOnly,
+                  })
+                }
+                shouldDismissPopover={false}
+              />
+              <MenuItem
+                tagName="div"
+                text={
+                  <Group direction="column" spacing={8}>
+                    <div>Colorize by age</div>
+                    {options.colorizeByAge ? (
+                      <SliceSlider
+                        disabled={false}
+                        value={Math.max(minUnix, colorizeSliceUnix)}
+                        onChange={setColorizeSliceUnix}
+                        maxUnix={maxUnix}
+                        minUnix={minUnix}
+                      />
+                    ) : null}
+                  </Group>
+                }
+                icon={
+                  <Icon
+                    icon="tick"
+                    color={options.colorizeByAge ? Colors.GRAY1 : Colors.LIGHT_GRAY3}
+                  />
+                }
+                onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
+                shouldDismissPopover={false}
+              />
+            </Menu>
           }
-          style={{marginBottom: 0, height: 20}}
-        />
-        <OptionsDivider />
-        <Checkbox
-          label="Colorize by Age"
-          checked={options.colorizeByAge}
-          onChange={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
-          style={{marginBottom: 0, height: 20}}
-        />
-        <div style={{width: 20}} />
-        <SliceSlider
-          disabled={!options.colorizeByAge}
-          value={Math.max(minUnix, colorizeSliceUnix)}
-          onChange={setColorizeSliceUnix}
-          maxUnix={maxUnix}
-          minUnix={minUnix}
-        />
-        <div style={{flex: 1}} />
-        <RunTagsTokenizingField
-          runs={partitions.reduce((a, b) => [...a, ...b.runs], [])}
-          onChange={props.setRunTags}
-          tokens={props.runTags}
-        />
-      </OptionsContainer>
+        >
+          <Button icon="settings" minimal text="Settings" />
+        </Popover>
+      </Box>
       <div
         style={{
           position: 'relative',
@@ -363,12 +406,6 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
 
 const PartitionRunMatrixContainer = styled.div`
   display: block;
-`;
-
-const OptionsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 6px 0;
 `;
 
 const Divider = styled.div`

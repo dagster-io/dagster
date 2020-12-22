@@ -98,7 +98,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           icon={IconNames.ADD}
           active={showBackfillSetup}
         >
-          Launch a partition backfill
+          Launch backfill
         </Button>
         {loading && (
           <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>

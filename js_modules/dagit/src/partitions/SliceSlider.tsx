@@ -15,7 +15,7 @@ export const SliceSlider: React.FunctionComponent<{
   const timeout = React.useRef<NodeJS.Timeout>();
 
   return (
-    <div style={{width: 200}}>
+    <div style={{width: 160}} onClick={(e) => e.stopPropagation()}>
       <SliderWithHandleLabelOnly
         min={0}
         max={1}

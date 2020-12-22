@@ -71,8 +71,7 @@ export const RunStatus: React.FunctionComponent<RunStatusProps> = React.memo(({s
   return <RunStatusDot status={status} size={size || 11} />;
 });
 
-// eslint-disable-next-line no-unexpected-multiline
-const RunStatusDot = styled.div<{
+export const RunStatusDot = styled.div<{
   status: IRunStatus;
   size: number;
 }>`
