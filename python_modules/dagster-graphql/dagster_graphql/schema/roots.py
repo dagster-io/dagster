@@ -15,7 +15,6 @@ from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.daemon.types import DaemonStatus, DaemonType
-from dagster.utils import datetime_as_float
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
     ExecutionParams,
@@ -997,7 +996,7 @@ class DauphinDaemonStatus(dauphin.ObjectType):
         if daemon_status.last_heartbeat is None:
             last_heartbeat_time = None
         else:
-            last_heartbeat_time = datetime_as_float(daemon_status.last_heartbeat.timestamp)
+            last_heartbeat_time = daemon_status.last_heartbeat.timestamp
 
         super(DauphinDaemonStatus, self).__init__(
             daemonType=daemon_status.daemon_type,

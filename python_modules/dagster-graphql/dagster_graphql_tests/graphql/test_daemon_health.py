@@ -1,4 +1,5 @@
 import pytest
+from dagster.daemon.types import DaemonHeartbeat, DaemonType
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -51,6 +52,11 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
     def test_get_individual_daemons(self, graphql_context):
         if graphql_context.instance.is_ephemeral:
             pytest.skip("The daemon isn't compatible with an in-memory instance")
+        graphql_context.instance.add_daemon_heartbeat(
+            DaemonHeartbeat(
+                timestamp=100.0, daemon_type=DaemonType.SENSOR, daemon_id=None, error=None
+            )
+        )
         results = execute_dagster_graphql(graphql_context, INDIVIDUAL_DAEMON_QUERY)
         assert results.data == {
             "instance": {
@@ -59,7 +65,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                         "daemonType": "SENSOR",
                         "required": True,
                         "healthy": False,
-                        "lastHeartbeatTime": None,
+                        "lastHeartbeatTime": 100.0,
                     },
                     "run_coordinator": {
                         "daemonType": "QUEUED_RUN_COORDINATOR",
