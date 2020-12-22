@@ -36,7 +36,7 @@ class GithubResource:
             },
             self.app_private_rsa_key,
             algorithm="RS256",
-        ).decode("utf-8")
+        )
         self.app_token = {
             "value": encoded_token,
             "expires": expires,
