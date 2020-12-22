@@ -31,7 +31,7 @@ class DagsterDaemonController:
         self._daemon_uuid = str(uuid.uuid4())
 
         self._daemons = {}
-        self._last_heartbeat_time = None
+        self._last_heartbeat_times = {}
 
         self._logger = get_default_daemon_logger("dagster-daemon")
 
@@ -96,26 +96,28 @@ class DagsterDaemonController:
                         "Caught error in {}:\n{}".format(daemon.daemon_type(), error_info)
                     )
 
-        if (not self._last_heartbeat_time) or (
-            (curr_time - self._last_heartbeat_time).total_seconds()
-            >= DAEMON_HEARTBEAT_INTERVAL_SECONDS
-        ):
-            self._last_heartbeat_time = curr_time
-            for daemon in self.daemons:
-                self._add_heartbeat(daemon)
+                self._check_add_heartbeat(daemon, curr_time)
 
-    def _add_heartbeat(self, daemon):
+    def _check_add_heartbeat(self, daemon, curr_time):
         """
         Add a heartbeat for the given daemon
         """
-        self._instance.add_daemon_heartbeat(
-            DaemonHeartbeat(
-                pendulum.now("UTC").float_timestamp,
-                daemon.daemon_type(),
-                None,
-                daemon.last_iteration_exception,
+
+        daemon_type = daemon.daemon_type()
+
+        if (not daemon_type in self._last_heartbeat_times) or (
+            (curr_time - self._last_heartbeat_times[daemon_type]).total_seconds()
+            >= DAEMON_HEARTBEAT_INTERVAL_SECONDS
+        ):
+            self._last_heartbeat_times[daemon_type] = curr_time
+            self._instance.add_daemon_heartbeat(
+                DaemonHeartbeat(
+                    pendulum.now("UTC").float_timestamp,
+                    daemon.daemon_type(),
+                    None,
+                    daemon.last_iteration_exception,
+                )
             )
-        )
 
 
 def required_daemons(instance):
