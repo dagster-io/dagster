@@ -1,18 +1,28 @@
+{{- define "stringSource" }}
+{{- $tp := typeOf . }}
+
+{{- if eq $tp "map[string]interface {}" }}
+  {{- . | toYaml | nindent 4 }}
+{{- else if eq $tp "string" }}
+  {{- . | quote }}
+{{- end }}
+{{- end }}
+
 {{- define "dagsterYaml.computeLogManager.azure" }}
 {{- $azureBlobComputeLogManagerConfig := .Values.computeLogManager.config.azureBlobComputeLogManager }}
 module: dagster_azure.blob.compute_log_manager
 class: AzureBlobComputeLogManager
 config:
-  storage_account: {{ $azureBlobComputeLogManagerConfig.storageAccount | quote }}
-  container: {{ $azureBlobComputeLogManagerConfig.container | quote }}
-  secret_key: {{ $azureBlobComputeLogManagerConfig.secretKey | quote }}
+  storage_account: {{ include "stringSource" $azureBlobComputeLogManagerConfig.storageAccount }}
+  container: {{ include "stringSource" $azureBlobComputeLogManagerConfig.container }}
+  secret_key: {{ include "stringSource" $azureBlobComputeLogManagerConfig.secretKey }}
 
   {{- if $azureBlobComputeLogManagerConfig.localDir }}
-  local_dir: {{ $azureBlobComputeLogManagerConfig.localDir | quote }}
+  local_dir: {{ include "stringSource" $azureBlobComputeLogManagerConfig.localDir }}
   {{- end }}
 
   {{- if $azureBlobComputeLogManagerConfig.prefix }}
-  prefix: {{ $azureBlobComputeLogManagerConfig.prefix | quote }}
+  prefix: {{ include "stringSource" $azureBlobComputeLogManagerConfig.prefix }}
   {{- end }}
 {{- end }}
 
@@ -21,14 +31,14 @@ config:
 module: dagster_gcp.gcs.compute_log_manager
 class: GCSComputeLogManager
 config:
-  bucket: {{ $gcsComputeLogManagerConfig.bucket | quote }}
+  bucket: {{ include "stringSource" $gcsComputeLogManagerConfig.bucket }}
 
   {{- if $gcsComputeLogManagerConfig.localDir }}
-  local_dir: {{ $gcsComputeLogManagerConfig.localDir | quote }}
+  local_dir: {{ include "stringSource" $gcsComputeLogManagerConfig.localDir }}
   {{- end }}
 
   {{- if $gcsComputeLogManagerConfig.prefix }}
-  prefix: {{ $gcsComputeLogManagerConfig.prefix | quote }}
+  prefix: {{ include "stringSource" $gcsComputeLogManagerConfig.prefix }}
   {{- end }}
 {{- end }}
 
@@ -37,14 +47,14 @@ config:
 module: dagster_aws.s3.compute_log_manager
 class: S3ComputeLogManager
 config:
-  bucket: {{ $s3ComputeLogManagerConfig.bucket | quote }}
+  bucket: {{ include "stringSource" $s3ComputeLogManagerConfig.bucket }}
 
   {{- if $s3ComputeLogManagerConfig.localDir }}
-  local_dir: {{ $s3ComputeLogManagerConfig.localDir | quote }}
+  local_dir: {{ include "stringSource" $s3ComputeLogManagerConfig.localDir }}
   {{- end }}
 
   {{- if $s3ComputeLogManagerConfig.prefix }}
-  prefix: {{ $s3ComputeLogManagerConfig.prefix | quote }}
+  prefix: {{ include "stringSource" $s3ComputeLogManagerConfig.prefix }}
   {{- end }}
 
   {{- if $s3ComputeLogManagerConfig.useSsl }}
@@ -56,11 +66,11 @@ config:
   {{- end }}
 
   {{- if $s3ComputeLogManagerConfig.verifyCertPath }}
-  verify_cert_path: {{ $s3ComputeLogManagerConfig.verifyCertPath | quote }}
+  verify_cert_path: {{ include "stringSource" $s3ComputeLogManagerConfig.verifyCertPath }}
   {{- end }}
 
   {{- if $s3ComputeLogManagerConfig.endpointUrl }}
-  endpoint_url: {{ $s3ComputeLogManagerConfig.endpointUrl | quote }}
+  endpoint_url: {{ include "stringSource" $s3ComputeLogManagerConfig.endpointUrl }}
   {{- end }}
 {{- end }}
 
@@ -68,5 +78,5 @@ config:
 {{- $customComputeLogManagerConfig := .Values.computeLogManager.config.customComputeLogManager }}
 module: {{ $customComputeLogManagerConfig.module | quote }}
 class: {{ $customComputeLogManagerConfig.class | quote }}
-config: {{ toYaml $customComputeLogManagerConfig.config | nindent 2 }}
+config: {{ $customComputeLogManagerConfig.config | toYaml | nindent 2 }}
 {{- end }}

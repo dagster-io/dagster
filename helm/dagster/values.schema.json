@@ -30,6 +30,9 @@
             "items": {
                 "$ref": "#/definitions/SecretRef"
             }
+        },
+        "computeLogManager": {
+            "$ref": "#/definitions/ComputeLogManager"
         }
     },
     "required": [
@@ -40,7 +43,8 @@
         "redis",
         "flower",
         "ingress",
-        "imagePullSecrets"
+        "imagePullSecrets",
+        "computeLogManager"
     ],
     "definitions": {
         "PullPolicy": {
@@ -630,6 +634,419 @@
             "type": "object",
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+        },
+        "ComputeLogManagerType": {
+            "title": "ComputeLogManagerType",
+            "description": "An enumeration.",
+            "enum": [
+                "LocalComputeLogManager",
+                "AzureBlobComputeLogManager",
+                "GCSComputeLogManager",
+                "S3ComputeLogManager",
+                "CustomComputeLogManager"
+            ],
+            "type": "string"
+        },
+        "_StringSource": {
+            "title": "_StringSource",
+            "type": "object",
+            "properties": {
+                "env": {
+                    "title": "Env",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "env"
+            ],
+            "additionalProperties": false
+        },
+        "AzureBlobComputeLogManager": {
+            "title": "AzureBlobComputeLogManager",
+            "type": "object",
+            "properties": {
+                "storageAccount": {
+                    "title": "Storageaccount",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        }
+                    ]
+                },
+                "container": {
+                    "title": "Container",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        }
+                    ]
+                },
+                "secretKey": {
+                    "title": "Secretkey",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        }
+                    ]
+                },
+                "localDir": {
+                    "title": "Localdir",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "prefix": {
+                    "title": "Prefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "storageAccount",
+                "container",
+                "secretKey"
+            ],
+            "additionalProperties": false
+        },
+        "GCSComputeLogManager": {
+            "title": "GCSComputeLogManager",
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "title": "Bucket",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        }
+                    ]
+                },
+                "localDir": {
+                    "title": "Localdir",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "prefix": {
+                    "title": "Prefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "bucket"
+            ],
+            "additionalProperties": false
+        },
+        "S3ComputeLogManager": {
+            "title": "S3ComputeLogManager",
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "title": "Bucket",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        }
+                    ]
+                },
+                "localDir": {
+                    "title": "Localdir",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "prefix": {
+                    "title": "Prefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "useSsl": {
+                    "title": "Usessl",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "verify": {
+                    "title": "Verify",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "verifyCertPath": {
+                    "title": "Verifycertpath",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "endpointUrl": {
+                    "title": "Endpointurl",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/_StringSource"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "bucket"
+            ],
+            "additionalProperties": false
+        },
+        "CustomComputeLogManager": {
+            "title": "CustomComputeLogManager",
+            "type": "object",
+            "properties": {
+                "module": {
+                    "title": "Module",
+                    "type": "string"
+                },
+                "class": {
+                    "title": "Class",
+                    "type": "string"
+                },
+                "config": {
+                    "title": "Config",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "module",
+                "class",
+                "config"
+            ],
+            "additionalProperties": false
+        },
+        "ComputeLogManagerConfig": {
+            "title": "ComputeLogManagerConfig",
+            "type": "object",
+            "properties": {
+                "azureBlobComputeLogManager": {
+                    "title": "AzureBlobComputeLogManager",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/AzureBlobComputeLogManager"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "gcsComputeLogManager": {
+                    "title": "GCSComputeLogManager",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/GCSComputeLogManager"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "s3ComputeLogManager": {
+                    "title": "S3ComputeLogManager",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/S3ComputeLogManager"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "customComputeLogManager": {
+                    "title": "CustomComputeLogManager",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/CustomComputeLogManager"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "ComputeLogManager": {
+            "title": "ComputeLogManager",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "$ref": "#/definitions/ComputeLogManagerType"
+                },
+                "config": {
+                    "$ref": "#/definitions/ComputeLogManagerConfig"
+                }
+            },
+            "required": [
+                "type",
+                "config"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "AzureBlobComputeLogManager"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "azureBlobComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "GCSComputeLogManager"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "gcsComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "S3ComputeLogManager"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "s3ComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CustomComputeLogManager"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "customComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
         }
     }
 }
