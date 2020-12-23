@@ -24,7 +24,10 @@ class DauphinAsset(dauphin.ObjectType):
 
     key = dauphin.NonNull("AssetKey")
     assetMaterializations = dauphin.Field(
-        dauphin.non_null_list("AssetMaterialization"), cursor=dauphin.String(), limit=dauphin.Int(),
+        dauphin.non_null_list("AssetMaterialization"),
+        partitions=dauphin.List(dauphin.String),
+        cursor=dauphin.String(),
+        limit=dauphin.Int(),
     )
     runs = dauphin.Field(
         dauphin.non_null_list("PipelineRun"), cursor=dauphin.String(), limit=dauphin.Int(),
@@ -34,7 +37,11 @@ class DauphinAsset(dauphin.ObjectType):
         return [
             graphene_info.schema.type_named("AssetMaterialization")(event=event)
             for event in get_asset_events(
-                graphene_info, self.key, kwargs.get("cursor"), kwargs.get("limit")
+                graphene_info,
+                self.key,
+                kwargs.get("partitions"),
+                kwargs.get("cursor"),
+                kwargs.get("limit"),
             )
         ]
 

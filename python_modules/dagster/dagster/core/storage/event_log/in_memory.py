@@ -112,7 +112,7 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
             asset_keys["/".join(event.asset_key.path)] = event.asset_key
         return list(asset_keys.values())
 
-    def get_asset_events(self, asset_key, cursor=None, limit=None):
+    def get_asset_events(self, asset_key, partitions=None, cursor=None, limit=None):
         asset_events = []
         for records in self._logs.values():
             asset_events += [
@@ -120,6 +120,9 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
                 for record in records
                 if record.is_dagster_event and record.dagster_event.asset_key == asset_key
             ]
+
+        if partitions:
+            asset_events = filter(lambda x: x.dagster_event.partition in partitions, asset_events)
 
         asset_events = sorted(asset_events, key=lambda x: x.timestamp, reverse=True)
 

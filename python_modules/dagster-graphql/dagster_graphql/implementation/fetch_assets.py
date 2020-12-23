@@ -32,7 +32,7 @@ def get_asset(graphene_info, asset_key):
     return graphene_info.schema.type_named("Asset")(key=asset_key)
 
 
-def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
+def get_asset_events(graphene_info, asset_key, partitions=None, cursor=None, limit=None):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
@@ -41,7 +41,7 @@ def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
         return graphene_info.schema.type_named("AssetsNotSupportedError")(
             message="The configured event log storage is not asset aware."
         )
-    events = instance.events_for_asset_key(asset_key, cursor, limit)
+    events = instance.events_for_asset_key(asset_key, partitions, cursor, limit)
     return [
         event
         for event in events

@@ -405,7 +405,7 @@ enum StepKind {
 
 type Asset {
   key: AssetKey!
-  assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
+  assetMaterializations(partitions: [String], cursor: String, limit: Int): [AssetMaterialization!]!
   runs(cursor: String, limit: Int): [PipelineRun!]!
 }
 

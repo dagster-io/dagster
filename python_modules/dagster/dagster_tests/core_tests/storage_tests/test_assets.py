@@ -7,6 +7,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     DagsterEventType,
+    Field,
     Output,
     execute_pipeline,
     file_relative_path,
@@ -98,6 +99,27 @@ def pipeline_two():
 @pipeline
 def pipeline_normalization():
     solid_normalization()
+
+
+@solid(config_schema={"partition": Field(str, is_required=False)})
+def solid_partitioned(context):
+    yield AssetMaterialization(
+        asset_key=AssetKey("asset_key"), partition=context.solid_config.get("partition")
+    )
+    yield Output(1)
+
+
+@pipeline
+def pipeline_partitioned():
+    solid_partitioned()
+
+
+def execute_partitioned_pipeline(instance, partition):
+    return execute_pipeline(
+        pipeline_partitioned,
+        run_config={"solids": {"solid_partitioned": {"config": {"partition": partition}}}},
+        instance=instance,
+    )
 
 
 def test_validate_asset_key_string():
@@ -258,6 +280,23 @@ def test_asset_key_structure():
         assert len(events) == 2
         run_ids = asset_storage.get_asset_run_ids(asset_key)
         assert len(run_ids) == 2
+
+
+@asset_test
+def test_asset_partition_query(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_partitioned_pipeline(instance, "partition_a")
+        execute_partitioned_pipeline(instance, "partition_a")
+        execute_partitioned_pipeline(instance, "partition_b")
+        execute_partitioned_pipeline(instance, "partition_c")
+        events = event_log_storage.get_asset_events(AssetKey("asset_key"))
+        assert len(events) == 4
+
+        events = event_log_storage.get_asset_events(
+            AssetKey("asset_key"), partitions=["partition_a", "partition_b"]
+        )
+        assert len(events) == 3
 
 
 def _materialization_event_record(run_id, asset_key):
