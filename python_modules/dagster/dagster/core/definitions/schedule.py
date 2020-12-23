@@ -29,6 +29,8 @@ class ScheduleExecutionContext(JobContext):
         scheduled_execution_time (datetime):
             The time in which the execution was scheduled to happen. May differ slightly
             from both the actual execution time and the time at which the run config is computed.
+            Not available in all schedulers - currently only set in deployments using
+            DagsterDaemonScheduler.
     """
 
     __slots__ = ["_scheduled_execution_time"]
