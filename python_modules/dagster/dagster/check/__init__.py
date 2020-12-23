@@ -1,8 +1,11 @@
 import inspect
 import sys
-from inspect import Parameter
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from future.utils import raise_with_traceback
+
+Type = Union[type, Tuple[type, ...]]
+Numeric = Union[int, float]
 
 
 class CheckError(Exception):
@@ -21,7 +24,9 @@ class NotImplementedCheckError(CheckError):
     pass
 
 
-def _param_type_mismatch_exception(obj, ttype, param_name, additional_message=None):
+def _param_type_mismatch_exception(
+    obj: Any, ttype: Type, param_name: str, additional_message: str = None
+) -> ParameterCheckError:
     if isinstance(ttype, tuple):
         type_names = sorted([t.__name__ for t in ttype])
         return ParameterCheckError(
@@ -47,7 +52,7 @@ def _param_type_mismatch_exception(obj, ttype, param_name, additional_message=No
         )
 
 
-def _not_type_param_subclass_mismatch_exception(obj, param_name):
+def _not_type_param_subclass_mismatch_exception(obj: Any, param_name: str) -> ParameterCheckError:
     return ParameterCheckError(
         'Param "{name}" was supposed to be a type. Got {obj} of type {obj_type}'.format(
             name=param_name, obj=repr(obj), obj_type=type(obj)
@@ -55,7 +60,9 @@ def _not_type_param_subclass_mismatch_exception(obj, param_name):
     )
 
 
-def _param_subclass_mismatch_exception(obj, superclass, param_name):
+def _param_subclass_mismatch_exception(
+    obj: Any, superclass: Type, param_name: str
+) -> ParameterCheckError:
     return ParameterCheckError(
         'Param "{name}" is a type but not a subclass of {superclass}. Got {obj} instead'.format(
             name=param_name, superclass=superclass, obj=obj
@@ -63,7 +70,7 @@ def _param_subclass_mismatch_exception(obj, superclass, param_name):
     )
 
 
-def _type_mismatch_error(obj, ttype, desc=None):
+def _type_mismatch_error(obj: Any, ttype: Type, desc: str = None) -> CheckError:
     type_message = (
         f"not one of {sorted([t.__name__ for t in ttype])}"
         if isinstance(ttype, tuple)
@@ -76,7 +83,7 @@ def _type_mismatch_error(obj, ttype, desc=None):
     )
 
 
-def _not_callable_exception(obj, param_name):
+def _not_callable_exception(obj: Any, param_name: str) -> ParameterCheckError:
     return ParameterCheckError(
         'Param "{name}" is not callable. Got {obj} with type {obj_type}.'.format(
             name=param_name, obj=repr(obj), obj_type=type(obj)
@@ -84,7 +91,7 @@ def _not_callable_exception(obj, param_name):
     )
 
 
-def _param_invariant_exception(param_name, desc):
+def _param_invariant_exception(param_name: str, desc: str = None) -> ParameterCheckError:
     return ParameterCheckError(
         "Invariant violation for parameter {param_name}. Description: {desc}".format(
             param_name=param_name, desc=desc
@@ -92,34 +99,34 @@ def _param_invariant_exception(param_name, desc):
     )
 
 
-def failed(desc):
+def failed(desc: str):
     if not isinstance(desc, str):
         raise_with_traceback(CheckError("desc argument must be a string"))
 
     raise_with_traceback(CheckError("Failure condition: {desc}".format(desc=desc)))
 
 
-def not_implemented(desc):
+def not_implemented(desc: str):
     if not isinstance(desc, str):
         raise_with_traceback(CheckError("desc argument must be a string"))
 
     raise_with_traceback(NotImplementedCheckError("Not implemented: {desc}".format(desc=desc)))
 
 
-def inst(obj, ttype, desc=None):
+def inst(obj: Any, ttype: Type, desc: str = None) -> Any:
     if not isinstance(obj, ttype):
         raise_with_traceback(_type_mismatch_error(obj, ttype, desc))
     return obj
 
 
-def subclass(obj, superclass, desc=None):
+def subclass(obj: Any, superclass: Type, desc: str = None) -> Any:
     if not issubclass(obj, superclass):
         raise_with_traceback(_type_mismatch_error(obj, superclass, desc))
 
     return obj
 
 
-def is_callable(obj, desc=None):
+def is_callable(obj: Any, desc: str = None) -> Callable:
     if not callable(obj):
         if desc:
             raise_with_traceback(
@@ -139,7 +146,7 @@ def is_callable(obj, desc=None):
     return obj
 
 
-def not_none_param(obj, param_name):
+def not_none_param(obj: Any, param_name: str) -> Any:
     if obj is None:
         raise_with_traceback(
             _param_invariant_exception(
@@ -149,7 +156,7 @@ def not_none_param(obj, param_name):
     return obj
 
 
-def invariant(condition, desc=None):
+def invariant(condition: Any, desc: str = None) -> bool:
     if not condition:
         if desc:
             raise_with_traceback(
@@ -161,12 +168,12 @@ def invariant(condition, desc=None):
     return True
 
 
-def param_invariant(condition, param_name, desc=None):
+def param_invariant(condition: Any, param_name: str, desc: str = None):
     if not condition:
         raise_with_traceback(_param_invariant_exception(param_name, desc))
 
 
-def inst_param(obj, param_name, ttype, additional_message=None):
+def inst_param(obj: Any, param_name: str, ttype: Type, additional_message: str = None) -> Any:
     if not isinstance(obj, ttype):
         raise_with_traceback(
             _param_type_mismatch_exception(
@@ -176,31 +183,31 @@ def inst_param(obj, param_name, ttype, additional_message=None):
     return obj
 
 
-def opt_inst_param(obj, param_name, ttype, default=None):
+def opt_inst_param(obj: Any, param_name: str, ttype: Type, default: Any = None) -> Any:
     if obj is not None and not isinstance(obj, ttype):
         raise_with_traceback(_param_type_mismatch_exception(obj, ttype, param_name))
     return default if obj is None else obj
 
 
-def callable_param(obj, param_name):
+def callable_param(obj: Any, param_name: str) -> Callable:
     if not callable(obj):
         raise_with_traceback(_not_callable_exception(obj, param_name))
     return obj
 
 
-def opt_callable_param(obj, param_name, default=None):
+def opt_callable_param(obj: Any, param_name: str, default: Callable = None) -> Optional[Callable]:
     if obj is not None and not callable(obj):
         raise_with_traceback(_not_callable_exception(obj, param_name))
     return default if obj is None else obj
 
 
-def int_param(obj, param_name):
+def int_param(obj: Any, param_name: str) -> int:
     if not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     return obj
 
 
-def int_value_param(obj, value, param_name):
+def int_value_param(obj: Any, value: int, param_name: str) -> int:
     if not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     if obj != value:
@@ -210,67 +217,67 @@ def int_value_param(obj, value, param_name):
     return obj
 
 
-def opt_int_param(obj, param_name, default=None):
+def opt_int_param(obj: Any, param_name: str, default: int = None) -> Optional[int]:
     if obj is not None and not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     return default if obj is None else obj
 
 
-def float_param(obj, param_name):
+def float_param(obj: Any, param_name: str) -> float:
     if not isinstance(obj, float):
         raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
     return obj
 
 
-def opt_numeric_param(obj, param_name, default=None):
+def opt_numeric_param(obj: Any, param_name: str, default: Numeric = None) -> Optional[Numeric]:
     if obj is not None and not isinstance(obj, (int, float)):
         raise_with_traceback(_param_type_mismatch_exception(obj, (int, float), param_name))
     return default if obj is None else obj
 
 
-def numeric_param(obj, param_name):
+def numeric_param(obj: Any, param_name: str) -> Numeric:
     if not isinstance(obj, (int, float)):
         raise_with_traceback(_param_type_mismatch_exception(obj, (int, float), param_name))
     return obj
 
 
-def opt_float_param(obj, param_name, default=None):
+def opt_float_param(obj: Any, param_name: str, default: float = None) -> Optional[float]:
     if obj is not None and not isinstance(obj, float):
         raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
     return default if obj is None else obj
 
 
-def str_param(obj, param_name):
+def str_param(obj: Any, param_name: str) -> str:
     if not isinstance(obj, str):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return obj
 
 
-def opt_str_param(obj, param_name, default=None):
+def opt_str_param(obj: Any, param_name: str, default: str = None) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return default if obj is None else obj
 
 
-def opt_nonempty_str_param(obj, param_name, default=None):
+def opt_nonempty_str_param(obj: Any, param_name: str, default: str = None) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return default if obj is None or obj == "" else obj
 
 
-def bool_param(obj, param_name):
+def bool_param(obj: Any, param_name: str) -> bool:
     if not isinstance(obj, bool):
         raise_with_traceback(_param_type_mismatch_exception(obj, bool, param_name))
     return obj
 
 
-def opt_bool_param(obj, param_name, default=None):
+def opt_bool_param(obj: Any, param_name: str, default: bool = None) -> Optional[bool]:
     if obj is not None and not isinstance(obj, bool):
         raise_with_traceback(_param_type_mismatch_exception(obj, bool, param_name))
     return default if obj is None else obj
 
 
-def is_list(obj_list, of_type=None, desc=None):
+def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:
     if not isinstance(obj_list, list):
         raise_with_traceback(_type_mismatch_error(obj_list, list, desc))
 
@@ -280,7 +287,7 @@ def is_list(obj_list, of_type=None, desc=None):
     return _check_list_items(obj_list, of_type)
 
 
-def is_tuple(obj_tuple, of_type=None, desc=None):
+def is_tuple(obj_tuple: Any, of_type: Type = None, desc: str = None) -> Tuple:
     if not isinstance(obj_tuple, tuple):
         raise_with_traceback(_type_mismatch_error(obj_tuple, tuple, desc))
 
@@ -290,7 +297,7 @@ def is_tuple(obj_tuple, of_type=None, desc=None):
     return _check_tuple_items(obj_tuple, of_type)
 
 
-def list_param(obj_list, param_name, of_type=None):
+def list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List:
     from dagster.utils import frozenlist
 
     if not isinstance(obj_list, (frozenlist, list)):
@@ -304,7 +311,7 @@ def list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
-def set_param(obj_set, param_name, of_type=None):
+def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> Set:
     if not isinstance(obj_set, (frozenset, set)):
         raise_with_traceback(_param_type_mismatch_exception(obj_set, (frozenset, set), param_name))
 
@@ -314,7 +321,7 @@ def set_param(obj_set, param_name, of_type=None):
     return _check_set_items(obj_set, of_type)
 
 
-def tuple_param(obj, param_name, of_type=None):
+def tuple_param(obj: Any, param_name: str, of_type: Type = None) -> Tuple:
     if not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
 
@@ -324,7 +331,7 @@ def tuple_param(obj, param_name, of_type=None):
     return _check_tuple_items(obj, of_type)
 
 
-def matrix_param(matrix, param_name, of_type=None):
+def matrix_param(matrix: Any, param_name: str, of_type: Type = None) -> List[List]:
     matrix = list_param(matrix, param_name, of_type=list)
     if not matrix:
         raise_with_traceback(CheckError("You must pass a list of lists. Received an empty list."))
@@ -335,7 +342,9 @@ def matrix_param(matrix, param_name, of_type=None):
     return matrix
 
 
-def opt_tuple_param(obj, param_name, default=None, of_type=None):
+def opt_tuple_param(
+    obj: Any, param_name: str, default: Tuple = None, of_type: Type = None
+) -> Optional[Tuple]:
     if obj is not None and not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
 
@@ -348,9 +357,8 @@ def opt_tuple_param(obj, param_name, default=None, of_type=None):
     return _check_tuple_items(obj, of_type)
 
 
-def _check_list_items(obj_list, of_type):
+def _check_list_items(obj_list: Any, of_type: Type) -> List:
     for obj in obj_list:
-
         if not isinstance(obj, of_type):
             if isinstance(obj, type):
                 additional_message = (
@@ -372,7 +380,7 @@ def _check_list_items(obj_list, of_type):
     return obj_list
 
 
-def _check_set_items(obj_set, of_type):
+def _check_set_items(obj_set: Any, of_type: Type) -> Set:
     for obj in obj_set:
 
         if not isinstance(obj, of_type):
@@ -396,7 +404,7 @@ def _check_set_items(obj_set, of_type):
     return obj_set
 
 
-def _check_tuple_items(obj_tuple, of_type):
+def _check_tuple_items(obj_tuple: Any, of_type: Type) -> Tuple:
     if isinstance(of_type, tuple):
         len_tuple = len(obj_tuple)
         len_type = len(of_type)
@@ -453,7 +461,7 @@ def _check_tuple_items(obj_tuple, of_type):
     return obj_tuple
 
 
-def opt_list_param(obj_list, param_name, of_type=None):
+def opt_list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List:
     """Ensures argument obj_list is a list or None; in the latter case, instantiates an empty list
     and returns it.
 
@@ -474,7 +482,7 @@ def opt_list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
-def opt_set_param(obj_set, param_name, of_type=None):
+def opt_set_param(obj_set: Any, param_name: str, of_type: Type = None) -> Set:
     """Ensures argument obj_set is a set or None; in the latter case, instantiates an empty set
     and returns it.
 
@@ -491,7 +499,7 @@ def opt_set_param(obj_set, param_name, of_type=None):
     return _check_set_items(obj_set, of_type)
 
 
-def opt_nullable_list_param(obj_list, param_name, of_type=None):
+def opt_nullable_list_param(obj_list: Any, param_name: str, of_type: Type = None) -> Optional[List]:
     """Ensures argument obj_list is a list or None. Returns None if input is None.
 
     If the of_type argument is provided, also ensures that list items conform to the type specified
@@ -511,7 +519,13 @@ def opt_nullable_list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
-def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, value_check=isinstance):
+def _check_key_value_types(
+    obj: Any,
+    key_type: Type = None,
+    value_type: Type = None,
+    key_check: Callable = isinstance,
+    value_check: Callable = isinstance,
+) -> Dict:
     """Ensures argument obj is a dictionary, and enforces that the keys/values conform to the types
     specified by key_type, value_type.
     """
@@ -539,7 +553,13 @@ def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, valu
     return obj
 
 
-def dict_param(obj, param_name, key_type=None, value_type=None, additional_message=None):
+def dict_param(
+    obj: Any,
+    param_name: str,
+    key_type: Type = None,
+    value_type: Type = None,
+    additional_message: str = None,
+) -> Dict:
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
@@ -558,7 +578,13 @@ def dict_param(obj, param_name, key_type=None, value_type=None, additional_messa
     return _check_key_value_types(obj, key_type, value_type)
 
 
-def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=None):
+def opt_dict_param(
+    obj: Any,
+    param_name: str,
+    key_type: Type = None,
+    value_type: Type = None,
+    value_class: Type = None,
+) -> Dict:
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     """
@@ -575,7 +601,13 @@ def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=
     return _check_key_value_types(obj, key_type, value_type)
 
 
-def opt_nullable_dict_param(obj, param_name, key_type=None, value_type=None, value_class=None):
+def opt_nullable_dict_param(
+    obj: Any,
+    param_name: str,
+    key_type: Type = None,
+    value_type: Type = None,
+    value_class: Type = None,
+) -> Optional[Dict]:
     """Ensures argument obj is either a dictionary or None;
     """
     from dagster.utils import frozendict
@@ -591,7 +623,9 @@ def opt_nullable_dict_param(obj, param_name, key_type=None, value_type=None, val
     return _check_key_value_types(obj, key_type, value_type)
 
 
-def _check_two_dim_key_value_types(obj, key_type, _param_name, value_type):
+def _check_two_dim_key_value_types(
+    obj: Any, key_type: Type = None, _param_name: str = None, value_type: Type = None
+) -> Dict:
     _check_key_value_types(obj, key_type, dict)  # check level one
 
     for level_two_dict in obj.values():
@@ -600,14 +634,18 @@ def _check_two_dim_key_value_types(obj, key_type, _param_name, value_type):
     return obj
 
 
-def two_dim_dict_param(obj, param_name, key_type=str, value_type=None):
+def two_dim_dict_param(
+    obj: Any, param_name: str, key_type: Type = str, value_type: Type = None
+) -> Dict:
     if not isinstance(obj, dict):
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
     return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
 
 
-def opt_two_dim_dict_param(obj, param_name, key_type=str, value_type=None):
+def opt_two_dim_dict_param(
+    obj: Any, param_name: str, key_type: Type = str, value_type: Type = None
+) -> Dict:
     if obj is not None and not isinstance(obj, dict):
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
@@ -617,19 +655,19 @@ def opt_two_dim_dict_param(obj, param_name, key_type=str, value_type=None):
     return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
 
 
-def type_param(obj, param_name):
+def type_param(obj: Any, param_name: str) -> type:
     if not isinstance(obj, type):
         raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
     return obj
 
 
-def opt_type_param(obj, param_name, default=None):
+def opt_type_param(obj: Any, param_name: str, default: type = None) -> type:
     if obj is not None and not isinstance(obj, type):
         raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
     return obj if obj is not None else default
 
 
-def subclass_param(obj, param_name, superclass):
+def subclass_param(obj: Any, param_name: str, superclass: type) -> type:
     type_param(obj, param_name)
     if not issubclass(obj, superclass):
         raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
@@ -637,7 +675,7 @@ def subclass_param(obj, param_name, superclass):
     return obj
 
 
-def opt_subclass_param(obj, param_name, superclass):
+def opt_subclass_param(obj: Any, param_name: str, superclass: type) -> Optional[type]:
     opt_type_param(obj, param_name)
     if obj is not None and not issubclass(obj, superclass):
         raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
@@ -645,7 +683,7 @@ def opt_subclass_param(obj, param_name, superclass):
     return obj
 
 
-def _element_check_error(key, value, ddict, ttype):
+def _element_check_error(key: Any, value: Any, ddict: Dict, ttype: Type) -> ElementCheckError:
     return ElementCheckError(
         "Value {value} from key {key} is not a {ttype}. Dict: {ddict}".format(
             key=key, value=repr(value), ddict=repr(ddict), ttype=repr(ttype)
@@ -653,7 +691,7 @@ def _element_check_error(key, value, ddict, ttype):
     )
 
 
-def generator(obj):
+def generator(obj: Any) -> Generator:
     if not inspect.isgenerator(obj):
         raise ParameterCheckError(
             "Not a generator (return value of function that yields) Got {obj} instead".format(
@@ -663,7 +701,7 @@ def generator(obj):
     return obj
 
 
-def opt_generator(obj):
+def opt_generator(obj: Any) -> Optional[Generator]:
     if obj is not None and not inspect.isgenerator(obj):
         raise ParameterCheckError(
             "Not a generator (return value of function that yields) Got {obj} instead".format(
@@ -673,7 +711,7 @@ def opt_generator(obj):
     return obj
 
 
-def generator_param(obj, param_name):
+def generator_param(obj: Any, param_name: str) -> Generator:
     if not inspect.isgenerator(obj):
         raise ParameterCheckError(
             (
@@ -684,7 +722,7 @@ def generator_param(obj, param_name):
     return obj
 
 
-def opt_generator_param(obj, param_name):
+def opt_generator_param(obj: Any, param_name: str) -> Optional[Generator]:
     if obj is not None and not inspect.isgenerator(obj):
         raise ParameterCheckError(
             (
@@ -695,7 +733,7 @@ def opt_generator_param(obj, param_name):
     return obj
 
 
-def list_elem(ddict, key):
+def list_elem(ddict: Dict, key: str) -> List:  # type: ignore[return]
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -707,7 +745,7 @@ def list_elem(ddict, key):
     raise_with_traceback(_element_check_error(key, value, ddict, list))
 
 
-def opt_list_elem(ddict, key):
+def opt_list_elem(ddict: Dict, key: str) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -721,7 +759,7 @@ def opt_list_elem(ddict, key):
     return value
 
 
-def dict_elem(ddict, key):
+def dict_elem(ddict: Dict, key: str) -> Dict:
     from dagster.utils import frozendict
 
     dict_param(ddict, "ddict")
@@ -738,7 +776,7 @@ def dict_elem(ddict, key):
     return value
 
 
-def opt_dict_elem(ddict, key):
+def opt_dict_elem(ddict: Dict, key: str) -> Dict:
     from dagster.utils import frozendict
 
     dict_param(ddict, "ddict")
@@ -755,7 +793,7 @@ def opt_dict_elem(ddict, key):
     return value
 
 
-def bool_elem(ddict, key):
+def bool_elem(ddict: Dict, key: str) -> bool:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -765,7 +803,7 @@ def bool_elem(ddict, key):
     return value
 
 
-def opt_float_elem(ddict, key):
+def opt_float_elem(ddict: Dict, key: str) -> Optional[float]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -777,7 +815,7 @@ def opt_float_elem(ddict, key):
     return value
 
 
-def float_elem(ddict, key):
+def float_elem(ddict: Dict, key: str) -> float:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -787,7 +825,7 @@ def float_elem(ddict, key):
     return value
 
 
-def opt_int_elem(ddict, key):
+def opt_int_elem(ddict: Dict, key: str) -> Optional[int]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -799,7 +837,7 @@ def opt_int_elem(ddict, key):
     return value
 
 
-def int_elem(ddict, key):
+def int_elem(ddict: Dict, key: str) -> int:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -809,7 +847,7 @@ def int_elem(ddict, key):
     return value
 
 
-def opt_str_elem(ddict, key):
+def opt_str_elem(ddict: Dict, key: str) -> Optional[str]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -821,7 +859,7 @@ def opt_str_elem(ddict, key):
     return value
 
 
-def str_elem(ddict, key):
+def str_elem(ddict: Dict, key: str) -> str:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -831,7 +869,7 @@ def str_elem(ddict, key):
     return value
 
 
-def class_param(obj, param_name):
+def class_param(obj: Any, param_name: str) -> Union[ParameterCheckError, type]:
     if not inspect.isclass(obj):
         return ParameterCheckError(
             'Param "{name}" is not a class. Got {obj} which is type {obj_type}.'.format(
