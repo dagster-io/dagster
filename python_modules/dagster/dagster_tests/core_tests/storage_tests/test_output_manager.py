@@ -1,3 +1,5 @@
+import tempfile
+
 import pytest
 from dagster import (
     AssetMaterialization,
@@ -17,7 +19,6 @@ from dagster import (
     execute_pipeline,
     object_manager,
     pipeline,
-    seven,
     solid,
 )
 from dagster.core.instance import InstanceRef
@@ -239,7 +240,7 @@ def test_output_manager_with_failure():
     def simple():
         should_not_call(emit_str())
 
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
@@ -312,7 +313,7 @@ def test_output_manager_with_retries():
 
         should_not_execute(take_input(source_solid()))
 
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 

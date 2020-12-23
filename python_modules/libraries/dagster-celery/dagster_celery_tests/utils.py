@@ -1,9 +1,10 @@
 import os
 import signal
 import subprocess
+import tempfile
 from contextlib import contextmanager
 
-from dagster import execute_pipeline, seven
+from dagster import execute_pipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
@@ -19,7 +20,7 @@ def tempdir_wrapper(tempdir=None):
     if tempdir:
         yield tempdir
     else:
-        with seven.TemporaryDirectory() as t:
+        with tempfile.TemporaryDirectory() as t:
             yield t
 
 
@@ -54,7 +55,7 @@ def execute_pipeline_on_celery(
 
 @contextmanager
 def execute_eagerly_on_celery(pipeline_name, instance=None, tempdir=None, tags=None, subset=None):
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         run_config = {
             "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
             "execution": {"celery": {"config": {"config_source": {"task_always_eager": True}}}},

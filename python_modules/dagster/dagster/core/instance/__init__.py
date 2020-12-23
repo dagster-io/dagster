@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import tempfile
 import time
 import warnings
 from collections import defaultdict
@@ -8,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 
 import yaml
-from dagster import check, seven
+from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.errors import (
@@ -352,7 +353,7 @@ class DagsterInstance:
     @staticmethod
     def temp_storage():
         if DagsterInstance._PROCESS_TEMPDIR is None:
-            DagsterInstance._PROCESS_TEMPDIR = seven.TemporaryDirectory()
+            DagsterInstance._PROCESS_TEMPDIR = tempfile.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
 
     def _info(self, component):

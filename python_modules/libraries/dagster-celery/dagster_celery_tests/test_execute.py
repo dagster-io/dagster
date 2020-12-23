@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import os
+import tempfile
 from threading import Thread
 
 import pytest
@@ -110,7 +111,7 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
 
 def test_terminate_pipeline_on_celery(rabbitmq):
     with start_celery_worker():
-        with seven.TemporaryDirectory() as tempdir:
+        with tempfile.TemporaryDirectory() as tempdir:
             pipeline_def = ReconstructablePipeline.for_file(REPO_FILE, "interrupt_pipeline")
 
             with instance_for_test_tempdir(tempdir) as instance:
@@ -296,7 +297,7 @@ def test_engine_error():
         return_value=True,
     ):
         with pytest.raises(DagsterSubprocessError):
-            with seven.TemporaryDirectory() as tempdir:
+            with tempfile.TemporaryDirectory() as tempdir:
                 with instance_for_test_tempdir(tempdir) as instance:
                     storage = os.path.join(tempdir, "flakey_storage")
                     execute_pipeline(

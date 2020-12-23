@@ -1,5 +1,6 @@
 import os
 from contextlib import contextmanager
+from urllib.parse import urljoin, urlparse
 
 import sqlalchemy as db
 from dagster import StringSource, check
@@ -14,7 +15,6 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 from sqlalchemy.pool import NullPool
 

@@ -1,9 +1,10 @@
 import os
 import sys
+import tempfile
 from io import BytesIO
 
 import yaml
-from dagster import execute_pipeline, seven
+from dagster import execute_pipeline
 from dagster.cli.pipeline import execute_list_versions_command
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
@@ -31,7 +32,7 @@ class Capturing(list):
 
 
 def test_execute_display_command():
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = ConsolidatedSqliteEventLogStorage(temp_dir)
         compute_log_manager = LocalComputeLogManager(temp_dir)

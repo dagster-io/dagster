@@ -1,6 +1,7 @@
 # pylint chokes on the perfectly ok import from alembic.migration
 import sys
 from contextlib import contextmanager
+from functools import lru_cache
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -8,7 +9,6 @@ from alembic.config import Config
 from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
 from dagster.core.errors import DagsterInstanceMigrationRequired
-from dagster.seven import lru_cache
 from dagster.utils import file_relative_path
 from dagster.utils.log import quieten
 

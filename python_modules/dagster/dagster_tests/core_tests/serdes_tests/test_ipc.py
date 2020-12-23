@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from contextlib import ExitStack
 
 import pytest
 from dagster.serdes.ipc import (
@@ -8,7 +9,6 @@ from dagster.serdes.ipc import (
     interrupt_ipc_subprocess_pid,
     open_ipc_subprocess,
 )
-from dagster.seven import ExitStack
 from dagster.utils import file_relative_path, process_is_alive, safe_tempfile_path
 
 

@@ -26,7 +26,7 @@ setup(
             "dagster-cron",
             "dagster-postgres",
             "dagster-pyspark",
-            "dagster-slack; python_version >= '3'",
+            "dagster-slack",
             "dagster-snowflake",
             # These two packages, descartes and geopandas, are used in the airline demo notebooks
             "descartes",
@@ -35,8 +35,7 @@ setup(
             "google-cloud-storage",
             "keras; python_version < '3.9'",
             "lakehouse",
-            'matplotlib==3.0.2; python_version >= "3.5"',
-            'matplotlib==2.2.4; python_version < "3.5"',
+            "matplotlib==3.0.2",
             "mock",
             "moto>=1.3.7",
             "pandas>=1.0.0",

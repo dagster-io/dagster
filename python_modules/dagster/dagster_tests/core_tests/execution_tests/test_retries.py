@@ -1,4 +1,5 @@
 import os
+import tempfile
 import time
 from collections import defaultdict
 
@@ -15,7 +16,6 @@ from dagster import (
     pipeline,
     reconstructable,
     reexecute_pipeline,
-    seven,
     solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -114,7 +114,7 @@ def define_step_retry_pipeline():
 @executors
 def test_step_retry(environment):
     with instance_for_test() as instance:
-        with seven.TemporaryDirectory() as tempdir:
+        with tempfile.TemporaryDirectory() as tempdir:
             env = dict(environment)
             env["solids"] = {"fail_first_time": {"config": tempdir}}
             result = execute_pipeline(
@@ -219,7 +219,7 @@ def define_retry_wait_fixed_pipeline():
 @executors
 def test_step_retry_fixed_wait(environment):
     with instance_for_test() as instance:
-        with seven.TemporaryDirectory() as tempdir:
+        with tempfile.TemporaryDirectory() as tempdir:
             env = dict(environment)
             env["solids"] = {"fail_first_and_wait": {"config": tempdir}}
 

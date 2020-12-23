@@ -1,8 +1,8 @@
 import socket
 import struct
+from urllib.parse import urlparse
 
 from dagster import check
-from dagster.seven import urlparse
 
 
 def is_loopback(host):

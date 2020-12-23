@@ -8,7 +8,6 @@ import six
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import frozentags
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 

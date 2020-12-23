@@ -1,10 +1,11 @@
+import tempfile
+
 from dagster import (
     ModeDefinition,
     execute_pipeline,
     fs_object_manager,
     pipeline,
     reconstructable,
-    seven,
     solid,
 )
 from dagster.core.test_utils import instance_for_test
@@ -27,7 +28,7 @@ def my_pipeline():
 
 def test_object_manager_with_multi_process_executor():
     with instance_for_test() as instance:
-        with seven.TemporaryDirectory() as tmpdir_path:
+        with tempfile.TemporaryDirectory() as tmpdir_path:
             result = execute_pipeline(
                 reconstructable(my_pipeline),
                 run_config={

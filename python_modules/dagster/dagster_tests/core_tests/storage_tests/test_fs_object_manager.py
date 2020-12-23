@@ -1,7 +1,8 @@
 import os
 import pickle
+import tempfile
 
-from dagster import ModeDefinition, execute_pipeline, pipeline, seven, solid
+from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster.core.definitions.events import AssetStoreOperationType
 from dagster.core.storage.fs_object_manager import fs_object_manager
 
@@ -23,7 +24,7 @@ def define_pipeline(object_manager):
 
 
 def test_fs_object_manager():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
         pipeline_def = define_pipeline(asset_store)
 

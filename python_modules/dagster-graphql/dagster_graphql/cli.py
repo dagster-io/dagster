@@ -5,6 +5,7 @@ install_aliases()  # isort:skip
 import signal
 import threading
 import warnings
+from urllib.parse import urljoin, urlparse
 
 import click
 import requests
@@ -13,7 +14,6 @@ from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
 from dagster.cli.workspace.workspace import Workspace
 from dagster.core.instance import DagsterInstance
-from dagster.seven import urljoin, urlparse
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 from graphql import graphql

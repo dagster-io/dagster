@@ -161,7 +161,7 @@ def _make_airflow_dag(
     check.str_param(pipeline_name, "pipeline_name")
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode")
-    # Default to use the (persistent) system temp directory rather than a seven.TemporaryDirectory,
+    # Default to use the (persistent) system temp directory rather than a TemporaryDirectory,
     # which would not be consistent between Airflow task invocations.
     instance = (
         check.inst_param(instance, "instance", DagsterInstance)

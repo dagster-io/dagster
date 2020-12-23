@@ -340,7 +340,7 @@ class ConfigurableClassData(
 
         try:
             module = importlib.import_module(self.module_name)
-        except seven.ModuleNotFoundError:
+        except ModuleNotFoundError:
             check.failed(
                 "Couldn't import module {module_name} when attempting to load the "
                 "configurable class {configurable_class}".format(

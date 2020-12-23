@@ -33,8 +33,6 @@ if __name__ == "__main__":
             "google-cloud-bigquery>=1.19.*",
             "google-cloud-storage",
             "oauth2client",
-            # RSA 4.1+ is incompatible with py2.7
-            'rsa<=4.0; python_version<"3"',
         ],
         extras_require={"pyarrow": ["pyarrow; python_version < '3.9'"]},
         zip_safe=False,

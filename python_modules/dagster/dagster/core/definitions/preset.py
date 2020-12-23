@@ -6,7 +6,6 @@ import yaml
 from dagster import check
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.merger import deep_merge_dicts
 

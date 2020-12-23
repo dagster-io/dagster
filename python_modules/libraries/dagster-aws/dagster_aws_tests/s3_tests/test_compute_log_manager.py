@@ -1,8 +1,9 @@
 import os
 import sys
+import tempfile
 
 import six
-from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
+from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -32,7 +33,7 @@ def test_compute_log_manager(mock_s3_bucket):
 
         easy()
 
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = SqliteEventLogStorage(temp_dir)
         manager = S3ComputeLogManager(
@@ -101,7 +102,7 @@ compute_logs:
         s3_bucket=mock_s3_bucket.name, s3_prefix=s3_prefix
     )
 
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
             f.write(six.ensure_binary(dagster_yaml))
 

@@ -1,9 +1,10 @@
 import sys
+import tempfile
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
 import pytest
-from dagster import check, file_relative_path, seven
+from dagster import check, file_relative_path
 from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
@@ -34,7 +35,7 @@ def get_main_recon_repo():
 
 @contextmanager
 def graphql_postgres_instance(overrides):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-graphql",
         ) as pg_conn_string:
@@ -89,7 +90,7 @@ class InstanceManagers:
     def in_memory_instance():
         @contextmanager
         def _in_memory_instance():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 yield DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,
                     local_artifact_storage=LocalArtifactStorage(temp_dir),
@@ -107,7 +108,7 @@ class InstanceManagers:
     def readonly_in_memory_instance():
         @contextmanager
         def _readonly_in_memory_instance():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 yield DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,
                     local_artifact_storage=LocalArtifactStorage(temp_dir),
@@ -127,7 +128,7 @@ class InstanceManagers:
     def readonly_sqlite_instance():
         @contextmanager
         def _readonly_sqlite_instance():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
@@ -168,7 +169,7 @@ class InstanceManagers:
     def sqlite_instance_with_sync_run_launcher():
         @contextmanager
         def _sqlite_instance():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
@@ -193,7 +194,7 @@ class InstanceManagers:
     def sqlite_instance_with_queued_run_coordinator():
         @contextmanager
         def _sqlite_instance():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
@@ -213,7 +214,7 @@ class InstanceManagers:
     def sqlite_instance_with_default_run_launcher():
         @contextmanager
         def _sqlite_instance_with_default_hijack():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
@@ -268,7 +269,7 @@ class InstanceManagers:
     def asset_aware_sqlite_instance():
         @contextmanager
         def _sqlite_asset_instance():
-            with seven.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as temp_dir:
                 instance = DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,
                     local_artifact_storage=LocalArtifactStorage(temp_dir),

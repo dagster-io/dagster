@@ -41,7 +41,6 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             # standard python 2/3 compatability things
-            'enum34; python_version < "3.4"',
             "future",
             "PyYAML",
             # cli

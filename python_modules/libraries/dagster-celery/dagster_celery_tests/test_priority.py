@@ -1,11 +1,12 @@
 # pylint doesn't know about pytest fixtures
 # pylint: disable=unused-argument
 
+import tempfile
 import threading
 import time
 from collections import OrderedDict
 
-from dagster import ModeDefinition, default_executors, seven
+from dagster import ModeDefinition, default_executors
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster_celery import celery_executor
@@ -37,7 +38,7 @@ def test_eager_priority_pipeline():
 # If this test is failing locally, it likely means that there is a rogue
 # celery worker still running on your machine.
 def test_run_priority_pipeline(rabbitmq):
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test_tempdir(tempdir) as instance:
             low_done = threading.Event()
             hi_done = threading.Event()

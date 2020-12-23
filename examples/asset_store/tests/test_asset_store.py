@@ -1,7 +1,8 @@
 import os
 import pickle
+from tempfile import TemporaryDirectory
 
-from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline, seven
+from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
 
 from ..builtin_custom_path import custom_path_pipeline
 from ..builtin_default import model_pipeline
@@ -9,7 +10,7 @@ from ..builtin_pipeline import asset_store_pipeline
 
 
 def test_builtin_default():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.ephemeral()
 
         run_config = {
@@ -43,7 +44,7 @@ def test_builtin_default():
 
 
 def test_custom_path_asset_store():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with TemporaryDirectory() as tmpdir_path:
 
         instance = DagsterInstance.ephemeral()
 
@@ -78,7 +79,7 @@ def test_custom_path_asset_store():
 
 
 def test_builtin_pipeline():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.ephemeral()
 
         run_config = {

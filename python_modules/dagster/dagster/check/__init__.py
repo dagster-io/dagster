@@ -1,16 +1,8 @@
 import inspect
 import sys
+from inspect import Parameter
 
 from future.utils import raise_with_traceback
-from six import integer_types
-
-if sys.version_info[0] >= 3:
-    type_types = type
-else:
-    # These shenanigans are to support old-style classes in py27
-    import new  # pylint: disable=import-error
-
-    type_types = (type, new.classobj)  # pylint: disable=undefined-variable
 
 
 class CheckError(Exception):
@@ -203,13 +195,13 @@ def opt_callable_param(obj, param_name, default=None):
 
 
 def int_param(obj, param_name):
-    if not isinstance(obj, integer_types):
+    if not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     return obj
 
 
 def int_value_param(obj, value, param_name):
-    if not isinstance(obj, integer_types):
+    if not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     if obj != value:
         raise_with_traceback(
@@ -219,7 +211,7 @@ def int_value_param(obj, value, param_name):
 
 
 def opt_int_param(obj, param_name, default=None):
-    if obj is not None and not isinstance(obj, integer_types):
+    if obj is not None and not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
     return default if obj is None else obj
 
@@ -626,7 +618,7 @@ def opt_two_dim_dict_param(obj, param_name, key_type=str, value_type=None):
 
 
 def type_param(obj, param_name):
-    if not isinstance(obj, type_types):
+    if not isinstance(obj, type):
         raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
     return obj
 
@@ -800,7 +792,7 @@ def opt_int_elem(ddict, key):
     value = ddict.get(key)
     if value is None:
         return None
-    if not isinstance(value, integer_types):
+    if not isinstance(value, int):
         raise_with_traceback(_element_check_error(key, value, ddict, int))
     return value
 
@@ -810,7 +802,7 @@ def int_elem(ddict, key):
     str_param(key, "key")
 
     value = ddict[key]
-    if not isinstance(value, integer_types):
+    if not isinstance(value, int):
         raise_with_traceback(_element_check_error(key, value, ddict, int))
     return value
 

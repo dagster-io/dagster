@@ -1,10 +1,10 @@
 # pylint: disable=unused-import
 import os
+import tempfile
 
 import docker
 import kubernetes
 import pytest
-from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.scheduler import K8sScheduler
@@ -36,7 +36,7 @@ cluster_provider = define_cluster_provider_fixture(
 
 @pytest.yield_fixture
 def schedule_tempdir():
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         yield tempdir
 
 

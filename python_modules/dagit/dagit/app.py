@@ -7,7 +7,7 @@ import uuid
 
 import nbformat
 from dagster import __version__ as dagster_version
-from dagster import check, seven
+from dagster import check
 from dagster.cli.workspace import Workspace
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
@@ -199,7 +199,7 @@ def instantiate_app_with_views(context, app_path_prefix):
                         '<meta name="dagit-path-prefix" content="{}"'.format(app_path_prefix),
                     )
                 )
-        except seven.FileNotFoundError:
+        except FileNotFoundError:
             raise Exception(
                 """Can't find webapp files. Probably webapp isn't built. If you are using
                 dagit, then probably it's a corrupted installation or a bug. However, if you are

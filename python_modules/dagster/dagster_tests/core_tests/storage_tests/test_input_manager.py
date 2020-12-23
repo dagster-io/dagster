@@ -1,3 +1,5 @@
+import tempfile
+
 from dagster import (
     DagsterInstance,
     EventMetadataEntry,
@@ -10,7 +12,6 @@ from dagster import (
     execute_pipeline,
     pipeline,
     resource,
-    seven,
     solid,
 )
 from dagster.core.definitions.events import Failure, RetryRequested
@@ -177,7 +178,7 @@ def test_input_manager_with_failure():
     def simple():
         fail_on_input(emit_str())
 
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
@@ -246,7 +247,7 @@ def test_input_manager_with_retries():
 
         take_input_3(take_input_2(take_input_1(source_solid())))
 
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 

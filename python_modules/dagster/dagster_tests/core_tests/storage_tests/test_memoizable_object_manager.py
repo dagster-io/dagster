@@ -1,3 +1,5 @@
+from tempfile import TemporaryDirectory
+
 from dagster import Any, seven
 from dagster.core.execution.context.system import InputContext, OutputContext
 from dagster.core.storage.memoizable_object_manager import (
@@ -6,7 +8,7 @@ from dagster.core.storage.memoizable_object_manager import (
 
 
 def test_versioned_pickled_object_filesystem_object_manager():
-    with seven.TemporaryDirectory() as temp_dir:
+    with TemporaryDirectory() as temp_dir:
         store = VersionedPickledObjectFilesystemObjectManager(temp_dir)
         context = OutputContext(
             step_key="foo",

@@ -1,10 +1,10 @@
 import json
+import tempfile
 
 import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace
 from dagit.cli import host_dagit_ui_with_workspace, ui
-from dagster import seven
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
@@ -34,7 +34,7 @@ def test_create_app_with_workspace_and_scheduler():
     with load_workspace_from_yaml_paths(
         [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
-        with seven.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             with instance_for_test_tempdir(
                 temp_dir,
                 overrides={
@@ -118,7 +118,7 @@ def test_graphql_view_at_path_prefix():
 
 
 def test_successful_host_dagit_ui_from_workspace():
-    with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
+    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
 
         instance = DagsterInstance.get(temp_dir)
 
@@ -131,7 +131,7 @@ def test_successful_host_dagit_ui_from_workspace():
 
 
 def test_successful_host_dagit_ui_from_multiple_workspace_files():
-    with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
+    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
 
         with load_workspace_from_yaml_paths(
@@ -146,7 +146,7 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
 
 
 def test_successful_host_dagit_ui_from_legacy_repository():
-    with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
+    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
         with load_workspace_from_yaml_paths(
             [file_relative_path(__file__, "./workspace.yaml")]
@@ -176,7 +176,7 @@ def test_unknown_error():
 
     with mock.patch(
         "gevent.pywsgi.WSGIServer", new=_define_mock_server(_raise_custom_error)
-    ), seven.TemporaryDirectory() as temp_dir:
+    ), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
         with load_workspace_from_yaml_paths(
             [file_relative_path(__file__, "./workspace.yaml")]
@@ -193,7 +193,7 @@ def test_port_collision():
 
     with mock.patch(
         "gevent.pywsgi.WSGIServer", new=_define_mock_server(_raise_os_error)
-    ), seven.TemporaryDirectory() as temp_dir:
+    ), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
         with load_workspace_from_yaml_paths(
             [file_relative_path(__file__, "./workspace.yaml")]
@@ -212,7 +212,7 @@ def test_port_collision():
 
 
 def test_invalid_path_prefix():
-    with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
+    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
 
         with load_workspace_from_yaml_paths(
@@ -242,7 +242,7 @@ def test_invalid_path_prefix():
 
 
 def test_valid_path_prefix():
-    with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
+    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
 
         with load_workspace_from_yaml_paths(
@@ -262,7 +262,7 @@ def test_valid_path_prefix():
 def test_dagit_logs(
     server_mock, caplog,
 ):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")

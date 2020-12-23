@@ -1,5 +1,6 @@
 import os
 import signal
+import tempfile
 import time
 from threading import Thread
 
@@ -101,7 +102,7 @@ def test_single_proc_interrupt():
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_multiproc():
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test_tempdir(tempdir) as instance:
 
             file_1 = os.path.join(tempdir, "file_1")

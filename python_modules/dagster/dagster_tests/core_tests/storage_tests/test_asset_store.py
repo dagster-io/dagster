@@ -1,5 +1,6 @@
 import os
 import pickle
+import tempfile
 
 import pytest
 from dagster import (
@@ -12,7 +13,6 @@ from dagster import (
     pipeline,
     reexecute_pipeline,
     resource,
-    seven,
     solid,
 )
 from dagster.core.definitions.events import AssetMaterialization, AssetStoreOperationType
@@ -42,7 +42,7 @@ def define_asset_pipeline(asset_store, asset_metadata_dict):
 
 
 def test_result_output():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
         pipeline_def = define_asset_pipeline(asset_store, {})
 
@@ -55,7 +55,7 @@ def test_result_output():
 
 
 def test_fs_asset_store():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
         pipeline_def = define_asset_pipeline(asset_store, {})
 
@@ -96,7 +96,7 @@ def test_fs_asset_store():
 
 
 def test_default_asset_store_reexecution():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         default_asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
         pipeline_def = define_asset_pipeline(default_asset_store, {})
         instance = DagsterInstance.ephemeral()
@@ -131,7 +131,7 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
 
 
 def test_step_subset_with_custom_paths():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_store = custom_path_fs_asset_store
         # pass hardcoded file path via asset_metadata
         test_asset_metadata_dict = {
@@ -267,7 +267,7 @@ def test_set_asset_store_configure_intermediate_storage():
 
 
 def test_fan_in():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
 
         @solid
@@ -298,7 +298,7 @@ def get_fake_solid():
 
 
 def test_asset_store_optional_output():
-    with seven.TemporaryDirectory() as tmpdir_dir:
+    with tempfile.TemporaryDirectory() as tmpdir_dir:
         asset_store = fs_asset_store.configured({"base_dir": tmpdir_dir})
 
         skip = True
@@ -322,7 +322,7 @@ def test_asset_store_optional_output():
 
 
 def test_asset_store_optional_output_path_exists():
-    with seven.TemporaryDirectory() as tmpdir_dir:
+    with tempfile.TemporaryDirectory() as tmpdir_dir:
         asset_store = custom_path_fs_asset_store.configured({"base_dir": tmpdir_dir})
         filepath = os.path.join(tmpdir_dir, "foo")
         # file exists already

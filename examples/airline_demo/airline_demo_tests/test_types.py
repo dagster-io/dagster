@@ -1,4 +1,5 @@
 import os
+from tempfile import TemporaryDirectory
 
 import botocore
 import pyspark
@@ -12,7 +13,6 @@ from dagster import (
     file_relative_path,
     local_file_manager,
     pipeline,
-    seven,
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
@@ -153,7 +153,7 @@ def test_spark_dataframe_output_csv(spark_config):
     def passthrough():
         passthrough_df(emit())
 
-    with seven.TemporaryDirectory() as tempdir:
+    with TemporaryDirectory() as tempdir:
         file_name = os.path.join(tempdir, "output.csv")
         result = execute_pipeline(
             passthrough,

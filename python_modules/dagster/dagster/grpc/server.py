@@ -2,11 +2,13 @@ import math
 import os
 import queue
 import sys
+import tempfile
 import threading
 import time
 import uuid
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
+from threading import Event as ThreadingEventType
 
 import grpc
 from dagster import check, seven
@@ -183,7 +185,7 @@ class DagsterApiServer(DagsterApiServicer):
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 
         self._server_termination_event = check.inst_param(
-            server_termination_event, "server_termination_event", seven.ThreadingEventType
+            server_termination_event, "server_termination_event", ThreadingEventType
         )
         self._loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -900,7 +902,7 @@ def open_server_process(
 
     from dagster.core.test_utils import get_mocked_system_timezone
 
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         output_file = os.path.join(
             temp_dir, "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
         )

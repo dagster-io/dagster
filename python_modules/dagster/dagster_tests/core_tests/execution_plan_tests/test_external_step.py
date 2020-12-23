@@ -1,4 +1,5 @@
 import os
+import tempfile
 import time
 import uuid
 from threading import Thread
@@ -14,7 +15,6 @@ from dagster import (
     pipeline,
     reconstructable,
     resource,
-    seven,
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
@@ -179,7 +179,7 @@ def test_step_context_to_step_run_ref():
 
 
 def test_local_external_step_launcher():
-    with seven.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         with DagsterInstance.ephemeral() as instance:
             step_context = initialize_step_context(tmpdir, instance)
 
@@ -193,7 +193,7 @@ def test_local_external_step_launcher():
 
 @pytest.mark.parametrize("mode", ["external", "internal_and_external"])
 def test_pipeline(mode):
-    with seven.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
@@ -205,7 +205,7 @@ def test_pipeline(mode):
 
 def test_launcher_requests_retry():
     mode = "request_retry"
-    with seven.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
@@ -229,10 +229,8 @@ def _send_interrupt_thread(temp_file):
 
 @pytest.mark.parametrize("mode", ["external"])
 def test_interrupt_step_launcher(mode):
-    with seven.TemporaryDirectory() as tmpdir:
-
+    with tempfile.TemporaryDirectory() as tmpdir:
         with safe_tempfile_path() as success_tempfile:
-
             sleepy_run_config = {
                 "resources": {"first_step_launcher": {"config": {"scratch_dir": tmpdir}}},
                 "intermediate_storage": {"filesystem": {"config": {"base_dir": tmpdir}}},
@@ -267,7 +265,7 @@ def test_interrupt_step_launcher(mode):
 
 def test_multiproc_launcher_requests_retry():
     mode = "request_retry"
-    with seven.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         run_config = make_run_config(tmpdir, mode)
         run_config["execution"] = {"multiprocess": {}}
         result = execute_pipeline(

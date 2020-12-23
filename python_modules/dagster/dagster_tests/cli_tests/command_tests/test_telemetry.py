@@ -1,13 +1,13 @@
 import json
 import logging
 import os
+import tempfile
 from difflib import SequenceMatcher
 
 import mock
 import pytest
 import responses
 from click.testing import CliRunner
-from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
@@ -84,7 +84,7 @@ def test_dagster_telemetry_disabled(caplog):
 
 
 def test_dagster_telemetry_unset(caplog):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
@@ -110,7 +110,7 @@ def test_dagster_telemetry_unset(caplog):
 
 
 def test_repo_stats(caplog):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):

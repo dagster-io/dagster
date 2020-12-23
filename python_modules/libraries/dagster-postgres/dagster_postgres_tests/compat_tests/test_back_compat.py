@@ -3,9 +3,10 @@
 import os
 import re
 import subprocess
+import tempfile
 
 import pytest
-from dagster import execute_pipeline, pipeline, seven, solid
+from dagster import execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_event_log_data
@@ -39,7 +40,7 @@ def test_0_6_6_postgres(hostname, conn_string):
 
     run_id = "089287c5-964d-44c0-b727-357eb7ba522e"
 
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         # Create the dagster.yaml
         with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
@@ -91,7 +92,7 @@ def test_0_7_6_postgres_pre_event_log_migration(hostname, conn_string):
 
     run_id = "ca7f1e33-526d-4f75-9bc5-3e98da41ab97"
 
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
@@ -155,7 +156,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
     run_id = "d5f89349-7477-4fab-913e-0925cef0a959"
 
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
                 template = template_fd.read().format(hostname=hostname)

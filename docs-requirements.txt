@@ -1,4 +1,4 @@
-Sphinx==2.2.2; python_version >= '3.6'
+Sphinx==2.2.2
 sphinx-autobuild==0.7.1
 -e ./python_modules/dagster
 -e ./python_modules/dagster-graphql

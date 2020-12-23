@@ -1,4 +1,5 @@
 import asyncio
+import tempfile
 import time
 from threading import Thread
 
@@ -13,7 +14,6 @@ from dagster import (
     file_relative_path,
     pipeline,
     reconstructable,
-    seven,
     solid,
 )
 from dagster.core.definitions.executor import default_executors
@@ -41,7 +41,7 @@ def dask_engine_pipeline():
 
 
 def test_execute_on_dask_local():
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test_tempdir(tempdir) as instance:
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),
@@ -140,7 +140,7 @@ def test_dask():
 
 
 def test_execute_on_dask_local_with_intermediate_storage():
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test_tempdir(tempdir) as instance:
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),

@@ -1,10 +1,11 @@
 import os
 import pickle
+import tempfile
 import time
 
 import boto3
 from botocore.exceptions import ClientError
-from dagster import Field, StringSource, check, resource, seven
+from dagster import Field, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import log_step_event
@@ -167,7 +168,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         """
         from dagster_pyspark.utils import build_pyspark_zip
 
-        with seven.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             s3 = boto3.client("s3", region_name=self.region_name)
 
             # Upload step run ref

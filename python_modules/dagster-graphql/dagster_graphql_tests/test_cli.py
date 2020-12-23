@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import time
 from contextlib import contextmanager
 
@@ -13,7 +14,7 @@ from dagster_graphql.cli import ui
 
 @contextmanager
 def dagster_cli_runner():
-    with seven.TemporaryDirectory() as dagster_home_temp:
+    with tempfile.TemporaryDirectory() as dagster_home_temp:
         with instance_for_test_tempdir(
             dagster_home_temp,
             overrides={
@@ -214,7 +215,7 @@ def test_start_execution_save_output():
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
 
     with dagster_cli_runner() as runner:
-        with seven.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             file_name = os.path.join(temp_dir, "output_file")
 
             result = runner.invoke(
@@ -290,7 +291,7 @@ def test_logs_in_start_execution_predefined():
     )
 
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(
             temp_dir,
             overrides={

@@ -1,5 +1,6 @@
 import os
 import pickle
+import tempfile
 import time
 
 import pytest
@@ -24,7 +25,6 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     pipeline,
-    seven,
     solid,
 )
 
@@ -409,7 +409,7 @@ def test_hello():
 
 
 def test_unpickle():
-    with seven.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         filename = os.path.join(tmpdir, "foo.pickle")
         with open(filename, "wb") as f:
             pickle.dump("foo", f)

@@ -2,6 +2,7 @@ import copy
 import os
 import pickle
 import sys
+import tempfile
 import uuid
 
 import nbformat
@@ -152,7 +153,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
 
         system_compute_context = compute_context.get_system_context()
 
-        with seven.TemporaryDirectory() as output_notebook_dir:
+        with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
 
                 parameterized_notebook_path = os.path.join(

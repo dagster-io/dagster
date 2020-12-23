@@ -4,11 +4,12 @@ import typing
 class BuiltinEnum:
 
     ANY = typing.Any
-    BOOL = typing.NewType("Bool", bool)
-    FLOAT = typing.NewType("Float", float)
-    INT = typing.NewType("Int", int)
-    STRING = typing.NewType("String", str)
-    NOTHING = typing.NewType("Nothing", None)
+    # mypy doesn't like the mismatch between BOOL and "Bool"
+    BOOL = typing.NewType("Bool", bool)  # type: ignore[misc]
+    FLOAT = typing.NewType("Float", float)  # type: ignore[misc]
+    INT = typing.NewType("Int", int)  # type: ignore[misc]
+    STRING = typing.NewType("String", str)  # type: ignore[misc]
+    NOTHING = typing.NewType("Nothing", None)  # type: ignore[misc]
 
     @classmethod
     def contains(cls, value):

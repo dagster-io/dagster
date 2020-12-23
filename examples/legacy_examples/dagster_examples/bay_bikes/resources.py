@@ -2,7 +2,7 @@ import os
 import shutil
 import tempfile
 
-from dagster import check, resource, seven
+from dagster import check, resource
 from dagster.utils import mkdir_p
 from google.cloud import storage
 
@@ -34,7 +34,7 @@ def credentials_vault(context):
 
 @resource
 def temporary_directory_mount(_):
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         yield tmpdir_path
 
 

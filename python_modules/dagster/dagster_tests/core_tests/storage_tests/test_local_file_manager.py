@@ -1,6 +1,7 @@
+import tempfile
 from contextlib import contextmanager
 
-from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline, seven, solid
+from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager, local_file_manager
 from dagster.utils.temp_file import get_temp_file_handle_with_data
@@ -58,7 +59,7 @@ def test_basic_file_manager_execute():
     def pipe():
         return file_handle()
 
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
 
         result = execute_pipeline(
             pipe, run_config={"resources": {"file_manager": {"config": {"base_dir": temp_dir}}}}

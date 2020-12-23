@@ -1,7 +1,8 @@
+import tempfile
+
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster import seven
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.test_utils import instance_for_test
 from dagster_postgres.utils import get_conn
@@ -46,7 +47,7 @@ def full_pg_config(hostname):
 def test_connection_leak(hostname, conn_string):
     num_instances = 20
 
-    tempdir = seven.TemporaryDirectory()
+    tempdir = tempfile.TemporaryDirectory()
     copies = []
     for _ in range(num_instances):
         copies.append(

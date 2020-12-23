@@ -1,8 +1,9 @@
 import io
 import os.path
 import pickle
+import tempfile
 
-from dagster import Bool, Field, StringSource, check, resource, seven
+from dagster import Bool, Field, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import log_step_event
@@ -167,7 +168,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             )
 
         log.info("Uploading pipeline to DBFS")
-        with seven.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             # Zip and upload package containing pipeline
             zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
             build_pyspark_zip(zip_local_path, self.local_pipeline_package_path)

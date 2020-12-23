@@ -1,12 +1,12 @@
 import os
 import sys
+import tempfile
 import time
 import traceback
 from contextlib import contextmanager
 
 import pytest
 import sqlalchemy
-from dagster import seven
 from dagster.core.definitions import AssetMaterialization, ExpectationResult
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import (
@@ -36,13 +36,13 @@ def create_in_memory_event_log_storage():
 
 @contextmanager
 def create_sqlite_run_event_logstorage():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         yield SqliteEventLogStorage(tmpdir_path)
 
 
 @contextmanager
 def create_consolidated_sqlite_run_event_log_storage():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         yield ConsolidatedSqliteEventLogStorage(tmpdir_path)
 
 
@@ -245,7 +245,7 @@ def test_event_log_get_stats_without_start_and_success(event_storage_factory_cm_
 
 
 def test_filesystem_event_log_storage_run_corrupted():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)
         # URL begins sqlite:///
         # pylint: disable=protected-access
@@ -256,7 +256,7 @@ def test_filesystem_event_log_storage_run_corrupted():
 
 
 def test_filesystem_event_log_storage_run_corrupted_bad_data():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)
         SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_run_id("foo")))
         with storage.connect("foo") as conn:
@@ -291,7 +291,7 @@ def cmd(exceptions, tmpdir_path):
 
 def test_concurrent_sqlite_event_log_connections():
     exceptions = multiprocessing.Queue()
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
 
         ps = []
         for _ in range(5):

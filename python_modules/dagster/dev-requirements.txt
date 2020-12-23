@@ -1,5 +1,5 @@
-astroid>=2.3.3; python_version >= '3.6'
-black==19.10b0; python_version >= '3.6'
+astroid>=2.3.3
+black==19.10b0
 coverage==5.3
 docker
 flake8>=3.7.8
@@ -9,16 +9,13 @@ isort<5,>=4.3.21
 mock==3.0.5
 nbsphinx==0.4.2
 protobuf==3.13.0 # without this, pip will install the most up-to-date protobuf
-pylint==2.6.0; python_version >= '3.6'
+pylint==2.6.0
 pytest-cov==2.10.1
 pytest-dependency==0.5.1
-pytest-mock==2.0.0; python_version < '3.6'
-pytest-mock==3.3.1; python_version >= '3.6'
+pytest-mock==3.3.1
 pytest-runner==5.2
-pytest-xdist==1.34.0; python_version < '3.6'
-pytest-xdist==2.1.0; python_version >= '3.6'
-pytest==4.6.11; python_version < '3.6'
-pytest==6.1.1; python_version >= '3.6'
+pytest-xdist==2.1.0
+pytest==6.1.1
 recommonmark==0.4.0
 responses==0.10.*
 snapshottest==0.6.0

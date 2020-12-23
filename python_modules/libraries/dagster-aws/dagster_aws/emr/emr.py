@@ -23,13 +23,13 @@
 import gzip
 import re
 from io import BytesIO
+from urllib.parse import urlparse
 
 import boto3
 import dagster
 import six
 from botocore.exceptions import WaiterError
 from dagster import check
-from dagster.seven import urlparse
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
 
 from .types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState

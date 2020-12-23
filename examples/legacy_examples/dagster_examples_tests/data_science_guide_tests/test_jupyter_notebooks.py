@@ -3,7 +3,6 @@ import re
 import nbformat
 import psycopg2
 import pytest
-from dagster import seven
 from dagster.utils import script_relative_path
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
@@ -56,7 +55,7 @@ invalid_notebook_paths = [
     (
         "../../../python_modules/libraries/dagster-pandas/dagster_pandas/examples/pandas_hello_world/scratch.ipynb",
         ["cells", 0, "outputs", 0],
-        seven.ModuleNotFoundError.__name__,
+        ModuleNotFoundError.__name__,
         "No module named 'dagster_contrib'",
         "error",
     ),

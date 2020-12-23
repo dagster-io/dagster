@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from functools import lru_cache
 
 import yaml
 from dagster import check
@@ -10,7 +10,6 @@ from dagster.core.host_representation import (
 from dagster.core.snap import ConfigSchemaSnapshot, LoggerDefSnap, ModeDefSnap, ResourceDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.seven import lru_cache
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline

@@ -1,3 +1,4 @@
+import tempfile
 import time
 from contextlib import contextmanager
 
@@ -10,7 +11,6 @@ from dagster import (
     execute_pipeline,
     file_relative_path,
     pipeline,
-    seven,
     solid,
 )
 from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
@@ -45,7 +45,7 @@ def get_instance(temp_dir, event_log_storage):
 
 @contextmanager
 def create_in_memory_event_log_instance():
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         asset_storage = InMemoryEventLogStorage()
         instance = get_instance(temp_dir, asset_storage)
         yield [instance, asset_storage]
@@ -53,7 +53,7 @@ def create_in_memory_event_log_instance():
 
 @contextmanager
 def create_consolidated_sqlite_event_log_instance():
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         asset_storage = ConsolidatedSqliteEventLogStorage(temp_dir)
         instance = get_instance(temp_dir, asset_storage)
         yield [instance, asset_storage]

@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
@@ -17,7 +18,6 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
-    seven,
 )
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -369,7 +369,7 @@ def check_dagster_type(dagster_type, value):
 
 @contextmanager
 def copy_directory(src):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         dst = os.path.join(temp_dir, os.path.basename(src))
         shutil.copytree(src, dst)
         yield dst

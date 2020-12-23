@@ -2,6 +2,7 @@ import inspect
 import os
 import sys
 from collections import namedtuple
+from functools import lru_cache
 
 from dagster import check, seven
 from dagster.core.code_pointer import (
@@ -15,7 +16,6 @@ from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViola
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster.seven import lru_cache
 from dagster.utils.backcompat import experimental
 
 from .pipeline_base import IPipeline

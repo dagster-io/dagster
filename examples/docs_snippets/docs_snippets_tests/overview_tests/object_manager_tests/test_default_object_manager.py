@@ -1,5 +1,6 @@
+from tempfile import TemporaryDirectory
+
 from dagster import execute_pipeline
-from dagster.seven import TemporaryDirectory
 from docs_snippets.overview.object_managers.default_object_manager import my_pipeline
 
 

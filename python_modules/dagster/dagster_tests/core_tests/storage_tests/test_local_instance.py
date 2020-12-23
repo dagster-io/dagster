@@ -1,4 +1,5 @@
 import os
+import tempfile
 import types
 
 import pytest
@@ -13,7 +14,6 @@ from dagster import (
     check,
     execute_pipeline,
     pipeline,
-    seven,
     solid,
 )
 from dagster.core.definitions.events import RetryRequested
@@ -38,7 +38,7 @@ def test_fs_stores():
 
         easy()
 
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = SqliteEventLogStorage(temp_dir)
         compute_log_manager = LocalComputeLogManager(temp_dir)
@@ -67,7 +67,7 @@ def test_fs_stores():
 
 
 def test_init_compute_log_with_bad_config():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
             yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(
@@ -77,7 +77,7 @@ def test_init_compute_log_with_bad_config():
 
 
 def test_init_compute_log_with_bad_config_override():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         with pytest.raises(
             DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
         ):
@@ -87,7 +87,7 @@ def test_init_compute_log_with_bad_config_override():
 
 
 def test_init_compute_log_with_bad_config_module():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
             yaml.dump(
                 {"compute_logs": {"module": "flargh", "class": "Woble", "config": {}}},
@@ -102,7 +102,7 @@ MOCK_HAS_RUN_CALLED = False
 
 
 def test_get_run_by_id():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
@@ -116,7 +116,7 @@ def test_get_run_by_id():
         assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
 
     # Run is created after we check whether it exists
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
@@ -137,7 +137,7 @@ def test_get_run_by_id():
     # Run is created after we check whether it exists, but deleted before we can get it
     global MOCK_HAS_RUN_CALLED  # pylint:disable=global-statement
     MOCK_HAS_RUN_CALLED = False
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
@@ -180,7 +180,7 @@ def test_run_step_stats():
 
         should_not_execute(should_fail(should_succeed()))
 
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
         step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
@@ -223,7 +223,7 @@ def test_run_step_stats_with_retries():
 
         should_not_execute(should_retry(should_succeed()))
 
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
         step_stats = instance.get_run_step_stats(result.run_id, step_keys=["should_retry"])

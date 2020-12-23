@@ -1,7 +1,8 @@
 import os
+import tempfile
 
 import pytest
-from dagster import execute_pipeline, seven
+from dagster import execute_pipeline
 from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags,
@@ -355,7 +356,7 @@ def test_make_repo(
     path_and_content_tuples, fn_arg_path, expected_pipeline_names,
 ):
     repo_name = "my_repo_name"
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         for (path, content) in path_and_content_tuples:
             with open(os.path.join(tmpdir_path, path), "wb") as f:
                 f.write(bytes(content.encode("utf-8")))

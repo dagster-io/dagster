@@ -4,12 +4,12 @@ import io
 import os
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 import warnings
 from contextlib import contextmanager
 
-from dagster import seven
 from dagster.core.execution import poll_compute_logs, watch_orphans
 from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.seven import IS_WINDOWS, wait_for_process
@@ -93,7 +93,7 @@ def execute_windows_tail(path, stream):
     poll_file = os.path.abspath(poll_compute_logs.__file__)
     stream = stream if _fileno(stream) else None
 
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         ipc_output_file = os.path.join(
             temp_dir, "execute-windows-tail-{uuid}".format(uuid=uuid.uuid4().hex)
         )

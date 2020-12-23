@@ -16,11 +16,12 @@ from collections import namedtuple
 from enum import Enum
 from warnings import warn
 
+import _thread as thread
 import six
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS, TemporaryDirectory, multiprocessing, thread
+from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
 from six.moves import configparser
 

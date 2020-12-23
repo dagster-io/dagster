@@ -4,6 +4,7 @@ import json
 import os
 import string
 import sys
+import tempfile
 from contextlib import contextmanager
 
 import mock
@@ -16,7 +17,6 @@ from dagster import (
     lambda_solid,
     pipeline,
     repository,
-    seven,
     solid,
 )
 from dagster.cli import ENV_PREFIX, cli
@@ -174,7 +174,7 @@ def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
 
 @contextmanager
 def default_cli_test_instance(overrides=None):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with _default_cli_test_instance_tempdir(temp_dir, overrides) as instance:
             yield instance
 
@@ -273,7 +273,7 @@ def pipeline_python_origin_contexts():
 
 @contextmanager
 def scheduler_instance(overrides=None):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with _default_cli_test_instance_tempdir(
             temp_dir,
             overrides=merge_dicts(

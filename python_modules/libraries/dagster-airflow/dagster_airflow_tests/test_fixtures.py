@@ -1,5 +1,6 @@
 import logging
 import sys
+import tempfile
 from contextlib import contextmanager
 
 import pytest
@@ -8,7 +9,7 @@ from airflow.exceptions import AirflowSkipException
 from airflow.models import TaskInstance
 from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
-from dagster import file_relative_path, seven
+from dagster import file_relative_path
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list, merge_dicts
@@ -17,7 +18,7 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 @contextmanager
 def postgres_instance(overrides=None):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-airflow",
         ) as pg_conn_string:

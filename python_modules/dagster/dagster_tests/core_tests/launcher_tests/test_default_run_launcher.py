@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import tempfile
 import time
 from contextlib import contextmanager
 
@@ -205,7 +206,7 @@ def test_successful_run(get_external_pipeline, run_config):  # pylint: disable=r
     ],
 )
 def test_invalid_instance_run(get_external_pipeline):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         correct_run_storage_dir = os.path.join(temp_dir, "history", "")
         wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
 

@@ -33,8 +33,6 @@ if __name__ == "__main__":
             "python-dateutil>=2.8.0",
             "lazy_object_proxy",
             "pendulum==1.4.4",
-            # RSA 4.1+ is incompatible with py2.7
-            'rsa<=4.0; python_version<"3"',
             # https://issues.apache.org/jira/browse/AIRFLOW-6854
             'typing_extensions; python_version>="3.8"',
         ],

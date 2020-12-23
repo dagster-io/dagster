@@ -1,10 +1,11 @@
 import os
 import subprocess
+import tempfile
 import warnings
 from contextlib import contextmanager
 
 import pytest
-from dagster import check, file_relative_path, seven
+from dagster import check, file_relative_path
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import merge_dicts
 
@@ -13,7 +14,7 @@ BUILDKITE = bool(os.getenv("BUILDKITE"))
 
 @contextmanager
 def postgres_instance_for_test(dunder_file, container_name, overrides=None):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(dunder_file, "docker-compose.yml"), container_name,
         ) as pg_conn_string:

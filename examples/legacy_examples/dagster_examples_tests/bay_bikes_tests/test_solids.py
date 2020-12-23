@@ -6,7 +6,7 @@ from datetime import date
 from functools import partial
 
 import pytest
-from dagster import ModeDefinition, execute_pipeline, execute_solid, pipeline, seven
+from dagster import ModeDefinition, execute_pipeline, execute_solid, pipeline
 from dagster_examples.bay_bikes.resources import credentials_vault, mount, testing_client
 from dagster_examples.bay_bikes.solids import (
     MultivariateTimeseries,
@@ -411,7 +411,7 @@ def mock_download_zipfile(tmp_dir, fake_trip_data, _url, _target, _chunk_size):
 
 def test_monthly_trip_pipeline(mocker):
     env_dictionary = run_config_dict()
-    with seven.TemporaryDirectory() as tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
         # Run pipeline
         download_zipfile = mocker.patch(
             "dagster_examples.bay_bikes.solids._download_zipfile_from_url",

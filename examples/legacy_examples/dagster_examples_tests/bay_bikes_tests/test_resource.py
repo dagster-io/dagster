@@ -2,12 +2,11 @@ import os
 import shutil
 import tempfile
 
-from dagster import seven
 from dagster_examples.bay_bikes.resources import LocalBlob, LocalBucket, LocalClient
 
 
 def test_local_blob_upload():
-    with seven.TemporaryDirectory() as bucket_dir:
+    with tempfile.TemporaryDirectory() as bucket_dir:
         target_key = os.path.join(bucket_dir, "foo.txt")
         # TODO: Make this windows safe
         with tempfile.NamedTemporaryFile() as local_fp:

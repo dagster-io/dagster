@@ -505,7 +505,7 @@ class PythonObjectDagsterType(DagsterType):
     def __init__(self, python_type, key=None, name=None, **kwargs):
         if isinstance(python_type, tuple):
             self.python_type = check.tuple_param(
-                python_type, "python_type", of_type=tuple(check.type_types for item in python_type)
+                python_type, "python_type", of_type=tuple(type for item in python_type)
             )
             self.type_str = "Union[{}]".format(
                 ", ".join(python_type.__name__ for python_type in python_type)

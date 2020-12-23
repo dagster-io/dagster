@@ -1,11 +1,12 @@
 import os
 import subprocess
 import sys
+import tempfile
 from contextlib import contextmanager
 
 import kubernetes
 import pytest
-from dagster import DagsterInstance, ScheduleDefinition, seven
+from dagster import DagsterInstance, ScheduleDefinition
 from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -402,7 +403,7 @@ def test_script_execution(
     helm_namespace_for_k8s_run_launcher,
     restore_k8s_cron_tab,
 ):  # pylint:disable=unused-argument,redefined-outer-name
-    with seven.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         with environ({"DAGSTER_HOME": tempdir}):
             local_instance = DagsterInstance.get()
 

@@ -1,12 +1,13 @@
 import os
 import signal
 import sys
+import tempfile
 import time
 from contextlib import contextmanager
 
 import pendulum
 import yaml
-from dagster import Shape, check, composite_solid, pipeline, seven, solid
+from dagster import Shape, check, composite_solid, pipeline, solid
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.core.instance import DagsterInstance
@@ -82,7 +83,7 @@ def environ(env):
 
 @contextmanager
 def instance_for_test(overrides=None):
-    with seven.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir, overrides) as instance:
             yield instance
 

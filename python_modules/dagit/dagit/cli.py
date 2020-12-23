@@ -1,11 +1,12 @@
 import os
 import sys
+import tempfile
 import threading
 from contextlib import contextmanager
 
 import click
 import six
-from dagster import check, seven
+from dagster import check
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance
@@ -103,7 +104,7 @@ def ui(host, port, path_prefix, storage_fallback, db_statement_timeout, **kwargs
         port_lookup = False
 
     if storage_fallback is None:
-        with seven.TemporaryDirectory() as storage_fallback:
+        with tempfile.TemporaryDirectory() as storage_fallback:
             host_dagit_ui(
                 host,
                 port,

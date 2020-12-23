@@ -12,6 +12,7 @@ import threading
 import time
 from contextlib import contextmanager
 from types import MethodType
+from unittest import mock
 
 import pendulum
 
@@ -20,77 +21,9 @@ from .temp_dir import get_system_temp_directory
 
 IS_WINDOWS = os.name == "nt"
 
-if hasattr(inspect, "signature"):
-    funcsigs = inspect
-else:
-    import funcsigs
+funcsigs = inspect
 
-# pylint: disable=no-name-in-module,import-error,no-member
-if sys.version_info < (3, 0):
-    # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile
-
-    TemporaryDirectory = backports.tempfile.TemporaryDirectory
-
-else:
-    TemporaryDirectory = tempfile.TemporaryDirectory
-
-try:
-    # pylint:disable=redefined-builtin,self-assigning-variable
-    FileNotFoundError = FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
-
-try:
-    # pylint:disable=redefined-builtin,self-assigning-variable
-    ModuleNotFoundError = ModuleNotFoundError
-except NameError:
-    ModuleNotFoundError = ImportError
-
-try:
-    import _thread as thread
-except ImportError:
-    import thread
-
-try:
-    from urllib.parse import urljoin, urlparse, urlunparse, quote_plus
-except ImportError:
-    from urlparse import urljoin, urlparse, urlunparse
-    from urllib import quote_plus
-
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
-
-if sys.version_info > (3,):
-    from pathlib import Path  # pylint: disable=import-error
-else:
-    from pathlib2 import Path  # pylint: disable=import-error
-
-if sys.version_info > (3,):
-    from contextlib import ExitStack  # pylint: disable=import-error
-else:
-    from contextlib2 import ExitStack  # pylint: disable=import-error
-
-if sys.version_info > (3,):
-    from threading import Event as ThreadingEventType  # pylint: disable=import-error
-else:
-    from threading import _Event as ThreadingEventType  # pylint: disable=import-error
-
-# Set execution method to spawn, to avoid fork and to have same behavior between platforms.
-# Older versions are stuck with whatever is the default on their platform (fork on
-# Unix-like and spawn on windows)
-#
-# https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
-if hasattr(multiprocessing, "get_context"):
-    multiprocessing = multiprocessing.get_context("spawn")
-
+multiprocessing = multiprocessing.get_context("spawn")
 
 IS_WINDOWS = os.name == "nt"
 
@@ -98,46 +31,29 @@ IS_WINDOWS = os.name == "nt"
 
 # https://stackoverflow.com/a/67692/324449
 def import_module_from_path(module_name, path_to_file):
-    version = sys.version_info
-    if version.major >= 3 and version.minor >= 5:
-        import importlib.util
+    import importlib.util
 
-        spec = importlib.util.spec_from_file_location(module_name, path_to_file)
-        if spec is None:
-            raise Exception(
-                "Can not import module {module_name} from path {path_to_file}, unable to load spec.".format(
-                    module_name=module_name, path_to_file=path_to_file
-                )
+    spec = importlib.util.spec_from_file_location(module_name, path_to_file)
+    if spec is None:
+        raise Exception(
+            "Can not import module {module_name} from path {path_to_file}, unable to load spec.".format(
+                module_name=module_name, path_to_file=path_to_file
             )
-        if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == os.path.abspath(
-            spec.origin
-        ):
-            module = sys.modules[spec.name]
-        else:
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = module
-            spec.loader.exec_module(module)
-    elif version.major >= 3 and version.minor >= 3:
-        from importlib.machinery import SourceFileLoader
-
-        # pylint:disable=deprecated-method, no-value-for-parameter
-        module = SourceFileLoader(module_name, path_to_file).load_module()
+        )
+    if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == os.path.abspath(
+        spec.origin
+    ):
+        module = sys.modules[spec.name]
     else:
-        from imp import load_source
-
-        module = load_source(module_name, path_to_file)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
 
     return module
 
 
 def is_ascii(str_):
-    if sys.version_info.major < 3:
-        try:
-            str_.decode("ascii")
-            return True
-        except UnicodeEncodeError:
-            return False
-    elif sys.version_info.major == 3 and sys.version_info.minor < 7:
+    if sys.version_info.major == 3 and sys.version_info.minor < 7:
         try:
             str_.encode("ascii")
             return True
@@ -147,48 +63,15 @@ def is_ascii(str_):
         return str_.isascii()
 
 
-if sys.version_info.major >= 3 and sys.version_info.minor >= 3:
-    time_fn = time.perf_counter
-elif IS_WINDOWS:
-    time_fn = time.clock
-else:
-    time_fn = time.time
-
-try:
-    from unittest import mock
-except ImportError:
-    # Because this dependency is not encoded setup.py deliberately
-    # (we do not want to override or conflict with our users mocks)
-    # we never fail when importing this.
-
-    # This will only be used within *our* test environment of which
-    # we have total control
-    try:
-        import mock
-    except ImportError:
-        pass
+time_fn = time.perf_counter
 
 
 def get_args(callable_):
-    if sys.version_info.major >= 3:
-        return [
-            parameter.name
-            for parameter in inspect.signature(callable_).parameters.values()
-            if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
-        ]
-    else:
-        if inspect.isclass(callable_):
-            if issubclass(callable_, tuple):
-                arg_spec = inspect.getargspec(  # pylint: disable=deprecated-method
-                    callable_.__new__
-                )
-            else:
-                arg_spec = inspect.getargspec(  # pylint: disable=deprecated-method
-                    callable_.__init__
-                )
-        else:
-            arg_spec = inspect.getargspec(callable_)  # pylint: disable=deprecated-method
-        return arg_spec.args
+    return [
+        parameter.name
+        for parameter in inspect.signature(callable_).parameters.values()
+        if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+    ]
 
 
 def wait_for_process(process, timeout=30):
@@ -229,49 +112,28 @@ def kill_process(process):
 
 # https://stackoverflow.com/a/58437485/324449
 def is_module_available(module_name):
-    if sys.version_info <= (3, 3):
-        # python 3.3 and below
-        import pkgutil
+    # python 3.4 and above
+    import importlib
 
-        loader = pkgutil.find_loader(module_name)
-    elif sys.version_info >= (3, 4):
-        # python 3.4 and above
-        import importlib
-
-        loader = importlib.util.find_spec(module_name)
+    loader = importlib.util.find_spec(module_name)
 
     return loader is not None
 
 
 def builtin_print():
-    if sys.version_info.major >= 3:
-        return "builtins.print"
-
-    else:
-        return "sys.stdout"
+    return "builtins.print"
 
 
 def print_single_line_str(single_line_str):
-    if sys.version_info.major >= 3:
-        return [
-            mock.call(single_line_str),
-        ]
-    else:
-        return [
-            mock.call.write(single_line_str),
-            mock.call.write("\n"),
-        ]
+    return [
+        mock.call(single_line_str),
+    ]
 
 
 def get_utc_timezone():
-    if sys.version_info.major >= 3 and sys.version_info.minor >= 2:
-        from datetime import timezone
+    from datetime import timezone
 
-        return timezone.utc
-    else:
-        import pytz
-
-        return pytz.utc
+    return timezone.utc
 
 
 def get_current_datetime_in_utc():
@@ -285,12 +147,7 @@ def get_timestamp_from_utc_datetime(utc_datetime):
     if utc_datetime.tzinfo != get_utc_timezone():
         raise Exception("Must pass in a UTC timezone to compute UNIX timestamp")
 
-    if sys.version_info.major >= 3 and sys.version_info.minor >= 2:
-        return utc_datetime.timestamp()
-    else:
-        import pytz
-
-        return (utc_datetime - datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds()
+    return utc_datetime.timestamp()
 
 
 def is_lambda(target):
@@ -313,10 +170,7 @@ def xplat_shlex_split(s):
 
 
 def get_import_error_message(import_error):
-    if sys.version_info.major >= 3:
-        return import_error.msg
-    else:
-        return str(import_error)
+    return import_error.msg
 
 
 # Stand-in for contextlib.nullcontext, but available in python 3.6

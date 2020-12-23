@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 from contextlib import contextmanager
+from tempfile import TemporaryDirectory
 
 import pytest
 import yaml
@@ -30,11 +31,7 @@ from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.core.test_utils import environ
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.seven import (
-    TemporaryDirectory,
-    get_current_datetime_in_utc,
-    get_timestamp_from_utc_datetime,
-)
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster_cron import SystemCronScheduler
 from freezegun import freeze_time
 
