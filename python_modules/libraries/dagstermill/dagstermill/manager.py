@@ -268,14 +268,13 @@ class Manager:
 
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
-                "Solid {solid_name} does not have output named {output_name}".format(
-                    solid_name=self.solid_def.name, output_name=output_name
-                )
+                f"Solid {self.solid_def.name} does not have output named {output_name}."
+                f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 
         dagster_type = self.solid_def.output_def_named(output_name).dagster_type
 
-        out_file = os.path.join(self.marshal_dir, "output-{}".format(output_name))
+        out_file = os.path.join(self.marshal_dir, f"output-{output_name}")
         scrapbook.glue(output_name, write_value(dagster_type, value, out_file))
 
     def yield_event(self, dagster_event):

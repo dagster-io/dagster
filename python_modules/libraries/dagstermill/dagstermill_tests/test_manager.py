@@ -35,7 +35,7 @@ def in_pipeline_manager(
 
         if not executable_dict:
             executable_dict = ReconstructablePipeline.for_module(
-                "dagstermill.examples.repository", "define_hello_world_pipeline"
+                "dagstermill.examples.repository", "hello_world_pipeline"
             ).to_dict()
 
         pipeline_run_dict = pack_value(
@@ -106,10 +106,10 @@ def test_yield_unserializable_result():
     assert manager.yield_result(threading.Lock())
 
     with in_pipeline_manager(
-        pipeline_name="hello_world_with_output_pipeline",
+        pipeline_name="hello_world_output_pipeline",
         solid_handle=SolidHandle("hello_world_output", None),
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "define_hello_world_with_output_pipeline",
+            "dagstermill.examples.repository", "hello_world_output_pipeline",
         ).to_dict(),
     ) as manager:
         with pytest.raises(TypeError):
@@ -140,7 +140,8 @@ def test_out_of_pipeline_yield_event():
 def test_in_pipeline_manager_resources():
     with in_pipeline_manager() as manager:
         assert "file_manager" in manager.context.resources._asdict()
-        assert len(manager.context.resources._asdict()) == 1
+        assert "object_manager" in manager.context.resources._asdict()
+        assert len(manager.context.resources._asdict()) == 2
 
 
 def test_in_pipeline_manager_solid_config():
@@ -151,7 +152,7 @@ def test_in_pipeline_manager_solid_config():
         pipeline_name="hello_world_config_pipeline",
         solid_handle=SolidHandle("hello_world_config", None),
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "define_hello_world_config_pipeline",
+            "dagstermill.examples.repository", "hello_world_config_pipeline",
         ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {"greeting": "hello"}
@@ -166,7 +167,7 @@ def test_in_pipeline_manager_solid_config():
             }
         },
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "define_hello_world_config_pipeline",
+            "dagstermill.examples.repository", "hello_world_config_pipeline",
         ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {"greeting": "bonjour"}
@@ -181,7 +182,7 @@ def test_in_pipeline_manager_solid_config():
             }
         },
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "define_hello_world_config_pipeline",
+            "dagstermill.examples.repository", "hello_world_config_pipeline",
         ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {"farewell": "goodbye"}
@@ -195,7 +196,7 @@ def test_in_pipeline_manager_with_resources():
         with in_pipeline_manager(
             pipeline_name="resource_pipeline",
             executable_dict=ReconstructablePipeline.for_module(
-                "dagstermill.examples.repository", "define_resource_pipeline",
+                "dagstermill.examples.repository", "resource_pipeline",
             ).to_dict(),
             solid_handle=SolidHandle("hello_world_resource", None),
             run_config={"resources": {"list": {"config": path}}},

@@ -31,9 +31,9 @@ def read_value(dagster_type, value):
 
 def write_value(dagster_type, value, target_file):
     check.inst_param(dagster_type, "dagster_type", DagsterType)
-    if dagster_type.kind == DagsterTypeKind.SCALAR or (
-        dagster_type.kind == DagsterTypeKind.ANY and is_json_serializable(value)
-    ):
+    if (
+        dagster_type.kind == DagsterTypeKind.SCALAR or dagster_type.kind == DagsterTypeKind.ANY
+    ) and is_json_serializable(value):
         return {"value": value}
     else:
         dagster_type.serialization_strategy.serialize_to_file(value, target_file)

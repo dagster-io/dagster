@@ -4,16 +4,17 @@ import os
 
 from dagster import (
     ModeDefinition,
-    PipelineDefinition,
     String,
     execute_pipeline,
+    local_file_manager,
     logger,
+    pipeline,
     reconstructable,
     seven,
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
-from dagstermill.examples.repository import define_hello_logging_solid
+from dagstermill.examples.repository import hello_logging
 
 
 class LogTestFileHandler(logging.Handler):
@@ -41,14 +42,16 @@ def test_file_logger(init_context):
     return logger_
 
 
-def define_hello_logging_pipeline():
-    return PipelineDefinition(
-        name="hello_logging_pipeline",
-        solid_defs=[define_hello_logging_solid()],
-        mode_defs=[
-            ModeDefinition(logger_defs={"test": test_file_logger, "critical": test_file_logger})
-        ],
-    )
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            logger_defs={"test": test_file_logger, "critical": test_file_logger,},
+            resource_defs={"file_manager": local_file_manager,},
+        )
+    ]
+)
+def hello_logging_pipeline():
+    hello_logging()
 
 
 def test_logging():
@@ -56,7 +59,7 @@ def test_logging():
         with safe_tempfile_path() as critical_file_path:
             with instance_for_test() as instance:
                 execute_pipeline(
-                    reconstructable(define_hello_logging_pipeline),
+                    reconstructable(hello_logging_pipeline),
                     {
                         "loggers": {
                             "test": {
