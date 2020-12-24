@@ -119,7 +119,8 @@ userDeployments:
       #   - "-a"
       #   - "define_demo_execution_repo"
       dagsterApiGrpcArgs:
-        - ""
+        - "-f"
+        - "/example_project/example_repo/repo.py"
       port: 3030
       env:
         YOUR_ENV_VAR: ""
