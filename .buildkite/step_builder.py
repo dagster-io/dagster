@@ -24,12 +24,8 @@ def wait_step():
 
 
 class BuildkiteQueue(Enum):
-    """These are the Buildkite CloudFormation queues that we use. All queues with "-p" suffix are
-    provisioned by Pulumi.
-    """
-
     DOCKER = "docker-p"
-    MEDIUM = "medium-v4-3-2"
+    MEDIUM = "buildkite-medium-v5-0-1"
     WINDOWS = "windows-medium"
 
     @classmethod
@@ -40,7 +36,6 @@ class BuildkiteQueue(Enum):
 class StepBuilder:
     def __init__(self, label, key=None):
         self._step = {
-            # use Pulumi-managed medium queue by default
             "agents": {"queue": BuildkiteQueue.MEDIUM.value},
             "label": label,
             "timeout_in_minutes": TIMEOUT_IN_MIN,
