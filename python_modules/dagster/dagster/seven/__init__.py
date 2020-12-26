@@ -23,7 +23,7 @@ IS_WINDOWS = os.name == "nt"
 
 funcsigs = inspect
 
-multiprocessing = multiprocessing.get_context("spawn")
+multiprocessing = multiprocessing.get_context("spawn")  # type: ignore[assignment]
 
 IS_WINDOWS = os.name == "nt"
 

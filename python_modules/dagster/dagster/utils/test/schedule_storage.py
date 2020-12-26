@@ -30,8 +30,6 @@ class TestScheduleStorage:
     For example:
 
     ```
-    TestScheduleStorage.__test__ = False
-
     class TestMyStorageImplementation(TestScheduleStorage):
         __test__ = True
 
@@ -40,6 +38,8 @@ class TestScheduleStorage:
             return MyStorageImplementation()
     ```
     """
+
+    __test__ = False
 
     @pytest.fixture(name="storage", params=[])
     def schedule_storage(self, request):

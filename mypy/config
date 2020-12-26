@@ -1,0 +1,11 @@
+[mypy]
+python_version = 3.7
+ignore_missing_imports = True
+show_error_codes = True
+allow_redefinition = True
+
+[mypy-dagster.seven]
+ignore_errors = True
+
+[mypy-dagster.grpc.__generated__.*]
+ignore_errors = True

@@ -17,9 +17,6 @@ def create_in_memory_storage():
     yield InMemoryRunStorage()
 
 
-TestRunStorage.__test__ = False
-
-
 class TestSqliteImplementation(TestRunStorage):
     __test__ = True
 

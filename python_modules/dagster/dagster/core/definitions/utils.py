@@ -31,7 +31,7 @@ DISALLOWED_NAMES = set(
         "output",
         "type",
     ]
-    + keyword.kwlist  # just disallow all python keywords
+    + list(keyword.kwlist)  # just disallow all python keywords
 )
 
 VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"

@@ -23,7 +23,7 @@ HARDCODED_PORT = 8090
 # failing to open sporadically on windows after other subprocesses were closed.
 # Fixed in later versions of Python but never back-ported, see the bug for details.
 if seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6:
-    subprocess._cleanup = lambda: None  # pylint: disable=protected-access
+    subprocess._cleanup = lambda: None  # type: ignore # pylint: disable=protected-access
 
 
 @pytest.fixture(scope="session")

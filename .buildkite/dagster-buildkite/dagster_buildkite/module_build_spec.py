@@ -3,6 +3,68 @@ from collections import namedtuple
 from .defines import TOX_MAP, SupportedPython, SupportedPythons
 from .step_builder import StepBuilder
 
+MYPY_EXCLUDES = [
+    "python_modules/dagit",
+    "python_modules/automation",
+    "python_modules/dagster-graphql",
+    "python_modules/dagster-test",
+    "python_modules/libraries/dagster-airflow",
+    "python_modules/libraries/dagster-aws",
+    "python_modules/libraries/dagster-azure",
+    "python_modules/libraries/dagster-celery",
+    "python_modules/libraries/dagster-celery-docker",
+    "python_modules/libraries/dagster-celery-k8s",
+    "python_modules/libraries/dagster-cron",
+    "python_modules/libraries/dagster-dask",
+    "python_modules/libraries/dagster-databricks",
+    "python_modules/libraries/dagster-datadog",
+    "python_modules/libraries/dagster-dbt",
+    "python_modules/libraries/dagster-docker",
+    "python_modules/libraries/dagster-flyte",
+    "python_modules/libraries/dagster-gcp",
+    "python_modules/libraries/dagster-ge",
+    "python_modules/libraries/dagster-github",
+    "python_modules/libraries/dagster-k8s",
+    "python_modules/libraries/dagster-pagerduty",
+    "python_modules/libraries/dagster-pandas",
+    "python_modules/libraries/dagster-papertrail",
+    "python_modules/libraries/dagster-postgres",
+    "python_modules/libraries/dagster-prometheus",
+    "python_modules/libraries/dagster-pyspark",
+    "python_modules/libraries/dagster-shell",
+    "python_modules/libraries/dagster-slack",
+    "python_modules/libraries/dagster-snowflake",
+    "python_modules/libraries/dagster-spark",
+    "python_modules/libraries/dagster-ssh",
+    "python_modules/libraries/dagster-twilio",
+    "python_modules/libraries/dagstermill",
+    "python_modules/libraries/lakehouse",
+    "examples/airflow_ingest",
+    "examples/airline_demo",
+    "examples/asset_store",
+    "examples/basic_pyspark",
+    "examples/conditional_execution",
+    "examples/config_mapping",
+    "examples/dbt_example",
+    "examples/dep_dsl",
+    "examples/deploy_docker",
+    "examples/deploy_k8s",
+    "examples/docs_snippets",
+    "examples/emr_pyspark",
+    "examples/fan_in_pipeline",
+    "examples/ge_example",
+    "examples/hooks",
+    "examples/legacy_examples",
+    "examples/materializations",
+    "examples/multi_location",
+    "examples/multi_type_lakehouse",
+    "examples/nothing",
+    "examples/pipeline_tags",
+    "examples/pipeline_unittesting",
+    "examples/presentation",
+    "examples/simple_lakehouse",
+]
+
 
 class ModuleBuildSpec(
     namedtuple(
@@ -126,4 +188,18 @@ class ModuleBuildSpec(
             .on_integration_image(SupportedPython.V3_7)
             .build()
         )
+
+        # We expect the tox file to define a mypy testenv, and we'll construct a separate
+        # buildkite build step for the mypy testenv.
+        if self.directory not in MYPY_EXCLUDES:
+            tests.append(
+                StepBuilder("%s mypy" % package)
+                .run(
+                    "pip install mypy",
+                    "mypy --config-file mypy/config {directory}".format(directory=self.directory),
+                )
+                .on_integration_image(SupportedPython.V3_7)
+                .build()
+            )
+
         return tests

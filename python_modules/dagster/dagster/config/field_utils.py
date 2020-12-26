@@ -1,5 +1,6 @@
 # encoding: utf-8
 import hashlib
+from typing import Any, Dict
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigDefinitionError
@@ -45,7 +46,7 @@ class _ConfigHasFields(ConfigType):
         super(_ConfigHasFields, self).__init__(**kwargs)
 
 
-FIELD_HASH_CACHE = {}
+FIELD_HASH_CACHE: Dict[str, Any] = {}
 
 
 def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):

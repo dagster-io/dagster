@@ -12,9 +12,6 @@ def create_sqlite_schedule_storage():
         yield SqliteScheduleStorage.from_local(tempdir)
 
 
-TestScheduleStorage.__test__ = False
-
-
 class TestSqliteScheduleStorage(TestScheduleStorage):
     __test__ = True
 

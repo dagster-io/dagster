@@ -700,9 +700,11 @@ def list_elem(ddict, key):
     str_param(key, "key")
 
     value = ddict.get(key)
-    if not isinstance(value, list):
-        raise_with_traceback(_element_check_error(key, value, ddict, list))
-    return value
+
+    if isinstance(value, list):
+        return value
+
+    raise_with_traceback(_element_check_error(key, value, ddict, list))
 
 
 def opt_list_elem(ddict, key):

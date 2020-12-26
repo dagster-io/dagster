@@ -1,4 +1,5 @@
 import os
+import typing
 
 import pytest
 from dagster import (
@@ -7,7 +8,9 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
-    List,
+)
+from dagster import List as DagsterList
+from dagster import (
     Optional,
     Output,
     OutputDefinition,
@@ -29,6 +32,11 @@ from dagster.core.utility_solids import (
     input_set,
 )
 from dagster.utils.test import get_temp_dir
+
+if typing.TYPE_CHECKING:
+    List = typing.List
+else:
+    List = DagsterList
 
 
 def test_pipeline_in_pipeline():

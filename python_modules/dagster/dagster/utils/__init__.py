@@ -154,10 +154,10 @@ class frozendict(dict):
 
     __setitem__ = __readonly__
     __delitem__ = __readonly__
-    pop = __readonly__
+    pop = __readonly__  # type: ignore[assignment]
     popitem = __readonly__
     clear = __readonly__
-    update = __readonly__
+    update = __readonly__  # type: ignore[assignment]
     setdefault = __readonly__
     del __readonly__
 
@@ -178,7 +178,7 @@ class frozenlist(list):
     def __setstate__(self, state):
         self.__init__(state)
 
-    __setitem__ = __readonly__
+    __setitem__ = __readonly__  # type: ignore[assignment]
     __delitem__ = __readonly__
     append = __readonly__
     clear = __readonly__
@@ -187,7 +187,7 @@ class frozenlist(list):
     pop = __readonly__
     remove = __readonly__
     reverse = __readonly__
-    sort = __readonly__
+    sort = __readonly__  # type: ignore[assignment]
 
     def __hash__(self):
         return hash(tuple(self))

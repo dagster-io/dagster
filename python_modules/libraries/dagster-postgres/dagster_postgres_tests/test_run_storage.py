@@ -6,8 +6,6 @@ from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
 
-TestRunStorage.__test__ = False
-
 
 class TestPostgresRunStorage(TestRunStorage):
     __test__ = True
