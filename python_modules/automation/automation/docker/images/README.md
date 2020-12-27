@@ -37,7 +37,6 @@ in the `INTEGRATION_IMAGE_VERSION` variable.
 5. Then run `dagster-image build-all --name buildkite-integration --dagster-version 0.9.20` with
    the appropriate version set.
 6. Then run `dagster-image push-all --name buildkite-integration`
-7. Update `INTEGRATION_IMAGE_VERSION` and put up a diff with these planned changes.
 
 ### Publishing new unit images
 
@@ -54,4 +53,3 @@ to a pipeline in buildkite.
 5. Then run `dagster-image push-all --name buildkite-unit`
 6. Next you have to update the Dockerfile in `dagster-test` manually with the value in
    `UNIT_IMAGE_VERSION` in the `FROM` directive.
-7. Update `UNIT_IMAGE_VERSION` and put up a diff with these planned changes.

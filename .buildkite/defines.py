@@ -1,3 +1,8 @@
+import os
+
+import yaml
+
+
 # This should be an enum once we make our own buildkite AMI with py3
 class SupportedPython:
     V3_8 = "3.8.3"
@@ -24,19 +29,23 @@ TOX_MAP = {
 # These timestamps are generated with:
 # datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S")
 ####################################################################################################
+def get_image_version(image_name):
+    root_images_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "..",
+        "python_modules",
+        "automation",
+        "automation",
+        "docker",
+        "images",
+    )
+    with open(os.path.join(root_images_path, image_name, "last_updated.yaml")) as f:
+        versions = set(yaml.safe_load(f).values())
 
-# Update this when releasing a new version of our integration image
-# Per README.md, run the integration build image pipeline
-# and then find the tag of the created images. A string
-# like the following will be in that tag.
-INTEGRATION_IMAGE_VERSION = "2020-12-11T184835"
+    # There should be only one image timestamp tag across all Python versions
+    assert len(versions) == 1
+    return versions.pop()
 
-# Keep this fixed. Do not update when updating snapshots Only update when updating the base
-# integration image which should be less frequent
-INTEGRATION_BASE_VERSION = "2020-07-03T094007"
 
-# Update this when releasing a new version of our unit image
-# Per README.md, run the unit build image pipeline
-# and then find the tag of the created images. A string
-# like the following will be in that tag.
-UNIT_IMAGE_VERSION = "2020-12-11T192450"
+INTEGRATION_IMAGE_VERSION = get_image_version("buildkite-integration")
+UNIT_IMAGE_VERSION = get_image_version("buildkite-unit")
