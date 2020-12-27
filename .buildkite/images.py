@@ -18,7 +18,10 @@ def publish_test_images():
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
                 'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
                 "/scriptdir/aws.pex s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
-                #
+                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py"
+                + version
+                + "-"
+                + UNIT_IMAGE_VERSION,
                 # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
                 + version,
