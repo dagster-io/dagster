@@ -1,12 +1,7 @@
-import os
-import sys
 from collections import namedtuple
 
-SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-
-sys.path.append(SCRIPT_PATH)
-from defines import SupportedPython, SupportedPythons, TOX_MAP  # isort:skip
-from step_builder import StepBuilder  # isort:skip
+from .defines import TOX_MAP, SupportedPython, SupportedPythons
+from .step_builder import StepBuilder
 
 
 class ModuleBuildSpec(

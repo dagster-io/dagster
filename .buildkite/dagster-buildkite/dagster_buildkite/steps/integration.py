@@ -1,9 +1,9 @@
 import os
 
-import yaml
-from module_build_spec import ModuleBuildSpec
-from pipeline import GCP_CREDS_LOCAL_FILE, publish_test_images, test_image_depends_fn
-from utils import connect_sibling_docker_container, network_buildkite_container
+from ..defines import GCP_CREDS_LOCAL_FILE
+from ..module_build_spec import ModuleBuildSpec
+from ..utils import connect_sibling_docker_container, network_buildkite_container
+from .test_images import publish_test_images, test_image_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -30,7 +30,7 @@ def integration_suite_extra_cmds_fn(version):
     ]
 
 
-def integration_tests():
+def integration_steps():
     tests = []
     tests += publish_test_images()
     tests += ModuleBuildSpec(
@@ -38,7 +38,9 @@ def integration_tests():
         upload_coverage=True,
     ).get_tox_build_steps()
 
-    integration_suites_root = os.path.join(SCRIPT_PATH, "..", "integration_tests", "test_suites")
+    integration_suites_root = os.path.join(
+        SCRIPT_PATH, "..", "..", "..", "integration_tests", "test_suites"
+    )
     integration_suites = [
         os.path.join("integration_tests", "test_suites", suite)
         for suite in os.listdir(integration_suites_root)
@@ -72,21 +74,3 @@ def integration_tests():
             retries=2,
         ).get_tox_build_steps()
     return tests
-
-
-if __name__ == "__main__":
-    print(  # pylint: disable=print-call
-        yaml.dump(
-            {
-                "env": {
-                    "CI_NAME": "buildkite",
-                    "CI_BUILD_NUMBER": "$BUILDKITE_BUILD_NUMBER",
-                    "CI_BUILD_URL": "$BUILDKITE_BUILD_URL",
-                    "CI_BRANCH": "$BUILDKITE_BRANCH",
-                    "CI_PULL_REQUEST": "$BUILDKITE_PULL_REQUEST",
-                },
-                "steps": integration_tests(),
-            },
-            default_flow_style=False,
-        )
-    )

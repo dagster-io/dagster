@@ -1,7 +1,25 @@
 import os
 import subprocess
 
+import yaml
+
 DAGIT_PATH = "js_modules/dagit"
+
+
+def buildkite_yaml_for_steps(steps):
+    return yaml.dump(
+        {
+            "env": {
+                "CI_NAME": "buildkite",
+                "CI_BUILD_NUMBER": "$BUILDKITE_BUILD_NUMBER",
+                "CI_BUILD_URL": "$BUILDKITE_BUILD_URL",
+                "CI_BRANCH": "$BUILDKITE_BRANCH",
+                "CI_PULL_REQUEST": "$BUILDKITE_PULL_REQUEST",
+            },
+            "steps": steps,
+        },
+        default_flow_style=False,
+    )
 
 
 def check_for_release():

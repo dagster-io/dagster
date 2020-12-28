@@ -33,6 +33,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
+            "dagster-buildkite = automation.buildkite.cli:main",
             "dagster-docs = automation.docs.cli:main",
             "dagster-image = automation.docker.cli:main",
             "dagster-release = automation.release.cli:main",

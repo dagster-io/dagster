@@ -1,11 +1,6 @@
-from defines import (
-    TEST_IMAGE_BUILDER_VERSION,
-    TOX_MAP,
-    UNIT_IMAGE_VERSION,
-    SupportedPython,
-    SupportedPythons,
-)
-from step_builder import StepBuilder
+from ..defines import TOX_MAP, SupportedPython, SupportedPythons
+from ..images.versions import TEST_IMAGE_BUILDER_VERSION, UNIT_IMAGE_VERSION
+from ..step_builder import StepBuilder
 
 
 def publish_test_images():

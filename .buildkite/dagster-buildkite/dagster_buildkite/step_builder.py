@@ -1,13 +1,8 @@
 import os
-import sys
 from enum import Enum
 
-from defines import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION, SupportedPythons
-
-SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-
-sys.path.append(SCRIPT_PATH)
-
+from .defines import SupportedPythons
+from .images.versions import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION
 
 TIMEOUT_IN_MIN = 20
 
@@ -17,10 +12,6 @@ ECR_PLUGIN = "ecr#v2.2.0"
 
 AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")
 AWS_ECR_REGION = "us-west-2"
-
-
-def wait_step():
-    return "wait"
 
 
 class BuildkiteQueue(Enum):
