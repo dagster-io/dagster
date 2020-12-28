@@ -58,7 +58,9 @@ export const SchedulePartitionStatus: React.FC<{
 
   const partitionUrl = workspacePathFromAddress(
     repoAddress,
-    `/pipelines/${schedule.pipelineName}/partitions`,
+    `/pipelines/${schedule.pipelineName}/partitions?partitionSet=${encodeURIComponent(
+      schedule.partitionSet.name,
+    )}`,
   );
   return (
     <Group direction="column" spacing={4}>

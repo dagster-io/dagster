@@ -7,17 +7,15 @@ import styled from 'styled-components';
 import {Loading} from 'src/Loading';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionView} from 'src/partitions/PartitionView';
 import {
   PipelinePartitionsRootQuery,
-  PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results,
   PipelinePartitionsRootQueryVariables,
 } from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
-
-type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 
 interface Props {
   pipelinePath: string;
@@ -37,7 +35,9 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
       fetchPolicy: 'network-only',
     },
   );
-  const [selected, setSelected] = React.useState<PartitionSet | undefined>();
+  const [selected = undefined, setSelected] = useQueryPersistedState<string>({
+    queryKey: 'partitionSet',
+  });
 
   if (snapshotId) {
     return (
@@ -79,16 +79,18 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
         }
 
         const selectionHasMatch =
-          selected && !!partitionSetsOrError.results.filter((x) => x.name === selected.name).length;
+          selected && !!partitionSetsOrError.results.filter((x) => x.name === selected).length;
         const partitionSet =
-          selectionHasMatch && selected ? selected : partitionSetsOrError.results[0];
+          selectionHasMatch && selected
+            ? partitionSetsOrError.results.filter((x) => x.name === selected)[0]
+            : partitionSetsOrError.results[0];
 
         return (
           <PartitionRootContainer>
             <PartitionView
               partitionSet={partitionSet}
               partitionSets={partitionSetsOrError.results}
-              onChangePartitionSet={setSelected}
+              onChangePartitionSet={(x) => setSelected(x.name)}
               pipelineName={pipelineName}
               repoAddress={repoAddress}
             />
