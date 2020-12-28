@@ -68,6 +68,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
+  sensors: [Sensor!]!
   parentSnapshotId: String
   presets: [PipelinePreset!]!
 }
@@ -592,6 +593,17 @@ type FutureJobTick {
   timestamp: Float!
 }
 
+type Sensor {
+  id: ID!
+  jobOriginId: String!
+  name: String!
+  pipelineName: String!
+  solidSelection: [String]
+  mode: String!
+  sensorState: JobState!
+  nextTick: FutureJobTick
+}
+
 type PipelinePreset {
   name: String!
   solidSelection: [String!]
@@ -608,17 +620,6 @@ type UsedSolid {
 type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
-}
-
-type Sensor {
-  id: ID!
-  jobOriginId: String!
-  name: String!
-  pipelineName: String!
-  solidSelection: [String]
-  mode: String!
-  sensorState: JobState!
-  nextTick: FutureJobTick
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -679,6 +680,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
+  sensors: [Sensor!]!
   parentSnapshotId: String
 }
 

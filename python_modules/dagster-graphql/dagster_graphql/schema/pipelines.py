@@ -13,6 +13,7 @@ from dagster.core.storage.tags import TagType, get_tag_type
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline
+from dagster_graphql.implementation.fetch_sensors import get_sensors_for_pipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from .config_types import DauphinConfigTypeField
@@ -76,6 +77,7 @@ class DauphinIPipelineSnapshotMixin:
         dauphin.non_null_list("PipelineRun"), cursor=dauphin.String(), limit=dauphin.Int(),
     )
     schedules = dauphin.non_null_list("Schedule")
+    sensors = dauphin.non_null_list("Sensor")
     parent_snapshot_id = dauphin.String()
 
     def resolve_pipeline_snapshot_id(self, _):
@@ -177,6 +179,17 @@ class DauphinIPipelineSnapshotMixin:
         pipeline_selector = represented_pipeline.handle.to_selector()
         schedules = get_schedules_for_pipeline(graphene_info, pipeline_selector)
         return schedules
+
+    def resolve_sensors(self, graphene_info):
+        represented_pipeline = self.get_represented_pipeline()
+        if not isinstance(represented_pipeline, ExternalPipeline):
+            # this is an historical pipeline snapshot, so there are not any associated running
+            # sensors
+            return []
+
+        pipeline_selector = represented_pipeline.handle.to_selector()
+        sensors = get_sensors_for_pipeline(graphene_info, pipeline_selector)
+        return sensors
 
     def resolve_parent_snapshot_id(self, _graphene_info):
         lineage_snapshot = self.get_represented_pipeline().pipeline_snapshot.lineage_snapshot

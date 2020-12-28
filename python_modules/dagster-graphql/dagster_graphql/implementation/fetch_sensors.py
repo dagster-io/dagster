@@ -1,6 +1,11 @@
 from dagster import check
 from dagster.core.definitions.job import JobType
-from dagster.core.host_representation import ExternalSensor, RepositorySelector, SensorSelector
+from dagster.core.host_representation import (
+    ExternalSensor,
+    PipelineSelector,
+    RepositorySelector,
+    SensorSelector,
+)
 from dagster.core.scheduler.job import JobStatus
 from graphql.execution.base import ResolveInfo
 
@@ -97,3 +102,18 @@ def get_unloadable_sensor_states_or_error(graphene_info):
             for job_state in unloadable_states
         ]
     )
+
+
+def get_sensors_for_pipeline(graphene_info, pipeline_selector):
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+
+    location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
+    repository = location.get_repository(pipeline_selector.repository_name)
+    external_sensors = repository.get_external_sensors()
+
+    return [
+        graphene_info.schema.type_named("Sensor")(graphene_info, external_sensor)
+        for external_sensor in external_sensors
+        if external_sensor.pipeline_name == pipeline_selector.pipeline_name
+    ]

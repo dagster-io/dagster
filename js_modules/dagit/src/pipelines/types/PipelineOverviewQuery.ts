@@ -334,11 +334,70 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   status: JobStatus;
 }
 
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks_results {
+  __typename: "FutureJobTick";
+  timestamp: number;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks {
+  __typename: "FutureJobTicks";
+  results: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks_results[];
+}
+
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {
   __typename: "Schedule";
   id: string;
   name: string;
   scheduleState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState;
+  futureTicks: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns_stats_PythonError {
+  __typename: "PythonError";
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns_stats_PipelineRunStatsSnapshot {
+  __typename: "PipelineRunStatsSnapshot";
+  id: string;
+  endTime: number | null;
+}
+
+export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns_stats_PythonError | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns_stats_PipelineRunStatsSnapshot;
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns {
+  __typename: "PipelineRun";
+  id: string;
+  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns_stats;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  pipelineName: string;
+  status: PipelineRunStatus;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState {
+  __typename: "JobState";
+  id: string;
+  runsCount: number;
+  lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns[];
+  runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_runs[];
+  status: JobStatus;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_nextTick {
+  __typename: "FutureJobTick";
+  timestamp: number;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  sensorState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState;
+  nextTick: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_nextTick | null;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot {
@@ -349,6 +408,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot 
   solidHandles: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs[];
   schedules: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules[];
+  sensors: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors[];
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineNotFoundError {

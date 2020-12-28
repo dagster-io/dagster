@@ -12,11 +12,11 @@ import {PipelineGraph} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {OverviewJobFragment} from 'src/pipelines/types/OverviewJobFragment';
 import {
   PipelineOverviewQuery,
   PipelineOverviewQueryVariables,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
-  PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules,
 } from 'src/pipelines/types/PipelineOverviewQuery';
 import {RunActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatus, RunStatusWithStats} from 'src/runs/RunStatusDots';
@@ -27,6 +27,7 @@ import {
   RunComponentFragments,
   RunElapsed,
 } from 'src/runs/RunUtils';
+import {JobType} from 'src/types/globalTypes';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -34,7 +35,6 @@ import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
-type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
 
 type Props = RouteComponentProps<{pipelinePath: string}> & {repoAddress: RepoAddress};
 
@@ -97,6 +97,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
 
         const solids = pipelineSnapshotOrError.solidHandles.map((handle) => handle.solid);
         const schedules = pipelineSnapshotOrError.schedules;
+        const sensors = pipelineSnapshotOrError.sensors;
 
         return (
           <RootContainer>
@@ -143,12 +144,39 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   <Table striped style={{width: '100%'}}>
                     <tbody>
                       {schedules.map((schedule) => (
-                        <OverviewSchedule schedule={schedule} key={schedule.name} />
+                        <OverviewJob
+                          repoAddress={repoAddress}
+                          name={schedule.name}
+                          key={schedule.name}
+                          jobState={schedule.scheduleState}
+                          jobType={JobType.SCHEDULE}
+                          nextTick={schedule.futureTicks.results[0]}
+                        />
                       ))}
                     </tbody>
                   </Table>
                 ) : (
                   'No pipeline schedules'
+                )}
+              </OverviewSection>
+              <OverviewSection title="Sensor">
+                {sensors.length ? (
+                  <Table striped style={{width: '100%'}}>
+                    <tbody>
+                      {sensors.map((sensor) => (
+                        <OverviewJob
+                          repoAddress={repoAddress}
+                          name={sensor.name}
+                          key={sensor.name}
+                          jobState={sensor.sensorState}
+                          jobType={JobType.SENSOR}
+                          nextTick={sensor.nextTick || undefined}
+                        />
+                      ))}
+                    </tbody>
+                  </Table>
+                ) : (
+                  'No pipeline sensors'
                 )}
               </OverviewSection>
               <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
@@ -207,20 +235,46 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
   );
 };
 
-const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
-  const lastRun = schedule.scheduleState.lastRuns.length && schedule.scheduleState.lastRuns[0];
+const OverviewJob = ({
+  repoAddress,
+  name,
+  jobState,
+  jobType,
+  nextTick,
+}: {
+  repoAddress: RepoAddress;
+  name: string;
+  jobState: OverviewJobFragment;
+  jobType: JobType;
+  nextTick?: {
+    timestamp: number;
+  };
+}) => {
+  const lastRun = jobState.lastRuns.length && jobState.lastRuns[0];
   return (
     <tr>
       <td>
-        <Link to={`/schedules/${schedule.name}`}>{schedule.name}</Link>
+        <Link
+          to={workspacePathFromAddress(
+            repoAddress,
+            `/${jobType === JobType.SCHEDULE ? 'schedules' : 'sensors'}/${name}`,
+          )}
+        >
+          {name}
+        </Link>
         {lastRun && lastRun.stats.__typename === 'PipelineRunStatsSnapshot' ? (
           <div style={{color: Colors.GRAY3, fontSize: 12, marginTop: 2}}>
             Last Run: <Timestamp unix={lastRun.stats.endTime || 0} />
           </div>
         ) : null}
-        {schedule.scheduleState.runs && (
+        {nextTick ? (
+          <div style={{color: Colors.GRAY3, fontSize: 12, marginTop: 2}}>
+            Next Tick: <Timestamp unix={nextTick.timestamp || 0} />
+          </div>
+        ) : null}
+        {jobState.runs && (
           <div style={{marginTop: '4px'}}>
-            {schedule.scheduleState.runs.map((run) => {
+            {jobState.runs.map((run) => {
               return (
                 <div
                   style={{
@@ -310,31 +364,26 @@ const SecondaryContainer = ({children}: {children: React.ReactNode}) => (
   </div>
 );
 
-const OverviewScheduleFragment = gql`
-  fragment OverviewScheduleFragment on Schedule {
-    __typename
+const OVERVIEW_JOB_FRAGMENT = gql`
+  fragment OverviewJobFragment on JobState {
     id
-    name
-    scheduleState {
+    runsCount
+    lastRuns: runs(limit: 1) {
       id
-      runsCount
-      lastRuns: runs(limit: 1) {
-        id
-        stats {
-          ... on PipelineRunStatsSnapshot {
-            id
-            endTime
-          }
+      stats {
+        ... on PipelineRunStatsSnapshot {
+          id
+          endTime
         }
       }
-      runs(limit: 10) {
-        id
-        runId
-        pipelineName
-        status
-      }
+    }
+    runs(limit: 10) {
+      id
+      runId
+      pipelineName
       status
     }
+    status
   }
 `;
 
@@ -363,7 +412,27 @@ const PIPELINE_OVERVIEW_QUERY = gql`
         }
         schedules {
           id
-          ...OverviewScheduleFragment
+          name
+          scheduleState {
+            id
+            ...OverviewJobFragment
+          }
+          futureTicks(limit: 1) {
+            results {
+              timestamp
+            }
+          }
+        }
+        sensors {
+          id
+          name
+          sensorState {
+            id
+            ...OverviewJobFragment
+          }
+          nextTick {
+            timestamp
+          }
         }
       }
       ... on PipelineNotFoundError {
@@ -378,7 +447,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
     }
   }
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-  ${OverviewScheduleFragment}
+  ${OVERVIEW_JOB_FRAGMENT}
   ${RunComponentFragments.RUN_TIME_FRAGMENT}
   ${RunComponentFragments.RUN_ACTION_MENU_FRAGMENT}
 `;
