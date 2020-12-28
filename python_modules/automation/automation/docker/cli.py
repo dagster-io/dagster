@@ -1,9 +1,4 @@
-import os
-import subprocess
-import sys
-
 import click
-from automation.git import git_repo_root
 from dagster import __version__ as current_dagster_version
 from dagster import check
 
@@ -124,45 +119,6 @@ def push_dockerhub(name, dagster_version):
     latest_tag = "dagster/{}:latest".format(name)
     execute_docker_tag(local_image, latest_tag)
     execute_docker_push(latest_tag)
-
-
-@cli.command()
-@click.option(
-    "-t", "--snap-type", required=True, help="Whether to build integration or unit snapshots"
-)
-def snapshot(snap_type):
-    """Snapshot Python dependencies for the interation image.
-    """
-    if snap_type == "integration":
-        image = DagsterDockerImage("buildkite-integration-snapshot-builder")
-        output_path = "buildkite-integration"
-    elif snap_type == "unit":
-        image = DagsterDockerImage("buildkite-unit-snapshot-builder")
-        output_path = "buildkite-unit"
-    else:
-        raise Exception("Unrecognized snapshot type")
-
-    for python_version in image.python_versions:
-        reqs_path = os.path.join(
-            git_repo_root(),
-            "python_modules",
-            "automation",
-            "automation",
-            "docker",
-            "images",
-            output_path,
-            "snapshot-reqs-{python_version}.txt".format(python_version=python_version),
-        )
-
-        retval = subprocess.call(
-            "docker run {image} pip freeze --exclude-editable > {reqs}".format(
-                image=image.local_image(python_version), reqs=reqs_path
-            ),
-            stderr=sys.stderr,
-            stdout=sys.stdout,
-            shell=True,
-        )
-        check.invariant(retval == 0)
 
 
 def main():

@@ -4,7 +4,7 @@ from dagster import seven
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="docker doesn't work on windows tests")
 def test_build_container(dagster_docker_image):
-    assert "dagster-core-docker-buildkite" in dagster_docker_image
+    assert "buildkite-test-image-core" in dagster_docker_image
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="docker doesn't work on windows tests")

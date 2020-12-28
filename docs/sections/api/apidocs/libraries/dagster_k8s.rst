@@ -52,9 +52,9 @@ For local dev (e.g., on kind or minikube):
 .. code-block:: shell
 
    helm install \
-       --set dagit.image.repository="dagster.io/dagster-docker-buildkite" \
+       --set dagit.image.repository="dagster.io/buildkite-test-image" \
        --set dagit.image.tag="py37-latest" \
-       --set job_runner.image.repository="dagster.io/dagster-docker-buildkite" \
+       --set job_runner.image.repository="dagster.io/buildkite-test-image" \
        --set job_runner.image.tag="py37-latest" \
        --set imagePullPolicy="IfNotPresent" \
        dagster \
@@ -139,7 +139,7 @@ the repo:
 .. code-block:: shell
 
    ./python_modules/dagster-test/dagster_test/test_project/build.sh 3.7.6 \
-       dagster.io.priv/dagster-docker-buildkite:py37-latest
+       dagster.io.priv/buildkite-test-image:py37-latest
 
 In the above invocation, the Python majmin version should be appropriate for your desired tests.
 

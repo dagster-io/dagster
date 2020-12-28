@@ -1,9 +1,0 @@
-3.6.11:
-  docker_args:
-    BASE_IMAGE: python:3.6.11-slim
-3.7.8:
-  docker_args:
-    BASE_IMAGE: python:3.7.8-slim
-3.8.3:
-  docker_args:
-    BASE_IMAGE: python:3.8.3-slim

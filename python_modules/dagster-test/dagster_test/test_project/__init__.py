@@ -41,7 +41,7 @@ def get_test_project_environments_path():
 def get_buildkite_registry_config():
     import boto3
 
-    ecr_client = boto3.client("ecr", region_name="us-west-1")
+    ecr_client = boto3.client("ecr", region_name="us-west-2")
     token = ecr_client.get_authorization_token()
     username, password = (
         base64.b64decode(token["authorizationData"][0]["authorizationToken"]).decode().split(":")
@@ -235,7 +235,7 @@ def get_test_project_external_schedule(schedule_name, container_image=None):
 
 def get_test_project_docker_image():
     docker_repository = os.getenv("DAGSTER_DOCKER_REPOSITORY")
-    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "dagster-docker-buildkite")
+    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "buildkite-test-image")
     docker_image_tag = os.getenv("DAGSTER_DOCKER_IMAGE_TAG")
 
     if IS_BUILDKITE:

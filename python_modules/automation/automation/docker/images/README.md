@@ -13,43 +13,19 @@ contain:
 
 Then, `dagster-image build-all --name <YOUR IMAGE>` will build your image.
 
-## Integration Images
+## Integration & unit images
 
-Building our integration images is a two-step process. One is the creation of a fixed set of
-requirements that are checked in at `images/buildkite-integration`. This is typically done on your
-development machine. You then put up a diff with these altered snapshot files and then instigate a
-build to build a fresh snapshot image. See detailed instructions below.
-
-The snapshot requirement files are locked at a given git hash (H) and a given time (T) when the
-snapshots were built. The git hash H locks set set of dependencies required. The time T sets the
-versions that were downloaded from the public pypi at a particular time. The hash H is in the file
-`images/buildkite-integration-snapshot-builder/Dockerfile`. The time T is in `.buildkite/defines.py`
-in the `INTEGRATION_IMAGE_VERSION` variable.
+For all of the steps below, you should first ensure you are authed for ECR, e.g. by running
+`aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 968703565975.dkr.ecr.us-west-2.amazonaws.com`.
 
 ### Publishing new integration images
 
-1. Update the git hash in `images/buildkite-integration-snapshot-builder/Dockerfile`.
-2. Ensure you are authed for ECR, e.g. by running
-   `aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin 968703565975.dkr.ecr.us-west-1.amazonaws.com`.
-3. Run: `dagster-image build-all --name buildkite-integration-snapshot-builder --dagster-version 0.9.20`
-   with the appropriate version set.
-4. Run: `dagster-image snapshot -t integration`
-5. Then run `dagster-image build-all --name buildkite-integration --dagster-version 0.9.20` with
-   the appropriate version set.
-6. Then run `dagster-image push-all --name buildkite-integration`
+1. Run with the appropriate Dagster version:
+   `dagster-image build-all --name buildkite-integration --dagster-version 0.9.20`
+2. Then run `dagster-image push-all --name buildkite-integration`
 
 ### Publishing new unit images
 
-Similarly we have a similar system for the unit test images. These are more
-modest and require less build times so we have not pushed the process
-to a pipeline in buildkite.
-
-1. Update the git hash in `images/buildkite-unit-snapshot-builder/Dockerfile`
-2. Run, with the appropriate Dagster version,
-   `dagster-image build-all --name buildkite-unit-snapshot-builder --dagster-version 0.9.20`
-3. Run: `dagster-image snapshot -t unit`
-4. Then run, with the appropriate Dagster version,
+1. Run with the appropriate Dagster version:
    `dagster-image build-all --name buildkite-unit --dagster-version 0.9.20`
-5. Then run `dagster-image push-all --name buildkite-unit`
-6. Next you have to update the Dockerfile in `dagster-test` manually with the value in
-   `UNIT_IMAGE_VERSION` in the `FROM` directive.
+2. Run `dagster-image push-all --name buildkite-unit`

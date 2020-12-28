@@ -4,7 +4,7 @@ import subprocess
 from dagster import check
 
 # We default to using the ECR region here
-DEFAULT_AWS_ECR_REGION = "us-west-1"
+DEFAULT_AWS_ECR_REGION = "us-west-2"
 
 
 def aws_ecr_repository(aws_account_id, aws_region=DEFAULT_AWS_ECR_REGION):

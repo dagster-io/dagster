@@ -1,12 +1,12 @@
-3.6.11:
+3.6.12:
   docker_args:
-    BASE_IMAGE: python:3.6.11-slim
-    PYTHON_VERSION: 3.6.11
-3.7.8:
+    BASE_IMAGE: python:3.6.12-slim
+    PYTHON_VERSION: 3.6.12
+3.7.9:
   docker_args:
-    BASE_IMAGE: python:3.7.8-slim
-    PYTHON_VERSION: 3.7.8
-3.8.3:
+    BASE_IMAGE: python:3.7.9-slim
+    PYTHON_VERSION: 3.7.9
+3.8.7:
   docker_args:
-    BASE_IMAGE: python:3.8.3-slim
-    PYTHON_VERSION: 3.8.3
+    BASE_IMAGE: python:3.8.7-slim
+    PYTHON_VERSION: 3.8.7

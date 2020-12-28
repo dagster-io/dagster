@@ -5,9 +5,9 @@ import yaml
 
 # This should be an enum once we make our own buildkite AMI with py3
 class SupportedPython:
-    V3_8 = "3.8.3"
-    V3_7 = "3.7.8"
-    V3_6 = "3.6.11"
+    V3_8 = "3.8.7"
+    V3_7 = "3.7.9"
+    V3_6 = "3.6.12"
 
 
 SupportedPythons = [
@@ -50,3 +50,4 @@ def get_image_version(image_name):
 COVERAGE_IMAGE_VERSION = get_image_version("buildkite-coverage")
 INTEGRATION_IMAGE_VERSION = get_image_version("buildkite-integration")
 UNIT_IMAGE_VERSION = get_image_version("buildkite-unit")
+TEST_IMAGE_BUILDER_VERSION = get_image_version("buildkite-test-image-builder")

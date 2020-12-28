@@ -47,7 +47,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
 
         if IS_BUILDKITE:
             print("Installing ECR credentials...")
-            check_output("aws ecr get-login --no-include-email --region us-west-1 | sh", shell=True)
+            check_output("aws ecr get-login --no-include-email --region us-west-2 | sh", shell=True)
 
         provider = request.config.getoption("--cluster-provider")
 
