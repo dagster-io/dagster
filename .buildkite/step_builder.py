@@ -11,8 +11,8 @@ sys.path.append(SCRIPT_PATH)
 
 TIMEOUT_IN_MIN = 20
 
-DOCKER_PLUGIN = "docker#v3.2.0"
-ECR_PLUGIN = "ecr#v2.0.0"
+DOCKER_PLUGIN = "docker#v3.7.0"
+ECR_PLUGIN = "ecr#v2.2.0"
 
 
 AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")

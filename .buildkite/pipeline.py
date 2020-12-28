@@ -1,7 +1,7 @@
 import os
 
 import yaml
-from defines import TOX_MAP, SupportedPython, SupportedPythons
+from defines import COVERAGE_IMAGE_VERSION, TOX_MAP, SupportedPython, SupportedPythons
 from images import core_test_image_depends_fn, publish_test_images, test_image_depends_fn
 from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
@@ -238,6 +238,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
         buildkite_label="dbt_example",
+        upload_coverage=False,
     ),
     ModuleBuildSpec(
         "examples/deploy_docker",
@@ -254,7 +255,11 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     #     buildkite_label='events-demo',
     # ),
     # Examples
-    ModuleBuildSpec("examples/legacy_examples", extra_cmds_fn=legacy_examples_extra_cmds_fn),
+    ModuleBuildSpec(
+        "examples/legacy_examples",
+        extra_cmds_fn=legacy_examples_extra_cmds_fn,
+        upload_coverage=False,
+    ),
     ModuleBuildSpec(
         "examples/docs_snippets",
         extra_cmds_fn=legacy_examples_extra_cmds_fn,
@@ -381,6 +386,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
+    ModuleBuildSpec("python_modules/libraries/lakehouse", upload_coverage=False),
 ]
 
 
@@ -458,11 +464,13 @@ def coverage_step():
             "coverage debug sys",
             "coverage debug data",
             "coverage combine",
-            "coveralls-lcov -v -n lcov.* > coverage.js.json",
+            # coveralls-lcov is currently not working - fails with:
+            # converter.rb:63:in `initialize': No such file or directory @ rb_sysopen - jest/mocks/dagre_layout.worker.ts
+            # "coveralls-lcov -v -n lcov.* > coverage.js.json",
             "coveralls",  # add '--merge=coverage.js.json' to report JS coverage
         )
         .on_python_image(
-            "coverage-image:py3.7.8-2020-10-22T213422",
+            "buildkite-coverage:py3.8.7-{version}".format(version=COVERAGE_IMAGE_VERSION),
             [
                 "COVERALLS_REPO_TOKEN",  # exported by /env in ManagedSecretsBucket
                 "CI_NAME",

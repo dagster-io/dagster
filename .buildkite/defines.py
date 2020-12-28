@@ -47,5 +47,6 @@ def get_image_version(image_name):
     return versions.pop()
 
 
+COVERAGE_IMAGE_VERSION = get_image_version("buildkite-coverage")
 INTEGRATION_IMAGE_VERSION = get_image_version("buildkite-integration")
 UNIT_IMAGE_VERSION = get_image_version("buildkite-unit")

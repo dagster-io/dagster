@@ -2,9 +2,11 @@
 ARG BASE_IMAGE
 FROM "${BASE_IMAGE}"
 
-
-RUN apt-get update \
-    && apt-get -qq -y install lcov ruby-full git \
+RUN apt-get update -yqq \
+    && apt-get install -yqq \
+        lcov \
+        ruby-full \
+        git \
     && pip install coverage==5.3 coveralls coveralls-merge \
     && gem install coveralls-lcov \
     && apt-get remove -yqq \
