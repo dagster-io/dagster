@@ -9,20 +9,6 @@ import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceStatusRoot';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 
-const REPOSITORY_SCHEDULES_FRAGMENT = gql`
-  fragment RepositorySchedulesFragment on Repository {
-    name
-    id
-    schedules {
-      id
-      ...ScheduleFragment
-    }
-    ...RepositoryInfoFragment
-  }
-  ${REPOSITORY_INFO_FRAGMENT}
-  ${SCHEDULER_FRAGMENT}
-`;
-
 export const SCHEDULE_FRAGMENT = gql`
   fragment ScheduleFragment on Schedule {
     id
@@ -48,13 +34,27 @@ export const SCHEDULE_FRAGMENT = gql`
       id
       ...JobStateFragment
     }
-    futureTicks(limit: 1) {
+    futureTicks(limit: 5) {
       results {
         timestamp
       }
     }
   }
   ${JOB_STATE_FRAGMENT}
+`;
+
+const REPOSITORY_SCHEDULES_FRAGMENT = gql`
+  fragment RepositorySchedulesFragment on Repository {
+    name
+    id
+    schedules {
+      id
+      ...ScheduleFragment
+    }
+    ...RepositoryInfoFragment
+  }
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
 `;
 
 export const SCHEDULES_ROOT_QUERY = gql`
@@ -84,7 +84,6 @@ export const SCHEDULES_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${REPOSITORY_SCHEDULES_FRAGMENT}

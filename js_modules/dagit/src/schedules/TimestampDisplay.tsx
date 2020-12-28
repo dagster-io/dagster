@@ -14,7 +14,6 @@ interface Props {
 export const TimestampDisplay = (props: Props) => {
   const {timestamp, timezone, format} = props;
   const [userTimezone] = React.useContext(TimezoneContext);
-  console.log(userTimezone);
 
   const timestampString = timestampToString({unix: timestamp, format}, timezone || userTimezone);
 
