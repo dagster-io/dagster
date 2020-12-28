@@ -40,54 +40,55 @@ install_dev_python_modules:
 
 # On machines with less memory, pyspark install will fail... see:
 # https://stackoverflow.com/a/31526029/11295366
-	pip --no-cache-dir install pyspark\>=3.0.0 $(QUIET)
-
-# This is to ensure we can build Pandas on 3.9
-	-python scripts/is_39.py && pip install Cython==0.29.21
+	pip --no-cache-dir install pyspark\>=3.0.1 $(QUIET)
 
 # Need to do this for 3.9 compat
+# This is to ensure we can build Pandas on 3.9
 # See: https://github.com/numpy/numpy/issues/17784,
-	-python scripts/is_39.py && pip install numpy==1.18.5
+	-python scripts/is_39.py && pip install Cython==0.29.21 numpy==1.18.5
 
-# Need to manually install Airflow because we no longer explicitly depend on it
-# dagster-pandas must come before dagstermill because of dependency
-# See https://github.com/dagster-io/dagster/issues/1485
+# NOTE: These need to be installed as one long pip install command, otherwise pip will install
+# conflicting dependencies, which will break pip freeze snapshot creation during the integration
+# image build!
+	pip install \
+	    -e python_modules/dagster \
+	    -e python_modules/dagster-graphql \
+	    -e python_modules/dagster-test \
+	    -e python_modules/dagit \
+	    -e python_modules/automation \
+	    -e python_modules/libraries/dagster-pandas \
+	    -e python_modules/libraries/dagster-aws \
+	    -e python_modules/libraries/dagster-celery \
+	    -e python_modules/libraries/dagster-celery-docker \
+	    -e python_modules/libraries/dagster-cron \
+	    -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" \
+	    -e python_modules/libraries/dagster-datadog \
+	    -e python_modules/libraries/dagster-dbt \
+	    -e python_modules/libraries/dagster-docker \
+	    -e python_modules/libraries/dagster-gcp \
+	    -e python_modules/libraries/dagster-ge \
+	    -e python_modules/libraries/dagster-k8s \
+	    -e python_modules/libraries/dagster-celery-k8s \
+	    -e python_modules/libraries/dagster-pagerduty \
+	    -e python_modules/libraries/dagster-papertrail \
+	    -e python_modules/libraries/dagster-postgres \
+	    -e python_modules/libraries/dagster-prometheus \
+	    -e python_modules/libraries/dagster-spark \
+	    -e python_modules/libraries/dagster-pyspark \
+	    -e python_modules/libraries/dagster-databricks \
+	    -e python_modules/libraries/dagster-shell \
+	    -e python_modules/libraries/dagster-slack \
+	    -e python_modules/libraries/dagster-ssh \
+	    -e python_modules/libraries/dagster-twilio \
+	    -e python_modules/libraries/lakehouse \
+	    -r python_modules/dagster/dev-requirements.txt \
+	    -r python_modules/libraries/dagster-aws/dev-requirements.txt \
+	    -e integration_tests/python_modules/dagster-k8s-test-infra \
+	    -r scala_modules/scripts/requirements.txt \
+	    $(QUIET)
 
-	pip install	apache-airflow==1.10.10
-	pip install -e python_modules/dagster
-	pip install -e python_modules/dagster-graphql
-	pip install -e python_modules/dagster-test
-	pip install -e python_modules/dagit
-	pip install -e python_modules/automation
-	pip install -e python_modules/libraries/dagster-pandas
-	pip install -e python_modules/libraries/dagster-aws
-	pip install -e python_modules/libraries/dagster-celery
-	pip install -e python_modules/libraries/dagster-celery-docker
-	pip install -e python_modules/libraries/dagster-cron
-	pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]"
-	pip install -e python_modules/libraries/dagster-datadog
-	pip install -e python_modules/libraries/dagster-dbt
-	pip install -e python_modules/libraries/dagster-docker
-	pip install -e python_modules/libraries/dagster-gcp
-	pip install -e python_modules/libraries/dagster-ge
-	pip install -e python_modules/libraries/dagster-k8s
-	pip install -e python_modules/libraries/dagster-celery-k8s
-	pip install -e python_modules/libraries/dagster-pagerduty
-	pip install -e python_modules/libraries/dagster-papertrail
-	pip install -e python_modules/libraries/dagster-postgres
-	pip install -e python_modules/libraries/dagster-prometheus
-	pip install -e python_modules/libraries/dagster-spark
-	pip install -e python_modules/libraries/dagster-pyspark
-	pip install -e python_modules/libraries/dagster-databricks
-	pip install -e python_modules/libraries/dagster-shell
-	pip install -e python_modules/libraries/dagster-slack
-	pip install -e python_modules/libraries/dagster-ssh
-	pip install -e python_modules/libraries/dagster-twilio
-	pip install -e python_modules/libraries/lakehouse
-	pip install -r python_modules/dagster/dev-requirements.txt $(QUIET)
-	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
-	pip install -e integration_tests/python_modules/dagster-k8s-test-infra
-	pip install -r scala_modules/scripts/requirements.txt $(QUIET)
+# Can't install dagster-airflow right now:
+# https://github.com/dagster-io/dagster/issues/3488
 
 # Don't install dagster-azure as part of this target _yet_ - it has a dependency
 # conflict with dagster-snowflake which causes any import of dagster-snowflake to
@@ -97,17 +98,16 @@ install_dev_python_modules:
 # See https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
 # pip install -e python_modules/libraries/dagster-azure $(QUIET)
 
-	set SLUGIFY_USES_TEXT_UNIDECODE=yes
-
-	pip install -e python_modules/libraries/dagster-airflow $(QUIET)
-
 # incompatible with python 3.9 below
 # minus prefix ignores non-zero exit code
-	-python scripts/is_39.py || pip install -e python_modules/libraries/dagster-snowflake
-	-python scripts/is_39.py || pip install -e python_modules/libraries/dagstermill 
-	-python scripts/is_39.py || pip install	-e examples/legacy_examples[full]
-	-python scripts/is_39.py || pip install -e examples/airline_demo[full]
-	-python scripts/is_39.py || pip install -r docs-requirements.txt $(QUIET)
+	-python scripts/is_39.py || \
+	pip install \
+	    -e python_modules/libraries/dagster-snowflake \
+	    -e python_modules/libraries/dagstermill \
+	    -e examples/legacy_examples[full] \
+	    -e examples/airline_demo[full] \
+	    -r docs-requirements.txt $(QUIET)
+
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules
