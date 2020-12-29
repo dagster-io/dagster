@@ -124,7 +124,8 @@ def _is_valid_table_schema(_, value) -> bool:
     for col in value:
         if not isinstance(col, SchemaField):
             return False
-        return True
+
+    return True
 
 
 class _Dataset(ConfigScalar):
