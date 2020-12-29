@@ -33,8 +33,8 @@ data:
         env_config_maps:
           - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
         env_secrets:
-          {{- if $.Values.scheduler.env_secrets -}}
-          {{- range $name := $.Values.scheduler.env_secrets }}
+          {{- if $.Values.scheduler.envSecrets -}}
+          {{- range $name := $.Values.scheduler.envSecrets }}
           {{- if $name }}
           - {{ $name }}
           {{- end }}
@@ -139,6 +139,3 @@ data:
       config:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
     {{- end }}
-
-    telemetry:
-      enabled: false

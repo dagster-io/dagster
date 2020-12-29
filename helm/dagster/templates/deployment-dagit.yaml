@@ -69,16 +69,16 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" . }}-dagit-env
-            {{- if .Values.dagit.env_config_maps -}}
-            {{- range $name := .Values.dagit.env_config_maps }}
+            {{- if .Values.dagit.envConfigMaps -}}
+            {{- range $name := .Values.dagit.envConfigMaps }}
             {{- if $name }}
             - configMapRef:
                 name: {{ $name }}
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- if .Values.dagit.env_secrets -}}
-            {{- range $name := .Values.dagit.env_secrets }}
+            {{- if .Values.dagit.envSecrets -}}
+            {{- range $name := .Values.dagit.envSecrets }}
             {{- if $name }}
             - secretRef:
                 name: {{ $name }}
@@ -87,7 +87,7 @@ spec:
             {{- end }}
           volumeMounts:
             - name: dagster-instance
-              mountPath: "{{ .Values.dagster_home }}/dagster.yaml"
+              mountPath: "{{ .Values.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
             {{- if .Values.userDeployments.enabled }}
             - name: dagster-workspace-yaml

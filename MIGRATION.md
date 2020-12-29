@@ -13,6 +13,7 @@ control over how inputs are loaded and outputs are handled.
 - We have deprecated the field `"storage"` and `"intermediate_storage"` on run config.
 
   For example, if your run config looks like this:
+
   ```python
   @pipeline
   def my_pipeline():
@@ -49,7 +50,6 @@ control over how inputs are loaded and outputs are handled.
   def my_pipeline():
       ...
   ```
-
 
 - We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
   new Object Managers.
@@ -90,6 +90,7 @@ recommended to follow the migration instruction about the deprecation of interme
   resource key and replace the `context.file_manager` with `context.resources.file_manager`.
 
   For example, if your solid look like this:
+
   ```python
   @solid
   def emit_file(context):
@@ -97,6 +98,7 @@ recommended to follow the migration instruction about the deprecation of interme
   ```
 
   it is recommended to make it look like this:
+
   ```python
   @solid(required_resource_keys={"file_manager"})
   def emit_file(context):
@@ -108,6 +110,18 @@ recommended to follow the migration instruction about the deprecation of interme
 We have removed the argument `step_keys_to_execute` to the `reexecute_pipeline` and `reexecute_pipeline_iterator`,
 in favor of `step_selection`, which additionally accepts the Dagster selection syntax, for example,
 `*solid_a+` represents `solid_a`, all of its upstream steps, its direct downstream steps.
+
+## Renamed: Helm values
+
+Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practices/values/#naming-conventions),
+we now camel case all of our Helm values.
+
+To migrate to 0.10.0, you'll need to update your `values.yaml` with the following renames:
+
+`pipeline_run` -> `pipelineRun`
+`dagster_home` -> `dagsterHome`
+`env_secrets` -> `envSecrets`
+`env_config_maps` -> `envConfigMaps`
 
 # Migrating to 0.9.0
 

@@ -43,7 +43,7 @@ spec:
           imagePullPolicy: {{ $.Values.celery.image.pullPolicy }}
           image: "{{ template "dagster.celery_image" $ }}"
           command: ["dagster-celery"]
-          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.dagster_home }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
+          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
@@ -53,16 +53,16 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-celery-worker-env
-            {{- if $.Values.celery.env_config_maps -}}
-            {{- range $name := $.Values.celery.env_config_maps }}
+            {{- if $.Values.celery.envConfigMaps -}}
+            {{- range $name := $.Values.celery.envConfigMaps }}
             {{- if $name }}
             - configMapRef:
                 name: {{ $name }}
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- if $.Values.celery.env_secrets -}}
-            {{- range $name := $.Values.celery.env_secrets }}
+            {{- if $.Values.celery.envSecrets -}}
+            {{- range $name := $.Values.celery.envSecrets }}
             {{- if $name }}
             - secretRef:
                 name: {{ $name }}
@@ -71,10 +71,10 @@ spec:
             {{- end }}
           volumeMounts:
             - name: dagster-instance
-              mountPath: "{{ $.Values.dagster_home }}/dagster.yaml"
+              mountPath: "{{ $.Values.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
             - name: dagster-celery
-              mountPath: "{{ $.Values.dagster_home }}/celery-config.yaml"
+              mountPath: "{{ $.Values.dagsterHome }}/celery-config.yaml"
               subPath: celery.yaml
           resources:
             {{- toYaml $.Values.celery.resources | nindent 12 }}

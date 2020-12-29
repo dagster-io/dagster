@@ -3,6 +3,7 @@
 ## TL;DR
 
 ### Installing from remote
+
 ```bash
 helm repo add dagster https://dagster-io.github.io/helm
 
@@ -12,27 +13,35 @@ helm install my-release dagster/dagster \
 ```
 
 ### Installing from source
+
 ```bash
 helm install my-release . \
     --namespace dagster \
     --create-namespace
 ```
+
 ## Introduction
+
 [Dagster](https://github.com/dagster-io/dagster) is a Python library for building data applications. This chart will bootstrap a Dagit web server deployment on a Kubernetes cluster using the Helm package manager.
 
 In addition, our helm chart allows for Dagster configuration such as:
- - Deploying user code containers separately from Dagster system components
- - Specifying the Dagster run launcher
- - Specifying the Dagster scheduler to handle recurring pipeline runs
+
+- Deploying user code containers separately from Dagster system components
+- Specifying the Dagster run launcher
+- Specifying the Dagster scheduler to handle recurring pipeline runs
 
 ## Prerequisites
+
 ### Setup a Kubernetes Cluster
+
 Please refer to the Kubernetes [getting started guide](https://kubernetes.io/docs/setup/) to set up and run a Kubernetes cluster.
 
 ### Installing Helm
+
 We use Helm to manage our Kubernetes application in a configurable, replicable, and sharable way. Helm can be installed by following the [Helm installation guide](https://helm.sh/docs/intro/install/).
 
 ### Adding the Dagster Repo
+
 To download and install the Dagster charts, use the following command:
 
 ```bash
@@ -40,6 +49,7 @@ helm repo add dagster https://dagster-io.github.io/helm
 ```
 
 ### Using Helm
+
 We can now use the Helm client to install the Dagster chart! Refer to the guide on [Using Helm](https://helm.sh/docs/intro/using_helm/) for an explanation of useful Helm concepts.
 
 Here, we install a release of the Dagster chart named `my-release`, under the Kubernetes namespace `dagster`:
@@ -51,9 +61,11 @@ helm install my-release dagster/dagster \
 ```
 
 ### Customizing the Release
+
 [Settings can configured](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing) to customize the Dagster release.
 
 To see the full list of configurable settings, check out the `values.yaml` file. Documentation can be found in the comments.
+
 ## Environment Variables
 
 We support two ways of setting environment variables: either directly add them to `values.yaml`, or
@@ -61,12 +73,12 @@ provide an external ConfigMap/Secret object to mount using `envFrom:` in the cha
 
 - `job_runner.env.SOME_ENV_VAR`: Set `SOME_ENV_VAR` in the Celery Worker and Job pods
 - `dagit.env.SOME_ENV_VAR`: Set `SOME_ENV_VAR` in the Dagit pod
-- `job_runner.env_config_maps`: names of ConfigMaps to use for environment variables in the
+- `job_runner.envConfigMaps`: names of ConfigMaps to use for environment variables in the
   Celery Worker and Job pods
-- `job_runner.env_secrets`: names of Secrets to use for environment variables in the
+- `job_runner.envSecrets`: names of Secrets to use for environment variables in the
   Celery Worker and Job pods
-- `dagit.env_config_maps`: names of ConfigMaps to use for environment variables in the Dagit pod
-- `dagit.env_secrets`: names of Secrets to use for environment variables in the Dagit pod
+- `dagit.envConfigMaps`: names of ConfigMaps to use for environment variables in the Dagit pod
+- `dagit.envSecrets`: names of Secrets to use for environment variables in the Dagit pod
 
 These will be loaded in the following order, and in the case of conflicts, subsequent loads will
 take priority:

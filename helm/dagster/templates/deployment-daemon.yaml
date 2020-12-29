@@ -72,7 +72,7 @@ spec:
             {{- end }}
           volumeMounts:
             - name: dagster-instance
-              mountPath: "{{ $.Values.dagster_home }}/dagster.yaml"
+              mountPath: "{{ $.Values.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
           resources:
             {{- toYaml .Values.dagsterDaemon.resources | nindent 12 }}

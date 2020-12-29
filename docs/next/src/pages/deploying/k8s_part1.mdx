@@ -46,7 +46,7 @@ dagit:
     tag: 'latest'
 
 # This image is used to launch the run coordinator job
-pipeline_run:
+pipelineRun:
   image:
     repository: 'your_repo/your_image:latest'
     tag: 'latest'
@@ -66,6 +66,7 @@ _**Note:** In this example, Dagit runs with the user code image. In
 The Helm chart installs several different components, including Dagit.
 
 ### Celery K8s
+
 By default, we configure Dagster to deploy with Celery.
 In this system, the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> coupled
 with the corresponding <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />
@@ -89,14 +90,15 @@ The deployed system looks like:
 When a pipeline is executed, Dagit (or the scheduler) instigates execution via the <PyObject
 module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />. The run launcher launches a
 run coordinator [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the
-user code image specified in the `pipeline_run:` values YAML configuration (the run coordinator
+user code image specified in the `pipelineRun:` values YAML configuration (the run coordinator
 Job will be named `dagster-run-<run_id>`, to make debugging in kubectl easier). The role of the run
 coordinator Job is to traverse the execution plan, and enqueue execution steps as Celery tasks.
 Celery workers poll for new tasks, and for each step execution task that it fetches, a
 step execution Job is launched to execute that step. These step execution Jobs are also launched
-using the `pipeline_run:` image, and each will be named `dagster-job-<hash>`.
+using the `pipelineRun:` image, and each will be named `dagster-job-<hash>`.
 
 ### Celery-less K8s
+
 The published helm chart also supports a celery-less deployment. In this case, we configure the <PyObject
 module="dagster_k8s" object="K8sRunLauncher" /> on the Dagster instance. This will launch each
 pipeline and its associated step executions in a single Kubernetes Job. We can use this option

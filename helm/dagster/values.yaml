@@ -8,7 +8,7 @@ nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true
 # The DAGSTER_HOME env var is set by default on all nodes from this value
-dagster_home: "/opt/dagster/dagster_home"
+dagsterHome: "/opt/dagster/dagster_home"
 
 # Specify secrets to run containers based on images in private registries. See:
 # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
@@ -35,11 +35,11 @@ dagit:
     YOUR_ENV_VAR: ""
   # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
   # list here
-  env_config_maps:
+  envConfigMaps:
     - ""
   # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
   # as a list here
-  env_secrets:
+  envSecrets:
     - ""
   # Support Node, affinity and tolerations for Dagit pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
@@ -124,9 +124,9 @@ userDeployments:
       port: 3030
       env:
         YOUR_ENV_VAR: ""
-      env_config_maps:
+      envConfigMaps:
         - ""
-      env_secrets:
+      envSecrets:
         - ""
       nodeSelector: {}
       affinity: {}
@@ -146,7 +146,7 @@ userDeployments:
 # `DAGSTER_K8S_PIPELINE_RUN_IMAGE`, so that celery workers will launch k8s jobs with said image.
 #
 ####################################################################################################
-pipeline_run:
+pipelineRun:
   image:
     repository: "dagster/k8s-example"
     tag: "latest"
@@ -183,7 +183,7 @@ scheduler:
 
   # (K8sScheduler only) Additional (secret) environment variables can be retrieved and set from
   # the Secrets enumerated as a list here
-  env_secrets:
+  envSecrets:
     - ""
 
 ####################################################################################################
@@ -252,11 +252,11 @@ celery:
     YOUR_ENV_VAR: ""
   # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
   # list here
-  env_config_maps:
+  envConfigMaps:
     - ""
   # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
   # as a list here
-  env_secrets:
+  envSecrets:
     - ""
   # Support Node, affinity and tolerations for Celery pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
