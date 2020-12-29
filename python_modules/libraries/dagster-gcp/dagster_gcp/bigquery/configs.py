@@ -12,6 +12,7 @@ from .types import (
     BQPriority,
     BQSchemaUpdateOption,
     BQSourceFormat,
+    BQTableSchema,
     BQWriteDisposition,
     Dataset,
     Table,
@@ -334,6 +335,12 @@ def define_bigquery_load_config():
         is_required=False,
     )
 
+    schema = Field(
+        BQTableSchema,
+        description="Schema of the destination table.",
+        is_required=False
+    )
+
     skip_leading_rows = Field(
         IntSource,
         description="Number of rows to skip when reading data (CSV only).",
@@ -366,7 +373,7 @@ def define_bigquery_load_config():
             "max_bad_records": max_bad_records,
             "null_marker": null_marker,
             "quote_character": quote_character,
-            # TODO: schema
+            "schema": schema,
             "schema_update_options": sf["schema_update_options"],
             "skip_leading_rows": skip_leading_rows,
             "source_format": source_format,
