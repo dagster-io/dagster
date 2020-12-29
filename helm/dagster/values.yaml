@@ -28,6 +28,7 @@ dagit:
   service:
     type: ClusterIP
     port: 80
+    annotations: {}
 
   # Additional environment variables to set on the dagit container.
   # A Kubernetes ConfigMap will be created with these environment variables.
@@ -45,6 +46,7 @@ dagit:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  annotations: {}
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -128,6 +130,7 @@ userDeployments:
         - ""
       envSecrets:
         - ""
+      annotations: {}
       nodeSelector: {}
       affinity: {}
       tolerations: []
@@ -135,6 +138,9 @@ userDeployments:
       securityContext: {}
       resources: {}
       replicaCount: 1
+
+      service:
+        annotations: {}
 
 ####################################################################################################
 # Pipeline Run: Configuration for user code containers.
@@ -238,7 +244,7 @@ celery:
     nameOverride: ""
   # additional config options for Celery, applied to all queues. See:
   # https://docs.celeryproject.org/en/stable/userguide/configuration.html for available options
-  configSource:
+  configSource: {}
 
   # Additional Celery worker queues can be configured here. When overriding, be sure to provision
   # a "dagster" worker queue, as this is the default queue used by Dagster.
@@ -262,6 +268,7 @@ celery:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  annotations: {}
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -368,6 +375,7 @@ flower:
     pullPolicy: Always
 
   service:
+    type: ClusterIP
     annotations: {}
     port: 5555
 
@@ -375,6 +383,7 @@ flower:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  annotations: {}
   nodeSelector: {}
   affinity: {}
   tolerations: []
@@ -488,6 +497,8 @@ dagsterDaemon:
     - ""
   envSecrets:
     - ""
+
+  annotations: {}
   nodeSelector: {}
   affinity: {}
   tolerations: []

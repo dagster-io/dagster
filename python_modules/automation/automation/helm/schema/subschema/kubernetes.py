@@ -1,8 +1,18 @@
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, Extra  # pylint: disable=E0611
 
 from .utils import SupportedKubernetes, create_definition_ref
+
+
+class Annotations(BaseModel):
+    class Config:
+        schema_extra = {
+            "$ref": create_definition_ref(
+                "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+            )
+        }
 
 
 class PullPolicy(str, Enum):
@@ -20,6 +30,7 @@ class Image(BaseModel):
 class Service(BaseModel):
     type: str
     port: int
+    annotations: Optional[Annotations]
 
     class Config:
         extra = Extra.forbid
@@ -69,15 +80,6 @@ class StartupProbe(BaseModel):
         schema_extra = {
             "$ref": create_definition_ref(
                 "io.k8s.api.core.v1.Probe", version=SupportedKubernetes.V1_16,
-            )
-        }
-
-
-class Annotations(BaseModel):
-    class Config:
-        schema_extra = {
-            "$ref": create_definition_ref(
-                "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
             )
         }
 

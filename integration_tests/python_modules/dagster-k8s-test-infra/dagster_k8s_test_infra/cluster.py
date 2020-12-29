@@ -127,7 +127,10 @@ def local_port_forward_postgres(namespace):
                 namespace,
                 postgres_pod_name,
                 "{forward_port}:5432".format(forward_port=forward_port),
-            ]
+            ],
+            # Squelch the verbose "Handling connection for..." messages
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
         )
 
         # Validate port forwarding works

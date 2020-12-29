@@ -8,6 +8,14 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: user-deployments
     deployment: {{ $deployment.name }}
+  annotations:
+    {{- if hasKey $deployment "service" }}
+    {{- if hasKey $deployment.service "annotations" }}
+    {{- range $key, $value := $deployment.service.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
 spec:
   type: "ClusterIP"
   ports:

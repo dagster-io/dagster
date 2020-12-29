@@ -7,6 +7,10 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: dagster-daemon
     deployment: daemon
+  annotations:
+    {{- range $key, $value := .Values.dagsterDaemon.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   replicas: 1
   selector:
@@ -22,6 +26,9 @@ spec:
         deployment: daemon
       annotations:
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
+        {{- range $key, $value := .Values.dagsterDaemon.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
     spec:
       imagePullSecrets:
         {{- toYaml $.Values.imagePullSecrets | nindent 8 }}

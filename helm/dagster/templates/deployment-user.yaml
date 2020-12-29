@@ -8,6 +8,12 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: user-deployments
     deployment: {{ $deployment.name }}
+  annotations:
+    {{- if hasKey $deployment "annotations" }}
+    {{- range $key, $value := $deployment.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
+    {{- end }}
 spec:
   replicas: {{ $deployment.replicaCount }}
   selector:
@@ -24,6 +30,11 @@ spec:
       annotations:
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") $ | sha256sum }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") $ | sha256sum }}
+        {{- if hasKey $deployment "annotations" }}
+        {{- range $key, $value := $deployment.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
+        {{- end }}
     spec:
     {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:

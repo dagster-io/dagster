@@ -8,6 +8,10 @@ metadata:
   labels:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: celery
+  annotations:
+    {{- range $key, $value := $.Values.celery.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   replicas: {{ $queue.replicaCount }}
   selector:
@@ -19,6 +23,9 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
       annotations:
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") $ | sha256sum }}
+        {{- range $key, $value := $.Values.celery.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
     spec:
     {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:

@@ -7,9 +7,9 @@ metadata:
     {{- include "dagster.labels" . | nindent 4 }}
     component: flower
   annotations:
-  {{- if .Values.flower.service.annotations }}
-  {{ toYaml .Values.flower.service.annotations | trim | indent 4 }}
-  {{- end }}
+    {{- range $key, $value := .Values.flower.service.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   type: {{ .Values.flower.service.type | default "ClusterIP" }}
   ports:

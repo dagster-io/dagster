@@ -71,6 +71,12 @@
                 "pullPolicy"
             ]
         },
+        "Annotations": {
+            "title": "Annotations",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+        },
         "automation__helm__schema__subschema__kubernetes__Service": {
             "title": "Service",
             "type": "object",
@@ -82,6 +88,9 @@
                 "port": {
                     "title": "Port",
                     "type": "integer"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
                 }
             },
             "required": [
@@ -175,6 +184,9 @@
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
                 }
             },
             "required": [
@@ -338,29 +350,6 @@
             ],
             "additionalProperties": false
         },
-        "Annotations": {
-            "title": "Annotations",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
-        },
-        "automation__helm__schema__subschema__flower__Service": {
-            "title": "Service",
-            "type": "object",
-            "properties": {
-                "annotations": {
-                    "$ref": "#/definitions/Annotations"
-                },
-                "port": {
-                    "title": "Port",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "annotations",
-                "port"
-            ]
-        },
         "Flower": {
             "title": "Flower",
             "type": "object",
@@ -370,7 +359,7 @@
                     "type": "boolean"
                 },
                 "service": {
-                    "$ref": "#/definitions/automation__helm__schema__subschema__flower__Service"
+                    "$ref": "#/definitions/automation__helm__schema__subschema__kubernetes__Service"
                 },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
@@ -395,6 +384,9 @@
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
                 }
             },
             "required": [

@@ -6,6 +6,10 @@ metadata:
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
     component: flower
+  annotations:
+    {{- range $key, $value := .Values.flower.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   replicas: 1
   selector:
@@ -19,6 +23,9 @@ spec:
         component: flower
       annotations:
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
+        {{- range $key, $value := .Values.flower.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

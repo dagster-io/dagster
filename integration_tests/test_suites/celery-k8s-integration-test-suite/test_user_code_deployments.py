@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import sys
 
 import kubernetes
 import pytest
@@ -18,7 +17,6 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 # dagit pod to trigger a pipeline run
 @mark_user_code_deployment
 @pytest.mark.integration
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-argument
     dagster_instance_for_user_deployments, helm_namespace_for_user_deployments,
 ):

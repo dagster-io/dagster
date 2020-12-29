@@ -5,6 +5,10 @@ metadata:
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
     component: dagit
+  annotations:
+    {{- range $key, $value := .Values.dagit.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   replicas: {{ .Values.dagit.replicaCount }}
   selector:
@@ -19,6 +23,9 @@ spec:
       annotations:
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
+        {{- range $key, $value := .Values.dagit.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
