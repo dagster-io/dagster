@@ -335,11 +335,7 @@ def define_bigquery_load_config():
         is_required=False,
     )
 
-    schema = Field(
-        BQTableSchema,
-        description="Schema of the destination table.",
-        is_required=False
-    )
+    schema = Field(BQTableSchema, description="Schema of the destination table.", is_required=False)
 
     skip_leading_rows = Field(
         IntSource,

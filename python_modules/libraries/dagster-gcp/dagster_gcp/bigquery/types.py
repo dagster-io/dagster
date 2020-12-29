@@ -172,7 +172,6 @@ class BigQueryError(Exception):
 
 BQTableSchema = DagsterType(
     name="BigQueryTableSchema",
-    description="A BigQuery table schema in the format described here - "
-                "https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file ",
-    type_check_fn=_is_valid_table_schema
+    description="A BigQuery table schema in the format described here - https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file ",
+    type_check_fn=_is_valid_table_schema,
 )
