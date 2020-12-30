@@ -474,6 +474,11 @@ def find_free_port():
 
 @contextlib.contextmanager
 def alter_sys_path(to_add, to_remove):
+    # If this is a non-main thread, bail out because global mutation of sys.path causes race conditions.
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
     to_restore = [path for path in sys.path]
 
     # remove paths
