@@ -1,9 +1,8 @@
 import sys
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
 import pytest
-import six
 from dagster import check, file_relative_path, seven
 from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -729,7 +728,7 @@ def manage_graphql_context(context_variant, recon_repo=None):
             yield DagsterGraphQLContext(instance=instance, workspace=workspace)
 
 
-class _GraphQLContextTestSuite(six.with_metaclass(ABCMeta)):
+class _GraphQLContextTestSuite(ABC):
     @abstractmethod
     def yield_graphql_context(self, request):
         pass

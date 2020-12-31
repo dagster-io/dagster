@@ -1,9 +1,8 @@
 import io
 import os
 import shutil
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-import six
 from dagster import check
 from dagster.config import Field
 from dagster.core.definitions import resource
@@ -12,7 +11,7 @@ from dagster.utils import mkdir_p
 from .file_manager import LocalFileHandle
 
 
-class FileCache(six.with_metaclass(ABCMeta)):
+class FileCache(ABC):
     def __init__(self, overwrite):
         # Overwrite is currently only a signal to callers to not overwrite.
         # These classes currently do not enforce any semantics around that

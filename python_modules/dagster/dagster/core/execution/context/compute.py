@@ -1,6 +1,5 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 
-import six
 from dagster import check
 from dagster.utils.forked_pdb import ForkedPdb
 
@@ -8,7 +7,7 @@ from .step import StepExecutionContext
 from .system import SystemComputeExecutionContext
 
 
-class AbstractComputeExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
     """Base class for solid context implemented by SolidExecutionContext and DagstermillInNotebookExecutionContext"""
 
     @abstractmethod

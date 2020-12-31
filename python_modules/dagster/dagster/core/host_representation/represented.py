@@ -1,12 +1,11 @@
-from abc import ABCMeta, abstractproperty
+from abc import ABC, abstractproperty
 
-import six
 from dagster import check
 
 from .pipeline_index import PipelineIndex
 
 
-class RepresentedPipeline(six.with_metaclass(ABCMeta)):
+class RepresentedPipeline(ABC):
     """
     RepresentedPipeline is a base class for ExternalPipeline or HistoricalPipeline.
 

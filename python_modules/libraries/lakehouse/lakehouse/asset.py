@@ -1,13 +1,12 @@
-from abc import ABCMeta
+from abc import ABC
 from typing import List, Tuple, Union
 
-import six
 from dagster import AssetKey, DagsterType, check
 
 from .computation import Computation
 
 
-class Asset(six.with_metaclass(ABCMeta)):
+class Asset(ABC):
     def __init__(self, storage_key, path, computation):
         self._storage_key = check.str_param(storage_key, "storage_key")
         self._path = canonicalize_path(path)

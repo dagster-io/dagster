@@ -1,10 +1,9 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-import six
 from dagster import check
 
 
-class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class TypeStoragePlugin(ABC):  # pylint: disable=no-init
     """Base class for storage plugins.
 
     Extend this class for (intermediate_storage_name, dagster_type) pairs that need special handling.

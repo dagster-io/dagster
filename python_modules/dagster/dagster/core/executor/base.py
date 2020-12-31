@@ -1,9 +1,7 @@
 import abc
 
-import six
 
-
-class Executor(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
+class Executor(abc.ABC):  # pylint: disable=no-init
     @abc.abstractmethod
     def execute(self, pipeline_context, execution_plan):
         """

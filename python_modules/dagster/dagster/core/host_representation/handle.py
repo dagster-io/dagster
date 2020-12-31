@@ -1,9 +1,8 @@
 import sys
 import threading
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import namedtuple
 
-import six
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
@@ -38,7 +37,7 @@ def _get_repository_python_origin(
     )
 
 
-class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
+class RepositoryLocationHandle(ABC):
     def __enter__(self):
         return self
 

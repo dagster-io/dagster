@@ -1,7 +1,6 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 
-import six
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -9,7 +8,7 @@ from dagster.core.types.dagster_type import DagsterTypeKind
 from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
 
 
-class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class IContainSolids(ABC):  # pylint: disable=no-init
     @abstractproperty
     def solids(self):
         """List[Solid]: Top-level solids in the container."""

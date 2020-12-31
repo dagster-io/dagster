@@ -1,12 +1,11 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-import six
 from dagster import check
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection
 
 
-class IPipeline(six.with_metaclass(ABCMeta)):
+class IPipeline(ABC):
     """
     IPipeline is a wrapper interface for PipelineDefinitions to be used as parameters to Dagster's
     core execution APIs.  This enables these execution APIs to operate on both in memory pipeline

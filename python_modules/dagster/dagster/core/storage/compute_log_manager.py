@@ -1,10 +1,9 @@
 import atexit
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
 from enum import Enum
 
-import six
 from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
 from rx import Observable
@@ -32,7 +31,7 @@ class ComputeLogFileData(namedtuple("ComputeLogFileData", "path data cursor size
         )
 
 
-class ComputeLogManager(six.with_metaclass(ABCMeta)):
+class ComputeLogManager(ABC):
     """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
     steps of pipeline solids."""
 

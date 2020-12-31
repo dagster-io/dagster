@@ -1,7 +1,6 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 
 import pyrsistent
-import six
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import (
     build_run_stats_from_events,
@@ -13,7 +12,7 @@ class EventLogSequence(pyrsistent.CheckedPVector):
     __type__ = EventRecord
 
 
-class EventLogStorage(six.with_metaclass(ABCMeta)):
+class EventLogStorage(ABC):
     """Abstract base class for storing structured event logs from pipeline runs.
 
     Note that event log storages using SQL databases as backing stores should implement
@@ -109,7 +108,7 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
 
-class AssetAwareEventLogStorage(six.with_metaclass(ABCMeta)):
+class AssetAwareEventLogStorage(ABC):
     @abstractmethod
     def has_asset_key(self, asset_key):
         pass

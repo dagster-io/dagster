@@ -3,7 +3,7 @@ import inspect
 import os
 import sys
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import namedtuple
 
 import six
@@ -15,7 +15,7 @@ from dagster.seven import get_import_error_message, import_module_from_path
 from dagster.utils import alter_sys_path, frozenlist, load_yaml_from_path
 
 
-class CodePointer(six.with_metaclass(ABCMeta)):
+class CodePointer(ABC):
     @abstractmethod
     def load_target(self):
         pass

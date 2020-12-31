@@ -11,7 +11,7 @@ class RedshiftError(Exception):
     pass
 
 
-class _BaseRedshiftResource(six.with_metaclass(abc.ABCMeta)):
+class _BaseRedshiftResource(abc.ABC):
     def __init__(self, context):  # pylint: disable=too-many-locals
         # Extract parameters from resource config
         self.conn_args = {

@@ -1,15 +1,14 @@
 import logging
 import os
 import shutil
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
-import six
 from dagster import check
 from dagster.core.types.marshal import PickleSerializationStrategy, SerializationStrategy
 from dagster.utils import mkdir_p
 
 
-class ObjectStore(six.with_metaclass(ABCMeta)):
+class ObjectStore(ABC):
     def __init__(self, name, sep="/"):
         """Create an ObjectStore.
 

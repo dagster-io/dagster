@@ -1,9 +1,7 @@
 import abc
 
-import six
 
-
-class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
+class ScheduleStorage(abc.ABC):
     """Abstract class for managing persistance of scheduler artifacts
     """
 

@@ -2,10 +2,9 @@ import io
 import os
 import shutil
 import uuid
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 from contextlib import contextmanager
 
-import six
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
@@ -19,7 +18,7 @@ from .temp_file_manager import TempfileManager
 
 # pylint: disable=no-init
 @usable_as_dagster_type
-class FileHandle(six.with_metaclass(ABCMeta)):
+class FileHandle(ABC):
     """A file handle is a reference to a file.
 
     Files can be be resident in the local file system, an object store, or any arbitrary place
@@ -52,7 +51,7 @@ class LocalFileHandle(FileHandle):
         return self._path
 
 
-class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class FileManager(ABC):  # pylint: disable=no-init
     """
     The base class for all file managers in dagster. The file manager is a user-facing
     abstraction that allows a Dagster user to pass files in between solids, and the file

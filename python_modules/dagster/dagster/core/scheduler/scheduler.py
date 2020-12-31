@@ -2,7 +2,6 @@ import abc
 import os
 from collections import namedtuple
 
-import six
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import IntSource
@@ -59,7 +58,7 @@ class SchedulerDebugInfo(
         )
 
 
-class Scheduler(six.with_metaclass(abc.ABCMeta)):
+class Scheduler(abc.ABC):
     """Abstract base class for a scheduler. This component is responsible for interfacing with
     an external system such as cron to ensure scheduled repeated execution according.
     """

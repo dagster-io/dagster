@@ -1,9 +1,8 @@
 import os
 import sys
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import namedtuple
 
-import six
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -51,7 +50,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin):
     )
 
 
-class RepositoryLocationOrigin(six.with_metaclass(ABCMeta)):
+class RepositoryLocationOrigin(ABC):
     """Serializable representation of a RepositoryLocation that can be used to
        uniquely identify the location or reload it in across process boundaries.
     """

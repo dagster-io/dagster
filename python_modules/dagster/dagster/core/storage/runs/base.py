@@ -1,9 +1,7 @@
-from abc import ABCMeta, abstractmethod
-
-import six
+from abc import ABC, abstractmethod
 
 
-class RunStorage(six.with_metaclass(ABCMeta)):
+class RunStorage(ABC):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement

@@ -1,9 +1,7 @@
-from abc import ABCMeta, abstractmethod
-
-import six
+from abc import ABC, abstractmethod
 
 
-class AssetStorage(six.with_metaclass(ABCMeta)):
+class AssetStorage(ABC):
     """An AssetStorage describes how to save and load assets."""
 
     @abstractmethod

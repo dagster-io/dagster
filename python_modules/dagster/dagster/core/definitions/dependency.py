@@ -1,7 +1,6 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 
-import six
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.serdes import whitelist_for_serdes
@@ -548,7 +547,7 @@ class DependencyStructure:
         return debug
 
 
-class IDependencyDefinition(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class IDependencyDefinition(ABC):  # pylint: disable=no-init
     @abstractmethod
     def get_solid_dependencies(self):
         pass

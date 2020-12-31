@@ -1,9 +1,7 @@
-from abc import ABCMeta, abstractmethod
-
-import six
+from abc import ABC, abstractmethod
 
 
-class RunCoordinator(six.with_metaclass(ABCMeta)):
+class RunCoordinator(ABC):
     def initialize(self, instance):
         """
         Perform any initialization that depends on the surrounding DagsterInstance.

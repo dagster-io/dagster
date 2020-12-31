@@ -1,10 +1,10 @@
-from abc import ABCMeta
+from abc import ABC
 from typing import Any, Dict, List
 
 from dagster import EventMetadataEntry, Failure, check
 
 
-class DagsterDbtError(Failure, metaclass=ABCMeta):
+class DagsterDbtError(Failure, ABC):
     """The base exception of the ``dagster-dbt`` library."""
 
 
@@ -26,7 +26,7 @@ class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
         self.invalid_line_nos = invalid_line_nos
 
 
-class DagsterDbtCliRuntimeError(DagsterDbtError, metaclass=ABCMeta):
+class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
     """Represents an error while executing a dbt CLI command."""
 
     def __init__(self, description: str, logs: List[Dict[str, Any]], raw_output: str):
