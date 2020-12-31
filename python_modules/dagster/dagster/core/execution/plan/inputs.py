@@ -3,13 +3,18 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions import Failure, RetryRequested
 from dagster.core.definitions.events import (
     AssetStoreOperation,
     AssetStoreOperationType,
     ObjectStoreOperation,
 )
 from dagster.core.definitions.input import InputDefinition
-from dagster.core.errors import DagsterTypeLoadingError, user_code_error_boundary
+from dagster.core.errors import (
+    DagsterExecutionLoadInputError,
+    DagsterTypeLoadingError,
+    user_code_error_boundary,
+)
 from dagster.core.storage.input_manager import InputManager
 from dagster.serdes import whitelist_for_serdes
 
@@ -103,7 +108,7 @@ class FromRootInputManager(
             metadata=self.input_def.metadata,
             dagster_type=self.input_def.dagster_type,
         )
-        return loader.load_input(load_input_context)
+        return _load_input_with_input_manager(loader, load_input_context)
 
     def compute_version(self, step_versions):
         # TODO: support versioning for root loaders
@@ -174,7 +179,7 @@ class FromStepOutput(
         source_handle = self.step_output_handle
         if self.input_def.manager_key:
             loader = getattr(step_context.resources, self.input_def.manager_key)
-            return loader.load_input(self.get_load_context(step_context))
+            return _load_input_with_input_manager(loader, self.get_load_context(step_context))
 
         object_manager = step_context.get_output_manager(source_handle)
 
@@ -187,7 +192,7 @@ class FromStepOutput(
             f'"{step_context.execution_plan.get_manager_key(source_handle)}" is an InputManager.',
         )
 
-        obj = object_manager.load_input(self.get_load_context(step_context))
+        obj = _load_input_with_input_manager(object_manager, self.get_load_context(step_context))
 
         output_def = step_context.execution_plan.get_step_output(source_handle).output_def
 
@@ -334,3 +339,18 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
         return join_and_hash(
             *[inner_source.compute_version(step_versions) for inner_source in self.sources]
         )
+
+
+def _load_input_with_input_manager(input_manager, context):
+    with user_code_error_boundary(
+        DagsterExecutionLoadInputError,
+        control_flow_exceptions=[Failure, RetryRequested],
+        msg_fn=lambda: (
+            f"Error occurred during the loading of a step input:"
+            f'    step key: "{context.step_context.step.key}"'
+            f'    input name: "{context.name}"'
+        ),
+        step_key=context.step_context.step.key,
+        input_name=context.name,
+    ):
+        return input_manager.load_input(context)

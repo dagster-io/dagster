@@ -18,7 +18,6 @@ from dagster.core.definitions.events import (
 )
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
-    DagsterExecutionLoadInputError,
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
@@ -393,10 +392,11 @@ def _set_objects(step_context, step_output, step_output_handle, output):
     with user_code_error_boundary(
         DagsterExecutionHandleOutputError,
         control_flow_exceptions=[Failure, RetryRequested],
-        msg_fn=lambda: f"""Error occurred during the the handling of step output:
-        step key: "{step_context.step.key}"
-        output name: "{output_context.name}"
-        """,
+        msg_fn=lambda: (
+            f"Error occurred during the the handling of step output:"
+            f'    step key: "{step_context.step.key}"'
+            f'    output name: "{output_context.name}"'
+        ),
         step_key=step_context.step.key,
         output_name=output_context.name,
     ):
@@ -529,16 +529,6 @@ def _load_input_values(step_context):
         if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
 
-        with user_code_error_boundary(
-            DagsterExecutionLoadInputError,
-            control_flow_exceptions=[Failure, RetryRequested],
-            msg_fn=lambda: f"""Error occurred during the loading of a step input:
-                step key: "{step_context.step.key}"
-                input name: "{step_input.name}"
-            """,  # pylint: disable=cell-var-from-loop
-            step_key=step_context.step.key,
-            input_name=step_input.name,
-        ):
-            input_value = step_input.source.load_input_object(step_context)
+        input_value = step_input.source.load_input_object(step_context)
 
         yield step_input.name, input_value
