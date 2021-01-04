@@ -7,8 +7,10 @@ import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceStatusRoot';
 import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {SensorInfo} from 'src/sensors/SensorInfo';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {SensorsRootQuery} from 'src/sensors/types/SensorsRootQuery';
 import {JobType} from 'src/types/globalTypes';
@@ -40,7 +42,7 @@ export const SensorsRoot = (props: Props) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {sensorsOrError, unloadableJobStatesOrError} = result;
+          const {sensorsOrError, unloadableJobStatesOrError, instance} = result;
           const content = () => {
             if (sensorsOrError.__typename === 'PythonError') {
               return <PythonErrorInfo error={sensorsOrError} />;
@@ -57,6 +59,9 @@ export const SensorsRoot = (props: Props) => {
             } else {
               return (
                 <Group direction="column" spacing={20}>
+                  {sensorsOrError.results.length > 0 && (
+                    <SensorInfo daemonHealth={instance.daemonHealth} />
+                  )}
                   <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
                   <UnloadableSensors sensorStates={unloadableJobStatesOrError.results} />
                 </Group>
@@ -92,8 +97,12 @@ const SENSORS_ROOT_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+    instance {
+      ...InstanceHealthFragment
+    }
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${JOB_STATE_FRAGMENT}
   ${SENSOR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;

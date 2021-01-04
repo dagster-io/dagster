@@ -35,7 +35,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {repositoryOrError, scheduler, unloadableJobStatesOrError} = result;
+          const {repositoryOrError, scheduler, unloadableJobStatesOrError, instance} = result;
           let schedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
@@ -75,7 +75,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
           return (
             <Group direction="column" spacing={20}>
-              <SchedulerInfo schedulerOrError={scheduler} />
+              <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
               {schedulesSection}
               {unloadableJobStatesOrError.__typename === 'PythonError' ? (
                 <PythonErrorInfo error={unloadableJobStatesOrError} />

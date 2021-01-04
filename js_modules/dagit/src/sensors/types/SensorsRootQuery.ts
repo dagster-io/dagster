@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorsRootQuery
@@ -207,9 +207,28 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_PythonError {
 
 export type SensorsRootQuery_unloadableJobStatesOrError = SensorsRootQuery_unloadableJobStatesOrError_JobStates | SensorsRootQuery_unloadableJobStatesOrError_PythonError;
 
+export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses {
+  __typename: "DaemonStatus";
+  daemonType: DaemonType;
+  required: boolean;
+  healthy: boolean | null;
+  lastHeartbeatTime: number | null;
+}
+
+export interface SensorsRootQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  allDaemonStatuses: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses[];
+}
+
+export interface SensorsRootQuery_instance {
+  __typename: "Instance";
+  daemonHealth: SensorsRootQuery_instance_daemonHealth;
+}
+
 export interface SensorsRootQuery {
   sensorsOrError: SensorsRootQuery_sensorsOrError;
   unloadableJobStatesOrError: SensorsRootQuery_unloadableJobStatesOrError;
+  instance: SensorsRootQuery_instance;
 }
 
 export interface SensorsRootQueryVariables {

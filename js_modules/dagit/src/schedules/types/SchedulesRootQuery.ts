@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, PipelineRunStatus, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, PipelineRunStatus, JobStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -286,10 +286,29 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_PythonError {
 
 export type SchedulesRootQuery_unloadableJobStatesOrError = SchedulesRootQuery_unloadableJobStatesOrError_JobStates | SchedulesRootQuery_unloadableJobStatesOrError_PythonError;
 
+export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses {
+  __typename: "DaemonStatus";
+  daemonType: DaemonType;
+  required: boolean;
+  healthy: boolean | null;
+  lastHeartbeatTime: number | null;
+}
+
+export interface SchedulesRootQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  allDaemonStatuses: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses[];
+}
+
+export interface SchedulesRootQuery_instance {
+  __typename: "Instance";
+  daemonHealth: SchedulesRootQuery_instance_daemonHealth;
+}
+
 export interface SchedulesRootQuery {
   repositoryOrError: SchedulesRootQuery_repositoryOrError;
   scheduler: SchedulesRootQuery_scheduler;
   unloadableJobStatesOrError: SchedulesRootQuery_unloadableJobStatesOrError;
+  instance: SchedulesRootQuery_instance;
 }
 
 export interface SchedulesRootQueryVariables {

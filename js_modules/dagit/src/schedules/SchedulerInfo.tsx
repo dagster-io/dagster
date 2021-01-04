@@ -3,6 +3,7 @@ import {Callout, Code, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 
 export const SCHEDULER_FRAGMENT = gql`
@@ -23,9 +24,39 @@ export const SCHEDULER_FRAGMENT = gql`
 export const SchedulerInfo: React.FunctionComponent<{
   errorsOnly?: boolean;
   schedulerOrError: SchedulerFragment;
-}> = ({errorsOnly = false, schedulerOrError}) => {
+  daemonHealth: DaemonHealthFragment | undefined;
+}> = ({errorsOnly = false, schedulerOrError, daemonHealth}) => {
   if (schedulerOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={schedulerOrError} />;
+  }
+
+  if (
+    schedulerOrError.__typename === 'Scheduler' &&
+    schedulerOrError.schedulerClass == 'DagsterDaemonScheduler'
+  ) {
+    let healthy = false;
+
+    if (daemonHealth) {
+      const schedulerHealths = daemonHealth.allDaemonStatuses.filter(
+        (daemon) => daemon.daemonType == 'SCHEDULER',
+      );
+      if (schedulerHealths) {
+        const schedulerHealth = schedulerHealths[0];
+        healthy = !!(schedulerHealth.required && schedulerHealth.healthy);
+      }
+    }
+
+    if (!healthy) {
+      return (
+        <Callout icon="time" intent={Intent.WARNING} title="The scheduler daemon is not running.">
+          <p>
+            See the{' '}
+            <a href="https://docs.dagster.io/overview/daemon">dagster-daemon documentation</a> for
+            more information on how to deploy the dagster-daemon process.
+          </p>
+        </Callout>
+      );
+    }
   }
 
   if (schedulerOrError.__typename === 'SchedulerNotDefinedError') {
