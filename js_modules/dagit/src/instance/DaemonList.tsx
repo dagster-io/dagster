@@ -20,7 +20,7 @@ const DaemonLabel = (props: DaemonLabelProps) => {
     case 'SCHEDULER':
       return <div>Scheduler</div>;
     case 'SENSOR':
-      return <div>Sensor</div>;
+      return <div>Sensors</div>;
     case 'QUEUED_RUN_COORDINATOR':
       return <div>Run queue</div>;
     default:
