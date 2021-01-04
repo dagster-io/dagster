@@ -104,7 +104,7 @@ def input_manager(
     .. code-block:: python
 
         @input_manager
-        def csv_loader(_, _resource_config):
+        def csv_loader(_):
             return read_csv("some/path")
 
         @solid(input_defs=[InputDefinition("input1", manager_key="csv_loader_key")])
@@ -116,11 +116,11 @@ def input_manager(
             my_solid()
 
         @input_manager(config_schema={"base_dir": str})
-        def csv_loader(_, resource_config):
-            return read_csv(resource_config["base_dir"] + "/some/path")
+        def csv_loader(context):
+            return read_csv(context.resource_config["base_dir"] + "/some/path")
 
         @input_manager(input_config_schema={"path": str})
-        def csv_loader(context, _resource_config):
+        def csv_loader(context):
             return read_csv(context.config["path"])
     """
 
@@ -139,13 +139,12 @@ def input_manager(
     return _wrap
 
 
-class ResourceConfigPassthroughInputManager(InputManager):
-    def __init__(self, config, load_fn):
-        self._config = config
+class InputManagerWrapper(InputManager):
+    def __init__(self, load_fn):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        return self._load_fn(context, self._config)
+        return self._load_fn(context)
 
 
 class _InputManagerDecoratorCallable:
@@ -166,8 +165,8 @@ class _InputManagerDecoratorCallable:
     def __call__(self, load_fn):
         check.callable_param(load_fn, "load_fn")
 
-        def _resource_fn(init_context):
-            return ResourceConfigPassthroughInputManager(init_context.resource_config, load_fn)
+        def _resource_fn(_):
+            return InputManagerWrapper(load_fn)
 
         input_manager_def = InputManagerDefinition(
             resource_fn=_resource_fn,

@@ -124,8 +124,8 @@ def output_manager(
     .. code-block:: python
 
         @output_manager(config_schema={"base_dir": str})
-        def csv_materializer(_, resource_config):
-            write_csv(resource_config["base_dir"] + "/some/path")
+        def csv_materializer(context):
+            write_csv(context.resource_config["base_dir"] + "/some/path")
 
         ...
 
@@ -139,7 +139,7 @@ def output_manager(
     .. code-block:: python
 
         @output_manager(output_config_schema={"path": str})
-        def csv_materializer(context, _resource_config):
+        def csv_materializer(context):
             write_csv(context.config["path"])
 
         ...
@@ -165,13 +165,12 @@ def output_manager(
     return _wrap
 
 
-class ResourceConfigPassthroughOutputManager(OutputManager):
-    def __init__(self, config, process_fn):
-        self._config = config
+class OutputManagerWrapper(OutputManager):
+    def __init__(self, process_fn):
         self._process_fn = process_fn
 
     def handle_output(self, context, obj):
-        return self._process_fn(context, self._config, obj)
+        return self._process_fn(context, obj)
 
 
 class _OutputManagerDecoratorCallable:
@@ -193,8 +192,8 @@ class _OutputManagerDecoratorCallable:
     def __call__(self, load_fn):
         check.callable_param(load_fn, "load_fn")
 
-        def _resource_fn(init_context):
-            return ResourceConfigPassthroughOutputManager(init_context.resource_config, load_fn)
+        def _resource_fn(_):
+            return OutputManagerWrapper(load_fn)
 
         output_manager_def = OutputManagerDefinition(
             resource_fn=_resource_fn,

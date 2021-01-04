@@ -13,7 +13,7 @@ def my_solid(_, dataframe):
 
 
 @input_manager
-def table1_loader(_, _resource_config):
+def table1_loader(_):
     return read_dataframe_from_table(name="table1")
 
 

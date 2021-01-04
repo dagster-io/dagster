@@ -107,6 +107,9 @@ class FromRootInputManager(
             self.config_data,
             metadata=self.input_def.metadata,
             dagster_type=self.input_def.dagster_type,
+            resource_config=step_context.environment_config.resources[
+                self.input_def.manager_key
+            ].get("config", {}),
         )
         return _load_input_with_input_manager(loader, load_input_context)
 
@@ -167,12 +170,19 @@ class FromStepOutput(
         )
 
     def get_load_context(self, step_context):
+        resource_config = (
+            step_context.environment_config.resources[self.input_def.manager_key].get("config", {})
+            if self.input_def.manager_key
+            else None
+        )
+
         return step_context.for_input_manager(
             self.input_def.name,
             self.config_data,
             self.input_def.metadata,
             self.input_def.dagster_type,
             self.step_output_handle,
+            resource_config,
         )
 
     def load_input_object(self, step_context):

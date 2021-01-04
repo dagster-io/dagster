@@ -30,7 +30,7 @@ def test_output_manager():
     adict = {}
 
     @output_manager
-    def my_output_manager(_context, _resource_config, obj):
+    def my_output_manager(_context, obj):
         adict["result"] = obj
 
     @solid(output_defs=[OutputDefinition(manager_key="my_output_manager")])
@@ -50,7 +50,7 @@ def test_configurable_output_manager():
     adict = {}
 
     @output_manager(output_config_schema=str)
-    def my_output_manager(context, _resource_config, obj):
+    def my_output_manager(context, obj):
         adict["result"] = (context.config, obj)
 
     @solid(output_defs=[OutputDefinition(name="my_output", manager_key="my_output_manager")])
@@ -72,11 +72,11 @@ def test_separate_output_manager_input_manager():
     adict = {}
 
     @output_manager
-    def my_output_manager(_context, _resource_config, obj):
+    def my_output_manager(_context, obj):
         adict["result"] = obj
 
     @input_manager
-    def my_input_manager(_context, _resource_config):
+    def my_input_manager(_context):
         return adict["result"]
 
     @solid(output_defs=[OutputDefinition(manager_key="my_output_manager")])
@@ -113,7 +113,7 @@ def test_type_materializer_and_configurable_output_manager():
     adict = {}
 
     @output_manager(output_config_schema={"output_manager_path": str})
-    def my_output_manager(_context, _resource_config, obj):
+    def my_output_manager(_context, obj):
         adict["result"] = obj
 
     my_type = DagsterType(lambda _, _val: True, name="my_type", materializer=my_materializer)
@@ -149,7 +149,7 @@ def test_type_materializer_and_nonconfigurable_output_manager():
         return AssetMaterialization(asset_key="a")
 
     @output_manager
-    def my_output_manager(_context, _resource_config, obj):
+    def my_output_manager(_context, obj):
         adict["result"] = obj
 
     my_type = DagsterType(lambda _, _val: True, name="my_type", materializer=my_materializer)
@@ -206,7 +206,7 @@ def test_output_manager_with_failure():
     _called_solid = False
 
     @output_manager
-    def should_fail(_, _resource_config, _obj):
+    def should_fail(_, _obj):
         raise Failure(
             description="Foolure",
             metadata_entries=[
@@ -369,3 +369,23 @@ def test_output_manager_no_input_manager():
         )
         def _should_fail():
             ingest_str(emit_str())
+
+
+def test_output_manager_resource_config():
+    @output_manager(config_schema={"is_foo": str})
+    def emit_foo(context, _obj):
+        assert context.resource_config["is_foo"] == "yes"
+
+    @solid(output_defs=[OutputDefinition(manager_key="emit_foo")])
+    def basic_solid(_):
+        return "foo"
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"emit_foo": emit_foo})])
+    def return_foo():
+        return basic_solid()
+
+    result = execute_pipeline(
+        return_foo, run_config={"resources": {"emit_foo": {"config": {"is_foo": "yes"}}}}
+    )
+
+    assert result.success

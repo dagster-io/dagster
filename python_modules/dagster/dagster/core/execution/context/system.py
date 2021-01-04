@@ -305,7 +305,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
         )
 
     def for_input_manager(
-        self, name, config, metadata, dagster_type, source_handle=None,
+        self, name, config, metadata, dagster_type, source_handle=None, resource_config=None,
     ):
         return InputContext(
             pipeline_name=self.pipeline_def.name,
@@ -317,6 +317,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             dagster_type=dagster_type,
             log_manager=self._log_manager,
             step_context=self,
+            resource_config=resource_config,
         )
 
     def get_output_manager(self, step_output_handle):
@@ -420,7 +421,7 @@ class HookContext(SystemExecutionContext):
 class OutputContext(
     namedtuple(
         "_OutputContext",
-        "step_key name pipeline_name run_id metadata mapping_key config solid_def dagster_type log version step_context",
+        "step_key name pipeline_name run_id metadata mapping_key config solid_def dagster_type log version step_context resource_config",
     )
 ):
     """
@@ -454,7 +455,9 @@ class OutputContext(
         version=None,
         # This is used internally by the intermediate storage adapter, we don't usually expect users to mock this.
         step_context=None,
+        resource_config=None,
     ):
+
         return super(OutputContext, cls).__new__(
             cls,
             step_key=check.str_param(step_key, "step_key"),
@@ -473,6 +476,7 @@ class OutputContext(
             step_context=check.opt_inst_param(
                 step_context, "step_context", SystemStepExecutionContext
             ),
+            resource_config=resource_config,
         )
 
     def get_run_scoped_output_identifier(self):
@@ -500,7 +504,7 @@ class OutputContext(
 class InputContext(
     namedtuple(
         "_InputContext",
-        "name pipeline_name solid_def config metadata upstream_output dagster_type log step_context",
+        "name pipeline_name solid_def config metadata upstream_output dagster_type log step_context resource_config",
     )
 ):
     """
@@ -517,6 +521,8 @@ class InputContext(
             we're loading.
         dagster_type (Optional[DagsterType]): The type of this input.
         log (Optional[DagsterLogManager]): The log manager to use for this input.
+        resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
+            initializes the InputManager.
     """
 
     def __new__(
@@ -532,6 +538,7 @@ class InputContext(
         log_manager=None,
         # This is used internally by the intermediate storage adapter, we don't expect users to mock this.
         step_context=None,
+        resource_config=None,
     ):
 
         return super(InputContext, cls).__new__(
@@ -549,6 +556,7 @@ class InputContext(
             step_context=check.opt_inst_param(
                 step_context, "step_context", SystemStepExecutionContext
             ),
+            resource_config=resource_config,
         )
 
 
@@ -591,6 +599,9 @@ def get_output_context(
     else:
         output_config = None
 
+    manager_key = execution_plan.get_step_output(step_output_handle).output_def.manager_key
+    resource_config = environment_config.resources[manager_key].get("config", {})
+
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
@@ -606,4 +617,5 @@ def get_output_context(
         if MEMOIZED_RUN_TAG in execution_plan.pipeline.get_definition().tags
         else None,
         step_context=step_context,
+        resource_config=resource_config,
     )
