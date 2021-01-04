@@ -1303,9 +1303,15 @@ class DagsterInstance:
             )
 
     def stop_sensor(self, job_origin_id):
+        from dagster.core.scheduler.job import JobStatus, SensorJobData
+
         job_state = self.get_job_state(job_origin_id)
         if job_state:
-            self.delete_job_state(job_origin_id)
+            self.update_job_state(
+                job_state.with_status(JobStatus.STOPPED).with_data(
+                    SensorJobData(datetime.utcnow().timestamp())
+                )
+            )
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)

@@ -1,5 +1,12 @@
+import os
+
 import pendulum
-from dagster.core.scheduler.job import JobStatus
+from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
+)
+from dagster.core.scheduler.job import JobState, JobStatus, JobType, ScheduleJobData
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -50,6 +57,24 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
         }
         cursor
       }
+    }
+  }
+}
+"""
+
+GET_UNLOADABLE_QUERY = """
+query getUnloadableSchedules {
+  unloadableJobStatesOrError(jobType: SCHEDULE) {
+    ... on JobStates {
+      results {
+        id
+        name
+        status
+      }
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }
@@ -126,6 +151,14 @@ def default_execution_params():
         "selector": {"name": "no_config_pipeline", "solidSelection": None},
         "mode": "default",
     }
+
+
+def _get_unloadable_schedule_origin(job_name):
+    working_directory = os.path.dirname(__file__)
+    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    return ExternalRepositoryOrigin(
+        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+    ).get_job_origin(job_name)
 
 
 def test_get_schedule_definitions_for_repository(graphql_context):
@@ -250,3 +283,30 @@ def test_get_single_schedule_definition(graphql_context):
         pendulum.create(2019, 3, 3, tz="US/Central").timestamp(),
         pendulum.create(2019, 3, 4, tz="US/Central").timestamp(),
     ]
+
+
+def test_get_unloadable_job(graphql_context):
+    instance = graphql_context.instance
+    initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59,)
+    with pendulum.test(initial_datetime):
+        instance.add_job_state(
+            JobState(
+                _get_unloadable_schedule_origin("unloadable_running"),
+                JobType.SCHEDULE,
+                JobStatus.RUNNING,
+                ScheduleJobData("0 0 * * *", pendulum.now("UTC").timestamp(),),
+            )
+        )
+
+        instance.add_job_state(
+            JobState(
+                _get_unloadable_schedule_origin("unloadable_stopped"),
+                JobType.SCHEDULE,
+                JobStatus.STOPPED,
+                ScheduleJobData("0 0 * * *", pendulum.now("UTC").timestamp(),),
+            )
+        )
+
+    result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
+    assert len(result.data["unloadableJobStatesOrError"]["results"]) == 1
+    assert result.data["unloadableJobStatesOrError"]["results"][0]["name"] == "unloadable_running"

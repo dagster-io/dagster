@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.scheduler.job import JobStatus
 
 from .utils import capture_dauphin_error
 
@@ -18,7 +19,9 @@ def get_unloadable_job_states_or_error(graphene_info, job_type=None):
     job_origin_ids = {job.get_external_origin_id() for job in external_jobs}
 
     unloadable_states = [
-        job_state for job_state in job_states if job_state.job_origin_id not in job_origin_ids
+        job_state
+        for job_state in job_states
+        if job_state.job_origin_id not in job_origin_ids and job_state.status == JobStatus.RUNNING
     ]
 
     return graphene_info.schema.type_named("JobStates")(
