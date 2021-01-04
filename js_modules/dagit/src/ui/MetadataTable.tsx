@@ -38,6 +38,9 @@ export const MetadataTable: React.FC<Props> = (props) => {
 
 const StyledTable = styled.table`
   border-spacing: 0;
+  td {
+    vertical-align: top;
+  }
 `;
 
 const Key = styled.div`

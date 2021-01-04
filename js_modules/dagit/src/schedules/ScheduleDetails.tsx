@@ -9,6 +9,7 @@ import {
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
 } from 'src/schedules/ScheduleMutations';
+import {SchedulePartitionStatus} from 'src/schedules/SchedulePartitionStatus';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
@@ -169,14 +170,7 @@ export const ScheduleDetails: React.FC<{
             {
               key: 'Partition set',
               value: partitionSet ? (
-                <Link
-                  to={workspacePathFromAddress(
-                    repoAddress,
-                    `/pipelines/${pipelineName}/partitions`,
-                  )}
-                >
-                  {partitionSet.name}
-                </Link>
+                <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
               ) : (
                 'None'
               ),
