@@ -57,7 +57,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
                 description={
                   <p>
                     This repository does not have any schedules defined. Visit the{' '}
-                    <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
+                    <a href="https://docs.dagster.io/overview/schedules-sensors/schedules">
                       scheduler documentation
                     </a>{' '}
                     for more information about scheduling pipeline runs in Dagster. .

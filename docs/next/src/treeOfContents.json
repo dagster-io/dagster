@@ -165,21 +165,32 @@
         ]
       },
       {
-        "name": "Partitions & Schedules",
-        "path": "/overview/scheduling-partitions/partitions",
+        "name": "Partitions & Backfills",
+        "path": "/overview/partitions-backfill/partitions",
         "childPath": true,
         "children": [
           {
             "name": "Partitions",
-            "path": "/overview/scheduling-partitions/partitions"
-          },
-          {
-            "name": "Schedules",
-            "path": "/overview/scheduling-partitions/schedules"
+            "path": "/overview/partitions-backfill/partitions"
           },
           {
             "name": "Backfills",
-            "path": "/overview/scheduling-partitions/backfill"
+            "path": "/overview/partitions-backfill/backfill"
+          }
+        ]
+      },
+      {
+        "name": "Schedules & Sensors",
+        "path": "/overview/schedules-sensors/schedules",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Schedules",
+            "path": "/overview/schedules-sensors/schedules"
+          },
+          {
+            "name": "Sensors",
+            "path": "/overview/schedules-sensors/sensors"
           }
         ]
       },

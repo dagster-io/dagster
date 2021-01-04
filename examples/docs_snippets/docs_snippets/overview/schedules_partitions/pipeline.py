@@ -28,3 +28,17 @@ def my_data_pipeline():
 
 
 # end_pipeline_marker_1
+
+# start_pipeline_marker_2
+@solid(config_schema={"filename": str})
+def process_file(context):
+    filename = context.solid_config["filename"]
+    context.log.info(filename)
+
+
+@pipeline
+def log_file_pipeline():
+    process_file()
+
+
+# end_pipeline_marker_2
