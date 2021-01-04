@@ -3,10 +3,8 @@ import inspect
 from dagster import check
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.utils.backcompat import experimental
 
 
-@experimental
 def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The

@@ -38,6 +38,15 @@ class JobContext:
 
 @whitelist_for_serdes
 class SkipReason(namedtuple("_SkipReason", "skip_message")):
+    """
+    Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
+    why no runs were requested.
+
+    Attributes:
+        skip_message (Optional[str]): A message displayed in dagit for why this evaluation resulted
+            in no requested runs.
+    """
+
     def __new__(cls, skip_message=None):
         return super(SkipReason, cls).__new__(
             cls, skip_message=check.opt_str_param(skip_message, "skip_message")

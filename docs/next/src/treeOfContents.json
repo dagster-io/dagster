@@ -285,8 +285,8 @@
             "path": "/_apidocs/cli"
           },
           {
-            "name": "Schedules",
-            "path": "/_apidocs/schedules"
+            "name": "Schedules & Sensors",
+            "path": "/_apidocs/schedules-sensors"
           },
           {
             "name": "Partitions",

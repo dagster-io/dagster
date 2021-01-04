@@ -1,5 +1,10 @@
 .. currentmodule:: dagster
 
+Run Requests
+============
+.. autoclass:: RunRequest
+.. autoclass:: SkipReason
+
 Schedules
 =========
 
@@ -11,3 +16,11 @@ Schedules
 
 .. autoclass:: ScheduleDefinition
 .. autoclass:: ScheduleExecutionContext
+
+Sensors
+=======
+
+.. autodecorator:: sensor
+
+.. autoclass:: SensorDefinition
+.. autoclass:: SensorExecutionContext

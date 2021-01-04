@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.utils import ensure_gen
-from dagster.utils.backcompat import experimental_class_warning
 
 from .job import JobContext, JobDefinition, JobType, RunRequest, SkipReason
 
@@ -61,7 +60,6 @@ class SensorDefinition(JobDefinition):
     def __init__(
         self, name, pipeline_name, evaluation_fn, solid_selection=None, mode=None,
     ):
-        experimental_class_warning("SensorDefinition")
         super(SensorDefinition, self).__init__(
             name,
             job_type=JobType.SENSOR,

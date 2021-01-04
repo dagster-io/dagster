@@ -1,8 +1,7 @@
 import inspect
 import os
 
-from dagster import check
-from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
+from dagster import RunRequest, SensorDefinition, SkipReason, check
 from dagster.core.errors import DagsterInvariantViolationError
 
 
