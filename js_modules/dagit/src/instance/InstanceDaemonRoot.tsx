@@ -46,12 +46,13 @@ export const InstanceDaemonRoot = () => {
             }
 
             const unloadableJobs = unloadableJobStatesOrError.results;
-            const hasSensors = repositoriesOrError.nodes.some(
-              (repository) => repository.sensors.length,
-            );
-            const hasSchedules = repositoriesOrError.nodes.some(
+            const withSchedules = repositoriesOrError.nodes.filter(
               (repository) => repository.schedules.length,
             );
+            const withSensors = repositoriesOrError.nodes.filter(
+              (repository) => repository.sensors.length,
+            );
+
             const hasDaemonScheduler =
               scheduler.__typename === 'Scheduler' &&
               scheduler.schedulerClass === 'DagsterDaemonScheduler';
@@ -63,7 +64,7 @@ export const InstanceDaemonRoot = () => {
               </Group>
             );
 
-            const scheduleDefinitionsSection = hasSchedules ? (
+            const scheduleDefinitionsSection = withSchedules.length ? (
               <Box padding={{top: 16}}>
                 <Group direction="column" spacing={12}>
                   <Box
@@ -75,7 +76,7 @@ export const InstanceDaemonRoot = () => {
                     <SchedulerTimezoneNote schedulerOrError={scheduler} />
                   </Box>
                   {hasDaemonScheduler ? null : <SchedulerInfo schedulerOrError={scheduler} />}
-                  {repositoriesOrError.nodes.map((repository) => (
+                  {withSchedules.map((repository) => (
                     <Group direction="column" spacing={12} key={repository.name}>
                       <strong>{`${repository.name}@${repository.location.name}`}</strong>
                       <SchedulesTable
@@ -88,7 +89,7 @@ export const InstanceDaemonRoot = () => {
               </Box>
             ) : null;
 
-            const sensorDefinitionsSection = hasSensors ? (
+            const sensorDefinitionsSection = withSensors.length ? (
               <Group direction="column" spacing={12}>
                 <Box
                   flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
@@ -97,7 +98,7 @@ export const InstanceDaemonRoot = () => {
                 >
                   <Subheading>Sensors</Subheading>
                 </Box>
-                {repositoriesOrError.nodes.map((repository) =>
+                {withSensors.map((repository) =>
                   repository.sensors.length ? (
                     <Group direction="column" spacing={12} key={repository.name}>
                       <strong>{`${repository.name}@${repository.location.name}`}</strong>
