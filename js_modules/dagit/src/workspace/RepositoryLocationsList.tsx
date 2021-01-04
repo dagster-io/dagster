@@ -1,12 +1,11 @@
 import {Button, Classes, Colors, Dialog, NonIdealState, Spinner, Tag} from '@blueprintjs/core';
 import React from 'react';
-import styled from 'styled-components';
 
 import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
-import {FontFamily} from 'src/ui/styles';
+import {Trace} from 'src/ui/Trace';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RootRepositoriesQuery';
 
@@ -120,14 +119,3 @@ export const RepositoryLocationsList = () => {
     </Table>
   );
 };
-
-const Trace = styled.div`
-  background-color: ${Colors.LIGHT_GRAY1};
-  color: rgb(41, 50, 56);
-  font-family: ${FontFamily.monospace};
-  font-size: 12px;
-  max-height: 90vh;
-  overflow: auto;
-  white-space: pre;
-  padding: 16px;
-`;

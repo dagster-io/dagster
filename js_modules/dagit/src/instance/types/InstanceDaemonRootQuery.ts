@@ -10,11 +10,25 @@ import { DaemonType, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from
 // GraphQL query operation: InstanceDaemonRootQuery
 // ====================================================
 
+export interface InstanceDaemonRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface InstanceDaemonRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: InstanceDaemonRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+}
+
 export interface InstanceDaemonRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
+  lastHeartbeatError: InstanceDaemonRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
   lastHeartbeatTime: number | null;
 }
 

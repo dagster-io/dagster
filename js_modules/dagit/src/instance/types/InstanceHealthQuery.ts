@@ -52,11 +52,25 @@ export interface InstanceHealthQuery_repositoryLocationsOrError_PythonError {
 
 export type InstanceHealthQuery_repositoryLocationsOrError = InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection | InstanceHealthQuery_repositoryLocationsOrError_PythonError;
 
+export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+}
+
 export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
+  lastHeartbeatError: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
   lastHeartbeatTime: number | null;
 }
 

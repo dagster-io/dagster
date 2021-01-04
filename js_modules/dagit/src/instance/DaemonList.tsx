@@ -2,8 +2,9 @@ import {gql} from '@apollo/client';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {browserTimezone, timestampToString} from 'src/TimeComponents';
-import {DaemonHealthTag} from 'src/instance/DaemonHealthTag';
+import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
   DaemonHealthFragment,
   DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
@@ -43,8 +44,8 @@ export const DaemonList = (props: Props) => {
     <Table striped style={{width: '100%'}}>
       <thead>
         <tr>
-          <th style={{width: '30%'}}>Daemon</th>
-          <th style={{width: '20%'}}>Status</th>
+          <th style={{width: '15%'}}>Daemon</th>
+          <th style={{width: '25%'}}>Status</th>
           <th>Last heartbeat</th>
         </tr>
       </thead>
@@ -58,10 +59,7 @@ export const DaemonList = (props: Props) => {
                   <DaemonLabel daemon={daemon} />
                 </td>
                 <td>
-                  <DaemonHealthTag
-                    daemon={daemon}
-                    tooltip={daemon.healthy ? undefined : 'No recent heartbeat'}
-                  />
+                  <DaemonHealth daemon={daemon} />
                 </td>
                 <td>
                   {daemon.lastHeartbeatTime
@@ -85,7 +83,12 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
       daemonType
       required
       healthy
+      lastHeartbeatError {
+        __typename
+        ...PythonErrorFragment
+      }
       lastHeartbeatTime
     }
   }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
