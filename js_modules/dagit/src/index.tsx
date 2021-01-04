@@ -68,10 +68,10 @@ const timeStartLink = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
-const logTimeLink = new ApolloLink((operation, forward) => {
+const logLink = new ApolloLink((operation, forward) => {
   return forward(operation).map((data) => {
     const time = performance.now() - operation.getContext().start;
-    debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`);
+    debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
     return data;
   });
 });
@@ -79,7 +79,7 @@ const logTimeLink = new ApolloLink((operation, forward) => {
 const client = new ApolloClient({
   cache: AppCache,
   link: ApolloLink.from([
-    logTimeLink,
+    logLink,
     AppErrorLink(),
     timeStartLink,
     new WebSocketLink(websocketClient),
