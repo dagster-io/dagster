@@ -1,5 +1,5 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
-import {Tooltip} from '@blueprintjs/core';
+import {Button, Tooltip} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,15 +7,21 @@ import styled from 'styled-components';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {stringFromValue, TokenizingFieldValue} from 'src/TokenizingField';
-import {PartitionProgressQuery} from 'src/partitions/types/PartitionProgressQuery';
+import {
+  PartitionProgressQuery,
+  PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results,
+} from 'src/partitions/types/PartitionProgressQuery';
 import {IRunStatus, RunStatusDot} from 'src/runs/RunStatusDots';
 import {
+  doneStatuses,
   failedStatuses,
   inProgressStatuses,
   queuedStatuses,
   successStatuses,
 } from 'src/runs/RunStatuses';
+import {TerminationDialog} from 'src/runs/TerminationDialog';
 import {POLL_INTERVAL} from 'src/runs/useCursorPaginatedQuery';
+import {Box} from 'src/ui/Box';
 import {useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
@@ -34,6 +40,7 @@ export const PartitionProgress = (props: Props) => {
     return {key, value};
   });
   const [shouldPoll, setShouldPoll] = React.useState(true);
+  const [isTerminating, setIsTerminating] = React.useState(false);
 
   const {data, networkStatus, refetch} = useQuery<PartitionProgressQuery>(
     PARTITION_PROGRESS_QUERY,
@@ -55,7 +62,9 @@ export const PartitionProgress = (props: Props) => {
   });
   const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
 
-  const results = React.useMemo(() => {
+  const results:
+    | PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results[]
+    | null = React.useMemo(() => {
     if (!data || !data?.pipelineRunsOrError) {
       return null;
     }
@@ -65,8 +74,16 @@ export const PartitionProgress = (props: Props) => {
       return null;
     }
 
-    const total = runs.results.length;
-    const {queued, inProgress, succeeded, failed} = runs.results.reduce(
+    return runs.results;
+  }, [data]);
+
+  const counts = React.useMemo(() => {
+    if (!results) {
+      return null;
+    }
+
+    const total = results.length;
+    const {queued, inProgress, succeeded, failed} = results.reduce(
       (accum, {status}) => {
         return {
           queued: accum.queued + (queuedStatuses.has(status) ? 1 : 0),
@@ -78,20 +95,20 @@ export const PartitionProgress = (props: Props) => {
       {queued: 0, inProgress: 0, succeeded: 0, failed: 0},
     );
     return {queued, inProgress, succeeded, failed, total};
-  }, [data]);
-
-  React.useEffect(() => {
-    if (results) {
-      const {total, succeeded, failed} = results;
-      setShouldPoll(total !== succeeded + failed);
-    }
   }, [results]);
 
-  if (!results) {
+  React.useEffect(() => {
+    if (counts) {
+      const {total, succeeded, failed} = counts;
+      setShouldPoll(total !== succeeded + failed);
+    }
+  }, [counts]);
+
+  if (!counts || !results) {
     return <div />;
   }
 
-  const {queued, inProgress, succeeded, failed, total} = results;
+  const {queued, inProgress, succeeded, failed, total} = counts;
   const finished = succeeded + failed;
 
   const table = (
@@ -115,29 +132,48 @@ export const PartitionProgress = (props: Props) => {
     </TooltipTable>
   );
 
+  const unfinishedMap: {[id: string]: boolean} = results
+    .filter((run) => !doneStatuses.has(run?.status))
+    .reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
+
   return (
-    <Group direction="row" spacing={8}>
-      <div style={{fontVariantNumeric: 'tabular-nums'}}>
-        <Tooltip content={table}>
-          <Link
-            to={workspacePathFromAddress(
-              repoAddress,
-              `/pipelines/${pipelineName}/runs?${qs.stringify({q: stringFromValue(runTags)})}`,
-            )}
-          >
-            {finished}/{total} runs
-          </Link>
-        </Tooltip>{' '}
-        done ({((finished / total) * 100).toFixed(1)}%)
-      </div>
-      {shouldPoll ? (
+    <Box flex={{alignItems: 'center', grow: 1, justifyContent: 'space-between'}}>
+      <Group direction="row" spacing={8} alignItems="center">
+        <div style={{fontVariantNumeric: 'tabular-nums'}}>
+          <Tooltip content={table}>
+            <Link
+              to={workspacePathFromAddress(
+                repoAddress,
+                `/pipelines/${pipelineName}/runs?${qs.stringify({q: stringFromValue(runTags)})}`,
+              )}
+            >
+              {finished}/{total} runs
+            </Link>
+          </Tooltip>{' '}
+          done ({((finished / total) * 100).toFixed(1)}%)
+        </div>
+        {Object.keys(unfinishedMap).length ? (
+          <>
+            <Button minimal icon="stop" intent="danger" onClick={() => setIsTerminating(true)}>
+              Terminate
+            </Button>
+            <TerminationDialog
+              isOpen={isTerminating}
+              onClose={() => setIsTerminating(false)}
+              onComplete={() => refetch()}
+              selectedRuns={unfinishedMap}
+            />
+          </>
+        ) : null}
+      </Group>
+      {shouldPoll && !isTerminating ? (
         <RefreshableCountdown
           refreshing={countdownRefreshing}
           seconds={Math.floor(timeRemaining / 1000)}
           onRefresh={() => refetch()}
         />
       ) : null}
-    </Group>
+    </Box>
   );
 };
 
@@ -185,6 +221,7 @@ const PARTITION_PROGRESS_QUERY = gql`
       ... on PipelineRuns {
         results {
           id
+          canTerminate
           status
         }
       }

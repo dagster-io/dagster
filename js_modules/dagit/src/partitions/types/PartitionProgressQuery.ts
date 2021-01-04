@@ -13,6 +13,7 @@ import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes
 export interface PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   id: string;
+  canTerminate: boolean;
   status: PipelineRunStatus;
 }
 

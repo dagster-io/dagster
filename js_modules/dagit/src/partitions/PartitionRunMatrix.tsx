@@ -193,14 +193,16 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             onChange={props.setRunTags}
             tokens={props.runTags}
           />
-          {props.runTags.length ? (
+        </Group>
+        {props.runTags.length ? (
+          <Box flex={{grow: 1}} margin={{left: 12, right: 8}}>
             <PartitionProgress
               pipelineName={props.pipelineName}
               repoAddress={props.repoAddress}
               runTags={props.runTags}
             />
-          ) : null}
-        </Group>
+          </Box>
+        ) : null}
         <Popover
           position="bottom-left"
           content={
