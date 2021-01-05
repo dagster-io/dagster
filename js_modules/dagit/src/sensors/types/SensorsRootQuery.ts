@@ -207,11 +207,25 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_PythonError {
 
 export type SensorsRootQuery_unloadableJobStatesOrError = SensorsRootQuery_unloadableJobStatesOrError_JobStates | SensorsRootQuery_unloadableJobStatesOrError_PythonError;
 
+export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+}
+
 export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
+  lastHeartbeatError: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
   lastHeartbeatTime: number | null;
 }
 
