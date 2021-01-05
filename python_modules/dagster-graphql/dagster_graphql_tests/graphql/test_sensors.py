@@ -219,7 +219,11 @@ def test_sensor_next_ticks(graphql_context):
     assert not next_tick
 
     # test default sensor with last tick
-    execute_sensor_iteration(graphql_context.instance, get_default_daemon_logger("SensorDaemon"))
+    list(
+        execute_sensor_iteration(
+            graphql_context.instance, get_default_daemon_logger("SensorDaemon")
+        )
+    )
     result = execute_dagster_graphql(
         graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
     )

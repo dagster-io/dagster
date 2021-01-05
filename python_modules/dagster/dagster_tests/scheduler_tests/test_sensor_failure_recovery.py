@@ -17,10 +17,12 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime):
-                execute_sensor_iteration(
-                    instance,
-                    get_default_daemon_logger("SensorDaemon"),
-                    debug_crash_flags=debug_crash_flags,
+                list(
+                    execute_sensor_iteration(
+                        instance,
+                        get_default_daemon_logger("SensorDaemon"),
+                        debug_crash_flags=debug_crash_flags,
+                    )
                 )
         finally:
             cleanup_test_instance(instance)

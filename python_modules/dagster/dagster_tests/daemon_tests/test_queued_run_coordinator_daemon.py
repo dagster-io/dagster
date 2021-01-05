@@ -42,7 +42,7 @@ def test_attempt_to_launch_runs_filter(instance):
     )
 
     coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run"]
 
@@ -57,7 +57,7 @@ def test_attempt_to_launch_runs_no_queued(instance):
     )
 
     coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert instance.run_launcher.queue() == []
 
@@ -87,7 +87,7 @@ def test_get_queued_runs_max_runs(instance, num_in_progress_runs):
     coordinator = QueuedRunCoordinatorDaemon(
         instance, interval_seconds=5, max_concurrent_runs=max_runs,
     )
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
 
@@ -102,7 +102,7 @@ def test_priority(instance):
     )
 
     coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == [
         "hi-pri-run",
@@ -120,7 +120,7 @@ def test_priority_on_malformed_tag(instance):
     )
 
     coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
 
@@ -141,7 +141,7 @@ def test_tag_limits(instance):
         max_concurrent_runs=10,
         tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
     )
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "large-1"]
 
@@ -171,7 +171,7 @@ def test_multiple_tag_limits(instance):
             {"key": "user", "value": "johann", "limit": 2},
         ],
     )
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
@@ -198,6 +198,6 @@ def test_overlapping_tag_limits(instance):
             {"key": "foo", "value": "bar", "limit": 1},
         ],
     )
-    coordinator.run_iteration()
+    list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]

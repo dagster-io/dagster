@@ -58,7 +58,7 @@ _SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 def execute_scheduler_iteration(instance, logger, max_catchup_runs):
     end_datetime_utc = pendulum.now("UTC")
-    launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
+    return launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
 
 
 def launch_scheduled_runs(
@@ -100,6 +100,7 @@ def launch_scheduled_runs(
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info()).to_string()
             logger.error(f"Scheduler failed for {schedule_state.job_name} : {error_info}")
+        yield
 
 
 def launch_scheduled_runs_for_schedule(

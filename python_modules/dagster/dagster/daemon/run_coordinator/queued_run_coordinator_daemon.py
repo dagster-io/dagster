@@ -133,6 +133,8 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             tag_concurrency_limits_counter.update_counters_with_launched_run(run)
             num_dequeued_runs += 1
 
+            yield
+
         self._logger.info("Launched {} runs.".format(num_dequeued_runs))
 
     def _get_queued_runs(self):

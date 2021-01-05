@@ -385,9 +385,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"),
-            )
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC"),))
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 0
@@ -403,9 +401,7 @@ def test_simple_schedule(external_repo_context, capfd):
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"),
-            )
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC"),))
 
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -441,9 +437,7 @@ def test_simple_schedule(external_repo_context, capfd):
             )
 
             # Verify idempotence
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"),
-            )
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC"),))
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -452,9 +446,7 @@ def test_simple_schedule(external_repo_context, capfd):
         # Verify advancing in time but not going past a tick doesn't add any new runs
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"),
-            )
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC"),))
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -465,9 +457,7 @@ def test_simple_schedule(external_repo_context, capfd):
             capfd.readouterr()
 
             # Traveling two more days in the future before running results in two new ticks
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"),
-            )
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC"),))
             assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
@@ -493,7 +483,7 @@ def test_simple_schedule(external_repo_context, capfd):
             )
 
             # Check idempotence again
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
@@ -505,7 +495,7 @@ def test_no_started_schedules(external_repo_context, capfd):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         schedule_origin = external_schedule.get_external_origin()
 
-        launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+        list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 0
 
         ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -535,7 +525,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
 
                 instance.start_schedule_and_update_storage_state(external_schedule)
 
-                launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+                list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
                 assert instance.get_runs_count() == 1
 
@@ -571,7 +561,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                 )
 
                 # Verify idempotence
-                launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+                list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
                 assert instance.get_runs_count() == 1
                 ticks = instance.get_job_ticks(schedule_origin.get_id())
                 assert len(ticks) == 1
@@ -586,7 +576,7 @@ def test_bad_env_fn(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -622,7 +612,7 @@ def test_bad_should_execute(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -661,7 +651,7 @@ def test_skip(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -693,7 +683,7 @@ def test_wrong_config(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
 
@@ -775,7 +765,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             )
             instance.add_job_state(unloadable_schedule_state)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
@@ -815,7 +805,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
             new_now = pendulum.now("UTC")
-            launch_scheduled_runs(instance, logger(), new_now)
+            list(launch_scheduled_runs(instance, logger(), new_now))
 
             assert instance.get_runs_count() == 3
             wait_for_all_runs_to_start(instance)
@@ -881,7 +871,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
             # Start schedule exactly at midnight
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -906,7 +896,7 @@ def test_bad_load(capfd):
 
         initial_datetime = initial_datetime.add(seconds=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
 
@@ -920,7 +910,7 @@ def test_bad_load(capfd):
 
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(fake_origin.get_id())
             assert len(ticks) == 0
@@ -940,9 +930,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
         initial_datetime = initial_datetime.add(seconds=2)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"),
-            )
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC"),))
 
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
@@ -970,7 +958,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
         initial_datetime = initial_datetime.add(hours=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 3
 
@@ -1013,7 +1001,7 @@ def test_launch_failure(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
 
@@ -1059,7 +1047,7 @@ def test_partitionless_schedule(capfd):
         # Travel enough in the future that many ticks have passed, but only one run executes
         initial_datetime = initial_datetime.add(days=5)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 1
 
             wait_for_all_runs_to_start(instance)
@@ -1108,8 +1096,8 @@ def test_max_catchup_runs(capfd):
         initial_datetime = initial_datetime.add(days=5)
         with pendulum.test(initial_datetime):
             # Day is now March 4 at 11:59PM
-            launch_scheduled_runs(
-                instance, logger(), pendulum.now("UTC"), max_catchup_runs=2,
+            list(
+                launch_scheduled_runs(instance, logger(), pendulum.now("UTC"), max_catchup_runs=2,)
             )
 
             assert instance.get_runs_count() == 2
@@ -1180,7 +1168,7 @@ def test_multi_runs(external_repo_context, capfd):
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 0
@@ -1196,7 +1184,7 @@ def test_multi_runs(external_repo_context, capfd):
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -1229,7 +1217,7 @@ def test_multi_runs(external_repo_context, capfd):
             )
 
             # Verify idempotence
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -1240,7 +1228,7 @@ def test_multi_runs(external_repo_context, capfd):
             capfd.readouterr()
 
             # Traveling one more day in the future before running results in a tick
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 4
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 2
@@ -1270,7 +1258,7 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
             schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1

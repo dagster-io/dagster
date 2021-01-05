@@ -174,6 +174,7 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                     error_info=serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
                 )
             )
+        yield
 
 
 def _evaluate_sensor(

@@ -67,6 +67,9 @@ class RepositoryLocationOrigin(ABC):
     def get_display_metadata(self):
         pass
 
+    def get_id(self):
+        return create_snapshot_id(self)
+
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(

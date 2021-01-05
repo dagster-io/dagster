@@ -148,7 +148,7 @@ def test_simple_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -168,7 +168,7 @@ def test_simple_sensor(external_repo_context, capfd):
             freeze_datetime = freeze_datetime.add(seconds=1)
 
         with pendulum.test(freeze_datetime):
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
             wait_for_all_runs_to_start(instance)
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
@@ -208,7 +208,7 @@ def test_error_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -251,7 +251,7 @@ def test_launch_failure(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
 
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
@@ -283,7 +283,7 @@ def test_launch_once(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
             wait_for_all_runs_to_start(instance)
 
             assert instance.get_runs_count() == 1
@@ -299,7 +299,7 @@ def test_launch_once(external_repo_context, capfd):
             )
 
             # run again, ensure
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2

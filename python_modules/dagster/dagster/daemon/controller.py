@@ -81,22 +81,33 @@ class DagsterDaemonController:
         return list(self._daemons.values())
 
     def run_iteration(self, curr_time):
+        daemon_generators = []  # list of daemon generator functions
         for daemon in self.daemons:
             if (not daemon.last_iteration_time) or (
                 (curr_time - daemon.last_iteration_time).total_seconds() >= daemon.interval_seconds
             ):
                 daemon.last_iteration_time = curr_time
                 daemon.last_iteration_exception = None
-                try:
-                    daemon.run_iteration()
-                except Exception:  # pylint: disable=broad-except
-                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                    daemon.last_iteration_exception = error_info
-                    self._logger.error(
-                        "Caught error in {}:\n{}".format(daemon.daemon_type(), error_info)
-                    )
+                daemon_generators.append((daemon, daemon.run_iteration()))
 
-                self._check_add_heartbeat(daemon, curr_time)
+        # Call next on each daemon generator function, rotating through the daemons.
+        while len(daemon_generators) > 0:
+            daemon, generator = daemon_generators.pop(0)
+            try:
+                next(generator)
+            except StopIteration:
+                pass  # don't add the generator back
+            except Exception:  # pylint: disable=broad-except
+                # log errors in daemon
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                daemon.last_iteration_exception = error_info
+                self._logger.error(
+                    "Caught error in {}:\n{}".format(daemon.daemon_type(), error_info)
+                )
+            else:
+                # append to the back, so other daemons will execute next
+                daemon_generators.append((daemon, generator))
+            self._check_add_heartbeat(daemon, curr_time)
 
     def _check_add_heartbeat(self, daemon, curr_time):
         """

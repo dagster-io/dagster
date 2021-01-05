@@ -45,7 +45,12 @@ class DagsterDaemon:
 
     @abstractmethod
     def run_iteration(self):
-        pass
+        """
+        Execute the daemon. In order to avoid blocking the controller thread for extended periods,
+        daemons can yield control during this method.
+
+        returns: generator (NoneType)
+        """
 
 
 class SchedulerDaemon(DagsterDaemon):
@@ -58,7 +63,7 @@ class SchedulerDaemon(DagsterDaemon):
         return DaemonType.SCHEDULER
 
     def run_iteration(self):
-        execute_scheduler_iteration(self._instance, self._logger, self._max_catchup_runs)
+        return execute_scheduler_iteration(self._instance, self._logger, self._max_catchup_runs)
 
 
 class SensorDaemon(DagsterDaemon):
@@ -67,4 +72,4 @@ class SensorDaemon(DagsterDaemon):
         return DaemonType.SENSOR
 
     def run_iteration(self):
-        execute_sensor_iteration(self._instance, self._logger)
+        return execute_sensor_iteration(self._instance, self._logger)

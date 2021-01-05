@@ -22,8 +22,13 @@ def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, 
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime):
-                launch_scheduled_runs(
-                    instance, logger(), pendulum.now("UTC"), debug_crash_flags=debug_crash_flags,
+                list(
+                    launch_scheduled_runs(
+                        instance,
+                        logger(),
+                        pendulum.now("UTC"),
+                        debug_crash_flags=debug_crash_flags,
+                    )
                 )
         finally:
             cleanup_test_instance(instance)

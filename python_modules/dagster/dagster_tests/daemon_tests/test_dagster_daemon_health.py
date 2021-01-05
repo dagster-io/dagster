@@ -2,6 +2,7 @@ import pendulum
 from dagster import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
 from dagster.daemon.controller import (
+    DAEMON_HEARTBEAT_INTERVAL_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
     get_daemon_status,
@@ -53,6 +54,7 @@ def test_error_daemon(monkeypatch):
 
         def run_iteration_error(_):
             raise DagsterInvariantViolationError("foobar")
+            yield  # pylint: disable=unreachable
 
         monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
         controller = DagsterDaemonController(instance)
