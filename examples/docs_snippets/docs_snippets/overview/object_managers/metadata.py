@@ -26,7 +26,7 @@ def solid2(_, _input_dataframe):
 
 # solids_end_marker
 
-# asset_store_start_marker
+# object_manager_start_marker
 class MyObjectManager(ObjectManager):
     def handle_output(self, context, obj):
         table_name = context.metadata["table"]
@@ -44,7 +44,7 @@ def my_object_manager(_):
     return MyObjectManager()
 
 
-# asset_store_end_marker
+# object_manager_end_marker
 
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_object_manager})])

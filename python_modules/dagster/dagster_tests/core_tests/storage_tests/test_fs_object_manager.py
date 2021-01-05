@@ -25,8 +25,8 @@ def define_pipeline(object_manager):
 
 def test_fs_object_manager():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(asset_store)
+        object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_pipeline(object_manager)
 
         result = execute_pipeline(pipeline_def)
         assert result.success

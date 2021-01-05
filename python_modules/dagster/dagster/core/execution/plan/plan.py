@@ -112,7 +112,7 @@ class _PlanBuilder:
             else [step.handle for step in self._steps.values()]
         )
 
-        check_asset_store_intermediate_storage(self.mode_definition, self.environment_config)
+        check_object_manager_intermediate_storage(self.mode_definition, self.environment_config)
 
         return ExecutionPlan(
             self.pipeline, step_dict, step_handles_to_execute, self.environment_config,
@@ -513,27 +513,26 @@ class ExecutionPlan(
         return True
 
 
-def check_asset_store_intermediate_storage(mode_def, environment_config):
-    """Only one of asset_store and intermediate_storage should be set."""
+def check_object_manager_intermediate_storage(mode_def, environment_config):
+    """Only one of object_manager and intermediate_storage should be set."""
     # pylint: disable=comparison-with-callable
     from dagster.core.storage.system_storage import mem_intermediate_storage
-    from dagster.core.storage.asset_store import mem_asset_store
 
     intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
     intermediate_storage_is_default = (
         intermediate_storage_def is None or intermediate_storage_def == mem_intermediate_storage
     )
 
-    asset_store = mode_def.resource_defs["object_manager"]
-    asset_store_is_default = asset_store == mem_asset_store
+    object_manager = mode_def.resource_defs["object_manager"]
+    object_manager_is_default = object_manager == mem_object_manager
 
-    if not intermediate_storage_is_default and not asset_store_is_default:
+    if not intermediate_storage_is_default and not object_manager_is_default:
         raise DagsterInvariantViolationError(
             'You have specified an intermediate storage, "{intermediate_storage_name}", and have '
-            "also specified a default asset store. You must specify only one. To avoid specifying "
+            "also specified a default object manager. You must specify only one. To avoid specifying "
             "an intermediate storage, omit the intermediate_storage_defs argument to your"
             'ModeDefinition and omit "intermediate_storage" in your run config. To avoid '
-            'specifying a default asset store, omit the "object_manager" key from the '
+            'specifying a default object manager, omit the "object_manager" key from the '
             "resource_defs argument to your ModeDefinition.".format(
                 intermediate_storage_name=intermediate_storage_def.name
             )

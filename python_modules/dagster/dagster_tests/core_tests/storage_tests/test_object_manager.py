@@ -17,8 +17,8 @@ from dagster import (
 )
 from dagster.core.definitions.events import AssetStoreOperationType
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.storage.asset_store import mem_asset_store
 from dagster.core.storage.fs_object_manager import custom_path_fs_object_manager, fs_object_manager
+from dagster.core.storage.mem_object_manager import mem_object_manager
 from dagster.core.storage.object_manager import ObjectManager, object_manager
 
 
@@ -108,8 +108,8 @@ def define_pipeline(manager, metadata_dict):
 
 def test_result_output():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(asset_store, {})
+        default_object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_pipeline(default_object_manager, {})
 
         result = execute_pipeline(pipeline_def)
         assert result.success
@@ -121,8 +121,8 @@ def test_result_output():
 
 def test_fs_object_manager_reexecution():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        default_asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(default_asset_store, {})
+        default_object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_pipeline(default_object_manager, {})
         instance = DagsterInstance.ephemeral()
 
         result = execute_pipeline(pipeline_def, instance=instance)
@@ -162,14 +162,14 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
 
 def test_step_subset_with_custom_paths():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        asset_store = custom_path_fs_object_manager
+        default_object_manager = custom_path_fs_object_manager
         # pass hardcoded file path via asset_metadata
         test_asset_metadata_dict = {
             "solid_a": {"path": os.path.join(tmpdir_path, "a")},
             "solid_b": {"path": os.path.join(tmpdir_path, "b")},
         }
 
-        pipeline_def = define_pipeline(asset_store, test_asset_metadata_dict)
+        pipeline_def = define_pipeline(default_object_manager, test_asset_metadata_dict)
         events = execute_pipeline_with_steps(pipeline_def)
         for evt in events:
             assert not evt.is_failure
@@ -251,7 +251,7 @@ def test_different_object_managers():
     def solid_b(_context, a):
         assert a == 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_object_manager": mem_asset_store})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_object_manager": mem_object_manager})])
     def my_pipeline():
         solid_b(solid_a())
 
@@ -286,7 +286,7 @@ def test_set_object_manager_and_intermediate_storage():
         execute_pipeline(my_pipeline)
 
 
-def test_set_asset_store_configure_intermediate_storage():
+def test_set_object_manager_configure_intermediate_storage():
     with pytest.raises(DagsterInvariantViolationError):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_object_manager})])
@@ -298,7 +298,7 @@ def test_set_asset_store_configure_intermediate_storage():
 
 def test_fan_in():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
+        default_object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
 
         @solid
         def input_solid1(_):
@@ -312,7 +312,9 @@ def test_fan_in():
         def solid1(_, input1):
             assert input1 == [1, 2]
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": asset_store})])
+        @pipeline(
+            mode_defs=[ModeDefinition(resource_defs={"object_manager": default_object_manager})]
+        )
         def my_pipeline():
             solid1(input1=[input_solid1(), input_solid2()])
 

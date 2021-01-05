@@ -161,7 +161,7 @@ class _ObjectManagerDecoratorCallable:
     def __call__(self, fn):
         check.callable_param(fn, "fn")
 
-        asset_store_def = ObjectManagerDefinition(
+        object_manager_def = ObjectManagerDefinition(
             resource_fn=fn,
             config_schema=self.config_schema,
             description=self.description,
@@ -171,6 +171,6 @@ class _ObjectManagerDecoratorCallable:
             input_config_schema=self.input_config_schema,
         )
 
-        update_wrapper(asset_store_def, wrapped=fn)
+        update_wrapper(object_manager_def, wrapped=fn)
 
-        return asset_store_def
+        return object_manager_def

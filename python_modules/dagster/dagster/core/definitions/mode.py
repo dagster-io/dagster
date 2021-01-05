@@ -59,10 +59,10 @@ class ModeDefinition(
         if resource_defs and "object_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
-            from dagster.core.storage.asset_store import mem_asset_store
+            from dagster.core.storage.mem_object_manager import mem_object_manager
 
             resource_defs_with_defaults = merge_dicts(
-                {"object_manager": mem_asset_store}, resource_defs or {}
+                {"object_manager": mem_object_manager}, resource_defs or {}
             )
 
         return super(ModeDefinition, cls).__new__(

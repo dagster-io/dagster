@@ -159,7 +159,7 @@ class FromStepOutput(
 
     def can_load_input_object(self, step_context):
         source_handle = self.step_output_handle
-        if step_context.using_asset_store(source_handle):
+        if step_context.using_object_manager(source_handle):
             # asset store does not have a has check so assume present
             return True
         if self.input_def.manager_key:
