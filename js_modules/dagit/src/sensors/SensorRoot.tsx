@@ -5,10 +5,12 @@ import * as React from 'react';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {SensorTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {SensorDetails} from 'src/sensors/SensorDetails';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {SensorInfo} from 'src/sensors/SensorInfo';
 import {SensorPreviousRuns} from 'src/sensors/SensorPreviousRuns';
 import {SensorTimeline} from 'src/sensors/SensorTimeline';
 import {SensorRootQuery} from 'src/sensors/types/SensorRootQuery';
@@ -81,6 +83,7 @@ export const SensorRoot: React.FC<{
             <TopNav breadcrumbs={breadcrumbs} />
             <Page>
               <Group direction="column" spacing={24}>
+                <SensorInfo daemonHealth={instance.daemonHealth} />
                 <SensorDetails
                   repoAddress={repoAddress}
                   sensor={sensorOrError}
@@ -120,6 +123,7 @@ const SENSOR_ROOT_QUERY = gql`
       }
     }
     instance {
+      ...InstanceHealthFragment
       daemonHealth {
         daemonStatus(daemonType: SENSOR) {
           healthy
@@ -128,4 +132,5 @@ const SENSOR_ROOT_QUERY = gql`
     }
   }
   ${SENSOR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;

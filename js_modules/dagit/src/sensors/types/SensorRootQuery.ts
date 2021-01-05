@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SensorSelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { SensorSelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorRootQuery
@@ -101,6 +101,28 @@ export interface SensorRootQuery_sensorOrError_Sensor {
 
 export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;
 
+export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+}
+
+export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
+  __typename: "DaemonStatus";
+  daemonType: DaemonType;
+  required: boolean;
+  healthy: boolean | null;
+  lastHeartbeatError: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatTime: number | null;
+}
+
 export interface SensorRootQuery_instance_daemonHealth_daemonStatus {
   __typename: "DaemonStatus";
   healthy: boolean | null;
@@ -108,6 +130,7 @@ export interface SensorRootQuery_instance_daemonHealth_daemonStatus {
 
 export interface SensorRootQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  allDaemonStatuses: SensorRootQuery_instance_daemonHealth_allDaemonStatuses[];
   daemonStatus: SensorRootQuery_instance_daemonHealth_daemonStatus;
 }
 

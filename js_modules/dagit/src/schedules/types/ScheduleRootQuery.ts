@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, PipelineRunStatus, JobType, JobStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -164,9 +164,42 @@ export interface ScheduleRootQuery_scheduleOrError_PythonError {
 
 export type ScheduleRootQuery_scheduleOrError = ScheduleRootQuery_scheduleOrError_Schedule | ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError | ScheduleRootQuery_scheduleOrError_PythonError;
 
+export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+}
+
+export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
+  __typename: "DaemonStatus";
+  daemonType: DaemonType;
+  required: boolean;
+  healthy: boolean | null;
+  lastHeartbeatError: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatTime: number | null;
+}
+
+export interface ScheduleRootQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  allDaemonStatuses: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses[];
+}
+
+export interface ScheduleRootQuery_instance {
+  __typename: "Instance";
+  daemonHealth: ScheduleRootQuery_instance_daemonHealth;
+}
+
 export interface ScheduleRootQuery {
   scheduler: ScheduleRootQuery_scheduler;
   scheduleOrError: ScheduleRootQuery_scheduleOrError;
+  instance: ScheduleRootQuery_instance;
 }
 
 export interface ScheduleRootQueryVariables {

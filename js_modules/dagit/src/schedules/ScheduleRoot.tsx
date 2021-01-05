@@ -5,17 +5,19 @@ import * as React from 'react';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {ScheduleTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
-import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
+import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {PreviousRunsForScheduleQuery} from 'src/schedules/types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from 'src/schedules/types/ScheduleRootQuery';
+import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
@@ -62,7 +64,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleOrError}) => {
+      {({scheduleOrError, scheduler, instance}) => {
         if (scheduleOrError.__typename !== 'Schedule') {
           return null;
         }
@@ -87,19 +89,28 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
             <Page>
-              <ScheduleDetails
-                repoAddress={repoAddress}
-                schedule={scheduleOrError}
-                countdownDuration={INTERVAL}
-                countdownStatus={countdownStatus}
-                onRefresh={() => onRefresh()}
-              />
-              <ScheduleTickHistory repoAddress={repoAddress} schedule={scheduleOrError} />
-              <SchedulePreviousRuns
-                repoAddress={repoAddress}
-                schedule={scheduleOrError}
-                runTab={runTab}
-              />
+              <Group direction="column" spacing={20}>
+                <SchedulerInfo
+                  schedulerOrError={scheduler}
+                  daemonHealth={instance.daemonHealth}
+                  errorsOnly={true}
+                />
+                <>
+                  <ScheduleDetails
+                    repoAddress={repoAddress}
+                    schedule={scheduleOrError}
+                    countdownDuration={INTERVAL}
+                    countdownStatus={countdownStatus}
+                    onRefresh={() => onRefresh()}
+                  />
+                  <ScheduleTickHistory repoAddress={repoAddress} schedule={scheduleOrError} />
+                  <SchedulePreviousRuns
+                    repoAddress={repoAddress}
+                    schedule={scheduleOrError}
+                    runTab={runTab}
+                  />
+                </>
+              </Group>
             </Page>
           </ScrollContainer>
         );
@@ -152,10 +163,14 @@ const SCHEDULE_ROOT_QUERY = gql`
         stack
       }
     }
+    instance {
+      ...InstanceHealthFragment
+    }
   }
 
   ${SCHEDULER_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
