@@ -274,7 +274,7 @@ def test_input_manager_with_retries():
 
 
 def test_fan_in():
-    with seven.TemporaryDirectory() as tmpdir_path:
+    with tempfile.TemporaryDirectory() as tmpdir_path:
         object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
 
         @solid
