@@ -45,7 +45,7 @@ export const DaemonList = (props: Props) => {
       <thead>
         <tr>
           <th style={{width: '15%'}}>Daemon</th>
-          <th style={{width: '25%'}}>Status</th>
+          <th style={{width: '30%'}}>Status</th>
           <th>Last heartbeat</th>
         </tr>
       </thead>

@@ -74,13 +74,13 @@ describe('App', () => {
       </ApolloTestProvider>,
     );
 
-    const details = await screen.findByText('Instance details');
-    expect(details).toBeVisible();
+    const instanceHeader = await screen.findByText('Instance');
+    expect(instanceHeader).toBeVisible();
 
     const [runsLink] = screen.getAllByText('Runs');
     expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
     expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
-    expect(screen.getByText('Daemons').closest('a')).toHaveAttribute('href', '/instance/daemons');
+    expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
 
     expect(screen.getByText('my_repository')).toBeVisible();
   });

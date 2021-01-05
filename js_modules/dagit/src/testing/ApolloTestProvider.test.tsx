@@ -2,13 +2,13 @@ import {useQuery} from '@apollo/client';
 import {render, screen} from '@testing-library/react';
 import React from 'react';
 
-import {INSTANCE_DETAIL_SUMMARY_QUERY} from 'src/nav/InstanceDetailsLink';
-import {InstanceDetailSummaryQuery} from 'src/nav/types/InstanceDetailSummaryQuery';
+import {INSTANCE_CONFIG_QUERY} from 'src/instance/InstanceConfig';
+import {InstanceConfigQuery} from 'src/instance/types/InstanceConfigQuery';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
 
 describe('ApolloTestProvider', () => {
   const Thing = () => {
-    const {data} = useQuery<InstanceDetailSummaryQuery>(INSTANCE_DETAIL_SUMMARY_QUERY, {
+    const {data} = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
       fetchPolicy: 'cache-and-network',
     });
     return (

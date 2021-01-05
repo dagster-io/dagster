@@ -57,8 +57,8 @@ export class WebsocketStatusProvider extends React.Component<
 
 const Circle = styled.div`
   align-self: center;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   display: inline-block;
   border-radius: 7px;
   border: 1px solid rgba(255, 255, 255, 0.6);

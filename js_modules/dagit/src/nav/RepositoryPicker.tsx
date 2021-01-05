@@ -62,7 +62,16 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
     >
       <RepositoryPickerFlexContainer>
         <div style={{flex: 1, minWidth: 0}}>
-          <div style={{fontSize: 10.5, color: Colors.GRAY1, userSelect: 'none'}}>REPOSITORY</div>
+          <div
+            style={{
+              fontSize: 10.5,
+              color: Colors.GRAY1,
+              userSelect: 'none',
+              textTransform: 'uppercase',
+            }}
+          >
+            Repository
+          </div>
           <RepoTitle>{titleContents()}</RepoTitle>
         </div>
         {repo?.repositoryLocation.isReloadSupported && (

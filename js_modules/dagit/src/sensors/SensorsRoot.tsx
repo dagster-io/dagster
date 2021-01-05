@@ -7,7 +7,7 @@ import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceStatusRoot';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorInfo} from 'src/sensors/SensorInfo';

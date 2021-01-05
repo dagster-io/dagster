@@ -3,10 +3,18 @@ import {Tab, Tabs, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Route, Switch} from 'react-router-dom';
 
-import {DAEMON_HEALTH_FRAGMENT} from 'src/instance/DaemonList';
-import {InstanceDetails} from 'src/instance/InstanceDetails';
+import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
+import {InstanceConfig} from 'src/instance/InstanceConfig';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {InstanceHealthPage} from 'src/instance/InstanceHealthPage';
+import {InstanceSchedules} from 'src/instance/InstanceSchedules';
+import {InstanceSensors} from 'src/instance/InstanceSensors';
 import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
+import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
+import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
+import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {Box} from 'src/ui/Box';
 import {useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
@@ -42,32 +50,16 @@ export const InstanceStatusRoot = (props: Props) => {
     <Page>
       <Group direction="column" spacing={24}>
         <Group direction="column" spacing={12}>
-          <Heading>Instance details</Heading>
+          <Heading>Instance status</Heading>
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
             border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
           >
             <Tabs selectedTabId={tab}>
-              <Tab
-                id="health"
-                title={
-                  <Link to="/instance/health">
-                    <Group direction="row" spacing={8}>
-                      <div>Health</div>
-                    </Group>
-                  </Link>
-                }
-              />
-              <Tab
-                id="config"
-                title={
-                  <Link to="/instance/config">
-                    <Group direction="row" spacing={8}>
-                      <div>Configuration</div>
-                    </Group>
-                  </Link>
-                }
-              />
+              <Tab id="health" title={<Link to="/instance/health">Health</Link>} />
+              <Tab id="schedules" title={<Link to="/instance/schedules">Schedules</Link>} />
+              <Tab id="sensors" title={<Link to="/instance/sensors">Sensors</Link>} />
+              <Tab id="config" title={<Link to="/instance/config">Configuration</Link>} />
             </Tabs>
             <Box padding={{bottom: 8}}>
               <RefreshableCountdown
@@ -83,31 +75,68 @@ export const InstanceStatusRoot = (props: Props) => {
             path="/instance/health"
             render={() => <InstanceHealthPage queryData={queryData} />}
           />
-          <Route path="/instance/config" render={() => <InstanceDetails />} />
+          <Route
+            path="/instance/schedules"
+            render={() => <InstanceSchedules queryData={queryData} />}
+          />
+          <Route
+            path="/instance/sensors"
+            render={() => <InstanceSensors queryData={queryData} />}
+          />
+          <Route path="/instance/config" render={() => <InstanceConfig />} />
         </Switch>
       </Group>
     </Page>
   );
 };
 
-export const INSTANCE_HEALTH_FRAGMENT = gql`
-  fragment InstanceHealthFragment on Instance {
-    daemonHealth {
-      ...DaemonHealthFragment
-    }
-  }
-  ${DAEMON_HEALTH_FRAGMENT}
-`;
-
 const INSTANCE_HEALTH_QUERY = gql`
   query InstanceHealthQuery {
-    repositoryLocationsOrError {
-      ...RepositoryLocationsFragment
-    }
     instance {
       ...InstanceHealthFragment
     }
+    repositoryLocationsOrError {
+      ...RepositoryLocationsFragment
+    }
+    repositoriesOrError {
+      __typename
+      ... on RepositoryConnection {
+        nodes {
+          id
+          name
+          ...RepositoryInfoFragment
+          schedules {
+            id
+            ...ScheduleFragment
+          }
+          sensors {
+            id
+            ...SensorFragment
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+    scheduler {
+      ...SchedulerFragment
+    }
+    unloadableJobStatesOrError {
+      ... on JobStates {
+        results {
+          id
+          ...JobStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
   }
-  ${REPOSITORY_LOCATIONS_FRAGMENT}
+
   ${INSTANCE_HEALTH_FRAGMENT}
+  ${REPOSITORY_LOCATIONS_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
+  ${SCHEDULER_FRAGMENT}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${SENSOR_FRAGMENT}
+  ${JOB_STATE_FRAGMENT}
 `;

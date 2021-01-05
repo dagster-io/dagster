@@ -5,15 +5,15 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: InstanceDetailsQuery
+// GraphQL query operation: InstanceConfigQuery
 // ====================================================
 
-export interface InstanceDetailsQuery_instance {
+export interface InstanceConfigQuery_instance {
   __typename: "Instance";
   info: string;
 }
 
-export interface InstanceDetailsQuery {
+export interface InstanceConfigQuery {
   version: string;
-  instance: InstanceDetailsQuery_instance;
+  instance: InstanceConfigQuery_instance;
 }

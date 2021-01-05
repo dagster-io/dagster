@@ -5,7 +5,7 @@ import React from 'react';
 import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceStatusRoot';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 
