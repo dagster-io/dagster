@@ -1,6 +1,15 @@
+import { ExampleReferenceLink } from 'components/ExampleReference';
+
 # deploy_docker
 
-Description of example goes here
+<ExampleReferenceLink filePath="examples/deploy_docker" />
+
+This example demonstrates a Dagster deployment that includes a dagit container for loading and
+launching pipelines, a dagster-daemon container for managing a run queue and submitting runs from
+schedules and sensors, a postgres container for persistent storage, and a container with user
+pipeline code. The Dagster instance uses DockerRunLauncher to launch each run in its own container.
+
+To start the deployment, run `docker-compose up`.
 
 ## Open in a playground
 

@@ -218,6 +218,10 @@
         "path": "/overview/dagit"
       },
       {
+        "name": "Dagster Daemon",
+        "path": "/overview/daemon"
+      },
+      {
         "name": "GraphQL API",
         "path": "/overview/graphql-api"
       },
@@ -455,8 +459,12 @@
     "path": "/deploying",
     "children": [
       {
-        "name": "Running Dagit as a service",
+        "name": "Running Dagster locally",
         "path": "/deploying/local"
+      },
+      {
+        "name": "Deploying on Docker",
+        "path": "/deploying/docker"
       },
       {
         "name": "Deploying on Kubernetes Pt 1",

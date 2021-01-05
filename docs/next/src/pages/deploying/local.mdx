@@ -1,16 +1,18 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
-  title="Running Dagit as a service | Dagster"
+  title="Running Dagster locally | Dagster"
   description="Dagit serves a user interface and offers a GraphQL API to Dagster. Here's how to run it."
 />
 
-# Running Dagit as a service
+# Running Dagster locally
 
-The core of any deployment of Dagster is a Dagit process that serves a user interface and responds
+## Running Dagit
+
+The core of any deployment of Dagster is [Dagit](/overview/dagit), a process that serves a user interface and responds
 to GraphQL queries.
 
-Ensure that you are running a recent Python version. Typically, you'll want to run Dagit inside a
+To run dagit locally, first ensure that you are running a recent Python version. Typically, you'll want to run Dagit inside a
 [virtualenv](https://virtualenv.pypa.io/en/stable/). Then, you can install Dagit and any additional
 libraries you might need.
 
@@ -27,56 +29,24 @@ DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
 In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on
 _0.0.0.0:3000_.
 
-## Dagit in Docker
+## Running dagster-daemon
 
-If you are running on AWS ECS, Kubernetes, or some other container-based orchestration system,
-you'll likely want to package Dagit using a Docker image.
+If you're using [schedules](/overview/scheduling-partitions/schedules) or sensors, or want to set limits on the number of runs that can be executed at once,
+you'll want to also run a [dagster-daemon service](/overview/daemon) as part of your deployment. To run this service locally, run the following command:
 
-A minimal skeleton `Dockerfile` and entrypoint shell script that will run Dagit and the cron
-scheduler are shown below:
+```shell
+pip install dagster
 
-```dockerfile literalinclude caption=Dockerfile
-file:/docs_snippets/docs_snippets/deploying/docker/Dockerfile
+DAGSTER_HOME=/opt/dagster/dagster_home dagster-daemon run
 ```
 
-In this setup, the contents of `entrypoint.sh` should be something like the following. This script
-ensures that cron will run in the Docker container alongside Dagit:
+The `dagster-daemon` process will periodically check your instance for any new runs that should
+be launched from your run queue or triggered by your running schedules or sensors.
+If you're running `dagster-daemon` in a different environment than dagit, it must also have access to your
+`dagster.yaml` file and be able to access the components defined on your instance,
+and also be able to load the [repositories](/overview/repositories-workspaces/repositories) defined in your
+[workspace](/overview/repositories-workspaces/workspaces).
 
-```bash literalinclude caption=entrypoint.sh
-file:/docs_snippets/docs_snippets/deploying/docker/entrypoint.sh
-```
-
-Finally, you should include a `dagster.yaml` file in `$DAGSTER_HOME` to configure the [Dagster
-instance](/overview/instances/dagster-instance) that Dagit will use:
-
-```yaml literalinclude caption=dagster.yaml
-file:/docs_snippets/docs_snippets/deploying/docker/dagster.yaml
-```
-
-In cases where you're using env vars to configure the instance database, you should ensure these
-environment variables are exposed in the running Dagit container.
-
-In practice, you may want to volume mount your pipeline code into your containers to enable
-deployment patterns such as git-sync sidecars that avoid the need to rebuild images and redeploy
-containers when pipeline code changes.
-
-Dagit servers expose a health check endpoint at `/dagit_info`, which returns a JSON response like:
-
-```JSON
-{
-  "dagit_version": "0.6.6",
-  "dagster_graphql_version": "0.6.6",
-  "dagster_version": "0.6.6"
-}
-```
-
-## Non-Docker deployment using systemd
-
-To run Dagit as a long-lived service, you can install a systemd service such as the following:
-
-```bash literalinclude caption=dagit.service
-file:/docs_snippets/docs_snippets/deploying/systemd/dagit.service
-```
-
-Note that this assumes you've got a virtualenv for Dagster at `/opt/dagster/venv` and that your
-pipeline code and `workspace.yaml` are located under `/opt/dagster/app`.
+You can check the status of your `dagster-daemon` process in Dagit by navigating to the Instance tab
+in the navigation bar on the left-hand side of the screen. A deployment can have multiple instances of dagit running at once, but should only include a single
+`dagster-daemon` process.
