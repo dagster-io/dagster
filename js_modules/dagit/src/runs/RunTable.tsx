@@ -209,17 +209,8 @@ const RunTags: React.FC<{
   );
 });
 
-const Row = styled.tr<{
-  highlighted: boolean;
-}>`
-  & > td {
-    border-top: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
-    border-bottom: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
-  }
-  & > td:first-child {
-    border-left: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
-  }
-  & > td:last-child {
-    border-right: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
-  }
+const Row = styled.tr<{highlighted: boolean}>`
+  ${({highlighted}) => {
+    return highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null;
+  }}
 `;
