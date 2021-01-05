@@ -38,7 +38,6 @@ class OutputDefinition:
         name=None,
         description=None,
         is_required=None,
-        asset_metadata=None,
         manager_key=None,
         metadata=None,
     ):
@@ -49,7 +48,7 @@ class OutputDefinition:
         self._manager_key = check.opt_str_param(
             manager_key, "manager_key", default="object_manager"
         )
-        self._metadata = asset_metadata or metadata
+        self._metadata = metadata
 
     @property
     def name(self):
