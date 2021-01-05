@@ -145,6 +145,11 @@ from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
+from dagster.utils.partitions import (
+    create_offset_partition_selector,
+    date_partition_range,
+    identity_partition_selector,
+)
 from dagster.utils.test import (
     check_dagster_type,
     execute_solid,
@@ -319,6 +324,9 @@ __all__ = [
     "hourly_schedule",
     "monthly_schedule",
     "weekly_schedule",
+    "create_offset_partition_selector",
+    "date_partition_range",
+    "identity_partition_selector",
     # IO managers
     "IOManager",
     "IOManagerDefinition",

@@ -3,16 +3,14 @@ import warnings
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.partition import (
-    PartitionSetDefinition,
-    create_default_partition_selector_fn,
-)
+from dagster.core.definitions.partition import PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
+    create_offset_partition_selector,
     schedule_partition_range,
 )
 
@@ -221,8 +219,8 @@ def my_schedule_definition(_):
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(
-                delta_fn=execution_time_to_partition_fn, fmt=fmt
+            partition_selector=create_offset_partition_selector(
+                execution_time_to_partition_fn=execution_time_to_partition_fn
             ),
             execution_timezone=execution_timezone,
         )
@@ -359,8 +357,8 @@ def my_schedule_definition(_):
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(
-                delta_fn=execution_time_to_partition_fn, fmt=fmt,
+            partition_selector=create_offset_partition_selector(
+                execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
         )
@@ -482,8 +480,8 @@ def my_schedule_definition(_):
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(
-                fmt=fmt, delta_fn=execution_time_to_partition_fn,
+            partition_selector=create_offset_partition_selector(
+                execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
         )
@@ -619,8 +617,8 @@ def my_schedule_definition(_):
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(
-                delta_fn=execution_time_to_partition_fn, fmt=fmt,
+            partition_selector=create_offset_partition_selector(
+                execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
         )

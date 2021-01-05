@@ -853,11 +853,7 @@ def define_schedules():
     )
 
     partition_based = integer_partition_set.create_schedule_definition(
-        schedule_name="partition_based", cron_schedule="0 0 * * *",
-    )
-
-    partition_based_custom_selector = integer_partition_set.create_schedule_definition(
-        schedule_name="partition_based_custom_selector",
+        schedule_name="partition_based",
         cron_schedule="0 0 * * *",
         partition_selector=last_empty_partition,
     )
@@ -975,7 +971,6 @@ def define_schedules():
         no_config_should_execute,
         dynamic_config,
         partition_based,
-        partition_based_custom_selector,
         partition_based_decorator,
         partition_based_multi_mode_decorator,
         solid_selection_hourly_decorator,

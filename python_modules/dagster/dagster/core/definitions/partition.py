@@ -30,38 +30,6 @@ class Partition(namedtuple("_Partition", ("value name"))):
         )
 
 
-def create_default_partition_selector_fn(
-    delta_fn, fmt,
-):
-    check.callable_param(delta_fn, "delta_fn")
-    check.str_param(fmt, "fmt")
-
-    def default_partition_selector(context, partition_set_def):
-        check.inst_param(context, "context", ScheduleExecutionContext)
-        check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
-
-        if not context.scheduled_execution_time:
-            return last_partition(context, partition_set_def)
-
-        # The tick at a given datetime corresponds to the time for the previous partition
-        # e.g. midnight on 12/31 is actually the 12/30 partition
-        partition_time = delta_fn(context.scheduled_execution_time)
-
-        return Partition(value=partition_time, name=partition_time.strftime(fmt))
-
-    return default_partition_selector
-
-
-def last_partition(context, partition_set_def):
-    check.inst_param(context, "context", ScheduleExecutionContext)
-    check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
-
-    partitions = partition_set_def.get_partitions()
-    if not partitions:
-        return None
-    return partitions[-1]
-
-
 def last_empty_partition(context, partition_set_def):
     check.inst_param(context, "context", ScheduleExecutionContext)
     partition_set_def = check.inst_param(
@@ -187,8 +155,8 @@ class PartitionSetDefinition(
         self,
         schedule_name,
         cron_schedule,
+        partition_selector,
         should_execute=None,
-        partition_selector=last_partition,
         environment_vars=None,
         execution_timezone=None,
     ):
@@ -197,11 +165,13 @@ class PartitionSetDefinition(
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
+            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition],
+            Partition): Function that determines the partition to use at a given execution time.
+            For time-based partition sets, will likely be either `identity_partition_selector` or a
+            selector returned by `create_offset_partition_selector`.
             should_execute (Optional[function]): Function that runs at schedule execution time that
             determines whether a schedule should execute. Defaults to a function that always returns
             ``True``.
-            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition],
-            Partition): A partition selector for the schedule.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
             execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
                 with DagsterDaemonScheduler, and must be set when using that scheduler.

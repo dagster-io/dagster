@@ -111,6 +111,18 @@ We have removed the argument `step_keys_to_execute` to the `reexecute_pipeline` 
 in favor of `step_selection`, which additionally accepts the Dagster selection syntax, for example,
 `*solid_a+` represents `solid_a`, all of its upstream steps, its direct downstream steps.
 
+## Breaking Change: `PartitionSetDefinition.create_schedule_definition'
+
+When you create a schedule from a partition set using `PartitionSetDefinition.create_schedule_definition`,
+you now must supply a `partition_selector` argument that tells the scheduler which partition to use
+for a given schedule time. We have added two helper functions, `create_offset_partition_selector`
+and `identity_partition_selector`, that capture two common partition selectors (schedules that
+execute at a fixed offset from the partition times, e.g. a schedule that creates the
+previous day's partition each morning, and schedules that execute at the same time as the partition
+times). The previous default partition selector was `last_partition`, which doesn't always work
+as expected when using the default scheduler and has been removed in favor of the two helper
+partition selectors above.
+
 ## Renamed: Helm values
 
 Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practices/values/#naming-conventions),
