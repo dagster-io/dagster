@@ -11,6 +11,7 @@ from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
 from sqlalchemy import create_engine
 
@@ -249,21 +250,68 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
 
         with pytest.raises(
             DagsterInstanceMigrationRequired,
-            match=_migration_regex("event log", current_revision="c9159e740d7e"),
+            match=_migration_regex("run", current_revision="c9159e740d7e"),
         ):
             execute_pipeline(asset_pipeline, instance=instance)
 
         # ensure migration is run
         instance.upgrade()
 
-        runs = instance.get_runs()
-        assert len(runs) == 2
-
         result = execute_pipeline(asset_pipeline, instance=instance)
         assert result.success
 
-        runs = instance.get_runs()
-        assert len(runs) == 3
+
+def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
+    engine = create_engine(conn_string)
+    engine.execute("drop schema public cascade;")
+    engine.execute("create schema public;")
+
+    env = os.environ.copy()
+    env["PGPASSWORD"] = "test"
+    subprocess.check_call(
+        [
+            "psql",
+            "-h",
+            hostname,
+            "-p",
+            "5432",
+            "-U",
+            "test",
+            "-f",
+            file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"),
+        ],
+        env=env,
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        @solid
+        def simple_solid(_):
+            return 1
+
+        @pipeline
+        def simple_pipeline():
+            simple_solid()
+
+        tags = {PARTITION_NAME_TAG: "my_partition", PARTITION_SET_TAG: "my_partition_set"}
+
+        with pytest.raises(
+            DagsterInstanceMigrationRequired,
+            match=_migration_regex("run", current_revision="3e0770016702"),
+        ):
+            execute_pipeline(simple_pipeline, tags=tags, instance=instance)
+
+        # ensure migration is run
+        instance.upgrade()
+
+        result = execute_pipeline(simple_pipeline, tags=tags, instance=instance)
+        assert result.success
 
 
 def _migration_regex(storage_name, current_revision, expected_revision=None):
@@ -272,6 +320,7 @@ def _migration_regex(storage_name, current_revision, expected_revision=None):
             storage_name
         )
     )
+
     if expected_revision:
         revision = re.escape(
             "Database is at revision {}, head is {}.".format(current_revision, expected_revision)

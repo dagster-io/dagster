@@ -15,6 +15,8 @@ RunsTable = db.Table(
     db.Column("pipeline_name", db.String),
     db.Column("status", db.String(63)),
     db.Column("run_body", db.String),
+    db.Column("partition", db.String),
+    db.Column("partition_set", db.String),
     db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
     db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
 )
@@ -58,3 +60,4 @@ DaemonHeartbeatsTable = db.Table(
 )
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value)
+db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition)

@@ -264,3 +264,25 @@ def test_event_log_asset_partition_migration():
         instance.upgrade()
 
         assert "partition" in set(get_sqlite3_columns(db_path, "event_logs"))
+
+
+def test_run_partition_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "224640159acf"
+        assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
+
+        # Make sure the schema is migrated
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        instance.upgrade()
+
+        assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
+
+        instance._run_storage._alembic_downgrade(rev="224640159acf")
+        assert get_current_alembic_version(db_path) == "224640159acf"
+
+        assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))

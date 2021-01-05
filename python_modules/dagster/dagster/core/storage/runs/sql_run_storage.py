@@ -16,7 +16,7 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster.core.storage.tags import ROOT_RUN_ID_TAG
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
@@ -73,6 +73,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
+        has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
+        partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
+        partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
         with self.connect() as conn:
             try:
                 runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -81,6 +84,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     status=pipeline_run.status.value,
                     run_body=serialize_dagster_namedtuple(pipeline_run),
                     snapshot_id=pipeline_run.pipeline_snapshot_id,
+                    partition=partition,
+                    partition_set=partition_set,
                 )
                 conn.execute(runs_insert)
             except db.exc.IntegrityError as exc:
@@ -261,6 +266,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         run = self.get_run_by_id(run_id)
         current_tags = run.tags if run.tags else {}
 
+        all_tags = merge_dicts(current_tags, new_tags)
+        partition = all_tags.get(PARTITION_NAME_TAG)
+        partition_set = all_tags.get(PARTITION_SET_TAG)
+
         with self.connect() as conn:
             conn.execute(
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
@@ -269,6 +278,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     run_body=serialize_dagster_namedtuple(
                         run.with_tags(merge_dicts(current_tags, new_tags))
                     ),
+                    partition=partition,
+                    partition_set=partition_set,
                     update_timestamp=datetime.now(),
                 )
             )
