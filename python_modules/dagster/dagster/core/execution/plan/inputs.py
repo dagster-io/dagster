@@ -19,6 +19,7 @@ from dagster.core.storage.input_manager import InputManager
 from dagster.serdes import whitelist_for_serdes
 
 from .objects import TypeCheckData
+from .utils import build_resources_for_manager
 
 
 @whitelist_for_serdes
@@ -110,6 +111,7 @@ class FromRootInputManager(
             resource_config=step_context.environment_config.resources[
                 self.input_def.manager_key
             ].get("config", {}),
+            resources=build_resources_for_manager(self.input_def.manager_key, step_context),
         )
         return _load_input_with_input_manager(loader, load_input_context)
 
@@ -175,6 +177,11 @@ class FromStepOutput(
             if self.input_def.manager_key
             else None
         )
+        resources = (
+            build_resources_for_manager(self.input_def.manager_key, step_context)
+            if self.input_def.manager_key
+            else None
+        )
 
         return step_context.for_input_manager(
             self.input_def.name,
@@ -183,6 +190,7 @@ class FromStepOutput(
             self.input_def.dagster_type,
             self.step_output_handle,
             resource_config,
+            resources,
         )
 
     def load_input_object(self, step_context):

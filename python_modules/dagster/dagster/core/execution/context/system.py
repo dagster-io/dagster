@@ -17,6 +17,7 @@ from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
+from dagster.core.execution.plan.utils import build_resources_for_manager
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
@@ -305,7 +306,14 @@ class SystemStepExecutionContext(SystemExecutionContext):
         )
 
     def for_input_manager(
-        self, name, config, metadata, dagster_type, source_handle=None, resource_config=None,
+        self,
+        name,
+        config,
+        metadata,
+        dagster_type,
+        source_handle=None,
+        resource_config=None,
+        resources=None,
     ):
         return InputContext(
             pipeline_name=self.pipeline_def.name,
@@ -318,6 +326,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             log_manager=self._log_manager,
             step_context=self,
             resource_config=resource_config,
+            resources=resources,
         )
 
     def get_output_manager(self, step_output_handle):
@@ -421,7 +430,7 @@ class HookContext(SystemExecutionContext):
 class OutputContext(
     namedtuple(
         "_OutputContext",
-        "step_key name pipeline_name run_id metadata mapping_key config solid_def dagster_type log version step_context resource_config",
+        "step_key name pipeline_name run_id metadata mapping_key config solid_def dagster_type log version step_context resource_config resources",
     )
 ):
     """
@@ -438,6 +447,8 @@ class OutputContext(
         dagster_type (Optional[DagsterType]): The type of this output.
         log (Optional[DagsterLogmanager]): The log manager to use for this output.
         version (Optional[str]): (Experimental) The version of the output.
+        resources (Optional[ScopedResources]): The resources required by the output manager, specified by the
+            `required_resource_keys` parameter.
     """
 
     def __new__(
@@ -456,6 +467,7 @@ class OutputContext(
         # This is used internally by the intermediate storage adapter, we don't usually expect users to mock this.
         step_context=None,
         resource_config=None,
+        resources=None,
     ):
 
         return super(OutputContext, cls).__new__(
@@ -477,6 +489,7 @@ class OutputContext(
                 step_context, "step_context", SystemStepExecutionContext
             ),
             resource_config=resource_config,
+            resources=resources,
         )
 
     def get_run_scoped_output_identifier(self):
@@ -504,7 +517,7 @@ class OutputContext(
 class InputContext(
     namedtuple(
         "_InputContext",
-        "name pipeline_name solid_def config metadata upstream_output dagster_type log step_context resource_config",
+        "name pipeline_name solid_def config metadata upstream_output dagster_type log step_context resource_config resources",
     )
 ):
     """
@@ -523,6 +536,9 @@ class InputContext(
         log (Optional[DagsterLogManager]): The log manager to use for this input.
         resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
             initializes the InputManager.
+        resources (ScopedResources): The resources required by the resource that initializes the
+            input manager. If using the :py:func:`@input_manager` decorator, these resources
+            correspond to those requested with the `required_resource_keys` parameter.
     """
 
     def __new__(
@@ -539,6 +555,7 @@ class InputContext(
         # This is used internally by the intermediate storage adapter, we don't expect users to mock this.
         step_context=None,
         resource_config=None,
+        resources=None,
     ):
 
         return super(InputContext, cls).__new__(
@@ -557,6 +574,7 @@ class InputContext(
                 step_context, "step_context", SystemStepExecutionContext
             ),
             resource_config=resource_config,
+            resources=resources,
         )
 
 
@@ -602,6 +620,8 @@ def get_output_context(
     manager_key = execution_plan.get_step_output(step_output_handle).output_def.manager_key
     resource_config = environment_config.resources[manager_key].get("config", {})
 
+    resources = build_resources_for_manager(manager_key, step_context) if step_context else None
+
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
@@ -618,4 +638,5 @@ def get_output_context(
         else None,
         step_context=step_context,
         resource_config=resource_config,
+        resources=resources,
     )

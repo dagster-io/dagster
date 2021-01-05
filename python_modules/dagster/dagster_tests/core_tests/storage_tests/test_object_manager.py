@@ -6,6 +6,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvariantViolationError,
+    InputDefinition,
     ModeDefinition,
     ObjectManagerDefinition,
     OutputDefinition,
@@ -352,3 +353,48 @@ def test_mem_object_manager_execution():
     mem_object_manager_instance.handle_output(output_context, 1)
     input_context = InputContext(pipeline_name="foo", upstream_output=output_context,)
     assert mem_object_manager_instance.load_input(input_context) == 1
+
+
+def test_object_manager_resources_on_context():
+    @resource
+    def foo_resource(_):
+        return "foo"
+
+    @object_manager(required_resource_keys={"foo_resource"})
+    def object_manager_reqs_resources(init_context):
+        assert init_context.resources.foo_resource == "foo"
+
+        class InternalObjectManager(ObjectManager):
+            def handle_output(self, context, obj):
+                assert context.resources.foo_resource == "foo"
+
+            def load_input(self, context):
+                assert context.resources.foo_resource == "foo"
+
+        return InternalObjectManager()
+
+    @solid(
+        input_defs=[InputDefinition("_manager_input", manager_key="object_manager_reqs_resources")],
+        output_defs=[
+            OutputDefinition(dagster_type=str, manager_key="object_manager_reqs_resources")
+        ],
+    )
+    def big_solid(_, _manager_input):
+        return "manager_input"
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "object_manager_reqs_resources": object_manager_reqs_resources,
+                    "foo_resource": foo_resource,
+                }
+            )
+        ]
+    )
+    def basic_pipeline():
+        big_solid()
+
+    result = execute_pipeline(basic_pipeline)
+
+    assert result.success

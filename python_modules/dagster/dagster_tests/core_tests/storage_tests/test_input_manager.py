@@ -323,3 +323,36 @@ def test_input_manager_resource_config():
     )
 
     assert result.success
+
+
+def test_input_manager_required_resource_keys():
+    @resource
+    def foo_resource(_):
+        return "foo"
+
+    @input_manager(required_resource_keys={"foo_resource"})
+    def input_manager_reqs_resources(context):
+        assert context.resources.foo_resource == "foo"
+
+    @solid(
+        input_defs=[InputDefinition("_manager_input", manager_key="input_manager_reqs_resources")]
+    )
+    def big_solid(_, _manager_input):
+        return "manager_input"
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "input_manager_reqs_resources": input_manager_reqs_resources,
+                    "foo_resource": foo_resource,
+                }
+            )
+        ]
+    )
+    def basic_pipeline():
+        big_solid()
+
+    result = execute_pipeline(basic_pipeline)
+
+    assert result.success

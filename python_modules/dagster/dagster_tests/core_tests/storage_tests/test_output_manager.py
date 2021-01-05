@@ -19,6 +19,7 @@ from dagster import (
     execute_pipeline,
     object_manager,
     pipeline,
+    resource,
     solid,
 )
 from dagster.core.instance import InstanceRef
@@ -387,5 +388,40 @@ def test_output_manager_resource_config():
     result = execute_pipeline(
         return_foo, run_config={"resources": {"emit_foo": {"config": {"is_foo": "yes"}}}}
     )
+
+    assert result.success
+
+
+def test_output_manager_required_resource_keys():
+    @resource
+    def foo_resource(_):
+        return "foo"
+
+    @output_manager(required_resource_keys={"foo_resource"})
+    def output_manager_reqs_resources(context, _obj):
+        assert context.resources.foo_resource == "foo"
+
+    @solid(
+        output_defs=[
+            OutputDefinition(dagster_type=str, manager_key="output_manager_reqs_resources")
+        ]
+    )
+    def big_solid(_):
+        return "output"
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "output_manager_reqs_resources": output_manager_reqs_resources,
+                    "foo_resource": foo_resource,
+                }
+            )
+        ]
+    )
+    def basic_pipeline():
+        big_solid()
+
+    result = execute_pipeline(basic_pipeline)
 
     assert result.success
