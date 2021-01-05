@@ -195,6 +195,3 @@ Contexts
 
 .. autoclass:: HookContext
    :members:
-
-.. autoclass:: AssetStoreContext
-   :members:

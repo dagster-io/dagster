@@ -64,7 +64,7 @@ class ObjectManager(InputManager, OutputManager):
     Base class for user-provided object managers.
 
     Extend this class to handle how objects are loaded and stored. Users should implement
-    ``handle_object`` to store an object and ``load_input`` to retrieve an object.
+    ``handle_output`` to store an object and ``load_input`` to retrieve an object.
     """
 
 
