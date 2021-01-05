@@ -497,6 +497,16 @@
     ]
   },
   {
+    "name": "Troubleshooting",
+    "path": "/troubleshooting",
+    "children": [
+      {
+        "name": "Debugging your schedules",
+        "path": "/troubleshooting/schedules"
+      }
+    ]
+  },
+  {
     "name": "Community",
     "path": "/community",
     "ignore": true,
