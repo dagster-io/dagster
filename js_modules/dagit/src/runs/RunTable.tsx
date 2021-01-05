@@ -27,26 +27,92 @@ interface RunTableProps {
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
 
+type State = {
+  checkedRuns: Set<string>;
+  lastCheckedID: string | null;
+};
+
+type Action =
+  | {type: 'toggle-one'; payload: {checked: boolean; runId: string}}
+  | {
+      type: 'toggle-slice';
+      payload: {checked: boolean; runId: string; allRuns: RunTableRunFragment[]};
+    }
+  | {type: 'toggle-all'; payload: {checked: boolean; allRuns: RunTableRunFragment[]}};
+
+const reducer = (state: State, action: Action): State => {
+  const copy = new Set(Array.from(state.checkedRuns));
+  switch (action.type) {
+    case 'toggle-one': {
+      const {checked, runId} = action.payload;
+      checked ? copy.add(runId) : copy.delete(runId);
+      return {lastCheckedID: runId, checkedRuns: copy};
+    }
+
+    case 'toggle-slice': {
+      const {checked, runId, allRuns} = action.payload;
+      const {lastCheckedID} = state;
+
+      const indexOfLast = allRuns.findIndex((run) => run.runId === lastCheckedID);
+      const indexOfChecked = allRuns.findIndex((run) => run.runId === runId);
+      if (indexOfLast === undefined || indexOfChecked === undefined) {
+        return state;
+      }
+
+      const [start, end] = [indexOfLast, indexOfChecked].sort();
+      for (let ii = start; ii <= end; ii++) {
+        const runAtIndex = allRuns[ii];
+        checked ? copy.add(runAtIndex.runId) : copy.delete(runAtIndex.runId);
+      }
+
+      return {
+        lastCheckedID: runId,
+        checkedRuns: copy,
+      };
+    }
+
+    case 'toggle-all': {
+      const {checked, allRuns} = action.payload;
+      return {
+        lastCheckedID: null,
+        checkedRuns: checked ? new Set(Array.from(allRuns.map((run) => run.runId))) : new Set(),
+      };
+    }
+  }
+};
+
+const initialState: State = {
+  checkedRuns: new Set(),
+  lastCheckedID: null,
+};
+
 export const RunTable = (props: RunTableProps) => {
   const {runs, onSetFilter, nonIdealState, highlightedIds} = props;
-  const [checked, setChecked] = React.useState<RunTableRunFragment[]>(() => []);
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const {checkedRuns} = state;
 
-  // This is slightly complicated because we want to be able to select runs on a
-  // page of results, click "Next" and continue to select more runs. Some of the data
-  // (eg: selections on previous pages) are ONLY available in the `checked` state,
-  // but for runs that are on the current page we want to work with the data in `runs`
-  // so it's as new as possible and we don't make requests to cancel finished runs, etc.
-  //
-  // Clicking the "all" checkbox adds the current page if not every run is in the
-  // checked set, or empties the set completely if toggling from checked => unchecked.
-  const checkedIds = new Set(checked.map((c) => c.runId));
-  const checkedOnPage = runs.filter((r) => checkedIds.has(r.runId));
-  const checkedOffPage = checked.filter((c) => !runs.some((r) => r.runId === c.runId));
-  const checkedRuns = [...checkedOnPage, ...checkedOffPage];
+  const onToggle = (runId: string) => (values: {checked: boolean; shiftKey: boolean}) => {
+    const {checked, shiftKey} = values;
+    if (shiftKey && state.lastCheckedID) {
+      dispatch({type: 'toggle-slice', payload: {checked, runId, allRuns: runs}});
+    } else {
+      dispatch({type: 'toggle-one', payload: {checked, runId}});
+    }
+  };
+
+  const toggleAll = (checked: boolean) => {
+    dispatch({type: 'toggle-all', payload: {checked, allRuns: runs}});
+  };
+
+  const onChangeAll = (e: React.FormEvent<HTMLInputElement>) => {
+    if (e.target instanceof HTMLInputElement) {
+      toggleAll(e.target.checked);
+    }
+  };
 
   if (runs.length === 0) {
     return (
-      <div style={{marginTop: 100, marginBottom: 100}}>
+      <Box margin={{vertical: 64}}>
         {nonIdealState || (
           <NonIdealState
             icon="history"
@@ -54,9 +120,11 @@ export const RunTable = (props: RunTableProps) => {
             description="No runs to display. Use the Playground to launch a pipeline."
           />
         )}
-      </div>
+      </Box>
     );
   }
+
+  const selectedFragments = runs.filter((run) => checkedRuns.has(run.runId));
 
   return (
     <Table striped style={{width: '100%'}}>
@@ -66,15 +134,13 @@ export const RunTable = (props: RunTableProps) => {
             <div style={{display: 'flex', alignItems: 'center'}}>
               <Checkbox
                 style={{marginBottom: 0, marginTop: 1}}
-                indeterminate={checkedRuns.length > 0 && checkedOnPage.length < runs.length}
-                checked={checkedOnPage.length === runs.length}
-                onClick={() =>
-                  setChecked(checkedOnPage.length < runs.length ? [...checkedOffPage, ...runs] : [])
-                }
+                indeterminate={checkedRuns.size > 0 && checkedRuns.size !== runs.length}
+                checked={checkedRuns.size === runs.length}
+                onChange={onChangeAll}
               />
               <RunBulkActionsMenu
-                selected={checkedRuns}
-                onChangeSelection={(checked) => setChecked(checked)}
+                selected={selectedFragments}
+                clearSelection={() => toggleAll(false)}
               />
             </div>
           </th>
@@ -91,15 +157,9 @@ export const RunTable = (props: RunTableProps) => {
             run={run}
             key={run.runId}
             onSetFilter={onSetFilter}
-            checked={checkedRuns.includes(run)}
+            checked={checkedRuns.has(run.runId)}
             additionalColumns={props.additionalColumnsForRow?.(run)}
-            onToggleChecked={() =>
-              setChecked(
-                checkedRuns.includes(run)
-                  ? checkedRuns.filter((c) => c !== run)
-                  : [...checkedRuns, run],
-              )
-            }
+            onToggleChecked={onToggle(run.runId)}
             isHighlighted={highlightedIds && highlightedIds.includes(run.runId)}
           />
         ))}
@@ -135,24 +195,27 @@ RunTable.fragments = {
   `,
 };
 
-const RunRow: React.FunctionComponent<{
+const RunRow: React.FC<{
   run: RunTableRunFragment;
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   checked?: boolean;
-  onToggleChecked?: () => void;
+  onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
   isHighlighted?: boolean;
 }> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns, isHighlighted}) => {
+  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+    if (e.target instanceof HTMLInputElement) {
+      const {checked} = e.target;
+      const shiftKey =
+        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+      onToggleChecked && onToggleChecked({checked, shiftKey});
+    }
+  };
+
   return (
     <Row key={run.runId} highlighted={!!isHighlighted}>
-      <td
-        onClick={(e) => {
-          e.preventDefault();
-          onToggleChecked?.();
-        }}
-        style={{maxWidth: '36px'}}
-      >
-        {onToggleChecked && <Checkbox checked={checked} />}
+      <td style={{maxWidth: '36px'}}>
+        {onToggleChecked && <Checkbox checked={checked} onChange={onChange} />}
       </td>
       <td style={{width: '90px', fontFamily: FontFamily.monospace}}>
         <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
@@ -210,7 +273,6 @@ const RunTags: React.FC<{
 });
 
 const Row = styled.tr<{highlighted: boolean}>`
-  ${({highlighted}) => {
-    return highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null;
-  }}
+  ${({highlighted}) =>
+    highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
 `;
