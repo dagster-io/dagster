@@ -76,11 +76,16 @@ const AllTimezoneItems = moment.tz
 const PopularTimezones = ['UTC', 'US/Pacific', 'US/Mountain', 'US/Central', 'US/Eastern'];
 
 const automaticLabel = () => `Automatic (${browserTimezoneAbbreviation()})`;
+const offsetLabel = () => {
+  return `${browserTimezoneAbbreviation()} ${formatOffset(
+    moment.tz.zone(browserTimezone())?.utcOffset(Date.now()) || 0,
+  )}`;
+};
 
 const SortedTimezoneItems = [
   {
-    key: automaticLabel(),
-    offsetLabel: '',
+    key: 'Automatic',
+    offsetLabel: offsetLabel(),
     offset: 0,
   },
   {
