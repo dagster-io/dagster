@@ -4,7 +4,6 @@ import os
 import sqlite3
 import threading
 import time
-import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -26,7 +25,6 @@ from sqlalchemy.pool import NullPool
 from tqdm import tqdm
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
-from watchdog.utils import platform
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage
@@ -64,7 +62,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         mkdir_p(self._base_dir)
 
         self._watchers = defaultdict(dict)
-        self._obs = self._create_observer()
+        self._obs = Observer()
         self._obs.start()
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -74,22 +72,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # Ensure that multiple threads (like the event log watcher) interact safely with each other
         self._db_lock = threading.Lock()
-
-    def _create_observer(self):
-        # Default Mac OSX FSEventsObserver sometimes fails to pick up changes, so prefer
-        # the KqueueObserver instead.
-        # See: https://github.com/gorakhargosh/watchdog/blob/27588153a7aee849fbe36a608ee378b09a16e476/src/watchdog/observers/__init__.py
-        if platform.is_darwin():
-            try:
-                from watchdog.observers.kqueue import KqueueObserver
-
-                return KqueueObserver()
-            except Exception:  # pylint: disable=broad-except
-                warnings.warn(
-                    "Failed to import KqueueObserver, falling back to default watchdog observer"
-                )
-
-        return Observer()
 
     def upgrade(self):
         all_run_ids = self.get_all_run_ids()
