@@ -246,7 +246,9 @@ def get_outputs_field(solid, handle, resource_defs):
     # materializers
     output_manager_fields = {}
     for name, output_def in solid.definition.output_dict.items():
-        output_manager_output_field = get_output_manager_output_field(output_def, resource_defs)
+        output_manager_output_field = get_output_manager_output_field(
+            solid, output_def, resource_defs
+        )
         if output_manager_output_field:
             output_manager_fields[name] = output_manager_output_field
 
@@ -266,8 +268,20 @@ def get_outputs_field(solid, handle, resource_defs):
     return None
 
 
-def get_output_manager_output_field(output_def, resource_defs):
-    output_manager_def = resource_defs.get(output_def.manager_key)
+def get_output_manager_output_field(solid, output_def, resource_defs):
+    if output_def.manager_key not in resource_defs:
+        raise DagsterInvalidDefinitionError(
+            f'Output "{output_def.name}" for solid "{solid.name}" requires manager_key '
+            f'"{output_def.manager_key}", but no resource has been provided. Please include a '
+            f"resource definition for that key in the resource_defs of your ModeDefinition."
+        )
+    if not isinstance(resource_defs[output_def.manager_key], IOutputManagerDefinition):
+        raise DagsterInvalidDefinitionError(
+            f'Output "{output_def.name}" for solid "{solid.name}" requires manager_key '
+            f'"{output_def.manager_key}", but the resource definition provided is not an '
+            "IOutputManagerDefinition"
+        )
+    output_manager_def = resource_defs[output_def.manager_key]
     if (
         output_manager_def
         and isinstance(output_manager_def, IOutputManagerDefinition)

@@ -425,3 +425,43 @@ def test_output_manager_required_resource_keys():
     result = execute_pipeline(basic_pipeline)
 
     assert result.success
+
+
+def test_manager_not_provided():
+    @solid(output_defs=[OutputDefinition(manager_key="not_here")])
+    def solid_requires_manager(_, _input):
+        return "foo"
+
+    @pipeline
+    def basic():
+        solid_requires_manager()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Output "result" for solid "solid_requires_manager" requires manager_key "not_here", but no '
+        "resource has been provided. Please include a resource definition for that key in the "
+        "resource_defs of your ModeDefinition.",
+    ):
+        execute_pipeline(basic)
+
+
+def test_resource_not_output_manager():
+    @resource
+    def resource_not_manager(_):
+        return "foo"
+
+    @solid(output_defs=[OutputDefinition(manager_key="not_manager")])
+    def solid_requires_manager(_):
+        return "foo"
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
+    def basic():
+        solid_requires_manager()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Output "result" for solid "solid_requires_manager" requires manager_key '
+        '"not_manager", but the resource definition provided is not an '
+        "IOutputManagerDefinition",
+    ):
+        execute_pipeline(basic)

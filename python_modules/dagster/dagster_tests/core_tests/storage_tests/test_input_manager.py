@@ -1,7 +1,9 @@
 import tempfile
 
+import pytest
 from dagster import (
     DagsterInstance,
+    DagsterInvalidDefinitionError,
     EventMetadataEntry,
     InputDefinition,
     InputManagerDefinition,
@@ -12,6 +14,7 @@ from dagster import (
     execute_pipeline,
     fs_object_manager,
     input_manager,
+    object_manager,
     pipeline,
     resource,
     solid,
@@ -91,7 +94,7 @@ def test_override_object_manager():
         def load_input(self, context):
             assert False, "should not be called"
 
-    @resource
+    @object_manager
     def my_object_manager(_):
         return MyObjectManager()
 
@@ -275,7 +278,7 @@ def test_input_manager_with_retries():
 
 def test_fan_in():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
+        file_object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
 
         @solid
         def input_solid1(_):
@@ -293,8 +296,8 @@ def test_fan_in():
             mode_defs=[
                 ModeDefinition(
                     resource_defs={
-                        "object_manager": object_manager,
-                        "input_manager": object_manager,
+                        "object_manager": file_object_manager,
+                        "input_manager": file_object_manager,
                     }
                 )
             ]
@@ -356,3 +359,43 @@ def test_input_manager_required_resource_keys():
     result = execute_pipeline(basic_pipeline)
 
     assert result.success
+
+
+def test_manager_not_provided():
+    @solid(input_defs=[InputDefinition("_input", manager_key="not_here")])
+    def solid_requires_manager(_, _input):
+        pass
+
+    @pipeline
+    def basic():
+        solid_requires_manager()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Input "_input" for solid "solid_requires_manager" requires manager_key "not_here", but no '
+        "resource has been provided. Please include a resource definition for that key in the "
+        "resource_defs of your ModeDefinition.",
+    ):
+        execute_pipeline(basic)
+
+
+def test_resource_not_input_manager():
+    @resource
+    def resource_not_manager(_):
+        return "foo"
+
+    @solid(input_defs=[InputDefinition("_input", manager_key="not_manager")])
+    def solid_requires_manager(_, _input):
+        pass
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
+    def basic():
+        solid_requires_manager()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Input "_input" for solid "solid_requires_manager" requires manager_key '
+        '"not_manager", but the resource definition provided is not an '
+        "IInputManagerDefinition",
+    ):
+        execute_pipeline(basic)

@@ -2,11 +2,9 @@ import os
 import pickle
 from abc import abstractmethod
 
-from dagster import check
+from dagster import ObjectManager, check, object_manager
 from dagster.config import Field
 from dagster.config.source import StringSource
-from dagster.core.definitions.resource import resource
-from dagster.core.storage.object_manager import ObjectManager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
 
@@ -75,7 +73,9 @@ class VersionedPickledObjectFilesystemObjectManager(MemoizableObjectManager):
         return os.path.exists(filepath) and not os.path.isdir(filepath)
 
 
-@resource(config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)})
+@object_manager(
+    config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)}
+)
 @experimental
 def versioned_filesystem_object_manager(init_context):
     """Filesystem object manager that utilizes versioning of stored objects.
