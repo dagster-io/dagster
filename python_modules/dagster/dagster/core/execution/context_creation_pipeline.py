@@ -108,6 +108,7 @@ class ExecutionContextManager(ABC):
         scoped_resources_builder_cm=None,
         intermediate_storage=None,
         raise_on_error=False,
+        resource_instances_to_override=None,
     ):
         scoped_resources_builder_cm = check.opt_callable_param(
             scoped_resources_builder_cm,
@@ -122,6 +123,7 @@ class ExecutionContextManager(ABC):
             scoped_resources_builder_cm,
             intermediate_storage,
             raise_on_error,
+            resource_instances_to_override,
         )
 
         self._manager = EventGenerationManager(generator, self.context_type, raise_on_error)
@@ -159,6 +161,7 @@ class ExecutionContextManager(ABC):
         scoped_resources_builder_cm,
         intermediate_storage=None,
         raise_on_error=False,
+        resource_instances_to_override=None,
     ):
         execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         pipeline_def = execution_plan.pipeline.get_definition()
@@ -174,6 +177,9 @@ class ExecutionContextManager(ABC):
             intermediate_storage, "intermediate_storage_data", IntermediateStorage
         )
         raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
+        resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override"
+        )
 
         execution_context = None
         resources_manager = None
@@ -191,6 +197,7 @@ class ExecutionContextManager(ABC):
                 log_manager,
                 context_creation_data.resource_keys_to_init,
                 instance,
+                resource_instances_to_override,
             )
             yield from resources_manager.generate_setup_events()
             scoped_resources_builder = check.inst(
@@ -420,6 +427,7 @@ def scoped_pipeline_context(
     scoped_resources_builder_cm=resource_initialization_manager,
     intermediate_storage=None,
     raise_on_error=False,
+    resource_instances_to_override=None,
 ):
     """ Utility context manager which acts as a very thin wrapper around
     `pipeline_initialization_manager`, iterating through all the setup/teardown events and
@@ -434,6 +442,7 @@ def scoped_pipeline_context(
     check.inst_param(instance, "instance", DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")
     check.opt_inst_param(intermediate_storage, "intermediate_storage", IntermediateStorage)
+    check.opt_dict_param(resource_instances_to_override, "resource_instances_to_override")
 
     initialization_manager = PipelineExecutionContextManager(
         execution_plan,
@@ -443,6 +452,7 @@ def scoped_pipeline_context(
         scoped_resources_builder_cm=scoped_resources_builder_cm,
         intermediate_storage=intermediate_storage,
         raise_on_error=raise_on_error,
+        resource_instances_to_override=resource_instances_to_override,
     )
     for _ in initialization_manager.prepare_context():
         pass

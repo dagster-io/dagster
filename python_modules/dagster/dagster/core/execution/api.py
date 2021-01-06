@@ -14,6 +14,7 @@ from dagster.core.execution.resolve_versions import resolve_memoized_execution_p
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance, is_memoized_run
 from dagster.core.selector import parse_step_selection
+from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
@@ -197,17 +198,32 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     event_list = list(_execute_run_iterable)
     pipeline_context = _execute_run_iterable.pipeline_context
 
+    # workaround for mem_io_manager to work in reconstruct_context, e.g. result.result_for_solid
+    # in-memory values dict will get lost when the resource is re-initiated in reconstruct_context
+    # so instead of re-initiating every single resource, we pass the resource instances to
+    # reconstruct_context directly to avoid re-building from resource def.
+    resource_instances_to_override = {}
+    if pipeline_context:  # None if we have a pipeline failure
+        for (
+            key,
+            resource_instance,
+        ) in pipeline_context.scoped_resources_builder.resource_instance_dict.items():
+            if isinstance(resource_instance, InMemoryIOManager):
+                resource_instances_to_override[key] = resource_instance
+
     return PipelineExecutionResult(
         pipeline.get_definition(),
         pipeline_run.run_id,
         event_list,
-        lambda: scoped_pipeline_context(
+        lambda hardcoded_resources_arg: scoped_pipeline_context(
             execution_plan,
             pipeline_run.run_config,
             pipeline_run,
             instance,
             intermediate_storage=pipeline_context.intermediate_storage,
+            resource_instances_to_override=hardcoded_resources_arg,
         ),
+        resource_instances_to_override=resource_instances_to_override,
     )
 
 

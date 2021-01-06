@@ -1,7 +1,7 @@
 from collections import deque
 
 from dagster import check
-from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.resource import ResourceDefinition, ScopedResourcesBuilder
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -24,7 +24,13 @@ from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
-    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init, instance
+    execution_plan,
+    environment_config,
+    pipeline_run,
+    log_manager,
+    resource_keys_to_init,
+    instance,
+    resource_instances_to_override,
 ):
     generator = resource_initialization_event_generator(
         execution_plan,
@@ -33,6 +39,7 @@ def resource_initialization_manager(
         log_manager,
         resource_keys_to_init,
         instance,
+        resource_instances_to_override,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -81,6 +88,7 @@ def _core_resource_initialization_event_generator(
     resource_log_manager,
     resource_managers,
     instance,
+    resource_instances_to_override,
 ):
     pipeline_def = execution_plan.pipeline_def
     resource_instances = {}
@@ -96,7 +104,14 @@ def _core_resource_initialization_event_generator(
 
         for level in toposort(resource_dependencies):
             for resource_name in level:
-                resource_def = mode_definition.resource_defs[resource_name]
+
+                if resource_name in resource_instances_to_override:
+                    # use the given resource instances instead of re-initiating it from resource def
+                    resource_def = ResourceDefinition.hardcoded_resource(
+                        resource_instances_to_override[resource_name]
+                    )
+                else:
+                    resource_def = mode_definition.resource_defs[resource_name]
                 if not resource_name in resource_keys_to_init:
                     continue
 
@@ -143,7 +158,13 @@ def _core_resource_initialization_event_generator(
 
 
 def resource_initialization_event_generator(
-    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init, instance
+    execution_plan,
+    environment_config,
+    pipeline_run,
+    log_manager,
+    resource_keys_to_init,
+    instance,
+    resource_instances_to_override=None,
 ):
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(environment_config, "environment_config", EnvironmentConfig)
@@ -151,6 +172,7 @@ def resource_initialization_event_generator(
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     check.set_param(resource_keys_to_init, "resource_keys_to_init", of_type=str)
     check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_dict_param(resource_instances_to_override, "resource_instances_to_override")
 
     if execution_plan.step_handle_for_single_step_plans():
         step = execution_plan.get_step(execution_plan.step_handle_for_single_step_plans())
@@ -170,6 +192,7 @@ def resource_initialization_event_generator(
             resource_log_manager=resource_log_manager,
             resource_managers=resource_managers,
             instance=instance,
+            resource_instances_to_override=resource_instances_to_override,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed

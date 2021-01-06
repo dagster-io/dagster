@@ -65,9 +65,9 @@ def test_event_stream():
         DagsterEventType.STEP_EXPECTATION_RESULT,
         DagsterEventType.STEP_MATERIALIZATION,
         DagsterEventType.STEP_OUTPUT,
-        DagsterEventType.OBJECT_STORE_OPERATION,
+        DagsterEventType.ASSET_STORE_OPERATION,
         DagsterEventType.STEP_OUTPUT,
-        DagsterEventType.OBJECT_STORE_OPERATION,
+        DagsterEventType.ASSET_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
     ]
 

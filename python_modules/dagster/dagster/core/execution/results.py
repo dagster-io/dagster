@@ -18,11 +18,21 @@ def _construct_events_by_step_key(event_list):
 
 
 class GraphExecutionResult:
-    def __init__(self, container, event_list, reconstruct_context, handle=None):
+    def __init__(
+        self,
+        container,
+        event_list,
+        reconstruct_context,
+        handle=None,
+        resource_instances_to_override=None,
+    ):
         self.container = check.inst_param(container, "container", GraphDefinition)
         self.event_list = check.list_param(event_list, "step_event_list", of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
         self.handle = check.opt_inst_param(handle, "handle", SolidHandle)
+        self.resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override", str
+        )
         self._events_by_step_key = _construct_events_by_step_key(event_list)
 
     @property
@@ -103,6 +113,7 @@ class GraphExecutionResult:
                 events_by_kind,
                 self.reconstruct_context,
                 handle=handle.with_ancestor(self.handle),
+                resource_instances_to_override=self.resource_instances_to_override,
             )
         else:
             for event in self.event_list:
@@ -110,7 +121,12 @@ class GraphExecutionResult:
                     if event.solid_handle.is_or_descends_from(handle.with_ancestor(self.handle)):
                         events_by_kind[event.step_kind].append(event)
 
-            return SolidExecutionResult(solid, events_by_kind, self.reconstruct_context)
+            return SolidExecutionResult(
+                solid,
+                events_by_kind,
+                self.reconstruct_context,
+                resource_instances_to_override=self.resource_instances_to_override,
+            )
 
     def result_for_handle(self, handle):
         """Get the result of a solid by its solid handle.
@@ -141,12 +157,22 @@ class PipelineExecutionResult(GraphExecutionResult):
     Returned by :py:func:`execute_pipeline`. Users should not instantiate this class.
     """
 
-    def __init__(self, pipeline_def, run_id, event_list, reconstruct_context):
+    def __init__(
+        self,
+        pipeline_def,
+        run_id,
+        event_list,
+        reconstruct_context,
+        resource_instances_to_override=None,
+    ):
         self.run_id = check.str_param(run_id, "run_id")
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline_def, event_list=event_list, reconstruct_context=reconstruct_context,
+            container=pipeline_def,
+            event_list=event_list,
+            reconstruct_context=reconstruct_context,
+            resource_instances_to_override=resource_instances_to_override,
         )
 
     @property
@@ -160,7 +186,15 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
     Users should not instantiate this class.
     """
 
-    def __init__(self, solid, event_list, step_events_by_kind, reconstruct_context, handle=None):
+    def __init__(
+        self,
+        solid,
+        event_list,
+        step_events_by_kind,
+        reconstruct_context,
+        handle=None,
+        resource_instances_to_override=None,
+    ):
         check.inst_param(solid, "solid", Solid)
         check.invariant(
             solid.is_composite,
@@ -170,12 +204,15 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, "step_events_by_kind", key_type=StepKind, value_type=list
         )
-
+        self.resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override", str
+        )
         super(CompositeSolidExecutionResult, self).__init__(
             container=solid.definition,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
             handle=handle,
+            resource_instances_to_override=resource_instances_to_override,
         )
 
     def output_values_for_solid(self, name):
@@ -250,7 +287,9 @@ class SolidExecutionResult:
     Users should not instantiate this class.
     """
 
-    def __init__(self, solid, step_events_by_kind, reconstruct_context):
+    def __init__(
+        self, solid, step_events_by_kind, reconstruct_context, resource_instances_to_override=None
+    ):
         check.inst_param(solid, "solid", Solid)
         check.invariant(
             not solid.is_composite,
@@ -261,6 +300,9 @@ class SolidExecutionResult:
             step_events_by_kind, "step_events_by_kind", key_type=StepKind, value_type=list
         )
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
+        self.resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override", str
+        )
 
     @property
     def compute_input_event_dict(self):
@@ -415,7 +457,7 @@ class SolidExecutionResult:
             return None
 
         results = {}
-        with self.reconstruct_context() as context:
+        with self.reconstruct_context(self.resource_instances_to_override) as context:
             for compute_step_event in self.compute_step_events:
                 if compute_step_event.is_successful_output:
                     output = compute_step_event.step_output_data
@@ -464,7 +506,7 @@ class SolidExecutionResult:
         if not self.success:
             return None
 
-        with self.reconstruct_context() as context:
+        with self.reconstruct_context(self.resource_instances_to_override) as context:
             found = False
             result = None
             for compute_step_event in self.compute_step_events:

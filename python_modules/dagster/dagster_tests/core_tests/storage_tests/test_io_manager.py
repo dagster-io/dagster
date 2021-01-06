@@ -416,3 +416,22 @@ def test_io_manager_resources_on_context():
     result = execute_pipeline(basic_pipeline)
 
     assert result.success
+
+
+def test_mem_io_managers_result_for_solid():
+    @solid
+    def one(_):
+        return 1
+
+    @solid
+    def add_one(_, x):
+        return x + 1
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": mem_io_manager})])
+    def my_pipeline():
+        add_one(one())
+
+    result = execute_pipeline(my_pipeline)
+    assert result.success
+    assert result.result_for_solid("one").output_value() == 1
+    assert result.result_for_solid("add_one").output_value() == 2

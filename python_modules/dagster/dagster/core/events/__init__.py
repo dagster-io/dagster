@@ -76,6 +76,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_MATERIALIZATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.OBJECT_STORE_OPERATION,
+    DagsterEventType.ASSET_STORE_OPERATION,
     DagsterEventType.STEP_RESTARTED,
     DagsterEventType.STEP_UP_FOR_RETRY,
 }
