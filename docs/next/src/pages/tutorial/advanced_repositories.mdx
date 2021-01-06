@@ -124,16 +124,16 @@ And now you can switch between repositories in Dagit.
 ### Multi-environment repositories
 
 Sometimes teams desire different Python versions or virtual environments. To support this, Dagster
-allows repositories to live in completely separate processes from each other, and tools like Dagit
+repositories each live in completely separate processes from each other, and tools like Dagit
 communicate with those repositories using a cross-process RPC protocol.
 
-Via the workspace, you can configure where to launch repositories. For example:
+Via the workspace, you can configure a different executable_path for each of your repositories. For example:
 
 ```YAML literalinclude caption=multi_python_env_workspace_example.yaml
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
 ```
 
-For this example to work, you need to change the executable path to point a virtual environment
+For this example to work, you need to change the executable paths to point a virtual environment
 available in your system, and point to a Python file or package that is available and loadable by
 that executable.
 
