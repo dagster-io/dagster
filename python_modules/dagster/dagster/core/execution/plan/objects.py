@@ -1,9 +1,14 @@
-from typing import List, NamedTuple, Optional
+from enum import Enum
+from typing import TYPE_CHECKING, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster.utils.types import ExcInfo
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.system import SystemStepExecutionContext
 
 
 @whitelist_for_serdes
@@ -53,20 +58,71 @@ class UserFailureData(
 
 
 @whitelist_for_serdes
+class ErrorSource(Enum):
+    # An error that occurs while executing framework code
+    FRAMEWORK_ERROR = "FRAMEWORK_ERROR"
+    # An error that occurs while executing user code
+    USER_CODE_ERROR = "USER_CODE_ERROR"
+
+
+@whitelist_for_serdes
 class StepFailureData(
     NamedTuple(
         "_StepFailureData",
-        [("error", SerializableErrorInfo), ("user_failure_data", UserFailureData)],
+        [
+            ("error", SerializableErrorInfo),
+            ("user_failure_data", Optional[UserFailureData]),
+            ("error_source", ErrorSource),
+        ],
     )
 ):
-    def __new__(cls, error, user_failure_data):
+    def __new__(cls, error, user_failure_data, error_source=None):
         return super(StepFailureData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             user_failure_data=check.opt_inst_param(
                 user_failure_data, "user_failure_data", UserFailureData
             ),
+            error_source=check.opt_inst_param(
+                error_source, "error_source", ErrorSource, default=ErrorSource.FRAMEWORK_ERROR
+            ),
         )
+
+    @property
+    def error_display_string(self) -> str:
+        """
+        Creates a display string that hides framework frames if the error arose in user code.
+        """
+        if self.error_source == ErrorSource.USER_CODE_ERROR:
+            user_code_error = self.error.cause
+            check.invariant(
+                user_code_error,
+                "User code error is missing cause. User code errors are expected to have a causes, "
+                "which are the errors thrown from user code.",
+            )
+            return self.error.message.strip() + ":\n\n" + user_code_error.to_string()
+        elif self.error_source == ErrorSource.FRAMEWORK_ERROR:
+            return self.error.to_string()
+        else:
+            check.failed(f"Unexpected error setting: {self.error_source}")
+
+
+def step_failure_event_from_exc_info(
+    step_context: "SystemStepExecutionContext",
+    exc_info: ExcInfo,
+    user_failure_data: Optional[UserFailureData] = None,
+    error_source: Optional[ErrorSource] = None,
+):
+    from dagster.core.events import DagsterEvent
+
+    return DagsterEvent.step_failure_event(
+        step_context=step_context,
+        step_failure_data=StepFailureData(
+            error=serializable_error_info_from_exc_info(exc_info),
+            user_failure_data=user_failure_data,
+            error_source=error_source,
+        ),
+    )
 
 
 @whitelist_for_serdes

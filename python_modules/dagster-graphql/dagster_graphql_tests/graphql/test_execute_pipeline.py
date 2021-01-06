@@ -294,9 +294,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_run_log_entry["message"] == 'Execution of step "throw_a_thing" failed.'
         assert step_run_log_entry["error"]
         assert step_run_log_entry["level"] == "ERROR"
-        assert isinstance(step_run_log_entry["error"]["stack"], list)
+        assert isinstance(step_run_log_entry["error"]["cause"]["stack"], list)
 
-        assert "bad programmer" in step_run_log_entry["error"]["stack"][-1]
+        assert "bad programmer" in step_run_log_entry["error"]["cause"]["stack"][-1]
 
     def test_subscribe_bad_run_id(self, graphql_context):
         run_id = "nope"

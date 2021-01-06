@@ -267,22 +267,6 @@ class FromStepOutput(
         return set()
 
 
-def _generate_error_boundary_msg_for_step_input(
-    context: "SystemStepExecutionContext", input_name: str
-):
-    return lambda: """Error occurred during input loading:
-    input name: "{input_name}"
-    step key: "{key}"
-    solid invocation: "{solid}"
-    solid definition: "{solid_def}"
-    """.format(
-        input_name=input_name,
-        key=context.step.key,
-        solid_def=context.solid_def.name,
-        solid=context.solid.name,
-    )
-
-
 class FromConfig(
     NamedTuple("_FromConfig", [("solid_handle", SolidHandle), ("input_name", str)]),
     StepInputSource,
@@ -299,7 +283,10 @@ class FromConfig(
     def load_input_object(self, step_context: "SystemStepExecutionContext") -> Any:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
-            msg_fn=_generate_error_boundary_msg_for_step_input(step_context, self.input_name),
+            msg_fn=lambda: (
+                f'Error occurred while loading input "{self.input_name}" of '
+                f'step "{step_context.step.key}":'
+            ),
         ):
             dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
 
@@ -453,9 +440,8 @@ def _load_input_with_input_manager(input_manager: "InputManager", context: "Inpu
         DagsterExecutionLoadInputError,
         control_flow_exceptions=[Failure, RetryRequested],
         msg_fn=lambda: (
-            f"Error occurred during the loading of a step input:"
-            f'    step key: "{context.step_context.step.key}"'
-            f'    input name: "{context.name}"'
+            f'Error occurred while loading input "{context.name}" of '
+            f'step "{context.step_context.step.key}":'
         ),
         step_key=context.step_context.step.key,
         input_name=context.name,

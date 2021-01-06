@@ -105,7 +105,8 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
         assert len(result.solid_result_list) == 2  # fail & skip
         assert not result.result_for_solid("fails").success
         assert (
-            result.result_for_solid("fails").failure_data.error.message == "Exception: argjhgjh\n"
+            "Exception: argjhgjh\n"
+            in result.result_for_solid("fails").failure_data.error.cause.message
         )
         assert result.result_for_solid("should_never_execute").skipped
 
@@ -282,7 +283,8 @@ def test_execute_eagerly_fails_pipeline_on_celery():
         assert len(result.solid_result_list) == 2
         assert not result.result_for_solid("fails").success
         assert (
-            result.result_for_solid("fails").failure_data.error.message == "Exception: argjhgjh\n"
+            "Exception: argjhgjh\n"
+            in result.result_for_solid("fails").failure_data.error.cause.message
         )
         assert result.result_for_solid("should_never_execute").skipped
 

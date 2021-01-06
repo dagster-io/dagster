@@ -313,7 +313,8 @@ def test_resources_notebook_with_exception():
             assert not result.success
             assert result.step_event_list[8].event_type.value == "STEP_FAILURE"
             assert (
-                "raise Exception()" in result.step_event_list[8].event_specific_data.error.message
+                "raise Exception()"
+                in result.step_event_list[8].event_specific_data.error.cause.message
             )
 
             # Expect something like:

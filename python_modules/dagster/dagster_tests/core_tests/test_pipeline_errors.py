@@ -81,7 +81,14 @@ def test_failure_midstream():
     assert pipeline_result.result_for_solid("solid_a").success
     assert pipeline_result.result_for_solid("solid_b").success
     assert not pipeline_result.result_for_solid("solid_c").success
-    assert pipeline_result.result_for_solid("solid_c").failure_data.error.cls_name == "CheckError"
+    assert (
+        pipeline_result.result_for_solid("solid_c").failure_data.error.cls_name
+        == "DagsterExecutionStepExecutionError"
+    )
+    assert (
+        pipeline_result.result_for_solid("solid_c").failure_data.error.cause.cls_name
+        == "CheckError"
+    )
     assert not pipeline_result.result_for_solid("solid_d").success
     assert pipeline_result.result_for_solid("solid_d").skipped
 
@@ -128,7 +135,10 @@ def test_failure_propagation():
     assert pipeline_result.result_for_solid("solid_b").success
     assert pipeline_result.result_for_solid("solid_c").success
     assert not pipeline_result.result_for_solid("solid_d").success
-    assert pipeline_result.result_for_solid("solid_d").failure_data.error.cls_name == "CheckError"
+    assert (
+        pipeline_result.result_for_solid("solid_d").failure_data.error.cause.cls_name
+        == "CheckError"
+    )
     assert not pipeline_result.result_for_solid("solid_e").success
     assert pipeline_result.result_for_solid("solid_e").skipped
     assert not pipeline_result.result_for_solid("solid_f").success

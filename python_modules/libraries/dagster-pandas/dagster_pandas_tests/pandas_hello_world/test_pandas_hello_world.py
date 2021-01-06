@@ -91,4 +91,4 @@ def test_cli_execute_failure():
         os.chdir(cwd)
 
     assert len(failures) == 1
-    assert "I am a programmer and I make error" in failures[0].step_failure_data.error.message
+    assert "I am a programmer and I make error" in failures[0].step_failure_data.error.cause.message
