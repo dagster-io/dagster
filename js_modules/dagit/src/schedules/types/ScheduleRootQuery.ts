@@ -55,6 +55,7 @@ export type ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionSta
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionStatusesOrError: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError;
 }

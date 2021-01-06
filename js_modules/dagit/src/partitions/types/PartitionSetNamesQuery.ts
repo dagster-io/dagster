@@ -32,6 +32,7 @@ export type PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOr
 
 export interface PartitionSetNamesQuery_partitionSetOrError_PartitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionsOrError: PartitionSetNamesQuery_partitionSetOrError_PartitionSet_partitionsOrError;
 }

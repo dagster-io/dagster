@@ -30,6 +30,7 @@ export type RepositorySchedulesFragment_schedules_partitionSet_partitionStatuses
 
 export interface RepositorySchedulesFragment_schedules_partitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionStatusesOrError: RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError;
 }

@@ -30,6 +30,7 @@ export type ScheduleFragment_partitionSet_partitionStatusesOrError = ScheduleFra
 
 export interface ScheduleFragment_partitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionStatusesOrError: ScheduleFragment_partitionSet_partitionStatusesOrError;
 }

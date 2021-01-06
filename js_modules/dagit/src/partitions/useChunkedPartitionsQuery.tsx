@@ -296,6 +296,7 @@ const PARTITION_SET_NAMES_QUERY = gql`
       partitionSetName: $partitionSetName
     ) {
       ... on PartitionSet {
+        id
         name
         partitionsOrError(cursor: $cursor, limit: $limit, reverse: $reverse) {
           ... on Partitions {

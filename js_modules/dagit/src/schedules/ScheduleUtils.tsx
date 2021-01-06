@@ -19,6 +19,7 @@ export const SCHEDULE_FRAGMENT = gql`
     solidSelection
     mode
     partitionSet {
+      id
       name
       partitionStatusesOrError {
         ... on PartitionStatuses {

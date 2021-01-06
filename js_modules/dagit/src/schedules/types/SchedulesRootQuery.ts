@@ -34,6 +34,7 @@ export type SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionS
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionStatusesOrError: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError;
 }

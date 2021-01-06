@@ -123,6 +123,7 @@ export type InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_s
 
 export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionStatusesOrError: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError;
 }

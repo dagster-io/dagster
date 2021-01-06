@@ -464,6 +464,7 @@ export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
 export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
     results {
+      id
       name
       mode
       solidSelection
@@ -482,6 +483,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
     ) {
       __typename
       ... on PartitionSet {
+        id
         partitionsOrError {
           ... on Partitions {
             results {
@@ -510,6 +512,7 @@ const CONFIG_PARTITION_SELECTION_QUERY = gql`
     ) {
       __typename
       ... on PartitionSet {
+        id
         partition(partitionName: $partitionName) {
           name
           solidSelection

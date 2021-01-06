@@ -115,6 +115,7 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       }
       ... on PartitionSets {
         results {
+          id
           name
         }
       }

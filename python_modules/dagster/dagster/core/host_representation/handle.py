@@ -372,3 +372,8 @@ class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name r
     @property
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
+
+    def get_external_origin(self):
+        return self.repository_handle.get_external_origin().get_partition_set_origin(
+            self.partition_set_name
+        )

@@ -114,6 +114,7 @@ GET_PARTITION_SET_STATUS_QUERY = """
     query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
         partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
             ...on PartitionSet {
+                id
                 partitionStatusesOrError {
                     ... on PartitionStatuses {
                         results {

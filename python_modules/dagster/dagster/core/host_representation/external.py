@@ -513,3 +513,9 @@ class ExternalPartitionSet:
     @property
     def pipeline_name(self):
         return self._external_partition_set_data.pipeline_name
+
+    def get_external_origin(self):
+        return self._handle.get_external_origin()
+
+    def get_external_origin_id(self):
+        return self.get_external_origin().get_id()

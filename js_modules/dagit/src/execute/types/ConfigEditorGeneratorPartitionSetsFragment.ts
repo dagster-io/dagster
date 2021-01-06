@@ -10,6 +10,7 @@
 
 export interface ConfigEditorGeneratorPartitionSetsFragment_results {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   mode: string;
   solidSelection: string[] | null;

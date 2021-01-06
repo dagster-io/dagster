@@ -102,6 +102,7 @@ class DauphinPartitionSet(dauphin.ObjectType):
     class Meta:
         name = "PartitionSet"
 
+    id = dauphin.NonNull(dauphin.ID)
     name = dauphin.NonNull(dauphin.String)
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
@@ -129,6 +130,9 @@ class DauphinPartitionSet(dauphin.ObjectType):
             solid_selection=external_partition_set.solid_selection,
             mode=external_partition_set.mode,
         )
+
+    def resolve_id(self, _graphene_info):
+        return self._external_partition_set.get_external_origin_id()
 
     def resolve_partitionsOrError(self, graphene_info, **kwargs):
         return get_partitions(

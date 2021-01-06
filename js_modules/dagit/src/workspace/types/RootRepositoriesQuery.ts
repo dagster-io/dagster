@@ -17,6 +17,7 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_partitionSets {
   __typename: "PartitionSet";
+  id: string;
   pipelineName: string;
 }
 

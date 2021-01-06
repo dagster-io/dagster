@@ -62,6 +62,7 @@ export type PipelineExecutionRootQuery_pipelineOrError = PipelineExecutionRootQu
 
 export interface PipelineExecutionRootQuery_partitionSetsOrError_PartitionSets_results {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   mode: string;
   solidSelection: string[] | null;

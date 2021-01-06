@@ -41,6 +41,7 @@ export type ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrE
 
 export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet {
   __typename: "PartitionSet";
+  id: string;
   partitionsOrError: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError;
 }
 

@@ -71,6 +71,7 @@ export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_
 
 export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet {
   __typename: "PartitionSet";
+  id: string;
   partition: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition | null;
 }
 
