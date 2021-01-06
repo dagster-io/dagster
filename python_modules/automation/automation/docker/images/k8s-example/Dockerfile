@@ -1,5 +1,5 @@
 ARG BASE_IMAGE
-FROM "${BASE_IMAGE}"
+FROM "${BASE_IMAGE}" as build
 
 ARG DAGSTER_VERSION
 
@@ -16,4 +16,19 @@ RUN pip install \
     dagster-celery-k8s==${DAGSTER_VERSION}
 
 # Get example pipelines
-COPY build_cache/ /
+# COPY build_cache/ /
+
+# (25.66 MB) 
+RUN rm -rf /var
+
+# (36.08 MB) 
+RUN rm -rf /root/.cache
+
+# (12.01 MB) 
+RUN rm -rf /usr/lib/python2.7
+
+# (37.21 MB)
+RUN rm -rf /usr/lib/x86_64-linux-gnu/guile
+
+FROM "${BASE_IMAGE}"
+COPY --from=build / /
