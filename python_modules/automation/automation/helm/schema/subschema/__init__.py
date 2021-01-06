@@ -5,3 +5,4 @@ from .ingress import Ingress
 from .postgresql import PostgreSQL
 from .rabbitmq import RabbitMQ
 from .redis import Redis
+from .userdeployments import UserDeployments

@@ -427,6 +427,7 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                         "define_demo_execution_repo",
                     ],
                     "port": 3030,
+                    "replicaCount": 1,
                 }
             ],
         },
@@ -519,6 +520,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                     "service": {
                         "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}
                     },
+                    "replicaCount": 1,
                 }
             ],
         },

@@ -6,6 +6,9 @@
         "dagit": {
             "$ref": "#/definitions/Dagit"
         },
+        "userDeployments": {
+            "$ref": "#/definitions/UserDeployments"
+        },
         "postgresql": {
             "$ref": "#/definitions/PostgreSQL"
         },
@@ -31,6 +34,7 @@
     },
     "required": [
         "dagit",
+        "userDeployments",
         "postgresql",
         "rabbitmq",
         "redis",
@@ -193,6 +197,107 @@
                 "replicaCount",
                 "image",
                 "service"
+            ]
+        },
+        "UserDeployment": {
+            "title": "UserDeployment",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "dagsterApiGrpcArgs": {
+                    "title": "Dagsterapigrpcargs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                },
+                "env": {
+                    "title": "Env",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "env_config_maps": {
+                    "title": "Env Config Maps",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "env_secrets": {
+                    "title": "Env Secrets",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "affinity": {
+                    "$ref": "#/definitions/Affinity"
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/SecurityContext"
+                },
+                "resources": {
+                    "$ref": "#/definitions/Resources"
+                },
+                "replicaCount": {
+                    "title": "Replicacount",
+                    "type": "integer"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/LivenessProbe"
+                },
+                "startupProbe": {
+                    "$ref": "#/definitions/StartupProbe"
+                }
+            },
+            "required": [
+                "name",
+                "image",
+                "dagsterApiGrpcArgs",
+                "port",
+                "replicaCount"
+            ]
+        },
+        "UserDeployments": {
+            "title": "UserDeployments",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "deployments": {
+                    "title": "Deployments",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UserDeployment"
+                    }
+                }
+            },
+            "required": [
+                "enabled",
+                "deployments"
             ]
         },
         "automation__helm__schema__subschema__postgresql__Service": {

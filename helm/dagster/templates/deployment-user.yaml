@@ -93,16 +93,66 @@ spec:
               subPath: dagster.yaml
           resources:
             {{- toYaml $deployment.resources | nindent 12 }}
+        {{- if $deployment.livenessProbe }}
+          {{- if not $deployment.livenessProbe.exec }}
           livenessProbe:
             exec:
               command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-            periodSeconds: 20
-            timeoutSeconds: 3
+            {{- if hasKey $deployment.livenessProbe "initialDelaySeconds" }}
+            initialDelaySeconds:
+              {{- toYaml $deployment.livenessProbe.initialDelaySeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.livenessProbe "periodSeconds" }}
+            periodSeconds:
+              {{- toYaml $deployment.livenessProbe.periodSeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.livenessProbe "timeoutSeconds" }}
+            timeoutSeconds:
+              {{- toYaml $deployment.livenessProbe.timeoutSeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.livenessProbe "successThreshold" }}
+            successThreshold:
+              {{- toYaml $deployment.livenessProbe.successThreshold | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.livenessProbe "failureThreshold" }}
+            failureThreshold:
+              {{- toYaml $deployment.livenessProbe.failureThreshold | nindent 14 }}
+            {{- end }}
+          {{- else}}
+          livenessProbe:
+            {{- toYaml $deployment.livenessProbe | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if $deployment.startupProbe }}
+          {{- if not $deployment.startupProbe.exec }}
           startupProbe:
             exec:
-              command: ["dagster", "api", "grpc-health-check", "-p",  "{{ $deployment.port }}"]
-            periodSeconds: 10
-            timeoutSeconds: 3
+              command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
+            {{- if hasKey $deployment.startupProbe "initialDelaySeconds" }}
+            initialDelaySeconds:
+              {{- toYaml $deployment.startupProbe.initialDelaySeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.startupProbe "periodSeconds" }}
+            periodSeconds:
+              {{- toYaml $deployment.startupProbe.periodSeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.startupProbe "timeoutSeconds" }}
+            timeoutSeconds:
+              {{- toYaml $deployment.startupProbe.timeoutSeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.startupProbe "successThreshold" }}
+            successThreshold:
+              {{- toYaml $deployment.startupProbe.successThreshold | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $deployment.startupProbe "failureThreshold" }}
+            failureThreshold:
+              {{- toYaml $deployment.startupProbe.failureThreshold | nindent 14 }}
+            {{- end }}
+          {{- else}}
+          startupProbe:
+            {{- toYaml $deployment.startupProbe | nindent 12 }}
+          {{- end }}
+        {{- end }}
       {{- with $deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

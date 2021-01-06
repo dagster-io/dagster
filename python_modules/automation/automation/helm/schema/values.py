@@ -11,6 +11,7 @@ class HelmValues(BaseModel):
     """
 
     dagit: subschema.Dagit
+    userDeployments: subschema.UserDeployments
     postgresql: subschema.PostgreSQL
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis
