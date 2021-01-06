@@ -54,7 +54,7 @@ query InstanceDetailSummaryQuery {
     instance {
         daemonHealth {
             sensor: daemonStatus(daemonType: SENSOR){
-                lastHeartbeatError {
+                lastHeartbeatErrors {
                     message
                 }
             }
@@ -70,7 +70,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
             pytest.skip("The daemon isn't compatible with an in-memory instance")
         graphql_context.instance.add_daemon_heartbeat(
             DaemonHeartbeat(
-                timestamp=100.0, daemon_type=DaemonType.SENSOR, daemon_id=None, error=None
+                timestamp=100.0, daemon_type=DaemonType.SENSOR, daemon_id=None, errors=[]
             )
         )
         results = execute_dagster_graphql(graphql_context, INDIVIDUAL_DAEMON_QUERY)
@@ -142,10 +142,12 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                 timestamp=100.0,
                 daemon_type=DaemonType.SENSOR,
                 daemon_id=None,
-                error=SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None),
+                errors=[
+                    SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None)
+                ],
             )
         )
         results = execute_dagster_graphql(graphql_context, DAEMON_HEALTH_QUERY)
         assert results.data["instance"]["daemonHealth"]["sensor"] == {
-            "lastHeartbeatError": {"message": "foobar"},
+            "lastHeartbeatErrors": [{"message": "foobar"}],
         }

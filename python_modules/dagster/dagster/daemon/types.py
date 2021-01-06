@@ -15,18 +15,18 @@ class DaemonType(Enum):
 
 
 @whitelist_for_serdes
-class DaemonHeartbeat(namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id error")):
+class DaemonHeartbeat(namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id errors")):
     """
     Heartbeats are placed in storage by the daemon to show liveness
     """
 
-    def __new__(cls, timestamp, daemon_type, daemon_id, error):
+    def __new__(cls, timestamp, daemon_type, daemon_id, errors):
         return super(DaemonHeartbeat, cls).__new__(
             cls,
             timestamp=check.float_param(timestamp, "timestamp"),
             daemon_type=check.inst_param(daemon_type, "daemon_type", DaemonType),
             daemon_id=daemon_id,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            errors=check.list_param(errors, "errors", of_type=SerializableErrorInfo),
         )
 
 

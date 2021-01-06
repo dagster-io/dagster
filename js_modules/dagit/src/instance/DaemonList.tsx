@@ -83,7 +83,7 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
       daemonType
       required
       healthy
-      lastHeartbeatError {
+      lastHeartbeatErrors {
         __typename
         ...PythonErrorFragment
       }

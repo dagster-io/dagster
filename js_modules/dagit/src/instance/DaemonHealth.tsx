@@ -42,7 +42,7 @@ export const DaemonHealth = (props: Props) => {
   const [showDialog, setShowDialog] = React.useState(false);
 
   const metadata = () => {
-    if (daemon.lastHeartbeatError) {
+    if (daemon.lastHeartbeatErrors.length > 0) {
       return (
         <>
           <ButtonLink color={Colors.BLUE2} underline="hover" onClick={() => setShowDialog(true)}>
@@ -62,8 +62,8 @@ export const DaemonHealth = (props: Props) => {
                 </div>
                 <Trace>
                   <Group direction="column" spacing={12}>
-                    <div>{daemon.lastHeartbeatError.message}</div>
-                    <div>{daemon.lastHeartbeatError.stack}</div>
+                    <div>{daemon.lastHeartbeatErrors[0].message}</div>
+                    <div>{daemon.lastHeartbeatErrors[0].stack}</div>
                   </Group>
                 </Trace>
               </Group>

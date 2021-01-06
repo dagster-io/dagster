@@ -898,7 +898,7 @@ class TestRunStorage:
             timestamp=pendulum.from_timestamp(1000).float_timestamp,
             daemon_type=DaemonType.SENSOR,
             daemon_id=None,
-            error=None,
+            errors=[],
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         assert len(storage.get_daemon_heartbeats()) == 1
@@ -910,7 +910,7 @@ class TestRunStorage:
             timestamp=pendulum.from_timestamp(2000).float_timestamp,
             daemon_type=DaemonType.SENSOR,
             daemon_id=None,
-            error=None,
+            errors=[],
         )
         storage.add_daemon_heartbeat(second_added_heartbeat)
         assert len(storage.get_daemon_heartbeats()) == 1
@@ -924,7 +924,7 @@ class TestRunStorage:
             timestamp=pendulum.from_timestamp(1000).float_timestamp,
             daemon_type=DaemonType.SENSOR,
             daemon_id=None,
-            error=None,
+            errors=[],
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()

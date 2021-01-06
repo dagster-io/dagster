@@ -10,17 +10,17 @@ import { DaemonType } from "./../../types/globalTypes";
 // GraphQL fragment: InstanceHealthFragment
 // ====================================================
 
-export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses {
@@ -28,7 +28,7 @@ export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses {
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 

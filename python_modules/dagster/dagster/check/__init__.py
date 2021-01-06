@@ -119,6 +119,12 @@ def inst(obj: Any, ttype: Type, desc: str = None) -> Any:
     return obj
 
 
+def opt_inst(obj: Any, ttype: Type, desc: str = None, default: Any = None) -> Any:
+    if obj is not None and not isinstance(obj, ttype):
+        raise_with_traceback(_type_mismatch_error(obj, ttype, desc))
+    return default if obj is None else obj
+
+
 def subclass(obj: Any, superclass: Type, desc: str = None) -> Any:
     if not issubclass(obj, superclass):
         raise_with_traceback(_type_mismatch_error(obj, superclass, desc))

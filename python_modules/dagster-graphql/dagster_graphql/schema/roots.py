@@ -1011,25 +1011,24 @@ class DauphinDaemonStatus(dauphin.ObjectType):
     required = dauphin.NonNull(dauphin.Boolean)
     healthy = dauphin.Boolean()
     lastHeartbeatTime = dauphin.Float()
-    lastHeartbeatError = dauphin.Field("PythonError")
+    lastHeartbeatErrors = dauphin.non_null_list("PythonError")
 
     def __init__(self, daemon_status):
 
         check.inst_param(daemon_status, "daemon_status", DaemonStatus)
 
-        last_heartbeat_time = None
-        last_heartbeat_error = None
-        if daemon_status.last_heartbeat:
-            last_heartbeat_time = daemon_status.last_heartbeat.timestamp
-            if daemon_status.last_heartbeat.error:
-                last_heartbeat_error = DauphinPythonError(daemon_status.last_heartbeat.error)
-
         super(DauphinDaemonStatus, self).__init__(
             daemonType=daemon_status.daemon_type,
             required=daemon_status.required,
             healthy=daemon_status.healthy,
-            lastHeartbeatTime=last_heartbeat_time,
-            lastHeartbeatError=last_heartbeat_error,
+            lastHeartbeatTime=daemon_status.last_heartbeat.timestamp
+            if daemon_status.last_heartbeat
+            else None,
+            lastHeartbeatErrors=[
+                DauphinPythonError(error) for error in daemon_status.last_heartbeat.errors
+            ]
+            if daemon_status.last_heartbeat
+            else [],
         )
 
 

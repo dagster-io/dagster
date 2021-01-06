@@ -287,17 +287,17 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_PythonError {
 
 export type SchedulesRootQuery_unloadableJobStatesOrError = SchedulesRootQuery_unloadableJobStatesOrError_JobStates | SchedulesRootQuery_unloadableJobStatesOrError_PythonError;
 
-export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses {
@@ -305,7 +305,7 @@ export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses {
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 

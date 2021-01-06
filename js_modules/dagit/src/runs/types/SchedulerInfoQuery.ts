@@ -35,17 +35,17 @@ export interface SchedulerInfoQuery_scheduler_PythonError {
 
 export type SchedulerInfoQuery_scheduler = SchedulerInfoQuery_scheduler_SchedulerNotDefinedError | SchedulerInfoQuery_scheduler_Scheduler | SchedulerInfoQuery_scheduler_PythonError;
 
-export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses {
@@ -53,7 +53,7 @@ export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses {
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 

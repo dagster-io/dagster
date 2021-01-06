@@ -7,6 +7,7 @@ from dagster.daemon.controller import (
     all_daemons_healthy,
     get_daemon_status,
 )
+from dagster.utils.error import SerializableErrorInfo
 
 
 def test_healthy():
@@ -63,10 +64,32 @@ def test_error_daemon(monkeypatch):
 
         status = get_daemon_status(instance, SensorDaemon.daemon_type(), init_time.float_timestamp)
         assert status.healthy == False
+        assert len(status.last_heartbeat.errors) == 1
         assert (
-            status.last_heartbeat.error.message.strip()
+            status.last_heartbeat.errors[0].message.strip()
             == "dagster.core.errors.DagsterInvariantViolationError: foobar"
         )
+
+
+def test_multiple_error_daemon(monkeypatch):
+    with instance_for_test(overrides={}) as instance:
+        from dagster.daemon.daemon import SensorDaemon
+
+        def run_iteration_error(_):
+            # ?message stack cls_name cause"
+            yield SerializableErrorInfo("foobar", None, None, None)
+            yield SerializableErrorInfo("bizbuz", None, None, None)
+
+        monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
+        controller = DagsterDaemonController(instance)
+        init_time = pendulum.now("UTC")
+        controller.run_iteration(init_time)
+
+        status = get_daemon_status(instance, SensorDaemon.daemon_type(), init_time.float_timestamp)
+        assert status.healthy == False
+        assert len(status.last_heartbeat.errors) == 2
+        assert status.last_heartbeat.errors[0].message.strip() == "foobar"
+        assert status.last_heartbeat.errors[1].message.strip() == "bizbuz"
 
 
 def test_warn_multiple_daemons(capsys):

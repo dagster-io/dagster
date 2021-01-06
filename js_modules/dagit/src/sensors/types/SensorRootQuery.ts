@@ -101,17 +101,17 @@ export interface SensorRootQuery_sensorOrError_Sensor {
 
 export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;
 
-export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
@@ -119,7 +119,7 @@ export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
   daemonType: DaemonType;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 
