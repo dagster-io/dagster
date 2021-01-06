@@ -39,7 +39,7 @@ def integration_steps():
     ).get_tox_build_steps()
 
     integration_suites_root = os.path.join(
-        SCRIPT_PATH, "..", "..", "..", "integration_tests", "test_suites"
+        SCRIPT_PATH, "..", "..", "..", "..", "integration_tests", "test_suites"
     )
     integration_suites = [
         os.path.join("integration_tests", "test_suites", suite)
