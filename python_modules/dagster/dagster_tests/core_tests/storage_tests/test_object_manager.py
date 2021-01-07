@@ -17,8 +17,9 @@ from dagster import (
 )
 from dagster.core.definitions.events import AssetStoreOperationType
 from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.context.system import InputContext, OutputContext
 from dagster.core.storage.fs_object_manager import custom_path_fs_object_manager, fs_object_manager
-from dagster.core.storage.mem_object_manager import mem_object_manager
+from dagster.core.storage.mem_object_manager import InMemoryObjectManager, mem_object_manager
 from dagster.core.storage.object_manager import ObjectManager, object_manager
 
 
@@ -343,3 +344,11 @@ def test_configured():
         configured_object_manager.required_resource_keys == an_object_manager.required_resource_keys
     )
     assert configured_object_manager.version is None
+
+
+def test_mem_object_manager_execution():
+    mem_object_manager_instance = InMemoryObjectManager()
+    output_context = OutputContext(step_key="step_key", name="output_name", pipeline_name="foo",)
+    mem_object_manager_instance.handle_output(output_context, 1)
+    input_context = InputContext(pipeline_name="foo", upstream_output=output_context,)
+    assert mem_object_manager_instance.load_input(input_context) == 1

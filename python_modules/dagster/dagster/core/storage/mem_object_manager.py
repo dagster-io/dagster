@@ -10,7 +10,7 @@ class InMemoryObjectManager(ObjectManager):
         self.values[keys] = obj
 
     def load_input(self, context):
-        keys = tuple(context.get_run_scoped_output_identifier())
+        keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
         return self.values[keys]
 
 
