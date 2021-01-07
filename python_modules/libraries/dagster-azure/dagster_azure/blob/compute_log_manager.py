@@ -2,7 +2,7 @@ import itertools
 import os
 from contextlib import contextmanager
 
-from dagster import Field, check, seven
+from dagster import Field, StringSource, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -88,11 +88,11 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            "storage_account": str,
-            "container": str,
-            "secret_key": str,
-            "local_dir": Field(str, is_required=False),
-            "prefix": Field(str, is_required=False, default_value="dagster"),
+            "storage_account": StringSource,
+            "container": StringSource,
+            "secret_key": StringSource,
+            "local_dir": Field(StringSource, is_required=False),
+            "prefix": Field(StringSource, is_required=False, default_value="dagster"),
         }
 
     @staticmethod
