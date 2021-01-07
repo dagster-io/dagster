@@ -96,12 +96,16 @@ def test_invoke_entrypoint():
     assert "Start a dagster celery worker" in result.output
 
 
+# https://github.com/dagster-io/dagster/issues/3494
+@pytest.mark.skip
 def test_start_worker(rabbitmq):
     with cleanup_worker("dagster_test_worker"):
         start_worker("dagster_test_worker")
         assert check_for_worker("dagster_test_worker")
 
 
+# https://github.com/dagster-io/dagster/issues/3494
+@pytest.mark.skip
 def test_start_worker_too_many_queues(rabbitmq):
     args = ["-q", "1", "-q", "2", "-q", "3", "-q", "4", "-q", "5"]
 
@@ -117,6 +121,8 @@ def test_start_worker_too_many_queues(rabbitmq):
         )
 
 
+# https://github.com/dagster-io/dagster/issues/3494
+@pytest.mark.skip
 def test_start_worker_addargs(rabbitmq):
     args = ["--", "--uid", "42"]
 
@@ -127,6 +133,8 @@ def test_start_worker_addargs(rabbitmq):
         )
 
 
+# https://github.com/dagster-io/dagster/issues/3494
+@pytest.mark.skip
 def test_start_worker_config_from_empty_yaml(rabbitmq):
     args = ["-y", file_relative_path(__file__, "empty.yaml")]
     with cleanup_worker("dagster_test_worker", args=args):
@@ -134,6 +142,8 @@ def test_start_worker_config_from_empty_yaml(rabbitmq):
         assert check_for_worker("dagster_test_worker", args=args)
 
 
+# https://github.com/dagster-io/dagster/issues/3494
+@pytest.mark.skip
 def test_start_worker_config_from_partial_yaml(rabbitmq):
     args = ["-y", file_relative_path(__file__, "partial.yaml")]
     with cleanup_worker("dagster_test_worker", args=args):
