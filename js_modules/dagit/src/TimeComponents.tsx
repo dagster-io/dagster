@@ -27,9 +27,7 @@ const defaultTimeFormat = (m: moment.Moment, timezone: string) => {
 // encourage use of the same default format string across the app.
 export function timestampToString(time: TimestampProps, timezone: string) {
   let m = 'ms' in time ? moment(time.ms) : moment.unix(time.unix);
-  if (timezone !== 'Automatic') {
-    m = m.tz(timezone);
-  }
+  m = m.tz(timezone === 'Automatic' ? browserTimezone() : timezone);
 
   return m.format(time.format || defaultTimeFormat(m, timezone));
 }
