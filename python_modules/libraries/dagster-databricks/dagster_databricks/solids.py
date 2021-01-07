@@ -43,12 +43,12 @@ def create_databricks_job_solid(
             "poll_interval_sec": Field(
                 float,
                 description="Check whether the job is done at this interval.",
-                default_value=10,
+                default_value=_DEFAULT_POLL_INTERVAL,
             ),
             "max_wait_time_sec": Field(
                 float,
                 description="If the job is not complete after this length of time, raise an error.",
-                default_value=(24 * 60 * 60),
+                default_value=_DEFAULT_RUN_MAX_WAIT_TIME_SEC,
             ),
         },
         input_defs=input_defs,
