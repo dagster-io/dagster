@@ -41,11 +41,12 @@ event_log_storage:
 # ==================================================================================================
 # Scheduler
 # ==================================================================================================
-# Provides an optional scheduler which will control timed, repeated execution of pipeline runs.
-# Currently, only SystemCronScheduler is supported.
+# Provides an optional scheduler which controls execution of pipeline runs at regular intervals.
+# We recommend using the default DagsterDaemonScheduler - SystemCronScheduler and K8sScheduler are
+# also available but are deprecated.
 scheduler:
-  module: dagster_cron.cron_scheduler
-  class: SystemCronScheduler
+  module: dagster.core.scheduler
+  class: DagsterDaemonScheduler
 
 # ==================================================================================================
 # Schedule Storage
@@ -74,6 +75,16 @@ schedule_storage:
 run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
+
+# ==================================================================================================
+# Run Coordinator
+# ==================================================================================================
+# Determines the policy used to determine the prioritization rules and concurrency limits for runs.
+# Can be set to DefaultRunCoordinator (default) or QueuedRunCoordinator when you want to maintain
+# limits on the number of runs that can be executing at once.
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
 
 # ==================================================================================================
 # Compute Log Storage

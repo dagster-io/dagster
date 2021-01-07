@@ -158,6 +158,17 @@ See also: :py:class:`dagster_k8s.K8sRunLauncher`.
 
 ----
 
+Run coordinator
+------------
+
+.. currentmodule:: dagster.core.run_coordinator
+
+.. autoclass:: DefaultRunCoordinator
+
+.. autoclass:: QueuedRunCoordinator
+
+----
+
 Scheduling
 ----------
 
@@ -165,6 +176,7 @@ Scheduling
 
 .. autoclass:: Scheduler
 
+.. autoclass:: DagsterDaemonScheduler
 
 .. currentmodule:: dagster_cron.cron_scheduler
 

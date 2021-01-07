@@ -17,8 +17,14 @@ Schedules
 .. autoclass:: ScheduleDefinition
 .. autoclass:: ScheduleExecutionContext
 
+.. currentmodule:: dagster.core.scheduler
+
+.. autoclass:: DagsterDaemonScheduler
+
 Sensors
 =======
+
+.. currentmodule:: dagster
 
 .. autodecorator:: sensor
 

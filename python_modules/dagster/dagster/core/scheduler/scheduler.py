@@ -332,7 +332,7 @@ class Scheduler(abc.ABC):
 
 
 class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
-    """Scheduler implementation that launches runs from the `dagster scheduler run`
+    """Default scheduler implementation that submits runs from the `dagster-daemon`
     long-lived process.
     """
 
