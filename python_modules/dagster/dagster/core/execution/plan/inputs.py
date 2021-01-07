@@ -85,10 +85,6 @@ class StepInputSource(ABC):
     def load_input_object(self, step_context):
         raise NotImplementedError()
 
-    @abstractmethod
-    def can_load_input_object(self, step_context):
-        raise NotImplementedError()
-
     def required_resource_keys(self):
         return set()
 
@@ -121,9 +117,6 @@ class FromRootInputManager(
 
     def required_resource_keys(self):
         return {self.input_def.manager_key}
-
-    def can_load_input_object(self, step_context):
-        return True
 
 
 class FromStepOutput(
@@ -158,18 +151,6 @@ class FromStepOutput(
     @property
     def step_output_handle_dependencies(self):
         return [self.step_output_handle]
-
-    def can_load_input_object(self, step_context):
-        source_handle = self.step_output_handle
-        if step_context.using_io_manager(source_handle):
-            # asset store does not have a has check so assume present
-            return True
-        if self.input_def.manager_key:
-            return True
-
-        return step_context.intermediate_storage.has_intermediate(
-            context=step_context, step_output_handle=source_handle,
-        )
 
     def get_load_context(self, step_context):
         resource_config = (
@@ -264,9 +245,6 @@ class FromConfig(namedtuple("_FromConfig", "config_data dagster_type input_name"
             cls, config_data=config_data, dagster_type=dagster_type, input_name=input_name
         )
 
-    def can_load_input_object(self, step_context):
-        return True
-
     def load_input_object(self, step_context):
         with user_code_error_boundary(
             DagsterTypeLoadingError,
@@ -292,9 +270,6 @@ class FromDefaultValue(namedtuple("_FromDefaultValue", "value"), StepInputSource
         cls, value,
     ):
         return super(FromDefaultValue, cls).__new__(cls, value)
-
-    def can_load_input_object(self, step_context):
-        return True
 
     def load_input_object(self, step_context):
         return self.value
@@ -331,16 +306,30 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
 
         return handles
 
-    def can_load_input_object(self, step_context):
-        return any([source.can_load_input_object(step_context) for source in self.sources])
+    def _step_output_handles_no_output(self, step_context):
+        # FIXME https://github.com/dagster-io/dagster/issues/3511
+        # this is a stopgap which asks the instance to check the event logs to find out step skipping
+        step_output_handles_with_output = set()
+        for event_record in step_context.instance.all_logs(step_context.run_id):
+            if event_record.dagster_event and event_record.dagster_event.is_successful_output:
+                step_output_handles_with_output.add(
+                    event_record.dagster_event.event_specific_data.step_output_handle
+                )
+        return set(self.step_output_handle_dependencies).difference(step_output_handles_with_output)
 
     def load_input_object(self, step_context):
         values = []
+
+        # some upstream steps may have skipped and we allow fan-in to continue in their absence
+        source_handles_to_skip = self._step_output_handles_no_output(step_context)
+
         for inner_source in self.sources:
-            # perform a can_load check since some upstream steps may have skipped, and
-            # we allow fan-in to continue in their absence
-            if inner_source.can_load_input_object(step_context):
-                values.append(inner_source.load_input_object(step_context))
+            if (
+                inner_source.step_output_handle_dependencies
+                and inner_source.step_output_handle in source_handles_to_skip
+            ):
+                continue
+            values.append(inner_source.load_input_object(step_context))
 
         # When we're using an object store-backed intermediate store, we wrap the
         # representing the fan-in values in a FanInStepInputValuesWrapper
