@@ -4,10 +4,14 @@
     "outDir": "build/dist",
     "module": "esnext",
     "target": "es5",
-    "lib": ["es6", "dom", "esnext.asynciterable"],
+    "lib": [
+      "es6",
+      "dom",
+      "esnext.asynciterable"
+    ],
     "sourceMap": true,
     "allowJs": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
@@ -16,7 +20,10 @@
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["jest", "node"],
+    "types": [
+      "jest",
+      "node"
+    ],
     "skipLibCheck": true,
     "esModuleInterop": true,
     "strict": false,
@@ -35,5 +42,9 @@
     "scripts",
     "webpack"
   ],
-  "include": ["src", "types", "typings.d.ts"]
+  "include": [
+    "src",
+    "types",
+    "typings.d.ts"
+  ]
 }
