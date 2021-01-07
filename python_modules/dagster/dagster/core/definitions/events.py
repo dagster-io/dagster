@@ -776,7 +776,6 @@ class RetryRequested(Exception):
         self.seconds_to_wait = check.opt_int_param(seconds_to_wait, "seconds_to_wait")
 
 
-@whitelist_for_serdes
 class AssetStoreOperationType(Enum):
     SET_ASSET = "SET_ASSET"
     GET_ASSET = "GET_ASSET"
@@ -804,6 +803,20 @@ class AssetStoreOperation(
                 asset_store_handle, "asset_store_handle", AssetStoreHandle
             ),
             obj=obj,
+        )
+
+    @classmethod
+    def serializable(cls, inst, **kwargs):
+        return cls(
+            **dict(
+                {
+                    "op": inst.op.value,
+                    "step_output_handle": inst.step_output_handle,
+                    "asset_store_handle": inst.asset_store_handle,
+                    "obj": None,
+                },
+                **kwargs,
+            )
         )
 
 

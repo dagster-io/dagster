@@ -39,7 +39,7 @@ def test_fs_object_manager():
         # SET ASSET for step "solid_a" output "result"
         assert (
             asset_store_operation_events[0].event_specific_data.op
-            == AssetStoreOperationType.SET_ASSET
+            == AssetStoreOperationType.SET_ASSET.value
         )
         filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
         assert os.path.isfile(filepath_a)
@@ -49,14 +49,14 @@ def test_fs_object_manager():
         # GET ASSET for step "solid_b" input "_df"
         assert (
             asset_store_operation_events[1].event_specific_data.op
-            == AssetStoreOperationType.GET_ASSET
+            == AssetStoreOperationType.GET_ASSET.value
         )
         assert "solid_a" == asset_store_operation_events[1].event_specific_data.step_key
 
         # SET ASSET for step "solid_b" output "result"
         assert (
             asset_store_operation_events[2].event_specific_data.op
-            == AssetStoreOperationType.SET_ASSET
+            == AssetStoreOperationType.SET_ASSET.value
         )
         filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b", "result")
         assert os.path.isfile(filepath_b)

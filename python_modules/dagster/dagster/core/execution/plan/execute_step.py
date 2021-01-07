@@ -283,7 +283,9 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
                     )
                     final_values.append(inner_value.obj)
                 elif isinstance(inner_value, AssetStoreOperation):
-                    yield DagsterEvent.asset_store_operation(step_context, inner_value)
+                    yield DagsterEvent.asset_store_operation(
+                        step_context, AssetStoreOperation.serializable(inner_value)
+                    )
                     final_values.append(inner_value.obj)
                 # or the value directly
                 else:
@@ -291,7 +293,9 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
 
             inputs[input_name] = final_values
         elif isinstance(input_value, AssetStoreOperation):
-            yield DagsterEvent.asset_store_operation(step_context, input_value)
+            yield DagsterEvent.asset_store_operation(
+                step_context, AssetStoreOperation.serializable(input_value)
+            )
             inputs[input_name] = input_value.obj
         else:
             inputs[input_name] = input_value
@@ -417,10 +421,12 @@ def _set_objects(step_context, step_output, step_output_handle, output):
         # SET_ASSET operation by AssetStore
         yield DagsterEvent.asset_store_operation(
             step_context,
-            AssetStoreOperation(
-                AssetStoreOperationType.SET_ASSET,
-                step_output_handle,
-                AssetStoreHandle(output_def.manager_key, output_def.metadata),
+            AssetStoreOperation.serializable(
+                AssetStoreOperation(
+                    AssetStoreOperationType.SET_ASSET,
+                    step_output_handle,
+                    AssetStoreHandle(output_def.manager_key, output_def.metadata),
+                )
             ),
         )
 
