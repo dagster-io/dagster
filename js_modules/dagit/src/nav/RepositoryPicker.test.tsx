@@ -1,6 +1,5 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -58,22 +57,5 @@ describe('RepositoryPicker', () => {
       expect(screen.getByText(/foo-bar/i)).toBeVisible();
       expect(screen.getByRole('button', {name: /refresh/i})).toBeVisible();
     });
-  });
-
-  it('surfaces reloading errors', async () => {
-    const mocks = {
-      ...defaultMocks,
-      ReloadRepositoryLocationMutationResult: () => ({
-        __typename: 'RepositoryLocationLoadFailure',
-      }),
-      PythonError: () => ({
-        message: () => 'oh no rofl',
-      }),
-    };
-
-    render(<Wrapper mocks={mocks} />);
-
-    const button = await screen.findByRole('button', {name: /refresh/i});
-    userEvent.click(button);
   });
 });

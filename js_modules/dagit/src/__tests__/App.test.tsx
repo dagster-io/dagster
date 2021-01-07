@@ -37,6 +37,12 @@ describe('App', () => {
     RepositoryLocationOrLoadFailure: () => ({
       __typename: 'RepositoryLocation',
     }),
+    SchedulesOrError: () => ({
+      __typename: 'Schedules',
+    }),
+    SensorsOrError: () => ({
+      __typename: 'Sensors',
+    }),
     SolidDefinition: () => ({
       configField: null,
       description: null,
@@ -107,6 +113,7 @@ describe('App', () => {
         PipelineSnapshot: () => ({
           runs: () => new MockList(0),
           schedules: () => new MockList(0),
+          sensors: () => new MockList(0),
         }),
         PipelineSnapshotOrError: () => ({
           __typename: 'PipelineSnapshot',

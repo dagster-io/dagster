@@ -18,6 +18,18 @@ describe('LeftNav', () => {
     RepositoryLocationOrLoadFailure: () => ({
       __typename: 'RepositoryLocation',
     }),
+    SchedulesOrError: () => ({
+      __typename: 'Schedules',
+    }),
+    Schedules: () => ({
+      results: () => new MockList(1),
+    }),
+    SensorsOrError: () => ({
+      __typename: 'Sensors',
+    }),
+    Sensors: () => ({
+      results: () => new MockList(1),
+    }),
   };
 
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
