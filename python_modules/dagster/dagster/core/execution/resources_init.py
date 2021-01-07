@@ -151,8 +151,8 @@ def resource_initialization_event_generator(
     check.set_param(resource_keys_to_init, "resource_keys_to_init", of_type=str)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    if execution_plan.step_key_for_single_step_plans():
-        step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
+    if execution_plan.step_handle_for_single_step_plans():
+        step = execution_plan.get_step(execution_plan.step_handle_for_single_step_plans())
         resource_log_manager = log_manager.with_tags(**step.logging_tags)
     else:
         resource_log_manager = log_manager

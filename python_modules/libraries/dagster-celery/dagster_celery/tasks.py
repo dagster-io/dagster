@@ -50,7 +50,7 @@ def create_task(celery_app, **task_kwargs):
                 marker_end=DELEGATE_MARKER,
             ),
             CeleryExecutor,
-            step_key=execution_plan.step_key_for_single_step_plans(),
+            step_key=execution_plan.step_handle_for_single_step_plans().to_key(),
         )
 
         events = [engine_event]

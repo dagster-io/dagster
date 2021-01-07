@@ -359,6 +359,10 @@ class ExecutionPlan(
         check.inst_param(handle, "handle", StepHandle)
         return handle in self.step_dict
 
+    def get_step(self, handle):
+        check.inst_param(handle, "handle", StepHandle)
+        return self.step_dict[handle]
+
     def get_step_by_key(self, key):
         check.str_param(key, "key")
         for step in self.step_dict.values():
@@ -425,7 +429,7 @@ class ExecutionPlan(
 
         return ActiveExecution(self, retries, sort_key_fn)
 
-    def step_key_for_single_step_plans(self):
+    def step_handle_for_single_step_plans(self):
         # Temporary hack to isolate single-step plans, which are often the representation of
         # sub-plans in a multiprocessing execution environment.  We want to attribute pipeline
         # events (like resource initialization) that are associated with the execution of these
@@ -436,7 +440,7 @@ class ExecutionPlan(
             check.invariant(
                 isinstance(only_step, ExecutionStep), "Unexpected unresolved single step plan",
             )
-            return self.step_dict[self.step_handles_to_execute[0]].key
+            return only_step.handle
 
         return None
 
