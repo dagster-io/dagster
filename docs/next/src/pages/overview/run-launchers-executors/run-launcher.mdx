@@ -13,10 +13,9 @@ Dagster Instance. The run launcher is the interface to the computational resourc
 used to actually execute Dagster runs. It receives the ID of a created run and a representation of
 the pipeline that is about to undergo execution.
 
-The simplest run launcher is the built-in run launcher, <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a
-new process on the current node for each run that is launched. It also provides the ability to
-terminate launched runs, and monitors launched processes to detect unexpected process crashes. For
-pipelines hosted on gRPC servers, the DefaultRunLauncher delegates the launch to the gRPC server.
+The simplest run launcher is the built-in run launcher, <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />. This
+run launcher spawns a new process on the same node as the pipeline's repository
+location. It also provides the ability to terminate launched runs.
 
 Another example is the <PyObject module="dagster_k8s" object="K8sRunLauncher"/>, which allocates a
 Kubernetes Job per run.
@@ -24,12 +23,12 @@ Kubernetes Job per run.
 A few examples of when a custom run launcher is needed:
 
 - You want to allocate different computational resources for different pipelines or pipeline runs
-(e.g. GPUs for some, more cores or memory for others). These decisions should be made in the run
-launcher.
+  (e.g. GPUs for some, more cores or memory for others). These decisions should be made in the run
+  launcher.
 
 - You have custom infrastructure or custom APIs for allocating nodes for execution.
 
 Colloquially we refer to the process or computational resource created by the run launcher as the
-run coordinator. The run launcher only determines the behavior of the run coordinator. Once
-execution starts within the run coordinator, it is the *executor* -- an in-memory abstraction in the
-coordinator process -- that takes over management of computational resources.
+run worker. The run launcher only determines the behavior of the run worker. Once
+execution starts within the run worker, it is the _executor_ -- an in-memory abstraction in the
+run worker process -- that takes over management of computational resources.
