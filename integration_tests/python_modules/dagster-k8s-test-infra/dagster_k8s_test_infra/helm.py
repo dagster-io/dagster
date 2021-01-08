@@ -227,8 +227,13 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
         pod_names = [
             p.metadata.name for p in pods.items if CELERY_WORKER_NAME_PREFIX in p.metadata.name
         ]
-        if helm_config.get("celery", {}).get("enabled"):
-            worker_queues = helm_config.get("celery").get("workerQueues", [])
+        if helm_config.get("runLauncher").get("type") == "CeleryK8sRunLauncher":
+            worker_queues = (
+                helm_config.get("runLauncher")
+                .get("config")
+                .get("celeryK8sRunLauncher")
+                .get("workerQueues", [])
+            )
             for queue in worker_queues:
                 num_pods_for_queue = len(
                     [
@@ -331,20 +336,23 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 "periodSeconds": 10,
             },
         },
-        "celery": {
-            "enabled": True,
-            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "replicaCount": 1,
-            "workerQueues": [
-                {"name": "dagster", "replicaCount": 2},
-                {"name": "extra-queue-1", "replicaCount": 1},
-            ],
-            "livenessProbe": {
-                "initialDelaySeconds": 15,
-                "periodSeconds": 10,
-                "timeoutSeconds": 10,
-                "successThreshold": 1,
-                "failureThreshold": 3,
+        "runLauncher": {
+            "type": "CeleryK8sRunLauncher",
+            "config": {
+                "celeryK8sRunLauncher": {
+                    "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                    "workerQueues": [
+                        {"name": "dagster", "replicaCount": 2},
+                        {"name": "extra-queue-1", "replicaCount": 1},
+                    ],
+                    "livenessProbe": {
+                        "initialDelaySeconds": 15,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 10,
+                        "successThreshold": 1,
+                        "failureThreshold": 3,
+                    },
+                },
             },
         },
         "ingress": {
@@ -392,8 +400,10 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
                 "periodSeconds": 10,
             },
         },
-        "celery": {"enabled": False},
-        "k8sRunLauncher": {"enabled": True, "jobNamespace": namespace},
+        "runLauncher": {
+            "type": "K8sRunLauncher",
+            "config": {"k8sRunLauncher": {"jobNamespace": namespace}},
+        },
         "scheduler": {
             "type": "K8sScheduler",
             "config": {"k8sScheduler": {"schedulerNamespace": namespace}},
@@ -465,24 +475,27 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                 "periodSeconds": 10,
             },
         },
-        "celery": {
-            "enabled": True,
-            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "replicaCount": 1,
-            "workerQueues": [
-                {"name": "dagster", "replicaCount": 2},
-                {"name": "extra-queue-1", "replicaCount": 1},
-            ],
-            "livenessProbe": {
-                "initialDelaySeconds": 15,
-                "periodSeconds": 10,
-                "timeoutSeconds": 10,
-                "successThreshold": 1,
-                "failureThreshold": 3,
-            },
-            "configSource": {
-                "broker_transport_options": {"priority_steps": [9]},
-                "worker_concurrency": 1,
+        "runLauncher": {
+            "type": "CeleryK8sRunLauncher",
+            "config": {
+                "celeryK8sRunLauncher": {
+                    "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                    "workerQueues": [
+                        {"name": "dagster", "replicaCount": 2},
+                        {"name": "extra-queue-1", "replicaCount": 1},
+                    ],
+                    "livenessProbe": {
+                        "initialDelaySeconds": 15,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 10,
+                        "successThreshold": 1,
+                        "failureThreshold": 3,
+                    },
+                    "configSource": {
+                        "broker_transport_options": {"priority_steps": [9]},
+                        "worker_concurrency": 1,
+                    },
+                }
             },
         },
         "scheduler": {
@@ -551,26 +564,29 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
             "annotations": {"dagster-integration-tests": "dagit-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "dagit-svc-annotation"}},
         },
-        "celery": {
-            "enabled": True,
-            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            "replicaCount": 1,
-            "workerQueues": [
-                {"name": "dagster", "replicaCount": 2},
-                {"name": "extra-queue-1", "replicaCount": 1},
-            ],
-            "livenessProbe": {
-                "initialDelaySeconds": 15,
-                "periodSeconds": 10,
-                "timeoutSeconds": 10,
-                "successThreshold": 1,
-                "failureThreshold": 3,
+        "runLauncher": {
+            "type": "CeleryK8sRunLauncher",
+            "config": {
+                "celeryK8sRunLauncher": {
+                    "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                    "workerQueues": [
+                        {"name": "dagster", "replicaCount": 2},
+                        {"name": "extra-queue-1", "replicaCount": 1},
+                    ],
+                    "livenessProbe": {
+                        "initialDelaySeconds": 15,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 10,
+                        "successThreshold": 1,
+                        "failureThreshold": 3,
+                    },
+                    "configSource": {
+                        "broker_transport_options": {"priority_steps": [9]},
+                        "worker_concurrency": 1,
+                    },
+                    "annotations": {"dagster-integration-tests": "celery-pod-annotation"},
+                },
             },
-            "configSource": {
-                "broker_transport_options": {"priority_steps": [9]},
-                "worker_concurrency": 1,
-            },
-            "annotations": {"dagster-integration-tests": "celery-pod-annotation"},
         },
         "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
         "serviceAccount": {"name": "dagit-admin"},

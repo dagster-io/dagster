@@ -1,5 +1,6 @@
-{{- if .Values.celery.enabled }}
-{{ range $queue := .Values.celery.workerQueues }}
+{{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
+{{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
+{{ range $queue := $celeryK8sRunLauncherConfig.workerQueues }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -9,7 +10,7 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: celery
   annotations:
-    {{- range $key, $value := $.Values.celery.annotations }}
+    {{- range $key, $value := $celeryK8sRunLauncherConfig.annotations }}
     {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
@@ -23,7 +24,7 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
       annotations:
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") $ | sha256sum }}
-        {{- range $key, $value := $.Values.celery.annotations }}
+        {{- range $key, $value := $celeryK8sRunLauncherConfig.annotations }}
         {{ $key }}: {{ $value | squote }}
         {{- end }}
     spec:
@@ -33,7 +34,7 @@ spec:
     {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
       securityContext:
-        {{- toYaml $.Values.celery.podSecurityContext | nindent 8 }}
+        {{- toYaml $celeryK8sRunLauncherConfig.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
@@ -42,12 +43,12 @@ spec:
             'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]
           securityContext:
-            {{- toYaml $.Values.celery.securityContext | nindent 12 }}
+            {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
       containers:
         - name: {{ $.Chart.Name }}
           securityContext:
-            {{- toYaml $.Values.celery.securityContext | nindent 12 }}
-          imagePullPolicy: {{ $.Values.celery.image.pullPolicy }}
+            {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
+          imagePullPolicy: {{ $celeryK8sRunLauncherConfig.image.pullPolicy }}
           image: "{{ template "dagster.celery_image" $ }}"
           command: ["dagster-celery"]
           args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
@@ -60,16 +61,16 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-celery-worker-env
-            {{- if $.Values.celery.envConfigMaps -}}
-            {{- range $name := $.Values.celery.envConfigMaps }}
+            {{- if $celeryK8sRunLauncherConfig.envConfigMaps -}}
+            {{- range $name := $celeryK8sRunLauncherConfig.envConfigMaps }}
             {{- if $name }}
             - configMapRef:
                 name: {{ $name }}
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- if $.Values.celery.envSecrets -}}
-            {{- range $name := $.Values.celery.envSecrets }}
+            {{- if $celeryK8sRunLauncherConfig.envSecrets -}}
+            {{- range $name := $celeryK8sRunLauncherConfig.envSecrets }}
             {{- if $name }}
             - secretRef:
                 name: {{ $name }}
@@ -84,41 +85,41 @@ spec:
               mountPath: "{{ $.Values.dagsterHome }}/celery-config.yaml"
               subPath: celery.yaml
           resources:
-            {{- toYaml $.Values.celery.resources | nindent 12 }}
-      {{- if $.Values.celery.livenessProbe }}
-        {{- if not $.Values.celery.livenessProbe.exec }}
+            {{- toYaml $celeryK8sRunLauncherConfig.resources | nindent 12 }}
+      {{- if $celeryK8sRunLauncherConfig.livenessProbe }}
+        {{- if not $celeryK8sRunLauncherConfig.livenessProbe.exec }}
           livenessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
                 - celery -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" $ }} status | grep "${HOSTNAME}:.*OK"
-            {{- if hasKey $.Values.celery.livenessProbe "initialDelaySeconds" }}
+            {{- if hasKey $celeryK8sRunLauncherConfig.livenessProbe "initialDelaySeconds" }}
             initialDelaySeconds:
-              {{- toYaml $.Values.celery.livenessProbe.initialDelaySeconds | nindent 14 }}
+              {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe.initialDelaySeconds | nindent 14 }}
             {{- end }}
-            {{- if hasKey $.Values.celery.livenessProbe "periodSeconds" }}
+            {{- if hasKey $celeryK8sRunLauncherConfig.livenessProbe "periodSeconds" }}
             periodSeconds:
-              {{- toYaml $.Values.celery.livenessProbe.periodSeconds | nindent 14 }}
+              {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe.periodSeconds | nindent 14 }}
             {{- end }}
-            {{- if hasKey $.Values.celery.livenessProbe "timeoutSeconds" }}
+            {{- if hasKey $celeryK8sRunLauncherConfig.livenessProbe "timeoutSeconds" }}
             timeoutSeconds:
-              {{- toYaml $.Values.celery.livenessProbe.timeoutSeconds | nindent 14 }}
+              {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe.timeoutSeconds | nindent 14 }}
             {{- end }}
-            {{- if hasKey $.Values.celery.livenessProbe "successThreshold" }}
+            {{- if hasKey $celeryK8sRunLauncherConfig.livenessProbe "successThreshold" }}
             successThreshold:
-              {{- toYaml $.Values.celery.livenessProbe.successThreshold | nindent 14 }}
+              {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe.successThreshold | nindent 14 }}
             {{- end }}
-            {{- if hasKey $.Values.celery.livenessProbe "failureThreshold" }}
+            {{- if hasKey $celeryK8sRunLauncherConfig.livenessProbe "failureThreshold" }}
             failureThreshold:
-              {{- toYaml $.Values.celery.livenessProbe.failureThreshold | nindent 14 }}
+              {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
         {{- else}}
           livenessProbe:
-          {{- toYaml $.Values.celery.livenessProbe | nindent 12 }}
+          {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe | nindent 12 }}
         {{- end }}
       {{- end }}
-      {{- with $.Values.celery.nodeSelector }}
+      {{- with $celeryK8sRunLauncherConfig.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -129,11 +130,11 @@ spec:
         - name: dagster-celery
           configMap:
             name: {{ template "dagster.fullname" $ }}-celery
-    {{- with $.Values.celery.affinity }}
+    {{- with $celeryK8sRunLauncherConfig.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with $.Values.celery.tolerations }}
+    {{- with $celeryK8sRunLauncherConfig.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}

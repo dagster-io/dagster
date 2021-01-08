@@ -261,6 +261,110 @@ scheduler:
       envSecrets: []
 
 ####################################################################################################
+# Run Launcher: Configuration for run launcher
+####################################################################################################
+runLauncher:
+  # Type can be one of [CeleryK8sRunLauncher, K8sRunLauncher]
+  type: CeleryK8sRunLauncher
+
+  config:
+    # This configuration will only be used if the CeleryK8sRunLauncher is selected
+    celeryK8sRunLauncher:
+      # The Celery workers can be deployed with a fixed image (no user code included)
+      image:
+        repository: "dagster/k8s-celery-worker"
+        tag: "latest"
+        pullPolicy: Always
+
+      # Support overriding the name prefix of Celery worker pods
+      nameOverride: "celery-workers"
+
+      # Additional config options for Celery, applied to all queues.
+      # For available options, see:
+      # https://docs.celeryproject.org/en/stable/userguide/configuration.html
+      configSource: {}
+
+      # Additional Celery worker queues can be configured here. When overriding, be sure to
+      # provision a "dagster" worker queue, as this is the default queue used by Dagster.
+      workerQueues:
+        - name: "dagster"
+          replicaCount: 2
+
+      # Additional environment variables to set on the celery/job containers
+      # A Kubernetes ConfigMap will be created with these environment variables.
+      env: {}
+
+      # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
+      # list here
+      envConfigMaps: []
+
+      # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
+      # as a list here
+      envSecrets: []
+
+      # Support Node, affinity and tolerations for Celery pod assignment. See:
+      # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+      # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+      # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      annotations: {}
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      podSecurityContext: {}
+      securityContext: {}
+
+      # Specify resources.
+      # Example:
+      #
+      # resources:
+      #   limits:
+      #     cpu: 100m
+      #     memory: 128Mi
+      #   requests:
+      #     cpu: 100m
+      #     memory: 128Mi
+      resources: {}
+
+      # If `livenessProbe` does not contain `exec` field, then we will default to using:
+      # exec:
+      #   command:
+      #     - /bin/sh
+      #     - -c
+      #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+      livenessProbe:
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 10
+        successThreshold: 1
+        failureThreshold: 3
+
+    # This configuration will only be used if the K8sRunLauncher is selected
+    k8sRunLauncher:
+      ## The image to use for the launched Job's Dagster container.
+      ## This image should only be specified when user code deployments are disabled. Otherwise,
+      ## it will be ignored.
+      # image:
+      #   repository: ""
+      #   tag: ""
+      #   pullPolicy: Always
+
+      # The K8s namespace where new jobs will be launched.
+      # By default, the release namespace is used.
+      jobNamespace: ~
+
+      # Set to true to load kubeconfig from within cluster.
+      loadInclusterConfig: true
+
+      # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
+      kubeconfigFile: ~
+
+      # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
+      envConfigMaps: []
+
+      # A list of custom Secret names from which to draw environment variables for the Job.
+      envSecrets: []
+
+####################################################################################################
 # PostgreSQL: Configuration values for postgresql
 #
 # https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
@@ -294,106 +398,6 @@ postgresql:
 
   service:
     port: 5432
-
-####################################################################################################
-# Celery: Configuration for the CeleryK8sRunLauncher and Celery workers.
-# If celery.enabled is true, k8sRunLauncher.enabled should be false.
-####################################################################################################
-celery:
-  # The Celery workers can be deployed with a fixed image (no user code included)
-  image:
-    repository: "dagster/k8s-celery-worker"
-    tag: "latest"
-    pullPolicy: Always
-
-  enabled: true
-  # support overriding the name of Celery workers
-  workers:
-    nameOverride: ""
-  # additional config options for Celery, applied to all queues. See:
-  # https://docs.celeryproject.org/en/stable/userguide/configuration.html for available options
-  configSource: {}
-
-  # Additional Celery worker queues can be configured here. When overriding, be sure to provision
-  # a "dagster" worker queue, as this is the default queue used by Dagster.
-  workerQueues:
-    - name: "dagster"
-      replicaCount: 2
-
-  # Additional environment variables to set on the celery/job containers
-  # A Kubernetes ConfigMap will be created with these environment variables.
-  env:
-    YOUR_ENV_VAR: ""
-  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
-  # list here
-  envConfigMaps:
-    - ""
-  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
-  # as a list here
-  envSecrets:
-    - ""
-  # Support Node, affinity and tolerations for Celery pod assignment. See:
-  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
-  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  annotations: {}
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
-  podSecurityContext: {}
-  securityContext: {}
-  resources: {}
-  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
-  # and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-  livenessProbe:
-    # If `livenessProbe` does not contain `exec` field, then we will default to using:
-    # exec:
-    #   command:
-    #     - /bin/sh
-    #     - -c
-    #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
-    initialDelaySeconds: 15
-    periodSeconds: 10
-    timeoutSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-
-####################################################################################################
-# K8s Run Launcher: configuration values for the K8sRunLauncher.
-# If k8sRunLauncher.enabled is true, celery.enabled should be false.
-####################################################################################################
-k8sRunLauncher:
-  enabled: false
-  ## The image to use for the launched Job's Dagster container. Note that when loading a pipeline
-  ## from a gRPC server, the image should not be specified.
-  # image:
-  #   repository: ""
-  #   tag: ""
-  #   pullPolicy: Always
-
-  # The K8s namespace where new jobs will be launched.
-  # If left empty, the release namespace will be used.
-  jobNamespace: ""
-
-  # Set to true to load kubeconfig from within cluster.
-  loadInclusterConfig: true
-
-  # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
-  kubeconfigFile: ""
-
-  # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
-  envConfigMaps:
-    - ""
-
-  # A list of custom Secret names from which to draw environment variables for the Job.
-  envSecrets:
-    - ""
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.

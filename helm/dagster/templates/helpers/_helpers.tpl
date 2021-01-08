@@ -25,9 +25,9 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 # Image utils
-{{- define "image.job_image" -}}
-"{{- .repository -}}:{{- .tag -}}"
-{{- end -}}
+{{- define "image.jobImage" }}
+{{- .repository -}}:{{- .tag -}}
+{{- end }}
 
 # Dagit image e.g. repo/foo:bar
 {{- define "dagster.dagit_image" -}}
@@ -36,28 +36,12 @@ If release name contains chart name it will be used as a full name.
 {{- required "Dagit image tag .Values.dagit.image.tag is required" .Values.dagit.image.tag }}
 {{- end -}}
 
-# Dagster Run Launcher
-{{- define "dagster.validate_one_run_launcher_enabled" -}}
-{{- if or (and .Values.celery.enabled .Values.k8sRunLauncher.enabled) (not (or .Values.celery.enabled .Values.k8sRunLauncher.enabled)) -}}
-{{- fail "One of `celery.enabled` and `k8sRunLauncher.enabled` should be true." -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "dagster.celery_k8s_run_launcher_enabled" -}}
-{{- include "dagster.validate_one_run_launcher_enabled" . -}}
-{{- required "CeleryK8sRunLauncher .Values.celery.enabled is required" .Values.celery.enabled -}}
-{{- end -}}
-
-{{- define "dagster.k8s_run_launcher_enabled" -}}
-{{- include "dagster.validate_one_run_launcher_enabled" . -}}
-{{- required "K8sRunLauncher .Values.k8sRunLauncher.enabled is required" .Values.k8sRunLauncher.enabled -}}
-{{- end -}}
-
 # Dagster Celery worker image e.g. repo/foo:bar
 {{- define "dagster.celery_image" -}}
-{{ required "Celery worker image repository .Values.celery.image.repository is required" .Values.celery.image.repository -}}
+{{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher -}}
+{{ required "Celery worker image repository $celeryK8sRunLauncherConfig.image.repository is required" $celeryK8sRunLauncherConfig.image.repository -}}
 :
-{{- required "Celery worker image tag .Values.celery.image.tag is required" .Values.celery.image.tag }}
+{{- required "Celery worker image tag $celeryK8sRunLauncherConfig.image.tag is required" $celeryK8sRunLauncherConfig.image.tag }}
 {{- end -}}
 
 # Flower service image e.g. mher/flower:0.9.5
@@ -82,7 +66,8 @@ dagit -h 0.0.0.0 -p 80 -w /dagster-workspace/workspace.yaml
 {{- end -}}
 
 {{- define "dagster.workers.fullname" -}}
-{{- $name := default "celery-workers" .Values.celery.workers.nameOverride -}}
+{{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
+{{- $name := $celeryK8sRunLauncherConfig.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 

@@ -19,6 +19,7 @@
 - Removed the argument `step_keys_to_execute` to the `reexecute_pipeline` and `reexecute_pipeline_iterator`.
 - [Helm/K8s]
   - The schema for the `scheduler` values in the helm chart has been rewritten.
+  - `celery` and `k8sRunLauncher` have now been consolidated under `runLauncher`.
 
 ## 0.9.22.post0
 

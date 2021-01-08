@@ -1,4 +1,5 @@
-{{- if .Values.celery.enabled }}
+{{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
+{{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,12 +10,11 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  {{ include "dagster.shared_env" . | nindent 2 }}
-  {{- if .Values.celery.env -}}
-  {{- range $name, $value := .Values.celery.env }}
-  {{- if not (empty $value) }}
+  {{- include "dagster.shared_env" . | nindent 2 }}
+
+  {{- range $name, $value := $celeryK8sRunLauncherConfig.env }}
+  {{- if $value }}
   {{ $name }}: {{ $value | quote }}
-  {{- end }}
   {{- end }}
   {{- end }}
 {{- end }}

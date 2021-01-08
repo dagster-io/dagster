@@ -132,6 +132,15 @@ additional fields will need to be specified under `scheduler.config`.
 
 `scheduler.type` and corresponding `scheduler.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
 
+## Restructured: `celery` and `k8sRunLauncher` in Helm values
+
+`celery` and `k8sRunLauncher` now live under `runLauncher.config.celeryK8sRunLauncher` and
+`runLauncher.config.k8sRunLauncher` respectively. Now, to enable celery, `runLauncher.type`
+must equal `CeleryK8sRunLauncher`. To enable the vanilla K8s run launcher, `runLauncher.type`
+must equal `K8sRunLauncher`.
+
+`runLauncher.type` and corresponding `runLauncher.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+
 # Migrating to 0.9.0
 
 ## Removal: `config` argument
