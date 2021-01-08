@@ -55,7 +55,7 @@ spec:
           securityContext:
             {{- toYaml .Values.dagit.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
-          image: "{{ template "dagster.dagit_image" . }}"
+          image: {{ include "image.name" .Values.dagit.image | quote }}
           command: [
             "/bin/bash",
             "-c",

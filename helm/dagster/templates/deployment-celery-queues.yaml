@@ -49,7 +49,7 @@ spec:
           securityContext:
             {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
           imagePullPolicy: {{ $celeryK8sRunLauncherConfig.image.pullPolicy }}
-          image: "{{ template "dagster.celery_image" $ }}"
+          image: {{ include "image.name" $celeryK8sRunLauncherConfig.image | quote }}
           command: ["dagster-celery"]
           args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
           env:

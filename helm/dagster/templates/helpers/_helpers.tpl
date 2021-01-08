@@ -25,31 +25,9 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 # Image utils
-{{- define "image.jobImage" }}
+{{- define "image.name" }}
 {{- .repository -}}:{{- .tag -}}
 {{- end }}
-
-# Dagit image e.g. repo/foo:bar
-{{- define "dagster.dagit_image" -}}
-{{ required "Dagit image repository .Values.dagit.image.repository is required" .Values.dagit.image.repository -}}
-:
-{{- required "Dagit image tag .Values.dagit.image.tag is required" .Values.dagit.image.tag }}
-{{- end -}}
-
-# Dagster Celery worker image e.g. repo/foo:bar
-{{- define "dagster.celery_image" -}}
-{{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher -}}
-{{ required "Celery worker image repository $celeryK8sRunLauncherConfig.image.repository is required" $celeryK8sRunLauncherConfig.image.repository -}}
-:
-{{- required "Celery worker image tag $celeryK8sRunLauncherConfig.image.tag is required" $celeryK8sRunLauncherConfig.image.tag }}
-{{- end -}}
-
-# Flower service image e.g. mher/flower:0.9.5
-{{- define "dagster.flower_image" -}}
-{{ required "Flower image repository .Values.flower.image.repository is required" .Values.flower.image.repository -}}
-:
-{{- required "Flower worker image tag .Values.flower.image.tag is required" .Values.flower.image.tag }}
-{{- end -}}
 
 {{- define "dagster.dagit.scheduleUpCommand" -}}
 {{- if .Values.userDeployments.enabled }}
