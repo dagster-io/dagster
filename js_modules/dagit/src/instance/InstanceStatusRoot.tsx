@@ -32,7 +32,7 @@ interface Props {
 export const InstanceStatusRoot = (props: Props) => {
   const {tab} = props;
   const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
     pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
