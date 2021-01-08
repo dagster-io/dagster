@@ -1,0 +1,22 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Run coordinators | Dagster"
+  description="Using run coordinators to manage run instigation."
+/>
+
+# Run Coordinators
+
+Run coordinators are a level above run launchers that manage where a run will be launched.
+
+## DefaultRunCoordinator
+
+The default run coordinator simply calls `launch_run` on the instance's run launcher. Hence clicking
+`launch_run` in Dagit will cause the run to be launched by the Dagit process. Similarly, scheduled
+runs will launch from whatever process the scheduler is running in.
+
+## QueuedRunCoordinator
+
+The QueuedRunCoordinator sends runs to the [Dagster Daemon](/overview/daemon) via a queue. The Daemon pulls from the
+queue, and calls `launch_run` on the submitted runs. This enables instance-level
+[limits on run concurrency](/overview/pipeline-runs/limiting-run-concurrency).

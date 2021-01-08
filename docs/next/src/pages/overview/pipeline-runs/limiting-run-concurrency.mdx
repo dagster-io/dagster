@@ -1,0 +1,73 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Limiting run concurrency | Dagster"
+  description="Using the Dagster Daemon to queue runs."
+/>
+
+# Limiting Run Concurrency
+
+Dagster offers a few options for limiting the number of concurrent pipeline runs on your instance. Some situations where this can help are:
+
+- Your cluster has limited capacity and you need to avoid flooding it
+- You want to launch a backfill that only executes when there is capacity to spare, giving priority to other runs
+- Some of your runs connect to an external service that shouldn’t be overloaded
+
+## Setup
+
+Concurrency limits are supported by the [QueuedRunCoordinator](/overview/pipeline-runs/run-coordinator), which uses the [Dagster Daemon](/overview/daemon) to coordinate which runs execute.
+
+## Usage
+
+### Run limits
+
+You can place limits on the number of runs that can be in progress at a single time. Any runs beyond this limit will be queued, and won’t use any compute.
+
+- An overall limit on the number of runs can be placed using the `max_concurrent_runs` configuration
+- More specific limits can be configured based on run tags, with `tag_concurrency_limits`. Limits can be specified for all runs with a certain tag key or key-value pair.
+
+If any limit would be exceeded by launching a run, then the run will stay queued.
+
+Example:
+
+```yaml
+# dagster.yaml
+---
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 25
+    tag_concurrency_limits:
+      [
+        { key:'database', value:'redshift', limit:4 },
+        { key:'dagster/backfill', limit:10 },
+      ]
+```
+
+This run queue will only allow a maximum of 25 runs at once. Additionally, only 4 runs with the "database" tag equal to "redshift" can run at once, and at most 10 runs with the "dagster/backfill" tag and any value can run at once.
+
+### Priorities
+
+By default, runs are removed from the queue in the same order as they are submitted. Using the tag
+`dagster/priority` (either in Dagit or on the pipeline definition), you can specify an integer value
+as the run’s priority. By default, all runs have priority 0. Runs with greater priority values will be
+launched first. Negative priorities are permitted, for example to deprioritize a backfill. If multiple
+runs have equal priority, their submission order is maintained.
+
+### Queuing semantics
+
+In the absence of tag limits and priorities, queued runs are first-in-first-out. However, a run that is blocked by tag limits will not block runs submitted after it. To illustrate, let’s say we submit 3 runs in order: run A (tagged ‘foo’:‘bar’), run B (tagged ‘foo’:‘bar’), and run C (no tags). With no limits configured, the runs will be launched in the order they were submitted, A → B → C. Next, say we add the following instance configuration:
+
+```yaml
+tag_concurrency_limits: [{ key:'foo', limit:1 }]
+```
+
+Now A and B would not be able to execute concurrently, while there is no limit on C. Assume each will execute for at least a few minutes. If we submit in order A → B → C, then
+
+- A launches
+- B is passed over since A is in progress and there's a limit 1 to concurrent ‘foo’ runs
+- C launches
+- Once A finishes, B launches
+
+Thus the launch order will be A → C → B.

@@ -11,5 +11,5 @@ Deploying Dagster usually involves:
 
 - Defining a [Dagster instance](/overview/instances/dagster-instance), which is shared by all of your services and specifies the configuration of your deployment.
 - Deploying [Dagit](/overview/dagit), Dagster's a web-based interface for viewing and interacting with Dagster objects.
-- Optionally, setting up an [executor](/overview/run-launchers-executors/executor), e.g. [Celery](/deploying/celery) or [Dask](/deploying/dask), for executing solids within runs.
+- Optionally, setting up an [executor](/overview/pipeline-runs/executor), e.g. [Celery](/deploying/celery) or [Dask](/deploying/dask), for executing solids within runs.
 - Optionally, deploying a [dagster-daemon service](/overview/daemon), which enables advanced features like schedules, sensors, and run queueing.

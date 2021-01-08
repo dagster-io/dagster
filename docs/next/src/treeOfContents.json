@@ -195,17 +195,25 @@
         "path": "/overview/instances/dagster-instance"
       },
       {
-        "name": "Run Launchers & Executors",
-        "path": "/overview/run-launchers-executors/run-launcher",
+        "name": "Pipeline Runs",
+        "path": "/overview/pipeline-runs/run-launcher",
         "childPath": true,
         "children": [
           {
             "name": "Run Launchers",
-            "path": "/overview/run-launchers-executors/run-launcher"
+            "path": "/overview/pipeline-runs/run-launcher"
           },
           {
             "name": "Executors",
-            "path": "/overview/run-launchers-executors/executor"
+            "path": "/overview/pipeline-runs/executor"
+          },
+          {
+            "name": "Run Coordinators",
+            "path": "/overview/pipeline-runs/run-coordinator"
+          },
+          {
+            "name": "Limiting run concurrency",
+            "path": "/overview/pipeline-runs/limiting-run-concurrency"
           }
         ]
       },
