@@ -6,5 +6,6 @@ from .ingress import Ingress
 from .postgresql import PostgreSQL
 from .rabbitmq import RabbitMQ
 from .redis import Redis
+from .run_launcher import RunLauncher
 from .scheduler import Scheduler
 from .userdeployments import UserDeployments

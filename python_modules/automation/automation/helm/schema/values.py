@@ -20,3 +20,4 @@ class HelmValues(BaseModel):
     imagePullSecrets: List[subschema.kubernetes.SecretRef]
     computeLogManager: subschema.ComputeLogManager
     scheduler: subschema.Scheduler
+    runLauncher: subschema.RunLauncher

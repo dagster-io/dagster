@@ -36,6 +36,9 @@
         },
         "scheduler": {
             "$ref": "#/definitions/Scheduler"
+        },
+        "runLauncher": {
+            "$ref": "#/definitions/RunLauncher"
         }
     },
     "required": [
@@ -48,7 +51,8 @@
         "ingress",
         "imagePullSecrets",
         "computeLogManager",
-        "scheduler"
+        "scheduler",
+        "runLauncher"
     ],
     "definitions": {
         "PullPolicy": {
@@ -1163,6 +1167,275 @@
                             "config": {
                                 "required": [
                                     "k8sScheduler"
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "RunLauncherType": {
+            "title": "RunLauncherType",
+            "description": "An enumeration.",
+            "enum": [
+                "CeleryK8sRunLauncher",
+                "K8sRunLauncher"
+            ],
+            "type": "string"
+        },
+        "CeleryWorkerQueue": {
+            "title": "CeleryWorkerQueue",
+            "type": "object",
+            "properties": {
+                "replicaCount": {
+                    "title": "Replicacount",
+                    "exclusiveMinimum": 0,
+                    "type": "integer"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "replicaCount",
+                "name"
+            ],
+            "additionalProperties": false
+        },
+        "ConfigMapEnvSource": {
+            "title": "ConfigMapEnvSource",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
+        },
+        "CeleryK8sRunLauncherConfig": {
+            "title": "CeleryK8sRunLauncherConfig",
+            "type": "object",
+            "properties": {
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "nameOverride": {
+                    "title": "Nameoverride",
+                    "type": "string"
+                },
+                "configSource": {
+                    "title": "Configsource",
+                    "type": "object"
+                },
+                "workerQueues": {
+                    "title": "Workerqueues",
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CeleryWorkerQueue"
+                    }
+                },
+                "env": {
+                    "title": "Env",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "envConfigMaps": {
+                    "title": "Envconfigmaps",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigMapEnvSource"
+                    }
+                },
+                "envSecrets": {
+                    "title": "Envsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretEnvSource"
+                    }
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "affinity": {
+                    "$ref": "#/definitions/Affinity"
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/SecurityContext"
+                },
+                "resources": {
+                    "$ref": "#/definitions/Resources"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/LivenessProbe"
+                }
+            },
+            "required": [
+                "image",
+                "nameOverride",
+                "configSource",
+                "workerQueues",
+                "env",
+                "envConfigMaps",
+                "envSecrets",
+                "annotations",
+                "nodeSelector",
+                "affinity",
+                "tolerations",
+                "podSecurityContext",
+                "securityContext",
+                "resources",
+                "livenessProbe"
+            ],
+            "additionalProperties": false
+        },
+        "K8sRunLauncherConfig": {
+            "title": "K8sRunLauncherConfig",
+            "type": "object",
+            "properties": {
+                "image": {
+                    "title": "Image",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Image"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobNamespace": {
+                    "title": "Jobnamespace",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "loadInclusterConfig": {
+                    "title": "Loadinclusterconfig",
+                    "type": "boolean"
+                },
+                "kubeconfigFile": {
+                    "title": "Kubeconfigfile",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "envConfigMaps": {
+                    "title": "Envconfigmaps",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigMapEnvSource"
+                    }
+                },
+                "envSecrets": {
+                    "title": "Envsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretEnvSource"
+                    }
+                }
+            },
+            "required": [
+                "loadInclusterConfig",
+                "envConfigMaps",
+                "envSecrets"
+            ],
+            "additionalProperties": false
+        },
+        "RunLauncherConfig": {
+            "title": "RunLauncherConfig",
+            "type": "object",
+            "properties": {
+                "celeryK8sRunLauncher": {
+                    "title": "CeleryK8sRunLauncherConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/CeleryK8sRunLauncherConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "k8sRunLauncher": {
+                    "title": "K8sRunLauncherConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/K8sRunLauncherConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
+        "RunLauncher": {
+            "title": "RunLauncher",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "$ref": "#/definitions/RunLauncherType"
+                },
+                "config": {
+                    "$ref": "#/definitions/RunLauncherConfig"
+                }
+            },
+            "required": [
+                "type",
+                "config"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CeleryK8sRunLauncher"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "celeryK8sRunLauncher"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "K8sRunLauncher"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "k8sRunLauncher"
                                 ]
                             }
                         }
