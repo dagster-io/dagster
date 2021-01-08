@@ -27,3 +27,10 @@ config:
     - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
   env_secrets: {{- toYaml $k8sSchedulerConfig.envSecrets | nindent 4 }}
 {{- end }}
+
+{{- define "dagsterYaml.scheduler.custom" }}
+{{- $customSchedulerConfig := .Values.scheduler.config.customScheduler }}
+module: {{ $customSchedulerConfig.module | quote }}
+class: {{ $customSchedulerConfig.class | quote }}
+config: {{ $customSchedulerConfig.config | toYaml | nindent 2 }}
+{{- end }}

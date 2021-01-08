@@ -1061,7 +1061,8 @@
             "description": "An enumeration.",
             "enum": [
                 "DagsterDaemonScheduler",
-                "K8sScheduler"
+                "K8sScheduler",
+                "CustomScheduler"
             ],
             "type": "string"
         },
@@ -1119,6 +1120,30 @@
             ],
             "additionalProperties": false
         },
+        "CustomSchedulerConfig": {
+            "title": "CustomSchedulerConfig",
+            "type": "object",
+            "properties": {
+                "module": {
+                    "title": "Module",
+                    "type": "string"
+                },
+                "class": {
+                    "title": "Class",
+                    "type": "string"
+                },
+                "config": {
+                    "title": "Config",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "module",
+                "class",
+                "config"
+            ],
+            "additionalProperties": false
+        },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
@@ -1128,6 +1153,17 @@
                     "anyOf": [
                         {
                             "$ref": "#/definitions/K8sSchedulerConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "customScheduler": {
+                    "title": "CustomSchedulerConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/CustomSchedulerConfig"
                         },
                         {
                             "type": "null"
@@ -1167,6 +1203,24 @@
                             "config": {
                                 "required": [
                                     "k8sScheduler"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CustomScheduler"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "customScheduler"
                                 ]
                             }
                         }

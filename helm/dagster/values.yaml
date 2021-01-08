@@ -232,7 +232,7 @@ pipelineRun:
 # Scheduler: Configuration for the K8sScheduler. (deprecated)
 ####################################################################################################
 scheduler:
-  # Type can be one of [DagsterDaemonScheduler, K8sScheduler]
+  # Type can be one of [DagsterDaemonScheduler, K8sScheduler, CustomScheduler]
   type: DagsterDaemonScheduler
 
   config:
@@ -259,6 +259,14 @@ scheduler:
       # Additional (secret) environment variables can be retrieved and set from
       # the Secrets enumerated as a list here
       envSecrets: []
+
+    ## Uncomment this configuration will only be used if the CustomScheduler is selected.
+    ## Using this setting requires a custom Dagit image that defines the user specified
+    ## scheduler in an installed python module.
+    # customScheduler:
+    #   module: ~
+    #   class: ~
+    #   config: {}
 
 ####################################################################################################
 # Run Launcher: Configuration for run launcher
