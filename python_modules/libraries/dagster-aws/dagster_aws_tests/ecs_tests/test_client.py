@@ -44,6 +44,22 @@ def mock_ecs_task_definition(mock_ecs_client):
     return task_definition.get("taskDefinition").get("taskDefinitionArn")
 
 
+def test_set_task(mock_ecs_client, mock_ecs_cluster, mock_subnets):
+    client = FakeECSClient(cluster=mock_ecs_cluster, client=mock_ecs_client, subnets=mock_subnets)
+    definition = dict(
+        family="dagster",
+        requiresCompatibilities=["FARGATE"],
+        containerDefinitions=[{"name": "HelloWorld", "image": "hello-world:latest", "cpu": 256},],
+        networkMode="awsvpc",
+        cpu="256",
+        memory="512",
+    )
+
+    assert not mock_ecs_client.list_task_definitions()["taskDefinitionArns"]
+    task_definition_arn = client.set_task(**definition)
+    assert mock_ecs_client.list_task_definitions()["taskDefinitionArns"] == [task_definition_arn]
+
+
 @pytest.mark.parametrize(
     "expected_statuses",
     [

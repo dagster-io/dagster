@@ -25,6 +25,18 @@ class ECSClient:
         self.max_polls = max_polls
         self.polling_interval = polling_interval
 
+    def set_task(self, **kwargs):
+        """Set an ECS Task Definition.
+
+        Args:
+
+        https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RegisterTaskDefinition.html
+
+        Returns:
+            str: The Task Definition ARN
+        """
+        return self.client.register_task_definition(**kwargs)["taskDefinition"]["taskDefinitionArn"]
+
     def run_task(self, task_definition):
         """Synchronously run a task definition on ECS.
 
