@@ -35,7 +35,7 @@ setup(
             "google-cloud-storage",
             "keras; python_version < '3.9'",
             "lakehouse",
-            "matplotlib==3.0.2",
+            "matplotlib",
             "mock",
             "moto>=1.3.7",
             "pandas>=1.0.0",

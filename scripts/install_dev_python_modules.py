@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -67,7 +68,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-dbt",
         "-e python_modules/libraries/dagster-docker",
         "-e python_modules/libraries/dagster-gcp",
-        "-e python_modules/libraries/dagster-ge",
         "-e python_modules/libraries/dagster-k8s",
         "-e python_modules/libraries/dagster-celery-k8s",
         "-e python_modules/libraries/dagster-pagerduty",
@@ -95,6 +95,11 @@ def main(quiet):
         # compatible) Azure dependencies.
         # "-e python_modules/libraries/dagster-azure",
     ]
+
+    # dagster-ge depends on a great_expectations version that does not install on Windows
+    # https://github.com/dagster-io/dagster/issues/3319
+    if not os.name == "nt":
+        install_targets += ["-e python_modules/libraries/dagster-ge"]
 
     if not is_39():
         install_targets += [
