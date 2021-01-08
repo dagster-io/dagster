@@ -9,10 +9,11 @@ interface Props {
   timestamp: number;
   timezone?: string | null;
   format: string;
+  tooltipFormat: string;
 }
 
 export const TimestampDisplay = (props: Props) => {
-  const {timestamp, timezone, format} = props;
+  const {timestamp, timezone, format, tooltipFormat} = props;
   const [userTimezone] = React.useContext(TimezoneContext);
 
   const timestampString = timestampToString({unix: timestamp, format}, userTimezone);
@@ -21,7 +22,9 @@ export const TimestampDisplay = (props: Props) => {
     <Group direction="row" spacing={8} alignItems="center">
       <div>{timestampString}</div>
       {timezone && timezone !== userTimezone ? (
-        <TimestampTooltip content={timestampToString({unix: timestamp, format}, timezone)}>
+        <TimestampTooltip
+          content={timestampToString({unix: timestamp, format: tooltipFormat}, timezone)}
+        >
           <Icon icon="time" iconSize={12} color={Colors.GRAY3} style={{display: 'block'}} />
         </TimestampTooltip>
       ) : null}
@@ -31,6 +34,7 @@ export const TimestampDisplay = (props: Props) => {
 
 TimestampDisplay.defaultProps = {
   format: 'MMM D, YYYY, h:mm A z',
+  tooltipFormat: 'MMM D, YYYY, h:mm A z',
 };
 
 const TimestampTooltip = styled(Tooltip)`

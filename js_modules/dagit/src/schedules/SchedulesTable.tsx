@@ -254,10 +254,10 @@ const ScheduleRow: React.FC<{
           <TimestampDisplay
             timestamp={futureTicks.results[0].timestamp}
             timezone={executionTimezone}
-            format="h:mm A, MMM D"
+            format="MMM D, h:mm A"
           />
         ) : (
-          <span style={{color: Colors.GRAY4}}>&mdash;</span>
+          <span style={{color: Colors.GRAY4}}>None</span>
         )}
       </td>
       <td>
