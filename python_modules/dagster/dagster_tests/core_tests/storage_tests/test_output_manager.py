@@ -69,43 +69,6 @@ def test_configurable_output_manager():
     assert adict["result"] == ("a", 5)
 
 
-def test_separate_output_manager_input_manager():
-    adict = {}
-
-    @output_manager
-    def my_output_manager(_context, obj):
-        adict["result"] = obj
-
-    @input_manager
-    def my_input_manager(_context):
-        return adict["result"]
-
-    @solid(output_defs=[OutputDefinition(manager_key="my_output_manager")])
-    def my_solid(_):
-        return 5
-
-    @solid(input_defs=[InputDefinition("input1", manager_key="my_input_manager")])
-    def my_downstream_solid(_, input1):
-        return input1 + 1
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "my_input_manager": my_input_manager,
-                    "my_output_manager": my_output_manager,
-                }
-            )
-        ]
-    )
-    def my_pipeline():
-        my_downstream_solid(my_solid())
-
-    execute_pipeline(my_pipeline)
-
-    assert adict["result"] == 5
-
-
 def test_type_materializer_and_configurable_output_manager():
     @dagster_type_materializer(config_schema={"type_materializer_path": str})
     def my_materializer(_, _config, _value):
@@ -215,31 +178,13 @@ def test_output_manager_with_failure():
             ],
         )
 
-    @input_manager
-    def should_not_enter(_):
-        _called_input_manager = True
-
     @solid(output_defs=[OutputDefinition(manager_key="should_fail")])
     def emit_str(_):
         return "emit"
 
-    @solid(
-        input_defs=[
-            InputDefinition(name="_input_str", dagster_type=str, manager_key="should_not_enter")
-        ]
-    )
-    def should_not_call(_, _input_str):
-        _called_solid = True
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"should_fail": should_fail, "should_not_enter": should_not_enter}
-            )
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"should_fail": should_fail})])
     def simple():
-        should_not_call(emit_str())
+        emit_str()
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
@@ -358,7 +303,7 @@ def test_output_manager_no_input_manager():
         match='Input "_str_input" of solid "ingest_str" is connected to output "output_alone" of '
         'solid "emit_str". In mode "default", that output does not have an output manager that '
         "knows how to load inputs, so we don't know how to load the input. To address this, "
-        "assign an InputManager to this input or assign an IOManager to the upstream output.",
+        "assign an IOManager to the upstream output.",
     ):
 
         @pipeline(

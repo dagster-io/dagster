@@ -99,16 +99,16 @@ class FromRootInputManager(
     namedtuple("_FromRootInputManager", "input_def config_data"), StepInputSource,
 ):
     def load_input_object(self, step_context):
-        loader = getattr(step_context.resources, self.input_def.manager_key)
+        loader = getattr(step_context.resources, self.input_def.root_manager_key)
         load_input_context = step_context.for_input_manager(
             self.input_def.name,
             self.config_data,
             metadata=self.input_def.metadata,
             dagster_type=self.input_def.dagster_type,
             resource_config=step_context.environment_config.resources[
-                self.input_def.manager_key
+                self.input_def.root_manager_key
             ].get("config", {}),
-            resources=build_resources_for_manager(self.input_def.manager_key, step_context),
+            resources=build_resources_for_manager(self.input_def.root_manager_key, step_context),
         )
         return _load_input_with_input_manager(loader, load_input_context)
 
@@ -117,7 +117,7 @@ class FromRootInputManager(
         return None
 
     def required_resource_keys(self):
-        return {self.input_def.manager_key}
+        return {self.input_def.root_manager_key}
 
 
 class FromStepOutput(
@@ -152,16 +152,9 @@ class FromStepOutput(
         return [self.step_output_handle]
 
     def get_load_context(self, step_context):
-        resource_config = (
-            step_context.environment_config.resources[self.input_def.manager_key].get("config", {})
-            if self.input_def.manager_key
-            else None
-        )
-        resources = (
-            build_resources_for_manager(self.input_def.manager_key, step_context)
-            if self.input_def.manager_key
-            else None
-        )
+        manager_key = step_context.execution_plan.get_manager_key(self.step_output_handle)
+        resource_config = step_context.environment_config.resources[manager_key].get("config", {})
+        resources = build_resources_for_manager(manager_key, step_context)
 
         return step_context.for_input_manager(
             self.input_def.name,
@@ -175,10 +168,6 @@ class FromStepOutput(
 
     def load_input_object(self, step_context):
         source_handle = self.step_output_handle
-        if self.input_def.manager_key:
-            loader = getattr(step_context.resources, self.input_def.manager_key)
-            return _load_input_with_input_manager(loader, self.get_load_context(step_context))
-
         io_manager = step_context.get_output_manager(source_handle)
 
         check.invariant(
@@ -191,7 +180,6 @@ class FromStepOutput(
         )
 
         obj = _load_input_with_input_manager(io_manager, self.get_load_context(step_context))
-
         output_def = step_context.execution_plan.get_step_output(source_handle).output_def
 
         # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
@@ -219,7 +207,7 @@ class FromStepOutput(
             )
 
     def required_resource_keys(self):
-        return {self.input_def.manager_key} if self.input_def.manager_key else set()
+        return set()
 
 
 def _generate_error_boundary_msg_for_step_input(context, input_name):
@@ -445,7 +433,7 @@ class FromPendingDynamicStepOutput(
         return self.step_output_handle
 
     def required_resource_keys(self):
-        return {self.input_def.manager_key} if self.input_def.manager_key else set()
+        return set()
 
 
 class FromUnresolvedStepOutput(
@@ -489,4 +477,4 @@ class FromUnresolvedStepOutput(
         return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
 
     def required_resource_keys(self):
-        return {self.input_def.manager_key} if self.input_def.manager_key else set()
+        return set()

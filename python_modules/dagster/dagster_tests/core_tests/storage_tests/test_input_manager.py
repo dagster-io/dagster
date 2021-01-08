@@ -31,7 +31,7 @@ def test_validate_inputs():
     @solid(
         input_defs=[
             InputDefinition(
-                "input1", dagster_type=PythonObjectDagsterType(int), manager_key="my_loader"
+                "input1", dagster_type=PythonObjectDagsterType(int), root_manager_key="my_loader"
             )
         ]
     )
@@ -50,7 +50,7 @@ def test_root_input_manager():
     def my_hardcoded_csv_loader(_context):
         return 5
 
-    @solid(input_defs=[InputDefinition("input1", manager_key="my_loader")])
+    @solid(input_defs=[InputDefinition("input1", root_manager_key="my_loader")])
     def solid1(_, input1):
         assert input1 == 5
 
@@ -67,7 +67,7 @@ def test_configurable_root_input_manager():
         assert context.resource_config["base_dir"] == "abc"
         return context.config["value"]
 
-    @solid(input_defs=[InputDefinition("input1", manager_key="my_loader")])
+    @solid(input_defs=[InputDefinition("input1", root_manager_key="my_loader")])
     def solid1(_, input1):
         assert input1 == 5
 
@@ -84,7 +84,7 @@ def test_configurable_root_input_manager():
     )
 
 
-def test_override_io_manager():
+def test_only_used_for_root():
     metadata = {"name": 5}
 
     class MyIOManager(IOManager):
@@ -92,7 +92,13 @@ def test_override_io_manager():
             pass
 
         def load_input(self, context):
-            assert False, "should not be called"
+            output = context.upstream_output
+            assert output.metadata == metadata
+            assert output.name == "my_output"
+            assert output.step_key == "solid1"
+            assert context.pipeline_name == "my_pipeline"
+            assert context.solid_def.name == solid2.name
+            return 5
 
     @io_manager
     def my_io_manager(_):
@@ -106,24 +112,18 @@ def test_override_io_manager():
     def solid1(_):
         return 1
 
-    @solid(input_defs=[InputDefinition("input1", manager_key="spark_loader")])
+    @solid(input_defs=[InputDefinition("input1", root_manager_key="my_root_manager")])
     def solid2(_, input1):
         assert input1 == 5
 
     @input_manager
-    def spark_table_loader(context):
-        output = context.upstream_output
-        assert output.metadata == metadata
-        assert output.name == "my_output"
-        assert output.step_key == "solid1"
-        assert context.pipeline_name == "my_pipeline"
-        assert context.solid_def.name == solid2.name
-        return 5
+    def root_manager(_):
+        assert False, "should not be called"
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"my_io_manager": my_io_manager, "spark_loader": spark_table_loader,}
+                resource_defs={"my_io_manager": my_io_manager, "my_root_manager": root_manager,}
             )
         ]
     )
@@ -155,8 +155,6 @@ def test_configured():
 
 
 def test_input_manager_with_failure():
-    _called = False
-
     @input_manager
     def should_fail(_):
         raise Failure(
@@ -166,17 +164,13 @@ def test_input_manager_with_failure():
             ],
         )
 
-    @solid
-    def emit_str(_):
-        return "emit"
-
-    @solid(input_defs=[InputDefinition("_fail_input", manager_key="should_fail")])
+    @solid(input_defs=[InputDefinition("_fail_input", root_manager_key="should_fail")])
     def fail_on_input(_, _fail_input):
-        _called = True
+        assert False, "should not be called"
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"should_fail": should_fail})])
     def simple():
-        fail_on_input(emit_str())
+        fail_on_input()
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
@@ -195,15 +189,12 @@ def test_input_manager_with_failure():
         assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
         assert failure_data.user_failure_data.metadata_entries[0].description == "description"
 
-        assert not _called
-
 
 def test_input_manager_with_retries():
-    _called = False
     _count = {"total": 0}
 
     @input_manager
-    def should_succeed(_):
+    def should_succeed_after_retries(_):
         if _count["total"] < 2:
             _count["total"] += 1
             raise RetryRequested(max_retries=3)
@@ -213,39 +204,32 @@ def test_input_manager_with_retries():
     def should_retry(_):
         raise RetryRequested(max_retries=3)
 
-    @input_manager
-    def should_not_execute(_):
-        _called = True
+    @solid(
+        input_defs=[InputDefinition("solid_input", root_manager_key="should_succeed_after_retries")]
+    )
+    def take_input_1(_, solid_input):
+        return solid_input
+
+    @solid(input_defs=[InputDefinition("solid_input", root_manager_key="should_retry")])
+    def take_input_2(_, solid_input):
+        return solid_input
+
+    @solid
+    def take_input_3(_, _input1, _input2):
+        assert False, "should not be called"
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    "should_succeed": should_succeed,
-                    "should_not_execute": should_not_execute,
+                    "should_succeed_after_retries": should_succeed_after_retries,
                     "should_retry": should_retry,
                 }
             )
         ]
     )
     def simple():
-        @solid
-        def source_solid(_):
-            return "foo"
-
-        @solid(input_defs=[InputDefinition("solid_input", manager_key="should_succeed")])
-        def take_input_1(_, solid_input):
-            return solid_input
-
-        @solid(input_defs=[InputDefinition("solid_input", manager_key="should_retry")])
-        def take_input_2(_, solid_input):
-            return solid_input
-
-        @solid(input_defs=[InputDefinition("solid_input", manager_key="should_not_execute")])
-        def take_input_3(_, solid_input):
-            return solid_input
-
-        take_input_3(take_input_2(take_input_1(source_solid())))
+        take_input_3(take_input_2(), take_input_1())
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
@@ -254,7 +238,7 @@ def test_input_manager_with_retries():
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
 
         step_stats = instance.get_run_step_stats(result.run_id)
-        assert len(step_stats) == 3
+        assert len(step_stats) == 2
 
         step_stats_1 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_1"])
         assert len(step_stats_1) == 1
@@ -270,36 +254,6 @@ def test_input_manager_with_retries():
 
         step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_3"])
         assert len(step_stats_3) == 0
-        assert _called == False
-
-
-def test_fan_in():
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        file_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
-
-        @solid
-        def input_solid1(_):
-            return 1
-
-        @solid
-        def input_solid2(_):
-            return 2
-
-        @solid(input_defs=[InputDefinition("input1", manager_key="input_manager")])
-        def solid1(_, input1):
-            assert input1 == [1, 2]
-
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"io_manager": file_io_manager, "input_manager": file_io_manager}
-                )
-            ]
-        )
-        def my_pipeline():
-            solid1(input1=[input_solid1(), input_solid2()])
-
-        execute_pipeline(my_pipeline)
 
 
 def test_input_manager_resource_config():
@@ -307,7 +261,7 @@ def test_input_manager_resource_config():
     def emit_dog(context):
         assert context.resource_config["dog"] == "poodle"
 
-    @solid(input_defs=[InputDefinition("solid_input", manager_key="emit_dog")])
+    @solid(input_defs=[InputDefinition("solid_input", root_manager_key="emit_dog")])
     def source_solid(_, solid_input):
         return solid_input
 
@@ -332,7 +286,9 @@ def test_input_manager_required_resource_keys():
         assert context.resources.foo_resource == "foo"
 
     @solid(
-        input_defs=[InputDefinition("_manager_input", manager_key="input_manager_reqs_resources")]
+        input_defs=[
+            InputDefinition("_manager_input", root_manager_key="input_manager_reqs_resources")
+        ]
     )
     def big_solid(_, _manager_input):
         return "manager_input"
@@ -356,7 +312,7 @@ def test_input_manager_required_resource_keys():
 
 
 def test_manager_not_provided():
-    @solid(input_defs=[InputDefinition("_input", manager_key="not_here")])
+    @solid(input_defs=[InputDefinition("_input", root_manager_key="not_here")])
     def solid_requires_manager(_, _input):
         pass
 
@@ -366,7 +322,7 @@ def test_manager_not_provided():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Input "_input" for solid "solid_requires_manager" requires manager_key "not_here", but no '
+        match='Input "_input" for solid "solid_requires_manager" requires root_manager_key "not_here", but no '
         "resource has been provided. Please include a resource definition for that key in the "
         "resource_defs of your ModeDefinition.",
     ):
@@ -378,7 +334,7 @@ def test_resource_not_input_manager():
     def resource_not_manager(_):
         return "foo"
 
-    @solid(input_defs=[InputDefinition("_input", manager_key="not_manager")])
+    @solid(input_defs=[InputDefinition("_input", root_manager_key="not_manager")])
     def solid_requires_manager(_, _input):
         pass
 
@@ -388,7 +344,7 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Input "_input" for solid "solid_requires_manager" requires manager_key '
+        match='Input "_input" for solid "solid_requires_manager" requires root_manager_key '
         '"not_manager", but the resource definition provided is not an '
         "IInputManagerDefinition",
     ):

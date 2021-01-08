@@ -184,11 +184,10 @@ def get_inputs_field(solid, handle, dependency_structure, resource_defs):
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
-        if inp.manager_key:
+        has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
+        if inp.root_manager_key and not has_upstream:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
-        elif inp.dagster_type.loader and not input_has_upstream(
-            dependency_structure, inp_handle, solid, name
-        ):
+        elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(solid, name, inp)
         else:
             input_field = None
@@ -207,21 +206,21 @@ def input_has_upstream(dependency_structure, input_handle, solid, input_name):
 
 
 def get_input_manager_input_field(solid, input_def, resource_defs):
-    if input_def.manager_key not in resource_defs:
+    if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for solid "{solid.name}" requires manager_key '
-            f'"{input_def.manager_key}", but no resource has been provided. Please include a '
+            f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
+            f'"{input_def.root_manager_key}", but no resource has been provided. Please include a '
             f"resource definition for that key in the resource_defs of your ModeDefinition."
         )
 
-    if not isinstance(resource_defs[input_def.manager_key], IInputManagerDefinition):
+    if not isinstance(resource_defs[input_def.root_manager_key], IInputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for solid "{solid.name}" requires manager_key '
-            f'"{input_def.manager_key}", but the resource definition provided is not an '
+            f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
+            f'"{input_def.root_manager_key}", but the resource definition provided is not an '
             "IInputManagerDefinition"
         )
 
-    input_config_schema = resource_defs[input_def.manager_key].input_config_schema
+    input_config_schema = resource_defs[input_def.root_manager_key].input_config_schema
     if input_config_schema:
         return input_config_schema.config_type
 
@@ -232,7 +231,7 @@ def get_type_loader_input_field(solid, input_name, input_def):
     return Field(
         input_def.dagster_type.loader.schema_type,
         is_required=(
-            not solid.definition.input_has_default(input_name) and not input_def.manager_key
+            not solid.definition.input_has_default(input_name) and not input_def.root_manager_key
         ),
     )
 

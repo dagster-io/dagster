@@ -725,31 +725,29 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
     for solid in solid_dict.values():
         for handle in solid.input_handles():
             if dependency_structure.has_deps(handle):
-                if not handle.input_def.manager_key:
-                    for mode_def in mode_definitions:
-                        for source_output_handle in dependency_structure.get_deps_list(handle):
-                            output_manager_key = source_output_handle.output_def.manager_key
-                            output_manager_def = mode_def.resource_defs[output_manager_key]
-                            # TODO: remove the IOutputManagerDefinition check when asset store
-                            # API is removed.
-                            if isinstance(
-                                output_manager_def, IOutputManagerDefinition
-                            ) and not isinstance(output_manager_def, IInputManagerDefinition):
-                                raise DagsterInvalidDefinitionError(
-                                    f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
-                                    f'connected to output "{source_output_handle.output_def.name}" '
-                                    f'of solid "{source_output_handle.solid.name}". In mode '
-                                    f'"{mode_def.name}", that output does not have an output '
-                                    f"manager that knows how to load inputs, so we don't know how "
-                                    f"to load the input. To address this, assign an InputManager "
-                                    f"to this input or assign an IOManager to the upstream "
-                                    "output."
-                                )
+                for mode_def in mode_definitions:
+                    for source_output_handle in dependency_structure.get_deps_list(handle):
+                        output_manager_key = source_output_handle.output_def.manager_key
+                        output_manager_def = mode_def.resource_defs[output_manager_key]
+                        # TODO: remove the IOutputManagerDefinition check when asset store
+                        # API is removed.
+                        if isinstance(
+                            output_manager_def, IOutputManagerDefinition
+                        ) and not isinstance(output_manager_def, IInputManagerDefinition):
+                            raise DagsterInvalidDefinitionError(
+                                f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
+                                f'connected to output "{source_output_handle.output_def.name}" '
+                                f'of solid "{source_output_handle.solid.name}". In mode '
+                                f'"{mode_def.name}", that output does not have an output '
+                                f"manager that knows how to load inputs, so we don't know how "
+                                f"to load the input. To address this, assign an IOManager to "
+                                f"the upstream output."
+                            )
             else:
                 if (
                     not handle.input_def.dagster_type.loader
                     and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                    and not handle.input_def.manager_key
+                    and not handle.input_def.root_manager_key
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '

@@ -392,7 +392,9 @@ def test_io_manager_resources_on_context():
         return InternalIOManager()
 
     @solid(
-        input_defs=[InputDefinition("_manager_input", manager_key="io_manager_reqs_resources")],
+        input_defs=[
+            InputDefinition("_manager_input", root_manager_key="io_manager_reqs_resources")
+        ],
         output_defs=[OutputDefinition(dagster_type=str, manager_key="io_manager_reqs_resources")],
     )
     def big_solid(_, _manager_input):

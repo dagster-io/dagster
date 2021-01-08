@@ -14,7 +14,7 @@ These APIs make it easy separate code that's responsible for logical data transf
 
 ## IO managers
 
-<PyObject module="dagster" object="IOManager" />s are user-provided objects that know how to both load solid inputs and store solid outputs.  For example, an IOManager might store and load objects from files on a filesystem.  Each solid output can have its own IOManager, or multiple solid outputs can share an IOManager. The IOManager that's used for handling a particular solid output is automatically used for loading it in subsequent solids.
+<PyObject module="dagster" object="IOManager" />s are user-provided objects that are responsible for storing the output of a solid and loading it as input to downstream solids.  For example, an IOManager might store and load objects from files on a filesystem.  Each solid output can have its own IOManager, or multiple solid outputs can share an IOManager. The IOManager that's used for handling a particular solid output is automatically used for loading it in downstream solids.
 
 <p/>
 
@@ -30,9 +30,7 @@ IOManagers are [resources](/overview/modes-resources-presets/modes-resources), w
 
 ## Input managers and output managers
 
-IOManagers are resources that specify both how to load inputs and handle outputs. You can also define resources that only load inputs or only handle outputs.
-
-<PyObject module="dagster" object="InputManager" />s are for situations where you need to control how inputs are loaded independently of how outputs are stored.  They're useful for loading the inputs at the beginning of a pipeline, as well as for situations where you don't have control over the manager used for an upstream output.
+<PyObject module="dagster" object="RootInputManagers" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not hooked up to an upstream solid's output.
 
 <p/>
 
@@ -142,12 +140,14 @@ startAfter:start_marker
 endBefore:end_marker
 ```
 
+Setting the `root_manager_key` on an `InputDefinition` controls how that input is loaded in pipelines where it has no upstream output.
+
 The <PyObject module="dagster" object="input_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator.  It yields an <PyObject module="dagster" object="InputManagerDefinition" />, which is a <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="InputManager" />.
 
 
-## Providing per-input config to an input manager
+## Providing per-input config to a root input manager
 
-When launching a run, you might want to parameterize how particular inputs are loaded.
+When launching a run, you might want to parameterize how particular root inputs are loaded.
 
 To accomplish this, you can define an `input_config_schema` on the input manager definition.  The load function can access this config when storing or loading data, via the <PyObject module="dagster" object="InputContext" />.
 
@@ -165,13 +165,14 @@ startAfter:execute_start_marker
 endBefore:execute_end_marker
 ```
 
-## Using an input manager with subselection
+## Using a root input manager with subselection
 
-You might want to execute a subset of solids in your pipeline and control how the inputs of those solids are loaded.
+You might want to execute a subset of solids in your pipeline and control how the inputs of those solids are loaded.  Root input managers also help in these situations, because the inputs at the beginning of the subset become the new "roots".
 
 For example, you might have `solid1` that normally produces a table that `solid2` consumes. To debug `solid2`, you might want to run it on a different table than the one normally produced by `solid1`.
 
-To accomplish this, you can define an IO manager whose `load_input` method supports both behaviors: loading based on the upstream output or loading based on config.
+To accomplish this, you can set up the `root_manager_key` on `solid2`'s `InputDefinition` to point to an input manager with the desired loading behavior.  As before, setting the `root_manager_key` on an `InputDefinition` controls how that input is loaded when it has no upstream output.
+
 
 ```python literalinclude caption=subselection.py
 file:/docs_snippets/docs_snippets/overview/io_managers/subselection.py
@@ -179,11 +180,11 @@ startAfter:start_marker
 endBefore:end_marker
 ```
 
-If `"table_name"` is provided in the input config for `solid2`'s `dataframe` input, the input will be loaded from the supplied config value:
+When running the full pipeline, `solid2`'s input will be loaded using the IO manager on the output of `solid1`.  When running the pipeline subset, `solid2`'s input has no upstream output, so the input manager corresponding to its `root_manager_key` is used.
+
 ```python literalinclude caption=subselection.py
 file:/docs_snippets/docs_snippets/overview/io_managers/subselection.py
 startAfter:start_execute_subselection
 endBefore:end_execute_subselection
 ```
 
-Otherwise, it will be loaded from the place that it expects the upstream output has placed it - in this case, a table with the name of the upstream output.

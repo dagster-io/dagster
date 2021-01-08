@@ -99,7 +99,10 @@ class NodeDefinition(ConfigurableDefinition):
 
     @property
     def has_configurable_inputs(self):
-        return any([inp.dagster_type.loader or inp.manager_key for inp in self._input_defs])
+        # This should be deprecated and removed. With the shift to root input managers, it doesn't
+        # really make sense anymore, because whether the solid has configurable inputs now depends
+        # on the mode definition.
+        return any([inp.dagster_type.loader or inp.root_manager_key for inp in self._input_defs])
 
     @property
     def has_configurable_outputs(self):

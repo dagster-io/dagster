@@ -7,7 +7,7 @@ def read_dataframe_from_table(**_kwargs):
 
 
 # start_marker
-@solid(input_defs=[InputDefinition("dataframe", manager_key="my_root_manager")])
+@solid(input_defs=[InputDefinition("dataframe", root_manager_key="my_root_manager")])
 def my_solid(_, dataframe):
     """Do some stuff"""
 

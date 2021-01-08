@@ -1,11 +1,11 @@
 # pylint: disable=unused-argument
 from dagster import (
-    Field,
     IOManager,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
+    input_manager,
     io_manager,
     pipeline,
     solid,
@@ -21,21 +21,21 @@ def read_dataframe_from_table(**_kwargs):
 
 
 # start_marker
+@input_manager(input_config_schema={"table_name": str})
+def my_root_input_manager(context):
+    return read_dataframe_from_table(name=context.config["table_name"])
+
+
 class MyIOManager(IOManager):
     def handle_output(self, context, obj):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
     def load_input(self, context):
-        if "table_name" in context.config:
-            table_name = context.config["table_name"]
-        else:
-            table_name = context.upstream_output.name
-
-        return read_dataframe_from_table(name=table_name)
+        return read_dataframe_from_table(name=context.upstream_output.name)
 
 
-@io_manager(input_config_schema={"table_name": Field(str, is_required=False)})
+@io_manager
 def my_io_manager(_):
     return MyIOManager()
 
@@ -45,12 +45,21 @@ def solid1(_):
     """Do stuff"""
 
 
-@solid(input_defs=[InputDefinition("dataframe", manager_key="my_io_manager")])
+@solid(input_defs=[InputDefinition("dataframe", root_manager_key="my_root_input_manager")])
 def solid2(_, dataframe):
     """Do stuff"""
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"my_io_manager": my_io_manager})])
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "my_io_manager": my_io_manager,
+                "my_root_input_manager": my_root_input_manager,
+            }
+        )
+    ]
+)
 def my_pipeline():
     solid2(solid1())
 

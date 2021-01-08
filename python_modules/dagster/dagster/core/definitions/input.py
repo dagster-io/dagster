@@ -57,8 +57,8 @@ class InputDefinition:
             :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        manager_key (Optional[str]): The resource key for the InputManager used for loading this
-            input.
+        root_manager_key (Optional[str]): The resource key for the InputManager used for loading
+            this input when it is not hooked up to an upstream output.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
     """
 
@@ -68,7 +68,7 @@ class InputDefinition:
         dagster_type=None,
         description=None,
         default_value=_NoValueSentinel,
-        manager_key=None,
+        root_manager_key=None,
         metadata=None,
     ):
         ""
@@ -80,7 +80,7 @@ class InputDefinition:
 
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
 
-        self._manager_key = check.opt_str_param(manager_key, "manager_key")
+        self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
@@ -106,8 +106,8 @@ class InputDefinition:
         return self._default_value
 
     @property
-    def manager_key(self):
-        return self._manager_key
+    def root_manager_key(self):
+        return self._root_manager_key
 
     @property
     def metadata(self):

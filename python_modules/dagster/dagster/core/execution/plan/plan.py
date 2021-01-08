@@ -258,7 +258,7 @@ def get_step_input_source(
     input_config = solid_config.inputs.get(input_name) if solid_config else None
 
     input_def = solid.definition.input_def_named(input_name)
-    if input_def.manager_key and not dependency_structure.has_deps(input_handle):
+    if input_def.root_manager_key and not dependency_structure.has_deps(input_handle):
         return FromRootInputManager(input_def=input_def, config_data=input_config)
 
     if dependency_structure.has_singular_dep(input_handle):
