@@ -37,8 +37,22 @@ class ECSClient:
         """
         return self.client.register_task_definition(**kwargs)["taskDefinition"]["taskDefinitionArn"]
 
+    def start_task(self, task_definition):
+        """Start a single FARGATE task from task definition.
+
+        Args:
+            task_definition (str): The family and revision (family:revision) or full ARN
+                of the task definition to run. If a revision is not specified, the
+                latest ACTIVE revision is used.
+
+        Returns:
+            str: The Task ARN
+        """
+        return self._start_task(task_definition)
+
     def run_task(self, task_definition):
-        """Synchronously run a task definition on ECS.
+        """Synchronously run a single FARGATE task from a task definition until all tasks
+        are STOPPED.
 
         Args:
             task_definition (str): The family and revision (family:revision) or full ARN
@@ -48,20 +62,11 @@ class ECSClient:
         Returns:
             None
         """
-        response = self.client.run_task(
-            count=1,
-            launchType="FARGATE",
-            taskDefinition=task_definition,
-            cluster=self.cluster,
-            networkConfiguration={
-                "awsvpcConfiguration": {"subnets": self.subnets, "assignPublicIp": "ENABLED"}
-            },
-        )
-        task_arns = [task["taskArn"] for task in response["tasks"]]
+        task_arn = self._start_task(task_definition)
 
         retries = self.max_polls
         while retries > 0:
-            response = self.client.describe_tasks(cluster=self.cluster, tasks=task_arns)
+            response = self.client.describe_tasks(cluster=self.cluster, tasks=[task_arn])
             tasks = [task for task in response["tasks"]]
 
             if all(task["lastStatus"] == "STOPPED" for task in tasks):
@@ -78,13 +83,35 @@ class ECSClient:
         if any(errors):
             raise ECSError(";".join(errors))
 
+    def _start_task(self, task_definition):
+        response = self.client.run_task(
+            count=1,
+            launchType="FARGATE",
+            taskDefinition=task_definition,
+            cluster=self.cluster,
+            networkConfiguration={
+                "awsvpcConfiguration": {"subnets": self.subnets, "assignPublicIp": "ENABLED"}
+            },
+        )
+        return response["tasks"][0]["taskArn"]
+
 
 class FakeECSClient(ECSClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.polling_interval = 0
         self.stubber = Stubber(self.client)
-        self.tasks = [f"arn:aws:ecs:us-east-2:0123456789:task/{uuid.uuid4()}"]
+
+    def start_task(self, task_definition):
+        self.stubber.activate()
+
+        self._stub_start_task(task_definition)
+        result = super().start_task(task_definition)
+
+        self.stubber.deactivate()
+        self.stubber.assert_no_pending_responses()
+
+        return result
 
     def run_task(
         self,
@@ -117,17 +144,19 @@ class FakeECSClient(ECSClient):
 
         self.stubber.activate()
 
-        self._stub_run_task(task_definition)
-        self._stub_describe_tasks(expected_statuses, expected_stop_code)
+        task_arn = self._stub_start_task(task_definition)
+        self._stub_describe_tasks(expected_statuses, expected_stop_code, task_arn)
         super().run_task(task_definition, **kwargs)
 
         self.stubber.deactivate()
         self.stubber.assert_no_pending_responses()
 
-    def _stub_run_task(self, task_definition):
+    def _stub_start_task(self, task_definition):
+        task = f"arn:aws:ecs:us-east-2:0123456789:task/{uuid.uuid4()}"
+
         self.stubber.add_response(
             method="run_task",
-            service_response={"tasks": [{"taskArn": task} for task in self.tasks]},
+            service_response={"tasks": [{"taskArn": task}]},
             expected_params={
                 "count": 1,
                 "launchType": "FARGATE",
@@ -139,12 +168,14 @@ class FakeECSClient(ECSClient):
             },
         )
 
-    def _stub_describe_tasks(self, expected_statuses, expected_stop_code):
+        return task
+
+    def _stub_describe_tasks(self, expected_statuses, expected_stop_code, task_arn):
         for status in expected_statuses:
             self.stubber.add_response(
                 method="describe_tasks",
                 service_response={
                     "tasks": [{"lastStatus": status, "stopCode": expected_stop_code}]
                 },
-                expected_params={"cluster": self.cluster, "tasks": self.tasks},
+                expected_params={"cluster": self.cluster, "tasks": [task_arn]},
             )

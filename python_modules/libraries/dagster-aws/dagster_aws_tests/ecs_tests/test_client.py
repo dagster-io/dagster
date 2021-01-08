@@ -60,6 +60,12 @@ def test_set_task(mock_ecs_client, mock_ecs_cluster, mock_subnets):
     assert mock_ecs_client.list_task_definitions()["taskDefinitionArns"] == [task_definition_arn]
 
 
+def test_start_task(mock_ecs_client, mock_ecs_cluster, mock_ecs_task_definition, mock_subnets):
+    client = FakeECSClient(cluster=mock_ecs_cluster, client=mock_ecs_client, subnets=mock_subnets)
+    task_arn = client.start_task(mock_ecs_task_definition)
+    assert client.start_task(mock_ecs_task_definition) != task_arn
+
+
 @pytest.mark.parametrize(
     "expected_statuses",
     [
