@@ -1,12 +1,24 @@
 from enum import Enum
 from typing import Dict, List
 
-from pydantic import BaseModel as PydanticBaseModel  # pylint: disable=E0611
+# pylint: disable=E0611
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import Extra
 
 
 class SupportedKubernetes(str, Enum):
     V1_15 = "1.15.0"
     V1_16 = "1.16.0"
+
+
+class ConfigurableClass(PydanticBaseModel):
+    module: str
+    class_: str
+    config: dict
+
+    class Config:
+        fields = {"class_": "class"}
+        extra = Extra.forbid
 
 
 class BaseModel(PydanticBaseModel):

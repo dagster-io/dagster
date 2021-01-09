@@ -890,8 +890,8 @@
             ],
             "additionalProperties": false
         },
-        "CustomComputeLogManager": {
-            "title": "CustomComputeLogManager",
+        "ConfigurableClass": {
+            "title": "ConfigurableClass",
             "type": "object",
             "properties": {
                 "module": {
@@ -952,10 +952,10 @@
                     ]
                 },
                 "customComputeLogManager": {
-                    "title": "CustomComputeLogManager",
+                    "title": "ConfigurableClass",
                     "anyOf": [
                         {
-                            "$ref": "#/definitions/CustomComputeLogManager"
+                            "$ref": "#/definitions/ConfigurableClass"
                         },
                         {
                             "type": "null"
@@ -1120,30 +1120,6 @@
             ],
             "additionalProperties": false
         },
-        "CustomSchedulerConfig": {
-            "title": "CustomSchedulerConfig",
-            "type": "object",
-            "properties": {
-                "module": {
-                    "title": "Module",
-                    "type": "string"
-                },
-                "class": {
-                    "title": "Class",
-                    "type": "string"
-                },
-                "config": {
-                    "title": "Config",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "module",
-                "class",
-                "config"
-            ],
-            "additionalProperties": false
-        },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
@@ -1160,10 +1136,10 @@
                     ]
                 },
                 "customScheduler": {
-                    "title": "CustomSchedulerConfig",
+                    "title": "ConfigurableClass",
                     "anyOf": [
                         {
-                            "$ref": "#/definitions/CustomSchedulerConfig"
+                            "$ref": "#/definitions/ConfigurableClass"
                         },
                         {
                             "type": "null"
@@ -1233,7 +1209,8 @@
             "description": "An enumeration.",
             "enum": [
                 "CeleryK8sRunLauncher",
-                "K8sRunLauncher"
+                "K8sRunLauncher",
+                "CustomRunLauncher"
             ],
             "type": "string"
         },
@@ -1439,6 +1416,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "customRunLauncher": {
+                    "title": "ConfigurableClass",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/ConfigurableClass"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             }
         },
@@ -1490,6 +1478,24 @@
                             "config": {
                                 "required": [
                                     "k8sRunLauncher"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CustomRunLauncher"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "customRunLauncher"
                                 ]
                             }
                         }

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Type
 from pydantic import Extra  # pylint: disable=E0611
 
 from .config import StringSource
-from .utils import BaseModel, create_json_schema_conditionals
+from .utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class ComputeLogManagerType(str, Enum):
@@ -48,21 +48,11 @@ class S3ComputeLogManager(BaseModel):
         extra = Extra.forbid
 
 
-class CustomComputeLogManager(BaseModel):
-    module: str
-    class_: str
-    config: dict
-
-    class Config:
-        fields = {"class_": "class"}
-        extra = Extra.forbid
-
-
 class ComputeLogManagerConfig(BaseModel):
     azureBlobComputeLogManager: Optional[AzureBlobComputeLogManager]
     gcsComputeLogManager: Optional[GCSComputeLogManager]
     s3ComputeLogManager: Optional[S3ComputeLogManager]
-    customComputeLogManager: Optional[CustomComputeLogManager]
+    customComputeLogManager: Optional[ConfigurableClass]
 
     class Config:
         extra = Extra.forbid

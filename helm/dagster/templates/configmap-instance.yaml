@@ -39,6 +39,8 @@ data:
         {{- include "dagsterYaml.runLauncher.celery" . | indent 6 -}}
       {{- else if eq $runLauncherType "K8sRunLauncher" }}
         {{- include "dagsterYaml.runLauncher.k8s" . | indent 6 -}}
+      {{- else if eq $runLauncherType "CustomRunLauncher" }}
+        {{- include "dagsterYaml.runLauncher.custom" . | indent 6 -}}
       {{- end }}
 
     run_storage:

@@ -61,3 +61,10 @@ config:
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{- define "dagsterYaml.runLauncher.custom" }}
+{{- $customRunLauncherConfig := .Values.runLauncher.config.customRunLauncher }}
+module: {{ $customRunLauncherConfig.module | quote }}
+class: {{ $customRunLauncherConfig.class | quote }}
+config: {{ $customRunLauncherConfig.config | toYaml | nindent 2 }}
+{{- end }}

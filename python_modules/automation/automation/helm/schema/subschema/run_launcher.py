@@ -4,12 +4,13 @@ from typing import Dict, List, Optional
 from pydantic import Extra, Field  # pylint: disable=E0611
 
 from . import kubernetes
-from .utils import BaseModel, create_json_schema_conditionals
+from .utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class RunLauncherType(str, Enum):
     CELERY = "CeleryK8sRunLauncher"
     K8S = "K8sRunLauncher"
+    CUSTOM = "CustomRunLauncher"
 
 
 class CeleryWorkerQueue(BaseModel):
@@ -56,6 +57,7 @@ class K8sRunLauncherConfig(BaseModel):
 class RunLauncherConfig(BaseModel):
     celeryK8sRunLauncher: Optional[CeleryK8sRunLauncherConfig]
     k8sRunLauncher: Optional[K8sRunLauncherConfig]
+    customRunLauncher: Optional[ConfigurableClass]
 
 
 class RunLauncher(BaseModel):
@@ -69,6 +71,7 @@ class RunLauncher(BaseModel):
                 {
                     RunLauncherType.CELERY: "celeryK8sRunLauncher",
                     RunLauncherType.K8S: "k8sRunLauncher",
+                    RunLauncherType.CUSTOM: "customRunLauncher",
                 }
             )
         }

@@ -272,7 +272,7 @@ scheduler:
 # Run Launcher: Configuration for run launcher
 ####################################################################################################
 runLauncher:
-  # Type can be one of [CeleryK8sRunLauncher, K8sRunLauncher]
+  # Type can be one of [CeleryK8sRunLauncher, K8sRunLauncher, CustomRunLauncher]
   type: CeleryK8sRunLauncher
 
   config:
@@ -371,6 +371,14 @@ runLauncher:
 
       # A list of custom Secret names from which to draw environment variables for the Job.
       envSecrets: []
+
+    ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
+    ## Using this setting requires a custom Dagit image that defines the user specified
+    ## run launcher in an installed python module.
+    # customRunLauncher:
+    #   module: ~
+    #   class: ~
+    #   config: {}
 
 ####################################################################################################
 # PostgreSQL: Configuration values for postgresql
