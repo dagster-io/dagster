@@ -536,7 +536,7 @@ def test_filtered_runs():
         run_id_1 = execute_pipeline(
             repo.get_pipeline("foo_pipeline"), instance=instance, tags={"run": "one"}
         ).run_id
-        _run_id_2 = execute_pipeline(
+        run_id_2 = execute_pipeline(
             repo.get_pipeline("foo_pipeline"), instance=instance, tags={"run": "two"}
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
@@ -557,6 +557,15 @@ def test_filtered_runs():
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_1
+
+            # test multiple run ids
+            result = execute_dagster_graphql(
+                context, FILTERED_RUN_QUERY, variables={"filter": {"runIds": [run_id_1, run_id_2]}}
+            )
+            assert result.data
+            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            assert len(run_ids) == 2
+            assert set(run_ids) == set([run_id_1, run_id_2])
 
 
 def test_filtered_runs_status():
