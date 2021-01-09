@@ -346,8 +346,8 @@ class IntermediateStorageConfig(
                 (
                     'The "storage" and "intermediate_storage" entries in the run config are deprecated, '
                     "and will removed in 0.11.0. Loading inputs and storing outputs are now handled "
-                    'by "object managers", which are resources that can be configured via '
-                    'the "object_manager" resource key.'
+                    'by "IO managers", which are resources that can be configured via '
+                    'the "io_manager" resource key.'
                 )
             )
             intermediate_storage_name, intermediate_storage_config = ensure_single_item(config)

@@ -108,7 +108,7 @@ def test_provided_default_on_resources_config():
     value = EnvironmentConfig.build(pipeline_def, {})
     assert value.resources == {
         "some_resource": {"config": {"with_default_int": 23434}},
-        "object_manager": {},
+        "io_manager": {},
     }
 
 
@@ -263,7 +263,7 @@ def test_whole_environment():
         "int_config_solid": SolidConfig.from_dict({"config": 123}),
         "no_config_solid": SolidConfig.from_dict({}),
     }
-    assert env.resources == {"test_resource": {"config": 1}, "object_manager": {}}
+    assert env.resources == {"test_resource": {"config": 1}, "io_manager": {}}
 
 
 def test_solid_config_error():
@@ -551,7 +551,7 @@ def test_optional_and_required_context():
     assert env_obj.resources == {
         "optional_resource": {"config": {}},
         "required_resource": {"config": {"required_field": "foo"}},
-        "object_manager": {},
+        "io_manager": {},
     }
 
 

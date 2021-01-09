@@ -1,11 +1,11 @@
 import os
 
 import pandas as pd
-from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, ObjectManager
+from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, IOManager
 
 
 # start_marker_0
-class PandasCsvObjectManager(ObjectManager):
+class PandasCsvIOManager(IOManager):
     def load_input(self, context):
         file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
         return pd.read_csv(file_path)
@@ -24,7 +24,7 @@ class PandasCsvObjectManager(ObjectManager):
 
 
 # start_marker_1
-class PandasCsvObjectManagerWithMetadata(ObjectManager):
+class PandasCsvIOManagerWithMetadata(IOManager):
     def load_input(self, context):
         file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
         return pd.read_csv(file_path)

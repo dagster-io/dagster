@@ -116,15 +116,11 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.fs_object_manager import custom_path_fs_object_manager, fs_object_manager
+from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.input_manager import InputManager, InputManagerDefinition, input_manager
-from dagster.core.storage.mem_object_manager import mem_object_manager
-from dagster.core.storage.object_manager import (
-    ObjectManager,
-    ObjectManagerDefinition,
-    object_manager,
-)
+from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
+from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.output_manager import (
     OutputManager,
     OutputManagerDefinition,
@@ -135,8 +131,8 @@ from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     default_intermediate_storage_defs,
     fs_intermediate_storage,
+    io_manager_from_intermediate_storage,
     mem_intermediate_storage,
-    object_manager_from_intermediate_storage,
 )
 from dagster.core.types.config_schema import dagster_type_loader, dagster_type_materializer
 from dagster.core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
@@ -238,7 +234,7 @@ __all__ = [
     "fs_intermediate_storage",
     "in_process_executor",
     "mem_intermediate_storage",
-    "object_manager_from_intermediate_storage",
+    "io_manager_from_intermediate_storage",
     "multiprocess_executor",
     "reconstructable",
     "reexecute_pipeline_iterator",
@@ -323,17 +319,17 @@ __all__ = [
     "hourly_schedule",
     "monthly_schedule",
     "weekly_schedule",
-    # object managers
-    "ObjectManager",
-    "ObjectManagerDefinition",
-    "object_manager",
+    # IO managers
+    "IOManager",
+    "IOManagerDefinition",
+    "io_manager",
     "InputManager",
     "InputManagerDefinition",
     "input_manager",
     "OutputManager",
     "OutputManagerDefinition",
     "output_manager",
-    "fs_object_manager",
-    "mem_object_manager",
-    "custom_path_fs_object_manager",
+    "fs_io_manager",
+    "mem_io_manager",
+    "custom_path_fs_io_manager",
 ]

@@ -119,8 +119,8 @@
         "path": "/overview/modes-resources-presets/modes-resources"
       },
       {
-        "name": "Object Managers",
-        "path": "/overview/object-managers/object-managers"
+        "name": "IO Managers",
+        "path": "/overview/io-managers/io-managers"
       },
       {
         "name": "Types",
@@ -320,8 +320,8 @@
             "path": "/_apidocs/hooks"
           },
           {
-            "name": "Object Managers",
-            "path": "/_apidocs/object-managers"
+            "name": "IO Managers",
+            "path": "/_apidocs/io-managers"
           },
           {
             "name": "Utilities",

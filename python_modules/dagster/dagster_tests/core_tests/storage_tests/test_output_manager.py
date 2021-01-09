@@ -8,16 +8,16 @@ from dagster import (
     DagsterType,
     EventMetadataEntry,
     Failure,
+    IOManager,
     InputDefinition,
     ModeDefinition,
-    ObjectManager,
     Output,
     OutputDefinition,
     OutputManagerDefinition,
     RetryRequested,
     dagster_type_materializer,
     execute_pipeline,
-    object_manager,
+    io_manager,
     pipeline,
     resource,
     solid,
@@ -265,9 +265,9 @@ def test_output_manager_with_retries():
     _called = False
     _count = {"total": 0}
 
-    @object_manager
+    @io_manager
     def should_succeed(_):
-        class FakeObjectManager(ObjectManager):
+        class FakeIOManager(IOManager):
             def load_input(self, _context):
                 return "foo"
 
@@ -276,18 +276,18 @@ def test_output_manager_with_retries():
                     _count["total"] += 1
                     raise RetryRequested(max_retries=3)
 
-        return FakeObjectManager()
+        return FakeIOManager()
 
-    @object_manager
+    @io_manager
     def should_retry(_):
-        class FakeObjectManager(ObjectManager):
+        class FakeIOManager(IOManager):
             def load_input(self, _context):
                 return "foo"
 
             def handle_output(self, _context, _obj):
                 raise RetryRequested(max_retries=3)
 
-        return FakeObjectManager()
+        return FakeIOManager()
 
     @pipeline(
         mode_defs=[
@@ -358,7 +358,7 @@ def test_output_manager_no_input_manager():
         match='Input "_str_input" of solid "ingest_str" is connected to output "output_alone" of '
         'solid "emit_str". In mode "default", that output does not have an output manager that '
         "knows how to load inputs, so we don't know how to load the input. To address this, "
-        "assign an InputManager to this input or assign an ObjectManager to the upstream output.",
+        "assign an InputManager to this input or assign an IOManager to the upstream output.",
     ):
 
         @pipeline(

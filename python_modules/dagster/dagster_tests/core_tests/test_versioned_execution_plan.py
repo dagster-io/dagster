@@ -12,7 +12,7 @@ from dagster import (
     String,
     composite_solid,
     dagster_type_loader,
-    object_manager,
+    io_manager,
     pipeline,
     resource,
     solid,
@@ -28,11 +28,11 @@ from dagster.core.execution.resolve_versions import (
     resolve_memoized_execution_plan,
     resolve_resource_versions,
 )
-from dagster.core.storage.memoizable_object_manager import MemoizableObjectManager
+from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 
-class VersionedInMemoryObjectManager(MemoizableObjectManager):
+class VersionedInMemoryIOManager(MemoizableIOManager):
     def __init__(self):
         self.values = {}
 
@@ -52,12 +52,12 @@ class VersionedInMemoryObjectManager(MemoizableObjectManager):
         return keys in self.values
 
 
-def object_manager_factory(manager):
-    @object_manager
-    def _object_manager_resource(_):
+def io_manager_factory(manager):
+    @io_manager
+    def _io_manager_resource(_):
         return manager
 
-    return _object_manager_resource
+    return _io_manager_resource
 
 
 def test_join_and_hash():
@@ -101,9 +101,7 @@ def versioned_pipeline_factory(manager=None):
         mode_defs=[
             ModeDefinition(
                 name="main",
-                resource_defs=(
-                    {"object_manager": object_manager_factory(manager)} if manager else {}
-                ),
+                resource_defs=({"io_manager": io_manager_factory(manager)} if manager else {}),
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -124,9 +122,7 @@ def partially_versioned_pipeline_factory(manager=None):
         mode_defs=[
             ModeDefinition(
                 name="main",
-                resource_defs=(
-                    {"object_manager": object_manager_factory(manager)} if manager else {}
-                ),
+                resource_defs=({"io_manager": io_manager_factory(manager)} if manager else {}),
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -213,7 +209,7 @@ def no_version_pipeline():
 
 
 def test_resolve_memoized_execution_plan_no_stored_results():
-    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryObjectManager())
+    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryIOManager())
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
     memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
@@ -225,7 +221,7 @@ def test_resolve_memoized_execution_plan_no_stored_results():
 
 
 def test_resolve_memoized_execution_plan_yes_stored_results():
-    manager = VersionedInMemoryObjectManager()
+    manager = VersionedInMemoryIOManager()
     versioned_pipeline = versioned_pipeline_factory(manager)
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
@@ -251,7 +247,7 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
 
 
 def test_resolve_memoized_execution_plan_partial_versioning():
-    manager = VersionedInMemoryObjectManager()
+    manager = VersionedInMemoryIOManager()
 
     partially_versioned_pipeline = partially_versioned_pipeline_factory(manager)
     speculative_execution_plan = create_execution_plan(partially_versioned_pipeline)

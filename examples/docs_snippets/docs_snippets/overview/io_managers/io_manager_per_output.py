@@ -1,0 +1,20 @@
+# start_marker
+from dagster import ModeDefinition, OutputDefinition, fs_io_manager, mem_io_manager, pipeline, solid
+
+
+@solid(output_defs=[OutputDefinition(manager_key="fs")])
+def solid1(_):
+    return 1
+
+
+@solid(output_defs=[OutputDefinition(manager_key="mem")])
+def solid2(_, a):
+    return a + 1
+
+
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"fs": fs_io_manager, "mem": mem_io_manager})])
+def my_pipeline():
+    solid2(solid1())
+
+
+# end_marker

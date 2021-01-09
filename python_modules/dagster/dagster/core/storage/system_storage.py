@@ -4,7 +4,7 @@ from dagster.core.definitions.intermediate_storage import IntermediateStorageDef
 from dagster.core.definitions.intermediate_storage import (
     intermediate_storage as intermediate_storage_fn,
 )
-from dagster.core.storage.object_manager import object_manager
+from dagster.core.storage.io_manager import io_manager
 from dagster.core.storage.type_storage import (
     TypeStoragePluginRegistry,
     construct_type_storage_plugin_registry,
@@ -106,35 +106,35 @@ Framework authors seeking to add their own intermediate storage definitions can 
 """
 
 
-def object_manager_from_intermediate_storage(intermediate_storage_def):
-    """Define an :py:class:`ObjectManagerDefinition` from an existing :py:class:`IntermediateStorageDefinition`.
+def io_manager_from_intermediate_storage(intermediate_storage_def):
+    """Define an :py:class:`IOManagerDefinition` from an existing :py:class:`IntermediateStorageDefinition`.
 
-    This method is used to adapt an existing user-defined intermediate storage to a object manager
+    This method is used to adapt an existing user-defined intermediate storage to a IO manager
     resource, for example:
 
     .. code-block:: python
 
-        my_object_manager_def = object_manager_from_intermediate_storage(my_intermediate_storage_def)
+        my_io_manager_def = io_manager_from_intermediate_storage(my_intermediate_storage_def)
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_object_manager_def})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager_def})])
         def my_pipeline():
             ...
 
 
     Args:
         intermediate_storage_def (IntermediateStorageDefinition): The intermediate storage definition
-            to be converted to an object manager definition.
+            to be converted to an IO manager definition.
 
     Returns:
-        ObjectManagerDefinition
+        IOManagerDefinition
     """
 
     check.inst_param(
         intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition
     )
 
-    @object_manager
-    def _object_manager(init_context):
+    @io_manager
+    def _io_manager(init_context):
         pipeline_run = init_context.pipeline_run
         instance = init_context.instance_for_backwards_compat
         pipeline_def = init_context.pipeline_def_for_backwards_compat
@@ -164,4 +164,4 @@ def object_manager_from_intermediate_storage(intermediate_storage_def):
 
         return IntermediateStorageAdapter(intermediate_storage)
 
-    return _object_manager
+    return _io_manager

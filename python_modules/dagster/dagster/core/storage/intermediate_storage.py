@@ -6,7 +6,7 @@ from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOpe
 from dagster.core.errors import DagsterObjectStoreError, DagsterStepOutputNotFoundError
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.object_manager import ObjectManager
+from dagster.core.storage.io_manager import IOManager
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
@@ -37,7 +37,7 @@ class IntermediateStorage(ABC):  # pylint: disable=no-init
         pass
 
 
-class IntermediateStorageAdapter(ObjectManager):
+class IntermediateStorageAdapter(IOManager):
     def __init__(self, intermediate_storage):
         self.intermediate_storage = check.inst_param(
             intermediate_storage, "intermediate_storage", IntermediateStorage

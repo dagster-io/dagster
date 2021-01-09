@@ -11,4 +11,4 @@ def test_output_definition():
 
 def test_manager_key_default_value():
     output_def = OutputDefinition(manager_key=None)
-    assert output_def.manager_key == "object_manager"
+    assert output_def.manager_key == "io_manager"

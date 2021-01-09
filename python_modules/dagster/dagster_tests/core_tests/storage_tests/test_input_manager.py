@@ -5,16 +5,16 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     EventMetadataEntry,
+    IOManager,
     InputDefinition,
     InputManagerDefinition,
     ModeDefinition,
-    ObjectManager,
     OutputDefinition,
     PythonObjectDagsterType,
     execute_pipeline,
-    fs_object_manager,
+    fs_io_manager,
     input_manager,
-    object_manager,
+    io_manager,
     pipeline,
     resource,
     solid,
@@ -84,23 +84,23 @@ def test_configurable_root_input_manager():
     )
 
 
-def test_override_object_manager():
+def test_override_io_manager():
     metadata = {"name": 5}
 
-    class MyObjectManager(ObjectManager):
+    class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             pass
 
         def load_input(self, context):
             assert False, "should not be called"
 
-    @object_manager
-    def my_object_manager(_):
-        return MyObjectManager()
+    @io_manager
+    def my_io_manager(_):
+        return MyIOManager()
 
     @solid(
         output_defs=[
-            OutputDefinition(name="my_output", manager_key="my_object_manager", metadata=metadata)
+            OutputDefinition(name="my_output", manager_key="my_io_manager", metadata=metadata)
         ]
     )
     def solid1(_):
@@ -123,10 +123,7 @@ def test_override_object_manager():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "my_object_manager": my_object_manager,
-                    "spark_loader": spark_table_loader,
-                }
+                resource_defs={"my_io_manager": my_io_manager, "spark_loader": spark_table_loader,}
             )
         ]
     )
@@ -278,7 +275,7 @@ def test_input_manager_with_retries():
 
 def test_fan_in():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        file_object_manager = fs_object_manager.configured({"base_dir": tmpdir_path})
+        file_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
 
         @solid
         def input_solid1(_):
@@ -295,10 +292,7 @@ def test_fan_in():
         @pipeline(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={
-                        "object_manager": file_object_manager,
-                        "input_manager": file_object_manager,
-                    }
+                    resource_defs={"io_manager": file_io_manager, "input_manager": file_io_manager}
                 )
             ]
         )

@@ -36,7 +36,7 @@ class IntermediateStorageDefinition(ConfigurableDefinition):
     ):
         warnings.warn(
             "IntermediateStorageDefinition and @intermediate_storage are deprecated in 0.10.0 and "
-            "will be removed in 0.11.0. Use ObjectManagerDefinition and @object_manager instead, "
+            "will be removed in 0.11.0. Use IOManagerDefinition and @io_manager instead, "
             "which gives you better control over how inputs and outputs are handled and loaded."
         )
         self._name = check_valid_name(name)

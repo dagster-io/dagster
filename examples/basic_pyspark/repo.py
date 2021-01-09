@@ -1,12 +1,12 @@
 # start_repo_marker_0
 import os
 
-from dagster import ModeDefinition, ObjectManager, object_manager, pipeline, repository, solid
+from dagster import IOManager, ModeDefinition, io_manager, pipeline, repository, solid
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
-class LocalParquetStore(ObjectManager):
+class LocalParquetStore(IOManager):
     def _get_path(self, context):
         return os.path.join(context.run_id, context.step_key, context.name)
 
@@ -18,7 +18,7 @@ class LocalParquetStore(ObjectManager):
         return spark.read.parquet(self._get_path(context.upstream_output))
 
 
-@object_manager
+@io_manager
 def local_parquet_store(_):
     return LocalParquetStore()
 
@@ -36,7 +36,7 @@ def filter_over_50(_, people):
     return people.filter(people["age"] > 50)
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": local_parquet_store})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": local_parquet_store})])
 def my_pipeline():
     filter_over_50(make_people())
 

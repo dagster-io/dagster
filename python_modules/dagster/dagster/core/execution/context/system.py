@@ -331,7 +331,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
 
     def get_output_manager(self, step_output_handle):
         step_output = self.execution_plan.get_step_output(step_output_handle)
-        if self.using_object_manager(step_output_handle):
+        if self.using_io_manager(step_output_handle):
             output_manager = getattr(self.resources, step_output.output_def.manager_key)
         else:
             from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
@@ -339,14 +339,14 @@ class SystemStepExecutionContext(SystemExecutionContext):
             output_manager = IntermediateStorageAdapter(self.intermediate_storage)
         return check.inst(output_manager, OutputManager)
 
-    def using_object_manager(self, step_output_handle):
+    def using_io_manager(self, step_output_handle):
         # pylint: disable=comparison-with-callable
-        from dagster.core.storage.mem_object_manager import mem_object_manager
+        from dagster.core.storage.mem_io_manager import mem_io_manager
 
         output_manager_key = self.execution_plan.get_step_output(
             step_output_handle
         ).output_def.manager_key
-        return self.mode_def.resource_defs[output_manager_key] != mem_object_manager
+        return self.mode_def.resource_defs[output_manager_key] != mem_io_manager
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):

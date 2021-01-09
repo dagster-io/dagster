@@ -742,7 +742,7 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                                     f'"{mode_def.name}", that output does not have an output '
                                     f"manager that knows how to load inputs, so we don't know how "
                                     f"to load the input. To address this, assign an InputManager "
-                                    f"to this input or assign an ObjectManager to the upstream "
+                                    f"to this input or assign an IOManager to the upstream "
                                     "output."
                                 )
             else:

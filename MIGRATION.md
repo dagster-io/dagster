@@ -7,7 +7,7 @@ When new releases include breaking changes or deprecations, this document descri
 ## Deprecation: Intermediate Storage
 
 We have deprecated "intermediate storage". Loading inputs and storing outputs are now handled by
-"object managers", which serve the same purpose as intermediate storages but offer you better
+"IO managers", which serve the same purpose as intermediate storages but offer you better
 control over how inputs are loaded and outputs are handled.
 
 - We have deprecated the field `"storage"` and `"intermediate_storage"` on run config.
@@ -24,35 +24,35 @@ control over how inputs are loaded and outputs are handled.
   execute_pipeline(my_pipeline, run_config={"storage": {"filesystem": {"base_dir": ...}}})
   ```
 
-  It is recommended to use the built-in object managers like `fs_object_manager`, which is a resource:
+  It is recommended to use the built-in IO managers like `fs_io_manager`, which is a resource:
 
   ```python
-  @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": fs_object_manager})])
+  @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
   def my_pipeline():
       ...
 
   execute_pipeline(
-      my_pipeline, run_config={"resources": {"object_manager": {"config": {"base_dir": ...}}}}
+      my_pipeline, run_config={"resources": {"io_manager": {"config": {"base_dir": ...}}}}
   )
   ```
 
 - We have deprecated `IntermediateStorageDefinition` and `@intermediate_storage`.
 
   For example, if you have custom intermediate storages to handle get intermediate for inputs and
-  set intermediate for outputs. It is recommended to build your own object manager using `@object_manager`
-  or `ObjectManagerDefinition`. We have provided a helper method `object_manager_from_intermediate_storage`
-  to help migrate your existing custom intermediate storages to object managers.
+  set intermediate for outputs. It is recommended to build your own IO manager using `@io_manager`
+  or `IOManagerDefinition`. We have provided a helper method `io_manager_from_intermediate_storage`
+  to help migrate your existing custom intermediate storages to IO managers.
 
   ```python
-  my_object_manager_def = object_manager_from_intermediate_storage(my_intermediate_storage_def)
+  my_io_manager_def = io_manager_from_intermediate_storage(my_intermediate_storage_def)
 
-  @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_object_manager_def})])
+  @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager_def})])
   def my_pipeline():
       ...
   ```
 
 - We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
-  new Object Managers.
+  new IO Managers.
 
 ## Removal: Removed `input_hydration_config` and `output_materialization_config`
 

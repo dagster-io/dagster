@@ -16,7 +16,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': None,
                         'description': None,
-                        'name': 'object_manager'
+                        'name': 'io_manager'
                     },
                     {
                         'configField': {
@@ -35,7 +35,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': None,
                         'description': None,
-                        'name': 'object_manager'
+                        'name': 'io_manager'
                     },
                     {
                         'configField': {
@@ -68,7 +68,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': None,
                         'description': None,
-                        'name': 'object_manager'
+                        'name': 'io_manager'
                     },
                     {
                         'configField': {

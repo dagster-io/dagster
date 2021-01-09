@@ -374,7 +374,7 @@ def _materializations_to_events(step_context, step_output_handle, materializatio
             if not isinstance(materialization, AssetMaterialization):
                 raise DagsterInvariantViolationError(
                     (
-                        "object manager on output {output_name} has returned "
+                        "IO manager on output {output_name} has returned "
                         "value {value} of type {python_type}. The return type can only be "
                         "AssetMaterialization."
                     ).format(

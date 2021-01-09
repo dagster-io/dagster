@@ -161,7 +161,7 @@ class FromStepOutput(
 
     def can_load_input_object(self, step_context):
         source_handle = self.step_output_handle
-        if step_context.using_object_manager(source_handle):
+        if step_context.using_io_manager(source_handle):
             # asset store does not have a has check so assume present
             return True
         if self.input_def.manager_key:
@@ -199,10 +199,10 @@ class FromStepOutput(
             loader = getattr(step_context.resources, self.input_def.manager_key)
             return _load_input_with_input_manager(loader, self.get_load_context(step_context))
 
-        object_manager = step_context.get_output_manager(source_handle)
+        io_manager = step_context.get_output_manager(source_handle)
 
         check.invariant(
-            isinstance(object_manager, InputManager),
+            isinstance(io_manager, InputManager),
             f'Input "{self.input_def.name}" for step "{step_context.step.key}" is depending on '
             f'the manager of upstream output "{source_handle.output_name}" from step '
             f'"{source_handle.step_key}" to load it, but that manager is not an InputManager. '
@@ -210,7 +210,7 @@ class FromStepOutput(
             f'"{step_context.execution_plan.get_manager_key(source_handle)}" is an InputManager.',
         )
 
-        obj = _load_input_with_input_manager(object_manager, self.get_load_context(step_context))
+        obj = _load_input_with_input_manager(io_manager, self.get_load_context(step_context))
 
         output_def = step_context.execution_plan.get_step_output(source_handle).output_def
 
