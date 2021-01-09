@@ -146,7 +146,7 @@ computeLogManager:
 ####################################################################################################
 userDeployments:
   # Whether launching user deployments is enabled.
-  enabled: false
+  enabled: true
   # List of unique deployments
   deployments:
     - name: "k8s-example-user-code-1"
@@ -272,10 +272,36 @@ scheduler:
 # Run Launcher: Configuration for run launcher
 ####################################################################################################
 runLauncher:
-  # Type can be one of [CeleryK8sRunLauncher, K8sRunLauncher, CustomRunLauncher]
-  type: CeleryK8sRunLauncher
+  # Type can be one of [K8sRunLauncher, CeleryK8sRunLauncher, CustomRunLauncher]
+  type: K8sRunLauncher
 
   config:
+    # This configuration will only be used if the K8sRunLauncher is selected
+    k8sRunLauncher:
+      ## The image to use for the launched Job's Dagster container.
+      ## This image should only be specified when user code deployments are disabled. Otherwise,
+      ## it will be ignored.
+      # image:
+      #   repository: ""
+      #   tag: ""
+      #   pullPolicy: Always
+
+      # The K8s namespace where new jobs will be launched.
+      # By default, the release namespace is used.
+      jobNamespace: ~
+
+      # Set to true to load kubeconfig from within cluster.
+      loadInclusterConfig: true
+
+      # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
+      kubeconfigFile: ~
+
+      # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
+      envConfigMaps: []
+
+      # A list of custom Secret names from which to draw environment variables for the Job.
+      envSecrets: []
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
@@ -346,32 +372,6 @@ runLauncher:
         successThreshold: 1
         failureThreshold: 3
 
-    # This configuration will only be used if the K8sRunLauncher is selected
-    k8sRunLauncher:
-      ## The image to use for the launched Job's Dagster container.
-      ## This image should only be specified when user code deployments are disabled. Otherwise,
-      ## it will be ignored.
-      # image:
-      #   repository: ""
-      #   tag: ""
-      #   pullPolicy: Always
-
-      # The K8s namespace where new jobs will be launched.
-      # By default, the release namespace is used.
-      jobNamespace: ~
-
-      # Set to true to load kubeconfig from within cluster.
-      loadInclusterConfig: true
-
-      # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
-      kubeconfigFile: ~
-
-      # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
-      envConfigMaps: []
-
-      # A list of custom Secret names from which to draw environment variables for the Job.
-      envSecrets: []
-
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
     ## run launcher in an installed python module.
@@ -419,7 +419,7 @@ postgresql:
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
 ####################################################################################################
 rabbitmq:
-  enabled: true
+  enabled: false
 
   rabbitmq:
     username: test

@@ -20,6 +20,8 @@
 - [Helm/K8s]
   - The schema for the `scheduler` values in the helm chart has been rewritten.
   - `celery` and `k8sRunLauncher` have now been consolidated under `runLauncher`.
+  - The `K8sRunLauncher` is now enabled by default.
+  - The `userDeployments` is now enabled by default.
 
 ## 0.9.22.post0
 

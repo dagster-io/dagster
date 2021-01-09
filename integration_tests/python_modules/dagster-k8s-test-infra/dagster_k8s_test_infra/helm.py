@@ -306,6 +306,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
     helm_config = {
+        "userDeployments": {"enabled": False},
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
@@ -354,6 +355,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 },
             },
         },
+        "rabbitmq": {"enabled": True},
         "ingress": {
             "enabled": True,
             "dagit": {"host": "dagit.example.com"},
@@ -383,6 +385,7 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
     helm_config = {
+        "userDeployments": {"enabled": False},
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
@@ -403,6 +406,7 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
             "type": "K8sRunLauncher",
             "config": {"k8sRunLauncher": {"jobNamespace": namespace}},
         },
+        "rabbitmq": {"enabled": False},
         "scheduler": {
             "type": "K8sScheduler",
             "config": {"k8sScheduler": {"schedulerNamespace": namespace}},
@@ -497,6 +501,7 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                 }
             },
         },
+        "rabbitmq": {"enabled": True},
         "scheduler": {
             "type": "K8sScheduler",
             "config": {"k8sScheduler": {"schedulerNamespace": namespace}},
@@ -587,6 +592,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                 },
             },
         },
+        "rabbitmq": {"enabled": True},
         "scheduler": {"type": "DagsterDaemonScheduler", "config": {}},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
