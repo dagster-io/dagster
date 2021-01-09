@@ -12,7 +12,6 @@ import {SensorDetails} from 'src/sensors/SensorDetails';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorInfo} from 'src/sensors/SensorInfo';
 import {SensorPreviousRuns} from 'src/sensors/SensorPreviousRuns';
-import {SensorTimeline} from 'src/sensors/SensorTimeline';
 import {SensorRootQuery} from 'src/sensors/types/SensorRootQuery';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
@@ -92,13 +91,12 @@ export const SensorRoot: React.FC<{
                   countdownStatus={countdownStatus}
                   onRefresh={() => onRefresh()}
                 />
-                <SensorTimeline
+                <SensorTickHistory
                   repoAddress={repoAddress}
                   sensor={sensorOrError}
                   daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                  onSelectRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
                 />
-                <SensorTickHistory repoAddress={repoAddress} sensor={sensorOrError} />
                 <SensorPreviousRuns
                   repoAddress={repoAddress}
                   sensor={sensorOrError}

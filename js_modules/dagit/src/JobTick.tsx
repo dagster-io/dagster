@@ -123,7 +123,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-const RunList: React.FunctionComponent<{
+export const RunList: React.FunctionComponent<{
   runIds: string[];
 }> = ({runIds}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(

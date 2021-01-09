@@ -2,10 +2,9 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
-import styled from 'styled-components';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {SensorFragment} from 'src/sensors/types/SensorFragment';
+import {JobHistoryFragment_ticks} from 'src/jobs/types/JobHistoryFragment';
 import {
   SensorTimelineQuery,
   SensorTimelineQuery_sensorOrError_Sensor_nextTick,
@@ -14,7 +13,6 @@ import {
 import {JobTickStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
-import {Subheading} from 'src/ui/Text';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -29,14 +27,14 @@ const COLOR_MAP = {
 };
 
 export const SensorTimeline: React.FC<{
-  sensor: SensorFragment;
+  sensorName: string;
   repoAddress: RepoAddress;
-  daemonHealth: boolean | null;
-  onSelectRunIds: (runIds: string[]) => void;
-}> = ({sensor, repoAddress, daemonHealth, onSelectRunIds}) => {
+  onHighlightRunIds: (runIds: string[]) => void;
+  onSelectTick: (tick?: JobHistoryFragment_ticks) => void;
+}> = ({sensorName, repoAddress, onHighlightRunIds, onSelectTick}) => {
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
-    sensorName: sensor.name,
+    sensorName,
   };
 
   const {data} = useQuery<SensorTimelineQuery>(SENSOR_TIMELINE_QUERY, {
@@ -59,25 +57,18 @@ export const SensorTimeline: React.FC<{
 
   return (
     <Group direction="column" spacing={12}>
-      <Subheading>Latest ticks</Subheading>
       <div style={{position: 'relative'}}>
         {ticks.length ? (
           <TickTimelineGraph
             ticks={ticks}
             nextTick={nextTick}
-            paused={!daemonHealth}
-            onSelectRunIds={onSelectRunIds}
+            onHighlightRunIds={onHighlightRunIds}
+            onSelectTick={onSelectTick}
           />
         ) : (
           <Box margin={{vertical: 8}} flex={{justifyContent: 'center'}}>
             No ticks recorded
           </Box>
-        )}
-        {daemonHealth ? null : (
-          <Overlay>
-            The sensor daemon is not running. Please check your daemon process or start a new one by
-            running <code style={{marginLeft: 5, color: Colors.BLUE5}}>dagster-daemon run</code>.
-          </Overlay>
         )}
       </div>
     </Group>
@@ -89,9 +80,9 @@ const REFRESH_INTERVAL = 100;
 const TickTimelineGraph: React.FC<{
   ticks: SensorTick[];
   nextTick: FutureTick | null;
-  paused: boolean;
-  onSelectRunIds: (runIds: string[]) => void;
-}> = ({ticks, nextTick, onSelectRunIds, paused: pausedProp}) => {
+  onHighlightRunIds: (runIds: string[]) => void;
+  onSelectTick: (tick?: JobHistoryFragment_ticks) => void;
+}> = ({ticks, nextTick, onHighlightRunIds, onSelectTick}) => {
   const [now, setNow] = React.useState<number>(Date.now());
   const [graphNow, setGraphNow] = React.useState<number>(Date.now());
   const [isPaused, setPaused] = React.useState<boolean>(false);
@@ -103,10 +94,10 @@ const TickTimelineGraph: React.FC<{
   });
 
   React.useEffect(() => {
-    if (!isPaused && !pausedProp && (!nextTick || now < 1000 * nextTick.timestamp)) {
+    if (!isPaused && (!nextTick || now < 1000 * nextTick.timestamp)) {
       setGraphNow(now);
     }
-  }, [isPaused, nextTick, now, pausedProp]);
+  }, [isPaused, nextTick, now]);
 
   const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
   if (nextTick) {
@@ -179,7 +170,22 @@ const TickTimelineGraph: React.FC<{
       display: false,
     },
 
-    onHover: (_evt, elements: any[]) => {
+    onClick: (_event: MouseEvent, activeElements: any[]) => {
+      if (!activeElements.length) {
+        return;
+      }
+      const [item] = activeElements;
+      if (item._datasetIndex === undefined || item._index === undefined) {
+        return;
+      }
+      const tick = ticks[item._index];
+      onSelectTick(tick);
+    },
+
+    onHover: (event, elements: any[]) => {
+      if (event?.target instanceof HTMLElement) {
+        event.target.style.cursor = elements.length ? 'pointer' : 'default';
+      }
       if (elements.length && !isPaused) {
         setPaused(true);
         const [element] = elements.filter(
@@ -189,10 +195,10 @@ const TickTimelineGraph: React.FC<{
           return;
         }
         const tick = ticks[element._index];
-        onSelectRunIds(tick.runIds || []);
+        onHighlightRunIds(tick.runIds || []);
       } else if (!elements.length && isPaused) {
         setPaused(false);
-        onSelectRunIds([]);
+        onHighlightRunIds([]);
       }
     },
 
@@ -216,7 +222,7 @@ const TickTimelineGraph: React.FC<{
             return tick.skipReason;
           }
           if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
-            onSelectRunIds(tick.runIds);
+            onHighlightRunIds(tick.runIds);
             return tick.runIds;
           }
           if (tick.status == JobTickStatus.FAILURE && tick.error?.message) {
@@ -256,18 +262,4 @@ const SENSOR_TIMELINE_QUERY = gql`
     }
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
-`;
-
-const Overlay = styled.div`
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  left: 0;
-  background-color: ${Colors.DARK_GRAY5};
-  opacity: 0.7;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: ${Colors.WHITE};
 `;

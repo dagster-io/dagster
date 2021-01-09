@@ -37,6 +37,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   const {scheduleName, repoAddress, runTab} = props;
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
+  const [selectedRunIds, setSelectedRunIds] = React.useState<string[]>([]);
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName,
@@ -103,10 +104,15 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                     countdownStatus={countdownStatus}
                     onRefresh={() => onRefresh()}
                   />
-                  <ScheduleTickHistory repoAddress={repoAddress} schedule={scheduleOrError} />
+                  <ScheduleTickHistory
+                    repoAddress={repoAddress}
+                    schedule={scheduleOrError}
+                    onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                  />
                   <SchedulePreviousRuns
                     repoAddress={repoAddress}
                     schedule={scheduleOrError}
+                    highlightedIds={selectedRunIds}
                     runTab={runTab}
                   />
                 </>
@@ -125,10 +131,11 @@ interface SchedulePreviousRunsProps {
   repoAddress: RepoAddress;
   runTab?: string;
   schedule: Schedule;
+  highlightedIds: string[];
 }
 
 const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
-  const {schedule} = props;
+  const {schedule, highlightedIds} = props;
   const {data, loading} = useQuery<PreviousRunsForScheduleQuery>(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {
@@ -142,7 +149,13 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
     pollInterval: 15 * 1000,
   });
 
-  return <PreviousRunsSection loading={loading} data={data?.pipelineRunsOrError} />;
+  return (
+    <PreviousRunsSection
+      loading={loading}
+      data={data?.pipelineRunsOrError}
+      highlightedIds={highlightedIds}
+    />
+  );
 };
 
 const SCHEDULE_ROOT_QUERY = gql`

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, JobTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, JobType, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleTickHistoryQuery
@@ -40,6 +40,7 @@ export interface ScheduleTickHistoryQuery_scheduleOrError_Schedule_scheduleState
 export interface ScheduleTickHistoryQuery_scheduleOrError_Schedule_scheduleState {
   __typename: "JobState";
   id: string;
+  jobType: JobType;
   ticks: ScheduleTickHistoryQuery_scheduleOrError_Schedule_scheduleState_ticks[];
 }
 
