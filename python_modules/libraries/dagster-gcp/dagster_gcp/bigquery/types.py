@@ -1,8 +1,7 @@
 import re
 from enum import Enum as PyEnum
-from typing import Dict, List
 
-from dagster import DagsterType, Enum, EnumValue
+from dagster import Enum, EnumValue
 from dagster.config import ConfigScalar, ConfigScalarKind, PostProcessingError
 from google.cloud.bigquery.job import (
     CreateDisposition,
@@ -12,7 +11,6 @@ from google.cloud.bigquery.job import (
     SourceFormat,
     WriteDisposition,
 )
-from google.cloud.bigquery.schema import SchemaField
 
 
 class BigQueryLoadSource(PyEnum):
@@ -117,17 +115,6 @@ def _is_valid_table(config_value):
     )
 
 
-def _is_valid_table_schema(_, value) -> bool:
-    if not isinstance(value, list):
-        return False
-
-    for col in value:
-        if not isinstance(col, SchemaField):
-            return False
-
-    return True
-
-
 class _Dataset(ConfigScalar):
     def __init__(self):
         super(_Dataset, self).__init__(
@@ -169,10 +156,3 @@ Dataset = _Dataset()
 
 class BigQueryError(Exception):
     pass
-
-
-BQTableSchema = DagsterType(
-    name="BigQueryTableSchema",
-    description="A BigQuery table schema in the format described here - https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file ",
-    type_check_fn=_is_valid_table_schema,
-)

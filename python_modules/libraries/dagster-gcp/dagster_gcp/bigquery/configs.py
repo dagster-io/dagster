@@ -4,7 +4,10 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 """
 
+from typing import List
+
 from dagster import Bool, Field, IntSource, String, StringSource
+from google.cloud.bigquery.schema import SchemaField
 
 from .types import (
     BQCreateDisposition,
@@ -12,7 +15,6 @@ from .types import (
     BQPriority,
     BQSchemaUpdateOption,
     BQSourceFormat,
-    BQTableSchema,
     BQWriteDisposition,
     Dataset,
     Table,
@@ -335,7 +337,7 @@ def define_bigquery_load_config():
         is_required=False,
     )
 
-    schema = Field(BQTableSchema, description="Schema of the destination table.", is_required=False)
+    schema = Field(List[SchemaField], description="Schema of the destination table.", is_required=False)
 
     skip_leading_rows = Field(
         IntSource,
