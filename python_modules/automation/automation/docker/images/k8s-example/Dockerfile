@@ -30,5 +30,5 @@ RUN rm -rf /usr/lib/python2.7
 # (37.21 MB)
 RUN rm -rf /usr/lib/x86_64-linux-gnu/guile
 
-FROM "${BASE_IMAGE}"
+FROM scratch
 COPY --from=build / /
