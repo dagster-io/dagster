@@ -79,7 +79,6 @@ def get_core_k8s_dirs():
     return [
         "python_modules/dagster",
         "python_modules/libraries/dagster-postgres",
-        "python_modules/libraries/dagster-cron",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-k8s",
         "python_modules/libraries/dagster-celery-k8s",

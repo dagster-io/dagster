@@ -59,13 +59,7 @@ spec:
           command: [
             "/bin/bash",
             "-c",
-            {{- if .Values.userDeployments.enabled }}
-            "{{ template "dagster.dagit.scheduleUpCommand" $ }}"
-            {{- else }}
-            "service cron start; \
-            /usr/local/bin/dagster schedule up; \
-            dagit -h 0.0.0.0 -p 80"
-            {{- end }}
+            "{{ template "dagster.dagit.dagitCommand" $ }}"
           ]
           env:
             - name: DAGSTER_PG_PASSWORD
