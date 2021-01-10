@@ -615,17 +615,34 @@ dagsterDaemon:
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ####################################################################################################
 extraManifests:
-##
-## Example:
-##  - apiVersion: cloud.google.com/v1beta1
-##    kind: BackendConfig
-##    metadata:
-##      name: "{{ .Release.Name }}-backend-config"
-##      labels:
-##      {{- include "dagster.labels" . | nindent 6 }}
-##    spec:
-##      securityPolicy:
-##        name: "gcp-cloud-armor-policy-test"
+#  # Set default container resource requests/limits for the namespace
+#  #   * To override these for dagster system containers; edit the resources sections of
+#  #     this values yaml -  eg: dagit.resources & celery.resources
+#  #   * To override these in solid execution containers; add a @solid(tag=) similar to:
+#  #      { "dagster-k8s/config": { "container_config": { "resources": {...
+#  - apiVersion: v1
+#    kind: LimitRange
+#    metadata:
+#      name: default-container-resources
+#    spec:
+#      limits:
+#        - default:
+#            cpu: 250m
+#            memory: 512Mi
+#          defaultRequest:
+#            cpu: 100m
+#            memory: 256Mi
+#          type: Container
+#  # Example 2:
+#  - apiVersion: cloud.google.com/v1beta1
+#    kind: BackendConfig
+#    metadata:
+#      name: "{{ .Release.Name }}-backend-config"
+#      labels:
+#      {{- include "dagster.labels" . | nindent 6 }}
+#      spec:
+#        securityPolicy:
+#          name: "gcp-cloud-armor-policy-test"
 
 serviceAccount:
   create: true
