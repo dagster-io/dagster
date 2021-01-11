@@ -26,7 +26,11 @@ def dagster():
 
         # Trigger builds of the internal pipeline for builds on master
         all_steps += [
-            trigger_step(pipeline="internal", branches=["master"], async_step=True),
+            trigger_step(
+                pipeline="internal",
+                async_step=True,
+                if_condition="build.branch=='master' && build.creator.email =~ /elementl.com$$/",
+            ),
         ]
 
     buildkite_yaml = buildkite_yaml_for_steps(all_steps)
