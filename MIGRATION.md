@@ -111,6 +111,14 @@ We have removed the argument `step_keys_to_execute` to the `reexecute_pipeline` 
 in favor of `step_selection`, which additionally accepts the Dagster selection syntax, for example,
 `*solid_a+` represents `solid_a`, all of its upstream steps, its direct downstream steps.
 
+## Breaking Change: `date_partition_range`
+
+Starting in 0.10.0, Dagster uses the pendulum library to ensure that schedules and partitions
+behave correctly with respect to timezones. As part of thischange, the `delta` parameter to
+`date_partition_range` (which determined the time different between partitions and was a
+`datetime.timedelta`) has been replaced by a `delta_range` parameter (which must be a string that's
+a valid argument to the `pendulum.period` function (for example, `days`, `hours`, or `months`).
+
 ## Breaking Change: `PartitionSetDefinition.create_schedule_definition'
 
 When you create a schedule from a partition set using `PartitionSetDefinition.create_schedule_definition`,

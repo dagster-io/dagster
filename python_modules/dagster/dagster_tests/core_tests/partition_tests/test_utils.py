@@ -1,9 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytest
 from dagster import DagsterInvariantViolationError, Partition
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE, date_partition_range
-from dateutil.relativedelta import relativedelta
 
 
 def test_date_partition_range_out_of_order():
@@ -14,12 +13,11 @@ def test_date_partition_range_out_of_order():
 
 
 @pytest.mark.parametrize(
-    "start, end, delta, delta_range, fmt, inclusive, timezone, expected_partitions",
+    "start, end, delta_range, fmt, inclusive, timezone, expected_partitions",
     [
         (
             datetime(year=2020, month=1, day=1),
             datetime(year=2020, month=1, day=6),
-            timedelta(days=1),
             "days",
             None,
             False,
@@ -29,7 +27,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=1, day=1),
             datetime(year=2020, month=1, day=6, hour=1),
-            timedelta(days=1),
             "days",
             None,
             True,
@@ -39,7 +36,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=12, day=29),
             datetime(year=2021, month=1, day=3),
-            timedelta(days=1),
             "days",
             None,
             False,
@@ -49,7 +45,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=2, day=28),
             datetime(year=2020, month=3, day=3),
-            timedelta(days=1),
             "days",
             None,
             False,
@@ -59,7 +54,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=2, day=28),
             datetime(year=2019, month=3, day=3),
-            timedelta(days=1),
             "days",
             None,
             False,
@@ -69,7 +63,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=2, day=28),
             datetime(year=2019, month=3, day=3),
-            relativedelta(days=1),
             "days",
             None,
             False,
@@ -79,7 +72,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=1, day=1),
             datetime(year=2020, month=3, day=6),
-            relativedelta(months=1),
             "months",
             None,
             False,
@@ -89,7 +81,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=1, day=1),
             datetime(year=2020, month=1, day=27),
-            relativedelta(weeks=1),
             "weeks",
             None,
             False,
@@ -99,7 +90,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=12, day=1),
             datetime(year=2021, month=2, day=6),
-            relativedelta(months=1),
             "months",
             None,
             False,
@@ -109,7 +99,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2020, month=2, day=12),
             datetime(year=2020, month=3, day=11),
-            relativedelta(months=1),
             "months",
             None,
             False,
@@ -120,7 +109,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=3, day=10, hour=1),
             datetime(year=2019, month=3, day=10, hour=4),
-            timedelta(hours=1),
             "hours",
             DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
             True,
@@ -135,7 +123,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=3, day=10, hour=1),
             datetime(year=2019, month=3, day=10, hour=4),
-            relativedelta(hours=1),
             "hours",
             DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
             True,
@@ -150,7 +137,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=3, day=10, hour=1),
             datetime(year=2019, month=3, day=10, hour=4),
-            timedelta(hours=1),
             "hours",
             DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
             True,
@@ -160,7 +146,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=11, day=3, hour=0),
             datetime(year=2019, month=11, day=3, hour=3),
-            timedelta(hours=1),
             "hours",
             DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
             True,
@@ -175,7 +160,6 @@ def test_date_partition_range_out_of_order():
         (
             datetime(year=2019, month=11, day=3, hour=0),
             datetime(year=2019, month=11, day=3, hour=3),
-            timedelta(hours=1),
             "hours",
             DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
             True,
@@ -191,30 +175,11 @@ def test_date_partition_range_out_of_order():
     ],
 )
 def test_date_partition_range(
-    start, end, delta, delta_range, fmt, inclusive, timezone, expected_partitions
-):
-    # Check case where delta_range is not set
-    _test_date_or_delta_range(
-        start, end, delta, None, fmt, inclusive, timezone, expected_partitions
-    )
-    # Check case where delta is not set
-    _test_date_or_delta_range(
-        start, end, None, delta_range, fmt, inclusive, timezone, expected_partitions
-    )
-
-
-def _test_date_or_delta_range(
-    start, end, delta, delta_range, fmt, inclusive, timezone, expected_partitions
+    start, end, delta_range, fmt, inclusive, timezone, expected_partitions
 ):
 
     partition_generator = date_partition_range(
-        start,
-        end,
-        delta=delta,
-        delta_range=delta_range,
-        fmt=fmt,
-        inclusive=inclusive,
-        timezone=timezone,
+        start, end, delta_range=delta_range, fmt=fmt, inclusive=inclusive, timezone=timezone,
     )
     generated_partitions = partition_generator()
 
