@@ -1,7 +1,3 @@
-from future.standard_library import install_aliases  # isort:skip
-
-install_aliases()  # isort:skip
-
 import signal
 import threading
 import warnings
@@ -14,7 +10,7 @@ from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
 from dagster.cli.workspace.workspace import Workspace
 from dagster.core.instance import DagsterInstance
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
+from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor
@@ -24,6 +20,10 @@ from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .implementation.context import DagsterGraphQLContext
 from .schema import create_schema
 from .version import __version__
+
+from future.standard_library import install_aliases  # isort:skip
+
+install_aliases()  # isort:skip
 
 
 def create_dagster_graphql_cli():
@@ -146,7 +146,7 @@ PREDEFINED_QUERIES = {
         "\n\n4. dagster-graphql -m some_module -a define_repo"
         "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
         "\n\n6. dagster-graphql -m some_module -a define_pipeline"
-    ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
+    ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME),
 )
 @click.version_option(version=__version__)
 @click.option(

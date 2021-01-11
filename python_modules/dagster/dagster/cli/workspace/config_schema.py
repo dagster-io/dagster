@@ -11,7 +11,7 @@ from dagster.utils import merge_dicts
 def process_workspace_config(workspace_config):
     check.dict_param(workspace_config, "workspace_config")
 
-    return process_config(WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY, workspace_config)
+    return process_config(WORKSPACE_CONFIG_SCHEMA, workspace_config)
 
 
 def ensure_workspace_config(workspace_config, yaml_path):
@@ -108,17 +108,3 @@ WORKSPACE_CONFIG_SCHEMA = {
         is_required=False,
     ),
 }
-
-WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY = merge_dicts(
-    {
-        "repository": Field(
-            {
-                "module": Field(str, is_required=False),
-                "file": Field(str, is_required=False),
-                "fn": Field(str),
-            },
-            is_required=False,
-        ),
-    },
-    WORKSPACE_CONFIG_SCHEMA,
-)

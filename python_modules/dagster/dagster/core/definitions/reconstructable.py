@@ -62,12 +62,6 @@ class ReconstructableRepository(
     def get_cli_args(self):
         return self.pointer.get_cli_args()
 
-    @classmethod
-    def from_legacy_repository_yaml(cls, file_path):
-        check.str_param(file_path, "file_path")
-        absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
-        return cls(pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path))
-
     def get_python_origin(self):
         return RepositoryPythonOrigin(
             executable_path=sys.executable,

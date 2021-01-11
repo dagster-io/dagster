@@ -6,7 +6,6 @@ import yaml
 from dagster import check
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.merger import deep_merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
@@ -59,9 +58,7 @@ class PresetDefinition(
         )
 
     @staticmethod
-    def from_files(
-        name, environment_files=None, config_files=None, solid_selection=None, mode=None, tags=None
-    ):
+    def from_files(name, config_files=None, solid_selection=None, mode=None, tags=None):
         """Static constructor for presets from YAML files.
 
         Args:
@@ -83,9 +80,6 @@ class PresetDefinition(
                 error.
         """
         check.str_param(name, "name")
-        config_files = canonicalize_backcompat_args(
-            config_files, "config_files", environment_files, "environment_files", "0.9.0"
-        )
         config_files = check.opt_list_param(config_files, "config_files")
         solid_selection = check.opt_nullable_list_param(
             solid_selection, "solid_selection", of_type=str

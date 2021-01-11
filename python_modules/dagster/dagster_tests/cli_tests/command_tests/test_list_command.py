@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import os
-import re
 import sys
 
 import pytest
@@ -237,24 +236,6 @@ def test_list_command():
             no_print,
             instance,
         )
-
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "You have used -y or --repository-yaml to load a workspace. This is deprecated and "
-                "will be eliminated in 0.9.0."
-            ),
-        ):
-            execute_list_command(
-                {
-                    "repository_yaml": file_relative_path(__file__, "repository_module.yaml"),
-                    "python_file": None,
-                    "module_name": None,
-                    "fn_name": None,
-                },
-                no_print,
-                instance,
-            )
 
         with pytest.raises(UsageError):
             execute_list_command(

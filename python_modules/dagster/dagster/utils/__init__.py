@@ -23,7 +23,6 @@ from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
-from six.moves import configparser
 
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
@@ -38,7 +37,6 @@ EPOCH = datetime.datetime.utcfromtimestamp(0)
 PICKLE_PROTOCOL = 4
 
 
-DEFAULT_REPOSITORY_YAML_FILENAME = "repository.yaml"
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 

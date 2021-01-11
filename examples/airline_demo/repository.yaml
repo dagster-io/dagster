@@ -1,4 +1,0 @@
-load_from:
-  - python_module:
-      module_name: airline_demo
-      attribute: define_internal_dagit_repository

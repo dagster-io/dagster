@@ -9,12 +9,7 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import (
-    DEFAULT_REPOSITORY_YAML_FILENAME,
-    check_script,
-    pushd,
-    script_relative_path,
-)
+from dagster.utils import check_script, pushd, script_relative_path
 
 PIPELINES_OR_ERROR_QUERY = """
 {
@@ -337,16 +332,3 @@ def test_runpy(dirname, filename, _fn_name, _env_yaml, _mode, _preset, _return_c
                 runpy.run_path(filepath, run_name="__main__")
         else:
             runpy.run_path(filepath, run_name="__main__")
-
-
-# TODO python command line
-
-
-# dagit
-def test_load_repo():
-    load_dagit_for_workspace_cli_args(
-        n_pipelines=2,
-        repository_yaml=path_to_tutorial_file(
-            os.path.join("advanced/repositories/", DEFAULT_REPOSITORY_YAML_FILENAME)
-        ),
-    )

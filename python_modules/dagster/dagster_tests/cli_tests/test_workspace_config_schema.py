@@ -7,23 +7,6 @@ def _validate_yaml_contents(yaml_contents):
     return process_workspace_config(yaml.safe_load(yaml_contents))
 
 
-def test_repository_yaml_parsing():
-    valid_yaml_contents = """
-repository:
-    module: some_module
-    fn: a_repo
-    """
-    assert _validate_yaml_contents(valid_yaml_contents).success
-
-    invalid_yaml_contents = """
-repository:
-    module: some_module
-    wrong: a_repo
-    """
-
-    assert not _validate_yaml_contents(invalid_yaml_contents).success
-
-
 def test_python_file():
     terse_workspace_yaml = """
 load_from:
