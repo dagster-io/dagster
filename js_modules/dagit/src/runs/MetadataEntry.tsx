@@ -178,7 +178,16 @@ const PythonArtifactLink = ({
   description: string;
 }) => (
   <>
-    <Tooltip hoverOpenDelay={100} position={Position.TOP} content={`${module}.${name}`}>
+    <Tooltip
+      hoverOpenDelay={100}
+      position={Position.TOP}
+      content={`${module}.${name}`}
+      usePortal
+      modifiers={{
+        preventOverflow: {enabled: false},
+        flip: {enabled: false},
+      }}
+    >
       <span style={{cursor: 'pointer', textDecoration: 'underline'}}>{name}</span>
     </Tooltip>{' '}
     - {description}
