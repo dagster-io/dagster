@@ -235,6 +235,10 @@ class DagsterInstance:
             schedule_storage, "schedule_storage", ScheduleStorage
         )
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
+
+        if self._schedule_storage:
+            self._schedule_storage.validate_stored_schedules(self.scheduler_class)
+
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.initialize(self)
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)

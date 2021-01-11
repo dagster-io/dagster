@@ -1,9 +1,11 @@
+import re
 import sys
 import time
 
 import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
+from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -21,6 +23,8 @@ from dagster.seven import get_current_datetime_in_utc
 from dagster.utils.error import SerializableErrorInfo
 
 FAKE_SCHEDULER_NAME = "FakeSchedulerClassName"
+
+OTHER_FAKE_SCHEDULER_NAME = "OtherFakeSchedulerClassName"
 
 
 class TestScheduleStorage:
@@ -61,13 +65,13 @@ class TestScheduleStorage:
 
     @classmethod
     def build_schedule(
-        cls, schedule_name, cron_schedule, status=JobStatus.STOPPED,
+        cls, schedule_name, cron_schedule, status=JobStatus.STOPPED, scheduler=FAKE_SCHEDULER_NAME
     ):
         return JobState(
             cls.fake_repo_target().get_job_origin(schedule_name),
             JobType.SCHEDULE,
             status,
-            ScheduleJobData(cron_schedule, start_timestamp=None, scheduler=FAKE_SCHEDULER_NAME),
+            ScheduleJobData(cron_schedule, start_timestamp=None, scheduler=scheduler),
         )
 
     @classmethod
@@ -542,3 +546,34 @@ class TestScheduleStorage:
 
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 2
+
+    def test_migrate_schedulers(self, storage):
+        schedule = self.build_schedule("my_schedule", "* * * * *")
+        storage.add_job_state(schedule)
+
+        # changing if its not running is fine
+        storage.validate_stored_schedules(OTHER_FAKE_SCHEDULER_NAME)
+
+        running_schedule = self.build_schedule(
+            "my_other_schedule", "* * * * *", status=JobStatus.RUNNING
+        )
+        storage.add_job_state(running_schedule)
+
+        with pytest.raises(
+            DagsterScheduleWipeRequired,
+            match=re.escape(
+                "Found a running schedule using a scheduler (FakeSchedulerClassName) "
+                "that differs from the scheduler on the instance (OtherFakeSchedulerClassName). "
+                "The most likely reason for this error is that you changed the scheduler on your "
+                "instance while it was still running schedules. To fix this, change the scheduler "
+                "on your instance back to the previous scheduler configuration and run the command "
+                "'dagster schedule wipe'. It will then be safe to change back "
+                "to OtherFakeSchedulerClassName."
+            ),
+        ):
+            storage.validate_stored_schedules(OTHER_FAKE_SCHEDULER_NAME)
+
+        storage.wipe()
+
+        # Now passes
+        storage.validate_stored_schedules(OTHER_FAKE_SCHEDULER_NAME)
