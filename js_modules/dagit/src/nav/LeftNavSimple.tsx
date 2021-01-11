@@ -23,7 +23,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(
 
     const item = (
       <Item to={to} key={to} $active={matchSome(pathname, matchingPaths)}>
-        <Icon icon={icon} iconSize={12} />
+        <Icon icon={icon} iconSize={12} className="navIcon" />
         {label}
       </Item>
     );
@@ -62,7 +62,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(
   },
 );
 
-export const LeftNavSimple = () => {
+export const LeftNavSimple = React.memo(() => {
   const {pathname} = useLocation();
 
   const items = config.map((section, ii) => (
@@ -100,7 +100,7 @@ export const LeftNavSimple = () => {
       </Group>
     </Box>
   );
-};
+});
 
 interface ItemProps extends LinkProps {
   $active?: boolean;
@@ -118,12 +118,12 @@ const Item = styled(Link)<ItemProps>`
   user-select: none;
   transition: background 0.1s linear;
 
-  .bp3-icon {
+  .navIcon.bp3-icon {
     display: block;
     margin-right: 8px;
   }
 
-  .bp3-icon svg {
+  .navIcon.bp3-icon svg {
     fill: ${({$active}) => ($active ? Colors.BLUE2 : Colors.DARK_GRAY3)};
   }
 
@@ -132,7 +132,7 @@ const Item = styled(Link)<ItemProps>`
     text-decoration: none;
   }
 
-  &:hover .bp3-icon svg {
+  &:hover .navIcon.bp3-icon svg {
     fill: ${Colors.BLUE2};
   }
 `;

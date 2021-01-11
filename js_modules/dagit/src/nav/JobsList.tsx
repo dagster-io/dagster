@@ -181,7 +181,7 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
                 background={isSelected ? Colors.BLACK : null}
                 border={border}
                 flex={{alignItems: 'center', justifyContent: 'space-between'}}
-                padding={{vertical: 8, right: 8, left: 12}}
+                padding={{vertical: 8, right: 12, left: 12}}
               >
                 <Box
                   flex={{alignItems: 'center', justifyContent: 'flex-start'}}
