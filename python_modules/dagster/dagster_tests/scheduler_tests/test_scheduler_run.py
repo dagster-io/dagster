@@ -761,7 +761,9 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 unloadable_origin,
                 JobType.SCHEDULE,
                 JobStatus.RUNNING,
-                ScheduleJobData("0 0 * * *", pendulum.now("UTC").timestamp()),
+                ScheduleJobData(
+                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                ),
             )
             instance.add_job_state(unloadable_schedule_state)
 
@@ -890,7 +892,9 @@ def test_bad_load(capfd):
                 fake_origin,
                 JobType.SCHEDULE,
                 JobStatus.RUNNING,
-                ScheduleJobData("0 0 * * *", pendulum.now("UTC").timestamp(),),
+                ScheduleJobData(
+                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                ),
             )
             instance.add_job_state(schedule_state)
 

@@ -435,14 +435,16 @@ class ExternalSchedule:
     # ScheduleState that represents the state of the schedule
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
-    def get_default_job_state(self):
+    def get_default_job_state(self, instance):
         from dagster.core.scheduler.job import JobState, JobStatus, ScheduleJobData
 
         return JobState(
             self.get_external_origin(),
             JobType.SCHEDULE,
             JobStatus.STOPPED,
-            ScheduleJobData(self.cron_schedule, start_timestamp=None),
+            ScheduleJobData(
+                self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
+            ),
         )
 
     def execution_time_iterator(self, start_timestamp):

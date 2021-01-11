@@ -193,6 +193,7 @@ def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-
             schedule_states = instance.all_stored_job_state(job_type=JobType.SCHEDULE)
 
             for state in schedule_states:
+                assert state.job_specific_data.scheduler == "SystemCronScheduler"
                 if state.name == "no_config_pipeline_every_min_schedule":
                     assert state == schedule_state
 
@@ -753,7 +754,7 @@ def test_reconcile_schedule_without_start_time():
                 external_schedule.get_external_origin(),
                 JobType.SCHEDULE,
                 JobStatus.RUNNING,
-                ScheduleJobData(external_schedule.cron_schedule, None),
+                ScheduleJobData(external_schedule.cron_schedule, None, "SystemCronScheduler"),
             )
 
             instance.add_job_state(legacy_schedule_state)

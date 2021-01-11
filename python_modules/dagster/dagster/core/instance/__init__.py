@@ -418,6 +418,10 @@ class DagsterInstance:
     def scheduler(self):
         return self._scheduler
 
+    @property
+    def scheduler_class(self):
+        return self.scheduler.__class__.__name__ if self.scheduler else None
+
     # run coordinator
 
     @property

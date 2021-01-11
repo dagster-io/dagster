@@ -152,6 +152,7 @@ def test_re_init(
         schedule_states = instance.all_stored_job_state(job_type=JobType.SCHEDULE)
 
         for state in schedule_states:
+            assert state.job_specific_data.scheduler == "K8sScheduler"
             if state.name == "no_config_pipeline_every_min_schedule":
                 assert state == schedule_state
 

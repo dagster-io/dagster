@@ -79,7 +79,7 @@ class Scheduler(abc.ABC):
             external_schedule.get_external_origin(),
             JobType.SCHEDULE,
             JobStatus.STOPPED,
-            ScheduleJobData(external_schedule.cron_schedule),
+            ScheduleJobData(external_schedule.cron_schedule, scheduler=self.__class__.__name__),
         )
 
         instance.add_job_state(schedule_state)
@@ -119,7 +119,11 @@ class Scheduler(abc.ABC):
                     external_schedule.get_external_origin(),
                     JobType.SCHEDULE,
                     existing_schedule_state.status,
-                    ScheduleJobData(external_schedule.cron_schedule, new_timestamp),
+                    ScheduleJobData(
+                        external_schedule.cron_schedule,
+                        new_timestamp,
+                        scheduler=self.__class__.__name__,
+                    ),
                 )
 
                 instance.update_job_state(schedule_state)
@@ -201,7 +205,9 @@ class Scheduler(abc.ABC):
         self.start_schedule(instance, external_schedule)
         started_schedule = schedule_state.with_status(JobStatus.RUNNING).with_data(
             ScheduleJobData(
-                external_schedule.cron_schedule, get_current_datetime_in_utc().timestamp()
+                external_schedule.cron_schedule,
+                get_current_datetime_in_utc().timestamp(),
+                scheduler=self.__class__.__name__,
             )
         )
         instance.update_job_state(started_schedule)
@@ -224,7 +230,10 @@ class Scheduler(abc.ABC):
 
         self.stop_schedule(instance, schedule_origin_id)
         stopped_schedule = schedule_state.with_status(JobStatus.STOPPED).with_data(
-            ScheduleJobData(cron_schedule=schedule_state.job_specific_data.cron_schedule)
+            ScheduleJobData(
+                cron_schedule=schedule_state.job_specific_data.cron_schedule,
+                scheduler=self.__class__.__name__,
+            )
         )
         instance.update_job_state(stopped_schedule)
         return stopped_schedule
