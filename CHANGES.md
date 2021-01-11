@@ -32,6 +32,7 @@
 **New**
 
 - When using a solid selection in the Dagit Playground, non-matching solids are hidden in the RunPreview panel.
+- The CLI command dagster pipeline launch now accepts --run-id
 
 **Bugfixes**
 

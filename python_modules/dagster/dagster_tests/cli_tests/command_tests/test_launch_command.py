@@ -3,7 +3,7 @@ from __future__ import print_function
 import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
-from dagster.core.errors import DagsterUserCodeProcessError
+from dagster.core.errors import DagsterRunAlreadyExists, DagsterUserCodeProcessError
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
@@ -119,6 +119,26 @@ def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
             assert "No qualified solids to execute found for solid_selection" in str(
                 result.exception
             )
+
+
+@pytest.mark.parametrize(
+    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+)
+def test_launch_with_run_id(gen_pipeline_args):
+    runner = CliRunner()
+    run_id = "my_super_cool_run_id"
+    with default_cli_test_instance() as instance:
+        with gen_pipeline_args as args:
+            result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
+            assert result.exit_code == 0
+
+            run = instance.get_run_by_id(run_id)
+            assert run is not None
+
+            # running it again should fail since run_id has to be unique
+            bad_result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
+            assert bad_result.exit_code == 1
+            assert isinstance(bad_result.exception, DagsterRunAlreadyExists)
 
 
 def test_empty_working_directory():

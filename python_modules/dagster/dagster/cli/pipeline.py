@@ -447,6 +447,7 @@ def _create_external_pipeline_run(
     preset,
     tags,
     solid_selection,
+    run_id,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
@@ -458,6 +459,7 @@ def _create_external_pipeline_run(
     check.opt_str_param(preset, "preset")
     check.opt_dict_param(tags, "tags", key_type=str)
     check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    check.opt_str_param(run_id, "run_id")
 
     run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
         external_pipeline, run_config, mode, preset, tags, solid_selection,
@@ -499,7 +501,7 @@ def _create_external_pipeline_run(
 
     return instance.create_run(
         pipeline_name=pipeline_name,
-        run_id=None,
+        run_id=run_id,
         run_config=run_config,
         mode=pipeline_mode,
         solids_to_execute=external_pipeline_subset.solids_to_execute,
@@ -573,6 +575,7 @@ def do_execute_command(
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
+@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline run")
 def pipeline_launch_command(**kwargs):
     with DagsterInstance.get() as instance:
         return execute_launch_command(instance, kwargs)
@@ -617,6 +620,7 @@ def execute_launch_command(instance, kwargs):
             preset=preset,
             tags=run_tags,
             solid_selection=solid_selection,
+            run_id=kwargs.get("run_id"),
         )
 
         return instance.launch_run(pipeline_run.run_id, external_pipeline)
@@ -917,6 +921,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
                 preset=None,
                 tags=merge_dicts(merge_dicts(partition_data.tags, backfill_tags), run_tags),
                 solid_selection=frozenset(solid_selection) if solid_selection else None,
+                run_id=None,
             )
 
             instance.submit_run(run.run_id, external_pipeline)
