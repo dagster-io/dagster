@@ -163,6 +163,7 @@ const StepStatusDot = styled.div`
 
 const Elapsed = styled.div`
   color: ${Colors.GRAY3};
+  font-variant-numeric: tabular-nums;
 `;
 
 const EmptyNotice = styled.div`
