@@ -1,9 +1,10 @@
 import {gql, NetworkStatus} from '@apollo/client';
-import {Colors, NonIdealState, Spinner, Tab, Tabs, Tag} from '@blueprintjs/core';
+import {Callout, Colors, Icon, NonIdealState, Spinner, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CursorPaginationControls} from 'src/CursorControls';
@@ -187,6 +188,11 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
           onChange={setFilterTokens}
           loading={queryResult.loading}
         />
+        {selectedTab === 'queued' ? (
+          <Callout icon={<Icon icon="multi-select" iconSize={20} />}>
+            <Link to="/instance/config#run_coordinator">View queue configuration</Link>
+          </Callout>
+        ) : null}
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>
             {({pipelineRunsOrError}) => {
