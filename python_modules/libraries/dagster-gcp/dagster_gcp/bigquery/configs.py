@@ -4,7 +4,7 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 """
 
-from dagster import Bool, Field, IntSource, String, StringSource, Array
+from dagster import Array, Bool, Field, IntSource, String, StringSource
 
 from .types import (
     BQCreateDisposition,
