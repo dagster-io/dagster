@@ -96,6 +96,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
         }
         outputDefinitions {
           name
+          isDynamic
           type {
             displayName
           }

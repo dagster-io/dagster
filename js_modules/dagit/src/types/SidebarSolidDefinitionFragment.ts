@@ -19,6 +19,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_outputDefinition
   __typename: "OutputDefinition";
   name: string;
   type: SidebarSolidDefinitionFragment_SolidDefinition_outputDefinitions_type;
+  isDynamic: boolean | null;
   description: string | null;
 }
 
@@ -409,6 +410,7 @@ export interface SidebarSolidDefinitionFragment_CompositeSolidDefinition_outputD
   __typename: "OutputDefinition";
   name: string;
   type: SidebarSolidDefinitionFragment_CompositeSolidDefinition_outputDefinitions_type;
+  isDynamic: boolean | null;
   description: string | null;
 }
 

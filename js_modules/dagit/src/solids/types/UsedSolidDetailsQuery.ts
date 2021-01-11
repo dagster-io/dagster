@@ -44,6 +44,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_SolidDefinition_outputDefinitions_type;
   description: string | null;
 }
@@ -434,6 +435,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definition_CompositeSolidDefinition_outputDefinitions_type;
   description: string | null;
 }

@@ -97,6 +97,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "OutputDefinition";
   name: string;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type;
+  isDynamic: boolean | null;
   description: string | null;
 }
 
@@ -487,6 +488,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "OutputDefinition";
   name: string;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
+  isDynamic: boolean | null;
   description: string | null;
 }
 

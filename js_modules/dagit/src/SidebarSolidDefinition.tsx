@@ -57,6 +57,7 @@ export class SidebarSolidDefinition extends React.Component<
         }
         outputDefinitions {
           name
+          isDynamic
           description
           type {
             ...DagsterTypeWithTooltipFragment
@@ -195,7 +196,10 @@ export class SidebarSolidDefinition extends React.Component<
         <SidebarSection title={'Outputs'}>
           {definition.outputDefinitions.map((outputDef, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionSmallHeader>{breakOnUnderscores(outputDef.name)}</SectionSmallHeader>
+              <SectionSmallHeader>
+                {breakOnUnderscores(outputDef.name)}
+                {outputDef.isDynamic && '[*]'}
+              </SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>

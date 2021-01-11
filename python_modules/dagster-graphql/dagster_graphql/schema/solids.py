@@ -59,7 +59,8 @@ class IDauphinSolidDefinitionMixin:
     def resolve_output_definitions(self, _):
         return [
             DauphinOutputDefinition(
-                self._represented_pipeline, self.solid_def_name, output_def_snap.name
+                self._represented_pipeline, self.solid_def_name, output_def_snap.name,
+                output_def_snap.is_dynamic
             )
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
@@ -271,9 +272,10 @@ class DauphinOutputDefinition(dauphin.ObjectType):
     solid_definition = dauphin.NonNull("SolidDefinition")
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
+    is_dynamic = dauphin.Boolean()
     type = dauphin.NonNull("DagsterType")
 
-    def __init__(self, represented_pipeline, solid_def_name, output_def_name):
+    def __init__(self, represented_pipeline, solid_def_name, output_def_name, is_dynamic):
         self._represented_pipeline = check.inst_param(
             represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
@@ -285,6 +287,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
 
         super(DauphinOutputDefinition, self).__init__(
             name=self._output_def_snap.name, description=self._output_def_snap.description,
+            is_dynamic=is_dynamic
         )
 
     def resolve_type(self, _):
@@ -377,6 +380,7 @@ class DauphinOutput(dauphin.ObjectType):
     def resolve_definition(self, _):
         return DauphinOutputDefinition(
             self._represented_pipeline, self._solid_def_snap.name, self._output_name,
+            self._output_def_snap.is_dynamic,
         )
 
     def resolve_depended_by(self, _):
