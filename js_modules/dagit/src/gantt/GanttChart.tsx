@@ -7,7 +7,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {ROOT_SERVER_URI} from 'src/DomUtils';
-import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
+import {GraphQueryItem, filterByQuery, stripDynamicIndex} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/RunMetadataProvider';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
@@ -76,7 +76,7 @@ export const queryStringToSelection = (
   query: string,
 ): string[] => {
   if (query && query !== '*') {
-    const graph = toGraphQueryItems(plan);
+    const graph = toGraphQueryItems(plan, []);
     const graphFiltered = filterByQuery(graph, query);
     return graphFiltered.all.map((node) => node.name);
   }
@@ -145,9 +145,10 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
   }
 
   getLayout = (params: BuildLayoutParams) => {
+    const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
     if (
       !this._cachedLayoutParams ||
-      this._cachedLayoutParams.nodes !== params.nodes ||
+      names(this._cachedLayoutParams.nodes) !== names(params.nodes) ||
       this._cachedLayoutParams.mode !== params.mode
     ) {
       this._cachedLayout = buildLayout(params);
@@ -164,9 +165,10 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
   };
 
   onUpdateQuery = (query: string) => {
-    this.props.onSetSelection({
+    const {onSetSelection, plan} = this.props;
+    onSetSelection({
       query: query || '*',
-      keys: queryStringToSelection(this.props.plan, query),
+      keys: queryStringToSelection(plan, query),
     });
   };
 
@@ -176,10 +178,10 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
   };
 
   render() {
-    const {plan, selection} = this.props;
+    const {plan, selection, metadata} = this.props;
     const {options} = this.state;
 
-    const graph = toGraphQueryItems(plan);
+    const graph = toGraphQueryItems(plan, metadata ? Object.keys(metadata.steps) : []);
     const graphFiltered = filterByQuery(graph, selection.query);
 
     const layout = this.getLayout({
@@ -332,10 +334,15 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
     highlightedMs.push(props.focusedTime);
   }
 
+  const selectedRuntimeKeys = props.graph
+    .map((b) => b.name)
+    .filter((b) => selection.keys.includes(stripDynamicIndex(b)));
+
+  console.log(selection.keys, selectedRuntimeKeys);
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
-  } else if (selection.keys.length > 0) {
-    const selectedMeta = selection.keys
+  } else if (selectedRuntimeKeys.length > 0) {
+    const selectedMeta = selectedRuntimeKeys
       .map((stepKey) => metadata?.steps[stepKey])
       .filter((x): x is IStepMetadata => x !== undefined);
     const sortedSelectedSteps = selectedMeta.sort((a, b) =>
@@ -373,7 +380,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               metadata={metadata || EMPTY_RUN_METADATA}
               layout={layout}
               hoveredStep={hoveredStep}
-              focusedSteps={selection.keys}
+              focusedSteps={selectedRuntimeKeys}
               viewport={viewport}
               setHoveredNodeName={setHoveredNodeName}
               onClickStep={props.onClickStep}
@@ -529,7 +536,8 @@ const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportCont
             chart-element
             ${useDot ? 'dot' : 'box'}
             ${focusedSteps.includes(box.node.name) && 'focused'}
-            ${hoveredStep === box.node.name && 'hovered'}`}
+            ${hoveredStep === box.node.name && 'hovered'}
+            ${box.node.name.endsWith(']') && 'dynamic'}`}
         style={{
           left: bounds.minX,
           top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
@@ -747,6 +755,9 @@ const GanttChartContainer = styled.div`
     }
     &.hovered {
       border: 1px solid ${Colors.DARK_GRAY3};
+    }
+    &.dynamic {
+      filter: brightness(125%);
     }
   }
 

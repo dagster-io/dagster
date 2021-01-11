@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
 import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {isEqual} from 'lodash';
+import {isEqual, uniq} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from 'src/GraphQueryImpl';
+import {GraphQueryItem, stripDynamicIndex} from 'src/GraphQueryImpl';
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];
@@ -50,7 +50,7 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
   }>((s) => ({
     incount: s.inputs.reduce((sum, o) => sum + o.dependsOn.length, 0),
     outcount: s.outputs.reduce((sum, o) => sum + o.dependedBy.length, 0),
-    name: s.name,
+    name: stripDynamicIndex(s.name),
   }));
 
   if (seed === 0) {
@@ -83,13 +83,12 @@ export const GraphQueryInput = React.memo(
     let menu: JSX.Element | undefined = undefined;
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
+    const available = uniq(props.items.map((s) => stripDynamicIndex(s.name)));
     const suggestions = React.useMemo(() => {
       return lastElementName && !suffix
-        ? props.items
-            .map((s) => s.name)
-            .filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
+        ? available.filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
         : [];
-    }, [lastElementName, props.items, suffix]);
+    }, [lastElementName, available, suffix]);
 
     const onConfirmSuggestion = (suggestion: string) => {
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';

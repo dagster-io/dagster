@@ -95,7 +95,11 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (!highestYParent) {
         continue;
       }
-
+      // Don't re-order the first row of nodes that "fan out" from a dynamic output. this
+      // ensures that these nodes are always "waterfall" visually by ascending index.
+      if (box.node.name.endsWith(']') && !highestYParent.node.name.endsWith(']')) {
+        continue;
+      }
       const onTargetY = boxesByY[`${highestYParent.y}`];
       const taken = onTargetY.find((r) => r.x === box.x);
       if (taken) {

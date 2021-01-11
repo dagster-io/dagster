@@ -76,6 +76,10 @@ function expansionDepthForClause(clause: string) {
   return clause.includes('*') ? Number.MAX_SAFE_INTEGER : clause.length;
 }
 
+export const stripDynamicIndex = (name: string) => {
+  return name.split('[')[0];
+};
+
 export function filterByQuery<T extends GraphQueryItem>(items: T[], query: string) {
   if (query === '*') {
     return {all: items, focus: []};
@@ -99,7 +103,9 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
     }
     const [, parentsClause, itemName, descendentsClause] = parts;
     const itemsMatching = items.filter(
-      (s) => itemName === s.name || (itemName.length > 3 && s.name.includes(itemName)),
+      (s) =>
+        stripDynamicIndex(itemName) === stripDynamicIndex(s.name) ||
+        (itemName.length > 3 && s.name.includes(itemName)),
     );
 
     for (const item of itemsMatching) {

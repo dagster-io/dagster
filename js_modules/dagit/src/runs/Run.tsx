@@ -233,7 +233,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           toolbarActions={
             <RunActionButtons
               run={run}
-              executionPlan={run.executionPlan}
+              runtimeStepKeys={Object.keys(metadata.steps)}
               artifactsPersisted={run.executionPlan.artifactsPersisted}
               onLaunch={onLaunch}
               selection={selection}
