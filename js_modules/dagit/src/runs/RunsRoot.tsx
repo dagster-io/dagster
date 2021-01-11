@@ -51,6 +51,8 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
 export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   useDocumentTitle('Runs');
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
+  const filter = runsFilterForSearchTokens(filterTokens);
+
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables
@@ -68,9 +70,9 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
       return data.pipelineRunsOrError.results;
     },
     variables: {
-      filter: runsFilterForSearchTokens(filterTokens),
-      queuedFilter: {statuses: Array.from(queuedStatuses)},
-      inProgressFilter: {statuses: Array.from(inProgressStatuses)},
+      filter,
+      queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
+      inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
     },
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
