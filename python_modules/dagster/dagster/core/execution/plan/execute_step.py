@@ -377,7 +377,9 @@ def _set_objects(step_context, step_output, step_output_handle, output):
         yield evt
 
     yield DagsterEvent.handled_output(
-        step_context, output_name=step_output_handle.output_name, manager_key=output_def.manager_key
+        step_context,
+        output_name=step_output_handle.output_name,
+        manager_key=output_def.io_manager_key,
     )
 
 

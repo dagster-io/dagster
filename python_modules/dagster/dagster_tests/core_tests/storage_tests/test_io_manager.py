@@ -213,7 +213,7 @@ def test_multi_materialization():
     def dummy_io_manager(_):
         return DummyIOManager()
 
-    @solid(output_defs=[OutputDefinition(manager_key="my_io_manager")])
+    @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
     def solid_a(_context):
         return 1
 
@@ -235,7 +235,7 @@ def test_multi_materialization():
 
 
 def test_different_io_managers():
-    @solid(output_defs=[OutputDefinition(manager_key="my_io_manager")],)
+    @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")],)
     def solid_a(_context):
         return 1
 
@@ -387,7 +387,9 @@ def test_io_manager_resources_on_context():
         input_defs=[
             InputDefinition("_manager_input", root_manager_key="io_manager_reqs_resources")
         ],
-        output_defs=[OutputDefinition(dagster_type=str, manager_key="io_manager_reqs_resources")],
+        output_defs=[
+            OutputDefinition(dagster_type=str, io_manager_key="io_manager_reqs_resources")
+        ],
     )
     def big_solid(_, _manager_input):
         return "manager_input"

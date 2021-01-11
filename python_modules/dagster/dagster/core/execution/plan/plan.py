@@ -429,7 +429,7 @@ class ExecutionPlan(
         return step.step_output_named(step_output_handle.output_name)
 
     def get_manager_key(self, step_output_handle):
-        return self.get_step_output(step_output_handle).output_def.manager_key
+        return self.get_step_output(step_output_handle).output_def.io_manager_key
 
     def has_step(self, handle):
         check.inst_param(handle, "handle", StepHandleUnion)
@@ -632,8 +632,8 @@ class ExecutionPlan(
             # check if all its inputs' upstream step outputs have non-in-memory IO manager configured
             for step_input in step.step_inputs:
                 for step_output_handle in step_input.get_step_output_handle_dependencies():
-                    manager_key = self.get_manager_key(step_output_handle)
-                    manager_def = mode_def.resource_defs.get(manager_key)
+                    io_manager_key = self.get_manager_key(step_output_handle)
+                    manager_def = mode_def.resource_defs.get(io_manager_key)
                     if (
                         # no IO manager is configured
                         not manager_def

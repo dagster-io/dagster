@@ -220,7 +220,7 @@ def _all_outputs_non_mem_io_managers(pipeline_def, mode_def):
         for output_def in solid_def.output_defs
     ]
     for output_def in output_defs:
-        if mode_def.resource_defs[output_def.manager_key] == mem_io_manager:
+        if mode_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
             return False
 
     return True

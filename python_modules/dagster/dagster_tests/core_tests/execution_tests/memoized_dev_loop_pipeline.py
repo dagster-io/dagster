@@ -15,7 +15,7 @@ from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 @solid(
     version="create_string_version",
     config_schema={"input_str": Field(String)},
-    output_defs=[OutputDefinition(name="created_string", manager_key="io_manager", metadata={})],
+    output_defs=[OutputDefinition(name="created_string", io_manager_key="io_manager", metadata={})],
 )
 def create_string_1_asset(context):
     return context.solid_config["input_str"]
@@ -25,7 +25,7 @@ def create_string_1_asset(context):
     input_defs=[InputDefinition("_string_input", String)],
     version="take_string_version",
     config_schema={"input_str": Field(String)},
-    output_defs=[OutputDefinition(name="taken_string", manager_key="io_manager", metadata={})],
+    output_defs=[OutputDefinition(name="taken_string", io_manager_key="io_manager", metadata={})],
 )
 def take_string_1_asset(context, _string_input):
     return context.solid_config["input_str"] + _string_input

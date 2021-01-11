@@ -24,7 +24,7 @@ class OutputDefinition:
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        manager_key (Optional[str]): The resource key of the output manager used for this output.
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
             (default: "io_manager").
         metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output. For example,
             users can provide a file path if the data object will be stored in a filesystem, or
@@ -38,14 +38,16 @@ class OutputDefinition:
         name=None,
         description=None,
         is_required=None,
-        manager_key=None,
+        io_manager_key=None,
         metadata=None,
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
-        self._manager_key = check.opt_str_param(manager_key, "manager_key", default="io_manager")
+        self._manager_key = check.opt_str_param(
+            io_manager_key, "io_manager_key", default="io_manager"
+        )
         self._metadata = metadata
 
     @property
@@ -69,7 +71,7 @@ class OutputDefinition:
         return self._is_required
 
     @property
-    def manager_key(self):
+    def io_manager_key(self):
         return self._manager_key
 
     @property

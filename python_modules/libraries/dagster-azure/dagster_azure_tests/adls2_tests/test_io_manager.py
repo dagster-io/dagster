@@ -42,13 +42,13 @@ def get_step_output(step_events, step_key, output_name="result"):
 
 
 def define_inty_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, manager_key="io_manager"))
+    @lambda_solid(output_def=OutputDefinition(Int, io_manager_key="io_manager"))
     def return_one():
         return 1
 
     @lambda_solid(
         input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, manager_key="io_manager"),
+        output_def=OutputDefinition(Int, io_manager_key="io_manager"),
     )
     def add_one(num):
         return num + 1

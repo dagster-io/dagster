@@ -40,7 +40,7 @@ def my_io_manager(_):
     return MyIOManager()
 
 
-@solid(output_defs=[OutputDefinition(manager_key="my_io_manager")])
+@solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
 def solid1(_):
     """Do stuff"""
 

@@ -721,7 +721,7 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
             if dependency_structure.has_deps(handle):
                 for mode_def in mode_definitions:
                     for source_output_handle in dependency_structure.get_deps_list(handle):
-                        output_manager_key = source_output_handle.output_def.manager_key
+                        output_manager_key = source_output_handle.output_def.io_manager_key
                         output_manager_def = mode_def.resource_defs[output_manager_key]
                         # TODO: remove the IOutputManagerDefinition check when asset store
                         # API is removed.

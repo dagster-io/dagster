@@ -159,18 +159,18 @@ def resolve_memoized_execution_plan(execution_plan):
         for output_name in step.step_output_dict.keys():
             step_output_handle = StepOutputHandle(step.key, output_name)
 
-            manager_key = execution_plan.get_manager_key(step_output_handle)
+            io_manager_key = execution_plan.get_manager_key(step_output_handle)
             # TODO: https://github.com/dagster-io/dagster/issues/3302
             # The following code block is HIGHLY experimental. It initializes an IO manager
             # outside of the resource initialization context, and will ignore any exit hooks defined
             # for the IO manager, and will not work if the IO manager requires resource keys
             # for initialization.
             resource_config = (
-                environment_config.resources[manager_key]["config"]
-                if "config" in environment_config.resources[manager_key]
+                environment_config.resources[io_manager_key]["config"]
+                if "config" in environment_config.resources[io_manager_key]
                 else {}
             )
-            resource_def = mode_def.resource_defs[manager_key]
+            resource_def = mode_def.resource_defs[io_manager_key]
             resource_context = InitResourceContext(
                 resource_config,
                 resource_def,

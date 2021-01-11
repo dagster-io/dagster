@@ -107,7 +107,7 @@ def output_manager(
         def csv_materializer(_, _resource_config):
             write_csv("some/path")
 
-        @solid(output_defs=[OutputDefinition(manager_key="csv_materializer_key")])
+        @solid(output_defs=[OutputDefinition(io_manager_key="csv_materializer_key")])
         def my_solid(_):
             return do_stuff()
 

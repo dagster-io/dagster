@@ -268,19 +268,19 @@ def get_outputs_field(solid, handle, resource_defs):
 
 
 def get_output_manager_output_field(solid, output_def, resource_defs):
-    if output_def.manager_key not in resource_defs:
+    if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for solid "{solid.name}" requires manager_key '
-            f'"{output_def.manager_key}", but no resource has been provided. Please include a '
+            f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
+            f'"{output_def.io_manager_key}", but no resource has been provided. Please include a '
             f"resource definition for that key in the resource_defs of your ModeDefinition."
         )
-    if not isinstance(resource_defs[output_def.manager_key], IOutputManagerDefinition):
+    if not isinstance(resource_defs[output_def.io_manager_key], IOutputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for solid "{solid.name}" requires manager_key '
-            f'"{output_def.manager_key}", but the resource definition provided is not an '
+            f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
+            f'"{output_def.io_manager_key}", but the resource definition provided is not an '
             "IOutputManagerDefinition"
         )
-    output_manager_def = resource_defs[output_def.manager_key]
+    output_manager_def = resource_defs[output_def.io_manager_key]
     if (
         output_manager_def
         and isinstance(output_manager_def, IOutputManagerDefinition)

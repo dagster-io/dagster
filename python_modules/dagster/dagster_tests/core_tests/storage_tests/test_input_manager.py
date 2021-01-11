@@ -106,7 +106,7 @@ def test_only_used_for_root():
 
     @solid(
         output_defs=[
-            OutputDefinition(name="my_output", manager_key="my_io_manager", metadata=metadata)
+            OutputDefinition(name="my_output", io_manager_key="my_io_manager", metadata=metadata)
         ]
     )
     def solid1(_):

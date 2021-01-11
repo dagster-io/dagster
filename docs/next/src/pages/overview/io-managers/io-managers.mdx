@@ -46,7 +46,7 @@ file:/docs_snippets/docs_snippets/overview/io_managers/default_io_manager.py
 
 Not all the outputs in a pipeline should necessarily be stored the same way.  Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
 
-To select the IOManager for a particular output, you can set an `manager_key` on the <PyObject module="dagster" object="OutputDefinition" />, and then refer to that `manager_key` when setting IO managers in your <PyObject module="dagster" object="ModeDefinition" />.  In this example, the output of solid1 will go to `fs_io_manager` and the output of solid2 will go to `mem_io_manager`.
+To select the IOManager for a particular output, you can set an `io_manager_key` on the <PyObject module="dagster" object="OutputDefinition" />, and then refer to that `io_manager_key` when setting IO managers in your <PyObject module="dagster" object="ModeDefinition" />.  In this example, the output of solid1 will go to `fs_io_manager` and the output of solid2 will go to `mem_io_manager`.
 
 ```python literalinclude caption=io_manager_per_output.py
 file:/docs_snippets/docs_snippets/overview/io_managers/io_manager_per_output.py

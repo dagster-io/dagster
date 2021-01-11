@@ -330,8 +330,8 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
             resource_keys = resource_keys.union(
                 step_output.output_def.dagster_type.materializer.required_resource_keys()
             )
-        if step_output.output_def.manager_key:
-            resource_keys = resource_keys.union([step_output.output_def.manager_key])
+        if step_output.output_def.io_manager_key:
+            resource_keys = resource_keys.union([step_output.output_def.io_manager_key])
 
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():

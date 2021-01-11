@@ -44,7 +44,7 @@ def fs_io_manager(init_context):
 
     .. code-block:: python
 
-        @solid(output_defs=[OutputDefinition(manager_key="my_io_manager")])
+        @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
         def solid_a(context, df):
             return df
 
@@ -175,7 +175,7 @@ def custom_path_fs_io_manager(init_context):
         @solid(
             output_defs=[
                 OutputDefinition(
-                    manager_key="io_manager", metadata={"path": "path/to/sample_output"}
+                    io_manager_key="io_manager", metadata={"path": "path/to/sample_output"}
                 )
             ]
         )
