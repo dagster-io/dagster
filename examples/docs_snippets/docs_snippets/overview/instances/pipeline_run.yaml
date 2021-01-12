@@ -20,31 +20,6 @@ execution:
       max_concurrent: 4
 
 # ==================================================================================================
-# Intermediate Storage
-# ==================================================================================================
-# The intermediate storage key in pipeline run config is used to set where inputs/outputs are stored
-# during pipeline execution. Custom storage backends can be defined with the @intermediate_storage decorator.
-#
-# **NOTE**: setting pipeline run storage globally on the Dagster instance is not currently
-# supported!
-#
-# You will need to configure persistent intermediates storage for all of your pipeline runs that you
-# would like to run on multiprocess or distributed executors. This is because those executors use
-# intermediates storage to exchange input and output values -- you should ensure that whatever
-# storage you use is accessible by all processes/nodes involved in execution.
-#
-# Generally, filesystem storage is suitable for local in_process/multiprocess execution, and object/
-# distributed storage like S3, GCS, or NFS is suitable for distributed execution.
-#
-# Currently available storage types:
-# - in_memory (default)
-# - filesystem
-# - s3 (provided by dagster_aws.s3)
-# - gcs (provided by dagster_gcp)
-intermediate_storage:
-  filesystem:
-
-# ==================================================================================================
 # Loggers
 # ==================================================================================================
 # The loggers key in pipeline run config is used to set up customized loggers. Custom loggers can be

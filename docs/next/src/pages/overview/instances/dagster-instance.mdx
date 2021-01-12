@@ -39,15 +39,10 @@ $DAGSTER_HOME
 │   └── runs.db
 └── storage
     ├── 00636713-98a9-461c-a9ac-d049407059cd
-    │   ├── compute_logs
-    │   │   ├── my_solid.compute.complete
-    │   │   ├── my_solid.compute.err
-    │   │   ├── my_solid.compute.out
-    │   │   └── ...
-    │   └── intermediates
-    │       ├── my_solid.compute
-    │       │   ├── output_one
-    │       │   └── ...
+    │   └── compute_logs
+    │       ├── my_solid.compute.complete
+    │       ├── my_solid.compute.err
+    │       ├── my_solid.compute.out
     │       └── ...
     └── ...
 ```
@@ -55,8 +50,7 @@ $DAGSTER_HOME
 The `runs.db` and `{run_id}.db` files are SQLite database files recording information about pipeline
 runs and per-run event logs respectively. The `compute_logs` directories (one per
 pipeline run) contain the stdout and stderr logs from the execution of the compute functions of each
-solid in a pipeline. Finally, the `intermediates` directories contain serialized representations of the
-outputs of each solid, enabling incremental recomputation of pipeline subsets.
+solid in a pipeline.
 
 If `DAGSTER_HOME` is not set, the Dagster tools will use an ephemeral instance for execution. In
 this case, the run and event log storages will be in-memory rather than persisted to disk, and
@@ -67,9 +61,8 @@ object="execute_pipeline" displayText="execute_pipeline" /> directly.
 ## Instance Configuration YAML
 
 In persistent Dagster deployments, you will typically want to configure many of the components on
-the instance. For example, you may want to use a Postgres instance to store runs and the corresponding event logs,
-to store intermediates and other local artifacts on an NFS mount, and to stream compute logs to an
-S3 bucket.
+the instance. For example, you may want to use a Postgres instance to store runs and the corresponding
+event logs, and to stream compute logs to an S3 bucket.
 
 To do this, provide a `$DAGSTER_HOME/dagster.yaml` file. Dagit and all Dagster tools will look for
 this file on startup. Note that Dagster supports retrieving instance YAML values from environment

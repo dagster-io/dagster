@@ -227,16 +227,6 @@ cli_args = [
         None,
     ),
     (
-        "advanced/intermediates/",
-        "serialization_strategy.py",
-        "serialization_strategy_pipeline",
-        "inputs_env.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
         "advanced/scheduling/",
         "scheduler.py",
         "hello_cereal_pipeline",

@@ -2,7 +2,7 @@
 from dagster import ModeDefinition, PresetDefinition, pipeline
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster_aws.emr import emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
+from dagster_aws.s3 import s3_io_manager, s3_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import pyspark_resource
 
@@ -24,8 +24,8 @@ prod_emr_mode = ModeDefinition(
         "pyspark_step_launcher": emr_pyspark_step_launcher,
         "pyspark": pyspark_resource,
         "s3": s3_resource,
+        "io_manager": s3_io_manager,
     },
-    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -35,8 +35,8 @@ prod_databricks_mode = ModeDefinition(
         "pyspark_step_launcher": databricks_pyspark_step_launcher,
         "pyspark": pyspark_resource,
         "s3": s3_resource,
+        "io_manager": s3_io_manager,
     },
-    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -46,10 +46,7 @@ prod_databricks_mode = ModeDefinition(
         PresetDefinition.from_pkg_resources(
             name="local",
             mode="local",
-            pkg_resource_defs=[
-                ("dagster_examples.simple_pyspark.environments", "local.yaml"),
-                ("dagster_examples.simple_pyspark.environments", "filesystem_storage.yaml"),
-            ],
+            pkg_resource_defs=[("dagster_examples.simple_pyspark.environments", "local.yaml"),],
         ),
         PresetDefinition.from_pkg_resources(
             name="prod_emr",

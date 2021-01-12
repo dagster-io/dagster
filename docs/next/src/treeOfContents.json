@@ -54,10 +54,6 @@
         "path": "/tutorial/advanced_materializations"
       },
       {
-        "name": "Advanced: Intermediates",
-        "path": "/tutorial/advanced_intermediates"
-      },
-      {
         "name": "Advanced: Organizing Pipelines in Repositories & Workspaces",
         "path": "/tutorial/advanced_repositories"
       },

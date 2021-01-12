@@ -25,8 +25,3 @@ solids:
   make_weather_samples:
     inputs:
       file_path: s3://dagster-databricks-tests/sfo_q2_weather_fixed_header.txt
-intermediate_storage:
-  s3:
-    config:
-      s3_bucket: dagster-databricks-tests
-      s3_prefix: simple-pyspark

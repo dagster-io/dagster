@@ -1,4 +1,2 @@
-intermediate_storage:
-  filesystem:
 execution:
   celery:

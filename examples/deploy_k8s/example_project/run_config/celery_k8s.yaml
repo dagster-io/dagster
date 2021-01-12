@@ -7,8 +7,8 @@ execution:
         - "dagster-pipeline-env"
       repo_location_name: "example_repo"
 
-intermediate_storage:
-  s3:
+resources:
+  io_manager:
     config:
       s3_bucket: "YOUR_BUCKET"
       s3_prefix: "dagster-k8s-test"

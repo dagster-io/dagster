@@ -1,4 +1,4 @@
-import {DynamicMetaTags} from 'components/MetaTags';
+import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
@@ -48,10 +48,19 @@ startAfter:start_script
 endBefore:end_script
 ```
 
-If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using dagit or the cli. You will also need to configure the intermediate values between solids to be stored in a way that they can be accessed across processes.
+If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using dagit or the cli.
 
 ```python literalinclude caption=execute.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
 startAfter:start_multi_proc
 endBefore:end_multi_proc
+```
+
+You will also need to configure the intermediate values between solids to be stored in a way that they can be accessed across processes.
+See the [IO Managers Overview](/overview/io-managers/io-managers) for more details.
+
+```python literalinclude caption=pipeline_def.py
+file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
+startAfter:start_pipeline_def_multi_proc
+endBefore:end_pipeline_def_multi_proc
 ```

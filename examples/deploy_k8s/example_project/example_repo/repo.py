@@ -11,7 +11,7 @@ from dagster import (
     repository,
     solid,
 )
-from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
+from dagster_aws.s3 import s3_io_manager, s3_resource
 from dagster_celery_k8s import celery_k8s_job_executor
 
 
@@ -28,10 +28,11 @@ def count_letters(_context, word):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
-            resource_defs={"s3": s3_resource},
+            name="default",
+            resource_defs={"s3": s3_resource, "io_manager": s3_io_manager},
             executor_defs=default_executors + [celery_k8s_job_executor],
-        )
+        ),
+        ModeDefinition(name="test", executor_defs=default_executors + [celery_k8s_job_executor],),
     ],
     preset_defs=[
         PresetDefinition.from_files(

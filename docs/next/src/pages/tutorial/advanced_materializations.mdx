@@ -2,7 +2,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 import { CodeReferenceLink } from 'components/CodeReference';
 
 <DynamicMetaTags
-  title="Advanced: Intermediates | Dagster"
+  title="Advanced: Asset Materializations | Dagster"
   description="Dagster solids can describe their persistent artifacts to the system by yielding AssetMaterialization events."
 />
 
@@ -80,8 +80,7 @@ startAfter:start_output_materialization_marker_1
 endBefore:end_output_materialization_marker_1
 ```
 
-Now we can tell Dagster to materialize intermediate outputs of this type by
-providing config:
+Now we can tell Dagster to materialize outputs of this type by providing config:
 
 ```YAML literalinclude emphasize-lines=6-10 caption=output_materialization.yaml
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.yaml

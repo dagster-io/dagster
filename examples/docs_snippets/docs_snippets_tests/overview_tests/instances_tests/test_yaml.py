@@ -26,6 +26,5 @@ def test_yaml_schema():
 
     assert res == {
         "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
-        "intermediate_storage": {"filesystem": None},
         "loggers": {"console": {"config": {"log_level": "DEBUG"}}},
     }
