@@ -28,7 +28,6 @@ def get_all_static_functions(klass):
     return list(_yield_all())
 
 
-@pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
 def test_get_all_static_members():
     class Bar:
         class_var = "foo"
@@ -48,7 +47,6 @@ def test_get_all_static_members():
     assert set(get_all_static_functions(Bar)) == {Bar.static_one, Bar.static_two}
 
 
-@pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
 def test_all_variants_in_variants_function():
     """
     This grabs all pre-defined variants on GraphQLContextVariant (defined as static methods that

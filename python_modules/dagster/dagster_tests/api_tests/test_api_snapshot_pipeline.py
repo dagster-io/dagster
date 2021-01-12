@@ -49,7 +49,6 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc():
         )
 
 
-@pytest.mark.skipif(sys.version_info.major < 3, reason="Exception cause only vailable in py3+")
 def test_pipeline_with_invalid_definition_snapshot_api_grpc():
     with get_bar_grpc_repo_handle() as repo_handle:
         pipeline_handle = PipelineHandle("bar", repo_handle)
