@@ -20,7 +20,7 @@ import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
 import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
-import {ExecutionParams} from 'src/types/globalTypes';
+import {ExecutionParams, PipelineRunStatus} from 'src/types/globalTypes';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
@@ -272,10 +272,11 @@ interface RunTimeProps {
 }
 export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
   const [timezone] = React.useContext(TimezoneContext);
+  const {stats, status} = run;
 
-  if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
+  if (stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
-      <Popover content={<PythonErrorInfo error={run.stats} />}>
+      <Popover content={<PythonErrorInfo error={stats} />}>
         <div>
           <Icon icon="error" /> Failed to load times
         </div>
@@ -286,24 +287,28 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
   const useSameDayFormat =
     size === 'minimal' &&
     timezone !== 'UTC' &&
-    run.stats.startTime &&
-    timestampToString({unix: run.stats.startTime, format: 'MMM DD'}, timezone) ===
+    stats.startTime &&
+    timestampToString({unix: stats.startTime, format: 'MMM DD'}, timezone) ===
       timestampToString({ms: Date.now(), format: 'MMM DD'}, timezone);
 
-  return (
-    <div>
-      {run.stats.startTime ? (
-        <Timestamp unix={run.stats.startTime} format={useSameDayFormat ? 'h:mm A' : undefined} />
-      ) : run.status === 'FAILURE' ? (
-        <>Failed to start</>
-      ) : (
-        <>Starting...</>
-      )}
-    </div>
-  );
+  const content = () => {
+    if (stats.startTime) {
+      return <Timestamp unix={stats.startTime} format={useSameDayFormat ? 'h:mm A' : undefined} />;
+    }
+    switch (status) {
+      case PipelineRunStatus.FAILURE:
+        return 'Failed to start';
+      case PipelineRunStatus.QUEUED:
+        return 'Queued';
+      default:
+        return 'Starting…';
+    }
+  };
+
+  return <div>{content()}</div>;
 };
 
-export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({run}) => {
+export const RunElapsed: React.FC<RunTimeProps> = ({run}) => {
   if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>

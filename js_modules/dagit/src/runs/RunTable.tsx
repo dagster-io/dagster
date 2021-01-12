@@ -9,6 +9,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
+import {queuedStatuses} from 'src/runs/RunStatuses';
 import {RunTags} from 'src/runs/RunTags';
 import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
@@ -242,7 +243,7 @@ const RunRow: React.FC<{
       </td>
       <td style={{maxWidth: '150px', whiteSpace: 'nowrap'}}>
         <RunTime run={run} />
-        <RunElapsed run={run} />
+        {queuedStatuses.has(run.status) ? null : <RunElapsed run={run} />}
       </td>
       {additionalColumns}
       <td style={{maxWidth: '52px'}}>
