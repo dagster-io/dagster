@@ -16,7 +16,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.definitions.events import AssetStoreOperationType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.system import InputContext, OutputContext
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
@@ -133,16 +132,9 @@ def test_fs_io_manager_reexecution():
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events
-        get_asset_events = list(
-            filter(
-                lambda evt: evt.is_asset_store_operation
-                and AssetStoreOperationType(evt.event_specific_data.op)
-                == AssetStoreOperationType.GET_ASSET,
-                re_result.event_list,
-            )
-        )
-        assert len(get_asset_events) == 1
-        assert get_asset_events[0].event_specific_data.step_key == "solid_a"
+        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, re_result.event_list))
+        assert len(loaded_input_events) == 1
+        assert loaded_input_events[0].event_specific_data.upstream_step_key == "solid_a"
 
 
 def test_can_reexecute():

@@ -113,10 +113,15 @@ export class Structured extends React.Component<StructuredProps, StructuredState
             }
           }
         }
-        ... on AssetStoreOperationEvent {
-          assetStoreResult {
-            op
-          }
+        ... on HandledOutputEvent {
+          outputName
+          managerKey
+        }
+        ... on LoadedInputEvent {
+          inputName
+          managerKey
+          upstreamOutputName
+          upstreamStepKey
         }
         ... on EngineEvent {
           metadataEntries {

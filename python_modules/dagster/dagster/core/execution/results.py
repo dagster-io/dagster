@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid, SolidHandle
-from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
@@ -545,7 +544,6 @@ class SolidExecutionResult:
         step_output_handle = step_output_data.step_output_handle
         manager = context.get_output_manager(step_output_handle)
 
-        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
         res = manager.load_input(
             context.for_input_manager(
                 name=None,
@@ -555,10 +553,7 @@ class SolidExecutionResult:
                 source_handle=step_output_handle,
             )
         )
-        if isinstance(res, ObjectStoreOperation):
-            return res.obj
-        else:
-            return res
+        return res
 
     @property
     def failure_data(self):

@@ -36,7 +36,7 @@ def test_execute_on_celery_default(dagster_celery_worker):
         assert len(result.step_event_list) == 4
         assert len(events_of_type(result, "STEP_START")) == 1
         assert len(events_of_type(result, "STEP_OUTPUT")) == 1
-        assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 1
+        assert len(events_of_type(result, "HANDLED_OUTPUT")) == 1
         assert len(events_of_type(result, "STEP_SUCCESS")) == 1
 
 
@@ -48,7 +48,8 @@ def test_execute_serial_on_celery(dagster_celery_worker):
         assert len(events_of_type(result, "STEP_START")) == 2
         assert len(events_of_type(result, "STEP_INPUT")) == 1
         assert len(events_of_type(result, "STEP_OUTPUT")) == 2
-        assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 3
+        assert len(events_of_type(result, "HANDLED_OUTPUT")) == 2
+        assert len(events_of_type(result, "LOADED_INPUT")) == 1
         assert len(events_of_type(result, "STEP_SUCCESS")) == 2
 
 
@@ -172,7 +173,7 @@ def test_execute_eagerly_on_celery():
             assert len(result.step_event_list) == 4
             assert len(events_of_type(result, "STEP_START")) == 1
             assert len(events_of_type(result, "STEP_OUTPUT")) == 1
-            assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 1
+            assert len(events_of_type(result, "HANDLED_OUTPUT")) == 1
             assert len(events_of_type(result, "STEP_SUCCESS")) == 1
 
             events = instance.all_logs(result.run_id)
@@ -180,7 +181,7 @@ def test_execute_eagerly_on_celery():
             end_markers = {}
             for event in events:
                 dagster_event = event.dagster_event
-                if dagster_event.is_engine_event:
+                if dagster_event and dagster_event.is_engine_event:
                     if dagster_event.engine_event_data.marker_start:
                         key = "{step}.{marker}".format(
                             step=event.step_key, marker=dagster_event.engine_event_data.marker_start
@@ -207,7 +208,8 @@ def test_execute_eagerly_serial_on_celery():
         assert len(events_of_type(result, "STEP_START")) == 2
         assert len(events_of_type(result, "STEP_INPUT")) == 1
         assert len(events_of_type(result, "STEP_OUTPUT")) == 2
-        assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 3
+        assert len(events_of_type(result, "HANDLED_OUTPUT")) == 2
+        assert len(events_of_type(result, "LOADED_INPUT")) == 1
         assert len(events_of_type(result, "STEP_SUCCESS")) == 2
 
 

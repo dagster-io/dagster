@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, ObjectStoreOperationType, AssetStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsScrollingTableMessageFragment
@@ -534,18 +534,26 @@ export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent {
   operationResult: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export interface LogsScrollingTableMessageFragment_AssetStoreOperationEvent_assetStoreResult {
-  __typename: "AssetStoreOperationResult";
-  op: AssetStoreOperationType;
-}
-
-export interface LogsScrollingTableMessageFragment_AssetStoreOperationEvent {
-  __typename: "AssetStoreOperationEvent";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent {
+  __typename: "HandledOutputEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  assetStoreResult: LogsScrollingTableMessageFragment_AssetStoreOperationEvent_assetStoreResult;
+  outputName: string;
+  managerKey: string;
+}
+
+export interface LogsScrollingTableMessageFragment_LoadedInputEvent {
+  __typename: "LoadedInputEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  inputName: string;
+  managerKey: string;
+  upstreamOutputName: string | null;
+  upstreamStepKey: string | null;
 }
 
 export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
@@ -652,4 +660,4 @@ export interface LogsScrollingTableMessageFragment_HookErroredEvent {
   error: LogsScrollingTableMessageFragment_HookErroredEvent_error;
 }
 
-export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_PipelineFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_AssetStoreOperationEvent | LogsScrollingTableMessageFragment_EngineEvent | LogsScrollingTableMessageFragment_HookErroredEvent;
+export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_PipelineFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_HandledOutputEvent | LogsScrollingTableMessageFragment_LoadedInputEvent | LogsScrollingTableMessageFragment_EngineEvent | LogsScrollingTableMessageFragment_HookErroredEvent;

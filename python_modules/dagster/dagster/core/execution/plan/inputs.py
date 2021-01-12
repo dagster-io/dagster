@@ -4,11 +4,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import Failure, RetryRequested
-from dagster.core.definitions.events import (
-    AssetStoreOperation,
-    AssetStoreOperationType,
-    ObjectStoreOperation,
-)
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
@@ -17,6 +12,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.input_manager import InputManager
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils import ensure_gen
 
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
@@ -67,10 +63,6 @@ def join_and_hash(*args):
         return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
-class FanInStepInputValuesWrapper(list):
-    """Wrapper to distinguish fan-in input loads from values loads of a regular list"""
-
-
 class StepInputSource(ABC):
     """How to load the data for a step input"""
 
@@ -99,6 +91,8 @@ class FromRootInputManager(
     namedtuple("_FromRootInputManager", "input_def config_data"), StepInputSource,
 ):
     def load_input_object(self, step_context):
+        from dagster.core.events import DagsterEvent
+
         loader = getattr(step_context.resources, self.input_def.root_manager_key)
         load_input_context = step_context.for_input_manager(
             self.input_def.name,
@@ -110,7 +104,12 @@ class FromRootInputManager(
             ].get("config", {}),
             resources=build_resources_for_manager(self.input_def.root_manager_key, step_context),
         )
-        return _load_input_with_input_manager(loader, load_input_context)
+        yield _load_input_with_input_manager(loader, load_input_context)
+        yield DagsterEvent.loaded_input(
+            step_context,
+            input_name=self.input_def.name,
+            manager_key=self.input_def.root_manager_key,
+        )
 
     def compute_version(self, step_versions):
         # TODO: support versioning for root loaders
@@ -167,33 +166,27 @@ class FromStepOutput(
         )
 
     def load_input_object(self, step_context):
-        source_handle = self.step_output_handle
-        io_manager = step_context.get_output_manager(source_handle)
+        from dagster.core.events import DagsterEvent
 
+        source_handle = self.step_output_handle
+        manager_key = step_context.execution_plan.get_manager_key(source_handle)
+        input_manager = step_context.get_output_manager(source_handle)
         check.invariant(
-            isinstance(io_manager, InputManager),
+            isinstance(input_manager, InputManager),
             f'Input "{self.input_def.name}" for step "{step_context.step.key}" is depending on '
             f'the manager of upstream output "{source_handle.output_name}" from step '
             f'"{source_handle.step_key}" to load it, but that manager is not an InputManager. '
             f"Please ensure that the resource returned for resource key "
-            f'"{step_context.execution_plan.get_manager_key(source_handle)}" is an InputManager.',
+            f'"{manager_key}" is an InputManager.',
         )
-
-        obj = _load_input_with_input_manager(io_manager, self.get_load_context(step_context))
-        output_def = step_context.execution_plan.get_step_output(source_handle).output_def
-
-        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
-        if isinstance(obj, ObjectStoreOperation):
-            return obj
-        else:
-            from dagster.core.storage.asset_store import AssetStoreHandle
-
-            return AssetStoreOperation(
-                AssetStoreOperationType.GET_ASSET,
-                source_handle,
-                AssetStoreHandle(output_def.manager_key, output_def.metadata),
-                obj=obj,
-            )
+        yield _load_input_with_input_manager(input_manager, self.get_load_context(step_context))
+        yield DagsterEvent.loaded_input(
+            step_context,
+            input_name=self.input_def.name,
+            manager_key=manager_key,
+            upstream_output_name=source_handle.output_name,
+            upstream_step_key=source_handle.step_key,
+        )
 
     def compute_version(self, step_versions):
         if (
@@ -305,6 +298,8 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
         return set(self.step_output_handle_dependencies).difference(step_output_handles_with_output)
 
     def load_input_object(self, step_context):
+        from dagster.core.events import DagsterEvent
+
         values = []
 
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
@@ -316,12 +311,14 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
                 and inner_source.step_output_handle in source_handles_to_skip
             ):
                 continue
-            values.append(inner_source.load_input_object(step_context))
 
-        # When we're using an object store-backed intermediate store, we wrap the
-        # representing the fan-in values in a FanInStepInputValuesWrapper
-        # so we can yield the relevant object store events and unpack the values in the caller
-        return FanInStepInputValuesWrapper(values)
+            for event_or_input_value in ensure_gen(inner_source.load_input_object(step_context)):
+                if isinstance(event_or_input_value, DagsterEvent):
+                    yield event_or_input_value
+                else:
+                    values.append(event_or_input_value)
+
+        yield values
 
     def required_resource_keys(self):
         resource_keys = set()

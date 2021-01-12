@@ -11,9 +11,8 @@ from dagster.core.definitions import (
     ExpectationResult,
     Materialization,
     SolidHandle,
-    TypeCheck,
 )
-from dagster.core.definitions.events import AssetStoreOperationType, ObjectStoreOperationType
+from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.context.system import (
     HookContext,
     SystemExecutionContext,
@@ -58,6 +57,8 @@ class DagsterEventType(Enum):
 
     OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
     ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
+    LOADED_INPUT = "LOADED_INPUT"
+    HANDLED_OUTPUT = "HANDLED_OUTPUT"
 
     ENGINE_EVENT = "ENGINE_EVENT"
 
@@ -76,7 +77,8 @@ STEP_EVENTS = {
     DagsterEventType.STEP_MATERIALIZATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.OBJECT_STORE_OPERATION,
-    DagsterEventType.ASSET_STORE_OPERATION,
+    DagsterEventType.HANDLED_OUTPUT,
+    DagsterEventType.LOADED_INPUT,
     DagsterEventType.STEP_RESTARTED,
     DagsterEventType.STEP_UP_FOR_RETRY,
 }
@@ -391,8 +393,12 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
     @property
-    def is_asset_store_operation(self):
-        return self.event_type == DagsterEventType.ASSET_STORE_OPERATION
+    def is_handled_output(self):
+        return self.event_type == DagsterEventType.HANDLED_OUTPUT
+
+    @property
+    def is_loaded_input(self):
+        return self.event_type == DagsterEventType.LOADED_INPUT
 
     @property
     def is_step_materialization(self):
@@ -859,38 +865,41 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def asset_store_operation(step_context, asset_store_operation):
-        from dagster.core.definitions.events import AssetStoreOperation
+    def handled_output(step_context, output_name, manager_key):
+        check.str_param(output_name, "output_name")
+        check.str_param(manager_key, "manager_key")
+        message = f'Handled output "{output_name}" using output manager ' f'"{manager_key}"'
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.HANDLED_OUTPUT,
+            step_context=step_context,
+            event_specific_data=HandledOutputData(
+                output_name=output_name, manager_key=manager_key,
+            ),
+            message=message,
+        )
 
-        check.inst_param(asset_store_operation, "asset_store_operation", AssetStoreOperation)
+    @staticmethod
+    def loaded_input(
+        step_context, input_name, manager_key, upstream_output_name=None, upstream_step_key=None
+    ):
 
-        if AssetStoreOperationType(asset_store_operation.op) == AssetStoreOperationType.SET_ASSET:
-            message = (
-                'Stored output "{output_name}" using asset store "{asset_store_key}".'
-            ).format(
-                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
-                output_name=asset_store_operation.step_output_handle.output_name,
-            )
-        elif AssetStoreOperationType(asset_store_operation.op) == AssetStoreOperationType.GET_ASSET:
-            message = (
-                'Retrieved output "{output_name}" from step "{step_key}" '
-                'using asset store "{asset_store_key}".'
-            ).format(
-                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
-                output_name=asset_store_operation.step_output_handle.output_name,
-                step_key=asset_store_operation.step_output_handle.step_key,
-            )
-        else:
-            message = ""
+        check.str_param(input_name, "input_name")
+        check.str_param(manager_key, "manager_key")
+        check.opt_str_param(upstream_output_name, "upstream_output_name")
+        check.opt_str_param(upstream_step_key, "upstream_step_key")
+
+        message = f'Loaded input "{input_name}" using input manager ' f'"{manager_key}"'
+        if upstream_output_name:
+            message += f', from output "{upstream_output_name}" of step ' f'"{upstream_step_key}"'
 
         return DagsterEvent.from_step(
-            event_type=DagsterEventType.ASSET_STORE_OPERATION,
+            event_type=DagsterEventType.LOADED_INPUT,
             step_context=step_context,
-            event_specific_data=AssetStoreOperationData(
-                op=asset_store_operation.op,
-                step_key=asset_store_operation.step_output_handle.step_key,
-                output_name=asset_store_operation.step_output_handle.output_name,
-                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
+            event_specific_data=LoadedInputData(
+                input_name=input_name,
+                manager_key=manager_key,
+                upstream_output_name=upstream_output_name,
+                upstream_step_key=upstream_step_key,
             ),
             message=message,
         )
@@ -990,13 +999,6 @@ class StepMaterializationData(namedtuple("_StepMaterializationData", "materializ
 
 @whitelist_for_serdes
 class StepExpectationResultData(namedtuple("_StepExpectationResultData", "expectation_result")):
-    pass
-
-
-@whitelist_for_serdes
-class AssetStoreOperationData(
-    namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
-):
     pass
 
 
@@ -1106,6 +1108,30 @@ class HookErroredData(namedtuple("_HookErroredData", "error")):
         )
 
 
+@whitelist_for_serdes
+class HandledOutputData(namedtuple("_HandledOutputData", "output_name manager_key")):
+    def __new__(cls, output_name, manager_key):
+        return super(HandledOutputData, cls).__new__(
+            cls,
+            output_name=check.str_param(output_name, "output_name"),
+            manager_key=check.str_param(manager_key, "manager_key"),
+        )
+
+
+@whitelist_for_serdes
+class LoadedInputData(
+    namedtuple("_LoadedInputData", "input_name manager_key upstream_output_name upstream_step_key")
+):
+    def __new__(cls, input_name, manager_key, upstream_output_name=None, upstream_step_key=None):
+        return super(LoadedInputData, cls).__new__(
+            cls,
+            input_name=check.str_param(input_name, "input_name"),
+            manager_key=check.str_param(manager_key, "manager_key"),
+            upstream_output_name=check.opt_str_param(upstream_output_name, "upstream_output_name"),
+            upstream_step_key=check.opt_str_param(upstream_step_key, "upstream_step_key"),
+        )
+
+
 ###################################################################################################
 # THE GRAVEYARD
 #
@@ -1122,6 +1148,13 @@ class HookErroredData(namedtuple("_HookErroredData", "error")):
 ###################################################################################################
 
 
+@whitelist_for_serdes
+class AssetStoreOperationData(
+    namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
+):
+    pass
+
+
 def _handle_back_compat(event_type_value, event_specific_data):
     if event_type_value == "PIPELINE_PROCESS_START":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
@@ -1129,6 +1162,21 @@ def _handle_back_compat(event_type_value, event_specific_data):
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
     elif event_type_value == "PIPELINE_PROCESS_EXITED":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+    elif event_type_value == "ASSET_STORE_OPERATION":
+        if event_specific_data.op == "GET_ASSET":
+            return (
+                DagsterEventType.LOADED_INPUT.value,
+                LoadedInputData(
+                    event_specific_data.output_name, event_specific_data.asset_store_key
+                ),
+            )
+        if event_specific_data.op == "SET_ASSET":
+            return (
+                DagsterEventType.HANDLED_OUTPUT.value,
+                HandledOutputData(
+                    event_specific_data.output_name, event_specific_data.asset_store_key
+                ),
+            )
     else:
         return event_type_value, event_specific_data
 
@@ -1138,5 +1186,6 @@ register_serdes_tuple_fallbacks(
         "PipelineProcessStartedData": None,
         "PipelineProcessExitedData": None,
         "PipelineProcessStartData": None,
+        "AssetStoreOperationData": AssetStoreOperationData,
     }
 )

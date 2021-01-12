@@ -216,7 +216,8 @@ def poll_for_event(instance, run_id, event_type, message, timeout=30):
         matching_events = [
             log_record.dagster_event
             for log_record in logs
-            if log_record.dagster_event.event_type_value == event_type
+            if log_record.is_dagster_event
+            and log_record.dagster_event.event_type_value == event_type
         ]
         if matching_events:
             if message is None:

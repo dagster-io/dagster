@@ -156,7 +156,9 @@ def _is_multiprocess(run_config):
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):
-    types_and_messages = [(e.dagster_event.event_type_value, e.message) for e in event_log]
+    types_and_messages = [
+        (e.dagster_event.event_type_value, e.message) for e in event_log if e.is_dagster_event
+    ]
     for expected_event_type, expected_message_fragment in expected_type_and_message:
         assert any(
             event_type == expected_event_type and expected_message_fragment in message

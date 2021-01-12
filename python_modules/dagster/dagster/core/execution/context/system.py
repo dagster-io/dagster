@@ -197,6 +197,15 @@ class SystemExecutionContext:
     def for_type(self, dagster_type):
         return TypeCheckContext(self._execution_context_data, self.log, dagster_type)
 
+    def using_io_manager(self, step_output_handle):
+        # pylint: disable=comparison-with-callable
+        from dagster.core.storage.mem_io_manager import mem_io_manager
+
+        output_manager_key = self.execution_plan.get_step_output(
+            step_output_handle
+        ).output_def.manager_key
+        return self.mode_def.resource_defs[output_manager_key] != mem_io_manager
+
 
 class SystemPipelineExecutionContext(SystemExecutionContext):
     __slots__ = ["_executor"]
@@ -348,15 +357,6 @@ class SystemStepExecutionContext(SystemExecutionContext):
 
             output_manager = IntermediateStorageAdapter(self.intermediate_storage)
         return check.inst(output_manager, OutputManager)
-
-    def using_io_manager(self, step_output_handle):
-        # pylint: disable=comparison-with-callable
-        from dagster.core.storage.mem_io_manager import mem_io_manager
-
-        output_manager_key = self.execution_plan.get_step_output(
-            step_output_handle
-        ).output_def.manager_key
-        return self.mode_def.resource_defs[output_manager_key] != mem_io_manager
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):

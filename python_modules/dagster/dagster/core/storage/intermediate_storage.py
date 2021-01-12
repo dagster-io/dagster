@@ -59,11 +59,26 @@ class IntermediateStorageAdapter(IOManager):
             value=obj,
             version=context.version,
         )
-        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
-        # we set loose constraint on the return type of a custom `set_intermediate_object`, so
-        # in the deprecation cycle, we will filter out values other than structured `ObjectStoreOperation`
+
+        # Stopgap https://github.com/dagster-io/dagster/issues/3368
         if isinstance(res, ObjectStoreOperation):
-            return res
+            context.log.debug(
+                (
+                    'Stored output "{output_name}" in {object_store_name}object store{serialization_strategy_modifier} '
+                    "at {address}"
+                ).format(
+                    output_name=context.name,
+                    object_store_name=res.object_store_name,
+                    serialization_strategy_modifier=(
+                        " using {serialization_strategy_name}".format(
+                            serialization_strategy_name=res.serialization_strategy_name
+                        )
+                        if res.serialization_strategy_name
+                        else ""
+                    ),
+                    address=res.key,
+                )
+            )
 
     def load_input(self, context):
         step_context = context.step_context
@@ -81,11 +96,34 @@ class IntermediateStorageAdapter(IOManager):
                 step_key=source_handle.step_key,
                 output_name=source_handle.output_name,
             )
-        return self.intermediate_storage.get_intermediate(
+        res = self.intermediate_storage.get_intermediate(
             context=step_context,
             dagster_type=context.dagster_type,
             step_output_handle=source_handle,
         )
+
+        # Stopgap https://github.com/dagster-io/dagster/issues/3368
+        if isinstance(res, ObjectStoreOperation):
+            context.log.debug(
+                (
+                    "Loaded input {input_name} in {object_store_name}object store{serialization_strategy_modifier} "
+                    "from {address}"
+                ).format(
+                    input_name=context.name,
+                    object_store_name=res.object_store_name,
+                    serialization_strategy_modifier=(
+                        " using {serialization_strategy_name}".format(
+                            serialization_strategy_name=res.serialization_strategy_name
+                        )
+                        if res.serialization_strategy_name
+                        else ""
+                    ),
+                    address=res.key,
+                )
+            )
+            return res.obj
+        else:
+            return res
 
 
 class ObjectStoreIntermediateStorage(IntermediateStorage):

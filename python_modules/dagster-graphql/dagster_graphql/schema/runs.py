@@ -619,22 +619,6 @@ class DauphinObjectStoreOperationResult(dauphin.ObjectType):
         return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
-class DauphinAssetStoreOperationType(dauphin.Enum):
-    class Meta:
-        name = "AssetStoreOperationType"
-
-    SET_ASSET = "SET_ASSET"
-    GET_ASSET = "GET_ASSET"
-
-
-class DauphinAssetStoreOperationResult(dauphin.ObjectType):
-    class Meta:
-        name = "AssetStoreOperationResult"
-        interfaces = (DauphinDisplayableEvent,)
-
-    op = dauphin.NonNull("AssetStoreOperationType")
-
-
 class DauphinMaterialization(dauphin.ObjectType):
     class Meta:
         name = "Materialization"
@@ -753,20 +737,32 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
         return stats[0]
 
 
+class DauphinHandledOutputEvent(dauphin.ObjectType):
+    class Meta:
+        name = "HandledOutputEvent"
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+    output_name = dauphin.NonNull(dauphin.String)
+    manager_key = dauphin.NonNull(dauphin.String)
+
+
+class DauphinLoadedInputEvent(dauphin.ObjectType):
+    class Meta:
+        name = "LoadedInputEvent"
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+    input_name = dauphin.NonNull(dauphin.String)
+    manager_key = dauphin.NonNull(dauphin.String)
+    upstream_output_name = dauphin.Field(dauphin.String)
+    upstream_step_key = dauphin.Field(dauphin.String)
+
+
 class DauphinObjectStoreOperationEvent(dauphin.ObjectType):
     class Meta:
         name = "ObjectStoreOperationEvent"
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     operation_result = dauphin.NonNull(DauphinObjectStoreOperationResult)
-
-
-class DauphinAssetStoreOperationEvent(dauphin.ObjectType):
-    class Meta:
-        name = "AssetStoreOperationEvent"
-        interfaces = (DauphinMessageEvent, DauphinStepEvent)
-
-    asset_store_result = dauphin.NonNull(DauphinAssetStoreOperationResult)
 
 
 class DauphinEngineEvent(dauphin.ObjectType):
@@ -810,8 +806,9 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineCancelingEvent,
             DauphinPipelineCanceledEvent,
             DauphinPipelineSuccessEvent,
+            DauphinHandledOutputEvent,
+            DauphinLoadedInputEvent,
             DauphinObjectStoreOperationEvent,
-            DauphinAssetStoreOperationEvent,
             DauphinStepExpectationResultEvent,
             DauphinStepMaterializationEvent,
             DauphinEngineEvent,
@@ -914,14 +911,23 @@ def from_dagster_event_record(event_record, pipeline_name):
             error=DauphinPythonError(dagster_event.pipeline_init_failure_data.error),
             **basic_params,
         )
+    elif dagster_event.event_type == DagsterEventType.HANDLED_OUTPUT:
+        return DauphinHandledOutputEvent(
+            output_name=dagster_event.event_specific_data.output_name,
+            manager_key=dagster_event.event_specific_data.manager_key,
+            **basic_params,
+        )
+    elif dagster_event.event_type == DagsterEventType.LOADED_INPUT:
+        return DauphinLoadedInputEvent(
+            input_name=dagster_event.event_specific_data.input_name,
+            manager_key=dagster_event.event_specific_data.manager_key,
+            upstream_output_name=dagster_event.event_specific_data.upstream_output_name,
+            upstream_step_key=dagster_event.event_specific_data.upstream_step_key,
+            **basic_params,
+        )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
         operation_result = dagster_event.event_specific_data
         return DauphinObjectStoreOperationEvent(operation_result=operation_result, **basic_params)
-    elif dagster_event.event_type == DagsterEventType.ASSET_STORE_OPERATION:
-        asset_store_result = dagster_event.event_specific_data
-        return DauphinAssetStoreOperationEvent(
-            asset_store_result=asset_store_result, **basic_params
-        )
     elif dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
         return DauphinEngineEvent(
             metadataEntries=_to_dauphin_metadata_entries(
