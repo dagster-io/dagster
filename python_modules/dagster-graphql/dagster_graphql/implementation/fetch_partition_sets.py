@@ -190,7 +190,7 @@ def get_partition_set_partition_statuses(graphene_info, repository_handle, parti
     return graphene_info.schema.type_named("PartitionStatuses")(
         results=[
             graphene_info.schema.type_named("PartitionStatus")(
-                id=partition_name,
+                id=f"{partition_set_name}:{partition_name}",
                 partitionName=partition_name,
                 runStatus=runs_by_partition[partition_name].status
                 if runs_by_partition.get(partition_name)
