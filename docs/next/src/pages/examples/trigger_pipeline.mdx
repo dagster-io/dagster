@@ -1,0 +1,80 @@
+import { ExampleReferenceLink } from 'components/ExampleReference';
+
+# Execute Pipeline by GraphQL
+
+<ExampleReferenceLink filePath="examples/trigger_pipeline" />
+
+This demonstrates how to trigger a Dagster pipeline externally by a GraphQL client.
+
+## Create a GraphQL client
+
+First of all, run `pip install --pre gql[requests]` to install GQL 3 (the GraphQL Client for Python 3.6+)
+with the `requests` dependency. After installation, you can start using GQL by importing from the top-level `gql` package.
+For more information about GQL 3 installation, read the GQL 3 [documentation](https://gql.readthedocs.io/en/v3.0.0a5/intro.html).
+
+This example uses the `RequestsHTTPTransport` to communicate with the backend.
+By default, the destination url is `http://localhost:3000/graphql`.
+You can create a GraphQL client with the selected transport and the url endpoint like below:
+
+```python literalinclude caption=trigger.py
+file:/trigger_pipeline/trigger_pipeline/trigger.py
+startAfter:start_trigger_marker_0
+endBefore:end_trigger_marker_0
+```
+
+## Trigger a pipeline over GraphQL
+
+To query GraphQL, you can use the `launchPipelineExecution` mutation.
+
+```python literalinclude caption=trigger.py
+file:/trigger_pipeline/trigger_pipeline/trigger.py
+startAfter:start_trigger_marker_1
+endBefore:end_trigger_marker_1
+```
+
+Next, you provide the file or the module where your repository lives for the `repositoryLocationName`.
+Here, the `repositoryLocationName` is `repo.py`. You also pass the name of your repository to `repositoryName`.
+In this example, it is called `my_repo`. If you have never run a collectioin of pipelines using the concept of a repository before,
+check our documentation for [Repositories](https://docs.dagster.io/overview/repositories-workspaces/repositories).
+
+Then, you supply the inputs to the `pipelineName`, `runConfigData`, and `mode` like below. The `runConfigData`
+is the same as the `run_config` parameter to `execute_pipeline`.
+
+```python literalinclude caption=trigger.py
+file:/trigger_pipeline/trigger_pipeline/trigger.py
+startAfter:start_trigger_marker_2
+endBefore:end_trigger_marker_2
+```
+
+Lastly, execute the query on the client to get the result.
+
+```python literalinclude caption=trigger.py
+file:/trigger_pipeline/trigger_pipeline/trigger.py
+startAfter:start_trigger_marker_3
+endBefore:end_trigger_marker_3
+```
+
+Before you run this example script, remember to launch the Dagit web server first.
+You can either load the repository from a file or load from a module.
+If you load from a Python file, run `dagit -f repo.py`.
+If you load from a module, run `dagit -m repo`. Don't forget to change the input for
+the first argument `location` as well. In this example, `repo.py` is changed to `repo`.
+Then, open another tab in your terminal, run `python trigger.py` to execute the script.
+
+```python literalinclude caption=trigger.py
+file:/trigger_pipeline/trigger_pipeline/trigger.py
+startAfter:start_trigger_marker_4
+endBefore:end_trigger_marker_4
+```
+
+## Open in a playground
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#EXAMPLE=trigger_pipeline/https://github.com/dagster-io/dagster)
+
+## Download
+
+```
+curl https://codeload.github.com/dagster-io/dagster/tar.gz/master | tar -xz --strip=2 dagster-master/examples/trigger_pipeline
+cd trigger_pipeline
+pip install -e .
+```

@@ -45,6 +45,11 @@
     "description": "Run a PySpark solids in EMR"
   },
   {
+    "name": "trigger_pipeline",
+    "title": "Execute Pipeline GraphQL",
+    "description": "Trigger a Dagster pipeline externally by a GraphQL client."
+  },
+  {
     "name": "fan_in_pipeline",
     "title": "Fan-In Dependency",
     "description": "Create a pipeline with a fan-in dependency"
