@@ -28,17 +28,17 @@ Input and Output Contexts
     :members:
 
 
-Input Managers
+Root Input Managers
 --------------
 
-Input managers are user-provided objects that specify how to load step inputs.
+Root input managers are user-provided objects that specify how to load step inputs.
 
-.. autodecorator:: input_manager
+.. autodecorator:: root_input_manager
 
-.. autoclass:: InputManager
+.. autoclass:: RootInputManager
     :members:
 
-.. autoclass:: InputManagerDefinition
+.. autoclass:: RootInputManagerDefinition
     :members:
 
 

@@ -57,7 +57,7 @@ class InputDefinition:
             :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        root_manager_key (Optional[str]): The resource key for the InputManager used for loading
+        root_manager_key (Optional[str]): The resource key for the RootInputManager used for loading
             this input when it is not hooked up to an upstream output.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
     """

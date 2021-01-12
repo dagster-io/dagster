@@ -16,11 +16,11 @@ class IInputManagerDefinition:
         input manager"""
 
 
-class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
-    """Definition of an input manager resource.
+class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
+    """Definition of a root input manager resource.
 
-    An InputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
-    :py:class:`InputManager`.  InputManagers are used to load the inputs to solids.
+    An RootInputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
+    :py:class:`RootInputManager`.  RootInputManagers are used to load the inputs to solids.
     """
 
     def __init__(
@@ -35,7 +35,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
-        super(InputManagerDefinition, self).__init__(
+        super(RootInputManagerDefinition, self).__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
@@ -49,7 +49,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
 
     def copy_for_configured(self, name, description, config_schema, _):
         check.invariant(name is None, "ResourceDefintions do not have names")
-        return InputManagerDefinition(
+        return RootInputManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
@@ -58,10 +58,10 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         )
 
 
-class InputManager(ABC):
-    """InputManagers are used to load the inputs to solids.
+class RootInputManager(ABC):
+    """RootInputManagers are used to load the inputs to solids at the root of a pipeline.
 
-    The easiest way to define an InputManager is with the :py:function:`input_manager` decorator.
+    The easiest way to define an RootInputManager is with the :py:function:`root_input_manager` decorator.
     """
 
     @abstractmethod
@@ -76,19 +76,19 @@ class InputManager(ABC):
         """
 
 
-def input_manager(
+def root_input_manager(
     config_schema=None,
     description=None,
     input_config_schema=None,
     required_resource_keys=None,
     version=None,
 ):
-    """Define an input manager.
+    """Define a root input manager.
 
     The decorated function should accept a :py:class:`InputContext` and resource config, and return
     a loaded object that will be passed into one of the inputs of a solid.
 
-    The decorator produces an :py:class:`InputManagerDefinition`.
+    The decorator produces an :py:class:`RootInputManagerDefinition`.
 
     Args:
         config_schema (Optional[ConfigSchema]): The schema for the resource-level config.
@@ -103,11 +103,11 @@ def input_manager(
 
     .. code-block:: python
 
-        @input_manager
+        @root_input_manager
         def csv_loader(_):
             return read_csv("some/path")
 
-        @solid(input_defs=[InputDefinition("input1", manager_key="csv_loader_key")])
+        @solid(input_defs=[InputDefinition("input1", root_manager_key="csv_loader_key")])
         def my_solid(_, input1):
             do_stuff(input1)
 
@@ -115,11 +115,11 @@ def input_manager(
         def my_pipeline():
             my_solid()
 
-        @input_manager(config_schema={"base_dir": str})
+        @root_input_manager(config_schema={"base_dir": str})
         def csv_loader(context):
             return read_csv(context.resource_config["base_dir"] + "/some/path")
 
-        @input_manager(input_config_schema={"path": str})
+        @root_input_manager(input_config_schema={"path": str})
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
@@ -139,7 +139,7 @@ def input_manager(
     return _wrap
 
 
-class InputManagerWrapper(InputManager):
+class RootInputManagerWrapper(RootInputManager):
     def __init__(self, load_fn):
         self._load_fn = load_fn
 
@@ -166,9 +166,9 @@ class _InputManagerDecoratorCallable:
         check.callable_param(load_fn, "load_fn")
 
         def _resource_fn(_):
-            return InputManagerWrapper(load_fn)
+            return RootInputManagerWrapper(load_fn)
 
-        input_manager_def = InputManagerDefinition(
+        root_input_manager_def = RootInputManagerDefinition(
             resource_fn=_resource_fn,
             config_schema=self.config_schema,
             description=self.description,
@@ -177,6 +177,6 @@ class _InputManagerDecoratorCallable:
             required_resource_keys=self.required_resource_keys,
         )
 
-        update_wrapper(input_manager_def, wrapped=load_fn)
+        update_wrapper(root_input_manager_def, wrapped=load_fn)
 
-        return input_manager_def
+        return root_input_manager_def

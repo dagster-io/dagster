@@ -3,8 +3,8 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     execute_pipeline,
-    input_manager,
     pipeline,
+    root_input_manager,
     solid,
 )
 
@@ -19,7 +19,7 @@ def my_solid(_, dataframe):
 
 
 # def_start_marker
-@input_manager(input_config_schema={"table_name": str})
+@root_input_manager(input_config_schema={"table_name": str})
 def table_loader(context):
     return read_dataframe_from_table(name=context.config["table_name"])
 

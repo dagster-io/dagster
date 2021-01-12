@@ -5,9 +5,9 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
-    input_manager,
     io_manager,
     pipeline,
+    root_input_manager,
     solid,
 )
 
@@ -21,7 +21,7 @@ def read_dataframe_from_table(**_kwargs):
 
 
 # start_marker
-@input_manager(input_config_schema={"table_name": str})
+@root_input_manager(input_config_schema={"table_name": str})
 def my_root_input_manager(context):
     return read_dataframe_from_table(name=context.config["table_name"])
 

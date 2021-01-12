@@ -1,5 +1,5 @@
 # pylint: disable=unused-argument
-from dagster import InputDefinition, ModeDefinition, input_manager, pipeline, solid
+from dagster import InputDefinition, ModeDefinition, pipeline, root_input_manager, solid
 
 
 def read_dataframe_from_table(**_kwargs):
@@ -12,7 +12,7 @@ def my_solid(_, dataframe):
     """Do some stuff"""
 
 
-@input_manager
+@root_input_manager
 def table1_loader(_):
     return read_dataframe_from_table(name="table1")
 

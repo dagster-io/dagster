@@ -6,8 +6,8 @@ from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.storage.input_manager import IInputManagerDefinition, InputManager
 from dagster.core.storage.output_manager import IOutputManagerDefinition, OutputManager
+from dagster.core.storage.root_input_manager import IInputManagerDefinition
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
@@ -57,7 +57,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         )
 
 
-class IOManager(InputManager, OutputManager):
+class IOManager(OutputManager):
     """
     Base class for user-provided IO managers.
 

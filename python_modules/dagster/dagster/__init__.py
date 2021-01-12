@@ -118,10 +118,14 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.init import InitIntermediateStorageContext
-from dagster.core.storage.input_manager import InputManager, InputManagerDefinition, input_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.root_input_manager import (
+    RootInputManager,
+    RootInputManagerDefinition,
+    root_input_manager,
+)
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     default_intermediate_storage_defs,
@@ -326,9 +330,9 @@ __all__ = [
     "IOManager",
     "IOManagerDefinition",
     "io_manager",
-    "InputManager",
-    "InputManagerDefinition",
-    "input_manager",
+    "RootInputManager",
+    "RootInputManagerDefinition",
+    "root_input_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",

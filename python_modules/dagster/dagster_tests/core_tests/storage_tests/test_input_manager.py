@@ -7,16 +7,16 @@ from dagster import (
     EventMetadataEntry,
     IOManager,
     InputDefinition,
-    InputManagerDefinition,
     ModeDefinition,
     OutputDefinition,
     PythonObjectDagsterType,
+    RootInputManagerDefinition,
     execute_pipeline,
     fs_io_manager,
-    input_manager,
     io_manager,
     pipeline,
     resource,
+    root_input_manager,
     solid,
 )
 from dagster.core.definitions.events import Failure, RetryRequested
@@ -24,7 +24,7 @@ from dagster.core.instance import InstanceRef
 
 
 def test_validate_inputs():
-    @input_manager
+    @root_input_manager
     def my_loader(_):
         return 5
 
@@ -46,7 +46,7 @@ def test_validate_inputs():
 
 
 def test_root_input_manager():
-    @input_manager
+    @root_input_manager
     def my_hardcoded_csv_loader(_context):
         return 5
 
@@ -62,7 +62,7 @@ def test_root_input_manager():
 
 
 def test_configurable_root_input_manager():
-    @input_manager(config_schema={"base_dir": str}, input_config_schema={"value": int})
+    @root_input_manager(config_schema={"base_dir": str}, input_config_schema={"value": int})
     def my_configurable_csv_loader(context):
         assert context.resource_config["base_dir"] == "abc"
         return context.config["value"]
@@ -116,7 +116,7 @@ def test_only_used_for_root():
     def solid2(_, input1):
         assert input1 == 5
 
-    @input_manager
+    @root_input_manager
     def root_manager(_):
         assert False, "should not be called"
 
@@ -134,7 +134,7 @@ def test_only_used_for_root():
 
 
 def test_configured():
-    @input_manager(
+    @root_input_manager(
         config_schema={"base_dir": str},
         description="abc",
         input_config_schema={"format": str},
@@ -146,7 +146,7 @@ def test_configured():
 
     configured_input_manager = my_input_manager.configured({"base_dir": "/a/b/c"})
 
-    assert isinstance(configured_input_manager, InputManagerDefinition)
+    assert isinstance(configured_input_manager, RootInputManagerDefinition)
     assert configured_input_manager.description == my_input_manager.description
     assert (
         configured_input_manager.required_resource_keys == my_input_manager.required_resource_keys
@@ -155,7 +155,7 @@ def test_configured():
 
 
 def test_input_manager_with_failure():
-    @input_manager
+    @root_input_manager
     def should_fail(_):
         raise Failure(
             description="Foolure",
@@ -193,14 +193,14 @@ def test_input_manager_with_failure():
 def test_input_manager_with_retries():
     _count = {"total": 0}
 
-    @input_manager
+    @root_input_manager
     def should_succeed_after_retries(_):
         if _count["total"] < 2:
             _count["total"] += 1
             raise RetryRequested(max_retries=3)
         return "foo"
 
-    @input_manager
+    @root_input_manager
     def should_retry(_):
         raise RetryRequested(max_retries=3)
 
@@ -257,7 +257,7 @@ def test_input_manager_with_retries():
 
 
 def test_input_manager_resource_config():
-    @input_manager(config_schema={"dog": str})
+    @root_input_manager(config_schema={"dog": str})
     def emit_dog(context):
         assert context.resource_config["dog"] == "poodle"
 
@@ -281,13 +281,13 @@ def test_input_manager_required_resource_keys():
     def foo_resource(_):
         return "foo"
 
-    @input_manager(required_resource_keys={"foo_resource"})
-    def input_manager_reqs_resources(context):
+    @root_input_manager(required_resource_keys={"foo_resource"})
+    def root_input_manager_reqs_resources(context):
         assert context.resources.foo_resource == "foo"
 
     @solid(
         input_defs=[
-            InputDefinition("_manager_input", root_manager_key="input_manager_reqs_resources")
+            InputDefinition("_manager_input", root_manager_key="root_input_manager_reqs_resources")
         ]
     )
     def big_solid(_, _manager_input):
@@ -297,7 +297,7 @@ def test_input_manager_required_resource_keys():
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    "input_manager_reqs_resources": input_manager_reqs_resources,
+                    "root_input_manager_reqs_resources": root_input_manager_reqs_resources,
                     "foo_resource": foo_resource,
                 }
             )
