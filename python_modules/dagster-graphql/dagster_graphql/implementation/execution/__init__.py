@@ -1,8 +1,3 @@
-from __future__ import absolute_import
-
-import sys
-import time
-
 from dagster import check
 from dagster.core.definitions import IPipeline
 from dagster.core.definitions.schedule import ScheduleExecutionContext

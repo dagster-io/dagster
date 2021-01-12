@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import subprocess
 
 from dagster.version import __version__

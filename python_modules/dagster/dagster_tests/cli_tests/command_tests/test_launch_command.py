@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command

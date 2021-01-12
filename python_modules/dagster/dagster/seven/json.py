@@ -1,6 +1,4 @@
 # pylint: disable=unused-import
-from __future__ import absolute_import
-
 from functools import partial
 from json import dump as dump_
 from json import dumps as dumps_

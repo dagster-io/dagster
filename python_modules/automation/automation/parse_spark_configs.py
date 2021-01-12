@@ -3,8 +3,6 @@
 This script parses the Spark configuration parameters downloaded from the Spark Github repository,
 and codegens a file that contains dagster configurations for these parameters.
 """
-from __future__ import print_function
-
 import re
 import sys
 from collections import namedtuple
