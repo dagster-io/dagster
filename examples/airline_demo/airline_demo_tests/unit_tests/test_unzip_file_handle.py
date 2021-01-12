@@ -1,4 +1,3 @@
-import sys
 import zipfile
 
 import boto3
@@ -22,12 +21,7 @@ from moto import mock_s3
 
 def write_zip_file_to_disk(zip_file_path, archive_member, data):
     with zipfile.ZipFile(zip_file_path, mode="w") as archive:
-        # writable stream with archive.open not available < 3.6
-        if sys.version_info.major < 3:
-            # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            archive.writestr(bytes=data, zinfo_or_arcname=archive_member)
-        else:
-            archive.writestr(data=data, zinfo_or_arcname=archive_member)
+        archive.writestr(data=data, zinfo_or_arcname=archive_member)
 
 
 def test_unzip_file_handle():

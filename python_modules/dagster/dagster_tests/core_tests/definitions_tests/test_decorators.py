@@ -1,6 +1,3 @@
-# encoding: utf-8
-# py27 compat
-
 import re
 from datetime import datetime, time
 
@@ -125,12 +122,7 @@ def test_solid_with_explicit_empty_outputs():
     assert (
         "Error in solid hello_world: Unexpectedly returned output foo of type "
         "<class 'str'>. Solid is explicitly defined to return no results."
-    ) in str(exc_info.value) or (
-        "Error in solid hello_world: Unexpectedly returned output foo of type "
-        "<type 'str'>. Solid is explicitly defined to return no results."
-    ) in str(
-        exc_info.value
-    )  # py2
+    ) in str(exc_info.value)
 
 
 def test_solid_with_implicit_single_output():

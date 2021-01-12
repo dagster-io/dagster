@@ -1,7 +1,6 @@
 import json
 import os
 import pickle
-import sys
 import tempfile
 import uuid
 from datetime import timedelta
@@ -45,17 +44,12 @@ from pandas import (
     DataFrame,
     date_range,
     get_dummies,
+    json_normalize,
     notnull,
     read_csv,
     read_sql_table,
     to_datetime,
 )
-
-if sys.version_info >= (3, 6):
-    # this is done because a compatibility issue with json_normalize in python 3.5
-    from pandas import json_normalize  # pylint:disable=import-error,no-name-in-module
-else:
-    from pandas.io.json import json_normalize  # pylint:disable=import-error,no-name-in-module
 
 # Added this to silence tensorflow logs. They are insanely verbose.
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"

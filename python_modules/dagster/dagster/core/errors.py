@@ -133,17 +133,6 @@ class DagsterStepOutputNotFoundError(DagsterError):
         super(DagsterStepOutputNotFoundError, self).__init__(*args, **kwargs)
 
 
-def _add_inner_exception_for_py2(msg, exc_info):
-    if sys.version_info[0] == 2:
-        return (
-            msg
-            + "\n\nThe above exception was the direct cause of the following exception:\n\n"
-            + "".join(traceback.format_exception(*exc_info))
-        )
-
-    return msg
-
-
 @contextmanager
 def raise_execution_interrupts():
     with raise_interrupts_as(DagsterExecutionInterruptedError):
@@ -217,9 +206,7 @@ class DagsterUserCodeExecutionError(DagsterError):
 
         check.invariant(original_exc_info[0] is not None)
 
-        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
-
-        super(DagsterUserCodeExecutionError, self).__init__(msg, *args[1:], **kwargs)
+        super(DagsterUserCodeExecutionError, self).__init__(args[0], *args[1:], **kwargs)
 
         self.user_exception = check.opt_inst_param(user_exception, "user_exception", Exception)
         self.original_exc_info = original_exc_info

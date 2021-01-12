@@ -36,12 +36,7 @@ def mirror_stream_to_file(stream, filepath):
 def should_disable_io_stream_redirect():
     # See https://stackoverflow.com/a/52377087
     # https://www.python.org/dev/peps/pep-0528/
-    return (
-        os.name == "nt"
-        and sys.version_info.major == 3
-        and sys.version_info.minor >= 6
-        and not os.environ.get("PYTHONLEGACYWINDOWSSTDIO")
-    )
+    return os.name == "nt" and not os.environ.get("PYTHONLEGACYWINDOWSSTDIO")
 
 
 def warn_if_compute_logs_disabled():

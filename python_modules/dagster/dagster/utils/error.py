@@ -34,14 +34,4 @@ def _serializable_error_info_from_tb(tb):
 
 
 def serializable_error_info_from_exc_info(exc_info):
-    if hasattr(traceback, "TracebackException"):
-        return _serializable_error_info_from_tb(traceback.TracebackException(*exc_info))
-
-    else:  # fallback for our old pal py27
-        exc_type, exc_value, exc_tb = exc_info
-
-        return SerializableErrorInfo(
-            traceback.format_exception_only(exc_type, exc_value)[-1],
-            traceback.format_tb(tb=exc_tb),
-            exc_type.__name__,
-        )
+    return _serializable_error_info_from_tb(traceback.TracebackException(*exc_info))

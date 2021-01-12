@@ -173,15 +173,12 @@ def test_local_directory_package():
 
 def test_local_directory_file():
     path = file_relative_path(__file__, "autodiscover_file_in_directory/repository.py")
-    is_py27 = sys.version_info < (3,)
+
     with restore_sys_modules():
         with pytest.raises(ImportError) as exc_info:
             loadable_targets_from_python_file(path)
 
-        assert str(exc_info.value) in [
-            "No module named 'autodiscover_src'",  # py3+
-            "No module named autodiscover_src.pipelines",  # py27
-        ]
+        assert str(exc_info.value) == "No module named 'autodiscover_src'"
 
     with pytest.warns(
         UserWarning,
@@ -191,7 +188,7 @@ def test_local_directory_file():
                 "implicitly load modules from the working directory is deprecated and will be removed "
                 "in a future release. Please explicitly specify the `working_directory` config option "
                 "in your workspace.yaml or install `{module}` to your python environment."
-            ).format(module="repository" if is_py27 else "autodiscover_src")
+            ).format(module="autodiscover_src")
         ),
     ):
         with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):

@@ -6,7 +6,6 @@ from enum import Enum
 import kubernetes
 import six
 from dagster import DagsterInstance, check
-from dagster.core.errors import _add_inner_exception_for_py2
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from six import raise_from
 
@@ -37,11 +36,8 @@ class DagsterK8sAPIRetryLimitExceeded(Exception):
         max_retries = check.int_param(kwargs.pop("max_retries"), "max_retries")
 
         check.invariant(original_exc_info[0] is not None)
-        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
         super(DagsterK8sAPIRetryLimitExceeded, self).__init__(
-            "Retry limit of {max_retries} exceeded: ".format(max_retries=max_retries) + msg,
-            *args[1:],
-            **kwargs,
+            f"Retry limit of {max_retries} exceeded: " + args[0], *args[1:], **kwargs,
         )
 
         self.k8s_api_exception = check.opt_inst_param(
@@ -58,8 +54,7 @@ class DagsterK8sUnrecoverableAPIError(Exception):
         original_exc_info = check.tuple_param(kwargs.pop("original_exc_info"), "original_exc_info")
 
         check.invariant(original_exc_info[0] is not None)
-        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
-        super(DagsterK8sUnrecoverableAPIError, self).__init__(msg, *args[1:], **kwargs)
+        super(DagsterK8sUnrecoverableAPIError, self).__init__(args[0], *args[1:], **kwargs)
 
         self.k8s_api_exception = check.opt_inst_param(
             k8s_api_exception, "k8s_api_exception", Exception

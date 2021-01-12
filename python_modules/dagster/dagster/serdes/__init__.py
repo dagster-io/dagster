@@ -19,8 +19,8 @@ import sys
 from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
 from enum import Enum
+from inspect import Parameter, signature
 
-import six
 import yaml
 from dagster import check, seven
 from dagster.utils import compose
@@ -48,11 +48,6 @@ def register_serdes_tuple_fallbacks(fallback_map):
 
 
 def _get_dunder_new_params_dict(klass):
-    check.invariant(sys.version_info.major >= 3, "This function can only be run in python 3")
-
-    # only pulled in by python 3
-    from inspect import signature
-
     return signature(klass.__new__).parameters
 
 
@@ -74,11 +69,6 @@ class Persistable(ABC):
 
 
 def _check_serdes_tuple_class_invariants(klass):
-    check.invariant(sys.version_info.major >= 3, "This function can only be run in python 3")
-
-    # pull this in dynamically because this method is only called in python 3 contexts
-    from inspect import Parameter
-
     dunder_new_params = _get_dunder_new_params(klass)
 
     cls_param = dunder_new_params[0]
@@ -147,11 +137,7 @@ def _whitelist_for_serdes(whitelist_map):
         if issubclass(klass, Enum):
             whitelist_map["types"]["enum"][klass.__name__] = klass
         elif issubclass(klass, tuple):
-            # only catch this in python 3 dev environments
-            # no need to do backwards compat since this is
-            # only for development time
-            if sys.version_info.major >= 3:
-                _check_serdes_tuple_class_invariants(klass)
+            _check_serdes_tuple_class_invariants(klass)
             whitelist_map["types"]["tuple"][klass.__name__] = klass
         else:
             check.failed("Can not whitelist class {klass} for serdes".format(klass=klass))

@@ -1,5 +1,4 @@
 import pickle
-import sys
 from abc import ABC, abstractmethod
 
 from dagster import check
@@ -34,9 +33,9 @@ class SerializationStrategy(ABC):  # pylint: disable=no-init
 
     @property
     def encoding(self):
-        # Default to utf-8/ascii only if we are expecting to read and write strings
+        # Default to utf-8 only if we are expecting to read and write strings
         if self._write_mode == "w" or self._read_mode == "w":
-            return self._encoding or ("utf-8" if sys.version_info >= (3, 0) else "ascii")
+            return self._encoding or "utf-8"
         return self._encoding
 
     @abstractmethod
