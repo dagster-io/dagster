@@ -45,4 +45,4 @@ class DebugRunPayload(
         )
 
     def write(self, output_file):
-        return output_file.write(serialize_dagster_namedtuple(self).encode())
+        return output_file.write(serialize_dagster_namedtuple(self).encode("utf-8"))

@@ -42,7 +42,7 @@ def bq_solid_for_queries(sql_queries):
 
     m = hashlib.sha1()
     for query in sql_queries:
-        m.update(query.encode())
+        m.update(query.encode("utf-8"))
     name = "bq_solid_{hash}".format(hash=m.hexdigest()[:10])
 
     @solid(

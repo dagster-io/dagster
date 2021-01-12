@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 
-import six
 import sqlalchemy as db
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
@@ -96,7 +95,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
                 conn.execute(runs_insert)
             except db.exc.IntegrityError as exc:
-                six.raise_from(DagsterRunAlreadyExists, exc)
+                raise DagsterRunAlreadyExists from exc
 
             if pipeline_run.tags and len(pipeline_run.tags) > 0:
                 conn.execute(
@@ -525,7 +524,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             snapshot_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
                 snapshot_id=snapshot_id,
-                snapshot_body=zlib.compress(serialize_dagster_namedtuple(snapshot_obj).encode()),
+                snapshot_body=zlib.compress(
+                    serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
+                ),
                 snapshot_type=snapshot_type.value,
             )
             conn.execute(snapshot_insert)
@@ -670,7 +671,7 @@ def defensively_unpack_pipeline_snapshot_query(logger, row):
     def _warn(msg):
         logger.warning("get-pipeline-snapshot: {msg}".format(msg=msg))
 
-    if not isinstance(row[0], six.binary_type):
+    if not isinstance(row[0], bytes):
         _warn("First entry in row is not a binary type.")
         return None
 
@@ -681,7 +682,7 @@ def defensively_unpack_pipeline_snapshot_query(logger, row):
         return None
 
     try:
-        decoded_str = uncompressed_bytes.decode()
+        decoded_str = uncompressed_bytes.decode("utf-8")
     except UnicodeDecodeError:
         _warn("Could not unicode decode decompressed bytes stored in snapshot table.")
         return None

@@ -2,8 +2,6 @@ import os
 import random
 import subprocess
 
-import six
-
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
@@ -22,8 +20,8 @@ def check_output(*args, **kwargs):
     try:
         return subprocess.check_output(*args, **kwargs)
     except subprocess.CalledProcessError as exc:
-        output = exc.output.decode()
-        six.raise_from(Exception(output), exc)
+        output = exc.output.decode("utf-8")
+        raise Exception(output) from exc
 
 
 def which_(exe):

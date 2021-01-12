@@ -21,7 +21,6 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.utils.interrupts import raise_interrupts_as
-from future.utils import raise_from
 
 
 class DagsterError(Exception):
@@ -180,9 +179,9 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
         except Exception as e:  # pylint: disable=W0703
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
-            raise_from(
-                error_cls(msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
-            )
+            raise error_cls(
+                msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs
+            ) from e
 
 
 class DagsterUserCodeExecutionError(DagsterError):

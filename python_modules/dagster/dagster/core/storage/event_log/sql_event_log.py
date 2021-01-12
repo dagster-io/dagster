@@ -3,7 +3,6 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 
-import six
 import sqlalchemy as db
 from dagster import check, seven
 from dagster.core.definitions.events import AssetKey, Materialization
@@ -141,7 +140,7 @@ class SqlEventLogStorage(EventLogStorage):
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
         except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+            raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         return events
 
@@ -209,7 +208,7 @@ class SqlEventLogStorage(EventLogStorage):
                 end_time=datetime_as_float(end_time) if end_time else None,
             )
         except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+            raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
     def get_step_stats_for_run(self, run_id, step_keys=None):
         check.str_param(run_id, "run_id")
@@ -318,7 +317,7 @@ class SqlEventLogStorage(EventLogStorage):
                         event.dagster_event.event_specific_data.expectation_result
                     )
         except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+            raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         return [
             RunStepKeyStatsSnapshot(

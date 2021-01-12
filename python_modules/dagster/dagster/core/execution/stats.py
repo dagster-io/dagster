@@ -1,7 +1,6 @@
 from collections import defaultdict, namedtuple
 from enum import Enum
 
-import six
 from dagster import check
 from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
 from dagster.core.events import DagsterEventType, StepExpectationResultData, StepMaterializationData
@@ -15,14 +14,11 @@ def build_run_stats_from_events(run_id, records):
     try:
         iter(records)
     except TypeError as exc:
-        six.raise_from(
-            check.ParameterCheckError(
-                "Invariant violation for parameter 'records'. Description: Expected iterable."
-            ),
-            from_value=exc,
-        )
+        raise check.ParameterCheckError(
+            "Invariant violation for parameter 'records'. Description: Expected iterable."
+        ) from exc
     for i, record in enumerate(records):
-        check.inst_param(record, "records[{i}]".format(i=i), EventRecord)
+        check.inst_param(record, f"records[{i}]", EventRecord)
 
     steps_succeeded = 0
     steps_failed = 0

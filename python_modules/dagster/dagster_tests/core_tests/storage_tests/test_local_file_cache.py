@@ -7,7 +7,7 @@ from dagster.utils.temp_file import get_temp_dir
 
 
 def test_fs_file_cache_write_data():
-    bytes_object = io.BytesIO("bar".encode())
+    bytes_object = io.BytesIO(b"bar")
     with get_temp_dir() as temp_dir:
         file_cache = FSFileCache(temp_dir)
         assert not file_cache.has_file_object("foo")
@@ -21,7 +21,7 @@ def test_fs_file_cache_write_binary_data():
     with get_temp_dir() as temp_dir:
         file_store = FSFileCache(temp_dir)
         assert not file_store.has_file_object("foo")
-        assert file_store.write_binary_data("foo", "bar".encode())
+        assert file_store.write_binary_data("foo", b"bar")
         file_handle = file_store.get_file_handle("foo")
         assert isinstance(file_handle, LocalFileHandle)
         assert file_handle.path_desc == os.path.join(temp_dir, "foo")

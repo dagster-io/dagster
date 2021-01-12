@@ -7,7 +7,6 @@ from contextlib import contextmanager
 
 import kubernetes
 import pytest
-import six
 import yaml
 from dagster import check
 from dagster.utils import git_repository_root
@@ -157,7 +156,7 @@ def helm_test_resources(namespace, should_cleanup=True):
             kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
 
         # Secret values are expected to be base64 encoded
-        secret_val = six.ensure_str(base64.b64encode(six.ensure_binary("foobar")))
+        secret_val = base64.b64encode(b"foobar").decode("utf-8")
         secret = kubernetes.client.V1Secret(
             api_version="v1",
             kind="Secret",
@@ -205,7 +204,7 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
         p = subprocess.Popen(
             helm_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        stdout, stderr = p.communicate(six.ensure_binary(helm_config_yaml))
+        stdout, stderr = p.communicate(helm_config_yaml.encode("utf-8"))
         print("Helm install completed with stdout: ", stdout)
         print("Helm install completed with stderr: ", stderr)
         assert p.returncode == 0

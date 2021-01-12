@@ -51,7 +51,10 @@ class HttpSnooper(httplib2.Http):
     ):
         for expected_uri, expected_method, result in EXPECTED_RESULTS:
             if re.match(expected_uri, uri) and method == expected_method:
-                return (httplib2.Response({"status": "200"}), seven.json.dumps(result).encode())
+                return (
+                    httplib2.Response({"status": "200"}),
+                    seven.json.dumps(result).encode("utf-8"),
+                )
 
         # Pass this one through since its the entire JSON schema used for dynamic object creation
         if uri == DATAPROC_SCHEMA_URI:

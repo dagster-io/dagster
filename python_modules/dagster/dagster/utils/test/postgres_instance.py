@@ -160,7 +160,7 @@ class TestPostgresInstance:
                 stderr=subprocess.STDOUT,  # capture STDERR for error handling
             )
         except subprocess.CalledProcessError as ex:
-            err_text = ex.output.decode()
+            err_text = ex.output.decode("utf-8")
             raise PostgresDockerError(
                 "Failed to launch docker container(s) via docker-compose: {}".format(err_text), ex,
             )
@@ -210,7 +210,7 @@ def is_postgres_running(service_name):
             stderr=subprocess.STDOUT,  # capture STDERR for error handling
         )
     except subprocess.CalledProcessError as ex:
-        lines = ex.output.decode().split("\n")
+        lines = ex.output.decode("utf-8").split("\n")
         if len(lines) == 2 and "Cannot connect to the Docker daemon" in lines[0]:
             raise PostgresDockerError("Cannot connect to the Docker daemon", ex)
         else:
@@ -218,7 +218,7 @@ def is_postgres_running(service_name):
                 "Could not verify postgres container was running as expected", ex
             )
 
-    decoded = output.decode()
+    decoded = output.decode("utf-8")
     lines = decoded.split("\n")
 
     # header, one line for container, trailing \n

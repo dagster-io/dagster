@@ -163,7 +163,7 @@ class ConfigParser:
                 printer.append("return ")
                 base_field.write(printer)
 
-            return printer.read().strip().encode()
+            return printer.read().strip().encode("utf-8")
 
     def extract_enums(self):
         if not self.all_enums:
@@ -176,7 +176,7 @@ class ConfigParser:
             for enum in self.all_enums:
                 self.all_enums[enum].write(printer)
                 printer.blank_line()
-            return printer.read().strip().encode()
+            return printer.read().strip().encode("utf-8")
 
     def parse_object(self, obj, name=None, depth=0, enum_descriptions=None):
         # This is a reference to another object that we should substitute by recursing

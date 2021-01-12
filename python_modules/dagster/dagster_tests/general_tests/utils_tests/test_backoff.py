@@ -1,5 +1,4 @@
 import pytest
-import six
 from dagster.utils.backoff import backoff, backoff_delay_generator
 
 
@@ -38,7 +37,7 @@ def test_backoff_delay_generator():
     gen = backoff_delay_generator()
     vals = []
     for _ in range(10):
-        vals.append(six.next(gen))
+        vals.append(next(gen))
 
     assert vals == [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2]
 

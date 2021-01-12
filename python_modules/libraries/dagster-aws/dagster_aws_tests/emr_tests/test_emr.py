@@ -106,7 +106,7 @@ def test_emr_retrieve_logs(emr_cluster_config, mock_s3_bucket):
         time.sleep(0.5)
         out = io.BytesIO()
         with gzip.GzipFile(fileobj=out, mode="w") as fo:
-            fo.write("some log".encode())
+            fo.write(b"some log")
 
         prefix = "elasticmapreduce/{cluster_id}/steps/{step_id}".format(
             cluster_id=cluster_id, step_id="s-123456123456"
@@ -133,7 +133,7 @@ def test_wait_for_log(mock_s3_bucket):
         time.sleep(0.5)
         out = io.BytesIO()
         with gzip.GzipFile(fileobj=out, mode="w") as fo:
-            fo.write("foo bar".encode())
+            fo.write(b"foo bar")
 
         mock_s3_bucket.Object("some_log_file").put(Body=out.getvalue())  # pylint: disable=no-member
 

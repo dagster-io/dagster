@@ -4,7 +4,6 @@ import re
 from glob import glob
 
 import pkg_resources
-import six
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -134,13 +133,10 @@ def config_from_files(config_files):
     try:
         run_config = merge_yamls(filenames)
     except yaml.YAMLError as err:
-        six.raise_from(
-            DagsterInvariantViolationError(
-                "Encountered error attempting to parse yaml. Parsing files {file_set} "
-                "loaded by file/patterns {files}.".format(file_set=filenames, files=config_files)
-            ),
-            err,
-        )
+        raise DagsterInvariantViolationError(
+            f"Encountered error attempting to parse yaml. Parsing files {filenames} "
+            f"loaded by file/patterns {config_files}."
+        ) from err
 
     return run_config
 
@@ -163,14 +159,9 @@ def config_from_yaml_strings(yaml_strings):
     try:
         run_config = merge_yaml_strings(yaml_strings)
     except yaml.YAMLError as err:
-        six.raise_from(
-            DagsterInvariantViolationError(
-                "Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} ".format(
-                    yaml_strings=yaml_strings
-                )
-            ),
-            err,
-        )
+        raise DagsterInvariantViolationError(
+            f"Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} "
+        ) from err
 
     return run_config
 
@@ -205,16 +196,13 @@ def config_from_pkg_resources(pkg_resource_defs):
 
     try:
         yaml_strings = [
-            six.ensure_str(pkg_resources.resource_string(*pkg_resource_def))
+            pkg_resources.resource_string(*pkg_resource_def).decode("utf-8")
             for pkg_resource_def in pkg_resource_defs
         ]
     except (ModuleNotFoundError, FileNotFoundError, UnicodeDecodeError) as err:
-        six.raise_from(
-            DagsterInvariantViolationError(
-                "Encountered error attempting to parse yaml. Loading YAMLs from "
-                "package resources {pkg_resource_defs}.".format(pkg_resource_defs=pkg_resource_defs)
-            ),
-            err,
-        )
+        raise DagsterInvariantViolationError(
+            "Encountered error attempting to parse yaml. Loading YAMLs from "
+            f"package resources {pkg_resource_defs}."
+        ) from err
 
     return config_from_yaml_strings(yaml_strings=yaml_strings)

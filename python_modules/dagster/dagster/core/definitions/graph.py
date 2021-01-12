@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-import six
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -129,9 +128,7 @@ class GraphDefinition(NodeDefinition):
         try:
             order = toposort_flatten(backward_edges)
         except CircularDependencyError as err:
-            six.raise_from(
-                DagsterInvalidDefinitionError(str(err)), err,
-            )
+            raise DagsterInvalidDefinitionError(str(err)) from err
 
         return [self.solid_named(solid_name) for solid_name in order]
 

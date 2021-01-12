@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from datetime import datetime
 
-import six
 import sqlalchemy as db
 from dagster import check
 from dagster.core.definitions.job import JobType
@@ -82,12 +81,9 @@ class SqlScheduleStorage(ScheduleStorage):
                     )
                 )
             except db.exc.IntegrityError as exc:
-                six.raise_from(
-                    DagsterInvariantViolationError(
-                        "JobState {id} is already present in storage".format(id=job.job_origin_id,)
-                    ),
-                    exc,
-                )
+                raise DagsterInvariantViolationError(
+                    f"JobState {job.job_origin_id} is already present in storage"
+                ) from exc
 
         return job
 
@@ -169,14 +165,9 @@ class SqlScheduleStorage(ScheduleStorage):
                 tick_id = result.inserted_primary_key[0]
                 return JobTick(tick_id, job_tick_data)
             except db.exc.IntegrityError as exc:
-                six.raise_from(
-                    DagsterInvariantViolationError(
-                        "Unable to insert JobTick for job {job_name} in storage".format(
-                            job_name=job_tick_data.job_name,
-                        )
-                    ),
-                    exc,
-                )
+                raise DagsterInvariantViolationError(
+                    f"Unable to insert JobTick for job {job_tick_data.job_name} in storage"
+                ) from exc
 
     def update_job_tick(self, tick):
         check.inst_param(tick, "tick", JobTick)

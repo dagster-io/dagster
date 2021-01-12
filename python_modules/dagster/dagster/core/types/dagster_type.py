@@ -3,7 +3,6 @@ from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
 
-import six
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array
@@ -298,7 +297,7 @@ class _Int(BuiltinScalarDagsterType):
         )
 
     def type_check_scalar_value(self, value):
-        return _fail_if_not_of_type(value, six.integer_types, "int")
+        return _fail_if_not_of_type(value, int, "int")
 
 
 def _typemismatch_error_str(value, expected_type_desc):

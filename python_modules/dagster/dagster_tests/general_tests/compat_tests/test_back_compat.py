@@ -234,7 +234,7 @@ def instance_from_debug_payloads(payload_files):
     debug_payloads = []
     for input_file in payload_files:
         with GzipFile(input_file, "rb") as file:
-            blob = file.read().decode()
+            blob = file.read().decode("utf-8")
             debug_payload = deserialize_json_to_dagster_namedtuple(blob)
 
             check.invariant(isinstance(debug_payload, DebugRunPayload))

@@ -41,7 +41,7 @@ def main(quiet):
         if p.poll() is not None:
             break
         if output:
-            print(output.decode().strip())  # pylint: disable=print-call
+            print(output.decode("utf-8").strip())  # pylint: disable=print-call
 
     install_targets = []
 
@@ -126,7 +126,7 @@ def main(quiet):
         if p.poll() is not None:
             break
         if output:
-            print(output.decode().strip())  # pylint: disable=print-call
+            print(output.decode("utf-8").strip())  # pylint: disable=print-call
 
 
 if __name__ == "__main__":

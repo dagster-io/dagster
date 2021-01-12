@@ -1,6 +1,5 @@
 import time
 
-import six
 from dagster import check
 
 
@@ -26,7 +25,7 @@ def backoff(
 
     Note that this doesn't implement any jitter on the delays, so probably won't be appropriate for very
     parallel situations.
-    
+
     Args:
         fn (Callable): The function to wrap in a backoff/retry loop.
         retry_on (Tuple[Exception, ...]): The exception classes on which to retry. Note that we don't (yet)
@@ -54,7 +53,7 @@ def backoff(
         to_raise = exc
 
     while retries < max_retries:
-        time.sleep(six.next(delay_generator))
+        time.sleep(next(delay_generator))
         try:
             return fn(*args, **kwargs)
         except retry_on as exc:

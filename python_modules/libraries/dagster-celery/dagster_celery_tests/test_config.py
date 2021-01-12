@@ -42,7 +42,7 @@ def test_config_value_from_yaml():
 
 def test_config_value_from_empty_yaml():
     with tempfile.NamedTemporaryFile() as tmp:
-        tmp.write("".encode("utf-8"))
+        tmp.write(b"")
         tmp.seek(0)
         python_path = get_config_dir(config_yaml=tmp.name)
 

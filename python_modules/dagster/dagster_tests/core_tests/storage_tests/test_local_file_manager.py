@@ -20,7 +20,7 @@ def my_local_file_manager(instance, run_id):
 
 def test_basic_file_manager_copy_handle_to_local_temp():
     instance = DagsterInstance.ephemeral()
-    foo_data = "foo".encode()
+    foo_data = b"foo"
     with get_temp_file_handle_with_data(foo_data) as foo_handle:
         with my_local_file_manager(instance, "0") as manager:
             local_temp = manager.copy_handle_to_local_temp(foo_handle)
@@ -34,7 +34,7 @@ def test_basic_file_manager_execute():
 
     @solid(required_resource_keys={"file_manager"})
     def file_handle(context):
-        foo_bytes = "foo".encode()
+        foo_bytes = b"foo"
         file_handle = context.resources.file_manager.write_data(foo_bytes)
         assert isinstance(file_handle, LocalFileHandle)
         with open(file_handle.path, "rb") as handle_obj:

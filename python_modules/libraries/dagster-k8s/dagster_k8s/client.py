@@ -4,10 +4,8 @@ import time
 from enum import Enum
 
 import kubernetes
-import six
 from dagster import DagsterInstance, check
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from six import raise_from
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -99,22 +97,16 @@ def k8s_api_retry(
             if whitelisted and remaining_attempts > 0:
                 time.sleep(timeout)
             elif whitelisted and remaining_attempts == 0:
-                raise_from(
-                    DagsterK8sAPIRetryLimitExceeded(
-                        msg_fn(),
-                        k8s_api_exception=e,
-                        max_retries=max_retries,
-                        original_exc_info=sys.exc_info(),
-                    ),
-                    e,
-                )
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
+                    original_exc_info=sys.exc_info(),
+                ) from e
             else:
-                raise_from(
-                    DagsterK8sUnrecoverableAPIError(
-                        msg_fn(), k8s_api_exception=e, original_exc_info=sys.exc_info(),
-                    ),
-                    e,
-                )
+                raise DagsterK8sUnrecoverableAPIError(
+                    msg_fn(), k8s_api_exception=e, original_exc_info=sys.exc_info(),
+                ) from e
 
 
 class KubernetesWaitingReasons:
@@ -497,8 +489,6 @@ class DagsterKubernetesClient:
         # us with invalid JSON as the quotes have been switched to '
         #
         # https://github.com/kubernetes-client/python/issues/811
-        return six.ensure_str(
-            self.core_api.read_namespaced_pod_log(
-                name=pod_name, namespace=namespace, _preload_content=False
-            ).data
-        )
+        return self.core_api.read_namespaced_pod_log(
+            name=pod_name, namespace=namespace, _preload_content=False
+        ).data

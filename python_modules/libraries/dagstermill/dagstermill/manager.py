@@ -2,7 +2,6 @@ import os
 import pickle
 import uuid
 
-import six
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
@@ -127,12 +126,9 @@ class Manager:
             instance_ref = unpack_value(instance_ref_dict)
             instance = DagsterInstance.from_ref(instance_ref)
         except Exception as err:  # pylint: disable=broad-except
-            six.raise_from(
-                DagstermillError(
-                    "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
-                ),
-                err,
-            )
+            raise DagstermillError(
+                "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
+            ) from err
 
         pipeline_run = unpack_value(pipeline_run_dict)
 

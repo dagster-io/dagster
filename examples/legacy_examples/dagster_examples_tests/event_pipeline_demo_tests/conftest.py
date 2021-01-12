@@ -2,15 +2,14 @@ import os
 import subprocess
 
 import pytest
-import six
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p
 
 
 @pytest.fixture(scope="session")
 def events_jar():
-    git_repo_root = six.ensure_str(
-        subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip()
+    git_repo_root = (
+        subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
     )
 
     temp_dir = os.path.join(

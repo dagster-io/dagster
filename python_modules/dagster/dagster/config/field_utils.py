@@ -60,7 +60,7 @@ def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
 
 
 def _add_hash(m, string):
-    m.update(string.encode())
+    m.update(string.encode("utf-8"))
 
 
 def _compute_fields_hash(fields, description):

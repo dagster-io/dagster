@@ -2,7 +2,6 @@ import os
 from datetime import datetime, timedelta
 
 import click
-import six
 import yaml
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
@@ -33,7 +32,7 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
         system_tmp_path = seven.get_system_temp_directory()
         dagster_tmp_path = os.path.join(system_tmp_path, "dagster-airflow", pipeline_name)
         run_config["intermediate_storage"] = {
-            "filesystem": {"config": {"base_dir": six.ensure_str(dagster_tmp_path)}}
+            "filesystem": {"config": {"base_dir": dagster_tmp_path}}
         }
 
     return run_config
@@ -101,7 +100,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, run_config):
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(")")
 
-    return printer.read().encode()
+    return printer.read().encode("utf-8")
 
 
 @click.group()

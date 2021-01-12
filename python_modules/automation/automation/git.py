@@ -2,13 +2,12 @@ import os
 import re
 import subprocess
 
-import six
-
 from .utils import check_output
 
 
 def git_check_status():
-    changes = six.ensure_str(subprocess.check_output(["git", "status", "--porcelain"]))
+    changes = subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip()
+
     if changes != "":
         raise Exception(
             "Bailing: Cannot publish with changes present in git repo:\n{changes}".format(
@@ -18,13 +17,11 @@ def git_check_status():
 
 
 def git_user():
-    return six.ensure_str(
-        subprocess.check_output(["git", "config", "--get", "user.name"]).decode("utf-8").strip()
-    )
+    return subprocess.check_output(["git", "config", "--get", "user.name"]).decode("utf-8").strip()
 
 
 def git_repo_root():
-    return six.ensure_str(subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip())
+    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
 def git_push(tag=None, dry_run=True, cwd=None):
@@ -85,18 +82,22 @@ def get_git_tag():
 
 def get_most_recent_git_tag():
     try:
-        git_tag = str(
+        git_tag = (
             subprocess.check_output(["git", "describe", "--abbrev=0"], stderr=subprocess.STDOUT)
-        ).strip("'b\\n")
+            .decode("utf-8")
+            .strip()
+        )
     except subprocess.CalledProcessError as exc_info:
         raise Exception(str(exc_info.output))
     return git_tag
 
 
 def get_git_repo_branch(cwd=None):
-    git_branch = six.ensure_str(
+    git_branch = (
         subprocess.check_output(["git", "branch", "--show-current"], cwd=cwd)
-    ).strip()
+        .decode("utf-8")
+        .strip()
+    )
     return git_branch
 
 

@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 import pkg_resources
-import six
 import yaml
 from dagster import check
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
@@ -168,18 +167,15 @@ class PresetDefinition(
 
         try:
             yaml_strings = [
-                six.ensure_str(pkg_resources.resource_string(*pkg_resource_def))
+                pkg_resources.resource_string(*pkg_resource_def).decode("utf-8")
                 for pkg_resource_def in pkg_resource_defs
             ]
         except (ModuleNotFoundError, FileNotFoundError, UnicodeDecodeError) as err:
-            six.raise_from(
-                DagsterInvariantViolationError(
-                    "Encountered error attempting to parse yaml. Loading YAMLs from "
-                    "package resources {pkg_resource_defs} "
-                    'on preset "{name}".'.format(pkg_resource_defs=pkg_resource_defs, name=name)
-                ),
-                err,
-            )
+            raise DagsterInvariantViolationError(
+                "Encountered error attempting to parse yaml. Loading YAMLs from "
+                f"package resources {pkg_resource_defs} "
+                f'on preset "{name}".'
+            ) from err
 
         return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_selection, mode, tags)
 

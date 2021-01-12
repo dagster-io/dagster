@@ -25,7 +25,7 @@ def write_zip_file_to_disk(zip_file_path, archive_member, data):
 
 
 def test_unzip_file_handle():
-    data = "foo".encode()
+    data = b"foo"
 
     with get_temp_file_name() as zip_file_name:
         write_zip_file_to_disk(zip_file_name, "some_archive_member", data)
@@ -53,7 +53,7 @@ def test_unzip_file_handle():
 
 @mock_s3
 def test_unzip_file_handle_on_fake_s3():
-    foo_bytes = "foo".encode()
+    foo_bytes = b"foo"
 
     @solid(required_resource_keys={"file_manager"}, output_defs=[OutputDefinition(S3FileHandle)])
     def write_zipped_file_to_s3_store(context):

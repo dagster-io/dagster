@@ -1,6 +1,5 @@
 import inspect
 
-import six
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.seven import funcsigs, is_module_available
@@ -42,18 +41,11 @@ def infer_output_definitions(decorator_name, solid_name, fn):
         ]
 
     except CheckError as type_error:
-        six.raise_from(
-            DagsterInvalidDefinitionError(
-                "Error inferring Dagster type for return type "
-                '"{type_annotation}" from {decorator} "{solid}". '
-                "Correct the issue or explicitly pass definitions to {decorator}.".format(
-                    decorator=decorator_name,
-                    solid=solid_name,
-                    type_annotation=signature.return_annotation,
-                )
-            ),
-            type_error,
-        )
+        raise DagsterInvalidDefinitionError(
+            "Error inferring Dagster type for return type "
+            f'"{signature.return_annotation}" from {decorator_name} "{solid_name}". '
+            f"Correct the issue or explicitly pass definitions to {decorator_name}."
+        ) from type_error
 
 
 def has_explicit_return_type(fn):
@@ -97,19 +89,11 @@ def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=N
             input_defs.append(input_def)
 
         except CheckError as type_error:
-            six.raise_from(
-                DagsterInvalidDefinitionError(
-                    "Error inferring Dagster type for input name {param} typed as "
-                    '"{type_annotation}" from {decorator} "{solid}". '
-                    "Correct the issue or explicitly pass definitions to {decorator}.".format(
-                        decorator=decorator_name,
-                        solid=solid_name,
-                        param=param.name,
-                        type_annotation=param.annotation,
-                    )
-                ),
-                type_error,
-            )
+            raise DagsterInvalidDefinitionError(
+                f"Error inferring Dagster type for input name {param.name} typed as "
+                f'"{param.annotation}" from {decorator_name} "{solid_name}". '
+                "Correct the issue or explicitly pass definitions to {decorator_name}."
+            ) from type_error
 
     return input_defs
 

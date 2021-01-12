@@ -1,7 +1,6 @@
 import uuid
 import warnings
 
-import six
 from dagster import check
 from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.errors import (
@@ -569,15 +568,10 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
         # This handles the case when you construct a subset such that an unsatisfied
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
-        six.raise_from(
-            DagsterInvalidSubsetError(
-                "The attempted subset {solids_to_execute} for pipeline {pipeline_name} results in an invalid pipeline".format(
-                    solids_to_execute=str_format_set(solids_to_execute),
-                    pipeline_name=pipeline_def.name,
-                )
-            ),
-            exc,
-        )
+        raise DagsterInvalidSubsetError(
+            f"The attempted subset {str_format_set(solids_to_execute)} for pipeline "
+            f"{pipeline_def.name} results in an invalid pipeline"
+        ) from exc
 
 
 def _validate_resource_dependencies(

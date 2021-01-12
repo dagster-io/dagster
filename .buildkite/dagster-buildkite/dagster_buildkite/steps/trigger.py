@@ -21,7 +21,9 @@ def trigger_step(
         if_condition (str): A boolean expression that omits the step when false. Cannot be set with
             "branches" also set.
     """
-    commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
+    commit = (
+        subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode("utf-8").strip()
+    )
     step = {
         "trigger": pipeline,
         "label": f":link: {pipeline} from dagster@{commit}",

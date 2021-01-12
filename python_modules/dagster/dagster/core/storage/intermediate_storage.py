@@ -1,7 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
 
-import six
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterObjectStoreError, DagsterStepOutputNotFoundError
@@ -158,17 +157,14 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 key, serialization_strategy=dagster_type.serialization_strategy
             )
         except Exception as error:  # pylint: disable=broad-except
-            six.raise_from(
-                DagsterObjectStoreError(
-                    _object_store_operation_error_message(
-                        step_output_handle=step_output_handle,
-                        op=ObjectStoreOperationType.GET_OBJECT,
-                        object_store_name=self.object_store.name,
-                        serialization_strategy_name=dagster_type.serialization_strategy.name,
-                    )
-                ),
-                error,
-            )
+            raise DagsterObjectStoreError(
+                _object_store_operation_error_message(
+                    step_output_handle=step_output_handle,
+                    op=ObjectStoreOperationType.GET_OBJECT,
+                    object_store_name=self.object_store.name,
+                    serialization_strategy_name=dagster_type.serialization_strategy.name,
+                )
+            ) from error
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.GET_OBJECT,
@@ -212,17 +208,14 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 key, value, serialization_strategy=dagster_type.serialization_strategy
             )
         except Exception as error:  # pylint: disable=broad-except
-            six.raise_from(
-                DagsterObjectStoreError(
-                    _object_store_operation_error_message(
-                        step_output_handle=step_output_handle,
-                        op=ObjectStoreOperationType.SET_OBJECT,
-                        object_store_name=self.object_store.name,
-                        serialization_strategy_name=dagster_type.serialization_strategy.name,
-                    )
-                ),
-                error,
-            )
+            raise DagsterObjectStoreError(
+                _object_store_operation_error_message(
+                    step_output_handle=step_output_handle,
+                    op=ObjectStoreOperationType.SET_OBJECT,
+                    object_store_name=self.object_store.name,
+                    serialization_strategy_name=dagster_type.serialization_strategy.name,
+                )
+            ) from error
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.SET_OBJECT,

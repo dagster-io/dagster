@@ -27,7 +27,6 @@ from urllib.parse import urlparse
 
 import boto3
 import dagster
-import six
 from botocore.exceptions import WaiterError
 from dagster import check
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
@@ -411,9 +410,8 @@ class EmrJobRunner:
                 WaiterConfig={"Delay": waiter_delay, "MaxAttempts": waiter_max_attempts},
             )
         except WaiterError as err:
-            six.raise_from(
-                EmrError("EMR log file did not appear on S3 after waiting"), err,
-            )
+            raise EmrError("EMR log file did not appear on S3 after waiting") from err
+
         obj = BytesIO(s3.get_object(Bucket=log_bucket, Key=log_key)["Body"].read())
         gzip_file = gzip.GzipFile(fileobj=obj)
         return gzip_file.read().decode("utf-8")

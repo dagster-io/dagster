@@ -32,7 +32,6 @@ if __name__ == "__main__":
             "nbconvert>=5.4.0,<6.0.0",
             "nteract-scrapbook>=0.2.0",
             "papermill>=1.0.0,<2.0.0",
-            "six",
         ],
         entry_points={"console_scripts": ["dagstermill = dagstermill.cli:main"]},
     )

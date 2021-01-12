@@ -2,7 +2,6 @@ import os
 import sys
 import tempfile
 
-import six
 from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
@@ -70,7 +69,7 @@ def test_compute_log_manager(mock_s3_bucket):
                 prefix="my_prefix", run_id=result.run_id
             ),
         )
-        stderr_s3 = six.ensure_str(s3_object.get()["Body"].read())
+        stderr_s3 = s3_object.get()["Body"].read().decode("utf-8")
         for expected in EXPECTED_LOGS:
             assert expected in stderr_s3
 
@@ -104,7 +103,7 @@ compute_logs:
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
-            f.write(six.ensure_binary(dagster_yaml))
+            f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
     assert (

@@ -58,7 +58,7 @@ def is_phab_and_dagit_only():
         subprocess.check_call(["git", "fetch", "--tags"])
         diff_files = (
             subprocess.check_output(["git", "diff", base_branch, branch_name, "--name-only"])
-            .decode()
+            .decode("utf-8")
             .strip()
             .split("\n")
         )

@@ -69,7 +69,6 @@ if __name__ == "__main__":
             "python-dateutil",
             "requests",
             "rx<=1.6.1",  # 3.0 was a breaking change.
-            "six",
             "tabulate",
             "tqdm",
             "sqlalchemy>=1.0",

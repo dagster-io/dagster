@@ -19,7 +19,7 @@ def create_file_handle_pipeline(temp_file_handle):
 
 
 def test_successful_file_handle_to_s3(mock_s3_bucket):
-    foo_bytes = "foo".encode()
+    foo_bytes = b"foo"
     remote_s3_object = mock_s3_bucket.Object("some-key/foo")
     remote_s3_object.put(Body=foo_bytes)
 

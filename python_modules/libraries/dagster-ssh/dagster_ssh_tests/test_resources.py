@@ -1,7 +1,6 @@
 import logging
 import os
 
-import six
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -16,13 +15,11 @@ def generate_ssh_key():
     key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537, key_size=2048)
 
     # get private key in PEM container format
-    return six.ensure_str(
-        key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
-    )
+    return key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
 
 
 @mock.patch("paramiko.SSHClient")
@@ -95,7 +92,7 @@ def test_ssh_connection_with_key_string(ssh_mock):
         username="username",
         password=None,
         timeout=10,
-        key_string=six.ensure_str(ssh_key),
+        key_string=ssh_key,
         keepalive_interval=30,
         compress=True,
         no_host_key_check=False,
@@ -186,7 +183,7 @@ def test_tunnel_with_string_key(ssh_mock):
         username="username",
         password=None,
         timeout=10,
-        key_string=six.ensure_str(ssh_key),
+        key_string=ssh_key,
         keepalive_interval=30,
         compress=True,
         no_host_key_check=False,

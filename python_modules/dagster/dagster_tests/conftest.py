@@ -48,7 +48,7 @@ def dagster_docker_image():
                 pytest.skip(
                     "Skipped container tests due to a failure when trying to build the image. "
                     "Most likely, the docker deamon is not running.\n"
-                    "Output:\n{}".format(exc_info.output.decode())
+                    "Output:\n{}".format(exc_info.output.decode("utf-8"))
                 )
 
     return docker_image

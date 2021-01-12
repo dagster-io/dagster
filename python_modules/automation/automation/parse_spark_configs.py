@@ -260,7 +260,7 @@ def serialize(result):
             printer.append("return ")
             result.write(printer)
         printer.line("# pylint: enable=line-too-long")
-        return printer.read().strip().encode()
+        return printer.read().strip().encode("utf-8")
 
 
 @click.command()

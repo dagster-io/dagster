@@ -4,7 +4,6 @@ import errno
 import functools
 import inspect
 import os
-import pickle
 import re
 import signal
 import socket
@@ -17,7 +16,6 @@ from enum import Enum
 from warnings import warn
 
 import _thread as thread
-import six
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
@@ -451,7 +449,7 @@ def is_enum_value(value):
 
 
 def git_repository_root():
-    return six.ensure_str(subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip())
+    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
 def segfault():

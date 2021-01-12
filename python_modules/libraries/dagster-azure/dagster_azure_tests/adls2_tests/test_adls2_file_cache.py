@@ -28,7 +28,7 @@ def test_adls2_file_cache_file_present(storage_account, file_system, credential)
 
     assert not file_store.has_file_object("foo")
 
-    file_store.write_binary_data("foo", "bar".encode())
+    file_store.write_binary_data("foo", b"bar")
 
     assert file_store.has_file_object("foo")
 
@@ -56,5 +56,5 @@ def test_adls2_file_cache_write_file_object(storage_account, file_system, creden
         overwrite=False,
     )
 
-    stream = io.BytesIO("content".encode())
+    stream = io.BytesIO(b"content")
     file_store.write_file_object("foo", stream)

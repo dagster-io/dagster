@@ -44,7 +44,9 @@ def get_buildkite_registry_config():
     ecr_client = boto3.client("ecr", region_name="us-west-2")
     token = ecr_client.get_authorization_token()
     username, password = (
-        base64.b64decode(token["authorizationData"][0]["authorizationToken"]).decode().split(":")
+        base64.b64decode(token["authorizationData"][0]["authorizationToken"])
+        .decode("utf-8")
+        .split(":")
     )
     registry = token["authorizationData"][0]["proxyEndpoint"]
 

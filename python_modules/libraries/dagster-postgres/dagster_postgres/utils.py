@@ -5,7 +5,6 @@ from urllib.parse import quote_plus as urlquote
 
 import psycopg2
 import psycopg2.errorcodes
-import six
 import sqlalchemy
 from dagster import Field, IntSource, Selector, StringSource, check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
@@ -83,7 +82,7 @@ def retry_pg_creation_fn(fn, retry_limit=5, retry_wait=0.2):
 
             logging.warning("Retrying failed database creation")
             if retry_limit == 0:
-                six.raise_from(DagsterPostgresException("too many retries for DB creation"), exc)
+                raise DagsterPostgresException("too many retries for DB creation") from exc
 
         time.sleep(retry_wait)
         retry_limit -= 1
@@ -110,7 +109,7 @@ def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
         ) as exc:
             logging.warning("Retrying failed database connection")
             if retry_limit == 0:
-                six.raise_from(DagsterPostgresException("too many retries for DB connection"), exc)
+                raise DagsterPostgresException("too many retries for DB connection") from exc
 
         time.sleep(retry_wait)
         retry_limit -= 1

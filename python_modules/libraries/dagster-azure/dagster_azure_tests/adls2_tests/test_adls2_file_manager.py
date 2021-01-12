@@ -30,7 +30,7 @@ def test_adls2_file_manager_write(storage_account, file_system):
     adls2_mock.account_name = storage_account
     file_manager = ADLS2FileManager(adls2_mock, file_system, "some-key")
 
-    foo_bytes = "foo".encode()
+    foo_bytes = b"foo"
 
     file_handle = file_manager.write_data(foo_bytes)
 
@@ -56,7 +56,7 @@ def test_adls2_file_manager_write(storage_account, file_system):
 
 def test_adls2_file_manager_read(storage_account, file_system):
     state = {"called": 0}
-    bar_bytes = "bar".encode()
+    bar_bytes = b"bar"
 
     class DownloadMock(mock.MagicMock):
         def readinto(self, fileobj):
@@ -141,7 +141,7 @@ def create_adls2_key(run_id, step_key, output_name):
 
 
 def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
-    bar_bytes = "bar".encode()
+    bar_bytes = b"bar"
 
     @solid(output_defs=[OutputDefinition(ADLS2FileHandle)], required_resource_keys={"file_manager"})
     def emit_file(context):
