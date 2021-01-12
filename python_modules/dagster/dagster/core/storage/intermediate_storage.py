@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod, abstractproperty
 
 import six
@@ -41,6 +42,11 @@ class IntermediateStorageAdapter(IOManager):
     def __init__(self, intermediate_storage):
         self.intermediate_storage = check.inst_param(
             intermediate_storage, "intermediate_storage", IntermediateStorage
+        )
+        warnings.warn(
+            "Intermediate Storages are deprecated in 0.10.0 and will be removed in 0.11.0. "
+            "Use IO Managers instead, which gives you better control over how inputs and "
+            "outputs are handled and loaded."
         )
 
     def handle_output(self, context, obj):
