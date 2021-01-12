@@ -47,7 +47,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=lambda _: None):
         .where(SqlEventLogStorageTable.c.asset_key != None)
         .group_by(SqlEventLogStorageTable.c.asset_key)
     )
-    with event_log_storage.connect() as conn:
+    with event_log_storage.index_connection() as conn:
         print_fn("Querying event logs.")
         to_insert = conn.execute(query).fetchall()
         print_fn("Found {} records to index".format(len(to_insert)))

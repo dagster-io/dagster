@@ -198,9 +198,3 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
                     updated_record = record._replace(dagster_event=updated_dagster_event)
                     updated_records.append(updated_record)
             self._logs[run_id] = updated_records
-
-    def has_secondary_index(self, name, run_id=None):
-        return False
-
-    def enable_secondary_index(self, name, run_id=None):
-        pass

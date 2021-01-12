@@ -84,7 +84,7 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
                 stamp_alembic_rev(alembic_config, connection)
 
     @contextmanager
-    def connect(self, run_id=None):
+    def _connect(self):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
@@ -97,22 +97,28 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         finally:
             conn.close()
 
+    def run_connection(self, run_id):
+        return self._connect()
+
+    def index_connection(self):
+        return self._connect()
+
     def get_db_path(self):
         return os.path.join(self._base_dir, "{}.db".format(SQLITE_EVENT_LOG_FILENAME))
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        with self.connect() as conn:
+        with self._connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
 
-    def has_secondary_index(self, name, run_id=None):
+    def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
             self._secondary_index_cache[name] = super(
                 ConsolidatedSqliteEventLogStorage, self
-            ).has_secondary_index(name, run_id)
+            ).has_secondary_index(name)
         return self._secondary_index_cache[name]
 
-    def enable_secondary_index(self, name, run_id=None):
+    def enable_secondary_index(self, name):
         super(ConsolidatedSqliteEventLogStorage, self).enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]

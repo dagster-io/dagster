@@ -24,6 +24,7 @@ from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
+    SqliteEventLogStorage,
 )
 from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -60,9 +61,21 @@ def create_consolidated_sqlite_event_log_instance():
         yield [instance, asset_storage]
 
 
+@contextmanager
+def create_default_sqlite_event_log_instance():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        asset_storage = SqliteEventLogStorage(temp_dir)
+        instance = get_instance(temp_dir, asset_storage)
+        yield [instance, asset_storage]
+
+
 asset_test = pytest.mark.parametrize(
     "asset_aware_context",
-    [create_in_memory_event_log_instance, create_consolidated_sqlite_event_log_instance,],
+    [
+        create_in_memory_event_log_instance,
+        create_consolidated_sqlite_event_log_instance,
+        create_default_sqlite_event_log_instance,
+    ],
 )
 
 

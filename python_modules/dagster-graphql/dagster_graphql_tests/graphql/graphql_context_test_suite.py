@@ -266,7 +266,7 @@ class InstanceManagers:
         )
 
     @staticmethod
-    def asset_aware_sqlite_instance():
+    def consolidated_sqlite_instance():
         @contextmanager
         def _sqlite_asset_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -640,9 +640,9 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def asset_aware_sqlite_instance_in_process_env():
+    def consolidated_sqlite_instance_in_process_env():
         return GraphQLContextVariant(
-            InstanceManagers.asset_aware_sqlite_instance(),
+            InstanceManagers.consolidated_sqlite_instance(),
             EnvironmentManagers.user_code_in_host_process(),
             test_id="asset_aware_instance_in_process_env",
         )
@@ -676,7 +676,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
             GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
-            GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
+            GraphQLContextVariant.consolidated_sqlite_instance_in_process_env(),
         ]
 
     @staticmethod

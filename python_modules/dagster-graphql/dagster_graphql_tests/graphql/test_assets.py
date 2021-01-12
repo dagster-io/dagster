@@ -71,7 +71,8 @@ class TestAssetAwareEventLog(
     make_graphql_context_test_suite(
         context_variants=[
             GraphQLContextVariant.in_memory_instance_in_process_env(),
-            GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
+            GraphQLContextVariant.consolidated_sqlite_instance_in_process_env(),
+            GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
             GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
         ]
     )

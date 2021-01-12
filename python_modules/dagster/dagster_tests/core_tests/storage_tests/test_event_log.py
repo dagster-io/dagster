@@ -302,7 +302,7 @@ def test_filesystem_event_log_storage_run_corrupted():
         storage = SqliteEventLogStorage(tmpdir_path)
         # URL begins sqlite:///
         # pylint: disable=protected-access
-        with open(os.path.abspath(storage.conn_string_for_run_id("foo")[10:]), "w") as fd:
+        with open(os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w") as fd:
             fd.write("some nonsense")
         with pytest.raises(sqlalchemy.exc.DatabaseError):
             storage.get_logs_for_run("foo")
@@ -311,8 +311,8 @@ def test_filesystem_event_log_storage_run_corrupted():
 def test_filesystem_event_log_storage_run_corrupted_bad_data():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)
-        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_run_id("foo")))
-        with storage.connect("foo") as conn:
+        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("foo")))
+        with storage.run_connection("foo") as conn:
             event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
                 run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
             )
@@ -321,9 +321,9 @@ def test_filesystem_event_log_storage_run_corrupted_bad_data():
         with pytest.raises(DagsterEventLogInvalidForRun):
             storage.get_logs_for_run("foo")
 
-        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_run_id("bar")))
+        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("bar")))
 
-        with storage.connect("bar") as conn:  # pylint: disable=protected-access
+        with storage.run_connection("bar") as conn:
             event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
                 run_id="bar", event="3", dagster_event_type=None, timestamp=None
             )

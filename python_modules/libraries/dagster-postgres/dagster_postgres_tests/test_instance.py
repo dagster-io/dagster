@@ -85,7 +85,7 @@ def test_statement_timeouts(hostname):
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._event_storage._connect() as conn:  # pylint: disable=protected-access
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):

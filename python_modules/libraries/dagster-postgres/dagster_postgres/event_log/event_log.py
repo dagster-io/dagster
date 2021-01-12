@@ -72,7 +72,7 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
         if "event_logs" not in table_names:
-            with self.connect() as conn:
+            with self._connect() as conn:
                 alembic_config = get_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
 
@@ -90,7 +90,7 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        with self.connect() as conn:
+        with self._connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
 
     @property
@@ -120,7 +120,7 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         """
         check.inst_param(event, "event", EventRecord)
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
-        with self.connect() as conn:
+        with self._connect() as conn:
             result_proxy = conn.execute(
                 insert_event_statement.returning(
                     SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
@@ -132,31 +132,39 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
                 """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
                 (res[0] + "_" + str(res[1]),),
             )
-            if event.is_dagster_event and event.dagster_event.asset_key:
-                self.store_asset_key(conn, event)
 
-    def store_asset_key(self, conn, event):
+        if event.is_dagster_event and event.dagster_event.asset_key:
+            self.store_asset_key(event)
+
+    def store_asset_key(self, event):
         check.inst_param(event, "event", EventRecord)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
-        conn.execute(
-            db.dialects.postgresql.insert(AssetKeyTable)
-            .values(asset_key=event.dagster_event.asset_key.to_string())
-            .on_conflict_do_nothing(index_elements=[AssetKeyTable.c.asset_key])
-        )
+        with self.index_connection() as conn:
+            conn.execute(
+                db.dialects.postgresql.insert(AssetKeyTable)
+                .values(asset_key=event.dagster_event.asset_key.to_string())
+                .on_conflict_do_nothing(index_elements=[AssetKeyTable.c.asset_key])
+            )
 
-    def connect(self, run_id=None):
+    def _connect(self):
         return create_pg_connection(self._engine, __file__, "event log")
 
-    def has_secondary_index(self, name, run_id=None):
+    def run_connection(self, run_id=None):
+        return self._connect()
+
+    def index_connection(self):
+        return self._connect()
+
+    def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
             self._secondary_index_cache[name] = super(
                 PostgresEventLogStorage, self
-            ).has_secondary_index(name, run_id)
+            ).has_secondary_index(name)
         return self._secondary_index_cache[name]
 
-    def enable_secondary_index(self, name, run_id=None):
+    def enable_secondary_index(self, name):
         super(PostgresEventLogStorage, self).enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
