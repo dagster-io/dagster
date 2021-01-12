@@ -45,12 +45,12 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         mkdir_p(base_dir)
         conn_string = create_db_conn_string(base_dir, "schedules")
         engine = create_engine(conn_string, poolclass=NullPool)
-        engine.execute("PRAGMA journal_mode=WAL;")
-        ScheduleStorageSqlMetadata.create_all(engine)
         connection = engine.connect()
         alembic_config = get_alembic_config(__file__)
         db_revision, head_revision = check_alembic_revision(alembic_config, connection)
         if not (db_revision and head_revision):
+            ScheduleStorageSqlMetadata.create_all(engine)
+            engine.execute("PRAGMA journal_mode=WAL;")
             stamp_alembic_rev(alembic_config, engine)
 
         return SqliteScheduleStorage(conn_string, inst_data)

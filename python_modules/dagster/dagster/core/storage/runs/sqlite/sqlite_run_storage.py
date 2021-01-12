@@ -15,6 +15,7 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.seven import nullcontext
 from dagster.utils import mkdir_p
 from sqlalchemy.pool import NullPool
 
@@ -68,24 +69,24 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         mkdir_p(base_dir)
         conn_string = create_db_conn_string(base_dir, "runs")
         engine = create_engine(conn_string, poolclass=NullPool)
-        engine.execute("PRAGMA journal_mode=WAL;")
-        RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
         connection = engine.connect()
         db_revision, head_revision = check_alembic_revision(alembic_config, connection)
         if not (db_revision and head_revision):
+            RunStorageSqlMetadata.create_all(engine)
+            engine.execute("PRAGMA journal_mode=WAL;")
             stamp_alembic_rev(alembic_config, engine)
 
         return SqliteRunStorage(conn_string, inst_data)
 
     @contextmanager
-    def connect(self):
+    def connect(self, raise_migration_required_errors=True):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
             with handle_schema_errors(
                 conn, get_alembic_config(__file__), msg="Sqlite run storage requires migration",
-            ):
+            ) if raise_migration_required_errors else nullcontext():
                 yield conn
         finally:
             conn.close()

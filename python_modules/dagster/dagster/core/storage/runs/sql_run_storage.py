@@ -42,7 +42,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     """
 
     @abstractmethod
-    def connect(self):
+    def connect(self, raise_migration_required_errors=True):
         """Context manager yielding a sqlalchemy.engine.Connection."""
 
     @abstractmethod
@@ -600,7 +600,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             name=migration_name, migration_completed=datetime.now(),
         )
         try:
-            with self.connect() as conn:
+            # Don't raise schema errors as MigrationRequiredErrors since we're
+            # catching a schema error for control flow
+            with self.connect(raise_migration_required_errors=False) as conn:
                 conn.execute(query)
         except db.exc.IntegrityError:
             with self.connect() as conn:
@@ -657,7 +659,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def wipe_daemon_heartbeats(self):
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            DaemonHeartbeatsTable.drop(conn)  # pylint: disable=no-value-for-parameter
+            conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

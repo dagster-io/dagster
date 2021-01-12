@@ -117,13 +117,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         while True:
             try:
-                SqlEventLogStorageMetadata.create_all(engine)
-                engine.execute("PRAGMA journal_mode=WAL;")
 
                 with engine.connect() as connection:
                     db_revision, head_revision = check_alembic_revision(alembic_config, connection)
 
                 if not (db_revision and head_revision):
+                    SqlEventLogStorageMetadata.create_all(engine)
+                    engine.execute("PRAGMA journal_mode=WAL;")
                     stamp_alembic_rev(alembic_config, engine)
 
                 break

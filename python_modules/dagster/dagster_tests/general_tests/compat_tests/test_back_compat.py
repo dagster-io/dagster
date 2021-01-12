@@ -342,10 +342,14 @@ def test_0_10_0_schedule_wipe():
         assert "jobs" not in get_sqlite3_tables(db_path)
         assert "job_ticks" not in get_sqlite3_tables(db_path)
 
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            instance.upgrade()
+        with pytest.raises(DagsterInstanceMigrationRequired):
+            with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+                pass
 
-        assert get_current_alembic_version(db_path) == "140198fdfe65"
+        with DagsterInstance.from_ref(
+            InstanceRef.from_dir(test_dir), skip_validation_checks=True
+        ) as instance:
+            instance.upgrade()
 
         assert "schedules" not in get_sqlite3_tables(db_path)
         assert "schedule_ticks" not in get_sqlite3_tables(db_path)

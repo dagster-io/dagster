@@ -1,7 +1,12 @@
 import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
-from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.core.storage.sql import (
+    create_engine,
+    get_alembic_config,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
@@ -43,8 +48,17 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         )
 
         self._index_migration_cache = {}
+        table_names = db.inspect(self._engine).get_table_names()
+
         with self.connect() as conn:
-            retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
+            # Stamp and create tables if there's no previously stamped revision and the main table
+            # doesn't exist (since we used to not stamp postgres storage when it was first created)
+            if "runs" not in table_names:
+                alembic_config = get_alembic_config(__file__)
+                retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
+
+                # This revision may be shared by any other dagster storage classes using the same DB
+                stamp_alembic_rev(alembic_config, self._engine)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection and set statement_timeout
@@ -80,8 +94,15 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             engine.dispose()
         return PostgresRunStorage(postgres_url)
 
-    def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
-        return create_pg_connection(self._engine, __file__, "run")
+    def connect(
+        self, raise_migration_required_errors=True
+    ):  # pylint: disable=arguments-differ, unused-argument
+        return create_pg_connection(
+            self._engine,
+            __file__,
+            "run",
+            raise_migration_required_errors=raise_migration_required_errors,
+        )
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)

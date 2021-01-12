@@ -211,6 +211,7 @@ class DagsterInstance:
         run_coordinator=None,
         run_launcher=None,
         settings=None,
+        skip_validation_checks=False,
         ref=None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -236,7 +237,7 @@ class DagsterInstance:
         )
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
-        if self._schedule_storage:
+        if self._schedule_storage and not skip_validation_checks:
             self._schedule_storage.validate_stored_schedules(self.scheduler_class)
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
@@ -291,6 +292,10 @@ class DagsterInstance:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
+    def get_for_migration():
+        return DagsterInstance.from_config(_dagster_home(), skip_validation_checks=True)
+
+    @staticmethod
     def local_temp(tempdir=None, overrides=None):
         warnings.warn(
             "To create a local DagsterInstance for a test, use the instance_for_test "
@@ -303,12 +308,14 @@ class DagsterInstance:
         return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
 
     @staticmethod
-    def from_config(config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):
+    def from_config(
+        config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, skip_validation_checks=False
+    ):
         instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
-        return DagsterInstance.from_ref(instance_ref)
+        return DagsterInstance.from_ref(instance_ref, skip_validation_checks=skip_validation_checks)
 
     @staticmethod
-    def from_ref(instance_ref):
+    def from_ref(instance_ref, skip_validation_checks=False):
         check.inst_param(instance_ref, "instance_ref", InstanceRef)
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
@@ -321,6 +328,7 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
+            skip_validation_checks=skip_validation_checks,
             ref=instance_ref,
         )
 
