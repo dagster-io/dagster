@@ -4,6 +4,35 @@ When new releases include breaking changes or deprecations, this document descri
 
 # Migrating to 0.10.0
 
+## Breaking change: New storage schema
+
+This release includes several storage schema changes to improve performance and enable
+new features like sensors and run queueing. After switching to the 0.10.0, run the
+`dagster instance migrate` command to migrate your instance storage to the latest schema. You will
+also need to restart any previously running schedules.
+
+## New scheduler: DagsterDaemonScheduler
+
+This release includes a new scheduler with improved fault tolerance and full support for timezones.
+The existing schedulers, `SystemCronScheduler` and `K8sScheduler`, are deprecated and will be
+removed in a future release.
+
+### Steps to migrate
+
+- To use the new scheduler, you must first add the new `dagster-daemon` service as part of your
+  deployment. See https://docs.dagster.io/deploying for information on how to set up the daemon
+  process for local development, Docker, or Kubernetes deployments.
+
+- If you haven't used a scheduler before, no further action is required to migrate to the new
+  scheduler. If you're using `SystemCronScheduler` or `K8sScheduler`, first stop any schedules
+  that are currently running. Then update your `dagster.yaml` file to no longer include a
+  `scheduler` entry (`DagsterDaemonScheduler` is the new default scheduler, so no `scheduler` entry
+  is needed). Once the instance is configured in this way, the `dagster-daemon` process will
+  start submitting runs from any started schedules.
+
+See https://docs.dagster.io/troubleshooting/schedules for troubleshooting steps if you're running
+into any problems with new new scheduler.
+
 ## Deprecation: Intermediate Storage
 
 We have deprecated "intermediate storage". Loading inputs and storing outputs are now handled by
