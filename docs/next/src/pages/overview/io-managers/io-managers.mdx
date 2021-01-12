@@ -8,7 +8,7 @@ import PyObject from 'components/PyObject';
 
 # IO Managers
 
-Dagster solids have [inputs and outputs](/overview/solids-pipelines/solids#solid-inputs-and-outputs).  When a solid produces an output, what happens to it?  When a solid needs an input value, how is it loaded?  <PyObject module="dagster" object="IOManager" />s, <PyObject module="dagster" object="InputManager" />s, and <PyObject module="dagster" object="OutputManager" />s let the developer decide.
+Dagster solids have [inputs and outputs](/overview/solids-pipelines/solids#solid-inputs-and-outputs).  When a solid produces an output, what happens to it?  When a solid needs an input value, how is it loaded?  <PyObject module="dagster" object="IOManager" />s and <PyObject module="dagster" object="InputManager" />s.
 
 These APIs make it easy separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results.  Solids can focus on business logic, while IO managers handle I/O.  This separation makes it easier to test the business logic and run it in different environments.
 
@@ -28,24 +28,9 @@ The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, st
 
 IOManagers are [resources](/overview/modes-resources-presets/modes-resources), which means users can supply different IOManagers for the same solid outputs in different situations.  For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 
-## Input managers and output managers
+## Input managers
 
 <PyObject module="dagster" object="RootInputManagers" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not hooked up to an upstream solid's output.
-
-<p/>
-
-<PyObject module="dagster" object="OutputManager" />s are for situations where you need to control how outputs are handled independently of how inputs are loaded.  They're useful for handling the outputs at the end of a pipeline.
-
-<p/>
-
-<PyObject module="dagster" object="IOManager" /> is an interface that inherits from both the <PyObject module="dagster" object="InputManager" /> and <PyObject module="dagster" object="OutputManager" /> interfaces:
-
-<p/>
-
-<p align="center">
-  <img src="/assets/images/overview/io-managers/manager-venn-diagram.png" width="600px"/>
-</p>
-
 
 ## Setting a pipeline-wide IO manager
 

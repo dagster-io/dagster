@@ -42,20 +42,6 @@ Input managers are user-provided objects that specify how to load step inputs.
     :members:
 
 
-Output Managers
----------------
-
-Output managers are user-provided objects that specify how to handle step outputs.
-
-.. autodecorator:: output_manager
-
-.. autoclass:: OutputManager
-    :members:
-
-.. autoclass:: OutputManagerDefinition
-    :members:
-
-
 Built-in IO Managers
 ------------------------
 
