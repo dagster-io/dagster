@@ -17,7 +17,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_io_manager
+from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
@@ -55,7 +55,9 @@ def define_inty_pipeline():
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(resource_defs={"io_manager": adls2_io_manager, "adls2": adls2_resource})
+            ModeDefinition(
+                resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource}
+            )
         ]
     )
     def basic_external_plan_execution():
@@ -68,7 +70,7 @@ nettest = pytest.mark.nettest
 
 
 @nettest
-def test_adls2_io_manager_execution(storage_account, file_system, credential):
+def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     pipeline_def = define_inty_pipeline()
 
     run_config = {

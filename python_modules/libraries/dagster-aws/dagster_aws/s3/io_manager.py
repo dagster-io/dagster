@@ -82,12 +82,11 @@ class PickledObjectS3IOManager(IOManager):
     },
     required_resource_keys={"s3"},
 )
-def s3_io_manager(init_context):
+def s3_pickle_io_manager(init_context):
     """Persistent IO manager using S3 for storage.
 
-    Suitable for objects storage for distributed executors, so long as
-    each execution node has network connectivity and credentials for S3 and
-    the backing bucket.
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for S3 and the backing bucket.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition`
     in order to make it available to your pipeline:
@@ -97,7 +96,7 @@ def s3_io_manager(init_context):
         pipeline_def = PipelineDefinition(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'io_manager': s3_io_manager, "s3": s3_resource, ...},
+                    resource_defs={'io_manager': s3_pickle_io_manager, "s3": s3_resource, ...},
                 ), ...
             ], ...
         )

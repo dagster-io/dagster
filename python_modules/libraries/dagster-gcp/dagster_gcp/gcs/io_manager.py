@@ -70,12 +70,11 @@ class PickledObjectGCSIOManager(IOManager):
     },
     required_resource_keys={"gcs"},
 )
-def gcs_io_manager(init_context):
+def gcs_pickle_io_manager(init_context):
     """Persistent IO manager using GCS for storage.
 
-    Suitable for objects storage for distributed executors, so long as
-    each execution node has network connectivity and credentials for GCS and
-    the backing bucket.
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for GCS and the backing bucket.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition`
     in order to make it available to your pipeline:
@@ -85,7 +84,7 @@ def gcs_io_manager(init_context):
         pipeline_def = PipelineDefinition(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'io_manager': gcs_io_manager, 'gcs': gcs_resource, ...},
+                    resource_defs={'io_manager': gcs_pickle_io_manager, 'gcs': gcs_resource, ...},
                 ), ...
             ], ...
         )

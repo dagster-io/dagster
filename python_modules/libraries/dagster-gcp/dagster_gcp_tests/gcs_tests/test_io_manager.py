@@ -14,7 +14,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
-from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_io_manager
+from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage
 
@@ -44,7 +44,9 @@ def define_inty_pipeline():
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(resource_defs={"io_manager": gcs_io_manager, "gcs": gcs_resource},)
+            ModeDefinition(
+                resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource},
+            )
         ]
     )
     def basic_external_plan_execution():
@@ -53,7 +55,7 @@ def define_inty_pipeline():
     return basic_external_plan_execution
 
 
-def test_gcs_io_manager_execution(gcs_bucket):
+def test_gcs_pickle_io_manager_execution(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
     run_config = {"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket,}}}}

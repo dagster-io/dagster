@@ -15,7 +15,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
-from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_io_manager
+from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
 
@@ -48,7 +48,9 @@ def define_inty_pipeline():
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(resource_defs={"io_manager": s3_io_manager, "s3": test_s3_resource,},)
+            ModeDefinition(
+                resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource,},
+            )
         ]
     )
     def basic_external_plan_execution():
@@ -57,7 +59,7 @@ def define_inty_pipeline():
     return basic_external_plan_execution
 
 
-def test_s3_io_manager_execution(mock_s3_bucket):
+def test_s3_pickle_io_manager_execution(mock_s3_bucket):
     pipeline_def = define_inty_pipeline()
 
     run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}

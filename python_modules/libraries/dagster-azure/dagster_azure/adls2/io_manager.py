@@ -82,12 +82,12 @@ class PickledObjectADLS2IOManager(IOManager):
     },
     required_resource_keys={"adls2"},
 )
-def adls2_io_manager(init_context):
+def adls2_pickle_io_manager(init_context):
     """Persistent IO manager using Azure Data Lake Storage Gen2 for storage.
 
-    Suitable for objects storage for distributed executors, so long as
-    each execution node has network connectivity and credentials for ADLS and
-    the backing container.
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for ADLS and the backing
+    container.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition`
     in order to make it available to your pipeline:
@@ -98,7 +98,7 @@ def adls2_io_manager(init_context):
             mode_defs=[
                 ModeDefinition(
                     resource_defs={
-                        'io_manager': adls2_io_manager,
+                        'io_manager': adls2_pickle_io_manager,
                         'adls2': adls2_resource, ...},
                 ), ...
             ], ...
