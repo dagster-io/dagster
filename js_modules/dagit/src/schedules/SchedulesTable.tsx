@@ -55,6 +55,10 @@ export const SchedulesTable: React.FC<{
     </div>
   );
 
+  const repoAddressMemo = React.useMemo(() => {
+    return {name: repoAddress.name, location: repoAddress.location};
+  }, [repoAddress.name, repoAddress.location]);
+
   return (
     <Table striped style={{width: '100%'}}>
       <thead>
@@ -104,7 +108,7 @@ export const SchedulesTable: React.FC<{
       </thead>
       <tbody>
         {schedules.map((schedule) => (
-          <ScheduleRow repoAddress={repoAddress} schedule={schedule} key={schedule.name} />
+          <ScheduleRow repoAddress={repoAddressMemo} schedule={schedule} key={schedule.name} />
         ))}
       </tbody>
     </Table>

@@ -16,7 +16,7 @@ interface Props {
   queryData: QueryResult<InstanceHealthQuery>;
 }
 
-export const InstanceSchedules = (props: Props) => {
+export const InstanceSchedules = React.memo((props: Props) => {
   const {queryData} = props;
 
   return (
@@ -65,4 +65,4 @@ export const InstanceSchedules = (props: Props) => {
       }}
     </Loading>
   );
-};
+});
