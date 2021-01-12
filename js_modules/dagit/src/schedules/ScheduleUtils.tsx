@@ -44,10 +44,14 @@ export const SCHEDULE_FRAGMENT = gql`
   ${JOB_STATE_FRAGMENT}
 `;
 
-const REPOSITORY_SCHEDULES_FRAGMENT = gql`
+export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
   fragment RepositorySchedulesFragment on Repository {
     name
     id
+    location {
+      id
+      name
+    }
     schedules {
       id
       ...ScheduleFragment

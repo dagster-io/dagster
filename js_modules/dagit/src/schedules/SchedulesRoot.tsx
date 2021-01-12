@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
+import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
@@ -13,8 +13,10 @@ import {SchedulesNextTicks} from 'src/schedules/SchedulesNextTicks';
 import {SchedulesTable} from 'src/schedules/SchedulesTable';
 import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
 import {JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
+import {Subheading} from 'src/ui/Text';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -70,10 +72,14 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
               <Group direction="column" spacing={16}>
                 <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
-                <SchedulesNextTicks
-                  repoAddress={repoAddress}
-                  schedules={repositoryOrError.schedules}
-                />
+                <Box
+                  margin={{vertical: 16}}
+                  padding={{bottom: 8}}
+                  border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+                >
+                  <Subheading>Scheduled ticks</Subheading>
+                </Box>
+                <SchedulesNextTicks repos={[repositoryOrError]} />
               </Group>
             );
           }

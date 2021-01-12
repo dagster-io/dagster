@@ -14,6 +14,12 @@ export interface SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError";
 }
 
+export interface SchedulesRootQuery_repositoryOrError_Repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PythonError {
   __typename: "PythonError";
 }
@@ -144,19 +150,13 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_origin {
   repositoryLocationMetadata: SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata[];
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
 export interface SchedulesRootQuery_repositoryOrError_Repository {
   __typename: "Repository";
   id: string;
   name: string;
+  location: SchedulesRootQuery_repositoryOrError_Repository_location;
   schedules: SchedulesRootQuery_repositoryOrError_Repository_schedules[];
   origin: SchedulesRootQuery_repositoryOrError_Repository_origin;
-  location: SchedulesRootQuery_repositoryOrError_Repository_location;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_PythonError_cause {

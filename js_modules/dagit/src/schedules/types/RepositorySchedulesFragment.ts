@@ -10,6 +10,12 @@ import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../ty
 // GraphQL fragment: RepositorySchedulesFragment
 // ====================================================
 
+export interface RepositorySchedulesFragment_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
 export interface RepositorySchedulesFragment_schedules_partitionSet_partitionStatusesOrError_PythonError {
   __typename: "PythonError";
 }
@@ -140,17 +146,11 @@ export interface RepositorySchedulesFragment_origin {
   repositoryLocationMetadata: RepositorySchedulesFragment_origin_repositoryLocationMetadata[];
 }
 
-export interface RepositorySchedulesFragment_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
 export interface RepositorySchedulesFragment {
   __typename: "Repository";
   name: string;
   id: string;
+  location: RepositorySchedulesFragment_location;
   schedules: RepositorySchedulesFragment_schedules[];
   origin: RepositorySchedulesFragment_origin;
-  location: RepositorySchedulesFragment_location;
 }
