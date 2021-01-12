@@ -17,6 +17,7 @@ class SensorExecutionContext(JobContext):
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
         last_completion_time (float): The last time that the sensor was evaluated (UTC).
+        last_run_key (str): The run key of the RunRequest most recently created by this sensor.
     """
 
     __slots__ = ["_last_completion_time", "_last_run_key"]

@@ -1,4 +1,4 @@
-import {DynamicMetaTags} from 'components/MetaTags';
+import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
@@ -8,10 +8,11 @@ import PyObject from 'components/PyObject';
 
 # Sensors
 
-Dagster enables sensors capable of instigating runs based on some external state change, e.g. executing a pipeline when a new file appears in an S3 bucket.
-To create a sensor, define a <PyObject module="dagster" object="SensorDefinition"/> and include it in your repository.
+Sensors allow you to instigate runs when some external state changes. For example, you might
+want to launch a run whenever a new file appears in an S3 bucket, or when an asset is materialized
+by another Dagster pipeline.
 
-A sensor has a number of properties:
+Each sensor:
 
 - Targets a pipeline
 - Defines an evaluation function that yields a number of `RunRequest` objects, each corresponding to a requested pipeline run
@@ -19,12 +20,19 @@ A sensor has a number of properties:
 
 ## Defining a Sensor
 
-The core of a sensor definition is the evaluation function. The evaluation function checks some external state and yields a <PyObject module="dagster" object="RunRequest"/> for each pipeline run that should be executed.
+To create a sensor, define a <PyObject module="dagster" object="SensorDefinition"/> and include it in your repository.
+
+The core of a sensor definition is the evaluation function. This function checks some external state
+and yields a <PyObject module="dagster" object="RunRequest"/> for each pipeline run that should be executed.
 Each <PyObject module="dagster" object="RunRequest"/> consists a run config, a tags dictionary, and a run key string.
 
-### Example pipeline
+The [dagster-daemon](/overview/daemon) process is responsible for periodically invoking the
+evaluation function for each of your running sensors (by default, every 30 seconds), and launching
+runs from any <PyObject module="dagster" object="RunRequest"/>s that are returned.
 
-For example, we have a pipeline that takes in a filepath and logs it:
+### Example sensor
+
+For example, consider a pipeline that takes a filepath as input and logs it:
 
 ```python literalinclude caption=pipeline.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/pipeline.py
@@ -32,9 +40,7 @@ startAfter:start_pipeline_marker_2
 endBefore:end_pipeline_marker_2
 ```
 
-### Example sensor
-
-You can create a sensor that lists the contents of a directory and kicks off a job for each file that exists in the directory.
+Below is a sensor that iterates through the contents of a directory and kicks off a job for each file that exists in the directory.
 
 ```python literalinclude caption=sensor.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/sensor_definition.py
@@ -42,19 +48,25 @@ startAfter:start_sensor_marker_0
 endBefore:end_sensor_marker_0
 ```
 
+Adding a new file to the directory will cause a new run for that file to be created the next time that the sensor is evaluated.
+
 ### Idempotence using run keys
 
-In the above example, we are using the `run_key` parameter to enforce idempotence for each filename.
-Dagster will ensure that only one run is created for each unique `run_key` value for a given sensor. In the example, even though the full directory contents are requested on every sensor evaluation, only new files will actually be requested due to the filename-based run key.
+In the above example, we use the `run_key` parameter to enforce idempotence for each filename.
+Dagster will ensure that only one run is created for each unique `run_key` value for a given
+sensor. In the example, even though the full directory contents are requested on every sensor
+evaluation, only new files will actually instigate new runs due to the run key.
 
-Run keys enable a sensor evaluation function to declaratively describe what runs should exist, rather than keeping track of cursors or timestamps.
-
-If it is still useful to keep track of timestamps and cursors, some useful data are available on the <PyObject module="dagster" object="SensorExecutionContext"/>.
+Run keys enable a sensor evaluation function to declaratively describe what runs should exist,
+rather than keeping track of cursors or timestamps. However, the `last_run_key` and
+`last_completion_time` attributes on the <PyObject module="dagster" object="SensorExecutionContext" /> that's passed into
+the sensor evaluation function can also be used to keep track of timestamps and cursors.
 
 ### Sensors in Dagit
 
-You can view and operate sensors in Dagit. To view the sensors page, click the sensors tab in the left hand navigation pane.
+You can view and operate sensors in Dagit. To view the sensors page, click the "All sensors" button
+in the left-hand navigation pane.
 
-Here, we can turn sensors on and off, and also see past executions of the sensor.
+Here, we can turn sensors on and off, and also see past executions of each sensor.
 
 ![Sensors in Dagit](/assets/images/overview/schedules_partitions/sensors.png)
