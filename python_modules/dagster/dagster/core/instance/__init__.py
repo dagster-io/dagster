@@ -472,6 +472,7 @@ class DagsterInstance:
 
             print_fn("Updating run storage...")
             self._run_storage.upgrade()
+            self._run_storage.build_missing_indexes()
 
             print_fn("Updating event storage...")
             self._event_storage.upgrade()
@@ -488,6 +489,7 @@ class DagsterInstance:
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
         self._event_storage.reindex(print_fn)
+        self._run_storage.reindex(print_fn)
         print_fn("Done.")
 
     def dispose(self):

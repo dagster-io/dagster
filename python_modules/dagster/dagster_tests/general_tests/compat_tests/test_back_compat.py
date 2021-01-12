@@ -288,6 +288,47 @@ def test_run_partition_migration():
         assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
 
 
+def test_run_partition_data_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+        from dagster.core.storage.runs.migration import RUN_PARTITIONS
+
+        # load db that has migrated schema, but not populated data for run partitions
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "375e95bad550"
+
+        # Make sure the schema is migrated
+        assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+
+        run_storage = instance._run_storage
+        assert isinstance(run_storage, SqlRunStorage)
+
+        partition_set_name = "ingest_and_train"
+        partition_name = "2020-01-02"
+
+        # ensure old tag-based reads are working
+        assert not run_storage.has_built_index(RUN_PARTITIONS)
+        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 2
+
+        # turn on reads for the partition column, without migrating the data
+        run_storage.mark_index_built(RUN_PARTITIONS)
+
+        # ensure that no runs are returned because the data has not been migrated
+        assert run_storage.has_built_index(RUN_PARTITIONS)
+        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 0
+
+        # actually migrate the data
+        run_storage.build_missing_indexes(force_rebuild_all=True)
+
+        # ensure that we get the same partitioned runs returned
+        assert run_storage.has_built_index(RUN_PARTITIONS)
+        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 2
+
+
 def test_0_10_0_schedule_wipe():
     src_dir = file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/sqlite")
     with copy_directory(src_dir) as test_dir:

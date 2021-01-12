@@ -23,7 +23,14 @@ from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
-from .schema import DaemonHeartbeatsTable, RunTagsTable, RunsTable, SnapshotsTable
+from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
+from .schema import (
+    DaemonHeartbeatsTable,
+    RunTagsTable,
+    RunsTable,
+    SecondaryIndexMigrationTable,
+    SnapshotsTable,
+)
 
 
 class SnapshotType(Enum):
@@ -541,6 +548,66 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         row = self.fetchone(query)
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
+
+    def _get_partition_runs(self, partition_set_name, partition_name):
+        # utility method to help test reads off of the partition column
+        if not self.has_built_index(RUN_PARTITIONS):
+            # query by tags
+            return self.get_runs(
+                filters=PipelineRunsFilter(
+                    tags={
+                        PARTITION_SET_TAG: partition_set_name,
+                        PARTITION_NAME_TAG: partition_name,
+                    }
+                )
+            )
+        else:
+            query = (
+                self._runs_query()
+                .where(RunsTable.c.partition == partition_name)
+                .where(RunsTable.c.partition_set == partition_set_name)
+            )
+            rows = self.fetchall(query)
+            return self._rows_to_runs(rows)
+
+    # Tracking data migrations over secondary indexes
+
+    def build_missing_indexes(self, print_fn=lambda _: None, force_rebuild_all=False):
+        for migration_name, migration_fn in RUN_DATA_MIGRATIONS.items():
+            if self.has_built_index(migration_name):
+                if not force_rebuild_all:
+                    continue
+            print_fn(f"Starting data migration: {migration_name}")
+            migration_fn()(self, print_fn)
+            self.mark_index_built(migration_name)
+            print_fn(f"Finished data migration: {migration_name}")
+
+    def has_built_index(self, migration_name):
+        query = (
+            db.select([1])
+            .where(SecondaryIndexMigrationTable.c.name == migration_name)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .limit(1)
+        )
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
+
+    def mark_index_built(self, migration_name):
+        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+            name=migration_name, migration_completed=datetime.now(),
+        )
+        try:
+            with self.connect() as conn:
+                conn.execute(query)
+        except db.exc.IntegrityError:
+            with self.connect() as conn:
+                conn.execute(
+                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(SecondaryIndexMigrationTable.c.name == migration_name)
+                    .values(migration_completed=datetime.now())
+                )
 
     # Daemon heartbeats
 

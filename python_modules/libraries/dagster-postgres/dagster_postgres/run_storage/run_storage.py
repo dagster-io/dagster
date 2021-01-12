@@ -42,6 +42,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool,
         )
 
+        self._index_migration_cache = {}
         with self.connect() as conn:
             retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
 
@@ -85,6 +86,18 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
         run_alembic_upgrade(alembic_config, self._engine)
+
+    def has_built_index(self, migration_name):
+        if migration_name not in self._index_migration_cache:
+            self._index_migration_cache[migration_name] = super(
+                PostgresRunStorage, self
+            ).has_built_index(migration_name)
+        return self._index_migration_cache[migration_name]
+
+    def mark_index_built(self, migration_name):
+        super(PostgresRunStorage, self).mark_index_built(migration_name)
+        if migration_name in self._index_migration_cache:
+            del self._index_migration_cache[migration_name]
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
