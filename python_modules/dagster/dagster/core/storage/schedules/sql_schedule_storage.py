@@ -17,7 +17,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
-from .schema import JobTable, JobTickTable, ScheduleTable, ScheduleTickTable
+from .schema import JobTable, JobTickTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
@@ -237,7 +237,5 @@ class SqlScheduleStorage(ScheduleStorage):
         """Clears the schedule storage."""
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            conn.execute(ScheduleTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(ScheduleTickTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(JobTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(JobTickTable.delete())  # pylint: disable=no-value-for-parameter

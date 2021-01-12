@@ -286,3 +286,31 @@ def test_run_partition_migration():
 
         assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
         assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
+
+
+def test_0_10_0_schedule_wipe():
+    src_dir = file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "b22f16781a7c"
+
+        assert "schedules" in get_sqlite3_tables(db_path)
+        assert "schedule_ticks" in get_sqlite3_tables(db_path)
+
+        assert "jobs" not in get_sqlite3_tables(db_path)
+        assert "job_ticks" not in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert get_current_alembic_version(db_path) == "140198fdfe65"
+
+        assert "schedules" not in get_sqlite3_tables(db_path)
+        assert "schedule_ticks" not in get_sqlite3_tables(db_path)
+
+        assert "jobs" in get_sqlite3_tables(db_path)
+        assert "job_ticks" in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
+            assert len(upgraded_instance.all_stored_job_state()) == 0

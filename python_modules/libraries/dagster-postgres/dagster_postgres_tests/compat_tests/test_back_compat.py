@@ -261,6 +261,41 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
         assert result.success
 
 
+def test_0_10_0_schedule_wipe(hostname, conn_string):
+    engine = create_engine(conn_string)
+    engine.execute("drop schema public cascade;")
+    engine.execute("create schema public;")
+
+    env = os.environ.copy()
+    env["PGPASSWORD"] = "test"
+    subprocess.check_call(
+        [
+            "psql",
+            "-h",
+            hostname,
+            "-p",
+            "5432",
+            "-U",
+            "test",
+            "-f",
+            file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"),
+        ],
+        env=env,
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            instance.upgrade()
+
+        with DagsterInstance.from_config(tempdir) as upgraded_instance:
+            assert len(upgraded_instance.all_stored_job_state()) == 0
+
+
 def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
     engine = create_engine(conn_string)
     engine.execute("drop schema public cascade;")
