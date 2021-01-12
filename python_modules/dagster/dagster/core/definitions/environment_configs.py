@@ -178,9 +178,6 @@ def get_inputs_field(solid, handle, dependency_structure, resource_defs):
     check.inst_param(handle, "handle", SolidHandle)
     check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
 
-    if not solid.definition.has_configurable_inputs:
-        return None
-
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
@@ -299,15 +296,19 @@ def get_type_output_field(output_def):
 
 
 def solid_config_field(fields, ignored):
-    if ignored:
-        return Field(
-            Shape(remove_none_entries(fields)),
-            is_required=False,
-            description="This solid is not present in the current solid selection, "
-            "the config values are allowed but ignored.",
-        )
+    trimmed_fields = remove_none_entries(fields)
+    if trimmed_fields:
+        if ignored:
+            return Field(
+                Shape(trimmed_fields),
+                is_required=False,
+                description="This solid is not present in the current solid selection, "
+                "the config values are allowed but ignored.",
+            )
+        else:
+            return Field(Shape(trimmed_fields))
     else:
-        return Field(Shape(remove_none_entries(fields)))
+        return None
 
 
 def construct_leaf_solid_config(
@@ -398,24 +399,27 @@ def define_solid_dictionary_cls(
 
     fields = {}
     for solid in solids:
-        if solid.definition.has_config_entry:
-            fields[solid.name] = define_isolid_field(
-                solid,
-                SolidHandle(solid.name, parent_handle),
-                dependency_structure,
-                resource_defs,
-                ignored=False,
-            )
+        solid_field = define_isolid_field(
+            solid,
+            SolidHandle(solid.name, parent_handle),
+            dependency_structure,
+            resource_defs,
+            ignored=False,
+        )
+
+        if solid_field:
+            fields[solid.name] = solid_field
 
     for solid in ignored_solids:
-        if solid.definition.has_config_entry:
-            fields[solid.name] = define_isolid_field(
-                solid,
-                SolidHandle(solid.name, parent_handle),
-                dependency_structure,
-                resource_defs,
-                ignored=True,
-            )
+        solid_field = define_isolid_field(
+            solid,
+            SolidHandle(solid.name, parent_handle),
+            dependency_structure,
+            resource_defs,
+            ignored=True,
+        )
+        if solid_field:
+            fields[solid.name] = solid_field
 
     return Shape(fields)
 

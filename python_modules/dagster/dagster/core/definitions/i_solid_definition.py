@@ -1,3 +1,4 @@
+import warnings
 from abc import abstractmethod, abstractproperty
 
 from dagster import check
@@ -99,13 +100,20 @@ class NodeDefinition(ConfigurableDefinition):
 
     @property
     def has_configurable_inputs(self):
-        # This should be deprecated and removed. With the shift to root input managers, it doesn't
-        # really make sense anymore, because whether the solid has configurable inputs now depends
-        # on the mode definition.
+        warnings.warn(
+            "NodeDefinition.has_configurable_inputs is deprecated, starting in 0.10.0, because "
+            "whether the node has configurable inputs depends on what RootInputManager is supplied "
+            "in the mode."
+        )
         return any([inp.dagster_type.loader or inp.root_manager_key for inp in self._input_defs])
 
     @property
     def has_configurable_outputs(self):
+        warnings.warn(
+            "NodeDefinition.has_configurable_inputs is deprecated, starting in 0.10.0, because "
+            "whether the node has configurable inputs depends on what IOManager is supplied in the "
+            " mode."
+        )
         return any([out.dagster_type.materializer for out in self._output_defs])
 
     @abstractproperty
