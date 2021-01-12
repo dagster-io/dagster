@@ -74,7 +74,8 @@ Dagster's default scheduler, `DagsterDaemonScheduler`, runs as part
 of the [dagster-daemon process](/overview/daemon). This scheduler uses checkpointing to ensure
 that your schedule function runs exactly once per schedule interval, even if the scheduler goes
 down. Check the [Deploying Dagster](/deploying) section of the docs for more on how to deploy
-`dagster-daemon` to enable the use of this scheduler.
+`dagster-daemon` to enable the use of this scheduler. Once `dagster-daemon` is deployed and your
+schedule is turned on, your schedule should begin running at the interval specified by the schedule.
 
 Dagster also supports configuring `SystemCronScheduler` and `K8sScheduler` on your Dagster instance,
 but these schedulers are both deprecated - we recommend that you use `DagsterDaemonScheduler`.
