@@ -10,7 +10,7 @@ from dagster import (
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster_aws.emr import emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_io_manager, s3_resource
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
@@ -52,7 +52,7 @@ emr_mode = ModeDefinition(
         ),
         "pyspark": pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "2g"}}),
         "s3": s3_resource,
-        "io_manager": s3_io_manager.configured(
+        "io_manager": s3_pickle_io_manager.configured(
             {"s3_bucket": "my_staging_bucket", "s3_prefix": "simple-pyspark"}
         ),
     },
