@@ -460,9 +460,10 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 if not state.terminated.exit_code == 0:
                     raw_logs = self.retrieve_pod_logs(pod_name, namespace)
+                    message = state.terminated.message
                     raise DagsterK8sError(
-                        'Pod did not exit successfully. Failed with message: "%s" and pod logs: "%s"'
-                        % (state.terminated.message, str(raw_logs))
+                        f'Pod did not exit successfully. Failed with message: "{message}" '
+                        f'and pod logs: "{raw_logs}"'
                     )
                 else:
                     self.logger("Pod {pod_name} exitted successfully".format(pod_name=pod_name))
@@ -471,7 +472,7 @@ class DagsterKubernetesClient:
             else:
                 raise DagsterK8sError("Should not get here, unknown pod state")
 
-    def retrieve_pod_logs(self, pod_name, namespace):
+    def retrieve_pod_logs(self, pod_name: str, namespace: str) -> str:
         """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
 
         Args:
@@ -491,4 +492,4 @@ class DagsterKubernetesClient:
         # https://github.com/kubernetes-client/python/issues/811
         return self.core_api.read_namespaced_pod_log(
             name=pod_name, namespace=namespace, _preload_content=False
-        ).data
+        ).data.decode("utf-8")
