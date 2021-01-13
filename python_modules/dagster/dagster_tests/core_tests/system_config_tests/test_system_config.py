@@ -10,6 +10,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    Shape,
     SolidDefinition,
     SolidInvocation,
     String,
@@ -23,7 +24,6 @@ from dagster.config.validate import process_config
 from dagster.core.definitions import create_environment_type, create_run_config_schema
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
-    define_solid_config_cls,
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import EnvironmentConfig, SolidConfig
@@ -125,7 +125,7 @@ def test_default_environment():
 
 
 def test_solid_config():
-    solid_config_type = define_solid_config_cls(Field(Int), None, None)
+    solid_config_type = Shape({"config": Field(Int)})
     solid_inst = process_config(solid_config_type, {"config": 1})
     assert solid_inst.value["config"] == 1
 
