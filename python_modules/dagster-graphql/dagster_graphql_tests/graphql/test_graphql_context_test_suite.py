@@ -8,8 +8,11 @@ from dagster.core.test_utils import ExplodingRunLauncher
 from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_context
 
 
+@pytest.mark.graphql_context_variants
 @pytest.mark.parametrize("variant", GraphQLContextVariant.all_readonly_variants())
 def test_readonly_variants(variant):
+    # Note: This mark is only run in the `tox_postgres.ini` file and not the default `tox.ini`
+    # file because 3 of the variants have a postgres dependency
     assert isinstance(variant, GraphQLContextVariant)
     with manage_graphql_context(variant) as context:
         assert isinstance(context.instance.run_launcher, ExplodingRunLauncher)
