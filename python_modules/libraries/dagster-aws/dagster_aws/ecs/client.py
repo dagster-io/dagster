@@ -25,8 +25,34 @@ class ECSClient:
         self.max_polls = max_polls
         self.polling_interval = polling_interval
 
+    def set_task(self, **kwargs):
+        """Set an ECS Task Definition.
+
+        Args:
+
+        https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RegisterTaskDefinition.html
+
+        Returns:
+            str: The Task Definition ARN
+        """
+        return self.client.register_task_definition(**kwargs)["taskDefinition"]["taskDefinitionArn"]
+
+    def start_task(self, task_definition):
+        """Start a single FARGATE task from task definition.
+
+        Args:
+            task_definition (str): The family and revision (family:revision) or full ARN
+                of the task definition to run. If a revision is not specified, the
+                latest ACTIVE revision is used.
+
+        Returns:
+            str: The Task ARN
+        """
+        return self._start_task(task_definition)
+
     def run_task(self, task_definition):
-        """Synchronously run a task definition on ECS.
+        """Synchronously run a single FARGATE task from a task definition until all tasks
+        are STOPPED.
 
         Args:
             task_definition (str): The family and revision (family:revision) or full ARN
@@ -36,6 +62,37 @@ class ECSClient:
         Returns:
             None
         """
+        task_arn = self._start_task(task_definition)
+
+        tasks = self._poll_until_stopped(task_arn)
+
+        stop_codes = [task.get("stopCode") for task in tasks]
+        errors = [stop_code for stop_code in stop_codes if stop_code != "EssentialContainerExited"]
+        if any(errors):
+            raise ECSError(";".join(errors))
+
+    def stop_task(self, task_arn):
+        """Synchronously stop a running task. This method will call ECS StopTask and then
+            poll until the task reaches a STOPPED status.
+
+        Args:
+            task_arn (str): The Task ARN.
+
+        Returns:
+            bool: True if the task stops; False if the task was already stopped.
+        """
+        try:
+            response = self.client.stop_task(cluster=self.cluster, task=task_arn)
+        except Exception as e:
+            raise ECSError(e)
+
+        if response["task"]["lastStatus"] == "STOPPED":
+            return False
+
+        self._poll_until_stopped(task_arn)
+        return True
+
+    def _start_task(self, task_definition):
         response = self.client.run_task(
             count=1,
             launchType="FARGATE",
@@ -45,11 +102,12 @@ class ECSClient:
                 "awsvpcConfiguration": {"subnets": self.subnets, "assignPublicIp": "ENABLED"}
             },
         )
-        task_arns = [task["taskArn"] for task in response["tasks"]]
+        return response["tasks"][0]["taskArn"]
 
+    def _poll_until_stopped(self, task_arn):
         retries = self.max_polls
         while retries > 0:
-            response = self.client.describe_tasks(cluster=self.cluster, tasks=task_arns)
+            response = self.client.describe_tasks(cluster=self.cluster, tasks=[task_arn])
             tasks = [task for task in response["tasks"]]
 
             if all(task["lastStatus"] == "STOPPED" for task in tasks):
@@ -61,10 +119,7 @@ class ECSClient:
         if retries <= 0:
             raise ECSTimeout()
 
-        stop_codes = [task.get("stopCode") for task in tasks]
-        errors = [stop_code for stop_code in stop_codes if stop_code != "EssentialContainerExited"]
-        if any(errors):
-            raise ECSError(";".join(errors))
+        return tasks
 
 
 class FakeECSClient(ECSClient):
@@ -72,7 +127,17 @@ class FakeECSClient(ECSClient):
         super().__init__(*args, **kwargs)
         self.polling_interval = 0
         self.stubber = Stubber(self.client)
-        self.tasks = [f"arn:aws:ecs:us-east-2:0123456789:task/{uuid.uuid4()}"]
+
+    def start_task(self, task_definition):
+        self.stubber.activate()
+
+        self._stub_start_task(task_definition)
+        result = super().start_task(task_definition)
+
+        self.stubber.deactivate()
+        self.stubber.assert_no_pending_responses()
+
+        return result
 
     def run_task(
         self,
@@ -105,17 +170,56 @@ class FakeECSClient(ECSClient):
 
         self.stubber.activate()
 
-        self._stub_run_task(task_definition)
-        self._stub_describe_tasks(expected_statuses, expected_stop_code)
+        task_arn = self._stub_start_task(task_definition)
+        self._stub_describe_tasks(expected_statuses, expected_stop_code, task_arn)
         super().run_task(task_definition, **kwargs)
 
         self.stubber.deactivate()
         self.stubber.assert_no_pending_responses()
 
-    def _stub_run_task(self, task_definition):
+    def stop_task(self, task_arn, expected_statuses=None):  # pylint: disable=arguments-differ
+        """Fake for stop; stubs the expected ECS endpoints and polls against
+        the provided expected container statuses until all containers are STOPPED.
+
+        Args:
+            task_arn (str): The Task ARN.
+            expected_statuses (list[str]): The expected container satuses:
+                https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-lifecycle.html
+                Defaults to initially RUNNING and then STOPPED.
+
+        Returns:
+            bool: True if the task stops; False if the task was already stopped.
+        """
+        if not expected_statuses:
+            expected_statuses = ["RUNNING", "STOPPED"]
+        self.stubber.activate()
+
+        self.stubber.add_response(
+            method="stop_task",
+            service_response={"task": {"lastStatus": expected_statuses.pop(0)}},
+            expected_params={"task": task_arn, "cluster": self.cluster},
+        )
+
+        for status in expected_statuses:
+            self.stubber.add_response(
+                method="describe_tasks",
+                service_response={"tasks": [{"lastStatus": status}]},
+                expected_params={"cluster": self.cluster, "tasks": [task_arn]},
+            )
+
+        result = super().stop_task(task_arn)
+
+        self.stubber.deactivate()
+        self.stubber.assert_no_pending_responses()
+
+        return result
+
+    def _stub_start_task(self, task_definition):
+        task = f"arn:aws:ecs:us-east-2:0123456789:task/{uuid.uuid4()}"
+
         self.stubber.add_response(
             method="run_task",
-            service_response={"tasks": [{"taskArn": task} for task in self.tasks]},
+            service_response={"tasks": [{"taskArn": task}]},
             expected_params={
                 "count": 1,
                 "launchType": "FARGATE",
@@ -127,12 +231,14 @@ class FakeECSClient(ECSClient):
             },
         )
 
-    def _stub_describe_tasks(self, expected_statuses, expected_stop_code):
+        return task
+
+    def _stub_describe_tasks(self, expected_statuses, expected_stop_code, task_arn):
         for status in expected_statuses:
             self.stubber.add_response(
                 method="describe_tasks",
                 service_response={
                     "tasks": [{"lastStatus": status, "stopCode": expected_stop_code}]
                 },
-                expected_params={"cluster": self.cluster, "tasks": self.tasks},
+                expected_params={"cluster": self.cluster, "tasks": [task_arn]},
             )
