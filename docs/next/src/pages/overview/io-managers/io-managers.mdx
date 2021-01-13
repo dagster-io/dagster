@@ -28,9 +28,11 @@ The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, st
 
 IOManagers are [resources](/overview/modes-resources-presets/modes-resources), which means users can supply different IOManagers for the same solid outputs in different situations.  For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 
-## Input managers
+## Root input managers (experimental)
 
-<PyObject module="dagster" object="RootInputManagers" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not hooked up to an upstream solid's output.
+<PyObject module="dagster" object="RootInputManagers" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not connected to an upstream solid's output.
+
+Root input managers are currently an experimental feature.
 
 ## Setting a pipeline-wide IO manager
 
@@ -113,7 +115,7 @@ startAfter:execute_start_marker
 endBefore:execute_end_marker
 ```
 
-## Providing an input manager for a root input
+## Providing an input manager for a root input (experimental)
 
 When you have a solid at the beginning of a pipeline that operates on data from external source, you might wish to separate that I/O from your solid's business logic, in the same way you would with an IO manager if the solid were loading from an upstream output.
 
@@ -130,7 +132,7 @@ Setting the `root_manager_key` on an `InputDefinition` controls how that input i
 The <PyObject module="dagster" object="root_input_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator.  It yields an <PyObject module="dagster" object="RootInputManagerDefinition" />, which is a <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="RootInputManager" />.
 
 
-## Providing per-input config to a root input manager
+## Providing per-input config to a root input manager (experimental)
 
 When launching a run, you might want to parameterize how particular root inputs are loaded.
 
@@ -150,7 +152,7 @@ startAfter:execute_start_marker
 endBefore:execute_end_marker
 ```
 
-## Using a root input manager with subselection
+## Using a root input manager with subselection (experimental)
 
 You might want to execute a subset of solids in your pipeline and control how the inputs of those solids are loaded.  Root input managers also help in these situations, because the inputs at the beginning of the subset become the new "roots".
 

@@ -7,6 +7,7 @@ from dagster.core.types.dagster_type import (
     DagsterType,
     resolve_dagster_type,
 )
+from dagster.utils.backcompat import experimental_arg_warning
 
 from .utils import check_valid_name
 
@@ -57,8 +58,9 @@ class InputDefinition:
             :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        root_manager_key (Optional[str]): The resource key for the :py:class:`RootInputManager` used
-            for loading this input when it is not connected to an upstream output.
+        root_manager_key (Optional[str]): (Experimental) The resource key for the
+            :py:class:`RootInputManager` used for loading this input when it is not connected to an
+            upstream output.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
     """
 
@@ -79,6 +81,9 @@ class InputDefinition:
         self._description = check.opt_str_param(description, "description")
 
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
+
+        if root_manager_key:
+            experimental_arg_warning("root_manager_key", "InputDefinition")
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
