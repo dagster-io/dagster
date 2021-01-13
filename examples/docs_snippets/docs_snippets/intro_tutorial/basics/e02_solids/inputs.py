@@ -17,7 +17,9 @@ def read_csv(context, csv_path):
 
 @solid
 def sort_by_calories(context, cereals):
-    sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
+    sorted_cereals = sorted(
+        cereals, key=lambda cereal: int(cereal["calories"])
+    )
     context.log.info(
         "Least caloric cereal: {least_caloric}".format(
             least_caloric=sorted_cereals[0]["name"]
