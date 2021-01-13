@@ -1,19 +1,14 @@
-import sys
-
 import dagstermill
-import pandas as pd
-import pytest
 from dagster import (
-    DependencyDefinition,
     InputDefinition,
+    ModeDefinition,
     OutputDefinition,
     PresetDefinition,
-    execute_pipeline,
     file_relative_path,
+    fs_io_manager,
     pipeline,
     repository,
 )
-from dagster.core.utility_solids import define_stub_solid
 
 from ..data_frame import DataFrame
 from .pandas_hello_world.pipeline import pandas_hello_world
@@ -23,16 +18,16 @@ def nb_test_path(name):
     return file_relative_path(__file__, "notebooks/{name}.ipynb".format(name=name))
 
 
-def define_papermill_pandas_hello_world_solid():
-    return dagstermill.define_dagstermill_solid(
-        name="papermill_pandas_hello_world",
-        notebook_path=nb_test_path("papermill_pandas_hello_world"),
-        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
-        output_defs=[OutputDefinition(DataFrame)],
-    )
+hello_world = dagstermill.define_dagstermill_solid(
+    name="papermill_pandas_hello_world",
+    notebook_path=nb_test_path("papermill_pandas_hello_world"),
+    input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+    output_defs=[OutputDefinition(DataFrame)],
+)
 
 
 @pipeline(
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
     preset_defs=[
         PresetDefinition.from_files(
             "test",
@@ -52,10 +47,9 @@ def define_papermill_pandas_hello_world_solid():
                 )
             ],
         ),
-    ]
+    ],
 )
 def papermill_pandas_hello_world_pipeline():
-    hello_world = define_papermill_pandas_hello_world_solid()
     hello_world()
 
 
