@@ -346,7 +346,9 @@ def _load_input_with_input_manager(root_input_manager, context):
         step_key=context.step_context.step.key,
         input_name=context.name,
     ):
-        return root_input_manager.load_input(context)
+        value = root_input_manager.load_input(context)
+    # close user code boundary before returning value
+    return value
 
 
 class UnresolvedStepInput(namedtuple("_UnresolvedStepInput", "name dagster_type source")):
