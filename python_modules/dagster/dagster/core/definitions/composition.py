@@ -548,7 +548,7 @@ def do_composition(
         ignore_output_from_composite_fn(Bool): Because of backwards compatibility
             issues, pipelines ignore the return value out of the mapping if
             the user has not explicitly provided the output definitions.
-            This should be removed in 0.10.0.
+            This should be removed in 0.11.0.
     """
 
     actual_input_defs = (
@@ -581,7 +581,7 @@ def do_composition(
             if output is not None:
                 warnings.warn(
                     "You have returned a value out of a @pipeline-decorated function. "
-                    "This currently has no effect on behavior, but will after 0.10.0 is "
+                    "This currently has no effect on behavior, but will after 0.11.0 is "
                     "released. In order to preserve existing behavior to do not return "
                     "anything out of this function. Pipelines (and its successor, graphs) "
                     "will have meaningful outputs just like composite solids do today, "
