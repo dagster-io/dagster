@@ -164,7 +164,6 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
 
         # Ensure output path exists
         mkdir_p(os.path.dirname(dst))
-
         if os.path.isfile(src):
             shutil.copy(src, dst)
         elif os.path.isdir(src):

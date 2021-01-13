@@ -3,7 +3,8 @@ import re
 import pytest
 from dagster.core.definitions import intermediate_storage, pipeline, solid
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.execution.api import execute_pipeline
+from dagster.core.execution.api import execute_pipeline, reexecute_pipeline
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.object_store import InMemoryObjectStore
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
@@ -63,3 +64,36 @@ def test_intermediate_storage_deprecation_warning():
         ),
     ):
         execute_pipeline(foo, run_config={"intermediate_storage": {"filesystem": {}}})
+
+
+def test_intermediate_storage_reexecution():
+    @solid
+    def return_one(_):
+        return 1
+
+    @solid
+    def plus_one(_, one):
+        return one + 1
+
+    @pipeline
+    def foo():
+        plus_one(return_one())
+
+    run_config = {"intermediate_storage": {"filesystem": {}}}
+
+    instance = DagsterInstance.ephemeral()
+    result = execute_pipeline(foo, run_config=run_config, instance=instance)
+    assert result.success
+    reexecution_result = reexecute_pipeline(
+        foo, run_config=run_config, parent_run_id=result.run_id, instance=instance
+    )
+    assert reexecution_result.success
+
+    partial_reexecution_result = reexecute_pipeline(
+        foo,
+        run_config=run_config,
+        step_selection=["plus_one"],
+        parent_run_id=result.run_id,
+        instance=instance,
+    )
+    assert partial_reexecution_result.success
