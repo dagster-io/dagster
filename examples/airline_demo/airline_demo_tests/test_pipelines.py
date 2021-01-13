@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 # pylint: disable=unused-argument
 import pytest
@@ -27,39 +28,23 @@ def config_path(relative_path):
 @pytest.mark.py3
 @pytest.mark.spark
 def test_ingest_pipeline_fast(postgres, pg_hostname):
-    with instance_for_test() as instance:
-        ingest_config_dict = load_yaml_from_globs(
-            config_path("test_base.yaml"), config_path("local_fast_ingest.yaml")
-        )
-        result_ingest = execute_pipeline(
-            pipeline=ingest_pipeline,
-            mode="local",
-            run_config=ingest_config_dict,
-            instance=instance,
-        )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test() as instance:
+            ingest_config_dict = load_yaml_from_globs(
+                config_path("test_base.yaml"), config_path("local_fast_ingest.yaml"),
+            )
+            ingest_config_dict["resources"]["io_manager"] = {"config": {"base_dir": temp_dir}}
+            ingest_config_dict["resources"]["pyspark_io_manager"] = {
+                "config": {"base_dir": temp_dir}
+            }
+            result_ingest = execute_pipeline(
+                pipeline=ingest_pipeline,
+                mode="local",
+                run_config=ingest_config_dict,
+                instance=instance,
+            )
 
-        assert result_ingest.success
-
-
-@pytest.mark.db
-@pytest.mark.nettest
-@pytest.mark.py3
-@pytest.mark.spark
-def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
-    with instance_for_test() as instance:
-        ingest_config_dict = load_yaml_from_globs(
-            config_path("test_base.yaml"),
-            config_path("local_fast_ingest.yaml"),
-            config_path("filesystem_storage.yaml"),
-        )
-        result_ingest = execute_pipeline(
-            pipeline=ingest_pipeline,
-            mode="local",
-            run_config=ingest_config_dict,
-            instance=instance,
-        )
-
-        assert result_ingest.success
+            assert result_ingest.success
 
 
 @pytest.mark.db
@@ -68,15 +53,20 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
 @pytest.mark.spark
 @pytest.mark.skipif('"win" in sys.platform', reason="avoiding the geopandas tests")
 def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
-    with instance_for_test() as instance:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test() as instance:
 
-        warehouse_config_object = load_yaml_from_globs(
-            config_path("test_base.yaml"), config_path("local_warehouse.yaml")
-        )
-        result_warehouse = execute_pipeline(
-            pipeline=warehouse_pipeline,
-            mode="local",
-            run_config=warehouse_config_object,
-            instance=instance,
-        )
-        assert result_warehouse.success
+            warehouse_config_object = load_yaml_from_globs(
+                config_path("test_base.yaml"), config_path("local_warehouse.yaml")
+            )
+            warehouse_config_object["resources"]["io_manager"] = {"config": {"base_dir": temp_dir}}
+            warehouse_config_object["resources"]["pyspark_io_manager"] = {
+                "config": {"base_dir": temp_dir}
+            }
+            result_warehouse = execute_pipeline(
+                pipeline=warehouse_pipeline,
+                mode="local",
+                run_config=warehouse_config_object,
+                instance=instance,
+            )
+            assert result_warehouse.success

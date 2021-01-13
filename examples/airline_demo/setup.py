@@ -36,7 +36,7 @@ setup(
             "lakehouse",
             "matplotlib",
             "mock",
-            "moto>=1.3.7",
+            "moto>=1.3.16",
             "pandas>=1.0.0",
             "pytest-mock",
             # Pyspark 2.x is incompatible with Python 3.8+

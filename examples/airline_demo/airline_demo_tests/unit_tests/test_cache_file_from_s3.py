@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import pytest
 from airline_demo.cache_file_from_s3 import cache_file_from_s3
@@ -12,7 +13,6 @@ from dagster import (
 )
 from dagster.core.storage.file_cache import LocalFileHandle, fs_file_cache
 from dagster.seven import mock
-from dagster.utils.temp_file import get_temp_dir
 
 
 def execute_solid_with_resources(solid_def, resource_defs, run_config):
@@ -28,7 +28,7 @@ def execute_solid_with_resources(solid_def, resource_defs, run_config):
 
 def test_cache_file_from_s3_basic():
     s3_session = mock.MagicMock()
-    with get_temp_dir() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         solid_result = execute_solid(
             cache_file_from_s3,
             ModeDefinition(
@@ -67,7 +67,7 @@ def test_cache_file_from_s3_basic():
 
 def test_cache_file_from_s3_specify_target_key():
     s3_session = mock.MagicMock()
-    with get_temp_dir() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         solid_result = execute_solid(
             cache_file_from_s3,
             ModeDefinition(
@@ -95,7 +95,7 @@ def test_cache_file_from_s3_specify_target_key():
 
 
 def test_cache_file_from_s3_skip_download():
-    with get_temp_dir() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         s3_session_one = mock.MagicMock()
         execute_solid(
             cache_file_from_s3,
@@ -142,7 +142,7 @@ def test_cache_file_from_s3_skip_download():
 
 
 def test_cache_file_from_s3_overwrite():
-    with get_temp_dir() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         s3_session_one = mock.MagicMock()
         execute_solid(
             cache_file_from_s3,
@@ -194,7 +194,7 @@ def test_cache_file_from_s3_overwrite():
 
 def test_missing_resources():
     with pytest.raises(DagsterInvalidDefinitionError):
-        with get_temp_dir() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             execute_solid(
                 cache_file_from_s3,
                 ModeDefinition(resource_defs={"file_cache": fs_file_cache}),

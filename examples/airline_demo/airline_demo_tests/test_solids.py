@@ -28,33 +28,5 @@ def test_sql_solid_without_table_name():
 
 
 def test_sql_solid():
-    result = sql_solid("foo", "select * from bar", "table", "quux")
-    assert result
-    # TODO: test execution?
-
-
-@pytest.mark.postgres
-@pytest.mark.skip
-@pytest.mark.spark
-def test_load_data_to_postgres_from_spark_postgres():
-    raise NotImplementedError()
-
-
-@pytest.mark.nettest
-@pytest.mark.redshift
-@pytest.mark.skip
-@pytest.mark.spark
-def test_load_data_to_redshift_from_spark():
-    raise NotImplementedError()
-
-
-@pytest.mark.skip
-@pytest.mark.spark
-def test_subsample_spark_dataset():
-    raise NotImplementedError()
-
-
-@pytest.mark.skip
-@pytest.mark.spark
-def test_join_spark_data_frame():
-    raise NotImplementedError()
+    solid = sql_solid("foo", "select * from bar", "table", "quux")
+    assert solid

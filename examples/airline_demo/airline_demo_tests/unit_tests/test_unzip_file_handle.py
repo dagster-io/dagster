@@ -64,7 +64,8 @@ def test_unzip_file_handle_on_fake_s3():
                 return s3_file_handle
 
     # Uses mock S3
-    s3 = boto3.client("s3")
+    # https://github.com/spulec/moto/issues/3292
+    s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="some-bucket")
     file_manager = S3FileManager(s3_session=s3, s3_bucket="some-bucket", s3_base_key="dagster")
 
