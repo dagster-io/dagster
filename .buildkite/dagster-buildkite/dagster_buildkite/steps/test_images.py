@@ -11,7 +11,7 @@ def publish_test_images():
     for version in SupportedPythons:
         key = _test_image_step(version)
         tests.append(
-            StepBuilder("test images {version}".format(version=version), key=key)
+            StepBuilder(f":docker: test-image {version}", key=key)
             # these run commands are coupled to the way the test-image-builder is built
             # see python_modules/automation/automation/docker/images/buildkite-test-image-builder
             .run(
@@ -51,7 +51,7 @@ def publish_test_images():
 
         key = _core_test_image_step(version)
         tests.append(
-            StepBuilder("core test images {version}".format(version=version), key=key)
+            StepBuilder(f":docker: test-image-core {version}", key=key)
             # these run commands are coupled to the way the test-image-builder is built
             # see python_modules/automation/automation/docker/images/buildkite-test-image-builder
             .run(

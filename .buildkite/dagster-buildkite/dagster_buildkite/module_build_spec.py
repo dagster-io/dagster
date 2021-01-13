@@ -100,23 +100,19 @@ class ModuleBuildSpec(
 
                 # See: https://github.com/dagster-io/dagster/issues/2512
                 tox_file = "-c %s " % self.tox_file if self.tox_file else ""
-                tox_cmd = "tox -vv {tox_file}-e {ver}{tox_env_suffix}".format(
-                    tox_file=tox_file, tox_env_suffix=tox_env_suffix, ver=TOX_MAP[version]
-                )
+                tox_cmd = f"tox -vv {tox_file}-e {TOX_MAP[version]}{tox_env_suffix}"
 
-                cmds = extra_cmds + ["cd {directory}".format(directory=self.directory), tox_cmd]
+                cmds = extra_cmds + [f"cd {self.directory}", tox_cmd]
 
                 if self.upload_coverage:
-                    coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
-                        label=label, version=version
-                    )
+                    coverage = f".coverage.{label}.{version}.$BUILDKITE_BUILD_ID"
                     cmds += [
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
+                        f"mv .coverage {coverage}",
+                        f"buildkite-agent artifact upload {coverage}",
                     ]
 
                 step = (
-                    StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
+                    StepBuilder(f":pytest: {label} {version[:3]}")
                     .run(*cmds)
                     .on_integration_image(version, self.env_vars or [])
                 )
@@ -132,8 +128,8 @@ class ModuleBuildSpec(
         # We expect the tox file to define a pylint testenv, and we'll construct a separate
         # buildkite build step for the pylint testenv.
         tests.append(
-            StepBuilder("%s pylint" % package)
-            .run("cd {directory}".format(directory=self.directory), "tox -vv -e pylint")
+            StepBuilder(f":lint-roller: {package}")
+            .run(f"cd {self.directory}", "tox -vv -e pylint")
             .on_integration_image(SupportedPython.V3_7)
             .build()
         )
@@ -142,11 +138,8 @@ class ModuleBuildSpec(
         # buildkite build step for the mypy testenv.
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
-                StepBuilder("%s mypy" % package)
-                .run(
-                    "pip install mypy",
-                    "mypy --config-file mypy/config {directory}".format(directory=self.directory),
-                )
+                StepBuilder(f":mypy: {package}")
+                .run("pip install mypy", f"mypy --config-file mypy/config {self.directory}",)
                 .on_integration_image(SupportedPython.V3_7)
                 .build()
             )

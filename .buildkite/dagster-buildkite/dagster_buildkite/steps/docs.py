@@ -2,9 +2,13 @@ from ..defines import SupportedPython
 from ..step_builder import StepBuilder
 
 
-def next_docs_build_tests():
+def docs_steps():
     return [
-        StepBuilder("next docs build tests")
+        StepBuilder("docs validate-libraries")
+        .run("pip install -e python_modules/automation", "dagster-docs validate-libraries")
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+        StepBuilder("docs next build tests")
         .run(
             "pip install -e python_modules/automation",
             "pip install -r docs-requirements.txt -qqq",
@@ -14,7 +18,7 @@ def next_docs_build_tests():
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        StepBuilder("next docs tests")
+        StepBuilder("docs next tests")
         .run(
             "pip install -e python_modules/automation",
             "pip install -r docs-requirements.txt -qqq",
@@ -26,7 +30,7 @@ def next_docs_build_tests():
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        StepBuilder("documentation coverage")
+        StepBuilder(":coverage: docs")
         .run(
             "make install_dev_python_modules",
             "pip install -e python_modules/automation",

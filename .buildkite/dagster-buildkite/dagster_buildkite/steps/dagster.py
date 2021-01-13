@@ -5,7 +5,7 @@ from ..images.versions import COVERAGE_IMAGE_VERSION
 from ..module_build_spec import ModuleBuildSpec
 from ..step_builder import StepBuilder
 from ..utils import check_for_release, connect_sibling_docker_container, network_buildkite_container
-from .docs import next_docs_build_tests
+from .docs import docs_steps
 from .helm import helm_steps
 from .test_images import core_test_image_depends_fn, publish_test_images, test_image_depends_fn
 
@@ -436,7 +436,7 @@ def pipenv_smoke_tests():
 
     # See: https://github.com/dagster-io/dagster/issues/2079
     return [
-        StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
+        StepBuilder(f"pipenv smoke tests {TOX_MAP[version]}")
         .run(*smoke_test_steps)
         .on_unit_image(version)
         .build()
@@ -446,7 +446,7 @@ def pipenv_smoke_tests():
 
 def coverage_step():
     return (
-        StepBuilder("coverage")
+        StepBuilder(":coverage:")
         .run(
             "mkdir -p tmp",
             'buildkite-agent artifact download ".coverage*" tmp/',
@@ -501,7 +501,7 @@ def pylint_steps():
 
 def version_equality_checks(version=SupportedPython.V3_7):
     return [
-        StepBuilder("version equality checks for libraries")
+        StepBuilder("all versions == ?")
         .on_integration_image(version)
         .run("pip install -e python_modules/automation", "dagster-release version")
         .build()
@@ -514,14 +514,14 @@ def dagster_steps():
 
     steps += pylint_steps()
     steps += [
-        StepBuilder("isort")
+        StepBuilder(":isort:")
         .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code",)
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        StepBuilder("black")
+        StepBuilder(":python-black:")
         # See: https://github.com/dagster-io/dagster/issues/1999
         .run("make check_black").on_integration_image(SupportedPython.V3_7).build(),
-        StepBuilder("mypy examples")
+        StepBuilder(":mypy: examples")
         .run(
             "pip install mypy",
             # start small by making sure the local code type checks
@@ -530,10 +530,6 @@ def dagster_steps():
             "examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy* "
             "--ignore-missing-imports",
         )
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
-        StepBuilder("Validate Library Docs")
-        .run("pip install -e python_modules/automation", "dagster-docs validate-libraries")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
     ]
@@ -546,7 +542,7 @@ def dagster_steps():
     # https://github.com/dagster-io/dagster/issues/2785
     steps += pipenv_smoke_tests()
     steps += version_equality_checks()
-    steps += next_docs_build_tests()
+    steps += docs_steps()
     steps += examples_tests()
     steps += helm_steps()
 
