@@ -31,6 +31,7 @@ const createTreeOfContents = () => {
     'Deploy',
     'Troubleshooting',
     'Community',
+    'API Docs',
   ];
   const result = ORDERING.map((name) => entriesByName[name]);
   return result;
