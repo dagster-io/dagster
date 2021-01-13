@@ -20,10 +20,14 @@ export const TimestampDisplay = (props: Props) => {
 
   return (
     <Group direction="row" spacing={8} alignItems="center">
-      <div>{timestampString}</div>
+      <TabularNums>{timestampString}</TabularNums>
       {timezone && timezone !== userTimezone ? (
         <TimestampTooltip
-          content={timestampToString({unix: timestamp, format: tooltipFormat}, timezone)}
+          content={
+            <TabularNums>
+              {timestampToString({unix: timestamp, format: tooltipFormat}, timezone)}
+            </TabularNums>
+          }
         >
           <Icon icon="time" iconSize={12} color={Colors.GRAY3} style={{display: 'block'}} />
         </TimestampTooltip>
@@ -36,6 +40,10 @@ TimestampDisplay.defaultProps = {
   format: 'MMM D, YYYY, h:mm A z',
   tooltipFormat: 'MMM D, YYYY, h:mm A z',
 };
+
+const TabularNums = styled.div`
+  font-variant-numeric: tabular-nums;
+`;
 
 const TimestampTooltip = styled(Tooltip)`
   cursor: pointer;
