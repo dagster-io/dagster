@@ -15,6 +15,7 @@ from dagster import (
     pipeline,
     repository,
     schedule,
+    seven,
     solid,
 )
 from dagster.core.definitions.job import RunRequest
@@ -1301,6 +1302,7 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
             )
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cron doesn't work on windows")
 def test_run_with_hanging_cron_schedules():
     # Verify that the system will prompt you to wipe your schedules with the SystemCronScheduler
     # before you can switch to DagsterDaemonScheduler
