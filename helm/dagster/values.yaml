@@ -21,7 +21,7 @@ dagit:
   replicaCount: 1
   # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: "dagster/k8s-dagit-example"
+    repository: "dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
 
@@ -168,7 +168,7 @@ userDeployments:
   deployments:
     - name: "k8s-example-user-code-1"
       image:
-        repository: "dagster/k8s-example"
+        repository: "dagster/user-code-example"
         tag: latest
         # Change with caution! If you're using a fixed tag for pipeline run images, changing the
         # image pull policy to anything other than "Always" will use a cached/stale image, which is
@@ -261,7 +261,7 @@ userDeployments:
 ####################################################################################################
 pipelineRun:
   image:
-    repository: "dagster/k8s-example"
+    repository: "dagster/user-code-example"
     tag: "latest"
     pullPolicy: Always
 
@@ -294,7 +294,7 @@ scheduler:
       # (to call `dagster api launch_scheduled_execution`) and instance yaml
       # but does not need access to user code.
       image:
-        repository: "dagster/k8s-dagit"
+        repository: "dagster/dagster-celery-k8s"
         tag: "latest"
         pullPolicy: Always
 
@@ -375,7 +375,7 @@ runLauncher:
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
       image:
-        repository: "dagster/k8s-celery-worker"
+        repository: "dagster/dagster-celery-k8s"
         tag: "latest"
         pullPolicy: Always
 
@@ -667,7 +667,7 @@ dagsterDaemon:
   enabled: true
 
   image:
-    repository: "dagster/k8s-dagit"
+    repository: "dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
 
