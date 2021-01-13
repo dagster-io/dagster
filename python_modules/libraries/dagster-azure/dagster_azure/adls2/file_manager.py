@@ -17,6 +17,7 @@ class ADLS2FileHandle(FileHandle):
         self._account = check.str_param(account, "account")
         self._file_system = check.str_param(file_system, "file_system")
         self._key = check.str_param(key, "key")
+        super(ADLS2FileHandle, self).__init__()
 
     @property
     def account(self):
@@ -48,6 +49,7 @@ class ADLS2FileManager(FileManager):
         self._prefix = check.str_param(prefix, "prefix")
         self._local_handle_cache = {}
         self._temp_file_manager = TempfileManager()
+        super(ADLS2FileManager, self).__init__()
 
     def copy_handle_to_local_temp(self, file_handle):
         self._download_if_not_cached(file_handle)
