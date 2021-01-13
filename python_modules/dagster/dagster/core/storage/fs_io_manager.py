@@ -91,6 +91,7 @@ class PickledObjectFilesystemIOManager(IOManager):
         check.inst_param(context, "context", OutputContext)
 
         filepath = self._get_path(context)
+        context.log.debug(f"Writing file at: {filepath}")
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
@@ -103,6 +104,7 @@ class PickledObjectFilesystemIOManager(IOManager):
         check.inst_param(context, "context", InputContext)
 
         filepath = self._get_path(context.upstream_output)
+        context.log.debug(f"Loading file from: {filepath}")
 
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
@@ -139,6 +141,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
+        context.log.debug(f"Writing file at: {filepath}")
 
         with open(filepath, self.write_mode) as write_obj:
             pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
@@ -154,6 +157,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         metadata = context.upstream_output.metadata
         path = check.str_param(metadata.get("path"), "metadata.path")
         filepath = self._get_path(path)
+        context.log.debug(f"Loading file from: {filepath}")
 
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)

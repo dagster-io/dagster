@@ -1,4 +1,3 @@
-import logging
 import pickle
 
 from dagster import Field, IOManager, StringSource, check, io_manager
@@ -59,16 +58,17 @@ class PickledObjectS3IOManager(IOManager):
 
     def load_input(self, context):
         key = self._get_path(context.upstream_output)
+        context.log.debug(f"Loading S3 object from: {self._uri_for_key(key)}")
         obj = pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)["Body"].read())
 
         return obj
 
     def handle_output(self, context, obj):
         key = self._get_path(context)
-        logging.info("Writing S3 object at: " + self._uri_for_key(key))
+        context.log.debug(f"Writing S3 object at: {self._uri_for_key(key)}")
 
         if self._has_object(key):
-            logging.warning("Removing existing S3 key: {key}".format(key=key))
+            context.log.warning(f"Removing existing S3 key: {key}")
             self._rm_object(key)
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)

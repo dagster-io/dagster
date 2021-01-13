@@ -14,6 +14,7 @@ from dagster import (
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.log_manager import DagsterLogManager
 from dagster.core.utils import make_new_run_id
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
@@ -106,6 +107,7 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
             config=None,
             solid_def=pipeline_def.solid_def_named("return_one"),
         ),
+        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
     )
     assert io_manager.load_input(context) == 1
 
@@ -134,6 +136,7 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
             config=None,
             solid_def=pipeline_def.solid_def_named("add_one"),
         ),
+        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
     )
 
     assert get_step_output(add_one_step_events, "add_one")
