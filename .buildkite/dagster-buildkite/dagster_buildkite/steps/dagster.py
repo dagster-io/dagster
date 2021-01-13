@@ -509,6 +509,15 @@ def version_equality_checks(version=SupportedPython.V3_7):
     ]
 
 
+def schema_checks(version=SupportedPython.V3_8):
+    return [
+        StepBuilder("SQL schema checks")
+        .on_integration_image(version)
+        .run("pip install -e python_modules/dagster", "python scripts/check_schemas.py")
+        .build()
+    ]
+
+
 def dagster_steps():
     steps = []
     steps += publish_test_images()
@@ -546,5 +555,6 @@ def dagster_steps():
     steps += docs_steps()
     steps += examples_tests()
     steps += helm_steps()
+    steps += schema_checks()
 
     return steps

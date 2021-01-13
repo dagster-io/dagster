@@ -12,11 +12,11 @@ RunsTable = db.Table(
         db.String(255),
         db.ForeignKey("snapshots.snapshot_id", name="fk_runs_snapshot_id_snapshots_snapshot_id"),
     ),
-    db.Column("pipeline_name", db.String),
+    db.Column("pipeline_name", db.Text),
     db.Column("status", db.String(63)),
-    db.Column("run_body", db.String),
-    db.Column("partition", db.String),
-    db.Column("partition_set", db.String),
+    db.Column("run_body", db.Text),
+    db.Column("partition", db.Text),
+    db.Column("partition_set", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
     db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
 )
@@ -27,7 +27,7 @@ SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     RunStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
-    db.Column("name", db.String, unique=True),
+    db.Column("name", db.Text, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
     db.Column("migration_completed", db.DateTime),
 )
@@ -37,8 +37,8 @@ RunTagsTable = db.Table(
     RunStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("run_id", None, db.ForeignKey("runs.run_id", ondelete="CASCADE")),
-    db.Column("key", db.String),
-    db.Column("value", db.String),
+    db.Column("key", db.Text),
+    db.Column("value", db.Text),
 )
 
 SnapshotsTable = db.Table(

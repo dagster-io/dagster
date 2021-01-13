@@ -10,7 +10,7 @@ JobTable = db.Table(
     db.Column("repository_origin_id", db.String(255)),
     db.Column("status", db.String(63)),
     db.Column("job_type", db.String(63), index=True),
-    db.Column("job_body", db.String),
+    db.Column("job_body", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
     db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
 )
@@ -23,7 +23,7 @@ JobTickTable = db.Table(
     db.Column("status", db.String(63)),
     db.Column("type", db.String(63)),
     db.Column("timestamp", db.types.TIMESTAMP),
-    db.Column("tick_body", db.String),
+    db.Column("tick_body", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
     db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
 )
