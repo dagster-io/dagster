@@ -37,7 +37,8 @@ into any problems with new new scheduler.
 
 We have deprecated "intermediate storage". Loading inputs and storing outputs are now handled by
 "IO managers", which serve the same purpose as intermediate storages but offer you better
-control over how inputs are loaded and outputs are handled.
+control over how inputs are loaded and outputs are handled. Check out the
+[IO Managers Overview](https://docs.dagster.io/0.10.0/overview/io-managers/io-managers) for more information.
 
 - We have deprecated the field `"storage"` and `"intermediate_storage"` on run config.
 
