@@ -69,7 +69,7 @@ class StepExecutionContext:
     def get_tag(self, key):
         return self._system_step_execution_context.get_tag(key)
 
-    def get_system_context(self):
+    def get_system_context(self) -> SystemStepExecutionContext:
         """
         This allows advanced users (e.g. framework authors) to punch through
         to the underlying system context.

@@ -128,7 +128,7 @@ class SystemExecutionContext:
         return self._execution_context_data.environment_config
 
     @property
-    def pipeline(self):
+    def pipeline(self) -> IPipeline:
         return self._execution_context_data.pipeline
 
     @property

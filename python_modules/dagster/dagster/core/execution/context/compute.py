@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod, abstractproperty
+from typing import Any
 
 from dagster import check
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .step import StepExecutionContext
@@ -8,7 +10,7 @@ from .system import SystemComputeExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillInNotebookExecutionContext"""
+    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext"""
 
     @abstractmethod
     def has_tag(self, key):
@@ -35,12 +37,20 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """The pipeline being executed."""
 
     @abstractproperty
-    def resources(self):
+    def pipeline_run(self) -> PipelineRun:
+        """The PipelineRun object corresponding to the execution."""
+
+    @abstractproperty
+    def resources(self) -> Any:
         """Resources available in the execution context."""
 
     @abstractproperty
     def log(self):
         """The log manager available in the execution context."""
+
+    @abstractproperty
+    def solid_config(self):
+        """The parsed config specific to this solid."""
 
 
 class SolidExecutionContext(StepExecutionContext, AbstractComputeExecutionContext):

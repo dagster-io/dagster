@@ -13,6 +13,7 @@ import tempfile
 import threading
 from collections import namedtuple
 from enum import Enum
+from typing import Iterator
 from warnings import warn
 
 import _thread as thread
@@ -253,7 +254,7 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
             raise cpe
 
 
-def safe_tempfile_path_unmanaged():
+def safe_tempfile_path_unmanaged() -> str:
     # This gets a valid temporary file path in the safest possible way, although there is still no
     # guarantee that another process will not create a file at this path. The NamedTemporaryFile is
     # deleted when the context manager exits and the file object is closed.
@@ -269,7 +270,7 @@ def safe_tempfile_path_unmanaged():
 
 
 @contextlib.contextmanager
-def safe_tempfile_path():
+def safe_tempfile_path() -> Iterator[str]:
     try:
         path = safe_tempfile_path_unmanaged()
         yield path
