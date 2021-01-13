@@ -329,6 +329,10 @@ const TickHistoryGraph: React.FC<{
   };
 
   const dateFormat = (x: number) => moment(x).format('MMM D');
+  const snippet = (x: string, length = 100, buffer = 20) => {
+    const snipped = x.slice(0, length);
+    return snipped.length < x.length - buffer ? `${snipped}...` : x;
+  };
   const title = bounds
     ? dateFormat(bounds.min) === dateFormat(bounds.max)
       ? dateFormat(bounds.min)
@@ -371,13 +375,13 @@ const TickHistoryGraph: React.FC<{
           }
           const tick = ticks[tooltipItem.index];
           if (tick.status === JobTickStatus.SKIPPED && tick.skipReason) {
-            return tick.skipReason;
+            return snippet(tick.skipReason);
           }
           if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
             return tick.runIds;
           }
           if (tick.status == JobTickStatus.FAILURE && tick.error?.message) {
-            return tick.error.message;
+            return snippet(tick.error.message);
           }
           return '';
         },
@@ -432,6 +436,12 @@ const TickHistoryGraph: React.FC<{
           },
           enabled: true,
           mode: 'x',
+          onPan: ({chart}: {chart: Chart}) => {
+            const {min, max} = chart.options.scales?.xAxes?.[0].ticks || {};
+            if (min && max) {
+              setBounds({min, max});
+            }
+          },
         },
       },
     },
