@@ -444,6 +444,8 @@ class OutputContext(
     )
 ):
     """
+    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
+
     Attributes:
         step_key (str): The step_key for the compute step that produced the output.
         name (str): The name of the output that produced the output.
@@ -455,7 +457,7 @@ class OutputContext(
         config (Optional[Any]): The configuration for the output.
         solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
         dagster_type (Optional[DagsterType]): The type of this output.
-        log (Optional[DagsterLogmanager]): The log manager to use for this output.
+        log (Optional[DagsterLogManager]): The log manager to use for this output.
         version (Optional[str]): (Experimental) The version of the output.
         resources (Optional[ScopedResources]): The resources required by the output manager, specified by the
             `required_resource_keys` parameter.
@@ -531,7 +533,7 @@ class InputContext(
     )
 ):
     """
-    The ``context`` object available to the load method of :py:class:`RootInputManager`.
+    The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
 
     Attributes:
         name (Optional[str]): The name of the input that we're loading.

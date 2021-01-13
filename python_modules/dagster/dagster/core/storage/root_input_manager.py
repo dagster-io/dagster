@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 from functools import update_wrapper
 
 from dagster import check
@@ -7,6 +7,7 @@ from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.storage.input_manager import InputManager
 
 
 class IInputManagerDefinition:
@@ -19,8 +20,13 @@ class IInputManagerDefinition:
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     """Definition of a root input manager resource.
 
+    Root input managers load solid inputs that aren't connected to upstream outputs.
+
     An RootInputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
-    :py:class:`RootInputManager`.  RootInputManagers are used to load the inputs to solids.
+    :py:class:`RootInputManager`.
+
+    The easiest way to create an RootInputManagerDefinition is with the
+    :py:func:`@root_input_manager <root_input_manager>` decorator.
     """
 
     def __init__(
@@ -58,10 +64,11 @@ class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         )
 
 
-class RootInputManager(ABC):
-    """RootInputManagers are used to load the inputs to solids at the root of a pipeline.
+class RootInputManager(InputManager):
+    """RootInputManagers are used to load inputs to solids at the root of a pipeline.
 
-    The easiest way to define an RootInputManager is with the :py:function:`root_input_manager` decorator.
+    The easiest way to define an RootInputManager is with the
+    :py:func:`@root_input_manager <root_input_manager>` decorator.
     """
 
     @abstractmethod
@@ -84,6 +91,8 @@ def root_input_manager(
     version=None,
 ):
     """Define a root input manager.
+
+    Root input managers load solid inputs that aren't connected to upstream outputs.
 
     The decorated function should accept a :py:class:`InputContext` and resource config, and return
     a loaded object that will be passed into one of the inputs of a solid.

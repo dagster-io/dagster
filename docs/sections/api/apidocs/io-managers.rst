@@ -6,13 +6,13 @@ IO Managers
 IO Managers
 ---------------
 
-IO managers are user-provided objects that specify how to store step outputs and load step inputs.
+IO managers are user-provided objects that store solid outputs and load them as inputs to downstream
+solids.
 
 .. autodecorator:: io_manager
 
 .. autoclass:: IOManager
     :members:
-    :show-inheritance:
 
 .. autoclass:: IOManagerDefinition
     :members:
@@ -31,7 +31,8 @@ Input and Output Contexts
 Root Input Managers
 --------------
 
-Root input managers are user-provided objects that specify how to load step inputs.
+Root input managers are user-provided objects that specify how to load inputs that aren't connected
+to upstream outputs.
 
 .. autodecorator:: root_input_manager
 

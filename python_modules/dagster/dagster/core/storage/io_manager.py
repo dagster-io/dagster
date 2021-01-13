@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from functools import update_wrapper
 
 from dagster import check
@@ -6,15 +7,21 @@ from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.storage.input_manager import InputManager
 from dagster.core.storage.output_manager import IOutputManagerDefinition, OutputManager
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
 
 
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
-    """Definition of an output manager resource.
+    """Definition of an IO manager resource.
 
-    An OutputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
+    IOManagers are used to store solid outputs and load them as inputs to downstream solids.
+
+    An IOManagerDefinition is a :py:class:`ResourceDefinition` whose `resource_fn` returns an
     :py:class:`IOManager`.
+
+    The easiest way to create an IOManagerDefnition is with the :py:func:`@io_manager <io_manager>`
+    decorator.
     """
 
     def __init__(
@@ -57,13 +64,36 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         )
 
 
-class IOManager(OutputManager):
+class IOManager(InputManager, OutputManager):
     """
     Base class for user-provided IO managers.
+
+    IOManagers are used to store solid outputs and load them as inputs to downstream solids.
 
     Extend this class to handle how objects are loaded and stored. Users should implement
     ``handle_output`` to store an object and ``load_input`` to retrieve an object.
     """
+
+    @abstractmethod
+    def load_input(self, context):
+        """User-defined method that loads an input to a solid.
+
+        Args:
+            context (InputContext): The input context, which describes the input that's being loaded
+                and the upstream output that's being loaded from.
+
+        Returns:
+            Any: The data object.
+        """
+
+    @abstractmethod
+    def handle_output(self, context, obj):
+        """User-defined method that stores an output of a solid.
+
+        Args:
+            context (OutputContext): The context of the step output that produces this object.
+            obj (Any): The object, returned by the solid, to be stored.
+        """
 
 
 def io_manager(
@@ -77,8 +107,10 @@ def io_manager(
     """
     Define an IO manager.
 
-    The decorated function should accept an :py:class:`InitResourceContext and return an
-    py:class:`IOManager`.
+    IOManagers are used to store solid outputs and load them as inputs to downstream solids.
+
+    The decorated function should accept an :py:class:`InitResourceContext` and return an
+    :py:class:`IOManager`.
 
     Args:
         config_schema (Optional[ConfigSchema]): The schema for the resource config. Configuration

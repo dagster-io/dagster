@@ -13,7 +13,7 @@ class IOutputManagerDefinition:
     @abstractproperty
     def output_config_schema(self):
         """The schema for per-output configuration for outputs that are managed by this
-        input manager"""
+        manager"""
 
 
 class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
@@ -67,7 +67,7 @@ class OutputManager(ABC):
 
     @abstractmethod
     def handle_output(self, context, obj):
-        """Handles an output produced by a solid. Often, this means materializing it to persistent
+        """Handles an output produced by a solid. Usually, this means materializing it to persistent
         storage.
 
         Args:
