@@ -38,5 +38,5 @@ def test_configured_example():
 
 def test_config_map_example():
     execute_pipeline_with_resource_def(
-        unsigned_s3_session, run_config={"resources": {"key": {"config": {"region": "us-west-1"}}}}
+        unsigned_s3_session, run_config={"resources": {"key": {"config": {"region": "us-east-1"}}}}
     )
