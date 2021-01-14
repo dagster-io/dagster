@@ -1,4 +1,2 @@
 matplotlib
 scikit-learn>=0.19.0
-# unpin until https://github.com/jupyter/nbformat/issues/196 is resolved.
-nbformat==5.0.8
