@@ -1162,6 +1162,13 @@ class AssetStoreOperationData(
     pass
 
 
+@whitelist_for_serdes
+class AssetStoreOperationType(Enum):
+    # keep this around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
+    SET_ASSET = "SET_ASSET"
+    GET_ASSET = "GET_ASSET"
+
+
 def _handle_back_compat(event_type_value, event_specific_data):
     if event_type_value == "PIPELINE_PROCESS_START":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
@@ -1170,14 +1177,14 @@ def _handle_back_compat(event_type_value, event_specific_data):
     elif event_type_value == "PIPELINE_PROCESS_EXITED":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
     elif event_type_value == "ASSET_STORE_OPERATION":
-        if event_specific_data.op == "GET_ASSET":
+        if event_specific_data.op in ("GET_ASSET", AssetStoreOperationType.GET_ASSET):
             return (
                 DagsterEventType.LOADED_INPUT.value,
                 LoadedInputData(
                     event_specific_data.output_name, event_specific_data.asset_store_key
                 ),
             )
-        if event_specific_data.op == "SET_ASSET":
+        if event_specific_data.op in ("SET_ASSET", AssetStoreOperationType.SET_ASSET):
             return (
                 DagsterEventType.HANDLED_OUTPUT.value,
                 HandledOutputData(
