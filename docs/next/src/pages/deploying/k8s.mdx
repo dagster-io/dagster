@@ -45,7 +45,7 @@ to [architecture](/deploying/k8s#default-architecture), to individual [component
 
 The following steps are how to get up and running with the [default architecture](/deploying/k8s#default-architecture). This example requires a Kubernetes cluster.
 
-**Step 1:** Set up nvironment
+**Step 1:** Set up environment
 
 Make sure `kubectl` is configured with the intended Kubernetes cluster.
 
@@ -159,7 +159,7 @@ After a user clicks _Launch Execution_ in Dagit,
 1.  Dagit sends a gRPC request to the User Code Deployment to fetch the current image `company_repository/baz:6` that 
 the User Code Deployment is running.
 2.  Dagit creates a Pipeline Run entry in the PostgreSQL Runs table with `company_repository/baz:6` recorded as the image to be used.
-3.  The Daemon checks (every <100ms) for all runs that are ready to be executed, finds the Pipeline Run from (2), and spins up a Run Worker 
+3.  The Daemon checks for any runs that are ready to be executed, finds the Pipeline Run from (2), and spins up a Run Worker 
 (an ephemeral K8s Job) with image `company_repository/baz:6`.
 4.  The Run Worker traverses the execution plan (executing each solid in the pipeline in topological order) and writes structured events back to PostgreSQL. 
 
@@ -203,7 +203,7 @@ Each of these steps is visible in Dagit.
 
 ####  Daemon
 
-The daemon runs in a tight loop (<100ms) and checks the Runs table in PostgreSQL for Pipeline Runs in that are ready to be launched.
+The daemon periodically checks the Runs table in PostgreSQL for Pipeline Runs in that are ready to be launched.
 The daemon also runs the [dagster-native scheduler](/overview/daemon), which has exactly-once guarantees.
 
 ####  Dagit 
@@ -338,7 +338,7 @@ After a user clicks _Launch Execution_ in Dagit,
 1.  [same as default] Dagit sends a gRPC request to the User Code Deployment to fetch the current image `ml_team_repository/baz:6` that 
 the User Code Deployment is running.
 2.  Dagit creates a Pipeline Run entry with an ENQUEUED state in the the PostgreSQL Runs table with `ml_team_repository/baz:6` recorded as the image to be used.
-3.  [same as default] The Daemon checks in a tight loop (<100ms) for all runs that are ready to be executed.
+3.  [same as default] The Daemon periodically checks for all runs that are ready to be executed.
 4.  The Daemon finds the enqueued pipeline run and then checks whether there is capacity to launch a new run. If so, 
 the Daemon creates an ephemeral Run Worker (K8s Job) with image `ml_team_repository/baz:6`.
 5.  The Run Worker traverses the execution plan, sending steps that are ready to execute to the configured Celery queue as a Celery task and 
