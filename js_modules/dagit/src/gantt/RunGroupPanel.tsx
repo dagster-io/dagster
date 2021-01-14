@@ -1,9 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {showCustomAlert} from 'src/CustomAlertProvider';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
@@ -11,6 +12,8 @@ import {
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
 import {RunComponentFragments, RunElapsed, RunTime} from 'src/runs/RunUtils';
+import {ButtonLink} from 'src/ui/ButtonLink';
+import {Group} from 'src/ui/Group';
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
@@ -30,7 +33,32 @@ export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId})
     return <div />;
   }
   if (group.__typename === 'PythonError') {
-    return <div>The run group for this run could not be loaded: {group.message}</div>;
+    return (
+      <Group direction="row" spacing={8} padding={8}>
+        <Icon
+          icon="warning-sign"
+          color={Colors.GOLD3}
+          iconSize={13}
+          style={{position: 'relative', top: '-1px'}}
+        />
+        <div style={{fontSize: '13px'}}>
+          The run group for this run could not be loaded.{' '}
+          <ButtonLink
+            color={Colors.BLUE3}
+            underline="always"
+            onClick={() => {
+              showCustomAlert({
+                title: 'Python error',
+                // body: group.message,
+                body: 'Foo bar!',
+              });
+            }}
+          >
+            View error
+          </ButtonLink>
+        </div>
+      </Group>
+    );
   }
   if (group.runs?.length === 1) {
     return <div />;
