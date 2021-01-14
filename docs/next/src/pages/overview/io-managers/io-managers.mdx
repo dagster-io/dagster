@@ -71,28 +71,6 @@ The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly i
 The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />.  The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />.  The linked API documentation lists all the fields that are available on these objects.
 
 
-## Providing per-output metadata to an IO manager
-
-You might want to provide static metadata that controls how particular outputs are stored.  You don't plan to change the metadata at runtime, so it makes more sense to attach it to a definition rather than expose it as a configuration option.
-
-For example, if your pipeline produces DataFrames to populate tables in a data warehouse, you might want to specify that each output always goes to a particular table.  To accomplish this, you can define `metadata` on each <PyObject module="dagster" object="OutputDefinition" />:
-
-```python literalinclude caption=metadata.py
-file:/docs_snippets/docs_snippets/overview/io_managers/metadata.py
-startAfter:solids_start_marker
-endBefore:solids_end_marker
-```
-
-The IOManager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.
-
-In this case, the table names are encoded in the pipeline definition.  If, instead, you want to be able to set them at run time, the next section describes how.
-
-```python literalinclude caption=metadata.py
-file:/docs_snippets/docs_snippets/overview/io_managers/metadata.py
-startAfter:io_manager_start_marker
-endBefore:io_manager_end_marker
-```
-
 ## Providing per-output config to an IO manager
 
 When launching a run, you might want to parameterize how particular outputs are stored.
@@ -113,6 +91,28 @@ Then, when executing a pipeline, you can pass in this per-output config.
 file:/docs_snippets/docs_snippets/overview/io_managers/output_config.py
 startAfter:execute_start_marker
 endBefore:execute_end_marker
+```
+
+## Providing per-output metadata to an IO manager (experimental)
+
+You might want to provide static metadata that controls how particular outputs are stored.  You don't plan to change the metadata at runtime, so it makes more sense to attach it to a definition rather than expose it as a configuration option.
+
+For example, if your pipeline produces DataFrames to populate tables in a data warehouse, you might want to specify that each output always goes to a particular table.  To accomplish this, you can define `metadata` on each <PyObject module="dagster" object="OutputDefinition" />:
+
+```python literalinclude caption=metadata.py
+file:/docs_snippets/docs_snippets/overview/io_managers/metadata.py
+startAfter:solids_start_marker
+endBefore:solids_end_marker
+```
+
+The IOManager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.
+
+In this case, the table names are encoded in the pipeline definition.  If, instead, you want to be able to set them at run time, the next section describes how.
+
+```python literalinclude caption=metadata.py
+file:/docs_snippets/docs_snippets/overview/io_managers/metadata.py
+startAfter:io_manager_start_marker
+endBefore:io_manager_end_marker
 ```
 
 ## Providing an input manager for a root input (experimental)

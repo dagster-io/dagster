@@ -61,7 +61,7 @@ class InputDefinition:
         root_manager_key (Optional[str]): (Experimental) The resource key for the
             :py:class:`RootInputManager` used for loading this input when it is not connected to an
             upstream output.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
+        metadata (Optional[Dict[str, Any]]): (Experimental) A dict of metadata for the input.
     """
 
     def __init__(
@@ -86,6 +86,9 @@ class InputDefinition:
             experimental_arg_warning("root_manager_key", "InputDefinition")
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
+
+        if metadata:
+            experimental_arg_warning("metadata", "InputDefinition")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
