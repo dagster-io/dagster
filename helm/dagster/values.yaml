@@ -229,14 +229,18 @@ pipelineRun:
     YOUR_ENV_VAR: ""
 
 ####################################################################################################
-# Scheduler: Configuration for the K8sScheduler. (deprecated)
+# Scheduler: Configuration for the scheduler
 ####################################################################################################
 scheduler:
-  # Type can be one of [DagsterDaemonScheduler, K8sScheduler, CustomScheduler]
+  # Type can be one of [
+  #   DagsterDaemonScheduler,
+  #   K8sScheduler (deprecated),
+  #   CustomScheduler,
+  #  ]
   type: DagsterDaemonScheduler
 
   config:
-    # This configuration will only be used if the K8sScheduler is selected
+    # (deprecated) This configuration will only be used if the K8sScheduler is selected
     k8sScheduler:
       # Image for K8s CronJob(s) to launch K8s Job(s). This image needs access to dagster code
       # (to call `dagster api launch_scheduled_execution`) and instance yaml
