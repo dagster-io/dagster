@@ -2,7 +2,6 @@ import io
 import os
 import shutil
 import uuid
-import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from contextlib import contextmanager
 
@@ -17,6 +16,7 @@ from dagster.utils import mkdir_p
 from .temp_file_manager import TempfileManager
 
 
+# pylint: disable=no-init
 @usable_as_dagster_type
 class FileHandle(ABC):
     """A file handle is a reference to a file.
@@ -28,10 +28,6 @@ class FileHandle(ABC):
     transforms, and writes files, but where the same code can work in local development as well
     as in a cluster where the files would be stored in globally available object store such as s3.
     """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("`FileHandle` is deprecated in 0.10.0 and will be removed in 0.11.0.")
-        super(FileHandle, self).__init__(*args, **kwargs)
 
     @abstractproperty
     def path_desc(self):
@@ -45,7 +41,6 @@ class FileHandle(ABC):
 class LocalFileHandle(FileHandle):
     def __init__(self, path):
         self._path = check.str_param(path, "path")
-        super(LocalFileHandle, self).__init__()
 
     @property
     def path(self):
@@ -56,7 +51,7 @@ class LocalFileHandle(FileHandle):
         return self._path
 
 
-class FileManager(ABC):
+class FileManager(ABC):  # pylint: disable=no-init
     """
     The base class for all file managers in dagster. The file manager is a user-facing
     abstraction that allows a Dagster user to pass files in between solids, and the file
@@ -74,10 +69,6 @@ class FileManager(ABC):
     The business logic remains constant and a new implementation of the file manager is swapped out
     based on the system storage specified by the operator.
     """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("`FileManager` is deprecated in 0.10.0 and will be removed in 0.11.0.")
-        super(FileManager, self).__init__(*args, **kwargs)
 
     @abstractmethod
     def copy_handle_to_local_temp(self, file_handle):
@@ -186,7 +177,6 @@ class LocalFileManager(FileManager):
         self.base_dir = base_dir
         self._base_dir_ensured = False
         self._temp_file_manager = TempfileManager()
-        super(LocalFileManager, self).__init__()
 
     @staticmethod
     def for_instance(instance, run_id):

@@ -17,7 +17,6 @@ class GCSFileHandle(FileHandle):
     def __init__(self, gcs_bucket, gcs_key):
         self._gcs_bucket = check.str_param(gcs_bucket, "gcs_bucket")
         self._gcs_key = check.str_param(gcs_key, "gcs_key")
-        super(GCSFileHandle, self).__init__()
 
     @property
     def gcs_bucket(self):
@@ -43,7 +42,6 @@ class GCSFileManager(FileManager):
         self._gcs_base_key = check.str_param(gcs_base_key, "gcs_base_key")
         self._local_handle_cache = {}
         self._temp_file_manager = TempfileManager()
-        super(GCSFileManager, self).__init__()
 
     def copy_handle_to_local_temp(self, file_handle):
         self._download_if_not_cached(file_handle)

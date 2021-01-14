@@ -16,7 +16,6 @@ class S3FileHandle(FileHandle):
     def __init__(self, s3_bucket, s3_key):
         self._s3_bucket = check.str_param(s3_bucket, "s3_bucket")
         self._s3_key = check.str_param(s3_key, "s3_key")
-        super(S3FileHandle, self).__init__()
 
     @property
     def s3_bucket(self):
@@ -42,7 +41,6 @@ class S3FileManager(FileManager):
         self._s3_base_key = check.str_param(s3_base_key, "s3_base_key")
         self._local_handle_cache = {}
         self._temp_file_manager = TempfileManager()
-        super(S3FileManager, self).__init__()
 
     def copy_handle_to_local_temp(self, file_handle):
         self._download_if_not_cached(file_handle)
