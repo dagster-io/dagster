@@ -1,5 +1,6 @@
 import time
 from collections import defaultdict
+from typing import Callable, Dict, Iterator, List, Optional, Set, cast
 
 from dagster import check
 from dagster.core.errors import (
@@ -8,14 +9,17 @@ from dagster.core.errors import (
     DagsterUnknownStepStateError,
 )
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.retries import Retries
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.utils.interrupts import pop_captured_interrupt
 
+from .outputs import StepOutputHandle
 from .plan import ExecutionPlan
+from .step import ExecutionStep
 
 
-def _default_sort_key(step):
+def _default_sort_key(step: ExecutionStep) -> float:
     return int(step.tags.get(PRIORITY_TAG, 0)) * -1
 
 
@@ -23,43 +27,54 @@ class ActiveExecution:
     """State machine used to track progress through execution of an ExecutionPlan
     """
 
-    def __init__(self, execution_plan, retries, sort_key_fn=None):
-        self._plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-        self._retries = check.inst_param(retries, "retries", Retries)
-        self._sort_key_fn = check.opt_callable_param(sort_key_fn, "sort_key_fn", _default_sort_key)
+    def __init__(
+        self,
+        execution_plan: ExecutionPlan,
+        retries: Retries,
+        sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+    ):
+        self._plan: ExecutionPlan = check.inst_param(
+            execution_plan, "execution_plan", ExecutionPlan
+        )
+        self._retries: Retries = check.inst_param(retries, "retries", Retries)
+        self._sort_key_fn: Callable[[ExecutionStep], float] = check.opt_callable_param(
+            sort_key_fn, "sort_key_fn",
+        ) or _default_sort_key
 
-        self._context_guard = False  # Prevent accidental direct use
+        self._context_guard: bool = False  # Prevent accidental direct use
 
         # We decide what steps to skip based on what outputs are yielded by upstream steps
-        self._step_outputs = set()
+        self._step_outputs: Set[StepOutputHandle] = set()
 
         # All steps to be executed start out here in _pending
-        self._pending = self._plan.get_executable_step_deps()
+        self._pending: Dict[str, Set[str]] = self._plan.get_executable_step_deps()
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
-        self._successful_dynamic_outputs = defaultdict(lambda: defaultdict(list))
+        self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
 
         # steps move in to these buckets as a result of _update calls
-        self._executable = []
-        self._pending_skip = []
-        self._pending_retry = []
-        self._pending_abandon = []
-        self._pending_resolve = []
-        self._waiting_to_retry = {}
+        self._executable: List[str] = []
+        self._pending_skip: List[str] = []
+        self._pending_retry: List[str] = []
+        self._pending_abandon: List[str] = []
+        self._pending_resolve: List[str] = []
+        self._waiting_to_retry: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
-        self._in_flight = set()
+        self._in_flight: Set[str] = set()
 
         # and finally their terminal state is tracked by these sets, via mark_*
-        self._success = set()
-        self._failed = set()
-        self._skipped = set()
-        self._abandoned = set()
+        self._success: Set[str] = set()
+        self._failed: Set[str] = set()
+        self._skipped: Set[str] = set()
+        self._abandoned: Set[str] = set()
 
         # see verify_complete
-        self._unknown_state = set()
+        self._unknown_state: Set[str] = set()
 
-        self._interrupted = False
+        self._interrupted: bool = False
 
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
@@ -113,7 +128,7 @@ class ActiveExecution:
                     )
                 )
 
-    def _update(self):
+    def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
            as a function of what has been _completed
         """
@@ -189,13 +204,13 @@ class ActiveExecution:
             self._executable.append(key)
             del self._waiting_to_retry[key]
 
-    def sleep_til_ready(self):
+    def sleep_til_ready(self) -> None:
         now = time.time()
         sleep_amt = min([ready_at - now for ready_at in self._waiting_to_retry.values()])
         if sleep_amt > 0:
             time.sleep(sleep_amt)
 
-    def get_next_step(self):
+    def get_next_step(self) -> ExecutionStep:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
         steps = self.get_steps_to_execute(limit=1)
@@ -208,12 +223,12 @@ class ActiveExecution:
             step = self.get_next_step()
 
         check.invariant(step is not None, "Unexpected ActiveExecution state")
-        return step
+        return cast(ExecutionStep, step)
 
-    def get_step_by_key(self, step_key):
+    def get_step_by_key(self, step_key: str) -> ExecutionStep:
         return self._plan.get_step_by_key(step_key)
 
-    def get_steps_to_execute(self, limit=None):
+    def get_steps_to_execute(self, limit: int = None) -> List[ExecutionStep]:
         check.invariant(
             self._context_guard, "ActiveExecution must be used as a context manager",
         )
@@ -232,7 +247,7 @@ class ActiveExecution:
             self._executable.remove(step.key)
         return steps
 
-    def get_steps_to_skip(self):
+    def get_steps_to_skip(self) -> List[ExecutionStep]:
         self._update()
 
         steps = []
@@ -244,7 +259,7 @@ class ActiveExecution:
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def get_steps_to_abandon(self):
+    def get_steps_to_abandon(self) -> List[ExecutionStep]:
         self._update()
 
         steps = []
@@ -256,7 +271,7 @@ class ActiveExecution:
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def plan_events_iterator(self, pipeline_context):
+    def plan_events_iterator(self, pipeline_context) -> Iterator[DagsterEvent]:
         """Process all steps that can be skipped and abandoned
         """
 
@@ -264,7 +279,7 @@ class ActiveExecution:
         while steps_to_skip:
             for step in steps_to_skip:
                 step_context = pipeline_context.for_step(step)
-                skipped_inputs = []
+                skipped_inputs: List[str] = []
                 for step_input in step.step_inputs:
                     skipped_inputs.extend(self._skipped.intersection(step_input.dependency_keys))
 
@@ -283,11 +298,11 @@ class ActiveExecution:
         while steps_to_abandon:
             for step in steps_to_abandon:
                 step_context = pipeline_context.for_step(step)
-                failed_inputs = []
+                failed_inputs: List[str] = []
                 for step_input in step.step_inputs:
                     failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
 
-                abandoned_inputs = []
+                abandoned_inputs: List[str] = []
                 for step_input in step.step_inputs:
                     abandoned_inputs.extend(
                         self._abandoned.intersection(step_input.dependency_keys)
@@ -306,31 +321,31 @@ class ActiveExecution:
 
             steps_to_abandon = self.get_steps_to_abandon()
 
-    def mark_failed(self, step_key):
+    def mark_failed(self, step_key: str) -> None:
         self._failed.add(step_key)
         self._mark_complete(step_key)
 
-    def mark_success(self, step_key):
+    def mark_success(self, step_key: str) -> None:
         self._success.add(step_key)
         self._mark_complete(step_key)
         if step_key in self._successful_dynamic_outputs:
             self._pending_resolve.append(step_key)
 
-    def mark_skipped(self, step_key):
+    def mark_skipped(self, step_key: str) -> None:
         self._skipped.add(step_key)
         self._mark_complete(step_key)
 
-    def mark_abandoned(self, step_key):
+    def mark_abandoned(self, step_key: str) -> None:
         self._abandoned.add(step_key)
         self._mark_complete(step_key)
 
-    def mark_interrupted(self):
+    def mark_interrupted(self) -> None:
         self._interrupted = True
 
-    def check_for_interrupts(self):
+    def check_for_interrupts(self) -> None:
         return pop_captured_interrupt()
 
-    def mark_up_for_retry(self, step_key, at_time=None):
+    def mark_up_for_retry(self, step_key: str, at_time: Optional[float] = None) -> None:
         check.invariant(
             not self._retries.disabled,
             "Attempted to mark {} as up for retry but retries are disabled".format(step_key),
@@ -352,7 +367,7 @@ class ActiveExecution:
 
         self._mark_complete(step_key)
 
-    def _mark_complete(self, step_key):
+    def _mark_complete(self, step_key: str) -> None:
         check.invariant(
             step_key in self._in_flight,
             "Attempted to mark step {} as complete that was not known to be in flight".format(
@@ -361,7 +376,7 @@ class ActiveExecution:
         )
         self._in_flight.remove(step_key)
 
-    def handle_event(self, dagster_event):
+    def handle_event(self, dagster_event: DagsterEvent) -> None:
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
         if dagster_event.is_step_failure:
@@ -384,7 +399,9 @@ class ActiveExecution:
                     dagster_event.step_output_data.step_output_handle.output_name
                 ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(self, pipeline_context, step_key):
+    def verify_complete(
+        self, pipeline_context: SystemPipelineExecutionContext, step_key: str
+    ) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
         """
         if step_key in self._in_flight:
@@ -396,18 +413,18 @@ class ActiveExecution:
             self.mark_unknown_state(step_key)
 
     # factored out for test
-    def mark_unknown_state(self, step_key):
+    def mark_unknown_state(self, step_key: str) -> None:
         # note the step so that we throw upon plan completion
         self._unknown_state.add(step_key)
         # mark as abandoned so downstream tasks do not execute
         self.mark_abandoned(step_key)
 
     # factored out for test
-    def mark_step_produced_output(self, step_output_handle):
+    def mark_step_produced_output(self, step_output_handle: StepOutputHandle) -> None:
         self._step_outputs.add(step_output_handle)
 
     @property
-    def is_complete(self):
+    def is_complete(self) -> bool:
         return (
             len(self._pending) == 0
             and len(self._in_flight) == 0

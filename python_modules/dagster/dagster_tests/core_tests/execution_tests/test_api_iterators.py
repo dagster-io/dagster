@@ -1,6 +1,7 @@
 import pytest
 from dagster import ModeDefinition, PipelineDefinition, check, resource, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import (
     create_execution_plan,
@@ -158,7 +159,10 @@ def test_execute_canceled_state():
             pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
         ).with_status(PipelineRunStatus.CANCELED)
 
-        execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        with pytest.raises(DagsterInvariantViolationError):
+            execute_run(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance,
+            )
 
         logs = instance.all_logs(pipeline_run.run_id)
 

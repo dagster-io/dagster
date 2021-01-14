@@ -1,5 +1,6 @@
 import sys
 from contextlib import contextmanager
+from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions import IPipeline, PipelineDefinition
@@ -51,7 +52,9 @@ from .results import PipelineExecutionResult
 # (2) As for (1), but the ExecutionPlan passed must also agree in all relevant bits.
 
 
-def execute_run_iterator(pipeline, pipeline_run, instance):
+def execute_run_iterator(
+    pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
+) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -114,7 +117,12 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     )
 
 
-def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
+def execute_run(
+    pipeline: IPipeline,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    raise_on_error: bool = False,
+) -> PipelineExecutionResult:
     """Executes an existing pipeline run synchronously.
 
     Synchronous version of execute_run_iterator.
@@ -142,11 +150,11 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     check.inst_param(instance, "instance", DagsterInstance)
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:
+        message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
-            "Not starting execution since the run was canceled before execution could start",
-            pipeline_run,
+            message, pipeline_run,
         )
-        return
+        raise DagsterInvariantViolationError(message)
 
     check.invariant(
         pipeline_run.status == PipelineRunStatus.NOT_STARTED
@@ -228,14 +236,14 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
 
 def execute_pipeline_iterator(
-    pipeline,
-    run_config=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    solid_selection=None,
-    instance=None,
-):
+    pipeline: Union[PipelineDefinition, IPipeline],
+    run_config: Optional[dict] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    solid_selection: Optional[List[str]] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> Iterator[DagsterEvent]:
     """Execute a pipeline iteratively.
 
     Rather than package up the result of running a pipeline into a single object, like
@@ -300,7 +308,9 @@ def execute_pipeline_iterator(
 
 
 @contextmanager
-def _ephemeral_instance_if_missing(instance):
+def _ephemeral_instance_if_missing(
+    instance: Optional[DagsterInstance],
+) -> Iterator[DagsterInstance]:
     if instance:
         yield instance
     else:
@@ -309,15 +319,15 @@ def _ephemeral_instance_if_missing(instance):
 
 
 def execute_pipeline(
-    pipeline,
-    run_config=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    solid_selection=None,
-    instance=None,
-    raise_on_error=True,
-):
+    pipeline: Union[PipelineDefinition, IPipeline],
+    run_config: Optional[dict] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    solid_selection: Optional[List[str]] = None,
+    instance: Optional[DagsterInstance] = None,
+    raise_on_error: bool = True,
+) -> PipelineExecutionResult:
     """Execute a pipeline synchronously.
 
     Users will typically call this API when testing pipeline execution, or running standalone
@@ -367,15 +377,15 @@ def execute_pipeline(
 
 @telemetry_wrapper
 def _logged_execute_pipeline(
-    pipeline,
-    instance,
-    run_config=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    solid_selection=None,
-    raise_on_error=True,
-):
+    pipeline: Union[IPipeline, PipelineDefinition],
+    instance: DagsterInstance,
+    run_config: Optional[dict] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    solid_selection: Optional[List[str]] = None,
+    raise_on_error: bool = True,
+) -> PipelineExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
     (
         pipeline,
@@ -408,16 +418,16 @@ def _logged_execute_pipeline(
 
 
 def reexecute_pipeline(
-    pipeline,
-    parent_run_id,
-    run_config=None,
-    step_selection=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    instance=None,
-    raise_on_error=True,
-):
+    pipeline: Union[IPipeline, PipelineDefinition],
+    parent_run_id: str,
+    run_config: Optional[dict] = None,
+    step_selection: Optional[List[str]] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    instance: DagsterInstance = None,
+    raise_on_error: bool = True,
+) -> PipelineExecutionResult:
     """Reexecute an existing pipeline run.
 
     Users will typically call this API when testing pipeline reexecution, or running standalone
@@ -503,16 +513,15 @@ def reexecute_pipeline(
 
 
 def reexecute_pipeline_iterator(
-    pipeline,
-    parent_run_id,
-    run_config=None,
-    step_selection=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    instance=None,
-    step_keys_to_execute=None,
-):
+    pipeline: Union[IPipeline, PipelineDefinition],
+    parent_run_id: str,
+    run_config: Optional[dict] = None,
+    step_selection: Optional[List[str]] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    instance: DagsterInstance = None,
+) -> Iterator[DagsterEvent]:
     """Reexecute a pipeline iteratively.
 
     Rather than package up the result of running a pipeline into a single object, like
@@ -574,7 +583,7 @@ def reexecute_pipeline_iterator(
 
         # resolve step selection DSL queries using parent execution plan snapshot
         if step_selection:
-            parent_execution_plan_snapshot = instance.get_execution_plan_snapshot(
+            parent_execution_plan_snapshot = execute_instance.get_execution_plan_snapshot(
                 parent_pipeline_run.execution_plan_snapshot_id
             )
             step_keys_to_execute = parse_step_selection(
@@ -600,8 +609,12 @@ def reexecute_pipeline_iterator(
 
 
 def execute_plan_iterator(
-    execution_plan, pipeline_run, instance, retries=None, run_config=None,
-):
+    execution_plan: ExecutionPlan,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    retries: Optional[Retries] = None,
+    run_config: Optional[dict] = None,
+) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -625,8 +638,12 @@ def execute_plan_iterator(
 
 
 def execute_plan(
-    execution_plan, instance, pipeline_run, run_config=None, retries=None,
-):
+    execution_plan: ExecutionPlan,
+    instance: DagsterInstance,
+    pipeline_run: PipelineRun,
+    run_config: Optional[Dict] = None,
+    retries: Optional[Retries] = None,
+) -> List[DagsterEvent]:
     """This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_pipeline() above.
     """
@@ -647,7 +664,7 @@ def execute_plan(
     )
 
 
-def _check_pipeline(pipeline):
+def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline:
     # backcompat
     if isinstance(pipeline, PipelineDefinition):
         pipeline = InMemoryPipeline(pipeline)
@@ -656,7 +673,12 @@ def _check_pipeline(pipeline):
     return pipeline
 
 
-def create_execution_plan(pipeline, run_config=None, mode=None, step_keys_to_execute=None):
+def create_execution_plan(
+    pipeline: Union[IPipeline, PipelineDefinition],
+    run_config: Optional[dict] = None,
+    mode: Optional[str] = None,
+    step_keys_to_execute: Optional[List[str]] = None,
+) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -672,7 +694,9 @@ def create_execution_plan(pipeline, run_config=None, mode=None, step_keys_to_exe
     )
 
 
-def _pipeline_execution_iterator(pipeline_context, execution_plan):
+def _pipeline_execution_iterator(
+    pipeline_context: SystemPipelineExecutionContext, execution_plan: ExecutionPlan
+) -> Iterator[DagsterEvent]:
     """A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
 
@@ -779,7 +803,16 @@ class _ExecuteRunWithPlanIterable:
                         yield event
 
 
-def _check_execute_pipeline_args(pipeline, run_config, mode, preset, tags, solid_selection=None):
+def _check_execute_pipeline_args(
+    pipeline: Union[PipelineDefinition, IPipeline],
+    run_config: Optional[dict],
+    mode: Optional[str],
+    preset: Optional[str],
+    tags: Optional[Dict[str, Any]],
+    solid_selection: Optional[List[str]] = None,
+) -> Tuple[
+    IPipeline, Optional[dict], Optional[str], Dict[str, Any], FrozenSet[str], Optional[List[str]],
+]:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
