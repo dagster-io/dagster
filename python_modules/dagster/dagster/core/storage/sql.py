@@ -65,12 +65,15 @@ def handle_schema_errors(conn, alembic_config, msg=None):
             pass
 
         if db_revision != head_revision:
+            # Disable exception chaining since the original exception is included in the
+            # message, and the fact that the instance needs migrating should be the first
+            # thing the user sees
             raise DagsterInstanceMigrationRequired(
                 msg=msg,
                 db_revision=db_revision,
                 head_revision=head_revision,
                 original_exc_info=sys.exc_info(),
-            )
+            ) from None
 
         raise
 
