@@ -448,11 +448,10 @@ class SqlEventLogStorage(EventLogStorage):
         query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
             name=name, migration_completed=datetime.now(),
         )
-        try:
-            with self.connect(run_id) as conn:
+        with self.connect(run_id) as conn:
+            try:
                 conn.execute(query)
-        except db.exc.IntegrityError:
-            with self.connect(run_id) as conn:
+            except db.exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == name)

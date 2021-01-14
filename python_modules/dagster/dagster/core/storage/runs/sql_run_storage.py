@@ -42,7 +42,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     """
 
     @abstractmethod
-    def connect(self, raise_migration_required_errors=True):
+    def connect(self):
         """Context manager yielding a sqlalchemy.engine.Connection."""
 
     @abstractmethod
@@ -599,13 +599,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
             name=migration_name, migration_completed=datetime.now(),
         )
-        try:
-            # Don't raise schema errors as MigrationRequiredErrors since we're
-            # catching a schema error for control flow
-            with self.connect(raise_migration_required_errors=False) as conn:
+        with self.connect() as conn:
+            try:
                 conn.execute(query)
-        except db.exc.IntegrityError:
-            with self.connect() as conn:
+            except db.exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)

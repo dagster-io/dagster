@@ -94,15 +94,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             engine.dispose()
         return PostgresRunStorage(postgres_url)
 
-    def connect(
-        self, raise_migration_required_errors=True
-    ):  # pylint: disable=arguments-differ, unused-argument
-        return create_pg_connection(
-            self._engine,
-            __file__,
-            "run",
-            raise_migration_required_errors=raise_migration_required_errors,
-        )
+    def connect(self):
+        return create_pg_connection(self._engine, __file__, "run",)
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
