@@ -1,4 +1,4 @@
 solids:
-  process_data_for_day:
+  process_data_for_date:
     config:
-      day_of_week: "M"
+      date: "2020-05-05"
