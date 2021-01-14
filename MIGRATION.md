@@ -12,46 +12,66 @@ When new releases include breaking changes or deprecations, this document descri
 $ dagster instance migrate
 ```
 
-This release includes several schema changes to the Dagster storages that improve performance and enable new features like sensors and run queueing. After upgrading to 0.10.0, run the `dagster instance migrate` command to migrate your instance storage to the latest schema. This will turn off any running schedules, so you will need to restart any previously running schedules after migrating the schema. Before turning them back on, you should follow the steps below to migrate to `DagsterDaemonScheduler`.
+This release includes several schema changes to the Dagster storages that improve performance and
+enable new features like sensors and run queueing. After upgrading to 0.10.0, run the
+`dagster instance migrate` command to migrate your instance storage to the latest schema. This will
+turn off any running schedules, so you will need to restart any previously running schedules after
+migrating the schema. Before turning them back on, you should follow the steps below to migrate
+to `DagsterDaemonScheduler`.
 
 ## New scheduler: `DagsterDaemonScheduler`
 
-This release includes a new `DagsterDaemonScheduler` with improved fault tolerance and full support for timezones. We highly recommend upgrading to the new scheduler during this release. The existing schedulers, `SystemCronScheduler` and `K8sScheduler`, are deprecated and will be removed in a future release.
+This release includes a new `DagsterDaemonScheduler` with improved fault tolerance and full support
+for timezones. We highly recommend upgrading to the new scheduler during this release. The existing
+schedulers, `SystemCronScheduler` and `K8sScheduler`, are deprecated and will be removed in a
+future release.
 
 ### Steps to migrate
 
-Instead of relying on system cron or k8s cron jobs, the `DaemonScheduler` uses the new `dagster-deamon` service to run schedules. This requires running the `dagster-daemon` service as a part of your deployment.
+Instead of relying on system cron or k8s cron jobs, the `DaemonScheduler` uses the new
+`dagster-daemon` service to run schedules. This requires running the `dagster-daemon` service as a
+part of your deployment.
 
-Refer to our [deployment documentation](https://docs.dagster.io/deploying) for a guides on how to set up and run the daemon process for local development, Docker, or Kubernetes deployments.
+Refer to our [deployment documentation](https://docs.dagster.io/deploying) for a guides on how to
+set up and run the daemon process for local development, Docker, or Kubernetes deployments.
 
 **If you are currently using the SystemCronScheduler or K8sScheduler:**
 
-1. Stop any currently running schedules, to prevent any dangling cron jobs from being left behind. You can do this through the Dagit UI, or using the following command:
+1. Stop any currently running schedules, to prevent any dangling cron jobs from being left behind.
+   You can do this through the Dagit UI, or using the following command:
 
     ```bash
     dagster schedule stop --location {repository_location_name} {schedule_name}
     ```
 
-    If you do not stop running schedules before changing schedulers, Dagster will throw an exception on startup due to the misconfigured running schedules.
+    If you do not stop running schedules before changing schedulers, Dagster will throw an exception
+    on startup due to the misconfigured running schedules.
 
-2. In your `dagster.yaml` file, remove the `scheduler:` entry. If there is no `scheduler:` entry, the `DagsterDaemonScheduler` is automatically used as the default scheduler.
+2. In your `dagster.yaml` file, remove the `scheduler:` entry. If there is no `scheduler:` entry,
+   the `DagsterDaemonScheduler` is automatically used as the default scheduler.
 
-3. Start the `dagster-daemon` process. Guides can be found in our [deployment documentations](https://docs.dagster.io/deploying).
+3. Start the `dagster-daemon` process. Guides can be found in our
+   [deployment documentations](https://docs.dagster.io/deploying).
 
-See our [schedules troubleshooting guide](https://docs.dagster.io/troubleshooting/schedules) for help if you experience any problems with the new scheduler.
+See our [schedules troubleshooting guide](https://docs.dagster.io/troubleshooting/schedules) for
+help if you experience any problems with the new scheduler.
 
 **If you are not using a legacy scheduler:**
 
-No migration steps are needed, but make sure you run `dagster instance migrate` as a part of upgrading to 0.10.0.
+No migration steps are needed, but make sure you run `dagster instance migrate` as a part of
+upgrading to 0.10.0.
 
 ## Deprecation: Intermediate Storage
 
-We have deprecated the intermediate storage machinery in favor of the new IO manager abstraction, which offers finer-grained control over how inputs and outputs are serialized and persisted. Check out the
-[IO Managers Overview](https://docs.dagster.io/0.10.0/overview/io-managers/io-managers) for more information.
+We have deprecated the intermediate storage machinery in favor of the new IO manager abstraction,
+which offers finer-grained control over how inputs and outputs are serialized and persisted. Check
+out the [IO Managers Overview](https://docs.dagster.io/0.10.0/overview/io-managers/io-managers) for
+more information.
 
 ### Steps to Migrate
 
-* We have deprecated the top level `"storage"` and `"intermediate_storage"` fields on `run_config`. If you are currently executing pipelines as follows:
+* We have deprecated the top level `"storage"` and `"intermediate_storage"` fields on `run_config`.
+  If you are currently executing pipelines as follows:
 
     ```python
     @pipeline
@@ -77,7 +97,8 @@ We have deprecated the intermediate storage machinery in favor of the new IO man
     )
     ```
 
-    You should instead use the built-in IO manager `fs_io_manager`, which can be attached to your pipeline as a resource:
+    You should instead use the built-in IO manager `fs_io_manager`, which can be attached to your
+    pipeline as a resource:
 
     ```python
     @pipeline(
@@ -100,11 +121,15 @@ We have deprecated the intermediate storage machinery in favor of the new IO man
     )
     ```
 
-    There are corresponding IO managers for other intermediate storages, such as the S3- and ADLS2-based storages
+    There are corresponding IO managers for other intermediate storages, such as the S3- and
+    ADLS2-based storages
 
 * We have deprecated `IntermediateStorageDefinition` and `@intermediate_storage`.
 
-    If you have written custom intermediate storage, you should migrate to custom IO managers defined using the `@io_manager` API. We have provided a helper method, `io_manager_from_intermediate_storage`, to help migrate your existing custom intermediate storages to IO managers.
+  If you have written custom intermediate storage, you should migrate to custom IO managers
+  defined using the `@io_manager` API. We have provided a helper method,
+  `io_manager_from_intermediate_storage`, to help migrate your existing custom intermediate
+  storages to IO managers.
 
 
     ```python
@@ -125,23 +150,32 @@ We have deprecated the intermediate storage machinery in favor of the new IO man
         ...
     ```
 
-* We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the new IO managers, which should be attached using the `resource_defs` argument.
+* We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
+  new IO managers, which should be attached using the `resource_defs` argument.
 
 ## Removal: `input_hydration_config` and `output_materialization_config`
 
-Use `dagster_type_loader` instead of `input_hydration_config` and `dagster_type_materializer` instead of `output_materialization_config`.
+Use `dagster_type_loader` instead of `input_hydration_config` and `dagster_type_materializer`
+instead of `output_materialization_config`.
 
-On `DagsterType` and type constructors in `dagster_pandas` use the `loader` argument instead of `input_hydration_config` and the `materializer` argument instead of `dagster_type_materializer` argument.
+On `DagsterType` and type constructors in `dagster_pandas` use the `loader` argument instead of
+`input_hydration_config` and the `materializer` argument instead of `dagster_type_materializer`
+argument.
 
 ## Removal: `repository` key in workspace YAML
 
-We have removed the ability to specify a repository in your workspace using the `repository:` key. Use `load_from:` instead when specifying how to load the repositories in your workspace.
+We have removed the ability to specify a repository in your workspace using the `repository:` key.
+Use `load_from:` instead when specifying how to load the repositories in your workspace.
 
 ## Deprecated: `python_environment` key in workspace YAML
 
 The `python_environment:` key is now deprecated and will be removed in a future release.
 
-Previously, when you wanted to load a repository location in your workspace using a different Python environment from Dagit’s Python environment, you needed to use a `python_environment`: key under `load_from:` instead of the `python_file:` or `python_package:` keys. Now, you can simply customize the `executable_path` in your workspace entries without needing to change to the `python_environment:` key.
+Previously, when you wanted to load a repository location in your workspace using a different
+Python environment from Dagit’s Python environment, you needed to use a `python_environment:` key
+under `load_from:` instead of the `python_file:` or `python_package:` keys. Now, you can simply
+customize the `executable_path` in your workspace entries without needing to change to the
+`python_environment:` key.
 
 For example, the following workspace entry:
 
@@ -164,7 +198,8 @@ should now be expressed as:
 ```
 
 
-See our [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces#loading-from-an-external-environment) for more information and examples.
+See our [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces#loading-from-an-external-environment)
+for more information and examples.
 
 ## Removal: `config_field` property on definition classes
 
@@ -172,21 +207,33 @@ We have removed the property `config_field` on definition classes. Use `config_s
 
 ## Removal: System Storage
 
-We have removed the system storage abstractions, i.e. `SystemStorageDefinition` and `@system_storage`, in favor of "intermediate storage", which we deprecated in 0.9.0 as described [here](#deprecation-system_storage_defs)
+We have removed the system storage abstractions, i.e. `SystemStorageDefinition` and
+`@system_storage` ([deprecated in 0.9.0](#deprecation-system_storage_defs)).
 
-Please note that intermediate storage is also deprecated and will be removed in 0.11.0. [Use IO managers instead](#deprecation-intermediate-storage).
+Please note that the intermediate storage abstraction is also deprecated and will be removed in
+0.11.0. [Use IO managers instead](#deprecation-intermediate-storage).
 
-* We have removed the `system_storage_defs` argument (deprecated in 0.9.0) to `ModeDefinition`, in favor of `intermediate_storage_defs.`
-* We have removed the built-in system storages, e.g. `default_system_storage_defs` (deprecated in 0.9.0)..
+* We have removed the `system_storage_defs` argument (deprecated in 0.9.0) to `ModeDefinition`, in
+  favor of `intermediate_storage_defs.`
+* We have removed the built-in system storages, e.g. `default_system_storage_defs`
+  (deprecated in 0.9.0).
 
 
 ## Removal: `step_keys_to_execute`
 
-We have removed the `step_keys_to_execute` argument to `reexecute_pipeline` and `reexecute_pipeline_iterator`, in favor of `step_selection`. This argument accepts the Dagster selection syntax, so, for example, `*solid_a+` represents `solid_a`, all of its upstream steps, and its immediate downstream steps.
+We have removed the `step_keys_to_execute` argument to `reexecute_pipeline` and
+`reexecute_pipeline_iterator`, in favor of `step_selection`. This argument accepts the Dagster
+selection syntax, so, for example, `*solid_a+` represents `solid_a`, all of its upstream steps,
+and its immediate downstream steps.
 
 ## Breaking Change: `date_partition_range`
 
-Starting in 0.10.0, Dagster uses the [pendulum](https://pypi.org/project/pendulum/) library to ensure that schedules and partitions behave correctly with respect to timezones. As part of this change, the `delta` parameter to `date_partition_range` (which determined the time different between partitions and was a `datetime.timedelta`) has been replaced by a `delta_range` parameter (which must be a string that's a valid argument to the `pendulum.period` function (for example, `days`, `hours`, or `months`).
+Starting in 0.10.0, Dagster uses the [pendulum](https://pypi.org/project/pendulum/) library to
+ensure that schedules and partitions behave correctly with respect to timezones. As part of this
+change, the `delta` parameter to `date_partition_range` (which determined the time different between
+partitions and was a `datetime.timedelta`) has been replaced by a `delta_range` parameter
+(which must be a string that's a valid argument to the `pendulum.period` function, such as
+`"days"`, `"hours"`, or `"months"`).
 
 For example, the following partition range for a monthly partition set:
 
@@ -194,7 +241,7 @@ For example, the following partition range for a monthly partition set:
 date_partition_range(
     start=datetime.datetime(2018, 1, 1),
     end=datetime.datetime(2019, 1, 1),
-   delta=datetime.timedelta(months=1)
+    delta=datetime.timedelta(months=1)
 )
 ```
 
@@ -204,15 +251,27 @@ should now be expressed as:
 date_partition_range(
     start=datetime.datetime(2018, 1, 1),
     end=datetime.datetime(2019, 1, 1),
-   delta_range="months"
+    delta_range="months"
 )
 ```
 
 ## Breaking Change: `PartitionSetDefinition.create_schedule_definition`
 
-When you create a schedule from a partition set using `PartitionSetDefinition.create_schedule_definition`, you now must supply a `partition_selector` argument that tells the scheduler which partition to use for a given schedule time. We have added two helper functions, `create_offset_partition_selector` and `identity_partition_selector`, that capture two common partition selectors (schedules that execute at a fixed offset from the partition times, e.g. a schedule that creates the previous day's partition each morning, and schedules that execute at the same time as the partition times). The previous default partition selector was `last_partition`, which doesn't always work as expected when using the default scheduler and has been removed in favor of the two helper partition selectors above.
+When you create a schedule from a partition set using
+`PartitionSetDefinition.create_schedule_definition`, you now must supply a `partition_selector`
+argument that tells the scheduler which partition to use for a given schedule time.
 
-For example, a schedule created from a daily partition set that fills in each partition  the next day at 10AM would be created as follows:
+We have added two helper functions, `create_offset_partition_selector` and
+`identity_partition_selector`, that capture two common partition selectors (schedules that execute
+at a fixed offset from the partition times, e.g. a schedule that creates the previous day's
+partition each morning, and schedules that execute at the same time as the partition times).
+
+The previous default partition selector was `last_partition`, which didn't always work as expected
+when using the default scheduler and has been removed in favor of the two helper partition selectors
+above.
+
+For example, a schedule created from a daily partition set that fills in each partition the next
+day at 10AM would be created as follows:
 
 ```python
 partition_set = PartitionSetDefinition(
@@ -236,7 +295,9 @@ schedule_definition = partition_set.create_schedule_definition(
 
 ## Renamed: Helm values
 
-Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practices/values/#naming-conventions), we now camel case all of our Helm values. To migrate to 0.10.0, you'll need to update your `values.yaml` with the following renames:
+Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practices/values/#naming-conventions),
+we now camel case all of our Helm values. To migrate to 0.10.0, you'll need to update your
+`values.yaml` with the following renames:
 
 * `pipeline_run` → `pipelineRun`
 * `dagster_home` → `dagsterHome`
@@ -245,21 +306,77 @@ Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practice
 
 ## Restructured: `scheduler` in Helm values
 
-When specifying the Dagster instance scheduler, rather than using a boolean field to switch between the current options of `K8sScheduler` and `DagsterDaemonScheduler`, we now require the scheduler type to be explicitly defined under `scheduler.type`. If the user specified `scheduler.type` has required config, additional fields will need to be specified under `scheduler.config`.
+When specifying the Dagster instance scheduler, rather than using a boolean field to switch between
+the current options of `K8sScheduler` and `DagsterDaemonScheduler`, we now require the scheduler
+type to be explicitly defined under `scheduler.type`. If the user specified `scheduler.type` has
+required config, additional fields will need to be specified under `scheduler.config`.
 
-`scheduler.type` and corresponding `scheduler.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+`scheduler.type` and corresponding `scheduler.config` values are enforced via
+[JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+
+For example, if your Helm values previously were set like this to enable the
+`DagsterDaemonScheduler`:
+​
+```yaml
+scheduler:
+  k8sEnabled: false
+```
+​
+You should instead have:
+​
+```yaml
+scheduler:
+  type: DagsterDaemonScheduler
+```
 
 ## Restructured: `celery` and `k8sRunLauncher` in Helm values
 
-`celery` and `k8sRunLauncher` now live under `runLauncher.config.celeryK8sRunLauncher` and `runLauncher.config.k8sRunLauncher` respectively. Now, to enable celery, `runLauncher.type` must equal `CeleryK8sRunLauncher`. To enable the vanilla K8s run launcher, `runLauncher.type` must equal `K8sRunLauncher`.
+`celery` and `k8sRunLauncher` now live under `runLauncher.config.celeryK8sRunLauncher` and
+`runLauncher.config.k8sRunLauncher` respectively. Now, to enable celery, `runLauncher.type` must
+equal `CeleryK8sRunLauncher`. To enable the vanilla K8s run launcher, `runLauncher.type` must
+equal `K8sRunLauncher`.
 
-`runLauncher.type` and corresponding `runLauncher.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+`runLauncher.type` and corresponding `runLauncher.config` values are enforced via
+[JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+
+For example, if your Helm values previously were set like this to enable the `K8sRunLauncher`:
+​
+```yaml
+celery:
+  enabled: false
+​
+k8sRunLauncher:
+  enabled: true
+  jobNamespace: ~
+  loadInclusterConfig: true
+  kubeconfigFile: ~
+  envConfigMaps: []
+  envSecrets: []
+```
+​
+You should instead have:
+​
+```yaml
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      jobNamespace: ~
+      loadInclusterConfig: true
+      kubeconfigFile: ~
+      envConfigMaps: []
+      envSecrets: []
+```
 
 ## New Helm defaults
 
-By default, `userDeployments` is enabled and the `runLauncher` is set to the `K8sRunLauncher`. Along with the latter change, all message brokers (e.g. `rabbitmq` and `redis`) are now disabled by default.
+By default, `userDeployments` is enabled and the `runLauncher` is set to the `K8sRunLauncher`.
+Along with the latter change, all message brokers (e.g. `rabbitmq` and `redis`) are now disabled
+by default.
 
-If you were using the `CeleryK8sRunLauncher`, one of `rabbitmq` or `redis` must now be explicitly enabled in your Helm values.
+If you were using the `CeleryK8sRunLauncher`, one of `rabbitmq` or `redis` must now be explicitly
+enabled in your Helm values.
+
 
 # Migrating to 0.9.0
 

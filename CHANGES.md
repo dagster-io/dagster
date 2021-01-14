@@ -4,68 +4,138 @@
 
 ### Major Changes
 
-* A **native scheduler** with support for exactly-once, fault tolerant, timezone-aware scheduling. A new Dagster daemon process has been added to manage your schedules and sensors with a reconciliation loop, ensuring that all runs are executed exactly once, even if the Dagster daemon experiences occasional failure. See the [Migration Guide](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for instructions on moving from `SystemCronScheduler` or `K8sScheduler` to the new scheduler.
-* **First-class sensors**, built on the new Dagster daemon, allow you to instigate runs based on changes in external state - for example, files on S3 or assets materialized by other Dagster pipelines. See the [Sensors Overview](http://docs.dagster.io/overview/schedules-sensors/sensors) for more information.
-* Dagster now supports **pipeline run queueing**. You can apply instance-level run concurrency limits and prioritization rules by adding the QueuedRunCoordinator to your Dagster instance. See the [Run Concurrency Overview](http://docs.dagster.io/overview/pipeline-runs/limiting-run-concurrency) for more information.
-* The `IOManager` abstraction provides a new, streamlined primitive for granular control over where and how solid outputs are stored and loaded. This is intended to replace the (deprecated) intermediate/system storage abstractions, See the [IO Manager Overview](http://docs.dagster.io/overview/io-managers/io-managers) for more information.
-* A new **Partitions page** in Dagit lets you view your your pipeline runs organized by partition. You can also **launch backfills from Dagit** and monitor them from this page.
-* A new **Instance Status page** in Dagit lets you monitor the health of your Dagster instance, with repository location information, daemon statuses, instance-level schedule and sensor information, and linkable instance configuration.
-* **Resources can now declare their dependencies on other resources** via the `required_resource_keys` parameter on `@resource`.
-* Our support for deploying on **Kubernetes** is now mature and battle-tested  Our Helm chart is now easier to configure and deploy, and we’ve made big investments in observability and reliability. You can view Kubernetes interactions in the structured event log and use Dagit to help you understand what’s happening in your deployment. The defaults in the Helm chart will give you graceful degradation and failure recovery right out of the box.
-* Experimental support for **dynamic orchestration** with the new `DynamicOutputDefinition` API. Dagster can now map the downstream dependencies over a dynamic output at runtime.
+* A **native scheduler** with support for exactly-once, fault tolerant, timezone-aware scheduling.
+  A new Dagster daemon process has been added to manage your schedules and sensors with a
+  reconciliation loop, ensuring that all runs are executed exactly once, even if the Dagster daemon
+  experiences occasional failure. See the
+  [Migration Guide](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for
+  instructions on moving from `SystemCronScheduler` or `K8sScheduler` to the new scheduler.
+* **First-class sensors**, built on the new Dagster daemon, allow you to instigate runs based on
+  changes in external state - for example, files on S3 or assets materialized by other Dagster
+  pipelines. See the [Sensors Overview](http://docs.dagster.io/overview/schedules-sensors/sensors)
+  for more information.
+* Dagster now supports **pipeline run queueing**. You can apply instance-level run concurrency
+  limits and prioritization rules by adding the QueuedRunCoordinator to your Dagster instance. See
+  the [Run Concurrency Overview](http://docs.dagster.io/overview/pipeline-runs/limiting-run-concurrency)
+  for more information.
+* The `IOManager` abstraction provides a new, streamlined primitive for granular control over where
+  and how solid outputs are stored and loaded. This is intended to replace the (deprecated)
+  intermediate/system storage abstractions, See the
+  [IO Manager Overview](http://docs.dagster.io/overview/io-managers/io-managers) for more
+  information.
+* A new **Partitions page** in Dagit lets you view your your pipeline runs organized by partition.
+  You can also **launch backfills from Dagit** and monitor them from this page.
+* A new **Instance Status page** in Dagit lets you monitor the health of your Dagster instance,
+  with repository location information, daemon statuses, instance-level schedule and sensor
+  information, and linkable instance configuration.
+* **Resources can now declare their dependencies on other resources** via the
+  `required_resource_keys` parameter on `@resource`.
+* Our support for deploying on **Kubernetes** is now mature and battle-tested  Our Helm chart is
+  now easier to configure and deploy, and we’ve made big investments in observability and
+  reliability. You can view Kubernetes interactions in the structured event log and use Dagit to
+  help you understand what’s happening in your deployment. The defaults in the Helm chart will
+  give you graceful degradation and failure recovery right out of the box.
+* Experimental support for **dynamic orchestration** with the new `DynamicOutputDefinition` API.
+  Dagster can now map the downstream dependencies over a dynamic output at runtime.
 
 ### Breaking Changes
 
 **Dropping Python 2 support**
 
-* We’ve dropped support for Python 2.7, based on community usage and enthusiasm for Python 3-native public APIs.
+* We’ve dropped support for Python 2.7, based on community usage and enthusiasm for Python 3-native
+  public APIs.
 
 **Removal of deprecated APIs**
 
-These APIs were marked for deprecation with warnings in the 0.9.0 release, and have been removed in the 0.10.0 release.
+_These APIs were marked for deprecation with warnings in the 0.9.0 release, and have been removed in
+the 0.10.0 release._
 
-* The decorator `input_hydration_config`  has been removed. Use the `dagster_type_loader` decorator instead.
-* The decorator `output_materialization_config` has been removed. Use `dagster_type_materializer` instead.
-* The system storage subsystem has been removed. This includes `SystemStorageDefinition`, `@system_storage`, and `default_system_storage_defs` . Use the new `IOManagers` API instead. See the [IO Manager Overview](http://docs.dagster.io/overview/io-managers/io-managers) for more information.
-* The `config_field` argument on decorators and definitions classes has been removed and replaced with `config_schema`. This is a drop-in rename.
-* The argument `step_keys_to_execute` to the functions `reexecute_pipeline` and `reexecute_pipeline_iterator` has been removed. Use the `step_selection` argument to select subsets for execution instead.
-* Repositories can no longer be loaded using the legacy `repository` key in your `workspace.yaml`; use `load_from` instead. See the [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces) for documentation about how to define a workspace.
+* The decorator `input_hydration_config`  has been removed. Use the `dagster_type_loader` decorator
+  instead.
+* The decorator `output_materialization_config` has been removed. Use `dagster_type_materializer`
+  instead.
+* The system storage subsystem has been removed. This includes `SystemStorageDefinition`,
+  `@system_storage`, and `default_system_storage_defs` . Use the new `IOManagers` API instead. See
+  the [IO Manager Overview](http://docs.dagster.io/overview/io-managers/io-managers) for more
+  information.
+* The `config_field` argument on decorators and definitions classes has been removed and replaced
+  with `config_schema`. This is a drop-in rename.
+* The argument `step_keys_to_execute` to the functions `reexecute_pipeline` and
+  `reexecute_pipeline_iterator` has been removed. Use the `step_selection` argument to select
+  subsets for execution instead.
+* Repositories can no longer be loaded using the legacy `repository` key in your `workspace.yaml`;
+  use `load_from` instead. See the
+  [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces) for
+  documentation about how to define a workspace.
 
 **Breaking API Changes**
 
-* `SolidExecutionResult.compute_output_event_dict` has been renamed to `SolidExecutionResult.compute_output_events_dict`. A solid execution result is returned from methods such as `result_for_solid`. Any call sites will need to be updated.
-* The `.compute` suffix is no longer applied to step keys. Step keys that were previously named `step_key.compute` will now be named `step_key`. If you are using any API method that takes a step_selection argument, you will need to update the step keys accordingly.
-* The `pipeline_def` property has been removed from the `InitResourceContext` passed to functions decorated with `@resource`.
+* `SolidExecutionResult.compute_output_event_dict` has been renamed to
+  `SolidExecutionResult.compute_output_events_dict`. A solid execution result is returned from
+  methods such as `result_for_solid`. Any call sites will need to be updated.
+* The `.compute` suffix is no longer applied to step keys. Step keys that were previously named
+  `my_solid.compute` will now be named `my_solid`. If you are using any API method that takes a
+  step_selection argument, you will need to update the step keys accordingly.
+* The `pipeline_def` property has been removed from the `InitResourceContext` passed to functions
+  decorated with `@resource`.
 
 **Helm Chart**
 
-* The schema for the `scheduler` values in the helm chart has changed. Instead of a simple toggle on/off, we now require an explicit `scheduler.type` to specify usage of the `DagsterDaemonScheduler`, `K8sScheduler`, or otherwise. If your specified `scheduler.type` has required config, these fields must be specified under `scheduler.config`.
+* The schema for the `scheduler` values in the helm chart has changed. Instead of a simple toggle
+  on/off, we now require an explicit `scheduler.type` to specify usage of the
+  `DagsterDaemonScheduler`, `K8sScheduler`, or otherwise. If your specified `scheduler.type` has
+  required config, these fields must be specified under `scheduler.config`.
 * `snake_case` fields have been changed to `camelCase`. Please update your `values.yaml` as follows:
     * `pipeline_run` → `pipelineRun`
     * `dagster_home` → `dagsterHome`
     * `env_secrets` → `envSecrets`
     * `env_config_maps` → `envConfigMaps`
-* The Helm values `celery` and `k8sRunLauncher` have now been consolidated under the Helm value runLauncher for simplicity. Use the field `runLauncher.type` to specify usage of the `K8sRunLauncher`, `CeleryK8sRunLauncher`, or otherwise. By default, the `K8sRunLauncher` is enabled.
-* All Celery message brokers (i.e. RabbitMQ and Redis) are disabled by default. If you are using the `CeleryK8sRunLauncher`, you should explicitly enable your message broker of choice.
+* The Helm values `celery` and `k8sRunLauncher` have now been consolidated under the Helm value
+  `runLauncher` for simplicity. Use the field `runLauncher.type` to specify usage of the
+  `K8sRunLauncher`, `CeleryK8sRunLauncher`, or otherwise. By default, the `K8sRunLauncher` is
+  enabled.
+* All Celery message brokers (i.e. RabbitMQ and Redis) are disabled by default. If you are using
+  the `CeleryK8sRunLauncher`, you should explicitly enable your message broker of choice.
 * `userDeployments` are now enabled by default.
 
 ### Core
 
-* Event log messages streamed to `stdout` and `stderr` have been streamlined to be a single line per event.
-* Experimental support for memoization and versioning lets you execute pipelines incrementally, selecting which solids need to be rerun based on runtime criteria and versioning their outputs with configurable identifiers that capture their upstream dependencies.
-    * Use the `version` parameter of dagster entities to tag your steps to a specific version: ie `@solid(version=...)`
-    * Add the `IS_MEMOIZED_RUN` tag with value `"true"` in order to run a pipeline with memoization enabled.
-    * View which steps will be re-executed using the [`list_versions` CLI](https://docs.dagster.io/_apidocs/cli#dagster-pipeline-list-versions).
-* Schedules that are executed using the new `DagsterDaemonScheduler` can now execute in any timezone by adding an `execution_timezone` parameter to the schedule. Daylight Savings Time transitions are also supported. See the [Schedules Overview](http://docs.dagster.io/overview/schedules-sensors/schedules#timezones) for more information and examples.
+* Event log messages streamed to `stdout` and `stderr` have been streamlined to be a single line
+  per event.
+* Experimental support for memoization and versioning lets you execute pipelines incrementally,
+  selecting which solids need to be rerun based on runtime criteria and versioning their outputs
+  with configurable identifiers that capture their upstream dependencies.
+  
+  To set up memoized step selection, users can provide a `MemoizableIOManager`, whose `has_output`
+  function decides whether a given solid output needs to be computed or already exists. To execute
+  a pipeline with memoized step selection, users can supply the `dagster/is_memoized_run` run tag
+  to `execute_pipeline`.
+
+  To set the version on a solid or resource, users can supply the `version` field on the definition.
+  To access the derived version for a step output, users can access the `version` field on the
+  `OutputContext` passed to the `handle_output` and `load_input` methods of `IOManager` and the
+  `has_output` method of `MemoizableIOManager`.
+* Schedules that are executed using the new `DagsterDaemonScheduler` can now execute in any
+  timezone by adding an `execution_timezone` parameter to the schedule. Daylight Savings Time
+  transitions are also supported. See the
+  [Schedules Overview](http://docs.dagster.io/overview/schedules-sensors/schedules#timezones) for
+  more information and examples.
 
 ### Dagit
 
-* Countdown and refresh buttons have been added for pages with regular polling queries (e.g. Runs, Schedules).
-* Confirmation and progress dialogs are now presented when performing run terminations and deletions. Additionally, hanging/orphaned runs can now be forced to terminate, by selecting "Force termination immediately" in the run termination dialog.
-* The Runs page now shows counts for "Queued" and "In progress" tabs, and individual run pages show timing, tags, and configuration metadata.
-* The backfill experience has been improved with means to view progress and terminate the entire backfill via the partition set page. Additionally errors related to backfills are surfaced better.
+* Countdown and refresh buttons have been added for pages with regular polling queries (e.g. Runs,
+  Schedules).
+* Confirmation and progress dialogs are now presented when performing run terminations and
+  deletions. Additionally, hanging/orphaned runs can now be forced to terminate, by selecting
+  "Force termination immediately" in the run termination dialog.
+* The Runs page now shows counts for "Queued" and "In progress" tabs, and individual run pages
+  show timing, tags, and configuration metadata.
+* The backfill experience has been improved with means to view progress and terminate the entire
+  backfill via the partition set page. Additionally, errors related to backfills are now surfaced
+  more clearly.
 * Shortcut hints are no longer displayed when attempting to use the screen capture command.
-* The asset page has been revamped to include a table of events and enable organizing events by partition. Asset key escaping issues in other views have been fixed as well.
+* The asset page has been revamped to include a table of events and enable organizing events by
+  partition. Asset key escaping issues in other views have been fixed as well.
 * Miscellaneous bug fixes, frontend performance tweaks, and other improvements are also included.
 
 ### Kubernetes/Helm
@@ -74,7 +144,8 @@ These APIs were marked for deprecation with warnings in the 0.9.0 release, and h
 
 **Helm**
 
-* We've added schema validation to our Helm chart. You can now check that your values YAML file is correct by running:
+* We've added schema validation to our Helm chart. You can now check that your values YAML file is
+  correct by running:
 
     ```bash
     helm lint helm/dagster -f helm/dagster/values.yaml
@@ -84,7 +155,8 @@ These APIs were marked for deprecation with warnings in the 0.9.0 release, and h
 * Added Helm deployment of the dagster daemon & daemon scheduler.
 * Added Helm support for configuring a compute log manager in your dagster instance.
 * User code deployments now include a user `ConfigMap` by default.
-* Changed the default liveness probe for Dagit to use `httpGet "/dagit_info"` instead of `tcpSocket:80`
+* Changed the default liveness probe for Dagit to use `httpGet "/dagit_info"` instead of
+  `tcpSocket:80`
 
 **Dagster-K8s [Kubernetes]**
 
@@ -92,7 +164,8 @@ These APIs were marked for deprecation with warnings in the 0.9.0 release, and h
 * Added support for tagging pipeline executions.
 * Fixes to support version 12.0.0 of the Python Kubernetes client.
 * Improved implementation of Kubernetes+Dagster retries.
-* Many logging improvements to surface debugging information and failures in the structured event log.
+* Many logging improvements to surface debugging information and failures in the structured event
+  log.
 
 **Dagster-Celery-K8s**
 
@@ -100,7 +173,9 @@ These APIs were marked for deprecation with warnings in the 0.9.0 release, and h
 
 ### Integrations & Libraries
 
-* Added a new `dagster-docker` library with a `DockerRunLauncher` that launches each run in its own Docker container. See our [Deploying with Docker docs](https://docs.dagster.io/examples/deploy_docker) for an example)
+* Added a new `dagster-docker` library with a `DockerRunLauncher` that launches each run in its own
+  Docker container. (See [Deploying with Docker docs](https://docs.dagster.io/examples/deploy_docker)
+  for an example.)
 * Added support for AWS Athena. (Thanks @jmsanders!)
 * Added mocks for AWS S3, Athena, and Cloudwatch in tests. (Thanks @jmsanders!)
 * Allow setting of S3 endpoint through env variables. (Thanks @marksteve!)
@@ -118,7 +193,8 @@ These APIs were marked for deprecation with warnings in the 0.9.0 release, and h
 
 **New**
 
-- When using a solid selection in the Dagit Playground, non-matching solids are hidden in the RunPreview panel.
+- When using a solid selection in the Dagit Playground, non-matching solids are hidden in the
+  RunPreview panel.
 - The CLI command dagster pipeline launch now accepts --run-id
 
 **Bugfixes**
