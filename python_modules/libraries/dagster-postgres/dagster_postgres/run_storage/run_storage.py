@@ -50,10 +50,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         self._index_migration_cache = {}
         table_names = db.inspect(self._engine).get_table_names()
 
-        with self.connect() as conn:
-            # Stamp and create tables if there's no previously stamped revision and the main table
-            # doesn't exist (since we used to not stamp postgres storage when it was first created)
-            if "runs" not in table_names:
+        # Stamp and create tables if there's no previously stamped revision and the main table
+        # doesn't exist (since we used to not stamp postgres storage when it was first created)
+        if "runs" not in table_names:
+            with self.connect() as conn:
                 alembic_config = get_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
 

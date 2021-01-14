@@ -47,10 +47,9 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
         table_names = db.inspect(self._engine).get_table_names()
-
-        with self.connect() as conn:
-            missing_main_table = "schedules" not in table_names and "jobs" not in table_names
-            if missing_main_table:
+        missing_main_table = "schedules" not in table_names and "jobs" not in table_names
+        if missing_main_table:
+            with self.connect() as conn:
                 alembic_config = get_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
 

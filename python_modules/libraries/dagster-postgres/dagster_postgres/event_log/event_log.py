@@ -68,9 +68,9 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         )
         self._secondary_index_cache = {}
 
-        with self.connect() as conn:
-            table_names = db.inspect(self._engine).get_table_names()
-            if "event_logs" not in table_names:
+        table_names = db.inspect(self._engine).get_table_names()
+        if "event_logs" not in table_names:
+            with self.connect() as conn:
                 alembic_config = get_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
 
