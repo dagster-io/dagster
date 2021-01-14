@@ -212,7 +212,7 @@
             "path": "/overview/pipeline-runs/run-coordinator"
           },
           {
-            "name": "Limiting run concurrency",
+            "name": "Limiting Run Concurrency",
             "path": "/overview/pipeline-runs/limiting-run-concurrency"
           }
         ]
