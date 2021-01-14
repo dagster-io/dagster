@@ -29,9 +29,10 @@ class SolidDefinition(NodeDefinition):
             an additional injected first argument, ``context``, a collection of information provided
             by the system.
 
-            This function must return a generator, which must yield one :py:class:`Output` for each
-            of the solid's ``output_defs``, and additionally may yield other types of Dagster
-            events, including :py:class:`Materialization` and :py:class:`ExpectationResult`.
+            This function must return a generator or an async generator, which must yield one
+            :py:class:`Output` for each of the solid's ``output_defs``, and additionally may
+            yield other types of Dagster events, including :py:class:`Materialization` and
+            :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
         config_schema (Optional[ConfigSchema): The schema for the config. Configuration data
             available in `init_context.solid_config`.
