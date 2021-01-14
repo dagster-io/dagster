@@ -1053,6 +1053,7 @@ class DauphinInstance(dauphin.ObjectType):
     info = dauphin.NonNull(dauphin.String)
     runLauncher = dauphin.Field("RunLauncher")
     assetsSupported = dauphin.NonNull(dauphin.Boolean)
+    runQueuingSupported = dauphin.NonNull(dauphin.Boolean)
     executablePath = dauphin.NonNull(dauphin.String)
     daemonHealth = dauphin.NonNull("DaemonHealth")
 
@@ -1069,6 +1070,11 @@ class DauphinInstance(dauphin.ObjectType):
 
     def resolve_assetsSupported(self, _graphene_info):
         return self._instance.is_asset_aware
+
+    def resolve_runQueuingSupported(self, _graphene_info):
+        from dagster.core.run_coordinator import QueuedRunCoordinator
+
+        return isinstance(self._instance.run_coordinator, QueuedRunCoordinator)
 
     def resolve_executablePath(self, _graphene_info):
         return sys.executable
