@@ -492,9 +492,9 @@ class Output(namedtuple("_Output", "value output_name")):
 
 class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name")):
     """
-    Variant of :py:class:`Output` used to support mapping. Each DynamicOutput produced by a solid
-    will result in the downstream dag being cloned to run on that individual value. Each DynamicOutput
-    must have a unique mapping_key to distinguish it.
+    (Experimental) Variant of :py:class:`Output` used to support mapping. Each DynamicOutput
+    produced by a solid will result in the downstream dag being cloned to run on that individual
+    value. Each DynamicOutput must have a unique mapping_key to distinguish it.
 
     Args:
         value (Any):

@@ -328,6 +328,10 @@
             "path": "/_apidocs/io-managers"
           },
           {
+            "name": "Dynamic Graphs (Experimental)",
+            "path": "/_apidocs/dynamic"
+          },
+          {
             "name": "Utilities",
             "path": "/_apidocs/utilities"
           },

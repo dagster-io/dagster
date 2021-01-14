@@ -105,6 +105,12 @@ class OutputDefinition:
 
 
 class DynamicOutputDefinition(OutputDefinition):
+    """
+    (EXPERIMENTAL) Variant of :py:class:`OutputDefinition` for an output that will dynamically
+    alter the graph at runtime. Each copy of :py:class:`DynamicOutput` corresponding to this
+    definition that is yielded from the solid will create a copy of the downstream graph.
+    """
+
     @property
     def is_dynamic(self):
         return True
