@@ -182,6 +182,20 @@ additional fields will need to be specified under `scheduler.config`.
 
 `scheduler.type` and corresponding `scheduler.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
 
+For example, if your Helm values look like this to enable the `DagsterDaemonScheduler`:
+
+```yaml
+scheduler:
+  k8sEnabled: false
+```
+
+it is recommended to make it look like this:
+
+```yaml
+scheduler:
+  type: DagsterDaemonScheduler
+```
+
 ## Restructured: `celery` and `k8sRunLauncher` in Helm values
 
 `celery` and `k8sRunLauncher` now live under `runLauncher.config.celeryK8sRunLauncher` and
@@ -190,6 +204,35 @@ must equal `CeleryK8sRunLauncher`. To enable the vanilla K8s run launcher, `runL
 must equal `K8sRunLauncher`.
 
 `runLauncher.type` and corresponding `runLauncher.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+
+For example, if your Helm values look like this to enable the `K8sRunLauncher`:
+
+```yaml
+celery:
+  enabled: false
+
+k8sRunLauncher:
+  enabled: true
+  jobNamespace: ~
+  loadInclusterConfig: true
+  kubeconfigFile: ~
+  envConfigMaps: []
+  envSecrets: []
+```
+
+it is recommended to make it look like this:
+
+```yaml
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      jobNamespace: ~
+      loadInclusterConfig: true
+      kubeconfigFile: ~
+      envConfigMaps: []
+      envSecrets: []
+```
 
 ## New Helm defaults
 
