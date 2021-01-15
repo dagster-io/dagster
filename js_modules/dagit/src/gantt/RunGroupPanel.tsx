@@ -49,8 +49,7 @@ export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId})
             onClick={() => {
               showCustomAlert({
                 title: 'Python error',
-                // body: group.message,
-                body: 'Foo bar!',
+                body: group.message,
               });
             }}
           >
