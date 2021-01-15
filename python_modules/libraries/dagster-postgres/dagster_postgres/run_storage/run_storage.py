@@ -15,6 +15,7 @@ from ..utils import (
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
+    retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
 
@@ -48,7 +49,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         )
 
         self._index_migration_cache = {}
-        table_names = db.inspect(self._engine).get_table_names()
+        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
         # Stamp and create tables if there's no previously stamped revision and the main table
         # doesn't exist (since we used to not stamp postgres storage when it was first created)

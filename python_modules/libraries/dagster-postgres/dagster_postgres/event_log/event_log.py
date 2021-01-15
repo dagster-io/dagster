@@ -29,6 +29,7 @@ from ..utils import (
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
+    retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
 
@@ -68,7 +69,8 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         )
         self._secondary_index_cache = {}
 
-        table_names = db.inspect(self._engine).get_table_names()
+        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+
         if "event_logs" not in table_names:
             with self.connect() as conn:
                 alembic_config = get_alembic_config(__file__)

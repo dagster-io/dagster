@@ -14,6 +14,7 @@ from ..utils import (
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
+    retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
 
@@ -46,7 +47,8 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
 
-        table_names = db.inspect(self._engine).get_table_names()
+        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+
         missing_main_table = "schedules" not in table_names and "jobs" not in table_names
         if missing_main_table:
             with self.connect() as conn:
