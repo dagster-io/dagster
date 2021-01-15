@@ -1,6 +1,6 @@
 import inspect
 import sys
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, NoReturn, Optional, Set, Tuple, Union
 
 from future.utils import raise_with_traceback
 
@@ -99,7 +99,7 @@ def _param_invariant_exception(param_name: str, desc: str = None) -> ParameterCh
     )
 
 
-def failed(desc: str):
+def failed(desc: str) -> NoReturn:  # type: ignore[misc]
     if not isinstance(desc, str):
         raise_with_traceback(CheckError("desc argument must be a string"))
 

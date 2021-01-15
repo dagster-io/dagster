@@ -1,3 +1,5 @@
+from typing import Any, Callable, Dict, Iterator, List, Set, Union
+
 from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
@@ -12,18 +14,25 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.plan.handle import StepHandle, UnresolvedStepHandle
+from dagster.core.system_config.objects import EnvironmentConfig
 
 from .inputs import StepInput, UnresolvedStepInput
 from .outputs import StepOutput
 from .step import ExecutionStep, UnresolvedExecutionStep
 
+SolidOutputUnion = Union[
+    DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult
+]
 
-def _create_step_outputs(solid, handle, environment_config):
+
+def _create_step_outputs(
+    solid: Solid, handle: SolidHandle, environment_config: EnvironmentConfig
+) -> List[StepOutput]:
     check.inst_param(solid, "solid", Solid)
     check.inst_param(handle, "handle", SolidHandle)
 
     # the environment config has the solid output name configured
-    config_output_names = set()
+    config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
         solid_config = environment_config.solids.get(current_handle.to_string())
@@ -36,7 +45,13 @@ def _create_step_outputs(solid, handle, environment_config):
     ]
 
 
-def create_unresolved_step(solid, solid_handle, step_inputs, pipeline_name, environment_config):
+def create_unresolved_step(
+    solid: Solid,
+    solid_handle: SolidHandle,
+    step_inputs: List[Union[StepInput, UnresolvedStepInput]],
+    pipeline_name: str,
+    environment_config: EnvironmentConfig,
+) -> UnresolvedExecutionStep:
     check.inst_param(solid, "solid", Solid)
     check.inst_param(solid_handle, "solid_handle", SolidHandle)
     check.list_param(step_inputs, "step_inputs", of_type=(StepInput, UnresolvedStepInput))
@@ -51,7 +66,13 @@ def create_unresolved_step(solid, solid_handle, step_inputs, pipeline_name, envi
     )
 
 
-def create_compute_step(solid, solid_handle, step_inputs, pipeline_name, environment_config):
+def create_compute_step(
+    solid: Solid,
+    solid_handle: SolidHandle,
+    step_inputs: List[StepInput],
+    pipeline_name: str,
+    environment_config: EnvironmentConfig,
+) -> ExecutionStep:
     check.inst_param(solid, "solid", Solid)
     check.inst_param(solid_handle, "solid_handle", SolidHandle)
     check.list_param(step_inputs, "step_inputs", of_type=StepInput)
@@ -69,7 +90,9 @@ def create_compute_step(solid, solid_handle, step_inputs, pipeline_name, environ
     )
 
 
-def _yield_compute_results(compute_context, inputs, compute_fn):
+def _yield_compute_results(
+    compute_context: SystemComputeExecutionContext, inputs: Dict[str, Any], compute_fn: Callable
+) -> Iterator[SolidOutputUnion]:
     check.inst_param(compute_context, "compute_context", SystemComputeExecutionContext)
     step = compute_context.step
     user_event_sequence = compute_fn(SolidExecutionContext(compute_context), inputs)
@@ -107,7 +130,9 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
             )
 
 
-def _execute_core_compute(compute_context, inputs, compute_fn):
+def _execute_core_compute(
+    compute_context: SystemComputeExecutionContext, inputs: Dict[str, Any], compute_fn
+) -> Iterator[SolidOutputUnion]:
     """
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking

@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions.events import EventMetadataEntry
@@ -7,7 +7,17 @@ from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class TypeCheckData(namedtuple("_TypeCheckData", "success label description metadata_entries")):
+class TypeCheckData(
+    NamedTuple(
+        "_TypeCheckData",
+        [
+            ("success", bool),
+            ("label", str),
+            ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
+        ],
+    )
+):
     def __new__(cls, success, label, description=None, metadata_entries=None):
         return super(TypeCheckData, cls).__new__(
             cls,
@@ -21,7 +31,16 @@ class TypeCheckData(namedtuple("_TypeCheckData", "success label description meta
 
 
 @whitelist_for_serdes
-class UserFailureData(namedtuple("_UserFailureData", "label description metadata_entries")):
+class UserFailureData(
+    NamedTuple(
+        "_UserFailureData",
+        [
+            ("label", str),
+            ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
+        ],
+    )
+):
     def __new__(cls, label, description=None, metadata_entries=None):
         return super(UserFailureData, cls).__new__(
             cls,
@@ -34,7 +53,12 @@ class UserFailureData(namedtuple("_UserFailureData", "label description metadata
 
 
 @whitelist_for_serdes
-class StepFailureData(namedtuple("_StepFailureData", "error user_failure_data")):
+class StepFailureData(
+    NamedTuple(
+        "_StepFailureData",
+        [("error", SerializableErrorInfo), ("user_failure_data", UserFailureData)],
+    )
+):
     def __new__(cls, error, user_failure_data):
         return super(StepFailureData, cls).__new__(
             cls,
@@ -46,7 +70,11 @@ class StepFailureData(namedtuple("_StepFailureData", "error user_failure_data"))
 
 
 @whitelist_for_serdes
-class StepRetryData(namedtuple("_StepRetryData", "error seconds_to_wait")):
+class StepRetryData(
+    NamedTuple(
+        "_StepRetryData", [("error", SerializableErrorInfo), ("seconds_to_wait", Optional[int])]
+    )
+):
     def __new__(cls, error, seconds_to_wait=None):
         return super(StepRetryData, cls).__new__(
             cls,
@@ -56,7 +84,7 @@ class StepRetryData(namedtuple("_StepRetryData", "error seconds_to_wait")):
 
 
 @whitelist_for_serdes
-class StepSuccessData(namedtuple("_StepSuccessData", "duration_ms")):
+class StepSuccessData(NamedTuple("_StepSuccessData", [("duration_ms", float)])):
     def __new__(cls, duration_ms):
         return super(StepSuccessData, cls).__new__(
             cls, duration_ms=check.float_param(duration_ms, "duration_ms")

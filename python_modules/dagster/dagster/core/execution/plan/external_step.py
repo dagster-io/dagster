@@ -2,6 +2,7 @@ import os
 import pickle
 import subprocess
 import sys
+from typing import Iterator, Optional
 
 from dagster import Field, StringSource, check, resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
@@ -11,6 +12,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.errors import raise_execution_interrupts
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -37,10 +39,12 @@ def local_external_step_launcher(context):
 class LocalExternalStepLauncher(StepLauncher):
     """Launches each step in its own local process, outside the plan process."""
 
-    def __init__(self, scratch_dir):
+    def __init__(self, scratch_dir: str):
         self.scratch_dir = check.str_param(scratch_dir, "scratch_dir")
 
-    def launch_step(self, step_context, prior_attempts_count):
+    def launch_step(
+        self, step_context: SystemStepExecutionContext, prior_attempts_count: int
+    ) -> Iterator[DagsterEvent]:
         step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
         run_id = step_context.pipeline_run.run_id
 
@@ -72,7 +76,7 @@ class LocalExternalStepLauncher(StepLauncher):
         yield from events
 
 
-def _module_in_package_dir(file_path, package_dir):
+def _module_in_package_dir(file_path: str, package_dir: str) -> str:
     abs_path = os.path.abspath(file_path)
     abs_package_dir = os.path.abspath(package_dir)
     check.invariant(
@@ -87,7 +91,11 @@ def _module_in_package_dir(file_path, package_dir):
     return ".".join(without_extension.split(os.sep))
 
 
-def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir=None):
+def step_context_to_step_run_ref(
+    step_context: SystemStepExecutionContext,
+    prior_attempts_count: int,
+    package_dir: Optional[str] = None,
+) -> StepRunRef:
     """
     Args:
         step_context (SystemStepExecutionContext): The step context.
@@ -137,7 +145,9 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
     )
 
 
-def step_run_ref_to_step_context(step_run_ref, instance):
+def step_run_ref_to_step_context(
+    step_run_ref: StepRunRef, instance: DagsterInstance
+) -> SystemStepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
     pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
         step_run_ref.pipeline_run.solids_to_execute
@@ -158,7 +168,9 @@ def step_run_ref_to_step_context(step_run_ref, instance):
     return execution_context.for_step(execution_plan.get_step_by_key(step_run_ref.step_key))
 
 
-def run_step_from_ref(step_run_ref, instance):
+def run_step_from_ref(
+    step_run_ref: StepRunRef, instance: DagsterInstance
+) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
     return core_dagster_event_sequence_for_step(step_context, step_run_ref.prior_attempts_count)

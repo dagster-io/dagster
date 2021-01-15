@@ -226,7 +226,8 @@ class ActiveExecution:
         return cast(ExecutionStep, step)
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
-        return self._plan.get_step_by_key(step_key)
+        step = self._plan.get_step_by_key(step_key)
+        return cast(ExecutionStep, check.inst(step, ExecutionStep))
 
     def get_steps_to_execute(self, limit: int = None) -> List[ExecutionStep]:
         check.invariant(
@@ -236,7 +237,7 @@ class ActiveExecution:
         self._update()
 
         steps = sorted(
-            [self.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn
+            [self.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn,
         )
 
         if limit:

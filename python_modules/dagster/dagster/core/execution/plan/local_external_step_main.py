@@ -7,7 +7,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 
 
-def main(step_run_ref_path):
+def main(step_run_ref_path: str) -> None:
     file_manager = LocalFileManager(".")
     file_handle = LocalFileHandle(step_run_ref_path)
     step_run_ref = pickle.loads(file_manager.read_data(file_handle))

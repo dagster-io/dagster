@@ -1,4 +1,5 @@
 import sys
+from typing import Iterator, List, Optional
 
 from dagster import check
 from dagster.core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -16,9 +17,12 @@ from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, 
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster.utils.types import ExcInfo
 
 
-def inner_plan_execution_iterator(pipeline_context, execution_plan):
+def inner_plan_execution_iterator(
+    pipeline_context: SystemExecutionContext, execution_plan: ExecutionPlan
+) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
@@ -72,7 +76,9 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
                 yield hook_event
 
 
-def _trigger_hook(step_context, step_event_list):
+def _trigger_hook(
+    step_context: SystemStepExecutionContext, step_event_list: List[DagsterEvent]
+) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events"""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
     # when the solid doesn't have a hook configured
@@ -119,7 +125,9 @@ def _trigger_hook(step_context, step_event_list):
             yield DagsterEvent.hook_completed(hook_context, hook_def)
 
 
-def _dagster_event_sequence_for_step(step_context, retries):
+def _dagster_event_sequence_for_step(
+    step_context: SystemStepExecutionContext, retries: Retries
+) -> Iterator[DagsterEvent]:
     """
     Yield a sequence of dagster events for the given step with the step context.
 
@@ -256,7 +264,11 @@ def _dagster_event_sequence_for_step(step_context, retries):
         raise unexpected_exception
 
 
-def _step_failure_event_from_exc_info(step_context, exc_info, user_failure_data=None):
+def _step_failure_event_from_exc_info(
+    step_context: SystemStepExecutionContext,
+    exc_info: ExcInfo,
+    user_failure_data: Optional[UserFailureData] = None,
+):
     return DagsterEvent.step_failure_event(
         step_context=step_context,
         step_failure_data=StepFailureData(

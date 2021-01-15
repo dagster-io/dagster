@@ -194,7 +194,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         path.reverse()
         return path
 
-    def to_string(self):
+    def to_string(self) -> str:
         """Return a unique string representation of the handle.
 
         Inverse of SolidHandle.from_string.

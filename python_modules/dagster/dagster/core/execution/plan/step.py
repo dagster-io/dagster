@@ -1,5 +1,16 @@
-from collections import namedtuple
 from enum import Enum
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Union,
+)
 
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
@@ -9,6 +20,10 @@ from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHan
 from .inputs import StepInput, UnresolvedStepInput
 from .outputs import StepOutput
 
+if TYPE_CHECKING:
+    from dagster.core.definitions.dependency import Solid, SolidHandle
+    from dagster.core.definitions.hook import HookDefinition
+
 
 @whitelist_for_serdes
 class StepKind(Enum):
@@ -16,7 +31,7 @@ class StepKind(Enum):
     UNRESOLVED = "UNRESOLVED"
 
 
-def is_executable_step(step):
+def is_executable_step(step: Union["ExecutionStep", "UnresolvedExecutionStep"]) -> bool:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
         return True
@@ -27,13 +42,28 @@ def is_executable_step(step):
 
 
 class ExecutionStep(
-    namedtuple(
+    NamedTuple(
         "_ExecutionStep",
-        ("handle pipeline_name step_input_dict step_output_dict compute_fn solid logging_tags"),
+        [
+            ("handle", Union[StepHandle, ResolvedFromDynamicStepHandle]),
+            ("pipeline_name", str),
+            ("step_input_dict", Dict[str, StepInput]),
+            ("step_output_dict", Dict[str, StepOutput]),
+            ("compute_fn", Callable),
+            ("solid", "Solid"),
+            ("logging_tags", Dict[str, str]),
+        ],
     )
 ):
     def __new__(
-        cls, handle, pipeline_name, step_inputs, step_outputs, compute_fn, solid, logging_tags=None,
+        cls,
+        handle: Union[StepHandle, ResolvedFromDynamicStepHandle],
+        pipeline_name: str,
+        step_inputs: List[StepInput],
+        step_outputs: List[StepOutput],
+        compute_fn: Callable,
+        solid: "Solid",
+        logging_tags: Optional[Dict[str, str]] = None,
     ):
         from dagster.core.definitions import Solid
 
@@ -65,54 +95,54 @@ class ExecutionStep(
         )
 
     @property
-    def solid_handle(self):
+    def solid_handle(self) -> "SolidHandle":
         return self.handle.solid_handle
 
     @property
-    def tags(self):
+    def tags(self) -> Dict[str, Any]:
         return self.solid.tags
 
     @property
-    def hook_defs(self):
+    def hook_defs(self) -> FrozenSet["HookDefinition"]:
         return self.solid.hook_defs
 
     @property
-    def key(self):
+    def key(self) -> str:
         return self.handle.to_key()
 
     @property
-    def solid_name(self):
+    def solid_name(self) -> str:
         return self.solid_handle.name
 
     @property
-    def kind(self):
+    def kind(self) -> StepKind:
         return StepKind.COMPUTE
 
     @property
-    def step_outputs(self):
+    def step_outputs(self) -> List[StepOutput]:
         return list(self.step_output_dict.values())
 
     @property
-    def step_inputs(self):
+    def step_inputs(self) -> List[StepInput]:
         return list(self.step_input_dict.values())
 
-    def has_step_output(self, name):
+    def has_step_output(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self.step_output_dict
 
-    def step_output_named(self, name):
+    def step_output_named(self, name: str) -> StepOutput:
         check.str_param(name, "name")
         return self.step_output_dict[name]
 
-    def has_step_input(self, name):
+    def has_step_input(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self.step_input_dict
 
-    def step_input_named(self, name):
+    def step_input_named(self, name: str) -> StepInput:
         check.str_param(name, "name")
         return self.step_input_dict[name]
 
-    def get_execution_dependency_keys(self):
+    def get_execution_dependency_keys(self) -> Set[str]:
         deps = set()
         for inp in self.step_inputs:
             deps.update(inp.dependency_keys)
@@ -126,11 +156,25 @@ class ExecutionStep(
 
 
 class UnresolvedExecutionStep(
-    namedtuple(
-        "_UnresolvedExecutionStep", "handle solid step_input_dict step_output_dict pipeline_name"
+    NamedTuple(
+        "_UnresolvedExecutionStep",
+        [
+            ("handle", UnresolvedStepHandle),
+            ("solid", "Solid"),
+            ("step_input_dict", Dict[str, Union[StepInput, UnresolvedStepInput]]),
+            ("step_output_dict", Dict[str, StepOutput]),
+            ("pipeline_name", str),
+        ],
     )
 ):
-    def __new__(cls, handle, solid, step_inputs, step_outputs, pipeline_name):
+    def __new__(
+        cls,
+        handle: UnresolvedStepHandle,
+        solid: "Solid",
+        step_inputs: List[Union[StepInput, UnresolvedStepInput]],
+        step_outputs: List[StepOutput],
+        pipeline_name: str,
+    ):
         return super(UnresolvedExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", UnresolvedStepHandle),
@@ -149,34 +193,34 @@ class UnresolvedExecutionStep(
         )
 
     @property
-    def solid_handle(self):
+    def solid_handle(self) -> "SolidHandle":
         return self.handle.solid_handle
 
     @property
-    def key(self):
+    def key(self) -> str:
         return self.handle.to_key()
 
     @property
-    def kind(self):
+    def kind(self) -> StepKind:
         return StepKind.UNRESOLVED
 
     @property
-    def tags(self):
+    def tags(self) -> Dict[str, Any]:
         return self.solid.tags
 
     @property
-    def step_outputs(self):
+    def step_outputs(self) -> List[StepOutput]:
         return list(self.step_output_dict.values())
 
     @property
-    def step_inputs(self):
+    def step_inputs(self) -> List[Union[StepInput, UnresolvedStepInput]]:
         return list(self.step_input_dict.values())
 
-    def step_output_named(self, name):
+    def step_output_named(self, name: str) -> StepOutput:
         check.str_param(name, "name")
         return self.step_output_dict[name]
 
-    def get_all_dependency_keys(self):
+    def get_all_dependency_keys(self) -> Set[str]:
         deps = set()
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
@@ -196,7 +240,7 @@ class UnresolvedExecutionStep(
         return deps
 
     @property
-    def resolved_by_step_key(self):
+    def resolved_by_step_key(self) -> str:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedStepInput):
@@ -207,7 +251,7 @@ class UnresolvedExecutionStep(
         return list(keys)[0]
 
     @property
-    def resolved_by_output_name(self):
+    def resolved_by_output_name(self) -> str:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedStepInput):
@@ -219,7 +263,9 @@ class UnresolvedExecutionStep(
 
         return list(keys)[0]
 
-    def resolve(self, resolved_by_step_key, mappings):
+    def resolve(
+        self, resolved_by_step_key: str, mappings: Dict[str, List[str]]
+    ) -> List[ExecutionStep]:
         from .compute import _execute_core_compute
 
         check.invariant(
@@ -254,7 +300,7 @@ class UnresolvedExecutionStep(
         return execution_steps
 
 
-def _resolved_input(step_input, map_key):
+def _resolved_input(step_input: Union[StepInput, UnresolvedStepInput], map_key: str):
     if isinstance(step_input, StepInput):
         return step_input
     return step_input.resolve(map_key)

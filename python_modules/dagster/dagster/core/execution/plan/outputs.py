@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.definitions import AssetMaterialization, Materialization, OutputDefinition
@@ -8,11 +8,13 @@ from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData
 
 
-class StepOutput(namedtuple("_StepOutput", "output_def should_materialize")):
+class StepOutput(
+    NamedTuple("_StepOutput", [("output_def", OutputDefinition), ("should_materialize", bool)])
+):
     """Holds the information for an ExecutionStep to process its outputs"""
 
     def __new__(
-        cls, output_def, should_materialize=None,
+        cls, output_def: OutputDefinition, should_materialize: Optional[bool] = None,
     ):
         return super(StepOutput, cls).__new__(
             cls,
@@ -21,25 +23,30 @@ class StepOutput(namedtuple("_StepOutput", "output_def should_materialize")):
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.output_def.name
 
 
 @whitelist_for_serdes
 class StepOutputData(
-    namedtuple(
+    NamedTuple(
         "_StepOutputData",
-        "step_output_handle intermediate_materialization type_check_data version",
+        [
+            ("step_output_handle", "StepOutputHandle"),
+            ("intermediate_materialization", Union[AssetMaterialization, Materialization]),
+            ("type_check_data", Optional[TypeCheckData]),
+            ("version", Optional[str]),
+        ],
     )
 ):
     """Serializable payload of information for the result of processing a step output"""
 
     def __new__(
         cls,
-        step_output_handle,
-        intermediate_materialization=None,
-        type_check_data=None,
-        version=None,
+        step_output_handle: "StepOutputHandle",
+        intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
+        type_check_data: Optional[TypeCheckData] = None,
+        version: Optional[str] = None,
     ):
         return super(StepOutputData, cls).__new__(
             cls,
@@ -56,19 +63,24 @@ class StepOutputData(
         )
 
     @property
-    def output_name(self):
+    def output_name(self) -> str:
         return self.step_output_handle.output_name
 
     @property
-    def mapping_key(self):
+    def mapping_key(self) -> Optional[str]:
         return self.step_output_handle.mapping_key
 
 
 @whitelist_for_serdes
-class StepOutputHandle(namedtuple("_StepOutputHandle", "step_key output_name mapping_key")):
+class StepOutputHandle(
+    NamedTuple(
+        "_StepOutputHandle",
+        [("step_key", str), ("output_name", str), ("mapping_key", Optional[str])],
+    )
+):
     """A reference to a specific output that has or will occur within the scope of an execution"""
 
-    def __new__(cls, step_key, output_name="result", mapping_key=None):
+    def __new__(cls, step_key: str, output_name: str = "result", mapping_key: Optional[str] = None):
         return super(StepOutputHandle, cls).__new__(
             cls,
             step_key=check.str_param(step_key, "step_key"),
@@ -78,9 +90,14 @@ class StepOutputHandle(namedtuple("_StepOutputHandle", "step_key output_name map
 
 
 class UnresolvedStepOutputHandle(
-    namedtuple(
+    NamedTuple(
         "_UnresolvedStepOutputHandle",
-        "unresolved_step_handle output_name resolved_by_step_key resolved_by_output_name",
+        [
+            ("unresolved_step_handle", UnresolvedStepHandle),
+            ("output_name", str),
+            ("resolved_by_step_key", str),
+            ("resolved_by_output_name", str),
+        ],
     )
 ):
     """
@@ -89,7 +106,11 @@ class UnresolvedStepOutputHandle(
     """
 
     def __new__(
-        cls, unresolved_step_handle, output_name, resolved_by_step_key, resolved_by_output_name
+        cls,
+        unresolved_step_handle: UnresolvedStepHandle,
+        output_name: str,
+        resolved_by_step_key: str,
+        resolved_by_output_name: str,
     ):
         return super(UnresolvedStepOutputHandle, cls).__new__(
             cls,
@@ -104,12 +125,12 @@ class UnresolvedStepOutputHandle(
             ),
         )
 
-    def resolve(self, map_key):
+    def resolve(self, map_key) -> StepOutputHandle:
         """Return a resolved StepOutputHandle"""
         return StepOutputHandle(
             self.unresolved_step_handle.resolve(map_key).to_key(), self.output_name
         )
 
-    def get_step_output_handle_with_placeholder(self):
+    def get_step_output_handle_with_placeholder(self) -> StepOutputHandle:
         """Return a StepOutputHandle with a unresolved step key as a placeholder"""
         return StepOutputHandle(self.unresolved_step_handle.to_key(), self.output_name)
