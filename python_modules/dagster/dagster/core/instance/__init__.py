@@ -1340,8 +1340,10 @@ class DagsterInstance:
     def delete_job_state(self, job_origin_id):
         return self._schedule_storage.delete_job_state(job_origin_id)
 
-    def get_job_ticks(self, job_origin_id):
-        return self._schedule_storage.get_job_ticks(job_origin_id)
+    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
+        return self._schedule_storage.get_job_ticks(
+            job_origin_id, before=before, after=after, limit=limit
+        )
 
     def get_latest_job_tick(self, job_origin_id):
         return self._schedule_storage.get_latest_job_tick(job_origin_id)

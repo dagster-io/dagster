@@ -189,7 +189,12 @@ class DauphinJobState(dauphin.ObjectType):
     jobSpecificData = dauphin.Field("JobSpecificData")
     runs = dauphin.Field(dauphin.non_null_list("PipelineRun"), limit=dauphin.Int())
     runsCount = dauphin.NonNull(dauphin.Int)
-    ticks = dauphin.Field(dauphin.non_null_list("JobTick"), limit=dauphin.Int())
+    ticks = dauphin.Field(
+        dauphin.non_null_list("JobTick"),
+        dayRange=dauphin.Int(),
+        dayOffset=dauphin.Int(),
+        limit=dauphin.Int(),
+    )
     runningCount = dauphin.NonNull(dauphin.Int)  # remove with cron scheduler
 
     def __init__(self, job_state):
@@ -240,13 +245,19 @@ class DauphinJobState(dauphin.ObjectType):
             filters = PipelineRunsFilter.for_schedule(self._job_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
 
-    def resolve_ticks(self, graphene_info, limit=None):
-        ticks = graphene_info.context.instance.get_job_ticks(self._job_state.job_origin_id)
-
-        if limit:
-            ticks = ticks[:limit]
-
-        return [graphene_info.schema.type_named("JobTick")(graphene_info, tick) for tick in ticks]
+    def resolve_ticks(self, graphene_info, dayRange=None, dayOffset=None, limit=None):
+        before = pendulum.now("UTC").subtract(days=dayOffset).timestamp() if dayOffset else None
+        after = (
+            pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
+            if dayRange
+            else None
+        )
+        return [
+            graphene_info.schema.type_named("JobTick")(graphene_info, tick)
+            for tick in graphene_info.context.instance.get_job_ticks(
+                self._job_state.job_origin_id, before=before, after=after, limit=limit
+            )
+        ]
 
     def resolve_runningCount(self, graphene_info):
         if self._job_state.job_type == JobType.SENSOR:

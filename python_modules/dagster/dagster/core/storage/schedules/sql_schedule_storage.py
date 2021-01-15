@@ -134,8 +134,24 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return JobTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
 
-    def get_job_ticks(self, job_origin_id):
+    def _add_filter_limit(self, query, before=None, after=None, limit=None):
+        check.opt_float_param(before, "before")
+        check.opt_float_param(after, "after")
+        check.opt_int_param(limit, "limit")
+
+        if before:
+            query = query.where(JobTickTable.c.timestamp < utc_datetime_from_timestamp(before))
+        if after:
+            query = query.where(JobTickTable.c.timestamp > utc_datetime_from_timestamp(after))
+        if limit:
+            query = query.limit(limit)
+        return query
+
+    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
         check.str_param(job_origin_id, "job_origin_id")
+        check.opt_float_param(before, "before")
+        check.opt_float_param(after, "after")
+        check.opt_int_param(limit, "limit")
 
         query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
@@ -143,6 +159,8 @@ class SqlScheduleStorage(ScheduleStorage):
             .where(JobTickTable.c.job_origin_id == job_origin_id)
             .order_by(JobTickTable.c.id.desc())
         )
+
+        query = self._add_filter_limit(query, before=before, after=after, limit=limit)
 
         rows = self.execute(query)
         return list(

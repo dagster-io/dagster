@@ -56,7 +56,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_job_ticks(self, job_origin_id):
+    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
         """Get the ticks for a given job.
 
         Args:

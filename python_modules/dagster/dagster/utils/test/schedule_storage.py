@@ -463,6 +463,26 @@ class TestScheduleStorage:
         assert tick.run_ids == []
         assert tick.error == None
 
+    def test_get_job_tick(self, storage):
+        assert storage
+        now = pendulum.now()
+        five_days_ago = now.subtract(days=5).timestamp()
+        four_days_ago = now.subtract(days=4).timestamp()
+        one_day_ago = now.subtract(days=1).timestamp()
+
+        storage.create_job_tick(self.build_sensor_tick(five_days_ago, JobTickStatus.SKIPPED))
+        storage.create_job_tick(self.build_sensor_tick(four_days_ago, JobTickStatus.SKIPPED))
+        storage.create_job_tick(self.build_sensor_tick(one_day_ago, JobTickStatus.SKIPPED))
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 3
+
+        ticks = storage.get_job_ticks("my_sensor", after=five_days_ago + 1)
+        assert len(ticks) == 2
+        ticks = storage.get_job_ticks("my_sensor", before=one_day_ago - 1)
+        assert len(ticks) == 2
+        ticks = storage.get_job_ticks("my_sensor", after=five_days_ago + 1, before=one_day_ago - 1)
+        assert len(ticks) == 1
+
     def test_update_job_tick_to_success(self, storage):
         assert storage
 
