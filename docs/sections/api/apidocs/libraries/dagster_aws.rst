@@ -33,7 +33,7 @@ S3
             bucket: my-bucket
             key: my-key
 
-.. autodata:: dagster_aws.s3.s3_io_manager
+.. autodata:: dagster_aws.s3.s3_pickle_io_manager
   :annotation: IOManagerDefinition
 
 

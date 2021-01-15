@@ -24,13 +24,13 @@ I.e. an IOManager handles the teal boxes:
   <img src="/assets/images/overview/io-managers/io-managers.png" />
 </p>
 
-The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in memory, but this only works for the single process executor.  Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster" object="fs_io_manager"/>, <PyObject module="dagster_aws.s3" object="s3_io_manager"/>, <PyObject module="dagster_azure.adls2" object="adls2_io_manager"/>, or <PyObject module="dagster_gcp.gcs" object="gcs_io_manager"/>.
+The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in memory, but this only works for the single process executor.  Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster" object="fs_io_manager"/>, <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>, <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/>, or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
 IOManagers are [resources](/overview/modes-resources-presets/modes-resources), which means users can supply different IOManagers for the same solid outputs in different situations.  For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 
 ## Root input managers (experimental)
 
-<PyObject module="dagster" object="RootInputManagers" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not connected to an upstream solid's output.
+<PyObject module="dagster" object="RootInputManager" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not connected to an upstream solid's output.
 
 Root input managers are currently an experimental feature.
 

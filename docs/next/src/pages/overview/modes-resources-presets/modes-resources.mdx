@@ -70,7 +70,7 @@ dagster pipeline execute -d local_dev generate_tables_pipeline
 
 ## Other Mode-Level Definitions
 
-In addition to holding resource definitions, mode definitions also have arguments for `logger_defs`, `system_storage_defs`, and `executor_defs`. These arguments determine which <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" />s, <PyObject module="dagster" object="SystemStorageDefinition" displayText="SystemStorageDefinition" />s, and <PyObject module="dagster" object="ExecutorDefinition" displayText="ExecutorDefinition" />s are available to the pipeline when executing in that mode. From the options made available from the ModeDefinition, the particular `LoggerDefinition`, `SystemStorageDefinition`, and `ExecutorDefinition` used for a pipeline run are chosen using the pipeline's run config.
+In addition to holding resource definitions, mode definitions also have arguments for `logger_defs`, `system_storage_defs`, and `executor_defs`. These arguments determine which <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" />s and <PyObject module="dagster" object="ExecutorDefinition" displayText="ExecutorDefinition" />s are available to the pipeline when executing in that mode. From the options made available from the ModeDefinition, the particular `LoggerDefinition`, `SystemStorageDefinition`, and `ExecutorDefinition` used for a pipeline run are chosen using the pipeline's run config.
 
 ## Glossary
 
