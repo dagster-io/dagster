@@ -1,8 +1,10 @@
+from typing import Dict
+
 from setuptools import find_packages, setup
 
 
-def get_version():
-    version = {}
+def get_version() -> str:
+    version: Dict[str, str] = {}
     with open("dagstermill/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
@@ -33,5 +35,6 @@ if __name__ == "__main__":
             "nteract-scrapbook>=0.2.0",
             "papermill>=1.0.0,<2.0.0",
         ],
+        extras_require={"test": ["matplotlib", "scikit-learn>=0.19.0"]},
         entry_points={"console_scripts": ["dagstermill = dagstermill.cli:main"]},
     )

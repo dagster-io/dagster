@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup  # type: ignore
 
 setup(
     name="simple_lakehouse",
@@ -17,4 +17,5 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
+    extras_require={"test": ["pandas", "pyarrow; python_version < '3.9'"]},
 )

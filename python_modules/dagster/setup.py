@@ -1,7 +1,9 @@
-from setuptools import find_packages, setup
+from typing import Dict
+
+from setuptools import find_packages, setup  # type: ignore
 
 
-def long_description():
+def long_description() -> str:
     return """
 ## Dagster
 Dagster is a data orchestrator for machine learning, analytics, and ETL.
@@ -16,8 +18,8 @@ more robust. Developing data pipelines with Dagster makes testing easier and dep
 """.strip()
 
 
-def get_version():
-    version = {}
+def get_version() -> str:
+    version: Dict[str, str] = {}
     with open("dagster/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
@@ -80,7 +82,36 @@ if __name__ == "__main__":
             "pytz",
             "docstring-parser==0.7.1",
         ],
-        extras_require={"docker": ["docker"],},
+        extras_require={
+            "docker": ["docker"],
+            "test": [
+                "astroid>=2.3.3",
+                "black==19.10b0",
+                "coverage==5.3",
+                "docker",
+                "flake8>=3.7.8",
+                "freezegun>=0.3.15",
+                "grpcio-tools==1.32.0",
+                "isort>=4.3.21,<5",
+                "mock==3.0.5",
+                "nbsphinx==0.4.2",
+                "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
+                "pylint==2.6.0",
+                "pytest-cov==2.10.1",
+                "pytest-dependency==0.5.1",
+                "pytest-mock==3.3.1",
+                "pytest-runner==5.2",
+                "pytest-xdist==2.1.0",
+                "pytest==6.1.1",
+                "recommonmark==0.4.0",
+                "responses==0.10.*",
+                "snapshottest==0.6.0",
+                "tox==3.14.2",
+                "tox-pip-version==0.0.7",
+                "tqdm==4.48.0",  # pylint crash 48.1+
+                "yamllint",
+            ],
+        },
         entry_points={
             "console_scripts": [
                 "dagster = dagster.cli:main",

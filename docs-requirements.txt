@@ -1,6 +1,6 @@
 Sphinx==2.2.2
 sphinx-autobuild==0.7.1
--e ./python_modules/dagster
+-e ./python_modules/dagster[test]
 -e ./python_modules/dagster-graphql
 -e ./python_modules/dagit
 -e ./python_modules/libraries/dagstermill
@@ -13,6 +13,5 @@ sphinx-autobuild==0.7.1
 -e ./python_modules/libraries/dagster-docker
 -e ./python_modules/libraries/dagster-gcp
 -e ./python_modules/libraries/dagster-k8s
--r ./python_modules/dagster/dev-requirements.txt
 sphinx-click==2.3.1
 recommonmark==0.4.0

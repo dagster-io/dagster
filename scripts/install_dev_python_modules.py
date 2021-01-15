@@ -53,13 +53,13 @@ def main(quiet):
 
     install_targets += [
         "awscli",
-        "-e python_modules/dagster",
+        "-e python_modules/dagster[test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagit",
         "-e python_modules/automation",
         "-e python_modules/libraries/dagster-pandas",
-        "-e python_modules/libraries/dagster-aws",
+        "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
         "-e python_modules/libraries/dagster-cron",
@@ -82,8 +82,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
         "-e python_modules/libraries/lakehouse",
-        "-r python_modules/dagster/dev-requirements.txt",
-        "-r python_modules/libraries/dagster-aws/dev-requirements.txt",
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
         #

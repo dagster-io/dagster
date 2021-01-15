@@ -1,8 +1,10 @@
-from setuptools import find_packages, setup
+from typing import Dict
+
+from setuptools import find_packages, setup  # type: ignore
 
 
-def get_version():
-    version = {}
+def get_version() -> str:
+    version: Dict[str, str] = {}
     with open("dagster_airflow/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
@@ -22,6 +24,7 @@ if __name__ == "__main__":
         classifiers=[
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -35,6 +38,16 @@ if __name__ == "__main__":
             # https://issues.apache.org/jira/browse/AIRFLOW-6854
             'typing_extensions; python_version>="3.8"',
         ],
-        extras_require={"kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"]},
+        extras_require={
+            "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
+            "test": [
+                # Airflow should be provided by the end user, not us. For example, GCP Cloud
+                # Composer ships a fork of Airflow; we don't want to override it with our install.
+                # See https://github.com/dagster-io/dagster/issues/2701
+                "apache-airflow==1.10.10",
+                "boto3==1.9.*",
+                "kubernetes==10.0.1",
+            ],
+        },
         entry_points={"console_scripts": ["dagster-airflow = dagster_airflow.cli:main"]},
     )

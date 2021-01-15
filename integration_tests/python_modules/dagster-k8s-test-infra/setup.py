@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 if __name__ == "__main__":
     setup(
@@ -11,11 +11,11 @@ if __name__ == "__main__":
         classifiers=[
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=["dagster", "docker"],
-        tests_require=[],
         zip_safe=False,
     )

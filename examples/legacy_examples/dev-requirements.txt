@@ -1,3 +1,0 @@
-# See https://github.com/dagster-io/dagster/issues/2701
-apache-airflow==1.10.10
-docker-compose==1.23.2

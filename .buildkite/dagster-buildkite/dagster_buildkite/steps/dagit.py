@@ -1,13 +1,14 @@
+from typing import List
+
 from ..defines import SupportedPython
 from ..step_builder import StepBuilder
 
 
-def dagit_steps():
+def dagit_steps() -> List[dict]:
     return [
         StepBuilder("dagit webapp tests")
         .run(
-            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
-            "pip install -e python_modules/dagster -qqq",
+            "pip install -e python_modules/dagster[test] -qqq",
             "pip install -e python_modules/dagster-graphql -qqq",
             "pip install -e python_modules/libraries/dagster-cron -qqq",
             "pip install -e python_modules/libraries/dagster-slack -qqq",

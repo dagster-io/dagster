@@ -1,8 +1,10 @@
+from typing import List
+
 from ..defines import SupportedPython
 from ..step_builder import StepBuilder
 
 
-def docs_steps():
+def docs_steps() -> List[dict]:
     return [
         StepBuilder("docs validate-libraries")
         .run("pip install -e python_modules/automation", "dagster-docs validate-libraries")
@@ -12,7 +14,6 @@ def docs_steps():
         .run(
             "pip install -e python_modules/automation",
             "pip install -r docs-requirements.txt -qqq",
-            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "cd docs",
             "make NODE_ENV=production VERSION=master full_docs_build",
         )
@@ -22,7 +23,6 @@ def docs_steps():
         .run(
             "pip install -e python_modules/automation",
             "pip install -r docs-requirements.txt -qqq",
-            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "cd docs",
             "make buildnext",
             "cd next",
