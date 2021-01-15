@@ -1,4 +1,11 @@
+from typing import NamedTuple, Optional
+
 from dagster import check
+from dagster.core.definitions.dependency import Solid, SolidHandle
+from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError
 
 from .system import SystemStepExecutionContext
@@ -22,27 +29,27 @@ class StepExecutionContext:
         )
 
     @property
-    def resources(self):
+    def resources(self) -> NamedTuple:
         return self._system_step_execution_context.resources
 
     @property
-    def step_launcher(self):
+    def step_launcher(self) -> Optional[StepLauncher]:
         return self._system_step_execution_context.step_launcher
 
     @property
-    def run_id(self):
+    def run_id(self) -> str:
         return self._system_step_execution_context.run_id
 
     @property
-    def run_config(self):
+    def run_config(self) -> dict:
         return self._system_step_execution_context.run_config
 
     @property
-    def pipeline_def(self):
+    def pipeline_def(self) -> PipelineDefinition:
         return self._system_step_execution_context.pipeline_def
 
     @property
-    def mode_def(self):
+    def mode_def(self) -> ModeDefinition:
         return self._system_step_execution_context.mode_def
 
     @property
@@ -50,23 +57,23 @@ class StepExecutionContext:
         return self._system_step_execution_context.log
 
     @property
-    def solid_handle(self):
+    def solid_handle(self) -> SolidHandle:
         return self._system_step_execution_context.solid_handle
 
     @property
-    def solid(self):
+    def solid(self) -> Solid:
         return self._system_step_execution_context.pipeline_def.get_solid(self.solid_handle)
 
     @property
-    def solid_def(self):
+    def solid_def(self) -> SolidDefinition:
         return self._system_step_execution_context.pipeline_def.get_solid(
             self.solid_handle
         ).definition
 
-    def has_tag(self, key):
+    def has_tag(self, key: str) -> bool:
         return self._system_step_execution_context.has_tag(key)
 
-    def get_tag(self, key):
+    def get_tag(self, key: str) -> str:
         return self._system_step_execution_context.get_tag(key)
 
     def get_system_context(self) -> SystemStepExecutionContext:

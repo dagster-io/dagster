@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any
 
 from dagster import check
 from dagster.core.definitions.logger import LoggerDefinition
@@ -23,7 +24,13 @@ class InitLoggerContext(
         run_id (str): The ID for this run of the pipeline.
     """
 
-    def __new__(cls, logger_config, pipeline_def, logger_def, run_id):
+    def __new__(
+        cls,
+        logger_config: Any,
+        pipeline_def: PipelineDefinition,
+        logger_def: LoggerDefinition,
+        run_id: str,
+    ):
         return super(InitLoggerContext, cls).__new__(
             cls,
             logger_config,
