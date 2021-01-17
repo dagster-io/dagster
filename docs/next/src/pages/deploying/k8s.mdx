@@ -564,7 +564,7 @@ from that pipeline. Example usage:
 ```python
   @solid(
     tags = {
-      'dagster-celery/queue': 'snowflake_queue',
+      'dagster-celery/run_priority': 3,
     }
   )
   def my_solid(context):
