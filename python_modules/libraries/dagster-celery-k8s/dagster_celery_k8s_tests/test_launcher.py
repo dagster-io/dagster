@@ -173,7 +173,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             run_config=run_config,
             tags=tags,
         )
-        celery_k8s_run_launcher.launch_run(instance, run, fake_external_pipeline)
+        celery_k8s_run_launcher.launch_run(run, fake_external_pipeline)
 
     # Check that user defined k8s config was passed down to the k8s job.
     mock_method_calls = mock_k8s_client_batch_api.method_calls

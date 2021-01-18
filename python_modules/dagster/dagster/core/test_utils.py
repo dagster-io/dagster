@@ -272,7 +272,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return ExplodingRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         raise NotImplementedError("The entire purpose of this is to throw on launch")
 
     def join(self, timeout=30):
@@ -292,8 +292,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
         super().__init__()
 
-    def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(instance, "instance", DagsterInstance)
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.invariant(run.status == PipelineRunStatus.STARTING)

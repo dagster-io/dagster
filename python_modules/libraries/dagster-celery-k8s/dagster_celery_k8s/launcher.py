@@ -148,8 +148,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(instance, "instance", DagsterInstance)
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 

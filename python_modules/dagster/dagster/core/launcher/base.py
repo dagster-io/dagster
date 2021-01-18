@@ -5,7 +5,7 @@ from dagster.core.instance import MayHaveInstanceWeakref
 
 class RunLauncher(ABC, MayHaveInstanceWeakref):
     @abstractmethod
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         """Launch a run.
 
         This method should begin the execution of the specified run, and may emit engine events.
@@ -15,7 +15,6 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
         not be invoked directly, but should be invoked through ``DagsterInstance.launch_run()``.
 
         Args:
-            instance (DagsterInstance): The instance in which the run has been created.
             run (PipelineRun): The PipelineRun to launch.
             external_pipeline (ExternalPipeline): The pipeline that is being launched (currently
              optional during migration)

@@ -211,7 +211,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
         )
 
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 

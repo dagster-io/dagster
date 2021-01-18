@@ -55,7 +55,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         pipeline_name = "demo_pipeline"
         run = create_run_for_test(instance, pipeline_name=pipeline_name, tags=tags)
         k8s_run_launcher.register_instance(instance)
-        k8s_run_launcher.launch_run(None, run, fake_external_pipeline)
+        k8s_run_launcher.launch_run(run, fake_external_pipeline)
 
     # Check that user defined k8s config was passed down to the k8s job.
     mock_method_calls = mock_k8s_client_batch_api.method_calls
