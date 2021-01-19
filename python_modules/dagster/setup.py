@@ -59,7 +59,7 @@ if __name__ == "__main__":
             "coloredlogs>=6.1, <=14.0",
             "PyYAML",
             # core (not explicitly expressed atm)
-            "alembic>=1.2.1",
+            "alembic>=1.2.1, <1.5.0",
             "croniter>=0.3.34",
             "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
             "grpcio-health-checking>=1.32.0",
