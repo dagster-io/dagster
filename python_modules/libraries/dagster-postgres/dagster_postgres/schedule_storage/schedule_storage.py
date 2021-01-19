@@ -56,7 +56,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
 
                 # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(alembic_config, self._engine)
+                stamp_alembic_rev(alembic_config, conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout
@@ -97,4 +97,5 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self._engine)
+        with self.connect() as conn:
+            run_alembic_upgrade(alembic_config, conn)

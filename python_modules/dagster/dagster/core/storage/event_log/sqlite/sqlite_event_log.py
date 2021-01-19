@@ -121,10 +121,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 with engine.connect() as connection:
                     db_revision, head_revision = check_alembic_revision(alembic_config, connection)
 
-                if not (db_revision and head_revision):
-                    SqlEventLogStorageMetadata.create_all(engine)
-                    engine.execute("PRAGMA journal_mode=WAL;")
-                    stamp_alembic_rev(alembic_config, engine)
+                    if not (db_revision and head_revision):
+                        SqlEventLogStorageMetadata.create_all(engine)
+                        engine.execute("PRAGMA journal_mode=WAL;")
+                        stamp_alembic_rev(alembic_config, connection)
 
                 break
             except (db.exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:

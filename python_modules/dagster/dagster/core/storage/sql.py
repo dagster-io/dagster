@@ -116,16 +116,15 @@ def run_migrations_online(context, config, target_metadata):
     and associate a connection with the context.
 
     """
-    connectable = config.attributes.get("connection", None)
+    connection = config.attributes.get("connection", None)
 
-    if connectable is None:
+    if connection is None:
         raise Exception(
             "No connection set in alembic config. If you are trying to run this script from the "
             "command line, STOP and read the README."
         )
 
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata)
 
-        with context.begin_transaction():
-            context.run_migrations()
+    with context.begin_transaction():
+        context.run_migrations()

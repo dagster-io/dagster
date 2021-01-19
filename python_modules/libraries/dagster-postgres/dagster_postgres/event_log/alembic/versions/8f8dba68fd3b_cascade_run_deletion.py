@@ -24,7 +24,7 @@ def upgrade():
     has_tables = inspector.get_table_names()
 
     if "runs" in has_tables and "run_tags" in has_tables:
-        op.drop_constraint("run_tags_run_id_fkey", table_name="run_tags", type="foreignkey")
+        op.drop_constraint("run_tags_run_id_fkey", table_name="run_tags", type_="foreignkey")
         op.create_foreign_key(
             "run_tags_run_id_fkey",
             source_table="run_tags",
@@ -41,7 +41,7 @@ def downgrade():
     has_tables = inspector.get_table_names()
 
     if "runs" in has_tables and "run_tags" in has_tables:
-        op.drop_constraint("run_tags_run_id_fkey", table_name="run_tags", type="foreignkey")
+        op.drop_constraint("run_tags_run_id_fkey", table_name="run_tags", type_="foreignkey")
         op.create_foreign_key(
             "run_tags_run_id_fkey",
             source_table="run_tags",

@@ -75,12 +75,13 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         mkdir_p(self._base_dir)
         engine = create_engine(self._conn_string, poolclass=NullPool)
         alembic_config = get_alembic_config(__file__)
-        connection = engine.connect()
-        db_revision, head_revision = check_alembic_revision(alembic_config, connection)
-        if not (db_revision and head_revision):
-            SqlEventLogStorageMetadata.create_all(engine)
-            engine.execute("PRAGMA journal_mode=WAL;")
-            stamp_alembic_rev(alembic_config, engine)
+
+        with engine.connect() as connection:
+            db_revision, head_revision = check_alembic_revision(alembic_config, connection)
+            if not (db_revision and head_revision):
+                SqlEventLogStorageMetadata.create_all(engine)
+                engine.execute("PRAGMA journal_mode=WAL;")
+                stamp_alembic_rev(alembic_config, connection)
 
     @contextmanager
     def connect(self, run_id=None):
