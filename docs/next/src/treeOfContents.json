@@ -507,6 +507,10 @@
       {
         "name": "Debugging your schedules",
         "path": "/troubleshooting/schedules"
+      },
+      {
+        "name": "Debugging queued runs",
+        "path": "/troubleshooting/run-queue"
       }
     ]
   },
