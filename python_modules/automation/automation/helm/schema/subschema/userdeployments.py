@@ -29,7 +29,7 @@ class UserDeployment(BaseModel):
     podSecurityContext: Optional[PodSecurityContext]
     securityContext: Optional[SecurityContext]
     resources: Optional[Resources]
-    replicaCount: int
+    replicaCount: Optional[int]
     livenessProbe: Optional[LivenessProbe]
     startupProbe: Optional[StartupProbe]
 

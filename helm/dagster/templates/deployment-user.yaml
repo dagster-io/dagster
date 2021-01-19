@@ -15,7 +15,7 @@ metadata:
     {{- end }}
     {{- end }}
 spec:
-  replicas: {{ $deployment.replicaCount }}
+  replicas: {{ $deployment.replicaCount | default 1 }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}
