@@ -3,7 +3,7 @@ import {Colors, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {JobHistoryFragment_ticks} from 'src/jobs/types/JobHistoryFragment';
 import {
   SensorTimelineQuery,
@@ -261,5 +261,5 @@ const SENSOR_TIMELINE_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

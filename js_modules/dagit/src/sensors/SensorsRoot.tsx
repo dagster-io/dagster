@@ -5,7 +5,7 @@ import React from 'react';
 
 import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {Loading} from 'src/Loading';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
@@ -101,7 +101,7 @@ const SENSORS_ROOT_QUERY = gql`
       ...InstanceHealthFragment
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
   ${JOB_STATE_FRAGMENT}
   ${SENSOR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}

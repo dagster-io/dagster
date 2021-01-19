@@ -5,7 +5,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {stringFromValue, TokenizingFieldValue} from 'src/TokenizingField';
 import {
   PartitionProgressQuery,
@@ -233,5 +233,5 @@ const PARTITION_PROGRESS_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

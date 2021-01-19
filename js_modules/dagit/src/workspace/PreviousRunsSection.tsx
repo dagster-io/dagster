@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {RunTable} from 'src/runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Subheading} from 'src/ui/Text';
@@ -50,5 +50,5 @@ export const PREVIOUS_RUNS_FRAGMENT = gql`
       }
     }
   }
-  ${RunTable.fragments.RunTableRunFragment}
+  ${RUN_TABLE_RUN_FRAGMENT}
 `;

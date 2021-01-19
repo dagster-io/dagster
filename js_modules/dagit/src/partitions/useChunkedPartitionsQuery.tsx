@@ -1,7 +1,7 @@
 import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {PARTITION_GRAPH_SET_RUN_FRAGMENT} from 'src/partitions/PartitionGraphSet';
 import {PARTITION_RUN_MATRIX_RUN_FRAGMENT} from 'src/partitions/PartitionRunMatrix';
@@ -280,7 +280,7 @@ const PARTITION_SET_LOADER_QUERY = gql`
     }
   }
   ${PARTITION_SET_LOADER_RUN_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const PARTITION_SET_NAMES_QUERY = gql`

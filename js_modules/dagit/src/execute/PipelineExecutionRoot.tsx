@@ -15,6 +15,9 @@ import {
   ExecutionSessionContainer,
   ExecutionSessionContainerError,
   ExecutionSessionContainerLoading,
+  EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT,
+  EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT,
+  RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT,
 } from 'src/execute/ExecutionSessionContainer';
 import {ExecutionTabs} from 'src/execute/ExecutionTabs';
 import {
@@ -208,8 +211,8 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     }
   }
 
-  ${ExecutionSessionContainer.fragments.ExecutionSessionContainerPipelineFragment}
-  ${ExecutionSessionContainer.fragments.ExecutionSessionContainerPartitionSetsFragment}
+  ${EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT}
+  ${EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT}
 `;
 
 const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
@@ -219,5 +222,5 @@ const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
     }
   }
 
-  ${ExecutionSessionContainer.fragments.RunConfigSchemaOrErrorFragment}
+  ${RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT}
 `;

@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {RunMetadataProvider} from 'src/RunMetadataProvider';
-import {GanttChart} from 'src/gantt/GanttChart';
-import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
+import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from 'src/RunMetadataProvider';
+import {GANTT_CHART_EXECUTION_PLAN_FRAGMENT} from 'src/gantt/GanttChart';
+import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from 'src/runs/LogsScrollingTable';
 import {RUN_DETAILS_FRAGMENT} from 'src/runs/RunDetails';
-import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
+import {RUN_STATUS_PIPELINE_RUN_FRAGMENT} from 'src/runs/RunStatusToPageAttributes';
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   fragment RunFragmentForRepositoryMatch on PipelineRun {
@@ -69,8 +69,8 @@ export const RunFragments = {
       ...RunDetailsFragment
     }
 
-    ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
-    ${GanttChart.fragments.GanttChartExecutionPlanFragment}
+    ${RUN_STATUS_PIPELINE_RUN_FRAGMENT}
+    ${GANTT_CHART_EXECUTION_PLAN_FRAGMENT}
     ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
     ${RUN_DETAILS_FRAGMENT}
   `,
@@ -87,8 +87,8 @@ export const RunFragments = {
       ...RunMetadataProviderMessageFragment
     }
 
-    ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
-    ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
-    ${PythonErrorInfo.fragments.PythonErrorFragment}
+    ${RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT}
+    ${LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT}
+    ${PYTHON_ERROR_FRAGMENT}
   `,
 };

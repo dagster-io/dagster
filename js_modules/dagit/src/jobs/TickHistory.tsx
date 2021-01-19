@@ -7,7 +7,7 @@ import {Line, ChartComponentProps} from 'react-chartjs-2';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {TICK_TAG_FRAGMENT, RunList, TickTag} from 'src/JobTick';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {JobHistoryFragment, JobHistoryFragment_ticks} from 'src/jobs/types/JobHistoryFragment';
 import {ScheduleTickHistoryQuery} from 'src/jobs/types/ScheduleTickHistoryQuery';
 import {SensorTickHistoryQuery} from 'src/jobs/types/SensorTickHistoryQuery';
@@ -480,7 +480,7 @@ const JOB_HISTORY_FRAGMENT = gql`
       ...TickTagFragment
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
 `;
 

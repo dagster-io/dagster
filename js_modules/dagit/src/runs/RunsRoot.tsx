@@ -23,7 +23,7 @@ import {TokenizingFieldValue} from 'src/TokenizingField';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {AllScheduledTicks, SCHEDULED_TICKS_FRAGMENT} from 'src/runs/AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
-import {RunTable} from 'src/runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
   RunsFilter,
@@ -304,7 +304,7 @@ const RUNS_ROOT_QUERY = gql`
     }
   }
 
-  ${RunTable.fragments.RunTableRunFragment}
+  ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
   ${SCHEDULED_TICKS_FRAGMENT}
 `;

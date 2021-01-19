@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Button, MenuItem} from '@blueprintjs/core';
 import {Select} from '@blueprintjs/select';
 import * as React from 'react';
@@ -6,25 +5,15 @@ import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/ShortcutHandler';
-import {SolidJumpBarFragment_solids} from 'src/types/SolidJumpBarFragment';
+import {PipelineExplorerSolidHandleFragment_solid} from 'src/types/PipelineExplorerSolidHandleFragment';
 
 interface SolidJumpBarProps {
-  solids: Array<SolidJumpBarFragment_solids>;
-  selectedSolid: SolidJumpBarFragment_solids | undefined;
-  onChange: (solid: SolidJumpBarFragment_solids) => void;
+  solids: Array<PipelineExplorerSolidHandleFragment_solid>;
+  selectedSolid: PipelineExplorerSolidHandleFragment_solid | undefined;
+  onChange: (solid: PipelineExplorerSolidHandleFragment_solid) => void;
 }
 
 export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
-  static fragments = {
-    SolidJumpBarFragment: gql`
-      fragment SolidJumpBarFragment on IPipelineSnapshot {
-        solids {
-          name
-        }
-      }
-    `,
-  };
-
   select: React.RefObject<Select<string>> = React.createRef();
 
   render() {

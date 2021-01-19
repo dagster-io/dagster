@@ -11,9 +11,12 @@ import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {SolidJumpBar} from 'src/PipelineJumpComponents';
 import {PipelineExplorerPath, explorerPathToString} from 'src/PipelinePathUtils';
-import {SidebarTabbedContainer} from 'src/SidebarTabbedContainer';
+import {
+  SidebarTabbedContainer,
+  SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
+} from 'src/SidebarTabbedContainer';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
-import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {PipelineExplorerFragment} from 'src/types/PipelineExplorerFragment';
@@ -46,27 +49,6 @@ export class PipelineExplorer extends React.Component<
   PipelineExplorerProps,
   PipelineExplorerState
 > {
-  static fragments = {
-    PipelineExplorerFragment: gql`
-      fragment PipelineExplorerFragment on IPipelineSnapshot {
-        name
-        description
-        ...SidebarTabbedContainerPipelineFragment
-      }
-      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
-    `,
-    PipelineExplorerSolidHandleFragment: gql`
-      fragment PipelineExplorerSolidHandleFragment on SolidHandle {
-        handleID
-        solid {
-          name
-          ...PipelineGraphSolidFragment
-        }
-      }
-      ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-    `,
-  };
-
   pathOverlayEl = React.createRef<HTMLDivElement>();
 
   state = {
@@ -149,7 +131,7 @@ export class PipelineExplorer extends React.Component<
     return `/workspace/pipelines/${path}`;
   };
 
-  public render() {
+  render() {
     const {options, pipeline, explorerPath, parentHandle, selectedHandle} = this.props;
     const {highlighted} = this.state;
 
@@ -277,6 +259,26 @@ export class PipelineExplorer extends React.Component<
     );
   }
 }
+
+export const PIPELINE_EXPLORER_FRAGMENT = gql`
+  fragment PipelineExplorerFragment on IPipelineSnapshot {
+    name
+    description
+    ...SidebarTabbedContainerPipelineFragment
+  }
+  ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
+`;
+
+export const PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
+  fragment PipelineExplorerSolidHandleFragment on SolidHandle {
+    handleID
+    solid {
+      name
+      ...PipelineGraphSolidFragment
+    }
+  }
+  ${PIPELINE_GRAPH_SOLID_FRAGMENT}
+`;
 
 const RightInfoPanel = styled.div`
   // Fixes major perofmance hit. To reproduce, add enough content to

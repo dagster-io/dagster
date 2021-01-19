@@ -5,13 +5,13 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PipelineSnapshotLink} from 'src/PipelinePathUtils';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {queuedStatuses} from 'src/runs/RunStatuses';
 import {RunTags} from 'src/runs/RunTags';
-import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
+import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from 'src/runs/RunUtils';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
@@ -169,32 +169,30 @@ export const RunTable = (props: RunTableProps) => {
   );
 };
 
-RunTable.fragments = {
-  RunTableRunFragment: gql`
-    fragment RunTableRunFragment on PipelineRun {
-      id
-      runId
-      status
-      stepKeysToExecute
-      canTerminate
-      mode
-      rootRunId
-      parentRunId
-      pipelineSnapshotId
-      pipelineName
-      solidSelection
-      status
-      tags {
-        key
-        value
-      }
-      ...RunTimeFragment
+export const RUN_TABLE_RUN_FRAGMENT = gql`
+  fragment RunTableRunFragment on PipelineRun {
+    id
+    runId
+    status
+    stepKeysToExecute
+    canTerminate
+    mode
+    rootRunId
+    parentRunId
+    pipelineSnapshotId
+    pipelineName
+    solidSelection
+    status
+    tags {
+      key
+      value
     }
+    ...RunTimeFragment
+  }
 
-    ${PythonErrorInfo.fragments.PythonErrorFragment}
-    ${RunComponentFragments.RUN_TIME_FRAGMENT}
-  `,
-};
+  ${PYTHON_ERROR_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
+`;
 
 const RunRow: React.FC<{
   run: RunTableRunFragment;

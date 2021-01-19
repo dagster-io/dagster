@@ -3,7 +3,10 @@ import * as React from 'react';
 
 import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
-import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
+import {
+  SidebarSolidDefinition,
+  SIDEBAR_SOLID_DEFINITION_FRAGMENT,
+} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocation} from 'src/SidebarSolidInvocation';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {SidebarTabbedContainerSolidQuery} from 'src/types/SidebarTabbedContainerSolidQuery';
@@ -91,6 +94,6 @@ const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
       }
     }
   }
-  ${SidebarSolidInvocation.fragments.SidebarSolidInvocationFragment}
-  ${SidebarSolidDefinition.fragments.SidebarSolidDefinitionFragment}
+  ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
+  ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
 `;

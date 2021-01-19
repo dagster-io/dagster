@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Callout, Code, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 import {Group} from 'src/ui/Group';
@@ -20,7 +20,7 @@ export const SCHEDULER_FRAGMENT = gql`
     ...PythonErrorFragment
   }
 
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const SchedulerInfo: React.FunctionComponent<{

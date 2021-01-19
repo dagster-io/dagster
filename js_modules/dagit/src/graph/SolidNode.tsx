@@ -42,104 +42,6 @@ const TOOLTIP_STYLE = JSON.stringify({
 });
 
 export class SolidNode extends React.Component<ISolidNodeProps> {
-  static fragments = {
-    SolidNodeInvocationFragment: gql`
-      fragment SolidNodeInvocationFragment on Solid {
-        name
-        inputs {
-          definition {
-            name
-          }
-          dependsOn {
-            definition {
-              name
-              type {
-                displayName
-              }
-            }
-            solid {
-              name
-            }
-          }
-        }
-        outputs {
-          definition {
-            name
-          }
-          dependedBy {
-            solid {
-              name
-            }
-            definition {
-              name
-              type {
-                displayName
-              }
-            }
-          }
-        }
-      }
-    `,
-    SolidNodeDefinitionFragment: gql`
-      fragment SolidNodeDefinitionFragment on ISolidDefinition {
-        __typename
-        name
-        metadata {
-          key
-          value
-        }
-        inputDefinitions {
-          name
-          type {
-            displayName
-          }
-        }
-        outputDefinitions {
-          name
-          type {
-            displayName
-          }
-        }
-        ... on SolidDefinition {
-          configField {
-            configType {
-              key
-              description
-            }
-          }
-        }
-        ... on CompositeSolidDefinition {
-          inputMappings {
-            definition {
-              name
-            }
-            mappedInput {
-              definition {
-                name
-              }
-              solid {
-                name
-              }
-            }
-          }
-          outputMappings {
-            definition {
-              name
-            }
-            mappedOutput {
-              definition {
-                name
-              }
-              solid {
-                name
-              }
-            }
-          }
-        }
-      }
-    `,
-  };
-
   shouldComponentUpdate(prevProps: ISolidNodeProps) {
     if (prevProps.dim !== this.props.dim) {
       return true;
@@ -333,3 +235,100 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
     );
   }
 }
+
+export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
+  fragment SolidNodeInvocationFragment on Solid {
+    name
+    inputs {
+      definition {
+        name
+      }
+      dependsOn {
+        definition {
+          name
+          type {
+            displayName
+          }
+        }
+        solid {
+          name
+        }
+      }
+    }
+    outputs {
+      definition {
+        name
+      }
+      dependedBy {
+        solid {
+          name
+        }
+        definition {
+          name
+          type {
+            displayName
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
+  fragment SolidNodeDefinitionFragment on ISolidDefinition {
+    __typename
+    name
+    metadata {
+      key
+      value
+    }
+    inputDefinitions {
+      name
+      type {
+        displayName
+      }
+    }
+    outputDefinitions {
+      name
+      type {
+        displayName
+      }
+    }
+    ... on SolidDefinition {
+      configField {
+        configType {
+          key
+          description
+        }
+      }
+    }
+    ... on CompositeSolidDefinition {
+      inputMappings {
+        definition {
+          name
+        }
+        mappedInput {
+          definition {
+            name
+          }
+          solid {
+            name
+          }
+        }
+      }
+      outputMappings {
+        definition {
+          name
+        }
+        mappedOutput {
+          definition {
+            name
+          }
+          solid {
+            name
+          }
+        }
+      }
+    }
+  }
+`;

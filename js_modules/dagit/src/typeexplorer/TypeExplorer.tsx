@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
+import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/ConfigTypeSchema';
 import {Description} from 'src/Description';
 import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from 'src/SidebarComponents';
 import {TypeExplorerFragment} from 'src/typeexplorer/types/TypeExplorerFragment';
@@ -11,61 +11,56 @@ interface ITypeExplorerProps {
   type: TypeExplorerFragment;
 }
 
-export class TypeExplorer extends React.Component<ITypeExplorerProps> {
-  static fragments = {
-    TypeExplorerFragment: gql`
-      fragment TypeExplorerFragment on DagsterType {
-        name
-        description
-        inputSchemaType {
-          ...ConfigTypeSchemaFragment
-          recursiveConfigTypes {
-            ...ConfigTypeSchemaFragment
-          }
-        }
-        outputSchemaType {
-          ...ConfigTypeSchemaFragment
-          recursiveConfigTypes {
-            ...ConfigTypeSchemaFragment
-          }
-        }
-      }
-
-      ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
-    `,
-  };
-
-  render() {
-    const {name, inputSchemaType, outputSchemaType, description} = this.props.type;
-
-    return (
-      <div>
-        <SidebarSubhead />
-        <SectionInner>
-          <SidebarTitle>
-            <Link to="?types=true">Pipeline Types</Link> {'>'} {name}
-          </SidebarTitle>
-        </SectionInner>
-        <SidebarSection title={'Description'}>
-          <Description description={description || 'No Description Provided'} />
+export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
+  const {name, inputSchemaType, outputSchemaType, description} = props.type;
+  return (
+    <div>
+      <SidebarSubhead />
+      <SectionInner>
+        <SidebarTitle>
+          <Link to="?types=true">Pipeline Types</Link> {'>'} {name}
+        </SidebarTitle>
+      </SectionInner>
+      <SidebarSection title={'Description'}>
+        <Description description={description || 'No Description Provided'} />
+      </SidebarSection>
+      {inputSchemaType && (
+        <SidebarSection title={'Input'}>
+          <ConfigTypeSchema
+            type={inputSchemaType}
+            typesInScope={inputSchemaType.recursiveConfigTypes}
+          />
         </SidebarSection>
-        {inputSchemaType && (
-          <SidebarSection title={'Input'}>
-            <ConfigTypeSchema
-              type={inputSchemaType}
-              typesInScope={inputSchemaType.recursiveConfigTypes}
-            />
-          </SidebarSection>
-        )}
-        {outputSchemaType && (
-          <SidebarSection title={'Output'}>
-            <ConfigTypeSchema
-              type={outputSchemaType}
-              typesInScope={outputSchemaType.recursiveConfigTypes}
-            />
-          </SidebarSection>
-        )}
-      </div>
-    );
+      )}
+      {outputSchemaType && (
+        <SidebarSection title={'Output'}>
+          <ConfigTypeSchema
+            type={outputSchemaType}
+            typesInScope={outputSchemaType.recursiveConfigTypes}
+          />
+        </SidebarSection>
+      )}
+    </div>
+  );
+};
+
+export const TYPE_EXPLORER_FRAGMENT = gql`
+  fragment TypeExplorerFragment on DagsterType {
+    name
+    description
+    inputSchemaType {
+      ...ConfigTypeSchemaFragment
+      recursiveConfigTypes {
+        ...ConfigTypeSchemaFragment
+      }
+    }
+    outputSchemaType {
+      ...ConfigTypeSchemaFragment
+      recursiveConfigTypes {
+        ...ConfigTypeSchemaFragment
+      }
+    }
   }
-}
+
+  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
+`;

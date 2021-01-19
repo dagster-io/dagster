@@ -104,32 +104,6 @@ interface GanttChartState {
 export class GanttChart extends React.Component<GanttChartProps, GanttChartState> {
   static LoadingState: React.FunctionComponent<{runId: string}>;
 
-  static fragments = {
-    GanttChartExecutionPlanFragment: gql`
-      fragment GanttChartExecutionPlanFragment on ExecutionPlan {
-        steps {
-          key
-          kind
-        }
-        steps {
-          key
-          inputs {
-            dependsOn {
-              key
-              outputs {
-                name
-                type {
-                  name
-                }
-              }
-            }
-          }
-        }
-        artifactsPersisted
-      }
-    `,
-  };
-
   _cachedLayout: GanttChartLayout | null = null;
   _cachedLayoutParams: BuildLayoutParams | null = null;
 
@@ -232,6 +206,31 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
     );
   }
 }
+
+export const GANTT_CHART_EXECUTION_PLAN_FRAGMENT = gql`
+  fragment GanttChartExecutionPlanFragment on ExecutionPlan {
+    steps {
+      key
+      kind
+    }
+    steps {
+      key
+      inputs {
+        dependsOn {
+          key
+          outputs {
+            name
+            type {
+              name
+            }
+          }
+        }
+      }
+    }
+    artifactsPersisted
+  }
+`;
+
 type GanttChartInnerProps = GanttChartProps &
   GanttChartState & {
     graph: GraphQueryItem[];

@@ -7,7 +7,7 @@ import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualize
 import styled from 'styled-components/macro';
 
 import {Loading} from 'src/Loading';
-import {SolidTypeSignature} from 'src/SolidTypeSignature';
+import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/SolidTypeSignature';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {
   SuggestionProvider,
@@ -302,7 +302,7 @@ const SOLIDS_ROOT_QUERY = gql`
       }
     }
   }
-  ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
+  ${SOLID_TYPE_SIGNATURE_FRAGMENT}
 `;
 
 const SolidListItem = styled.div<{selected: boolean}>`

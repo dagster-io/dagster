@@ -9,7 +9,7 @@ import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {RunTable} from 'src/runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
   RunFilterTokenType,
@@ -152,5 +152,5 @@ const PIPELINE_RUNS_ROOT_QUERY = gql`
     }
   }
 
-  ${RunTable.fragments.RunTableRunFragment}
+  ${RUN_TABLE_RUN_FRAGMENT}
 `;

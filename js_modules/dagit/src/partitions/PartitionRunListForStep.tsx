@@ -4,13 +4,13 @@ import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {STEP_STATUS_COLORS} from 'src/partitions/RunMatrixUtils';
 import {
   PartitionRunListForStepQuery,
   PartitionRunListForStepQueryVariables,
 } from 'src/partitions/types/PartitionRunListForStepQuery';
-import {RunTable} from 'src/runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {DagsterTag} from 'src/runs/RunTag';
 import {openRunInBrowser} from 'src/runs/RunUtils';
 import {StepEventStatus} from 'src/types/globalTypes';
@@ -160,6 +160,6 @@ const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
       }
     }
   }
-  ${RunTable.fragments.RunTableRunFragment}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

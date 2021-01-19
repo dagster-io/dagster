@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
 import {IStepState} from 'src/RunMetadataProvider';
-import {ComputeLogContent} from 'src/runs/ComputeLogContent';
+import {ComputeLogContent, COMPUTE_LOG_CONTENT_FRAGMENT} from 'src/runs/ComputeLogContent';
 import {RunContext} from 'src/runs/RunContext';
 import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
 import {ComputeLogsSubscription} from 'src/runs/types/ComputeLogsSubscription';
@@ -119,17 +119,6 @@ class ComputeLogsProvider extends React.Component<
   IComputeLogsProviderProps,
   IComputeLogsProviderState
 > {
-  static fragments = {
-    subscription: gql`
-      fragment ComputeLogsSubscriptionFragment on ComputeLogFile {
-        data
-        cursor
-        ...ComputeLogContentFileFragment
-      }
-      ${ComputeLogContent.fragments.ComputeLogContentFragment}
-    `,
-  };
-
   _stdout: DirectGraphQLSubscription<ComputeLogsSubscription>;
   _stderr: DirectGraphQLSubscription<ComputeLogsSubscription>;
   state: IComputeLogsProviderState = {
@@ -237,6 +226,15 @@ class ComputeLogsProvider extends React.Component<
   }
 }
 
+export const COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT = gql`
+  fragment ComputeLogsSubscriptionFragment on ComputeLogFile {
+    data
+    cursor
+    ...ComputeLogContentFileFragment
+  }
+  ${COMPUTE_LOG_CONTENT_FRAGMENT}
+`;
+
 const COMPUTE_LOGS_SUBSCRIPTION = gql`
   subscription ComputeLogsSubscription(
     $runId: ID!
@@ -248,7 +246,7 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
       ...ComputeLogsSubscriptionFragment
     }
   }
-  ${ComputeLogsProvider.fragments.subscription}
+  ${COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT}
 `;
 
 const LoadingContainer = styled.div`

@@ -6,7 +6,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {Loading} from 'src/Loading';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {
   AssetsTableQuery,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes,
@@ -279,5 +279,5 @@ const ASSETS_TABLE_QUERY = gql`
     }
   }
 
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

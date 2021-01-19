@@ -3,9 +3,12 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Loading} from 'src/Loading';
-import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
+import {
+  SidebarSolidDefinition,
+  SIDEBAR_SOLID_DEFINITION_FRAGMENT,
+} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocationInfo} from 'src/SidebarSolidHelpers';
-import {SolidCard} from 'src/solids/SolidCard';
+import {SolidCard, SOLID_CARD_SOLID_DEFINITION_FRAGMENT} from 'src/solids/SolidCard';
 import {UsedSolidDetailsQuery} from 'src/solids/types/UsedSolidDetailsQuery';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -81,8 +84,8 @@ const USED_SOLID_DETAILS_QUERY = gql`
     }
   }
 
-  ${SolidCard.fragments.SolidCardSolidDefinitionFragment}
-  ${SidebarSolidDefinition.fragments.SidebarSolidDefinitionFragment}
+  ${SOLID_CARD_SOLID_DEFINITION_FRAGMENT}
+  ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
 `;
 
 export const SolidDetailScrollContainer = styled.div`

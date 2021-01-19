@@ -8,7 +8,7 @@ import styled from 'styled-components/macro';
 import {Loading} from 'src/Loading';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {Timestamp} from 'src/TimeComponents';
-import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
@@ -24,8 +24,9 @@ import {
   RunTime,
   RunsQueryRefetchContext,
   titleForRun,
-  RunComponentFragments,
   RunElapsed,
+  RUN_ACTION_MENU_FRAGMENT,
+  RUN_TIME_FRAGMENT,
 } from 'src/runs/RunUtils';
 import {JobType} from 'src/types/globalTypes';
 import {Table} from 'src/ui/Table';
@@ -446,8 +447,8 @@ const PIPELINE_OVERVIEW_QUERY = gql`
       }
     }
   }
-  ${PipelineGraph.fragments.PipelineGraphSolidFragment}
+  ${PIPELINE_GRAPH_SOLID_FRAGMENT}
   ${OVERVIEW_JOB_FRAGMENT}
-  ${RunComponentFragments.RUN_TIME_FRAGMENT}
-  ${RunComponentFragments.RUN_ACTION_MENU_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
+  ${RUN_ACTION_MENU_FRAGMENT}
 `;

@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {browserTimezone, timestampToString} from 'src/TimeComponents';
 import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
@@ -90,5 +90,5 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
       lastHeartbeatTime
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

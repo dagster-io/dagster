@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link, Route, Switch} from 'react-router-dom';
 
 import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {InstanceConfig} from 'src/instance/InstanceConfig';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
@@ -136,7 +136,7 @@ const INSTANCE_HEALTH_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
   ${SENSOR_FRAGMENT}
   ${JOB_STATE_FRAGMENT}
 `;

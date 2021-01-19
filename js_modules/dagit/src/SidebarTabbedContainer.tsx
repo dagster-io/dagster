@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
-import {SidebarPipelineInfo} from 'src/SidebarPipelineInfo';
+import {SidebarPipelineInfo, SIDEBAR_PIPELINE_INFO_FRAGMENT} from 'src/SidebarPipelineInfo';
 import {SidebarSolidContainer} from 'src/SidebarSolidContainer';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {TypeExplorerContainer} from 'src/typeexplorer/TypeExplorerContainer';
@@ -46,85 +46,81 @@ const TabInfo: Array<ITabInfo> = [
   },
 ];
 
-export class SidebarTabbedContainer extends React.Component<ISidebarTabbedContainerProps> {
-  static fragments = {
-    SidebarTabbedContainerPipelineFragment: gql`
-      fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {
-        name
-        ...SidebarPipelineInfoFragment
-      }
+export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (props) => {
+  const {
+    typeExplorer,
+    types,
+    pipeline,
+    explorerPath,
+    solidHandleID,
+    getInvocations,
+    parentSolidHandleID,
+    onEnterCompositeSolid,
+    onClickSolid,
+  } = props;
 
-      ${SidebarPipelineInfo.fragments.SidebarPipelineInfoFragment}
-    `,
-  };
+  let content = <div />;
+  let activeTab = 'info';
 
-  render() {
-    const {
-      typeExplorer,
-      types,
-      pipeline,
-      explorerPath,
-      solidHandleID,
-      getInvocations,
-      parentSolidHandleID,
-      onEnterCompositeSolid,
-      onClickSolid,
-    } = this.props;
-
-    let content = <div />;
-    let activeTab = 'info';
-
-    if (typeExplorer) {
-      activeTab = 'types';
-      content = <TypeExplorerContainer explorerPath={explorerPath} typeName={typeExplorer} />;
-    } else if (types) {
-      activeTab = 'types';
-      content = <TypeListContainer explorerPath={explorerPath} />;
-    } else if (solidHandleID) {
-      content = (
-        <SidebarSolidContainer
-          key={solidHandleID}
-          explorerPath={explorerPath}
-          handleID={solidHandleID}
-          showingSubsolids={false}
-          getInvocations={getInvocations}
-          onEnterCompositeSolid={onEnterCompositeSolid}
-          onClickSolid={onClickSolid}
-        />
-      );
-    } else if (parentSolidHandleID) {
-      content = (
-        <SidebarSolidContainer
-          key={parentSolidHandleID}
-          explorerPath={explorerPath}
-          handleID={parentSolidHandleID}
-          showingSubsolids={true}
-          getInvocations={getInvocations}
-          onEnterCompositeSolid={onEnterCompositeSolid}
-          onClickSolid={onClickSolid}
-        />
-      );
-    } else {
-      content = <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />;
-    }
-
-    return (
-      <>
-        <Tabs>
-          {TabInfo.map(({name, icon, key, link}) => (
-            <Link to={link} key={key}>
-              <Tab key={key} active={key === activeTab}>
-                <Icon icon={icon} style={{marginRight: 5}} />
-                {name}
-              </Tab>
-            </Link>
-          ))}
-        </Tabs>
-        {content}
-      </>
+  if (typeExplorer) {
+    activeTab = 'types';
+    content = <TypeExplorerContainer explorerPath={explorerPath} typeName={typeExplorer} />;
+  } else if (types) {
+    activeTab = 'types';
+    content = <TypeListContainer explorerPath={explorerPath} />;
+  } else if (solidHandleID) {
+    content = (
+      <SidebarSolidContainer
+        key={solidHandleID}
+        explorerPath={explorerPath}
+        handleID={solidHandleID}
+        showingSubsolids={false}
+        getInvocations={getInvocations}
+        onEnterCompositeSolid={onEnterCompositeSolid}
+        onClickSolid={onClickSolid}
+      />
     );
+  } else if (parentSolidHandleID) {
+    content = (
+      <SidebarSolidContainer
+        key={parentSolidHandleID}
+        explorerPath={explorerPath}
+        handleID={parentSolidHandleID}
+        showingSubsolids={true}
+        getInvocations={getInvocations}
+        onEnterCompositeSolid={onEnterCompositeSolid}
+        onClickSolid={onClickSolid}
+      />
+    );
+  } else {
+    content = <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />;
   }
-}
+
+  return (
+    <>
+      <Tabs>
+        {TabInfo.map(({name, icon, key, link}) => (
+          <Link to={link} key={key}>
+            <Tab key={key} active={key === activeTab}>
+              <Icon icon={icon} style={{marginRight: 5}} />
+              {name}
+            </Tab>
+          </Link>
+        ))}
+      </Tabs>
+      {content}
+    </>
+  );
+};
+
+export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
+  fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {
+    name
+    ...SidebarPipelineInfoFragment
+  }
+
+  ${SIDEBAR_PIPELINE_INFO_FRAGMENT}
+`;
 
 const Tabs = styled.div`
   width: 100%;

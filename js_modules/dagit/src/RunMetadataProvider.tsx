@@ -219,33 +219,28 @@ interface IRunMetadataProviderProps {
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
-export class RunMetadataProvider extends React.Component<IRunMetadataProviderProps> {
-  static fragments = {
-    RunMetadataProviderMessageFragment: gql`
-      fragment RunMetadataProviderMessageFragment on PipelineRunEvent {
-        __typename
-        ... on MessageEvent {
-          message
-          timestamp
-          stepKey
-        }
-        ... on EngineEvent {
-          markerStart
-          markerEnd
-        }
-        ... on ObjectStoreOperationEvent {
-          operationResult {
-            op
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
+export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = (props) =>
+  props.children(extractMetadataFromLogs(props.logs));
+
+export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
+  fragment RunMetadataProviderMessageFragment on PipelineRunEvent {
+    __typename
+    ... on MessageEvent {
+      message
+      timestamp
+      stepKey
+    }
+    ... on EngineEvent {
+      markerStart
+      markerEnd
+    }
+    ... on ObjectStoreOperationEvent {
+      operationResult {
+        op
+        metadataEntries {
+          ...MetadataEntryFragment
         }
       }
-    `,
-  };
-
-  render() {
-    return this.props.children(extractMetadataFromLogs(this.props.logs));
+    }
   }
-}
+`;

@@ -1,7 +1,7 @@
 import {useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import React from 'react';
+import * as React from 'react';
 
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';

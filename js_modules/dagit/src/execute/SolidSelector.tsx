@@ -11,7 +11,7 @@ import {
   SolidSelectorQuery_pipelineOrError,
   SolidSelectorQuery_pipelineOrError_Pipeline_solids,
 } from 'src/execute/types/SolidSelectorQuery';
-import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -88,7 +88,7 @@ const SOLID_SELECTOR_QUERY = gql`
       }
     }
   }
-  ${PipelineGraph.fragments.PipelineGraphSolidFragment}
+  ${PIPELINE_GRAPH_SOLID_FRAGMENT}
 `;
 
 export const SolidSelector = (props: ISolidSelectorProps) => {

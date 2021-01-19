@@ -17,7 +17,7 @@ import {
 } from 'src/assets/types/AssetQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {MetadataEntry} from 'src/runs/MetadataEntry';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from 'src/runs/MetadataEntry';
 import {titleForRun} from 'src/runs/RunUtils';
 import {Group} from 'src/ui/Group';
 import {MetadataTable} from 'src/ui/MetadataTable';
@@ -226,7 +226,7 @@ const ASSET_QUERY = gql`
       }
     }
   }
-  ${MetadataEntry.fragments.MetadataEntryFragment}
+  ${METADATA_ENTRY_FRAGMENT}
 `;
 
 export interface AssetNumericHistoricalData {

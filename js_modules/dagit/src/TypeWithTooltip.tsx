@@ -29,15 +29,13 @@ export const TypeWithTooltip = (props: ITypeWithTooltipProps) => {
   return <TypeName>{displayName}</TypeName>;
 };
 
-TypeWithTooltip.fragments = {
-  DagsterTypeWithTooltipFragment: gql`
-    fragment DagsterTypeWithTooltipFragment on DagsterType {
-      name
-      displayName
-      description
-    }
-  `,
-};
+export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
+  fragment DagsterTypeWithTooltipFragment on DagsterType {
+    name
+    displayName
+    description
+  }
+`;
 
 const TypeName = styled.code`
   background: #d6ecff;

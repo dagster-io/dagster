@@ -3,7 +3,7 @@ import {Callout, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {ScheduledTicksFragment} from 'src/runs/types/ScheduledTicksFragment';
 import {SchedulerInfoQuery} from 'src/runs/types/SchedulerInfoQuery';
@@ -85,5 +85,5 @@ export const SCHEDULED_TICKS_FRAGMENT = gql`
     ...PythonErrorFragment
   }
   ${REPOSITORY_SCHEDULES_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

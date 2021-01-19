@@ -15,9 +15,9 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {assertUnreachable} from 'src/Util';
-import {RunTable} from 'src/runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from 'src/types/LaunchedRunListQuery';
 import {TickTagFragment} from 'src/types/TickTagFragment';
 import {JobTickStatus, JobType} from 'src/types/globalTypes';
@@ -196,6 +196,6 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
       }
     }
   }
-  ${RunTable.fragments.RunTableRunFragment}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

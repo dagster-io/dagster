@@ -10,7 +10,7 @@ import {copyValue} from 'src/DomUtils';
 import {assertUnreachable} from 'src/Util';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
 
-export const LogRowStructuredContentTable: React.FunctionComponent<{
+export const LogRowStructuredContentTable: React.FC<{
   rows: {label: string; item: JSX.Element}[];
   styles?: CSS.Properties;
 }> = ({rows, styles}) => (
@@ -35,7 +35,7 @@ export const LogRowStructuredContentTable: React.FunctionComponent<{
   </div>
 );
 
-export const MetadataEntries: React.FunctionComponent<{
+export const MetadataEntries: React.FC<{
   entries?: MetadataEntryFragment[];
 }> = ({entries}) => {
   if (!entries || !entries.length) {
@@ -51,122 +51,116 @@ export const MetadataEntries: React.FunctionComponent<{
   );
 };
 
-export class MetadataEntry extends React.Component<{
+export const MetadataEntry: React.FC<{
   entry: MetadataEntryFragment;
-}> {
-  static fragments = {
-    MetadataEntryFragment: gql`
-      fragment MetadataEntryFragment on EventMetadataEntry {
-        __typename
-        label
-        description
-        ... on EventPathMetadataEntry {
-          path
-        }
-        ... on EventJsonMetadataEntry {
-          jsonString
-        }
-        ... on EventUrlMetadataEntry {
-          url
-        }
-        ... on EventTextMetadataEntry {
-          text
-        }
-        ... on EventMarkdownMetadataEntry {
-          mdStr
-        }
-        ... on EventPythonArtifactMetadataEntry {
-          module
-          name
-        }
-        ... on EventFloatMetadataEntry {
-          floatValue
-        }
-        ... on EventIntMetadataEntry {
-          intValue
-        }
-      }
-    `,
-  };
-
-  render() {
-    const {entry} = this.props;
-
-    switch (entry.__typename) {
-      case 'EventPathMetadataEntry':
-        return (
-          <>
-            <MetadataEntryAction
-              title={'Copy to clipboard'}
-              onClick={(e) => copyValue(e, entry.path)}
-            >
-              {entry.path}
-            </MetadataEntryAction>{' '}
-            <Icon
-              icon="clipboard"
-              iconSize={10}
-              color={'#a88860'}
-              style={{verticalAlign: 'initial'}}
-              onClick={(e) => copyValue(e, entry.path)}
-            />
-          </>
-        );
-
-      case 'EventJsonMetadataEntry':
-        return (
-          <MetadataEntryModalAction
-            label={entry.label}
-            copyContent={() => entry.jsonString}
-            content={() => (
-              <div style={{whiteSpace: 'pre-wrap'}}>
-                {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
-              </div>
-            )}
+}> = ({entry}) => {
+  switch (entry.__typename) {
+    case 'EventPathMetadataEntry':
+      return (
+        <>
+          <MetadataEntryAction
+            title={'Copy to clipboard'}
+            onClick={(e) => copyValue(e, entry.path)}
           >
-            [Show JSON]
-          </MetadataEntryModalAction>
-        );
-
-      case 'EventUrlMetadataEntry':
-        return (
-          <>
-            <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="__blank">
-              {entry.url}
-            </MetadataEntryAction>{' '}
-            <a href={entry.url} target="__blank">
-              <Icon icon="link" iconSize={10} color={'#a88860'} />
-            </a>
-          </>
-        );
-      case 'EventTextMetadataEntry':
-        return entry.text;
-      case 'EventMarkdownMetadataEntry':
-        return (
-          <MetadataEntryModalAction
-            label={entry.label}
-            copyContent={() => entry.mdStr}
-            content={() => <ReactMarkdown source={entry.mdStr} />}
-          >
-            [Show Markdown]
-          </MetadataEntryModalAction>
-        );
-      case 'EventPythonArtifactMetadataEntry':
-        return (
-          <PythonArtifactLink
-            name={entry.name}
-            module={entry.module}
-            description={entry.description || ''}
+            {entry.path}
+          </MetadataEntryAction>{' '}
+          <Icon
+            icon="clipboard"
+            iconSize={10}
+            color={'#a88860'}
+            style={{verticalAlign: 'initial'}}
+            onClick={(e) => copyValue(e, entry.path)}
           />
-        );
-      case 'EventFloatMetadataEntry':
-        return entry.floatValue;
-      case 'EventIntMetadataEntry':
-        return entry.intValue;
-      default:
-        return assertUnreachable(entry);
+        </>
+      );
+
+    case 'EventJsonMetadataEntry':
+      return (
+        <MetadataEntryModalAction
+          label={entry.label}
+          copyContent={() => entry.jsonString}
+          content={() => (
+            <div style={{whiteSpace: 'pre-wrap'}}>
+              {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
+            </div>
+          )}
+        >
+          [Show JSON]
+        </MetadataEntryModalAction>
+      );
+
+    case 'EventUrlMetadataEntry':
+      return (
+        <>
+          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="__blank">
+            {entry.url}
+          </MetadataEntryAction>{' '}
+          <a href={entry.url} target="__blank">
+            <Icon icon="link" iconSize={10} color={'#a88860'} />
+          </a>
+        </>
+      );
+    case 'EventTextMetadataEntry':
+      return <>{entry.text}</>;
+    case 'EventMarkdownMetadataEntry':
+      return (
+        <MetadataEntryModalAction
+          label={entry.label}
+          copyContent={() => entry.mdStr}
+          content={() => <ReactMarkdown source={entry.mdStr} />}
+        >
+          [Show Markdown]
+        </MetadataEntryModalAction>
+      );
+    case 'EventPythonArtifactMetadataEntry':
+      return (
+        <PythonArtifactLink
+          name={entry.name}
+          module={entry.module}
+          description={entry.description || ''}
+        />
+      );
+    case 'EventFloatMetadataEntry':
+      return <>{entry.floatValue}</>;
+    case 'EventIntMetadataEntry':
+      return <>{entry.intValue}</>;
+    default:
+      return assertUnreachable(entry);
+  }
+};
+
+export const METADATA_ENTRY_FRAGMENT = gql`
+  fragment MetadataEntryFragment on EventMetadataEntry {
+    __typename
+    label
+    description
+    ... on EventPathMetadataEntry {
+      path
+    }
+    ... on EventJsonMetadataEntry {
+      jsonString
+    }
+    ... on EventUrlMetadataEntry {
+      url
+    }
+    ... on EventTextMetadataEntry {
+      text
+    }
+    ... on EventMarkdownMetadataEntry {
+      mdStr
+    }
+    ... on EventPythonArtifactMetadataEntry {
+      module
+      name
+    }
+    ... on EventFloatMetadataEntry {
+      floatValue
+    }
+    ... on EventIntMetadataEntry {
+      intValue
     }
   }
-}
+`;
 
 const PythonArtifactLink = ({
   name,

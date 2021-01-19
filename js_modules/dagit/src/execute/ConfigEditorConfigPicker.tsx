@@ -16,7 +16,7 @@ import styled from 'styled-components';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {IExecutionSession} from 'src/LocalStorage';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
@@ -497,7 +497,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const CONFIG_PARTITION_SELECTION_QUERY = gql`
@@ -540,5 +540,5 @@ const CONFIG_PARTITION_SELECTION_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

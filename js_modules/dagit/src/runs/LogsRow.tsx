@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {IRunMetadataDict} from 'src/RunMetadataProvider';
 import {setHighlightedGanttChartTime} from 'src/gantt/GanttChart';
 import {CellTruncationProvider} from 'src/runs/CellTruncationProvider';
@@ -14,7 +14,7 @@ import {
   TimestampColumn,
 } from 'src/runs/LogsRowComponents';
 import {LogsRowStructuredContent} from 'src/runs/LogsRowStructuredContent';
-import {MetadataEntry} from 'src/runs/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from 'src/runs/MetadataEntry';
 import {LogsRowStructuredFragment} from 'src/runs/types/LogsRowStructuredFragment';
 import {LogsRowUnstructuredFragment} from 'src/runs/types/LogsRowUnstructuredFragment';
 import {LogLevel} from 'src/types/globalTypes';
@@ -31,117 +31,6 @@ interface StructuredState {
 }
 
 export class Structured extends React.Component<StructuredProps, StructuredState> {
-  static fragments = {
-    LogsRowStructuredFragment: gql`
-      fragment LogsRowStructuredFragment on PipelineRunEvent {
-        __typename
-        ... on MessageEvent {
-          message
-          timestamp
-          level
-          stepKey
-        }
-        ... on StepMaterializationEvent {
-          materialization {
-            assetKey {
-              path
-            }
-            label
-            description
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
-        }
-        ... on PipelineInitFailureEvent {
-          error {
-            ...PythonErrorFragment
-          }
-        }
-        ... on PipelineFailureEvent {
-          pipelineFailureError: error {
-            ...PythonErrorFragment
-          }
-        }
-        ... on ExecutionStepFailureEvent {
-          error {
-            ...PythonErrorFragment
-          }
-          failureMetadata {
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
-        }
-        ... on ExecutionStepInputEvent {
-          inputName
-          typeCheck {
-            label
-            description
-            success
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
-        }
-        ... on ExecutionStepOutputEvent {
-          outputName
-          typeCheck {
-            label
-            description
-            success
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
-        }
-        ... on StepExpectationResultEvent {
-          expectationResult {
-            success
-            label
-            description
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
-        }
-        ... on ObjectStoreOperationEvent {
-          operationResult {
-            op
-            metadataEntries {
-              ...MetadataEntryFragment
-            }
-          }
-        }
-        ... on HandledOutputEvent {
-          outputName
-          managerKey
-        }
-        ... on LoadedInputEvent {
-          inputName
-          managerKey
-          upstreamOutputName
-          upstreamStepKey
-        }
-        ... on EngineEvent {
-          metadataEntries {
-            ...MetadataEntryFragment
-          }
-          engineError: error {
-            ...PythonErrorFragment
-          }
-        }
-        ... on HookErroredEvent {
-          error {
-            ...PythonErrorFragment
-          }
-        }
-      }
-      ${MetadataEntry.fragments.MetadataEntryFragment}
-      ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `,
-  };
-
   onExpand = () => {
     const {node, metadata} = this.props;
 
@@ -195,6 +84,115 @@ export class Structured extends React.Component<StructuredProps, StructuredState
   }
 }
 
+export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
+  fragment LogsRowStructuredFragment on PipelineRunEvent {
+    __typename
+    ... on MessageEvent {
+      message
+      timestamp
+      level
+      stepKey
+    }
+    ... on StepMaterializationEvent {
+      materialization {
+        assetKey {
+          path
+        }
+        label
+        description
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
+    ... on PipelineInitFailureEvent {
+      error {
+        ...PythonErrorFragment
+      }
+    }
+    ... on PipelineFailureEvent {
+      pipelineFailureError: error {
+        ...PythonErrorFragment
+      }
+    }
+    ... on ExecutionStepFailureEvent {
+      error {
+        ...PythonErrorFragment
+      }
+      failureMetadata {
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
+    ... on ExecutionStepInputEvent {
+      inputName
+      typeCheck {
+        label
+        description
+        success
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
+    ... on ExecutionStepOutputEvent {
+      outputName
+      typeCheck {
+        label
+        description
+        success
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
+    ... on StepExpectationResultEvent {
+      expectationResult {
+        success
+        label
+        description
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
+    ... on ObjectStoreOperationEvent {
+      operationResult {
+        op
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+    }
+    ... on HandledOutputEvent {
+      outputName
+      managerKey
+    }
+    ... on LoadedInputEvent {
+      inputName
+      managerKey
+      upstreamOutputName
+      upstreamStepKey
+    }
+    ... on EngineEvent {
+      metadataEntries {
+        ...MetadataEntryFragment
+      }
+      engineError: error {
+        ...PythonErrorFragment
+      }
+    }
+    ... on HookErroredEvent {
+      error {
+        ...PythonErrorFragment
+      }
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
 const StructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
@@ -221,20 +219,6 @@ interface UnstructuredProps {
 }
 
 export class Unstructured extends React.Component<UnstructuredProps> {
-  static fragments = {
-    LogsRowUnstructuredFragment: gql`
-      fragment LogsRowUnstructuredFragment on PipelineRunEvent {
-        __typename
-        ... on MessageEvent {
-          message
-          timestamp
-          level
-          stepKey
-        }
-      }
-    `,
-  };
-
   onExpand = () => {
     showCustomAlert({
       body: <div style={{whiteSpace: 'pre-wrap'}}>{this.props.node.message}</div>,
@@ -249,6 +233,18 @@ export class Unstructured extends React.Component<UnstructuredProps> {
     );
   }
 }
+
+export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
+  fragment LogsRowUnstructuredFragment on PipelineRunEvent {
+    __typename
+    ... on MessageEvent {
+      message
+      timestamp
+      level
+      stepKey
+    }
+  }
+`;
 
 const UnstructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowUnstructuredFragment;

@@ -11,7 +11,7 @@ import {
 } from 'src/gantt/types/RunGroupPanelQuery';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
-import {RunComponentFragments, RunElapsed, RunTime} from 'src/runs/RunUtils';
+import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from 'src/runs/RunUtils';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 
@@ -133,7 +133,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
       }
     }
   }
-  ${RunComponentFragments.RUN_TIME_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
 `;
 
 const RunGroupContainer = styled.div`

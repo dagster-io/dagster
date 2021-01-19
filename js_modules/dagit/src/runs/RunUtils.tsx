@@ -7,7 +7,7 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
 import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
@@ -322,43 +322,42 @@ export const RunElapsed: React.FC<RunTimeProps> = ({run}) => {
   return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
 };
 
-export const RunComponentFragments = {
-  RUN_TIME_FRAGMENT: gql`
-    fragment RunTimeFragment on PipelineRun {
-      id
-      status
-      stats {
-        ... on PipelineRunStatsSnapshot {
-          id
-          startTime
-          endTime
-        }
-        ... on PythonError {
-          ...PythonErrorFragment
-        }
+export const RUN_TIME_FRAGMENT = gql`
+  fragment RunTimeFragment on PipelineRun {
+    id
+    status
+    stats {
+      ... on PipelineRunStatsSnapshot {
+        id
+        startTime
+        endTime
+      }
+      ... on PythonError {
+        ...PythonErrorFragment
       }
     }
-    ${PythonErrorInfo.fragments.PythonErrorFragment}
-  `,
-  RUN_ACTION_MENU_FRAGMENT: gql`
-    fragment RunActionMenuFragment on PipelineRun {
-      id
-      runId
-      rootRunId
-      pipelineName
-      solidSelection
-      pipelineSnapshotId
-      mode
-      canTerminate
-      tags {
-        key
-        value
-      }
-      status
-      repositoryOrigin {
-        ...RepositoryOriginFragment
-      }
+  }
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const RUN_ACTION_MENU_FRAGMENT = gql`
+  fragment RunActionMenuFragment on PipelineRun {
+    id
+    runId
+    rootRunId
+    pipelineName
+    solidSelection
+    pipelineSnapshotId
+    mode
+    canTerminate
+    tags {
+      key
+      value
     }
-    ${REPOSITORY_ORIGIN_FRAGMENT}
-  `,
-};
+    status
+    repositoryOrigin {
+      ...RepositoryOriginFragment
+    }
+  }
+  ${REPOSITORY_ORIGIN_FRAGMENT}
+`;

@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
-import {TypeList} from 'src/typeexplorer/TypeList';
+import {TypeList, TYPE_LIST_FRAGMENT} from 'src/typeexplorer/TypeList';
 import {TypeListContainerQuery} from 'src/typeexplorer/types/TypeListContainerQuery';
 import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
 
@@ -47,5 +47,5 @@ const TYPE_LIST_CONTAINER_QUERY = gql`
     }
   }
 
-  ${TypeList.fragments.TypeListFragment}
+  ${TYPE_LIST_FRAGMENT}
 `;
