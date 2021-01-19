@@ -1,4 +1,4 @@
-import { DynamicMetaTags } from 'components/MetaTags';
+import {DynamicMetaTags} from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
@@ -70,3 +70,9 @@ in the left-hand navigation pane.
 Here, we can turn sensors on and off, and also see past executions of each sensor.
 
 ![Sensors in Dagit](/assets/images/overview/schedules_partitions/sensors.png)
+
+### Testing sensors on the command-line
+
+The `dagster` command-line tool contains a number of options to manage sensors. You can view the set of known sensors, turn them on and off, and preview the set of runs that will be requested in the next evaluation of the sensor.
+
+You can view the full set of sensor command-line options by running `dagster sensor --help`.

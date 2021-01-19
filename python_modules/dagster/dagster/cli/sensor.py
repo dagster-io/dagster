@@ -100,15 +100,16 @@ def check_repo_and_scheduler(repository, instance):
 
 
 def extract_sensor_name(sensor_name):
-    if sensor_name and not isinstance(sensor_name, str):
-        if len(sensor_name) == 1:
-            return sensor_name[0]
-        else:
-            check.failed(
-                "Can only handle zero or one sensor args. Got {sensor_name}".format(
-                    sensor_name=repr(sensor_name)
-                )
-            )
+    if not sensor_name:
+        raise click.UsageError("Missing sensor name argument")
+
+    if isinstance(sensor_name, str):
+        return sensor_name
+
+    if len(sensor_name) == 1:
+        return sensor_name[0]
+
+    raise click.UsageError("Missing sensor name argument")
 
 
 @click.command(
@@ -181,13 +182,8 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 @click.option("--start-all", help="start all sensors", is_flag=True, default=False)
 @repository_target_argument
 def sensor_start_command(sensor_name, start_all, **kwargs):
-    sensor_name = extract_sensor_name(sensor_name)
-    if sensor_name is None and start_all is False:
-        print(  # pylint: disable=print-call
-            "Noop: dagster sensor start was called without any arguments specifying which "
-            "sensors to start. Pass a sensor name or the --start-all flag to start sensors."
-        )
-        return
+    if not start_all:
+        sensor_name = extract_sensor_name(sensor_name)
     return execute_start_command(sensor_name, start_all, kwargs, click.echo)
 
 

@@ -57,8 +57,8 @@ def test_sensors_start_empty(gen_sensor_args):
             _instance.return_value = instance
             result = runner.invoke(sensor_start_command, cli_args,)
 
-            assert result.exit_code == 0
-            assert "Noop: dagster sensor start was called without any arguments" in result.output
+            assert result.exit_code == 2
+            assert "Missing sensor name argument" in result.output
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
