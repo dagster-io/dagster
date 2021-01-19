@@ -144,6 +144,21 @@ See also: :py:class:`dagster_aws.S3ComputeLogManager`.
 
 ----
 
+Memoizable IO Manager (Experimental)
+-------------------
+
+.. currentmodule:: dagster.core.storage.memoizable_io_manager
+
+.. autoclass:: MemoizableIOManager
+
+.. currentmodule:: dagster.core.storage.memoizable_io_manager
+
+.. autofunction:: versioned_filesystem_io_manager
+
+See also: :py:class:`dagster.IOManager`.
+
+----
+
 Run launcher
 ------------
 .. currentmodule:: dagster.core.launcher
