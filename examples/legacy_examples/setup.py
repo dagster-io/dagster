@@ -52,7 +52,7 @@ setup(
         "airflow": ["dagster_airflow", "docker-compose==1.23.2"],
         "test": [
             # See https://github.com/dagster-io/dagster/issues/2701
-            "apache-airflow==1.10.10",
+            "apache-airflow==1.10.14",
             "docker-compose==1.23.2",
         ],
     },
