@@ -71,6 +71,7 @@ class StepBuilder:
             "no-include-email": True,
             "account-ids": AWS_ACCOUNT_ID,
             "region": AWS_ECR_REGION,
+            "retries": 2,
         }
         self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
