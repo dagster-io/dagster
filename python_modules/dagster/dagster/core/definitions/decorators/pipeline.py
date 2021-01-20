@@ -1,4 +1,5 @@
 from functools import update_wrapper
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from dagster import check
 from dagster.utils.backcompat import experimental_arg_warning
@@ -14,16 +15,16 @@ from ..preset import PresetDefinition
 class _Pipeline:
     def __init__(
         self,
-        name=None,
-        mode_defs=None,
-        preset_defs=None,
-        description=None,
-        tags=None,
-        hook_defs=None,
-        input_defs=None,
-        output_defs=None,
-        config_schema=None,
-        config_fn=None,
+        name: Optional[str] = None,
+        mode_defs: Optional[List[ModeDefinition]] = None,
+        preset_defs: Optional[List[PresetDefinition]] = None,
+        description: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        hook_defs: Optional[Set[HookDefinition]] = None,
+        input_defs: Optional[List[InputDefinition]] = None,
+        output_defs: Optional[List[OutputDefinition]] = None,
+        config_schema: Optional[Dict[str, Any]] = None,
+        config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
@@ -41,7 +42,7 @@ class _Pipeline:
         self.config_schema = config_schema
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
 
-    def __call__(self, fn):
+    def __call__(self, fn: Callable[..., Any]) -> PipelineDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -86,17 +87,17 @@ class _Pipeline:
 
 
 def pipeline(
-    name=None,
-    description=None,
-    mode_defs=None,
-    preset_defs=None,
-    tags=None,
-    hook_defs=None,
-    input_defs=None,
-    output_defs=None,
-    config_schema=None,
-    config_fn=None,
-):
+    name: Union[Callable[..., Any], Optional[str]] = None,
+    description: Optional[str] = None,
+    mode_defs: Optional[List[ModeDefinition]] = None,
+    preset_defs: Optional[List[PresetDefinition]] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    hook_defs: Optional[Set[HookDefinition]] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_defs: Optional[List[OutputDefinition]] = None,
+    config_schema: Optional[Dict[str, Any]] = None,
+    config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+) -> Union[PipelineDefinition, _Pipeline]:
     """Create a pipeline with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
