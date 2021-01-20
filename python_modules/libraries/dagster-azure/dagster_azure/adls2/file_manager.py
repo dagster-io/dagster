@@ -13,29 +13,36 @@ from dagster.core.storage.file_manager import (
 
 @usable_as_dagster_type
 class ADLS2FileHandle(FileHandle):
-    def __init__(self, account, file_system, key):
+    """A reference to a file on ADLS2."""
+
+    def __init__(self, account: str, file_system: str, key: str):
         self._account = check.str_param(account, "account")
         self._file_system = check.str_param(file_system, "file_system")
         self._key = check.str_param(key, "key")
 
     @property
     def account(self):
+        """str: The name of the ADLS2 account."""
         return self._account
 
     @property
     def file_system(self):
+        """str: The name of the ADLS2 file system."""
         return self._file_system
 
     @property
     def key(self):
+        """str: The ADLS2 key."""
         return self._key
 
     @property
     def path_desc(self):
+        """str: The file's ADLS2 URL."""
         return self.adls2_path
 
     @property
     def adls2_path(self):
+        """str: The file's ADLS2 URL."""
         return "adfss://{file_system}@{account}.dfs.core.windows.net/{key}".format(
             file_system=self.file_system, account=self.account, key=self.key,
         )

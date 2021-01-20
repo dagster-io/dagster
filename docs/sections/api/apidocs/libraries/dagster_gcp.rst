@@ -42,5 +42,11 @@ GCS
 .. autodata:: gcs_resource
   :annotation: ResourceDefinition
 
+.. autoclass:: GCSFileHandle
+  :members:
+
+.. autodata:: gcs_file_manager
+  :annotation: ResourceDefinition
+
 .. autodata:: dagster_gcp.gcs.gcs_pickle_io_manager
   :annotation: IOManagerDefinition

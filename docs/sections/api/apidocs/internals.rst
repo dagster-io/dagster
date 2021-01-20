@@ -36,7 +36,7 @@ Executors
 
 ----
 
-System Storage
+File Manager
 --------------
 
 .. currentmodule:: dagster.core.storage.file_manager
@@ -44,7 +44,10 @@ System Storage
 .. autoclass:: FileManager
    :members:
 
-.. autoclass:: LocalFileManager
+.. currentmodule:: dagster
+
+.. autodata:: local_file_manager
+   :annotation: ResourceDefinition
 
 ----
 

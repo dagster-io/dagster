@@ -13,24 +13,30 @@ from dagster.core.storage.file_manager import (
 
 @usable_as_dagster_type
 class S3FileHandle(FileHandle):
-    def __init__(self, s3_bucket, s3_key):
+    """A reference to a file on S3."""
+
+    def __init__(self, s3_bucket: str, s3_key: str):
         self._s3_bucket = check.str_param(s3_bucket, "s3_bucket")
         self._s3_key = check.str_param(s3_key, "s3_key")
 
     @property
-    def s3_bucket(self):
+    def s3_bucket(self) -> str:
+        """str: The name of the S3 bucket."""
         return self._s3_bucket
 
     @property
-    def s3_key(self):
+    def s3_key(self) -> str:
+        """str: The S3 key."""
         return self._s3_key
 
     @property
-    def path_desc(self):
+    def path_desc(self) -> str:
+        """str: The file's S3 URL."""
         return self.s3_path
 
     @property
-    def s3_path(self):
+    def s3_path(self) -> str:
+        """str: The file's S3 URL."""
         return "s3://{bucket}/{key}".format(bucket=self.s3_bucket, key=self.s3_key)
 
 

@@ -4,6 +4,7 @@ import shutil
 import uuid
 from abc import ABC, abstractmethod, abstractproperty
 from contextlib import contextmanager
+from typing import BinaryIO, TextIO, Union
 
 from dagster import check
 from dagster.config import Field
@@ -19,102 +20,102 @@ from .temp_file_manager import TempfileManager
 # pylint: disable=no-init
 @usable_as_dagster_type
 class FileHandle(ABC):
-    """A file handle is a reference to a file.
+    """A reference to a file as manipulated by a FileManager
 
-    Files can be be resident in the local file system, an object store, or any arbitrary place
-    where a file can be stored.
+    Subclasses may handle files that are resident on the local file system, in an object store, or
+    in any arbitrary place where a file can be stored.
 
     This exists to handle the very common case where you wish to write a computation that reads,
-    transforms, and writes files, but where the same code can work in local development as well
-    as in a cluster where the files would be stored in globally available object store such as s3.
+    transforms, and writes files, but where you also want the same code to work in local development
+    as well as on a cluster where the files will be stored in a globally available object store
+    such as S3.
     """
 
     @abstractproperty
-    def path_desc(self):
-        """ This is a properly to return a *representation* of the path for
-        diplay purposes. Should not be used in a programatically meaningful
-        way beyond display"""
+    def path_desc(self) -> str:
+        """A representation of the file path for display purposes only."""
         raise NotImplementedError()
 
 
 @usable_as_dagster_type
 class LocalFileHandle(FileHandle):
-    def __init__(self, path):
+    """A reference to a file on a local filesystem."""
+
+    def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
     @property
-    def path(self):
+    def path(self) -> str:
+        """The file's path."""
         return self._path
 
     @property
-    def path_desc(self):
+    def path_desc(self) -> str:
+        """A representation of the file path for display purposes only."""
         return self._path
 
 
 class FileManager(ABC):  # pylint: disable=no-init
-    """
-    The base class for all file managers in dagster. The file manager is a user-facing
-    abstraction that allows a Dagster user to pass files in between solids, and the file
-    manager is responsible for marshalling those files to and from the nodes where
-    the actual Dagster computation occur.
+    """Base class for all file managers in dagster.
+    
+    The file manager is an interface that can be implemented by resources to provide abstract
+    access to a file system such as local disk, S3, or other cloud storage.
 
-    If the user does their file manipulations using this abstraction, it is straightforward to write
-    a pipeline that executes both:
+    For examples of usage, see the documentation of the concrete file manager implementations.
 
-        (a) in a local development environment with no external dependencies, where files are
-            available directly on the filesystem and
-        (b) in a cluster environment where those files would need to be on a distributed filesystem
-            (e.g. hdfs) or an object store (s3).
-
-    The business logic remains constant and a new implementation of the file manager is swapped out
-    based on the system storage specified by the operator.
+    In 0.10.x, this abstraction will be deprecated in favor of the :py:class:`~dagster.IOManager`.
     """
 
     @abstractmethod
-    def copy_handle_to_local_temp(self, file_handle):
-        """
-        Take a file handle and make it available as a local temp file. Returns a path.
+    def copy_handle_to_local_temp(self, file_handle: FileHandle) -> str:
+        """Copy a file represented by a file handle to a temp file.
 
-        In an implementation like an ``S3FileManager``, this would download the file from s3
-        to local filesystem, to files created (typically) by the python tempfile module.
+        In an implementation built around an object store such as S3, this method would be expected
+        to download the file from S3 to local filesystem in a location assigned by the standard
+        library's :py:mod:`python:tempfile` module.
 
-        These temp files are *not* guaranteed to be able across solid boundaries. For
-        files that must work across solid boundaries, use the read, read_data, write, and
-        write_data methods on this class.
+        Temp files returned by this method are *not* guaranteed to be reusable across solid
+        boundaries. For files that must be available across solid boundaries, use the
+        :py:meth:`~dagster.core.storage.file_manager.FileManager.read`,
+        :py:meth:`~dagster.core.storage.file_manager.FileManager.read_data`,
+        :py:meth:`~dagster.core.storage.file_manager.FileManager.write`, and 
+        :py:meth:`~dagster.core.storage.file_manager.FileManager.write_data` methods.
 
         Args:
-            file_handle (FileHandle): The file handle to make available as a local temp file.
+            file_handle (FileHandle): The handle to the file to make available as a local temp file.
 
         Returns:
-            str: Path to the temp file.
+            str: Path to the local temp file.
         """
         raise NotImplementedError()
 
     @abstractmethod
     def delete_local_temp(self):
-        """
-        Delete all the local temporary files created by ``copy_handle_to_local_temp``. This should
-        typically only be called by framework implementors.
+        """Delete all local temporary files created by previous calls to
+        :py:meth:`~dagster.core.storage.file_manager.FileManager.copy_handle_to_local_temp`.
+        
+        Should typically only be called by framework implementors.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def read(self, file_handle, mode="rb"):
-        """Return a file-like stream for the file handle. Defaults to binary mode read.
+    def read(self, file_handle: FileHandle, mode: str = "rb") -> Union[TextIO, BinaryIO]:
+        """Return a file-like stream for the file handle.
+        
         This may incur an expensive network call for file managers backed by object stores
-        such as s3.
+        such as S3.
 
         Args:
             file_handle (FileHandle): The file handle to make available as a stream.
-            mode (str): The mode in which to open the file. Default: ``'rb'``.
+            mode (str): The mode in which to open the file. Default: ``"rb"``.
 
         Returns:
-            Union[IOBytes, IOString]: A file-like stream.
+            Union[TextIO, BinaryIO]: A file-like stream.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def read_data(self, file_handle):
+    def read_data(self, file_handle: FileHandle) -> bytes:
         """Return the bytes for a given file handle. This may incur an expensive network
         call for file managers backed by object stores such as s3.
 
@@ -127,19 +128,15 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write(self, file_obj, mode="wb", ext=None):
-        """Write the bytes contained within the given ``file_obj`` into the file manager.
-        This returns a :py:class:`~dagster.FileHandle` corresponding to the newly created file.
-
-        File managers typically return a subclass of :py:class:`~dagster.FileHandle` appropriate for
-        their implementation: e.g., a
-        :py:class:`~dagster.core.storage.file_manager.LocalFileManager` returns a
-        :py:class:`~dagster.LocalFileHandle`, an :py:class:`~dagster_aws.S3FileManager` returns an
-        :py:class:`~dagster_aws.S3FileHandle`, and so forth.
+    def write(
+        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: str = None
+    ) -> FileHandle:
+        """Write the bytes contained within the given file object into the file manager.
 
         Args:
-            file_obj (Union[IOBytes, IOString]): A file-like object.
-            mode (Optional[str]): The mode in which to write the file into storage. Default: ``'wb'``.
+            file_obj (Union[TextIO, StringIO]): A file-like object.
+            mode (Optional[str]): The mode in which to write the file into the file manager.
+                Default: ``"wb"``.
             ext (Optional[str]): For file managers that support file extensions, the extension with
                 which to write the file. Default: ``None``.
 
@@ -149,11 +146,11 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write_data(self, data, ext=None):
-        """Write raw bytes into storage.
+    def write_data(self, data: bytes, ext: str = None) -> FileHandle:
+        """Write raw bytes into the file manager.
 
         Args:
-            data (bytes): The bytes to write into storage.
+            data (bytes): The bytes to write into the file manager.
             ext (Optional[str]): For file managers that support file extensions, the extension with
                 which to write the file. Default: ``None``.
 
@@ -165,6 +162,46 @@ class FileManager(ABC):  # pylint: disable=no-init
 
 @resource(config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)})
 def local_file_manager(init_context):
+    """FileManager that provides abstract access to a local filesystem.
+    
+    Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
+
+    Examples:
+
+    .. code-block:: python
+
+        import tempfile
+
+        from dagster import ModeDefinition, local_file_manager, pipeline, solid
+
+
+        @solid(required_resource_keys={"file_manager"})
+        def write_files(context):
+            fh_1 = context.resources.file_manager.write_data(b"foo")
+
+            with tempfile.NamedTemporaryFile("w+") as fd:
+                fd.write("bar")
+                fd.seek(0)
+                fh_2 = context.resources.file_manager.write(fd, mode="w", ext=".txt")
+
+            return (fh_1, fh_2)
+
+
+        @solid(required_resource_keys={"file_manager"})
+        def read_files(context, file_handles):
+            fh_1, fh_2 = file_handles
+            assert context.resources.file_manager.read_data(fh_2) == b"bar"
+            fd = context.resources.file_manager.read(fh_2, mode="r")
+            assert fd.read() == "foo"
+            fd.close()
+
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+        def files_pipeline():
+            read_files(write_files())
+
+    """
+
     return LocalFileManager(init_context.resource_config["base_dir"])
 
 

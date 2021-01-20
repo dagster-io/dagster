@@ -14,24 +14,30 @@ from google.cloud import storage
 
 @usable_as_dagster_type
 class GCSFileHandle(FileHandle):
-    def __init__(self, gcs_bucket, gcs_key):
+    """A reference to a file on GCS."""
+
+    def __init__(self, gcs_bucket: str, gcs_key: str):
         self._gcs_bucket = check.str_param(gcs_bucket, "gcs_bucket")
         self._gcs_key = check.str_param(gcs_key, "gcs_key")
 
     @property
-    def gcs_bucket(self):
+    def gcs_bucket(self) -> str:
+        """str: The name of the GCS bucket."""
         return self._gcs_bucket
 
     @property
-    def gcs_key(self):
+    def gcs_key(self) -> str:
+        """str: The GCS key."""
         return self._gcs_key
 
     @property
-    def path_desc(self):
+    def path_desc(self) -> str:
+        """str: The file's GCS URL."""
         return self.gcs_path
 
     @property
-    def gcs_path(self):
+    def gcs_path(self) -> str:
+        """str: The file's GCS URL."""
         return "gs://{bucket}/{key}".format(bucket=self.gcs_bucket, key=self.gcs_key)
 
 
