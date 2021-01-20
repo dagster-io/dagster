@@ -7,7 +7,10 @@ import {
   SidebarSolidDefinition,
   SIDEBAR_SOLID_DEFINITION_FRAGMENT,
 } from 'src/SidebarSolidDefinition';
-import {SidebarSolidInvocation} from 'src/SidebarSolidInvocation';
+import {
+  SidebarSolidInvocation,
+  SIDEBAR_SOLID_INVOCATION_FRAGMENT,
+} from 'src/SidebarSolidInvocation';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {SidebarTabbedContainerSolidQuery} from 'src/types/SidebarTabbedContainerSolidQuery';
 import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
@@ -94,6 +97,6 @@ const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
       }
     }
   }
-  ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
+  ${SIDEBAR_SOLID_INVOCATION_FRAGMENT}
   ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
 `;
