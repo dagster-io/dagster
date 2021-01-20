@@ -96,6 +96,7 @@ export const SensorTickHistory: React.FC<{
     ...repoAddressToSelector(repoAddress),
     sensorName: sensor.name,
   };
+
   const {data} = useQuery<SensorTickHistoryQuery>(SENSOR_TICK_HISTORY_QUERY, {
     variables: {
       sensorSelector,
@@ -269,6 +270,7 @@ const TickHistoryGraph: React.FC<{
   onHighlightRunIds: (runIds: string[]) => void;
 }> = ({ticks, selectedTick, onSelectTick, onHighlightRunIds}) => {
   const [bounds, setBounds] = React.useState<Bounds | null>(null);
+  const [hoveredTick, setHoveredTick] = React.useState<JobHistoryFragment_ticks | undefined>();
   const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
   const graphData: ChartComponentProps['data'] = {
     labels: ['ticks'],
@@ -338,6 +340,7 @@ const TickHistoryGraph: React.FC<{
       ? dateFormat(bounds.min)
       : `${dateFormat(bounds.min)} - ${dateFormat(bounds.max)}`
     : undefined;
+
   const options: ChartComponentProps['options'] = {
     title: {
       display: !!title,
@@ -369,35 +372,44 @@ const TickHistoryGraph: React.FC<{
     tooltips: {
       displayColors: false,
       callbacks: {
-        label: function (tooltipItem, _data) {
-          if (tooltipItem.index === undefined || tooltipItem.index === ticks.length) {
+        title: function (_item, _data) {
+          if (!hoveredTick) {
             return '';
           }
-          const tick = ticks[tooltipItem.index];
-          if (tick.status === JobTickStatus.SKIPPED && tick.skipReason) {
-            return snippet(tick.skipReason);
+          return moment(hoveredTick.timestamp * 1000).format('MMM D, YYYY h:mm:ss A z');
+        },
+        label: function (_tooltipItem, _data) {
+          if (!hoveredTick) {
+            return '';
           }
-          if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
-            return tick.runIds;
+          if (hoveredTick.status === JobTickStatus.SKIPPED && hoveredTick.skipReason) {
+            return snippet(hoveredTick.skipReason);
           }
-          if (tick.status == JobTickStatus.FAILURE && tick.error?.message) {
-            return snippet(tick.error.message);
+          if (hoveredTick.status === JobTickStatus.SUCCESS && hoveredTick.runIds.length) {
+            return hoveredTick.runIds;
+          }
+          if (hoveredTick.status == JobTickStatus.FAILURE && hoveredTick.error?.message) {
+            return snippet(hoveredTick.error.message);
           }
           return '';
         },
       },
     },
+
     onHover: (event: MouseEvent, activeElements: any[]) => {
       if (event?.target instanceof HTMLElement) {
         event.target.style.cursor = activeElements.length ? 'pointer' : 'default';
       }
+
       if (activeElements.length && activeElements[0] && activeElements[0]._index < ticks.length) {
         const tick = ticks[activeElements[0]._index];
+        setHoveredTick(tick);
         onHighlightRunIds(tick.runIds || []);
       } else {
         onHighlightRunIds([]);
       }
     },
+
     onClick: (_event: MouseEvent, activeElements: any[]) => {
       if (!activeElements.length) {
         return;
