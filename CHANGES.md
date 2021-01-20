@@ -79,6 +79,23 @@ the 0.10.0 release._
 * The `pipeline_def` property has been removed from the `InitResourceContext` passed to functions
   decorated with `@resource`.
 
+**Dagstermill**
+* If you are using `define_dagstermill_solid` with the `output_notebook` parameter set to `True`,
+  you will now need to provide a file manager resource (subclass of
+  `dagster.core.storage.FileManager`) on your pipeline mode under the resource key `"file_manager"`,
+  e.g.:
+
+  ```python
+  from dagster import ModeDefinition, local_file_manager, pipeline
+  from dagstermill import define_dagstermill_solid
+
+  my_dagstermill_solid = define_dagstermill_solid("my_dagstermill_solid", output_notebook=True, ...)
+
+  @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+  def my_dagstermill_pipeline():
+      my_dagstermill_solid(...)
+  ```
+
 **Helm Chart**
 
 * The schema for the `scheduler` values in the helm chart has changed. Instead of a simple toggle
