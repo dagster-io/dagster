@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any, Callable, Dict, Optional, Union
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
@@ -7,7 +8,7 @@ from dagster.primitive_mapping import is_supported_config_python_builtin
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-def is_callable_valid_config_arg(config):
+def is_callable_valid_config_arg(config: Dict[str, Any]) -> bool:
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 
@@ -28,7 +29,11 @@ class ConfigMapping(namedtuple("_ConfigMapping", "config_fn config_schema")):
         config_schema (ConfigSchema): The schema of the composite config.
     """
 
-    def __new__(cls, config_fn, config_schema=None):
+    def __new__(
+        cls,
+        config_fn: Callable[[Union[Any, Dict[str, Any]]], Union[Any, Dict[str, Any]]],
+        config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    ):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, "config_fn"),

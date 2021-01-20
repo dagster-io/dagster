@@ -1,33 +1,42 @@
 from abc import ABC, abstractmethod, abstractproperty
+from typing import Any, Callable, Dict, Optional, Union
 
-from dagster import check
+from dagster import Field, check
 from dagster.config.evaluate_value_result import EvaluateValueResult
+from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
+    IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
 
 
 class ConfigurableDefinition(ABC):
     @abstractproperty
-    def config_schema(self):
+    def config_schema(self) -> IDefinitionConfigSchema:
         raise NotImplementedError()
 
     @property
-    def has_config_field(self):
-        return self.config_schema and bool(self.config_schema.as_field())
+    def has_config_field(self) -> bool:
+        return self.config_schema is not None and bool(self.config_schema.as_field())
 
     @property
-    def config_field(self):
+    def config_field(self) -> Optional[Field]:
         return None if not self.config_schema else self.config_schema.as_field()
 
     @abstractmethod
-    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+    def copy_for_configured(
+        self,
+        name: Optional[str],
+        description: Optional[str],
+        config_schema: IDefinitionConfigSchema,
+        config_or_config_fn: Union[Any, Callable[[Any], Any]],
+    ):
         raise NotImplementedError()
 
-    def apply_config_mapping(self, config):
+    def apply_config_mapping(self, config: Any) -> EvaluateValueResult:
         """
         Applies user-provided config mapping functions to the given configuration and validates the
         results against the respective config schema.
@@ -53,7 +62,13 @@ class ConfigurableDefinition(ABC):
             else EvaluateValueResult.for_value(config)
         )
 
-    def configured(self, config_or_config_fn, config_schema=None, name=None, description=None):
+    def configured(
+        self,
+        config_or_config_fn: Any,
+        config_schema: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -81,7 +96,12 @@ class ConfigurableDefinition(ABC):
 
         return self.copy_for_configured(name, description, new_config_schema, config_or_config_fn)
 
-    def _name_for_configured_node(self, old_name, new_name, original_config_or_config_fn):
+    def _name_for_configured_node(
+        self,
+        old_name: Optional[str],
+        new_name: Optional[str],
+        original_config_or_config_fn: Optional[Callable],
+    ) -> Optional[str]:
         fn_name = (
             original_config_or_config_fn.__name__
             if callable(original_config_or_config_fn)
@@ -100,7 +120,7 @@ class ConfigurableDefinition(ABC):
         return name
 
 
-def _check_configurable_param(configurable):
+def _check_configurable_param(configurable: ConfigurableDefinition) -> Any:
     from dagster.core.definitions.composition import CallableNode
 
     check.param_invariant(
@@ -128,7 +148,11 @@ def _check_configurable_param(configurable):
     )
 
 
-def configured(configurable, config_schema=None, **kwargs):
+def configured(
+    configurable: ConfigurableDefinition,
+    config_schema: Optional[Dict[str, Any]] = None,
+    **kwargs: Any,
+):
     """
     A decorator that makes it easy to create a function-configured version of an object.
     The following definition types can be configured using this function:
