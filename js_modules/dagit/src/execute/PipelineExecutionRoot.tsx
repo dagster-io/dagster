@@ -11,14 +11,13 @@ import {
   useStorage,
 } from 'src/LocalStorage';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
+import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from 'src/configeditor/ConfigEditorUtils';
 import {
-  ExecutionSessionContainer,
-  ExecutionSessionContainerError,
-  ExecutionSessionContainerLoading,
-  EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT,
-  EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT,
-  RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT,
-} from 'src/execute/ExecutionSessionContainer';
+  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
+  CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
+} from 'src/execute/ConfigEditorConfigPicker';
+import {ExecutionSessionContainerError} from 'src/execute/ExecutionSessionContainerError';
+import {ExecutionSessionContainerLoading} from 'src/execute/ExecutionSessionContainerLoading';
 import {ExecutionTabs} from 'src/execute/ExecutionTabs';
 import {
   PipelineExecutionConfigSchemaQuery,
@@ -32,6 +31,8 @@ import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+
+const ExecutionSessionContainer = React.lazy(() => import('src/execute/ExecutionSessionContainer'));
 
 interface Props {
   pipelinePath: string;
@@ -149,17 +150,19 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
               }
 
               return (
-                <ExecutionSessionContainer
-                  data={data}
-                  onSaveSession={(changes) => onSaveSession(data.current, changes)}
-                  onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
-                  pipeline={pipelineOrError}
-                  partitionSets={partitionSetsOrError}
-                  runConfigSchemaOrError={configSchemaOrError}
-                  currentSession={session}
-                  pipelineSelector={pipelineSelector}
-                  repoAddress={repoAddress}
-                />
+                <React.Suspense fallback={<div />}>
+                  <ExecutionSessionContainer
+                    data={data}
+                    onSaveSession={(changes) => onSaveSession(data.current, changes)}
+                    onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
+                    pipeline={pipelineOrError}
+                    partitionSets={partitionSetsOrError}
+                    runConfigSchemaOrError={configSchemaOrError}
+                    currentSession={session}
+                    pipelineSelector={pipelineSelector}
+                    repoAddress={repoAddress}
+                  />
+                </React.Suspense>
               );
             }}
           </Query>
@@ -168,6 +171,38 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
     </>
   );
 };
+
+const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
+  fragment ExecutionSessionContainerPipelineFragment on Pipeline {
+    id
+    ...ConfigEditorGeneratorPipelineFragment
+    modes {
+      name
+      description
+    }
+  }
+  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+`;
+
+const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
+  fragment ExecutionSessionContainerPartitionSetsFragment on PartitionSets {
+    ...ConfigEditorGeneratorPartitionSetsFragment
+  }
+  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
+`;
+
+const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
+  fragment ExecutionSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
+    __typename
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      message
+    }
+  }
+  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
+`;
 
 const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query PipelineExecutionRootQuery(

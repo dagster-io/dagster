@@ -21,23 +21,14 @@ import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
 import {debounce} from 'src/Util';
+import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
 import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
 } from 'src/configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
-import {
-  ConfigEditorRunConfigSchemaFragment,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes,
-} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
 import {FontFamily} from 'src/ui/styles';
-
-export function isHelpContextEqual(
-  prev: ConfigEditorHelpContext | null,
-  next: ConfigEditorHelpContext | null,
-) {
-  return (prev && prev.type.key) === (next && next.type.key);
-}
 
 interface ConfigEditorProps {
   configCode: string;
@@ -98,10 +89,6 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
   background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
 }
 `;
-
-export interface ConfigEditorHelpContext {
-  type: ConfigEditorRunConfigSchemaFragment_allConfigTypes;
-}
 
 export class ConfigEditor extends React.Component<ConfigEditorProps> {
   _editor?: Editor;

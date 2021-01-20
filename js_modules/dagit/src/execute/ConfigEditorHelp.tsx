@@ -3,7 +3,8 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ConfigTypeSchema, TypeData} from 'src/ConfigTypeSchema';
-import {ConfigEditorHelpContext, isHelpContextEqual} from 'src/configeditor/ConfigEditor';
+import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
+import {isHelpContextEqual} from 'src/configeditor/isHelpContextEqual';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;

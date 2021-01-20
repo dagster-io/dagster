@@ -1,5 +1,5 @@
 import {ApolloClient, gql, ApolloConsumer} from '@apollo/client';
-import {Button, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -9,27 +9,22 @@ import {showCustomAlert} from 'src/CustomAlertProvider';
 import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/LocalStorage';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {SecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
+import {ConfigEditor} from 'src/configeditor/ConfigEditor';
+import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
 import {
-  ConfigEditor,
-  ConfigEditorHelpContext,
-  isHelpContextEqual,
-} from 'src/configeditor/ConfigEditor';
-import {
-  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from 'src/configeditor/ConfigEditorUtils';
+import {isHelpContextEqual} from 'src/configeditor/isHelpContextEqual';
 import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {
-  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
-  CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
-  ConfigEditorConfigPicker,
-} from 'src/execute/ConfigEditorConfigPicker';
+import {ConfigEditorConfigPicker} from 'src/execute/ConfigEditorConfigPicker';
 import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
 import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
+import {LoadingOverlay} from 'src/execute/LoadingOverlay';
 import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from 'src/execute/RunPreview';
+import {SessionSettingsBar} from 'src/execute/SessionSettingsBar';
 import {SolidSelector} from 'src/execute/SolidSelector';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {scaffoldPipelineConfig} from 'src/execute/scaffoldType';
@@ -45,7 +40,6 @@ import {PipelineSelector} from 'src/types/globalTypes';
 import {RepoAddress} from 'src/workspace/types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
-const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
 const LOADING_RUN_PREVIEW = `Checking config...`;
@@ -73,7 +67,7 @@ interface IExecutionSessionContainerState {
   tagEditorOpen: boolean;
 }
 
-export class ExecutionSessionContainer extends React.Component<
+class ExecutionSessionContainer extends React.Component<
   IExecutionSessionContainerProps,
   IExecutionSessionContainerState
 > {
@@ -461,74 +455,8 @@ export class ExecutionSessionContainer extends React.Component<
   }
 }
 
-export const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
-  fragment ExecutionSessionContainerPipelineFragment on Pipeline {
-    id
-    ...ConfigEditorGeneratorPipelineFragment
-    modes {
-      name
-      description
-    }
-  }
-  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
-`;
-
-export const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
-  fragment ExecutionSessionContainerPartitionSetsFragment on PartitionSets {
-    ...ConfigEditorGeneratorPartitionSetsFragment
-  }
-  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
-`;
-
-export const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
-  fragment ExecutionSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
-    __typename
-    ... on RunConfigSchema {
-      ...ConfigEditorRunConfigSchemaFragment
-    }
-    ... on ModeNotFoundError {
-      message
-    }
-  }
-  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
-`;
-
-// Normally we'd try to make the execution session container props optional and render these empty / error
-// states in the same component, but it's a lot less complicated to render them separately here.
-
-export const ExecutionSessionContainerError: React.FC<NonIdealState['props']> = (props) => (
-  <SplitPanelContainer
-    axis={'vertical'}
-    identifier={'execution'}
-    firstInitialPercent={75}
-    firstMinSize={100}
-    first={
-      <>
-        <SessionSettingsBar>
-          <Spinner size={20} />
-        </SessionSettingsBar>
-        <NonIdealState {...props} />
-      </>
-    }
-    second={<div />}
-  />
-);
-
-export const ExecutionSessionContainerLoading: React.FC = () => (
-  <SplitPanelContainer
-    axis={'vertical'}
-    identifier={'execution'}
-    firstInitialPercent={75}
-    firstMinSize={100}
-    first={
-      <>
-        <LoadingOverlay isLoading message={LOADING_PIPELINE} />
-        <SessionSettingsBar />
-      </>
-    }
-    second={<LoadingOverlay isLoading message={'Loading pipeline and partition sets...'} />}
-  />
-);
+// eslint-disable-next-line import/no-default-export
+export default ExecutionSessionContainer;
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
@@ -544,43 +472,6 @@ const PREVIEW_CONFIG_QUERY = gql`
   ${RUN_PREVIEW_VALIDATION_FRAGMENT}
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;
-
-const SessionSettingsBar = styled.div`
-  color: white;
-  display: flex;
-  position: relative;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
-  background: ${Colors.WHITE};
-  align-items: center;
-  height: 47px;
-  padding: 8px 10px;
-`;
-
-const LoadingOverlayContainer = styled.div<{isLoading: boolean}>`
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background-color: #fff;
-  z-index: 20;
-  display: ${({isLoading}) => (!isLoading ? 'none' : 'flex')};
-  align-items: center;
-  justify-content: center;
-  opacity: ${({isLoading}) => (isLoading ? '0.7' : '0')};
-  transition: opacity 150ms linear;
-  transition-delay: 300ms;
-`;
-
-const LoadingOverlay: React.FunctionComponent<{
-  isLoading: boolean;
-  message: string;
-}> = ({isLoading, message}) => (
-  <LoadingOverlayContainer isLoading={isLoading}>
-    <Spinner size={24} />
-    &nbsp;&nbsp;{message}
-  </LoadingOverlayContainer>
-);
 
 const SessionSettingsSpacer = styled.div`
   width: 5px;
