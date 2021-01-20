@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {titleOfIO} from 'src/Util';
+import {titleOfIO} from 'src/app/Util';
 import {ExternalConnectionNode} from 'src/graph/ExternalConnectionNode';
 import {MappingLine} from 'src/graph/MappingLine';
 import {SVGLabeledRect} from 'src/graph/SVGComponents';

@@ -6,8 +6,8 @@ import ReactMarkdown from 'react-markdown';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {copyValue} from 'src/DomUtils';
-import {assertUnreachable} from 'src/Util';
+import {copyValue} from 'src/app/DomUtils';
+import {assertUnreachable} from 'src/app/Util';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
 
 export const LogRowStructuredContentTable: React.FC<{

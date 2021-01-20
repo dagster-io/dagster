@@ -12,12 +12,11 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {SharedToaster} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {GraphQueryInput} from 'src/GraphQueryInput';
-import {PipelineRunTag} from 'src/LocalStorage';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {SharedToaster} from 'src/app/DomUtils';
+import {PipelineRunTag} from 'src/app/LocalStorage';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {LaunchButton} from 'src/execute/LaunchButton';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {GanttChartMode} from 'src/gantt/GanttChart';
@@ -35,6 +34,7 @@ import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBa
 import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';

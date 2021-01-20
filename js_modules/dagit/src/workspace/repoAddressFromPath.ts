@@ -1,4 +1,4 @@
-import {memoize} from 'src/Util';
+import {memoize} from 'src/app/Util';
 import {RepoAddress} from 'src/workspace/types';
 
 export const repoAddressFromPath = memoize<string, RepoAddress | null>((path: string) => {

@@ -4,25 +4,25 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Redirect, RouteComponentProps, useHistory} from 'react-router-dom';
 
-import {Loading} from 'src/Loading';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {
   PipelineExplorer,
   PipelineExplorerOptions,
   PIPELINE_EXPLORER_FRAGMENT,
   PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from 'src/PipelineExplorer';
+} from 'src/pipelines/PipelineExplorer';
 import {
   PipelineExplorerPath,
   explorerPathFromString,
   explorerPathToString,
-} from 'src/PipelinePathUtils';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+} from 'src/pipelines/PipelinePathUtils';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot,
-} from 'src/types/PipelineExplorerRootQuery';
-import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
+} from 'src/pipelines/types/PipelineExplorerRootQuery';
+import {PipelineExplorerSolidHandleFragment} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
+import {Loading} from 'src/ui/Loading';
 import {useActiveRepo, usePipelineSelector} from 'src/workspace/WorkspaceContext';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 

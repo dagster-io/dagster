@@ -1,6 +1,5 @@
 import {Colors} from '@blueprintjs/core';
 
-import {IRunMetadataDict, IStepAttempt, IStepState} from 'src/RunMetadataProvider';
 import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
@@ -14,6 +13,7 @@ import {
   LEFT_INSET,
   FLAT_INSET_FROM_PARENT,
 } from 'src/gantt/Constants';
+import {IRunMetadataDict, IStepAttempt, IStepState} from 'src/runs/RunMetadataProvider';
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];

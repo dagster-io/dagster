@@ -6,13 +6,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {ROOT_SERVER_URI} from 'src/DomUtils';
 import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
-import {GraphQueryInput} from 'src/GraphQueryInput';
-import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/RunMetadataProvider';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/VizComponents';
 import {WebsocketStatusContext} from 'src/WebsocketStatus';
+import {ROOT_SERVER_URI} from 'src/app/DomUtils';
 import {
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
@@ -47,8 +45,10 @@ import {ZoomSlider} from 'src/gantt/ZoomSlider';
 import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
 import {useViewport} from 'src/gantt/useViewport';
+import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/runs/RunMetadataProvider';
 import {StepSelection} from 'src/runs/StepSelection';
 import {Box} from 'src/ui/Box';
+import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
 
 export {GanttChartMode} from 'src/gantt/Constants';

@@ -2,8 +2,6 @@ import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import {IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {ScrollContainer} from 'src/ListComponents';
-import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {ScheduleTickHistory} from 'src/jobs/TickHistory';
@@ -18,6 +16,8 @@ import {
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from 'src/schedules/types/ScheduleRootQuery';
 import {Group} from 'src/ui/Group';
+import {ScrollContainer} from 'src/ui/ListComponents';
+import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';

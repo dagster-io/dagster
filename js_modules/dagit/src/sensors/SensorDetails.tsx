@@ -3,7 +3,7 @@ import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from 'src/JobTick';
+import {TickTag} from 'src/jobs/JobTick';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {
   displaySensorMutationErrors,

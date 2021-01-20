@@ -2,8 +2,8 @@ import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {LoadingWithProgress} from 'src/Loading';
 import {TopNav} from 'src/nav/TopNav';
+import {LoadingWithProgress} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {useRepositoryOptions} from 'src/workspace/WorkspaceContext';

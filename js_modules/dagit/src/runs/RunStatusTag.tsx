@@ -2,7 +2,7 @@ import {Popover, Spinner, Tag} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {assertUnreachable} from 'src/Util';
+import {assertUnreachable} from 'src/app/Util';
 import {RunStats} from 'src/runs/RunStats';
 import {IRunStatus} from 'src/runs/RunStatusDots';
 import {Group} from 'src/ui/Group';

@@ -1,9 +1,9 @@
 import {Colors, Intent, Tag} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {AssetsSupported} from 'src/AssetsSupported';
-import {IRunMetadataDict} from 'src/RunMetadataProvider';
-import {assertUnreachable} from 'src/Util';
+import {assertUnreachable} from 'src/app/Util';
+import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
+import {AssetsSupported} from 'src/runs/AssetsSupported';
 import {ComputeLogLink} from 'src/runs/ComputeLogModal';
 import {EventTypeColumn} from 'src/runs/LogsRowComponents';
 import {
@@ -12,12 +12,12 @@ import {
   MetadataEntryAction,
   MetadataEntryLink,
 } from 'src/runs/MetadataEntry';
+import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_StepMaterializationEvent_materialization,
 } from 'src/runs/types/LogsRowStructuredFragment';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
-import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;

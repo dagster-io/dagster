@@ -1,13 +1,13 @@
 import {uniq} from 'lodash';
 import React from 'react';
 
+import {RunFilterTokenType} from 'src/runs/RunsFilter';
 import {
   TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-} from 'src/TokenizingField';
-import {RunFilterTokenType} from 'src/runs/RunsFilter';
+} from 'src/ui/TokenizingField';
 
 interface RunTagsTokenizingFieldProps {
   runs: {tags: {key: string; value: string}[]}[];

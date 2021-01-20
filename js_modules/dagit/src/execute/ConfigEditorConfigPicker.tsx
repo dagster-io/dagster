@@ -14,10 +14,11 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {IExecutionSession} from 'src/LocalStorage';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
-import {ShortcutHandler} from 'src/ShortcutHandler';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {IExecutionSession} from 'src/app/LocalStorage';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
+import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
 import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
   ConfigEditorGeneratorPipelineFragment,
@@ -27,7 +28,6 @@ import {
   ConfigPartitionsQuery,
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
 } from 'src/execute/types/ConfigPartitionsQuery';
-import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
 import {RepositorySelector} from 'src/types/globalTypes';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';

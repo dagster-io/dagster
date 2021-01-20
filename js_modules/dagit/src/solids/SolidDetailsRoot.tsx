@@ -2,14 +2,14 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Loading} from 'src/Loading';
 import {
   SidebarSolidDefinition,
   SIDEBAR_SOLID_DEFINITION_FRAGMENT,
-} from 'src/SidebarSolidDefinition';
-import {SidebarSolidInvocationInfo} from 'src/SidebarSolidHelpers';
+} from 'src/pipelines/SidebarSolidDefinition';
+import {SidebarSolidInvocationInfo} from 'src/pipelines/SidebarSolidHelpers';
 import {SolidCard, SOLID_CARD_SOLID_DEFINITION_FRAGMENT} from 'src/solids/SolidCard';
 import {UsedSolidDetailsQuery} from 'src/solids/types/UsedSolidDetailsQuery';
+import {Loading} from 'src/ui/Loading';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 

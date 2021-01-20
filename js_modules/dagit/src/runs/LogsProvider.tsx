@@ -1,13 +1,13 @@
 import {ApolloClient, gql} from '@apollo/client';
 import * as React from 'react';
 
-import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
-import {TokenizingFieldValue} from 'src/TokenizingField';
+import {DirectGraphQLSubscription} from 'src/app/DirectGraphQLSubscription';
 import {RunFragments} from 'src/runs/RunFragments';
 import {PipelineRunLogsSubscription} from 'src/runs/types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from 'src/runs/types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';

@@ -3,7 +3,7 @@ import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
-import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
+import {DirectGraphQLSubscription} from 'src/app/DirectGraphQLSubscription';
 import {LocationStateChangeSubscription} from 'src/nav/types/LocationStateChangeSubscription';
 import {LocationStateChangeEventType} from 'src/types/globalTypes';
 import {ButtonLink} from 'src/ui/ButtonLink';

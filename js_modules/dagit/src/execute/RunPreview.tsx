@@ -3,10 +3,10 @@ import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
 import {useConfirmation} from 'src/CustomConfirmationProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {errorStackToYamlPath} from 'src/configeditor/ConfigEditorUtils';
 import {
   ConfigEditorRunConfigSchemaFragment,

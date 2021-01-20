@@ -5,10 +5,12 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {CursorPaginationControls} from 'src/CursorControls';
-import {ScrollContainer} from 'src/ListComponents';
-import {Loading} from 'src/Loading';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
+import {
+  PipelineRunsRootQuery,
+  PipelineRunsRootQueryVariables,
+} from 'src/pipelines/types/PipelineRunsRootQuery';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
@@ -18,12 +20,10 @@ import {
   useQueryPersistedRunFilters,
 } from 'src/runs/RunsFilter';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
-import {
-  PipelineRunsRootQuery,
-  PipelineRunsRootQueryVariables,
-} from 'src/types/PipelineRunsRootQuery';
 import {Box} from 'src/ui/Box';
 import {useCountdown} from 'src/ui/Countdown';
+import {ScrollContainer} from 'src/ui/ListComponents';
+import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 

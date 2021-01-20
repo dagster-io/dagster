@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker';
 
-import {asyncMemoize, memoize} from 'src/Util';
+import {asyncMemoize, memoize} from 'src/app/Util';
 import {ILayoutSolid, layoutPipeline} from 'src/graph/layout';
 
 // Loads the web worker using the Webpack loader `worker-loader`, specifying the import inline.

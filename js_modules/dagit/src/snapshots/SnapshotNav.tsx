@@ -3,8 +3,8 @@ import {Tag, IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {explorerPathToString, PipelineExplorerPath} from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
+import {explorerPathToString, PipelineExplorerPath} from 'src/pipelines/PipelinePathUtils';
 import {SnapshotQuery} from 'src/snapshots/types/SnapshotQuery';
 import {FontFamily} from 'src/ui/styles';
 import {useActivePipelineForName} from 'src/workspace/WorkspaceContext';

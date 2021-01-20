@@ -1,9 +1,9 @@
 import * as React from 'react';
 import {Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {PipelineExplorerSnapshotRoot} from 'src/PipelineExplorerRoot';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
-import {PipelineRunsRoot} from 'src/PipelineRunsRoot';
+import {PipelineExplorerSnapshotRoot} from 'src/pipelines/PipelineExplorerRoot';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
+import {PipelineRunsRoot} from 'src/pipelines/PipelineRunsRoot';
 import {SnapshotNav} from 'src/snapshots/SnapshotNav';
 
 export const SnapshotRoot: React.FC<RouteComponentProps<{pipelinePath: string; tab?: string}>> = (

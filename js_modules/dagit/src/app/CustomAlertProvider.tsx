@@ -2,7 +2,7 @@ import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {copyValue} from 'src/DomUtils';
+import {copyValue} from 'src/app/DomUtils';
 import {FontFamily} from 'src/ui/styles';
 
 const CURRENT_ALERT_CHANGED = 'alert-changed';

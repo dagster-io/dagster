@@ -4,10 +4,9 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {IRunMetadataDict, IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {
   GanttChart,
   GanttChartMode,
@@ -20,6 +19,7 @@ import {LogsToolbar} from 'src/runs/LogsToolbar';
 import {RunActionButtons} from 'src/runs/RunActionButtons';
 import {RunContext} from 'src/runs/RunContext';
 import {RunDetails} from 'src/runs/RunDetails';
+import {IRunMetadataDict, IStepState, RunMetadataProvider} from 'src/runs/RunMetadataProvider';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,

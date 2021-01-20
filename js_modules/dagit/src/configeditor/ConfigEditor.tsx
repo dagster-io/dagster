@@ -20,7 +20,7 @@ import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {debounce} from 'src/Util';
+import {debounce} from 'src/app/Util';
 import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
 import {
   YamlModeValidateFunction,

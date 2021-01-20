@@ -4,8 +4,6 @@ import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Loading} from 'src/Loading';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionView} from 'src/partitions/PartitionView';
@@ -13,6 +11,8 @@ import {
   PipelinePartitionsRootQuery,
   PipelinePartitionsRootQueryVariables,
 } from 'src/partitions/types/PipelinePartitionsRootQuery';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
+import {Loading} from 'src/ui/Loading';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';

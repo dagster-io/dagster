@@ -5,7 +5,7 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/ShortcutHandler';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {JobsListQuery} from 'src/nav/types/JobsListQuery';
 import {JobStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';

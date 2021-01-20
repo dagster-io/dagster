@@ -2,7 +2,7 @@ import {InMemoryCache, defaultDataIdFromObject} from '@apollo/client';
 
 // this is a require cause otherwise it breaks
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const possibleTypes = require('./possibleTypes.generated.json');
+const possibleTypes = require('../possibleTypes.generated.json');
 
 export const AppCache = new InMemoryCache({
   addTypename: true,

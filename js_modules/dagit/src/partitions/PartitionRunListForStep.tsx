@@ -4,7 +4,7 @@ import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {STEP_STATUS_COLORS} from 'src/partitions/RunMatrixUtils';
 import {
   PartitionRunListForStepQuery,

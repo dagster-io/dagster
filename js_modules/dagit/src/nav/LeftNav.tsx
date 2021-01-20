@@ -5,9 +5,9 @@ import {useHistory} from 'react-router';
 import {Link, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/ShortcutHandler';
 import {TimezonePicker} from 'src/TimeComponents';
 import {WebsocketStatus} from 'src/WebsocketStatus';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
 import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';

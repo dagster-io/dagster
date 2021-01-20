@@ -3,9 +3,9 @@ import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
-import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
 import {FontFamily} from 'src/ui/styles';
 
 interface IPythonErrorInfoProps {

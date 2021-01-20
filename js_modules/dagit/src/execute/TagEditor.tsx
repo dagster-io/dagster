@@ -3,8 +3,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PipelineRunTag} from 'src/LocalStorage';
-import {ShortcutHandler} from 'src/ShortcutHandler';
+import {PipelineRunTag} from 'src/app/LocalStorage';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {RunTag} from 'src/runs/RunTag';
 
 interface ITagEditorProps {

@@ -8,19 +8,19 @@ import {Route} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {GraphQueryInput} from 'src/GraphQueryInput';
-import {SolidJumpBar} from 'src/PipelineJumpComponents';
-import {PipelineExplorerPath, explorerPathToString} from 'src/PipelinePathUtils';
-import {
-  SidebarTabbedContainer,
-  SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
-} from 'src/SidebarTabbedContainer';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
+import {SolidJumpBar} from 'src/pipelines/PipelineJumpComponents';
+import {PipelineExplorerPath, explorerPathToString} from 'src/pipelines/PipelinePathUtils';
+import {
+  SidebarTabbedContainer,
+  SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
+} from 'src/pipelines/SidebarTabbedContainer';
+import {PipelineExplorerFragment} from 'src/pipelines/types/PipelineExplorerFragment';
+import {PipelineExplorerSolidHandleFragment} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
-import {PipelineExplorerFragment} from 'src/types/PipelineExplorerFragment';
-import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
+import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 

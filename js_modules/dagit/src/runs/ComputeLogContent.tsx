@@ -5,9 +5,9 @@ import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
-import {ROOT_SERVER_URI} from 'src/DomUtils';
-import {IStepState} from 'src/RunMetadataProvider';
+import {ROOT_SERVER_URI} from 'src/app/DomUtils';
 import {ExecutionStateDot} from 'src/runs/ExecutionStateDot';
+import {IStepState} from 'src/runs/RunMetadataProvider';
 import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
 import {FontFamily} from 'src/ui/styles';
 

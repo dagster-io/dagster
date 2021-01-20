@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./globalTypes";
+import { PipelineSelector } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineExplorerRootQuery

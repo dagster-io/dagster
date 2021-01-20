@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Callout, Code, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 import {Group} from 'src/ui/Group';

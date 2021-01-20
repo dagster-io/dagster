@@ -1,7 +1,7 @@
-import {tokenizedValueFromString} from 'src/TokenizingField';
 import {DefaultLogLevels, LogLevel} from 'src/runs/LogLevel';
 import {LogFilter} from 'src/runs/LogsProvider';
 import {getRunFilterProviders} from 'src/runs/getRunFilterProviders';
+import {tokenizedValueFromString} from 'src/ui/TokenizingField';
 
 /**
  * Query parameter structure, all optional:

@@ -5,8 +5,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
-import {stringFromValue, TokenizingFieldValue} from 'src/TokenizingField';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {
   PartitionProgressQuery,
   PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results,
@@ -25,6 +24,7 @@ import {Box} from 'src/ui/Box';
 import {useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
+import {stringFromValue, TokenizingFieldValue} from 'src/ui/TokenizingField';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 interface Props {

@@ -9,8 +9,7 @@ import {
   applyChangesToSession,
   applyCreateSession,
   useStorage,
-} from 'src/LocalStorage';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
+} from 'src/app/LocalStorage';
 import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from 'src/configeditor/ConfigEditorUtils';
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
@@ -28,6 +27,7 @@ import {
   PipelineExecutionRootQueryVariables,
 } from 'src/execute/types/PipelineExecutionRootQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';

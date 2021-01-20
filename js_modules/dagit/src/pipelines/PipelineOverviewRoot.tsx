@@ -5,13 +5,12 @@ import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Loading} from 'src/Loading';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {Timestamp} from 'src/TimeComponents';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
 import {OverviewJobFragment} from 'src/pipelines/types/OverviewJobFragment';
 import {
   PipelineOverviewQuery,
@@ -29,6 +28,7 @@ import {
   RUN_TIME_FRAGMENT,
 } from 'src/runs/RunUtils';
 import {JobType} from 'src/types/globalTypes';
+import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';

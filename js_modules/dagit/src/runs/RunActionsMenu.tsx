@@ -3,9 +3,8 @@ import {Button, Menu, MenuDivider, MenuItem, Popover, Position, Tooltip} from '@
 import * as qs from 'query-string';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {ROOT_SERVER_URI} from 'src/DomUtils';
-import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {ROOT_SERVER_URI} from 'src/app/DomUtils';
 import {DeletionDialog} from 'src/runs/DeletionDialog';
 import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from 'src/runs/RunFragments';
@@ -21,6 +20,7 @@ import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecutio
 import {PipelineEnvironmentYamlQuery} from 'src/runs/types/PipelineEnvironmentYamlQuery';
 import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
+import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
 import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
 
 export const RunActionsMenu: React.FC<{

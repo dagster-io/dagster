@@ -2,8 +2,8 @@ import {gql, useApolloClient, useMutation} from '@apollo/client';
 import {Button, Icon, Intent, Spinner, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SharedToaster} from 'src/DomUtils';
-import {ShortcutHandler} from 'src/ShortcutHandler';
+import {SharedToaster} from 'src/app/DomUtils';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,

@@ -1,8 +1,7 @@
 import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
-import {TokenizingFieldValue} from 'src/TokenizingField';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {PARTITION_GRAPH_SET_RUN_FRAGMENT} from 'src/partitions/PartitionGraphSet';
 import {PARTITION_RUN_MATRIX_RUN_FRAGMENT} from 'src/partitions/PartitionRunMatrix';
 import {
@@ -16,6 +15,7 @@ import {
 } from 'src/partitions/types/PartitionSetNamesQuery';
 import {DagsterTag} from 'src/runs/RunTag';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 

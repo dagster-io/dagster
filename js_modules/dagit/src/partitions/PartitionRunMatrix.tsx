@@ -3,8 +3,6 @@ import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover, Icon} from '@b
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryInput} from 'src/GraphQueryInput';
-import {TokenizingFieldValue} from 'src/TokenizingField';
 import {useViewport} from 'src/gantt/useViewport';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionProgress} from 'src/partitions/PartitionProgress';
@@ -31,7 +29,9 @@ import {
   StatusSquareFinalColor,
 } from 'src/partitions/useMatrixData';
 import {Box} from 'src/ui/Box';
+import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
+import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 

@@ -1,6 +1,6 @@
 import styled, {css} from 'styled-components';
 
-import {assertUnreachable} from 'src/Util';
+import {assertUnreachable} from 'src/app/Util';
 import {BorderSetting, DirectionalSpacing, FlexProperties} from 'src/ui/types';
 
 interface Props {

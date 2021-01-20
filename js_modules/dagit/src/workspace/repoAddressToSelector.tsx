@@ -1,4 +1,4 @@
-import {memoize} from 'src/Util';
+import {memoize} from 'src/app/Util';
 import {RepositorySelector} from 'src/types/globalTypes';
 import {RepoAddress} from 'src/workspace/types';
 

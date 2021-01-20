@@ -6,7 +6,6 @@ import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {IRunMetadataDict} from 'src/RunMetadataProvider';
 import {
   LOGS_ROW_STRUCTURED_FRAGMENT,
   LOGS_ROW_UNSTRUCTURED_FRAGMENT,
@@ -14,6 +13,7 @@ import {
   Unstructured,
 } from 'src/runs/LogsRow';
 import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
+import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
 import {LogsScrollingTableMessageFragment} from 'src/runs/types/LogsScrollingTableMessageFragment';
 
 interface ILogsScrollingTableProps {

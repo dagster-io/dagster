@@ -10,7 +10,7 @@ import {
   applyCreateSession,
   applyRemoveSession,
   applySelectSession,
-} from 'src/LocalStorage';
+} from 'src/app/LocalStorage';
 
 interface ExecutationTabProps {
   canRemove?: boolean;

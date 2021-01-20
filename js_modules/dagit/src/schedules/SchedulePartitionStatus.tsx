@@ -2,8 +2,8 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {StatusTable} from 'src/JobUtils';
-import {assertUnreachable} from 'src/Util';
+import {assertUnreachable} from 'src/app/Util';
+import {StatusTable} from 'src/jobs/JobUtils';
 import {
   ScheduleFragment,
   ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results,

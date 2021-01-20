@@ -1,8 +1,7 @@
 import {QueryResult} from '@apollo/client';
 import * as React from 'react';
 
-import {Loading} from 'src/Loading';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
 import {UnloadableSchedules} from 'src/jobs/UnloadableJobs';
 import {SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
@@ -10,6 +9,7 @@ import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable} from 'src/schedules/SchedulesTable';
 import {JobType} from 'src/types/globalTypes';
 import {Group} from 'src/ui/Group';
+import {Loading} from 'src/ui/Loading';
 import {Subheading} from 'src/ui/Text';
 
 interface Props {

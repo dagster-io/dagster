@@ -9,8 +9,8 @@ import {StyleSheetManager} from 'styled-components/macro';
 import {PipelineGraphContents} from 'src/graph/PipelineGraph';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
+import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from 'src/pipelines/types/PipelineExplorerRootQuery';
 import {MOCKS} from 'src/testing/SVGMocks';
-import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from 'src/types/PipelineExplorerRootQuery';
 
 function readMock(mock: {filepath: string}) {
   const {data} = JSON.parse(fs.readFileSync(mock.filepath).toString());

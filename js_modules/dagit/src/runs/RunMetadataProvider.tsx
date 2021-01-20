@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {RunMetadataProviderMessageFragment} from 'src/types/RunMetadataProviderMessageFragment';
+import {RunMetadataProviderMessageFragment} from 'src/runs/types/RunMetadataProviderMessageFragment';
 
 export enum IStepState {
   PREPARING = 'preparing',

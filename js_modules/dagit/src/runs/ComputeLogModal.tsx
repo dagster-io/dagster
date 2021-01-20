@@ -3,10 +3,10 @@ import {Dialog, Intent, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
-import {IStepState} from 'src/RunMetadataProvider';
+import {DirectGraphQLSubscription} from 'src/app/DirectGraphQLSubscription';
 import {ComputeLogContent, COMPUTE_LOG_CONTENT_FRAGMENT} from 'src/runs/ComputeLogContent';
 import {RunContext} from 'src/runs/RunContext';
+import {IStepState} from 'src/runs/RunMetadataProvider';
 import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
 import {ComputeLogsSubscription} from 'src/runs/types/ComputeLogsSubscription';
 import {ComputeLogsSubscriptionFragment} from 'src/runs/types/ComputeLogsSubscriptionFragment';

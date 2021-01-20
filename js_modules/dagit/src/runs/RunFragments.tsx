@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
-import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from 'src/RunMetadataProvider';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {GANTT_CHART_EXECUTION_PLAN_FRAGMENT} from 'src/gantt/GanttChart';
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from 'src/runs/LogsScrollingTable';
 import {RUN_DETAILS_FRAGMENT} from 'src/runs/RunDetails';
+import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from 'src/runs/RunMetadataProvider';
 import {RUN_STATUS_PIPELINE_RUN_FRAGMENT} from 'src/runs/RunStatusToPageAttributes';
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`

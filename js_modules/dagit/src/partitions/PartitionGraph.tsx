@@ -2,10 +2,10 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
-import {RowContainer} from 'src/ListComponents';
-import {colorHash} from 'src/Util';
+import {colorHash} from 'src/app/Util';
 import {PIPELINE_LABEL} from 'src/partitions/PartitionGraphUtils';
 import {PartitionGraphFragment} from 'src/partitions/types/PartitionGraphFragment';
+import {RowContainer} from 'src/ui/ListComponents';
 
 type PointValue = number | null | undefined;
 type Point = {x: string; y: PointValue};

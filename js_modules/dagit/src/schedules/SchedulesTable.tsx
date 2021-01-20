@@ -16,8 +16,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from 'src/JobTick';
-import {JobRunStatus} from 'src/JobUtils';
+import {TickTag} from 'src/jobs/JobTick';
+import {JobRunStatus} from 'src/jobs/JobUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {
   START_SCHEDULE_MUTATION,

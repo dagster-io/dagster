@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from 'src/TimeComponents';
-import {formatElapsedTime} from 'src/Util';
+import {formatElapsedTime} from 'src/app/Util';
 import {AssetNumericHistoricalData, LABEL_STEP_EXECUTION_TIME} from 'src/assets/AssetView';
 import {Sparkline} from 'src/assets/Sparkline';
 import {

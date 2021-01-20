@@ -5,9 +5,9 @@ import moment from 'moment-timezone';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {TICK_TAG_FRAGMENT, RunList, TickTag} from 'src/JobTick';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {TICK_TAG_FRAGMENT, RunList, TickTag} from 'src/jobs/JobTick';
 import {JobHistoryFragment, JobHistoryFragment_ticks} from 'src/jobs/types/JobHistoryFragment';
 import {ScheduleTickHistoryQuery} from 'src/jobs/types/ScheduleTickHistoryQuery';
 import {SensorTickHistoryQuery} from 'src/jobs/types/SensorTickHistoryQuery';

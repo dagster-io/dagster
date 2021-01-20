@@ -4,7 +4,12 @@ import {Link} from 'react-router-dom';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/ConfigTypeSchema';
 import {Description} from 'src/Description';
-import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from 'src/SidebarComponents';
+import {
+  SectionInner,
+  SidebarSection,
+  SidebarSubhead,
+  SidebarTitle,
+} from 'src/pipelines/SidebarComponents';
 import {TypeExplorerFragment} from 'src/typeexplorer/types/TypeExplorerFragment';
 
 interface ITypeExplorerProps {

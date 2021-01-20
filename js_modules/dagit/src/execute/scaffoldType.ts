@@ -1,4 +1,4 @@
-import {assertUnreachable} from 'src/Util';
+import {assertUnreachable} from 'src/app/Util';
 import {
   ConfigEditorRunConfigSchemaFragment_allConfigTypes,
   ConfigEditorRunConfigSchemaFragment,

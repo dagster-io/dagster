@@ -4,12 +4,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {TICK_TAG_FRAGMENT} from 'src/JobTick';
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {TICK_TAG_FRAGMENT} from 'src/jobs/JobTick';
+import {JobStateFragment} from 'src/jobs/types/JobStateFragment';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
-import {JobStateFragment} from 'src/types/JobStateFragment';
 import {Group} from 'src/ui/Group';
 import {FontFamily} from 'src/ui/styles';
 

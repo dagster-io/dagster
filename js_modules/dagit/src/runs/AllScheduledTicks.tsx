@@ -2,8 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Callout, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {ScheduledTicksFragment} from 'src/runs/types/ScheduledTicksFragment';
 import {SchedulerInfoQuery} from 'src/runs/types/SchedulerInfoQuery';

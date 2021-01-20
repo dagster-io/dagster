@@ -4,8 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {GraphQueryInput} from 'src/GraphQueryInput';
-import {ShortcutHandler} from 'src/ShortcutHandler';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {
   SolidSelectorQuery,
   SolidSelectorQuery_pipelineOrError,
@@ -14,6 +13,7 @@ import {
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
+import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 

@@ -2,8 +2,8 @@ import {gql} from '@apollo/client';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {browserTimezone, timestampToString} from 'src/TimeComponents';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
   DaemonHealthFragment,

@@ -2,12 +2,12 @@ import {IBreadcrumbProps, IconName} from '@blueprintjs/core';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
+import {TopNav} from 'src/nav/TopNav';
 import {
   explorerPathFromString,
   explorerPathToString,
   PipelineExplorerPath,
-} from 'src/PipelinePathUtils';
-import {TopNav} from 'src/nav/TopNav';
+} from 'src/pipelines/PipelinePathUtils';
 import {useActiveRepo} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';

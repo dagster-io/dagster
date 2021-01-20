@@ -4,11 +4,11 @@ import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Loading} from 'src/Loading';
 import {AssetView} from 'src/assets/AssetView';
 import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
 import {AssetEntryRootQuery} from 'src/assets/types/AssetEntryRootQuery';
 import {TopNav} from 'src/nav/TopNav';
+import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 
 export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {

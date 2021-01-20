@@ -2,9 +2,9 @@ import {Button, IconName, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {SharedToaster} from 'src/DomUtils';
-import {IStepState} from 'src/RunMetadataProvider';
+import {SharedToaster} from 'src/app/DomUtils';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
+import {IStepState} from 'src/runs/RunMetadataProvider';
 import {doneStatuses} from 'src/runs/RunStatuses';
 import {ReExecutionStyle} from 'src/runs/RunUtils';
 import {StepSelection} from 'src/runs/StepSelection';

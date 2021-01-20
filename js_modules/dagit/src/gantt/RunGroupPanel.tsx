@@ -4,7 +4,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,

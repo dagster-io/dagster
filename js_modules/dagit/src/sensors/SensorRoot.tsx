@@ -2,8 +2,6 @@ import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import {IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {ScrollContainer} from 'src/ListComponents';
-import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {SensorTickHistory} from 'src/jobs/TickHistory';
@@ -14,6 +12,8 @@ import {SensorInfo} from 'src/sensors/SensorInfo';
 import {SensorPreviousRuns} from 'src/sensors/SensorPreviousRuns';
 import {SensorRootQuery} from 'src/sensors/types/SensorRootQuery';
 import {Group} from 'src/ui/Group';
+import {ScrollContainer} from 'src/ui/ListComponents';
+import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';

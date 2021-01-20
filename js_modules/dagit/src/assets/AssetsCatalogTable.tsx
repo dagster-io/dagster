@@ -5,13 +5,13 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Loading} from 'src/Loading';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {
   AssetsTableQuery,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes,
 } from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;

@@ -3,8 +3,7 @@ import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {Loading} from 'src/Loading';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {UnloadableSchedules} from 'src/jobs/UnloadableJobs';
 import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
@@ -15,6 +14,7 @@ import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
 import {JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
+import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {Subheading} from 'src/ui/Text';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';

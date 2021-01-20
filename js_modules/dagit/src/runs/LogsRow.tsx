@@ -1,9 +1,8 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
-import {IRunMetadataDict} from 'src/RunMetadataProvider';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from 'src/gantt/GanttChart';
 import {CellTruncationProvider} from 'src/runs/CellTruncationProvider';
 import {
@@ -15,6 +14,7 @@ import {
 } from 'src/runs/LogsRowComponents';
 import {LogsRowStructuredContent} from 'src/runs/LogsRowStructuredContent';
 import {METADATA_ENTRY_FRAGMENT} from 'src/runs/MetadataEntry';
+import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
 import {LogsRowStructuredFragment} from 'src/runs/types/LogsRowStructuredFragment';
 import {LogsRowUnstructuredFragment} from 'src/runs/types/LogsRowUnstructuredFragment';
 import {LogLevel} from 'src/types/globalTypes';

@@ -3,15 +3,15 @@ import {Tab, Tabs, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Route, Switch} from 'react-router-dom';
 
-import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {InstanceConfig} from 'src/instance/InstanceConfig';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {InstanceHealthPage} from 'src/instance/InstanceHealthPage';
 import {InstanceSchedules} from 'src/instance/InstanceSchedules';
 import {InstanceSensors} from 'src/instance/InstanceSensors';
 import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
+import {JOB_STATE_FRAGMENT} from 'src/jobs/JobUtils';
 import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';

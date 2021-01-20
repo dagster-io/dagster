@@ -5,13 +5,16 @@ import * as React from 'react';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/ConfigTypeSchema';
 import {Description} from 'src/Description';
+import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/SolidTypeSignature';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from 'src/TypeWithTooltip';
+import {breakOnUnderscores} from 'src/app/Util';
 import {
   SectionItemContainer,
   SectionSmallHeader,
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from 'src/SidebarComponents';
+} from 'src/pipelines/SidebarComponents';
 import {
   Invocation,
   ResourceContainer,
@@ -21,12 +24,9 @@ import {
   SolidLinks,
   SolidMappingTable,
   TypeWrapper,
-} from 'src/SidebarSolidHelpers';
-import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/SolidTypeSignature';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from 'src/TypeWithTooltip';
-import {breakOnUnderscores} from 'src/Util';
+} from 'src/pipelines/SidebarSolidHelpers';
+import {SidebarSolidDefinitionFragment} from 'src/pipelines/types/SidebarSolidDefinitionFragment';
 import {pluginForMetadata} from 'src/plugins';
-import {SidebarSolidDefinitionFragment} from 'src/types/SidebarSolidDefinitionFragment';
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;

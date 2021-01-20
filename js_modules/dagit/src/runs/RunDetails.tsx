@@ -3,13 +3,13 @@ import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {RunTags} from 'src/runs/RunTags';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
+import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
 import {MetadataTable} from 'src/ui/MetadataTable';
 import {FontFamily} from 'src/ui/styles';
 

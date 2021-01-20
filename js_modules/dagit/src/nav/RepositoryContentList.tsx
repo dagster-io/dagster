@@ -5,7 +5,7 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/ShortcutHandler';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {tabForPipelinePathComponent} from 'src/nav/PipelineNav';
 import {ContentListSolidsQuery} from 'src/nav/types/ContentListSolidsQuery';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';

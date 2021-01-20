@@ -1,9 +1,9 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {PipelineSnapshotLink} from 'src/PipelinePathUtils';
 import {Timestamp} from 'src/TimeComponents';
 import {AssetQuery_assetOrError_Asset_assetMaterializations} from 'src/assets/types/AssetQuery';
+import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {titleForRun} from 'src/runs/RunUtils';

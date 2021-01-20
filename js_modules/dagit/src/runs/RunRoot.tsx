@@ -5,9 +5,9 @@ import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components';
 
-import {AssetsSupported} from 'src/AssetsSupported';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
+import {AssetsSupported} from 'src/runs/AssetsSupported';
 import {Run} from 'src/runs/Run';
 import {RunFragments} from 'src/runs/RunFragments';
 import {RunStatusTag} from 'src/runs/RunStatusTag';

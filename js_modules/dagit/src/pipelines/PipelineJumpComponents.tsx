@@ -4,8 +4,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/ShortcutHandler';
-import {PipelineExplorerSolidHandleFragment_solid} from 'src/types/PipelineExplorerSolidHandleFragment';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
+import {PipelineExplorerSolidHandleFragment_solid} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
 
 interface SolidJumpBarProps {
   solids: Array<PipelineExplorerSolidHandleFragment_solid>;

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./globalTypes";
+import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: JobStateFragment

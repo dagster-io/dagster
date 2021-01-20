@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SectionHeader} from 'src/SidebarComponents';
-import {titleOfIO} from 'src/Util';
+import {titleOfIO} from 'src/app/Util';
+import {SectionHeader} from 'src/pipelines/SidebarComponents';
 import {SolidColumn} from 'src/runs/LogsRowComponents';
 import {Code} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';

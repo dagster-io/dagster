@@ -3,8 +3,8 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {App, AppContent} from 'src/App';
-import {breakOnUnderscores} from 'src/Util';
+import {App, AppContent} from 'src/app/App';
+import {breakOnUnderscores} from 'src/app/Util';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
 
 describe('App', () => {

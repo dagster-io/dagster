@@ -4,12 +4,12 @@ import qs from 'query-string';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {APP_PATH_PREFIX} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {APP_PATH_PREFIX} from 'src/app/DomUtils';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';

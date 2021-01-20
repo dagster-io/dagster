@@ -1,18 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {Loading} from 'src/Loading';
-import {PipelineExplorerPath} from 'src/PipelinePathUtils';
+import {PipelineExplorerPath} from 'src/pipelines/PipelinePathUtils';
 import {
   SidebarSolidDefinition,
   SIDEBAR_SOLID_DEFINITION_FRAGMENT,
-} from 'src/SidebarSolidDefinition';
+} from 'src/pipelines/SidebarSolidDefinition';
 import {
   SidebarSolidInvocation,
   SIDEBAR_SOLID_INVOCATION_FRAGMENT,
-} from 'src/SidebarSolidInvocation';
+} from 'src/pipelines/SidebarSolidInvocation';
+import {SidebarTabbedContainerSolidQuery} from 'src/pipelines/types/SidebarTabbedContainerSolidQuery';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
-import {SidebarTabbedContainerSolidQuery} from 'src/types/SidebarTabbedContainerSolidQuery';
+import {Loading} from 'src/ui/Loading';
 import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
 
 interface SidebarSolidContainerProps {

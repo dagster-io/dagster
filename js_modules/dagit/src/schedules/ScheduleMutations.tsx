@@ -1,8 +1,8 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError,

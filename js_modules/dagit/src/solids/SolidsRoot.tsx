@@ -6,22 +6,22 @@ import {useHistory, useLocation} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {Loading} from 'src/Loading';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/SolidTypeSignature';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
-import {
-  SuggestionProvider,
-  TokenizingField,
-  TokenizingFieldValue,
-  stringFromValue,
-  tokenizedValuesFromString,
-} from 'src/TokenizingField';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {SolidDetailScrollContainer, UsedSolidDetails} from 'src/solids/SolidDetailsRoot';
 import {
   SolidsRootQuery,
   SolidsRootQuery_repositoryOrError_Repository_usedSolids,
 } from 'src/solids/types/SolidsRootQuery';
+import {Loading} from 'src/ui/Loading';
+import {
+  SuggestionProvider,
+  TokenizingField,
+  TokenizingFieldValue,
+  stringFromValue,
+  tokenizedValuesFromString,
+} from 'src/ui/TokenizingField';
 import {FontFamily} from 'src/ui/styles';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';

@@ -4,10 +4,10 @@ import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
-import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {InstanceConfigQuery} from 'src/instance/types/InstanceConfigQuery';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
+import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
 import {Subheading} from 'src/ui/Text';
 
 const YamlShimStyle = createGlobalStyle`

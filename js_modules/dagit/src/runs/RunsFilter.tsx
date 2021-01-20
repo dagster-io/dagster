@@ -1,16 +1,16 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
+import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
+import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-} from 'src/TokenizingField';
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
-import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
+} from 'src/ui/TokenizingField';
 import {useRepository, useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';

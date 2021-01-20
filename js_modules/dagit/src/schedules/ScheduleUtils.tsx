@@ -2,10 +2,10 @@ import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
-import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
+import {JOB_STATE_FRAGMENT} from 'src/jobs/JobUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 

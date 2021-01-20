@@ -2,9 +2,9 @@ import {Callout, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
-import {LoadingWithProgress} from 'src/Loading';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
+import {LoadingWithProgress} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {optionToRepoAddress, useRepositoryOptions} from 'src/workspace/WorkspaceContext';

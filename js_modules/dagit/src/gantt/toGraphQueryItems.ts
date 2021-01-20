@@ -1,4 +1,4 @@
-import {weakmapMemoize} from 'src/Util';
+import {weakmapMemoize} from 'src/app/Util';
 import {IGanttNode} from 'src/gantt/Constants';
 import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
 

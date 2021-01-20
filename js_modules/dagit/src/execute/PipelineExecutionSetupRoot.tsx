@@ -2,9 +2,9 @@ import * as querystring from 'query-string';
 import * as React from 'react';
 import {Redirect} from 'react-router';
 
-import {IExecutionSession, applyCreateSession, useStorage} from 'src/LocalStorage';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
+import {IExecutionSession, applyCreateSession, useStorage} from 'src/app/LocalStorage';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 

@@ -1,14 +1,14 @@
 import {QueryResult} from '@apollo/client';
 import * as React from 'react';
 
-import {Loading} from 'src/Loading';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
 import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
 import {SensorInfo} from 'src/sensors/SensorInfo';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {JobType} from 'src/types/globalTypes';
 import {Group} from 'src/ui/Group';
+import {Loading} from 'src/ui/Loading';
 import {Subheading} from 'src/ui/Text';
 
 interface Props {

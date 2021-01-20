@@ -3,7 +3,7 @@ import {pathVerticalDiagonal} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {weakmapMemoize} from 'src/Util';
+import {weakmapMemoize} from 'src/app/Util';
 import {
   IFullPipelineLayout,
   IFullSolidLayout,

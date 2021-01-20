@@ -12,12 +12,12 @@ import * as ReactDOM from 'react-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {App} from 'src/App';
-import {AppCache} from 'src/AppCache';
-import {AppErrorLink} from 'src/AppError';
-import {WEBSOCKET_URI} from 'src/DomUtils';
-import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from 'src/Util';
 import {WebsocketStatusProvider} from 'src/WebsocketStatus';
+import {App} from 'src/app/App';
+import {AppCache} from 'src/app/AppCache';
+import {AppErrorLink} from 'src/app/AppError';
+import {WEBSOCKET_URI} from 'src/app/DomUtils';
+import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from 'src/app/Util';
 import {FontFamily} from 'src/ui/styles';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names

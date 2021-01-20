@@ -3,9 +3,10 @@ import {Button, Callout, Intent, Colors, Switch, Tooltip} from '@blueprintjs/cor
 import * as React from 'react';
 
 import {useConfirmation} from 'src/CustomConfirmationProvider';
-import {TickTag} from 'src/JobTick';
-import {JobRunStatus} from 'src/JobUtils';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
+import {TickTag} from 'src/jobs/JobTick';
+import {JobRunStatus} from 'src/jobs/JobUtils';
+import {JobStateFragment} from 'src/jobs/types/JobStateFragment';
 import {
   STOP_SCHEDULE_MUTATION,
   displayScheduleMutationErrors,
@@ -14,7 +15,6 @@ import {humanCronString} from 'src/schedules/humanCronString';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from 'src/sensors/SensorMutations';
 import {StopSensor} from 'src/sensors/types/StopSensor';
-import {JobStateFragment} from 'src/types/JobStateFragment';
 import {JobType, JobStatus} from 'src/types/globalTypes';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';

@@ -5,10 +5,10 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/LocalStorage';
-import {ShortcutHandler} from 'src/ShortcutHandler';
 import {SecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
+import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/app/LocalStorage';
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {ConfigEditor} from 'src/configeditor/ConfigEditor';
 import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
 import {

@@ -2,8 +2,8 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
+import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {RepositorySelector} from 'src/types/globalTypes';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
