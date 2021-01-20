@@ -46,13 +46,7 @@ def construct_log_string(synth_props, logging_tags, message_props):
     if hasattr(event_specific_data, "error") and isinstance(
         event_specific_data.error, SerializableErrorInfo
     ):
-        stack = (
-            "\n"
-            + "\n"
-            + event_specific_data.error.message
-            + "\n"
-            + "".join(event_specific_data.error.stack)
-        )
+        stack = "\n\n" + event_specific_data.error.to_string()
 
     log_source_prefix = (
         "resource:%s" % logging_tags["resource_name"]

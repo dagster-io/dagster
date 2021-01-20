@@ -1,4 +1,3 @@
-import sys
 import zipfile
 
 import boto3
@@ -22,16 +21,11 @@ from moto import mock_s3
 
 def write_zip_file_to_disk(zip_file_path, archive_member, data):
     with zipfile.ZipFile(zip_file_path, mode="w") as archive:
-        # writable stream with archive.open not available < 3.6
-        if sys.version_info.major < 3:
-            # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            archive.writestr(bytes=data, zinfo_or_arcname=archive_member)
-        else:
-            archive.writestr(data=data, zinfo_or_arcname=archive_member)
+        archive.writestr(data=data, zinfo_or_arcname=archive_member)
 
 
 def test_unzip_file_handle():
-    data = "foo".encode()
+    data = b"foo"
 
     with get_temp_file_name() as zip_file_name:
         write_zip_file_to_disk(zip_file_name, "some_archive_member", data)
@@ -59,7 +53,7 @@ def test_unzip_file_handle():
 
 @mock_s3
 def test_unzip_file_handle_on_fake_s3():
-    foo_bytes = "foo".encode()
+    foo_bytes = b"foo"
 
     @solid(required_resource_keys={"file_manager"}, output_defs=[OutputDefinition(S3FileHandle)])
     def write_zipped_file_to_s3_store(context):
@@ -70,7 +64,8 @@ def test_unzip_file_handle_on_fake_s3():
                 return s3_file_handle
 
     # Uses mock S3
-    s3 = boto3.client("s3")
+    # https://github.com/spulec/moto/issues/3292
+    s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="some-bucket")
     file_manager = S3FileManager(s3_session=s3, s3_bucket="some-bucket", s3_base_key="dagster")
 

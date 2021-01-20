@@ -3,7 +3,6 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 
-import six
 import sqlalchemy as db
 from dagster import check, seven
 from dagster.core.definitions.events import AssetKey, Materialization
@@ -141,7 +140,7 @@ class SqlEventLogStorage(EventLogStorage):
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
         except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+            raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         return events
 
@@ -209,7 +208,7 @@ class SqlEventLogStorage(EventLogStorage):
                 end_time=datetime_as_float(end_time) if end_time else None,
             )
         except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+            raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
     def get_step_stats_for_run(self, run_id, step_keys=None):
         check.str_param(run_id, "run_id")
@@ -318,7 +317,7 @@ class SqlEventLogStorage(EventLogStorage):
                         event.dagster_event.event_specific_data.expectation_result
                     )
         except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+            raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         return [
             RunStepKeyStatsSnapshot(
@@ -449,11 +448,10 @@ class SqlEventLogStorage(EventLogStorage):
         query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
             name=name, migration_completed=datetime.now(),
         )
-        try:
-            with self.connect(run_id) as conn:
+        with self.connect(run_id) as conn:
+            try:
                 conn.execute(query)
-        except db.exc.IntegrityError:
-            with self.connect(run_id) as conn:
+            except db.exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == name)
@@ -470,19 +468,30 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
     def upgrade(self):
         pass
 
-    def _add_cursor_limit_to_query(self, query, cursor, limit):
+    def _add_cursor_limit_to_query(self, query, cursor, limit, ascending=False):
         """ Helper function to deal with cursor/limit pagination args """
+        try:
+            cursor = int(cursor) if cursor else None
+        except ValueError:
+            cursor = None
 
         if cursor:
             cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
                 SqlEventLogStorageTable.c.id == cursor
             )
-            query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
+            if ascending:
+                query = query.where(SqlEventLogStorageTable.c.id > cursor_query)
+            else:
+                query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
 
         if limit:
             query = query.limit(limit)
 
-        query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
+        if ascending:
+            query = query.order_by(SqlEventLogStorageTable.c.timestamp.asc())
+        else:
+            query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
+
         return query
 
     def has_asset_key(self, asset_key):
@@ -514,6 +523,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         return len(results) > 0
 
     def get_all_asset_keys(self, prefix_path=None):
+        lazy_migrate = False
         if not prefix_path:
             if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
                 query = db.select([AssetKeyTable.c.asset_key])
@@ -523,6 +533,16 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                     .where(SqlEventLogStorageTable.c.asset_key != None)
                     .distinct()
                 )
+
+                # This is in place to migrate everyone to using the secondary index table for asset
+                # keys.  Performing this migration should result in a big performance boost for
+                # any asset-catalog reads.
+
+                # After a sufficient amount of time (>= 0.11.0?), we can remove the checks
+                # for has_secondary_index(SECONDARY_INDEX_ASSET_KEY) and always read from the
+                # AssetKeyTable, since we are already writing to the table. Tracking the conditional
+                # check removal here: https://github.com/dagster-io/dagster/issues/3507
+                lazy_migrate = True
         else:
             if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
                 query = db.select([AssetKeyTable.c.asset_key]).where(
@@ -552,11 +572,42 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
+            if lazy_migrate:
+                # This is in place to migrate everyone to using the secondary index table for asset
+                # keys.  Performing this migration should result in a big performance boost for
+                # any subsequent asset-catalog reads.
+                self._lazy_migrate_secondary_index_asset_key(
+                    conn, [asset_key for (asset_key,) in results if asset_key]
+                )
         return list(
             set([AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key])
         )
 
-    def get_asset_events(self, asset_key, partitions=None, cursor=None, limit=None):
+    def _lazy_migrate_secondary_index_asset_key(self, conn, asset_keys):
+        results = conn.execute(db.select([AssetKeyTable.c.asset_key])).fetchall()
+        existing = [asset_key for (asset_key,) in results if asset_key]
+        to_migrate = set(asset_keys) - set(existing)
+        for asset_key in to_migrate:
+            try:
+                conn.execute(
+                    AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                        asset_key=AssetKey.from_db_string(asset_key).to_string()
+                    )
+                )
+            except db.exc.IntegrityError:
+                # asset key already present
+                pass
+        self.enable_secondary_index(SECONDARY_INDEX_ASSET_KEY)
+
+    def get_asset_events(
+        self,
+        asset_key,
+        partitions=None,
+        cursor=None,
+        limit=None,
+        ascending=False,
+        include_cursor=False,
+    ):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.opt_list_param(partitions, "partitions", of_type=str)
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
@@ -568,7 +619,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         if partitions:
             query = query.where(SqlEventLogStorageTable.c.partition.in_(partitions))
 
-        query = self._add_cursor_limit_to_query(query, cursor, limit)
+        query = self._add_cursor_limit_to_query(query, cursor, limit, ascending=ascending)
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
 
@@ -583,7 +634,10 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                         )
                     )
                     continue
-                events.append(event_record)
+                if include_cursor:
+                    events.append(tuple([row_id, event_record]))
+                else:
+                    events.append(event_record)
             except seven.JSONDecodeError:
                 logging.warning("Could not parse asset event record id `{}`.".format(row_id))
         return events

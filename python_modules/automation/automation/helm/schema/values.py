@@ -11,9 +11,13 @@ class HelmValues(BaseModel):
     """
 
     dagit: subschema.Dagit
+    userDeployments: subschema.UserDeployments
     postgresql: subschema.PostgreSQL
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis
     flower: subschema.Flower
     ingress: subschema.Ingress
     imagePullSecrets: List[subschema.kubernetes.SecretRef]
+    computeLogManager: subschema.ComputeLogManager
+    scheduler: subschema.Scheduler
+    runLauncher: subschema.RunLauncher

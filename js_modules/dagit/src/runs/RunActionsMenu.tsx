@@ -165,8 +165,8 @@ export const RunActionsMenu: React.FC<{
 
 export const RunBulkActionsMenu: React.FunctionComponent<{
   selected: RunTableRunFragment[];
-  onChangeSelection: (runs: RunTableRunFragment[]) => void;
-}> = React.memo(({selected, onChangeSelection}) => {
+  clearSelection: () => void;
+}> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
@@ -185,7 +185,7 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
   };
 
   const onComplete = () => {
-    onChangeSelection([]);
+    clearSelection();
     refetch();
   };
 

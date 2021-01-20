@@ -33,7 +33,7 @@ class ExecutionPlanSnapshotArgs(
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
             run_config=check.dict_param(run_config, "run_config"),
             mode=check.str_param(mode, "mode"),
-            step_keys_to_execute=check.opt_list_param(
+            step_keys_to_execute=check.opt_nullable_list_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
@@ -90,7 +90,7 @@ class ExecuteStepArgs(
                 pipeline_origin, "pipeline_origin", PipelinePythonOrigin
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
-            step_keys_to_execute=check.opt_list_param(
+            step_keys_to_execute=check.opt_nullable_list_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),

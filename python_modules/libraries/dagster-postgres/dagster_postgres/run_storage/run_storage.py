@@ -1,7 +1,12 @@
 import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
-from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.core.storage.sql import (
+    create_engine,
+    get_alembic_config,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
@@ -10,6 +15,7 @@ from ..utils import (
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
+    retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
 
@@ -42,8 +48,18 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool,
         )
 
-        with self.connect() as conn:
-            retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
+        self._index_migration_cache = {}
+        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+
+        # Stamp and create tables if there's no previously stamped revision and the main table
+        # doesn't exist (since we used to not stamp postgres storage when it was first created)
+        if "runs" not in table_names:
+            with self.connect() as conn:
+                alembic_config = get_alembic_config(__file__)
+                retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
+
+                # This revision may be shared by any other dagster storage classes using the same DB
+                stamp_alembic_rev(alembic_config, conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection and set statement_timeout
@@ -79,12 +95,25 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             engine.dispose()
         return PostgresRunStorage(postgres_url)
 
-    def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
-        return create_pg_connection(self._engine, __file__, "run")
+    def connect(self):
+        return create_pg_connection(self._engine, __file__, "run",)
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self._engine)
+        with self.connect() as conn:
+            run_alembic_upgrade(alembic_config, conn)
+
+    def has_built_index(self, migration_name):
+        if migration_name not in self._index_migration_cache:
+            self._index_migration_cache[migration_name] = super(
+                PostgresRunStorage, self
+            ).has_built_index(migration_name)
+        return self._index_migration_cache[migration_name]
+
+    def mark_index_built(self, migration_name):
+        super(PostgresRunStorage, self).mark_index_built(migration_name)
+        if migration_name in self._index_migration_cache:
+            del self._index_migration_cache[migration_name]
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:

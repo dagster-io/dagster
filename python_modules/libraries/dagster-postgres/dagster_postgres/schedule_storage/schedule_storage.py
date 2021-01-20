@@ -1,7 +1,12 @@
 import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.core.storage.sql import (
+    create_engine,
+    get_alembic_config,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
@@ -9,6 +14,7 @@ from ..utils import (
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
+    retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
 
@@ -41,8 +47,16 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
 
-        with self.connect() as conn:
-            retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
+        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+
+        missing_main_table = "schedules" not in table_names and "jobs" not in table_names
+        if missing_main_table:
+            with self.connect() as conn:
+                alembic_config = get_alembic_config(__file__)
+                retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
+
+                # This revision may be shared by any other dagster storage classes using the same DB
+                stamp_alembic_rev(alembic_config, conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout
@@ -83,4 +97,5 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self._engine)
+        with self.connect() as conn:
+            run_alembic_upgrade(alembic_config, conn)

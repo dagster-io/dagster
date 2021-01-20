@@ -27,6 +27,10 @@ Dagster CLI
    :prog: dagster schedule
    :show-nested:
 
+.. click:: dagster.cli.sensor:sensor_cli
+   :prog: dagster sensor
+   :show-nested:
+
 .. currentmodule:: dagster_graphql
 
 .. click:: dagster_graphql.cli:cli

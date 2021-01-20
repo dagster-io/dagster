@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
+from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -201,3 +202,37 @@ def test_overlapping_tag_limits(instance):
     list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+
+
+def test_location_handles_reused(instance, monkeypatch):
+    """
+    verifies that only one repository location is created when two queued runs from the same
+    location are dequeued in the same iteration
+    """
+
+    create_run(
+        instance, run_id="queued-run", status=PipelineRunStatus.QUEUED,
+    )
+
+    create_run(
+        instance, run_id="queued-run-2", status=PipelineRunStatus.QUEUED,
+    )
+
+    original_method = RepositoryLocationHandle.create_from_repository_location_origin
+    method_calls = []
+
+    def mocked_create_location_handle(origin):
+        method_calls.append(origin)
+        return original_method(origin)
+
+    monkeypatch.setattr(
+        RepositoryLocationHandle,
+        "create_from_repository_location_origin",
+        mocked_create_location_handle,
+    )
+
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
+    list(coordinator.run_iteration())
+
+    assert get_run_ids(instance.run_launcher.queue()) == ["queued-run", "queued-run-2"]
+    assert len(method_calls) == 1

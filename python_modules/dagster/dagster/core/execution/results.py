@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid, SolidHandle
-from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
@@ -18,11 +17,21 @@ def _construct_events_by_step_key(event_list):
 
 
 class GraphExecutionResult:
-    def __init__(self, container, event_list, reconstruct_context, handle=None):
+    def __init__(
+        self,
+        container,
+        event_list,
+        reconstruct_context,
+        handle=None,
+        resource_instances_to_override=None,
+    ):
         self.container = check.inst_param(container, "container", GraphDefinition)
         self.event_list = check.list_param(event_list, "step_event_list", of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
         self.handle = check.opt_inst_param(handle, "handle", SolidHandle)
+        self.resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override", str
+        )
         self._events_by_step_key = _construct_events_by_step_key(event_list)
 
     @property
@@ -103,6 +112,7 @@ class GraphExecutionResult:
                 events_by_kind,
                 self.reconstruct_context,
                 handle=handle.with_ancestor(self.handle),
+                resource_instances_to_override=self.resource_instances_to_override,
             )
         else:
             for event in self.event_list:
@@ -110,7 +120,12 @@ class GraphExecutionResult:
                     if event.solid_handle.is_or_descends_from(handle.with_ancestor(self.handle)):
                         events_by_kind[event.step_kind].append(event)
 
-            return SolidExecutionResult(solid, events_by_kind, self.reconstruct_context)
+            return SolidExecutionResult(
+                solid,
+                events_by_kind,
+                self.reconstruct_context,
+                resource_instances_to_override=self.resource_instances_to_override,
+            )
 
     def result_for_handle(self, handle):
         """Get the result of a solid by its solid handle.
@@ -141,12 +156,22 @@ class PipelineExecutionResult(GraphExecutionResult):
     Returned by :py:func:`execute_pipeline`. Users should not instantiate this class.
     """
 
-    def __init__(self, pipeline_def, run_id, event_list, reconstruct_context):
+    def __init__(
+        self,
+        pipeline_def,
+        run_id,
+        event_list,
+        reconstruct_context,
+        resource_instances_to_override=None,
+    ):
         self.run_id = check.str_param(run_id, "run_id")
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline_def, event_list=event_list, reconstruct_context=reconstruct_context,
+            container=pipeline_def,
+            event_list=event_list,
+            reconstruct_context=reconstruct_context,
+            resource_instances_to_override=resource_instances_to_override,
         )
 
     @property
@@ -160,7 +185,15 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
     Users should not instantiate this class.
     """
 
-    def __init__(self, solid, event_list, step_events_by_kind, reconstruct_context, handle=None):
+    def __init__(
+        self,
+        solid,
+        event_list,
+        step_events_by_kind,
+        reconstruct_context,
+        handle=None,
+        resource_instances_to_override=None,
+    ):
         check.inst_param(solid, "solid", Solid)
         check.invariant(
             solid.is_composite,
@@ -170,12 +203,15 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, "step_events_by_kind", key_type=StepKind, value_type=list
         )
-
+        self.resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override", str
+        )
         super(CompositeSolidExecutionResult, self).__init__(
             container=solid.definition,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
             handle=handle,
+            resource_instances_to_override=resource_instances_to_override,
         )
 
     def output_values_for_solid(self, name):
@@ -250,7 +286,9 @@ class SolidExecutionResult:
     Users should not instantiate this class.
     """
 
-    def __init__(self, solid, step_events_by_kind, reconstruct_context):
+    def __init__(
+        self, solid, step_events_by_kind, reconstruct_context, resource_instances_to_override=None
+    ):
         check.inst_param(solid, "solid", Solid)
         check.invariant(
             not solid.is_composite,
@@ -261,6 +299,9 @@ class SolidExecutionResult:
             step_events_by_kind, "step_events_by_kind", key_type=StepKind, value_type=list
         )
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
+        self.resource_instances_to_override = check.opt_dict_param(
+            resource_instances_to_override, "resource_instances_to_override", str
+        )
 
     @property
     def compute_input_event_dict(self):
@@ -411,37 +452,30 @@ class SolidExecutionResult:
         Note that accessing this property will reconstruct the pipeline context (including, e.g.,
         resources) to retrieve materialized output values.
         """
-        from .api import create_execution_plan
-
-        if self.success and self.compute_step_events:
-            with self.reconstruct_context() as context:
-                execution_plan = create_execution_plan(
-                    pipeline=context.pipeline,
-                    run_config=context.run_config,
-                    mode=context.pipeline_run.mode,
-                    step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
-                )
-                results = {}
-                for compute_step_event in self.compute_step_events:
-                    if compute_step_event.is_successful_output:
-                        output = compute_step_event.step_output_data
-                        value = self._get_value(
-                            context.for_step(
-                                execution_plan.get_step_by_key(compute_step_event.step_key)
-                            ),
-                            output,
-                        )
-                        if output.mapping_key:
-                            if results.get(output.output_name) is None:
-                                results[output.output_name] = {output.mapping_key: value}
-                            else:
-                                results[output.output_name][output.mapping_key] = value
-                        else:
-                            results[output.output_name] = value
-
-                return results
-        else:
+        if not self.success or not self.compute_step_events:
             return None
+
+        results = {}
+        with self.reconstruct_context(self.resource_instances_to_override) as context:
+            for compute_step_event in self.compute_step_events:
+                if compute_step_event.is_successful_output:
+                    output = compute_step_event.step_output_data
+                    step = context.execution_plan.get_step_by_key(compute_step_event.step_key)
+                    value = self._get_value(context.for_step(step), output)
+                    check.invariant(
+                        not (output.mapping_key and step.get_mapping_key()),
+                        "Not set up to handle mapped outputs downstream of mapped steps",
+                    )
+                    mapping_key = output.mapping_key or step.get_mapping_key()
+                    if mapping_key:
+                        if results.get(output.output_name) is None:
+                            results[output.output_name] = {mapping_key: value}
+                        else:
+                            results[output.output_name][mapping_key] = value
+                    else:
+                        results[output.output_name] = value
+
+        return results
 
     def output_value(self, output_name=DEFAULT_OUTPUT):
         """Get a computed output value.
@@ -456,8 +490,6 @@ class SolidExecutionResult:
             Union[None, Any, Dict[str, Any]]: ``None`` if execution did not succeed, the output value
                 in the normal case, and a dict of mapping keys to values in the mapped case.
         """
-        from .api import create_execution_plan
-
         check.str_param(output_name, "output_name")
 
         if not self.solid.definition.has_output(output_name):
@@ -470,14 +502,10 @@ class SolidExecutionResult:
                 )
             )
 
-        if self.success:
-            with self.reconstruct_context() as context:
-                execution_plan = create_execution_plan(
-                    pipeline=context.pipeline,
-                    run_config=context.run_config,
-                    mode=context.pipeline_run.mode,
-                    step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
-                )
+        if not self.success:
+            return None
+
+        with self.reconstruct_context(self.resource_instances_to_override) as context:
             found = False
             result = None
             for compute_step_event in self.compute_step_events:
@@ -487,17 +515,18 @@ class SolidExecutionResult:
                 ):
                     found = True
                     output = compute_step_event.step_output_data
-                    value = self._get_value(
-                        context.for_step(
-                            execution_plan.get_step_by_key(compute_step_event.step_key)
-                        ),
-                        output,
+                    step = context.execution_plan.get_step_by_key(compute_step_event.step_key)
+                    value = self._get_value(context.for_step(step), output)
+                    check.invariant(
+                        not (output.mapping_key and step.get_mapping_key()),
+                        "Not set up to handle mapped outputs downstream of mapped steps",
                     )
-                    if output.mapping_key:
+                    mapping_key = output.mapping_key or step.get_mapping_key()
+                    if mapping_key:
                         if result is None:
-                            result = {output.mapping_key: value}
+                            result = {mapping_key: value}
                         else:
-                            result[output.mapping_key] = value
+                            result[mapping_key] = value
                     else:
                         result = value
 
@@ -510,14 +539,11 @@ class SolidExecutionResult:
                     "execution result"
                 ).format(output_name=output_name, self=self)
             )
-        else:
-            return None
 
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
         manager = context.get_output_manager(step_output_handle)
 
-        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
         res = manager.load_input(
             context.for_input_manager(
                 name=None,
@@ -527,10 +553,7 @@ class SolidExecutionResult:
                 source_handle=step_output_handle,
             )
         )
-        if isinstance(res, ObjectStoreOperation):
-            return res.obj
-        else:
-            return res
+        return res
 
     @property
     def failure_data(self):

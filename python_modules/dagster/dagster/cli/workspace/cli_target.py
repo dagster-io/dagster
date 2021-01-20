@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -93,32 +92,8 @@ def created_workspace_load_target(kwargs):
             return EmptyWorkspaceTarget()
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
-        elif os.path.exists("repository.yaml"):
-            warnings.warn(
-                'You are automatically loading a "repository.yaml", a deprecated '
-                "capability. This capability will be eliminated in 0.9.0."
-            )
-            return WorkspaceFileTarget(paths=["repository.yaml"])
         raise click.UsageError("No arguments given and workspace.yaml not found.")
-    if kwargs.get("repository_yaml"):
-        warnings.warn(
-            "You have used -y or --repository-yaml to load a workspace. "
-            "This is deprecated and will be eliminated in 0.9.0."
-        )
-        _check_cli_arguments_none(
-            kwargs,
-            "python_file",
-            "working_directory",
-            "empty_working_directory",
-            "module_name",
-            "package_name",
-            "attribute",
-            "workspace",
-            "grpc_host",
-            "grpc_port",
-            "grpc_socket",
-        )
-        return WorkspaceFileTarget(paths=[kwargs["repository_yaml"]])
+
     if kwargs.get("workspace"):
         _check_cli_arguments_none(
             kwargs,
@@ -301,12 +276,6 @@ def workspace_target_click_options():
                 multiple=True,
                 type=click.Path(exists=True),
                 help=("Path to workspace file. Argument can be provided multiple times."),
-            ),
-            click.option(
-                "--repository-yaml",
-                "-y",
-                type=click.Path(exists=True),
-                help=("Path to legacy repository.yaml file"),
             ),
         ]
         + python_target_click_options()

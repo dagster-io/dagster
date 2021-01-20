@@ -112,7 +112,10 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         )
         self._watch_thread_shutdown_event = watch_thread_shutdown_event
         self._watch_thread = watch_thread
-        self._watch_thread.start()
+
+        # Temporarily disabling due to thread-safety issues ith
+        # deployed gRPC servers (https://github.com/dagster-io/dagster/issues/3404)
+        # self._watch_thread.start()
 
         self.executable_path = list_repositories_response.executable_path
         self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
@@ -372,3 +375,8 @@ class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name r
     @property
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
+
+    def get_external_origin(self):
+        return self.repository_handle.get_external_origin().get_partition_set_origin(
+            self.partition_set_name
+        )

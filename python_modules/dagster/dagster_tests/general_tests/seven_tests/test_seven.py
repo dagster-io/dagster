@@ -1,7 +1,3 @@
-# encoding: utf-8
-
-from __future__ import unicode_literals
-
 import json
 import tempfile
 from functools import update_wrapper

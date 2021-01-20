@@ -27,7 +27,12 @@ export const defaultMocks = {
     id: randomId,
     name: hyphenatedName,
   }),
-  ScheduleDefinition: () => ({
+  Schedule: () => ({
+    id: hyphenatedName,
+    name: hyphenatedName,
+  }),
+  Sensor: () => ({
+    id: hyphenatedName,
     name: hyphenatedName,
   }),
   Solid: () => ({

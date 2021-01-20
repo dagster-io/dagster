@@ -67,3 +67,23 @@ def test_error_daemon(monkeypatch):
             status.last_heartbeat.error.message.strip()
             == "dagster.core.errors.DagsterInvariantViolationError: foobar"
         )
+
+
+def test_warn_multiple_daemons(capsys):
+    with instance_for_test() as instance:
+        init_time = pendulum.now("UTC")
+        next_time = init_time.add(seconds=100)
+
+        controller1 = DagsterDaemonController(instance)
+        controller1.run_iteration(init_time)
+        captured = capsys.readouterr()
+        assert "Taking over from another SENSOR daemon process" not in captured.out
+
+        controller2 = DagsterDaemonController(instance)
+        controller2.run_iteration(init_time)
+        captured = capsys.readouterr()
+        assert "Taking over from another SENSOR daemon process" not in captured.out
+
+        controller1.run_iteration(next_time)
+        captured = capsys.readouterr()
+        assert "Taking over from another SENSOR daemon process" in captured.out

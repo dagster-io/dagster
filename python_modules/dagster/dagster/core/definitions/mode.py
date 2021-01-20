@@ -56,13 +56,13 @@ class ModeDefinition(
         check.opt_dict_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
-        if resource_defs and "object_manager" in resource_defs:
+        if resource_defs and "io_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
-            from dagster.core.storage.mem_object_manager import mem_object_manager
+            from dagster.core.storage.mem_io_manager import mem_io_manager
 
             resource_defs_with_defaults = merge_dicts(
-                {"object_manager": mem_object_manager}, resource_defs or {}
+                {"io_manager": mem_io_manager}, resource_defs or {}
             )
 
         return super(ModeDefinition, cls).__new__(

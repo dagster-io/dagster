@@ -3,7 +3,6 @@ import os
 from click import UsageError
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, all_none
 
 
 def _cli_load_invariant(condition, msg=None):
@@ -25,21 +24,6 @@ def recon_repo_for_cli_args(kwargs):
     if kwargs.get("workspace"):
         check.not_implemented("Workspace not supported yet in this cli command")
 
-    if kwargs.get("repository_yaml") or all_none(kwargs):
-        _cli_load_invariant(kwargs.get("module_name") is None)
-        _cli_load_invariant(kwargs.get("python_file") is None)
-        _cli_load_invariant(kwargs.get("fn_name") is None)
-        repo_yaml = (
-            os.path.abspath(kwargs.get("repository_yaml"))
-            if kwargs.get("repository_yaml")
-            else DEFAULT_REPOSITORY_YAML_FILENAME
-        )
-        _cli_load_invariant(
-            os.path.exists(repo_yaml),
-            'Expected to use file "{}" to load repository but it does not exist. '
-            "Verify your current working directory or CLI arguments.".format(repo_yaml),
-        )
-        return ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
     elif kwargs.get("module_name") and kwargs.get("fn_name"):
         _cli_load_invariant(kwargs.get("repository_yaml") is None)
         _cli_load_invariant(kwargs.get("python_file") is None)

@@ -4,7 +4,6 @@ from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 
 def build_dagster_type_namespace_snapshot(pipeline_def):
@@ -68,9 +67,6 @@ class DagsterTypeSnap(
         type_param_keys,
         loader_schema_key=None,
         materializer_schema_key=None,
-        # Graveyard
-        input_hydration_schema_key=None,
-        output_materialization_schema_key=None,
     ):
         return super(DagsterTypeSnap, cls).__new__(
             cls,
@@ -81,20 +77,8 @@ class DagsterTypeSnap(
             description=check.opt_str_param(description, "description"),
             is_builtin=check.bool_param(is_builtin, "is_builtin"),
             type_param_keys=check.list_param(type_param_keys, "type_param_keys", of_type=str),
-            loader_schema_key=canonicalize_backcompat_args(
-                check.opt_str_param(loader_schema_key, "loader_schema_key"),
-                "loader_schema_key",
-                check.opt_str_param(input_hydration_schema_key, "input_hydration_schema_key"),
-                "input_hydration_schema_key",
-                "0.10.0",
-            ),
-            materializer_schema_key=canonicalize_backcompat_args(
-                check.opt_str_param(materializer_schema_key, "materializer_schema_key"),
-                "materializer_schema_key",
-                check.opt_str_param(
-                    output_materialization_schema_key, "output_materialization_schema_key"
-                ),
-                "output_materialization_schema_key",
-                "0.10.0",
+            loader_schema_key=check.opt_str_param(loader_schema_key, "loader_schema_key"),
+            materializer_schema_key=check.opt_str_param(
+                materializer_schema_key, "materializer_schema_key"
             ),
         )

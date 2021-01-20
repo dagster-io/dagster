@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
 
-export const SensorInfo: React.FunctionComponent<{
+export const SensorInfo: React.FC<{
   daemonHealth: DaemonHealthFragment | undefined;
 }> = ({daemonHealth}) => {
   let healthy = false;
@@ -24,10 +24,8 @@ export const SensorInfo: React.FunctionComponent<{
 
   return (
     <Callout icon="time" intent={Intent.WARNING} title="The sensor daemon is not running.">
-      <p>
-        See the <a href="https://docs.dagster.io/overview/daemon">dagster-daemon documentation</a>{' '}
-        for more information on how to deploy the dagster-daemon process.
-      </p>
+      See the <a href="https://docs.dagster.io/overview/daemon">dagster-daemon documentation</a> for
+      more information on how to deploy the dagster-daemon process.
     </Callout>
   );
 };

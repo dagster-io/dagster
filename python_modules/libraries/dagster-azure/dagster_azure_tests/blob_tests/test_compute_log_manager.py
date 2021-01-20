@@ -2,7 +2,6 @@ import os
 import sys
 import tempfile
 
-import six
 from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -84,7 +83,7 @@ def test_compute_log_manager(
                 prefix="my_prefix", run_id=result.run_id
             ),
         )
-        adls2_stderr = six.ensure_str(adls2_object.download_blob().readall())
+        adls2_stderr = adls2_object.download_blob().readall().decode("utf-8")
         for expected in EXPECTED_LOGS:
             assert expected in adls2_stderr
 
@@ -120,7 +119,7 @@ compute_logs:
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
-            f.write(six.ensure_binary(dagster_yaml))
+            f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
     assert (

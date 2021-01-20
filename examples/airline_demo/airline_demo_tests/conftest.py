@@ -21,7 +21,7 @@ def is_postgres_running():
                 "status=running",
             ]
         )
-        decoded = output.decode()
+        decoded = output.decode("utf-8")
 
         lines = decoded.split("\n")
 

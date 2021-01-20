@@ -41,7 +41,7 @@ const calculateDisplayStatus = (
 export const SchedulePartitionStatus: React.FC<{
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
-}> = ({repoAddress, schedule}) => {
+}> = React.memo(({repoAddress, schedule}) => {
   if (
     !schedule.partitionSet ||
     schedule.partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses'
@@ -93,4 +93,4 @@ export const SchedulePartitionStatus: React.FC<{
       </StatusTable>
     </Group>
   );
-};
+});

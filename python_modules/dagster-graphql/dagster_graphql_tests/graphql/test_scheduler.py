@@ -294,7 +294,11 @@ def test_get_unloadable_job(graphql_context):
                 _get_unloadable_schedule_origin("unloadable_running"),
                 JobType.SCHEDULE,
                 JobStatus.RUNNING,
-                ScheduleJobData("0 0 * * *", pendulum.now("UTC").timestamp(),),
+                ScheduleJobData(
+                    "0 0 * * *",
+                    pendulum.now("UTC").timestamp(),
+                    graphql_context.instance.scheduler.__class__.__name__,
+                ),
             )
         )
 
@@ -303,7 +307,11 @@ def test_get_unloadable_job(graphql_context):
                 _get_unloadable_schedule_origin("unloadable_stopped"),
                 JobType.SCHEDULE,
                 JobStatus.STOPPED,
-                ScheduleJobData("0 0 * * *", pendulum.now("UTC").timestamp(),),
+                ScheduleJobData(
+                    "0 0 * * *",
+                    pendulum.now("UTC").timestamp(),
+                    graphql_context.instance.scheduler.__class__.__name__,
+                ),
             )
         )
 

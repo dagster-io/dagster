@@ -1,0 +1,6 @@
+2021-01-11 14:49:05 - dagster - DEBUG - foo - f0e84fbb-d72f-4429-a9dc-0e867fdeb1d1 - 26897 - do_input.compute - STEP_START - Started execution of step "do_input.compute".
+2021-01-11 14:49:05 - dagster - DEBUG - foo - f0e84fbb-d72f-4429-a9dc-0e867fdeb1d1 - 26897 - do_input.compute - OBJECT_STORE_OPERATION - Retrieved intermediate object for input x in memory object store using pickle.
+2021-01-11 14:49:05 - dagster - DEBUG - foo - f0e84fbb-d72f-4429-a9dc-0e867fdeb1d1 - 26897 - do_input.compute - STEP_INPUT - Got input "x" of type "Any". (Type check passed).
+2021-01-11 14:49:05 - dagster - DEBUG - foo - f0e84fbb-d72f-4429-a9dc-0e867fdeb1d1 - 26897 - do_input.compute - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2021-01-11 14:49:05 - dagster - DEBUG - foo - f0e84fbb-d72f-4429-a9dc-0e867fdeb1d1 - 26897 - do_input.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.
+2021-01-11 14:49:05 - dagster - DEBUG - foo - f0e84fbb-d72f-4429-a9dc-0e867fdeb1d1 - 26897 - do_input.compute - STEP_SUCCESS - Finished execution of step "do_input.compute" in 17ms.

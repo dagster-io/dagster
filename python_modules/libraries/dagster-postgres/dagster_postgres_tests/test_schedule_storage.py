@@ -1,8 +1,6 @@
 import pytest
 from dagster.utils.test.schedule_storage import TestScheduleStorage
 
-TestScheduleStorage.__test__ = False
-
 
 class TestPostgresScheduleStorage(TestScheduleStorage):
     __test__ = True

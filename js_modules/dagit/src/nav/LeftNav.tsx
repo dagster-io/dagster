@@ -26,20 +26,20 @@ const INSTANCE_TABS = [
   {
     to: `/instance/runs`,
     tab: `runs`,
-    icon: <Icon icon="history" iconSize={18} />,
+    icon: <Icon icon="history" iconSize={16} />,
     label: 'Runs',
   },
   {
     to: `/instance/assets`,
     tab: `assets`,
-    icon: <Icon icon="panel-table" iconSize={18} />,
+    icon: <Icon icon="panel-table" iconSize={16} />,
     label: 'Assets',
   },
   {
-    to: `/instance/daemons`,
-    tab: `jobs`,
-    icon: <Icon icon="social-media" iconSize={18} />,
-    label: 'Daemons',
+    to: `/instance`,
+    tab: `instance-status`,
+    icon: <Icon icon="dashboard" iconSize={16} />,
+    label: 'Status',
   },
 ];
 
@@ -93,7 +93,7 @@ const LeftNavRepositorySection = () => {
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
           <ItemHeader>{'Pipelines & Solids:'}</ItemHeader>
           <RepositoryContentList {...match?.params} repo={activeRepo.repo} />
-          <ItemHeader>Schedules & Sensors:</ItemHeader>
+          <ItemHeader>{`Schedules & Sensors:`}</ItemHeader>
           <JobsList {...match?.params} repo={activeRepo.repo} />
         </div>
       ) : null}
@@ -105,20 +105,36 @@ export const LeftNav = () => {
   const history = useHistory();
   return (
     <LeftNavContainer>
-      <Box padding={{bottom: 8}}>
+      <Box padding={{vertical: 8}}>
         <LogoContainer>
-          <img
-            alt="logo"
-            src={navBarImage}
-            style={{height: 40}}
-            onClick={() => history.push('/')}
-          />
-          <LogoMetaContainer>
-            <img src={navTitleImage} style={{height: 10}} alt="title" />
-            <InstanceDetailsLink />
-          </LogoMetaContainer>
-          <LogoWebsocketStatus />
+          <Group direction="row" spacing={16} padding={{horizontal: 12}} margin={{bottom: 8}}>
+            <div style={{position: 'relative'}}>
+              <img
+                alt="logo"
+                src={navBarImage}
+                style={{height: 30}}
+                onClick={() => history.push('/')}
+              />
+              <LogoWebsocketStatus />
+            </div>
+            <div>
+              <img src={navTitleImage} style={{height: 10}} alt="title" />
+              <InstanceDetailsLink />
+            </div>
+          </Group>
         </LogoContainer>
+        <Box padding={{horizontal: 12}} margin={{bottom: 4}}>
+          <div
+            style={{
+              fontSize: 10.5,
+              color: Colors.GRAY1,
+              userSelect: 'none',
+              textTransform: 'uppercase',
+            }}
+          >
+            Instance
+          </div>
+        </Box>
         {INSTANCE_TABS.map((t, i) => (
           <ShortcutHandler
             key={t.tab}
@@ -141,17 +157,15 @@ export const LeftNav = () => {
 
 const LogoWebsocketStatus = styled(WebsocketStatus)`
   position: absolute;
-  top: 28px;
-  left: 42px;
+  top: 20px;
+  left: 24px;
 `;
 
 const ItemHeader = styled.div`
   font-size: 15px;
   text-overflow: ellipsis;
   overflow: hidden;
-  padding: 8px 12px;
-  padding-left: 8px;
-  margin-top: 10px;
+  padding: 8px 12px 8px 8px;
   border-left: 4px solid transparent;
   border-bottom: 1px solid transparent;
   display: block;
@@ -168,7 +182,6 @@ const LeftNavContainer = styled.div`
   justify-content: start;
   background: ${Colors.DARK_GRAY2};
   border-right: 1px solid ${Colors.DARK_GRAY5};
-  padding-top: 14px;
 `;
 
 const Tab = styled(Link)`
@@ -176,8 +189,7 @@ const Tab = styled(Link)`
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   display: flex;
-  padding: 8px 12px;
-  margin: 0px 0;
+  padding: 8px 10px;
   align-items: center;
   outline: 0;
   &:hover {
@@ -196,34 +208,19 @@ const Tab = styled(Link)`
 
 const TabLabel = styled.div`
   font-size: 13px;
-  margin-left: 6px;
+  margin-left: 8px;
   text-decoration: none;
   white-space: nowrap;
   text-decoration: none;
 `;
 
 const LogoContainer = styled.div`
-  width: 100%;
-  padding: 0 10px;
-  margin-bottom: 10px;
-  position: relative;
   cursor: pointer;
   &:hover {
     img {
       filter: brightness(110%);
     }
   }
-`;
-
-const LogoMetaContainer = styled.div`
-  position: absolute;
-  left: 56px;
-  top: -3px;
-  height: 42px;
-  padding-left: 4px;
-  right: 0;
-  z-index: 1;
-  border-bottom: 1px solid ${Colors.DARK_GRAY4};
 `;
 
 const DetailLink = styled(Link)`

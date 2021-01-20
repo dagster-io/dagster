@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any, Dict, Optional, Set
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -34,14 +35,14 @@ class InitResourceContext(
 
     def __new__(
         cls,
-        resource_config,
-        resource_def,
-        pipeline_run,
-        log_manager=None,
-        resource_instance_dict=None,
-        required_resource_keys=None,
-        instance_for_backwards_compat=None,
-        pipeline_def_for_backwards_compat=None,
+        resource_config: Any,
+        resource_def: ResourceDefinition,
+        pipeline_run: PipelineRun,
+        log_manager: Optional[DagsterLogManager] = None,
+        resource_instance_dict: Optional[Dict[str, Any]] = None,
+        required_resource_keys: Optional[Set[str]] = None,
+        instance_for_backwards_compat: Optional[DagsterInstance] = None,
+        pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
     ):
         check.opt_dict_param(resource_instance_dict, "resource_instance_dict")
         required_resource_keys = check.opt_set_param(
@@ -69,14 +70,14 @@ class InitResourceContext(
         )
 
     @property
-    def log(self):
+    def log(self) -> DagsterLogManager:
         return self.log_manager
 
     @property
-    def run_id(self):
+    def run_id(self) -> str:
         return self.pipeline_run.run_id
 
-    def replace_config(self, config):
+    def replace_config(self, config: Any) -> "InitResourceContext":
         return InitResourceContext(
             resource_config=config,
             resource_def=self.resource_def,

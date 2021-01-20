@@ -2,6 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.types.dagster_type import resolve_dagster_type
+from dagster.utils.backcompat import experimental_arg_warning
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -24,12 +25,12 @@ class OutputDefinition:
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        manager_key (Optional[str]): The resource key of the output manager used for this output.
-            (default: "object_manager").
-        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output. For example,
-            users can provide a file path if the data object will be stored in a filesystem, or
-            provide information of a database table when it is going to load the data into the
-            table.
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): (Experimental) A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
     """
 
     def __init__(
@@ -38,7 +39,7 @@ class OutputDefinition:
         name=None,
         description=None,
         is_required=None,
-        manager_key=None,
+        io_manager_key=None,
         metadata=None,
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
@@ -46,8 +47,10 @@ class OutputDefinition:
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
         self._manager_key = check.opt_str_param(
-            manager_key, "manager_key", default="object_manager"
+            io_manager_key, "io_manager_key", default="io_manager"
         )
+        if metadata:
+            experimental_arg_warning("metadata", "OutputDefinition")
         self._metadata = metadata
 
     @property
@@ -71,7 +74,7 @@ class OutputDefinition:
         return self._is_required
 
     @property
-    def manager_key(self):
+    def io_manager_key(self):
         return self._manager_key
 
     @property
@@ -102,6 +105,12 @@ class OutputDefinition:
 
 
 class DynamicOutputDefinition(OutputDefinition):
+    """
+    (EXPERIMENTAL) Variant of :py:class:`OutputDefinition` for an output that will dynamically
+    alter the graph at runtime. Each copy of :py:class:`DynamicOutput` corresponding to this
+    definition that is yielded from the solid will create a copy of the downstream graph.
+    """
+
     @property
     def is_dynamic(self):
         return True

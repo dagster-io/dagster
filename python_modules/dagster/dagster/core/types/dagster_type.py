@@ -1,8 +1,8 @@
+import typing
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
 
-import six
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array
@@ -11,7 +11,6 @@ from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import rename_warning
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
@@ -201,18 +200,8 @@ class DagsterType:
         return []
 
     @property
-    def input_hydration_schema_key(self):
-        rename_warning("loader_schema_key", "input_hydration_schema_key", "0.10.0")
-        return self.loader_schema_key
-
-    @property
     def loader_schema_key(self):
         return self.loader.schema_type.key if self.loader else None
-
-    @property
-    def output_materialization_schema_key(self):
-        rename_warning("materializer_schema_key", "output_materialization_schema_key", "0.10.0")
-        return self.materializer_schema_key
 
     @property
     def materializer_schema_key(self):
@@ -297,7 +286,7 @@ class _Int(BuiltinScalarDagsterType):
         )
 
     def type_check_scalar_value(self, value):
-        return _fail_if_not_of_type(value, six.integer_types, "int")
+        return _fail_if_not_of_type(value, int, "int")
 
 
 def _typemismatch_error_str(value, expected_type_desc):
@@ -729,7 +718,7 @@ _RUNTIME_MAP = {
     BuiltinEnum.NOTHING: Nothing,
 }
 
-_PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY = {}
+_PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: typing.Dict[type, DagsterType] = {}
 """Python types corresponding to user-defined RunTime types created using @map_to_dagster_type or
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
 

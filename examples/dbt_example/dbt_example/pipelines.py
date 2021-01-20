@@ -1,4 +1,4 @@
-from dagster import ModeDefinition, PresetDefinition, pipeline
+from dagster import ModeDefinition, PresetDefinition, fs_io_manager, pipeline
 from dagster_slack import slack_resource
 
 from .resources import mock_slack_resource, postgres
@@ -16,8 +16,18 @@ CEREALS_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(name="prod", resource_defs={"db": postgres, "slack": slack_resource}),
-        ModeDefinition(name="dev", resource_defs={"db": postgres, "slack": mock_slack_resource}),
+        ModeDefinition(
+            name="prod",
+            resource_defs={"db": postgres, "slack": slack_resource, "io_manager": fs_io_manager,},
+        ),
+        ModeDefinition(
+            name="dev",
+            resource_defs={
+                "db": postgres,
+                "slack": mock_slack_resource,
+                "io_manager": fs_io_manager,
+            },
+        ),
     ],
     preset_defs=[
         PresetDefinition(

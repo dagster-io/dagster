@@ -1,8 +1,10 @@
-from setuptools import find_packages, setup
+from typing import Dict
+
+from setuptools import find_packages, setup  # type: ignore
 
 
-def get_version():
-    version = {}
+def get_version() -> str:
+    version: Dict[str, str] = {}
     with open("dagster_dask/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
@@ -31,11 +33,16 @@ if __name__ == "__main__":
             "dagster",
             "dask[dataframe]>=1.2.2,<=2.30.0",
             "distributed>=1.28.1,<=2.30.1",
+            # resolve issue with aiohttp pin of chardet for aiohttp<=3.7.3, req'd by dask-kubernetes
+            # https://github.com/dagster-io/dagster/issues/3539
+            "chardet<4.0",
         ],
         extras_require={
             "yarn": ["dask-yarn"],
             "pbs": ["dask-jobqueue"],
             "kube": ["dask-kubernetes"],
+            # we need `pyarrow` for testing read/write parquet files.
+            "test": ["pyarrow; python_version < '3.9'"],
         },
         zip_safe=False,
     )

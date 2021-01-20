@@ -79,9 +79,10 @@ def one_input_no_output_pipeline():
 
 
 def test_solid_has_config_entry():
-    pipeline = single_int_output_pipeline()
-    assert pipeline.solid_named("return_one").definition.has_configurable_outputs
-    assert pipeline.solid_named("return_one").definition.has_config_entry
+    with pytest.warns(None):
+        pipeline = single_int_output_pipeline()
+        assert pipeline.solid_named("return_one").definition.has_configurable_outputs
+        assert pipeline.solid_named("return_one").definition.has_config_entry
 
 
 def test_basic_json_default_output_config_schema():

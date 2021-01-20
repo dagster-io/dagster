@@ -63,7 +63,7 @@ def execute_cli(
 
     output = []
     for raw_line in process.stdout:
-        line = raw_line.decode()
+        line = raw_line.decode("utf-8")
         output.append(line)
         try:
             json_line = json.loads(line)

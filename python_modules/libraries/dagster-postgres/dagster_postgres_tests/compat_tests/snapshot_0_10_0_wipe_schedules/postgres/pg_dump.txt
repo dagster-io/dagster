@@ -1,0 +1,719 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.0
+-- Dumped by pg_dump version 13.0
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key character varying,
+    asset_key character varying
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key character varying,
+    value character varying
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name character varying,
+    status character varying(63),
+    run_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: schedule_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedule_ticks (
+    id integer NOT NULL,
+    schedule_origin_id character varying(255),
+    status character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedule_ticks OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedule_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedule_ticks_id_seq OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedule_ticks_id_seq OWNED BY public.schedule_ticks.id;
+
+
+--
+-- Name: schedules; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedules (
+    id integer NOT NULL,
+    schedule_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    schedule_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedules OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedules_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedules_id_seq OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedules_id_seq OWNED BY public.schedules.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: schedule_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks ALTER COLUMN id SET DEFAULT nextval('public.schedule_ticks_id_seq'::regclass);
+
+
+--
+-- Name: schedules id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules ALTER COLUMN id SET DEFAULT nextval('public.schedules_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, create_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key) FROM stdin;
+1	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80538"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for pipeline (pid: 80538).", "pid": null, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for pipeline (pid: 80538).", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.695335, "user_message": "Started process for pipeline (pid: 80538)."}	ENGINE_EVENT	2021-01-12 10:40:02.695335	\N	\N
+2	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [asset_store].", "pid": 80538, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - ENGINE_EVENT - Starting initialization of resources [asset_store].", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.725283, "user_message": "Starting initialization of resources [asset_store]."}	ENGINE_EVENT	2021-01-12 10:40:02.725283	\N	\N
+3	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.04ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.asset_store", "name": "InMemoryAssetStore"}, "label": "asset_store"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [asset_store].", "pid": 80538, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - ENGINE_EVENT - Finished initialization of resources [asset_store].", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.733164, "user_message": "Finished initialization of resources [asset_store]."}	ENGINE_EVENT	2021-01-12 10:40:02.733164	\N	\N
+4	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"foo\\".", "pid": 80538, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - PIPELINE_START - Started execution of pipeline \\"foo\\".", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.747415, "user_message": "Started execution of pipeline \\"foo\\"."}	PIPELINE_START	2021-01-12 10:40:02.747415	\N	\N
+5	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80538"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['do_something.compute', 'do_input.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 80538)", "pid": 80538, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - ENGINE_EVENT - Executing steps in process (pid: 80538)", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.766284, "user_message": "Executing steps in process (pid: 80538)"}	ENGINE_EVENT	2021-01-12 10:40:02.766284	\N	\N
+6	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Started execution of step \\"do_something.compute\\".", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_something.compute - STEP_START - Started execution of step \\"do_something.compute\\".", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_something.compute", "timestamp": 1610466002.791495, "user_message": "Started execution of step \\"do_something.compute\\"."}	STEP_START	2021-01-12 10:40:02.791495	do_something.compute	\N
+7	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_something.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_something.compute - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_something.compute", "timestamp": 1610466002.801619, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-01-12 10:40:02.801619	do_something.compute	\N
+8	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_something.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_something.compute/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Stored intermediate object for output result in memory object store using pickle.", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_something.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_something.compute", "timestamp": 1610466002.813374, "user_message": "Stored intermediate object for output result in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:40:02.813374	do_something.compute	\N
+9	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 24.420976638793945}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Finished execution of step \\"do_something.compute\\" in 24ms.", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_something.compute - STEP_SUCCESS - Finished execution of step \\"do_something.compute\\" in 24ms.", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_something.compute", "timestamp": 1610466002.824419, "user_message": "Finished execution of step \\"do_something.compute\\" in 24ms."}	STEP_SUCCESS	2021-01-12 10:40:02.824419	do_something.compute	\N
+10	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Started execution of step \\"do_input.compute\\".", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_input.compute - STEP_START - Started execution of step \\"do_input.compute\\".", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_input.compute", "timestamp": 1610466002.849921, "user_message": "Started execution of step \\"do_input.compute\\"."}	STEP_START	2021-01-12 10:40:02.849921	do_input.compute	\N
+11	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_something.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_something.compute/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "x", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Retrieved intermediate object for input x in memory object store using pickle.", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_input.compute - OBJECT_STORE_OPERATION - Retrieved intermediate object for input x in memory object store using pickle.", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_input.compute", "timestamp": 1610466002.858748, "user_message": "Retrieved intermediate object for input x in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:40:02.858748	do_input.compute	\N
+12	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "x", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "x", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_input.compute - STEP_INPUT - Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_input.compute", "timestamp": 1610466002.914811, "user_message": "Got input \\"x\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2021-01-12 10:40:02.914811	do_input.compute	\N
+19	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80630"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for pipeline (pid: 80630).", "pid": null, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for pipeline (pid: 80630).", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.469835, "user_message": "Started process for pipeline (pid: 80630)."}	ENGINE_EVENT	2021-01-12 10:41:03.469835	\N	\N
+13	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_input.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_input.compute - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_input.compute", "timestamp": 1610466002.923249, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-01-12 10:40:02.923249	do_input.compute	\N
+14	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_input.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_input.compute/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Stored intermediate object for output result in memory object store using pickle.", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_input.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_input.compute", "timestamp": 1610466002.93098, "user_message": "Stored intermediate object for output result in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:40:02.93098	do_input.compute	\N
+15	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 16.441822052001953}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Finished execution of step \\"do_input.compute\\" in 16ms.", "pid": 80538, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - do_input.compute - STEP_SUCCESS - Finished execution of step \\"do_input.compute\\" in 16ms.", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": "do_input.compute", "timestamp": 1610466002.938373, "user_message": "Finished execution of step \\"do_input.compute\\" in 16ms."}	STEP_SUCCESS	2021-01-12 10:40:02.938373	do_input.compute	\N
+16	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80538"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['do_something.compute', 'do_input.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 80538) in 174ms", "pid": 80538, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - ENGINE_EVENT - Finished steps in process (pid: 80538) in 174ms", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.947824, "user_message": "Finished steps in process (pid: 80538) in 174ms"}	ENGINE_EVENT	2021-01-12 10:40:02.947824	\N	\N
+17	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of pipeline \\"foo\\".", "pid": 80538, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 8c59d1b7-1841-4c60-8346-89e298dbf743 - 80538 - PIPELINE_SUCCESS - Finished execution of pipeline \\"foo\\".", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.955528, "user_message": "Finished execution of pipeline \\"foo\\"."}	PIPELINE_SUCCESS	2021-01-12 10:40:02.955528	\N	\N
+18	8c59d1b7-1841-4c60-8346-89e298dbf743	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for pipeline exited (pid: 80538).", "pid": null, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for pipeline exited (pid: 80538).", "pipeline_name": "foo", "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "step_key": null, "timestamp": 1610466002.976421, "user_message": "Process for pipeline exited (pid: 80538)."}	ENGINE_EVENT	2021-01-12 10:40:02.976421	\N	\N
+20	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [asset_store].", "pid": 80630, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - ENGINE_EVENT - Starting initialization of resources [asset_store].", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.497736, "user_message": "Starting initialization of resources [asset_store]."}	ENGINE_EVENT	2021-01-12 10:41:03.497736	\N	\N
+21	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.04ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.asset_store", "name": "InMemoryAssetStore"}, "label": "asset_store"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [asset_store].", "pid": 80630, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - ENGINE_EVENT - Finished initialization of resources [asset_store].", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.505822, "user_message": "Finished initialization of resources [asset_store]."}	ENGINE_EVENT	2021-01-12 10:41:03.505822	\N	\N
+22	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"foo\\".", "pid": 80630, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - PIPELINE_START - Started execution of pipeline \\"foo\\".", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.515559, "user_message": "Started execution of pipeline \\"foo\\"."}	PIPELINE_START	2021-01-12 10:41:03.515559	\N	\N
+23	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80630"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['do_something.compute', 'do_input.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 80630)", "pid": 80630, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - ENGINE_EVENT - Executing steps in process (pid: 80630)", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.537139, "user_message": "Executing steps in process (pid: 80630)"}	ENGINE_EVENT	2021-01-12 10:41:03.537139	\N	\N
+24	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Started execution of step \\"do_something.compute\\".", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_something.compute - STEP_START - Started execution of step \\"do_something.compute\\".", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_something.compute", "timestamp": 1610466063.560975, "user_message": "Started execution of step \\"do_something.compute\\"."}	STEP_START	2021-01-12 10:41:03.560975	do_something.compute	\N
+25	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_something.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_something.compute - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_something.compute", "timestamp": 1610466063.571169, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-01-12 10:41:03.571169	do_something.compute	\N
+26	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_something.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_something.compute/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Stored intermediate object for output result in memory object store using pickle.", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_something.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_something.compute", "timestamp": 1610466063.578979, "user_message": "Stored intermediate object for output result in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:41:03.578979	do_something.compute	\N
+27	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 17.81296730041504}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Finished execution of step \\"do_something.compute\\" in 17ms.", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_something.compute - STEP_SUCCESS - Finished execution of step \\"do_something.compute\\" in 17ms.", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_something.compute", "timestamp": 1610466063.587337, "user_message": "Finished execution of step \\"do_something.compute\\" in 17ms."}	STEP_SUCCESS	2021-01-12 10:41:03.587337	do_something.compute	\N
+28	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Started execution of step \\"do_input.compute\\".", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_input.compute - STEP_START - Started execution of step \\"do_input.compute\\".", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_input.compute", "timestamp": 1610466063.610631, "user_message": "Started execution of step \\"do_input.compute\\"."}	STEP_START	2021-01-12 10:41:03.610631	do_input.compute	\N
+29	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_something.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_something.compute/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "x", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Retrieved intermediate object for input x in memory object store using pickle.", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_input.compute - OBJECT_STORE_OPERATION - Retrieved intermediate object for input x in memory object store using pickle.", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_input.compute", "timestamp": 1610466063.620257, "user_message": "Retrieved intermediate object for input x in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:41:03.620257	do_input.compute	\N
+30	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "x", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "x", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_input.compute - STEP_INPUT - Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_input.compute", "timestamp": 1610466063.67839, "user_message": "Got input \\"x\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2021-01-12 10:41:03.67839	do_input.compute	\N
+31	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_input.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_input.compute - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_input.compute", "timestamp": 1610466063.688006, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-01-12 10:41:03.688006	do_input.compute	\N
+39	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.03ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.asset_store", "name": "InMemoryAssetStore"}, "label": "asset_store"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [asset_store].", "pid": 80827, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - ENGINE_EVENT - Finished initialization of resources [asset_store].", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.484303, "user_message": "Finished initialization of resources [asset_store]."}	ENGINE_EVENT	2021-01-12 10:42:03.484303	\N	\N
+32	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_input.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_input.compute/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Stored intermediate object for output result in memory object store using pickle.", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_input.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_input.compute", "timestamp": 1610466063.695479, "user_message": "Stored intermediate object for output result in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:41:03.695479	do_input.compute	\N
+33	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 16.563892364501953}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Finished execution of step \\"do_input.compute\\" in 16ms.", "pid": 80630, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - do_input.compute - STEP_SUCCESS - Finished execution of step \\"do_input.compute\\" in 16ms.", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": "do_input.compute", "timestamp": 1610466063.702914, "user_message": "Finished execution of step \\"do_input.compute\\" in 16ms."}	STEP_SUCCESS	2021-01-12 10:41:03.702914	do_input.compute	\N
+34	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80630"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['do_something.compute', 'do_input.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 80630) in 168ms", "pid": 80630, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - ENGINE_EVENT - Finished steps in process (pid: 80630) in 168ms", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.712225, "user_message": "Finished steps in process (pid: 80630) in 168ms"}	ENGINE_EVENT	2021-01-12 10:41:03.712225	\N	\N
+35	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of pipeline \\"foo\\".", "pid": 80630, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - d45fa10b-121d-4051-9358-cfd3dfcbc878 - 80630 - PIPELINE_SUCCESS - Finished execution of pipeline \\"foo\\".", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.7197, "user_message": "Finished execution of pipeline \\"foo\\"."}	PIPELINE_SUCCESS	2021-01-12 10:41:03.7197	\N	\N
+36	d45fa10b-121d-4051-9358-cfd3dfcbc878	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for pipeline exited (pid: 80630).", "pid": null, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for pipeline exited (pid: 80630).", "pipeline_name": "foo", "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "step_key": null, "timestamp": 1610466063.748248, "user_message": "Process for pipeline exited (pid: 80630)."}	ENGINE_EVENT	2021-01-12 10:41:03.748248	\N	\N
+37	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80827"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for pipeline (pid: 80827).", "pid": null, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for pipeline (pid: 80827).", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.454457, "user_message": "Started process for pipeline (pid: 80827)."}	ENGINE_EVENT	2021-01-12 10:42:03.454457	\N	\N
+38	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [asset_store].", "pid": 80827, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - ENGINE_EVENT - Starting initialization of resources [asset_store].", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.476954, "user_message": "Starting initialization of resources [asset_store]."}	ENGINE_EVENT	2021-01-12 10:42:03.476954	\N	\N
+40	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"foo\\".", "pid": 80827, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - PIPELINE_START - Started execution of pipeline \\"foo\\".", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.492956, "user_message": "Started execution of pipeline \\"foo\\"."}	PIPELINE_START	2021-01-12 10:42:03.492956	\N	\N
+41	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80827"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['do_something.compute', 'do_input.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 80827)", "pid": 80827, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - ENGINE_EVENT - Executing steps in process (pid: 80827)", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.511117, "user_message": "Executing steps in process (pid: 80827)"}	ENGINE_EVENT	2021-01-12 10:42:03.511117	\N	\N
+42	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Started execution of step \\"do_something.compute\\".", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_something.compute - STEP_START - Started execution of step \\"do_something.compute\\".", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_something.compute", "timestamp": 1610466123.532808, "user_message": "Started execution of step \\"do_something.compute\\"."}	STEP_START	2021-01-12 10:42:03.532808	do_something.compute	\N
+43	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_something.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_something.compute - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_something.compute", "timestamp": 1610466123.54216, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-01-12 10:42:03.54216	do_something.compute	\N
+44	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_something.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_something.compute/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Stored intermediate object for output result in memory object store using pickle.", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_something.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_something.compute", "timestamp": 1610466123.549176, "user_message": "Stored intermediate object for output result in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:42:03.549176	do_something.compute	\N
+45	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 15.560150146484375}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something.compute"}, "message": "Finished execution of step \\"do_something.compute\\" in 15ms.", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_something.compute - STEP_SUCCESS - Finished execution of step \\"do_something.compute\\" in 15ms.", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_something.compute", "timestamp": 1610466123.556208, "user_message": "Finished execution of step \\"do_something.compute\\" in 15ms."}	STEP_SUCCESS	2021-01-12 10:42:03.556208	do_something.compute	\N
+46	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Started execution of step \\"do_input.compute\\".", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_input.compute - STEP_START - Started execution of step \\"do_input.compute\\".", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_input.compute", "timestamp": 1610466123.579117, "user_message": "Started execution of step \\"do_input.compute\\"."}	STEP_START	2021-01-12 10:42:03.579117	do_input.compute	\N
+47	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_something.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_something.compute/result"}, "label": "key"}], "op": "GET_OBJECT", "value_name": "x", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Retrieved intermediate object for input x in memory object store using pickle.", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_input.compute - OBJECT_STORE_OPERATION - Retrieved intermediate object for input x in memory object store using pickle.", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_input.compute", "timestamp": 1610466123.588098, "user_message": "Retrieved intermediate object for input x in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:42:03.588098	do_input.compute	\N
+48	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "x", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "x", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_input.compute - STEP_INPUT - Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_input.compute", "timestamp": 1610466123.645675, "user_message": "Got input \\"x\\" of type \\"Any\\". (Type check passed)."}	STEP_INPUT	2021-01-12 10:42:03.645675	do_input.compute	\N
+49	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_input.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_input.compute - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_input.compute", "timestamp": 1610466123.653987, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-01-12 10:42:03.653987	do_input.compute	\N
+50	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ObjectStoreOperationResultData", "address": "/intermediates/do_input.compute/result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "PathMetadataEntryData", "path": "/intermediates/do_input.compute/result"}, "label": "key"}], "op": "SET_OBJECT", "value_name": "result", "version": null}, "event_type_value": "OBJECT_STORE_OPERATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Stored intermediate object for output result in memory object store using pickle.", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_input.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_input.compute", "timestamp": 1610466123.661306, "user_message": "Stored intermediate object for output result in memory object store using pickle."}	OBJECT_STORE_OPERATION	2021-01-12 10:42:03.661306	do_input.compute	\N
+51	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 15.877008438110352}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule", "pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Finished execution of step \\"do_input.compute\\" in 15ms.", "pid": 80827, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - do_input.compute - STEP_SUCCESS - Finished execution of step \\"do_input.compute\\" in 15ms.", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": "do_input.compute", "timestamp": 1610466123.668594, "user_message": "Finished execution of step \\"do_input.compute\\" in 15ms."}	STEP_SUCCESS	2021-01-12 10:42:03.668594	do_input.compute	\N
+52	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "80827"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['do_something.compute', 'do_input.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 80827) in 160ms", "pid": 80827, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - ENGINE_EVENT - Finished steps in process (pid: 80827) in 160ms", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.677631, "user_message": "Finished steps in process (pid: 80827) in 160ms"}	ENGINE_EVENT	2021-01-12 10:42:03.677631	\N	\N
+53	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of pipeline \\"foo\\".", "pid": 80827, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "foo - 9f130936-1409-4bd0-b15d-67cf6e7a67ec - 80827 - PIPELINE_SUCCESS - Finished execution of pipeline \\"foo\\".", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.684907, "user_message": "Finished execution of pipeline \\"foo\\"."}	PIPELINE_SUCCESS	2021-01-12 10:42:03.684907	\N	\N
+54	9f130936-1409-4bd0-b15d-67cf6e7a67ec	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for pipeline exited (pid: 80827).", "pid": null, "pipeline_name": "foo", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for pipeline exited (pid: 80827).", "pipeline_name": "foo", "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "step_key": null, "timestamp": 1610466123.705453, "user_message": "Process for pipeline exited (pid: 80827)."}	ENGINE_EVENT	2021-01-12 10:42:03.705453	\N	\N
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+1	8c59d1b7-1841-4c60-8346-89e298dbf743	dagster/schedule_name	foo_schedule
+2	8c59d1b7-1841-4c60-8346-89e298dbf743	.dagster/grpc_info	{"host": "localhost", "socket": "/tmp/tmpOhX8MX"}
+3	d45fa10b-121d-4051-9358-cfd3dfcbc878	dagster/schedule_name	foo_schedule
+4	d45fa10b-121d-4051-9358-cfd3dfcbc878	.dagster/grpc_info	{"host": "localhost", "socket": "/tmp/tmpRbaiCU"}
+5	9f130936-1409-4bd0-b15d-67cf6e7a67ec	dagster/schedule_name	foo_schedule
+6	9f130936-1409-4bd0-b15d-67cf6e7a67ec	.dagster/grpc_info	{"host": "localhost", "socket": "/tmp/tmpbmtnrh"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, status, run_body, create_timestamp, update_timestamp) FROM stdin;
+1	8c59d1b7-1841-4c60-8346-89e298dbf743	47992fd61f2aecc862f741e1355e2b910d5850de	foo	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "53f52f323e0e20f0b8ec27a3d698335b3e0918fb", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": "bar", "executable_path": "/System/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python", "module_name": null, "package_name": null, "python_file": "/Users/dgibson/dagster/python_modules/dagit/dagit_tests/toy/bar_repo.py", "working_directory": "/Users/dgibson/dagster-home"}, "location_name": "bar_repo.py:bar"}, "repository_name": "bar"}, "pipeline_name": "foo"}, "mode": "default", "parent_run_id": null, "pipeline_name": "foo", "pipeline_snapshot_id": "47992fd61f2aecc862f741e1355e2b910d5850de", "root_run_id": null, "run_config": {}, "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpOhX8MX\\"}", "dagster/schedule_name": "foo_schedule"}}	2021-01-12 10:40:02.568045	2021-01-12 09:40:02.973559
+2	d45fa10b-121d-4051-9358-cfd3dfcbc878	47992fd61f2aecc862f741e1355e2b910d5850de	foo	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "53f52f323e0e20f0b8ec27a3d698335b3e0918fb", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": "bar", "executable_path": "/System/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python", "module_name": null, "package_name": null, "python_file": "/Users/dgibson/dagster/python_modules/dagit/dagit_tests/toy/bar_repo.py", "working_directory": "/Users/dgibson/dagster-home"}, "location_name": "bar_repo.py:bar"}, "repository_name": "bar"}, "pipeline_name": "foo"}, "mode": "default", "parent_run_id": null, "pipeline_name": "foo", "pipeline_snapshot_id": "47992fd61f2aecc862f741e1355e2b910d5850de", "root_run_id": null, "run_config": {}, "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpRbaiCU\\"}", "dagster/schedule_name": "foo_schedule"}}	2021-01-12 10:41:03.336991	2021-01-12 09:41:03.737958
+3	9f130936-1409-4bd0-b15d-67cf6e7a67ec	47992fd61f2aecc862f741e1355e2b910d5850de	foo	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "53f52f323e0e20f0b8ec27a3d698335b3e0918fb", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": "bar", "executable_path": "/System/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python", "module_name": null, "package_name": null, "python_file": "/Users/dgibson/dagster/python_modules/dagit/dagit_tests/toy/bar_repo.py", "working_directory": "/Users/dgibson/dagster-home"}, "location_name": "bar_repo.py:bar"}, "repository_name": "bar"}, "pipeline_name": "foo"}, "mode": "default", "parent_run_id": null, "pipeline_name": "foo", "pipeline_snapshot_id": "47992fd61f2aecc862f741e1355e2b910d5850de", "root_run_id": null, "run_config": {}, "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/tmp/tmpbmtnrh\\"}", "dagster/schedule_name": "foo_schedule"}}	2021-01-12 10:42:03.334236	2021-01-12 09:42:03.702535
+\.
+
+
+--
+-- Data for Name: schedule_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedule_ticks (id, schedule_origin_id, status, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+1	acea3d9d526d4aa5e549e9eb0f60d9ef8b15eec7	SUCCESS	2021-01-12 10:40:01.192489	{"__class__": "ScheduleTickData", "cron_schedule": "* * * * *", "error": null, "run_id": "8c59d1b7-1841-4c60-8346-89e298dbf743", "schedule_name": "foo_schedule", "schedule_origin_id": "acea3d9d526d4aa5e549e9eb0f60d9ef8b15eec7", "status": {"__enum__": "ScheduleTickStatus.SUCCESS"}, "timestamp": 1610466001.192489}	2021-01-12 10:40:01.20459	2021-01-12 10:40:01.20459
+2	acea3d9d526d4aa5e549e9eb0f60d9ef8b15eec7	SUCCESS	2021-01-12 10:41:02.0638	{"__class__": "ScheduleTickData", "cron_schedule": "* * * * *", "error": null, "run_id": "d45fa10b-121d-4051-9358-cfd3dfcbc878", "schedule_name": "foo_schedule", "schedule_origin_id": "acea3d9d526d4aa5e549e9eb0f60d9ef8b15eec7", "status": {"__enum__": "ScheduleTickStatus.SUCCESS"}, "timestamp": 1610466062.0638}	2021-01-12 10:41:02.069839	2021-01-12 10:41:02.069839
+3	acea3d9d526d4aa5e549e9eb0f60d9ef8b15eec7	SUCCESS	2021-01-12 10:42:01.999318	{"__class__": "ScheduleTickData", "cron_schedule": "* * * * *", "error": null, "run_id": "9f130936-1409-4bd0-b15d-67cf6e7a67ec", "schedule_name": "foo_schedule", "schedule_origin_id": "acea3d9d526d4aa5e549e9eb0f60d9ef8b15eec7", "status": {"__enum__": "ScheduleTickStatus.SUCCESS"}, "timestamp": 1610466121.999318}	2021-01-12 10:42:02.005972	2021-01-12 10:42:02.005972
+\.
+
+
+--
+-- Data for Name: schedules; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedules (id, schedule_origin_id, repository_origin_id, status, schedule_body, create_timestamp, update_timestamp) FROM stdin;
+1	3c69c0fa6cf35ab1c72bf2ec46dd1b85f0582618	f08361dc16dea651cea80148e7ce436ff5f253a9	RUNNING	{"__class__": "ScheduleState", "cron_schedule": "* * * * *", "origin": {"__class__": "SchedulePythonOrigin", "repository_origin": {"__class__": "RepositoryPythonOrigin", "code_pointer": {"__class__": "FileCodePointer", "fn_name": "bar", "python_file": "/Users/dgibson/dagster-home/../dagster/python_modules/dagit/dagit_tests/toy/bar_repo.py", "working_directory": "/Users/dgibson/dagster-home/"}, "executable_path": "python"}, "schedule_name": "foo_schedule"}, "start_timestamp": 1610465951.557492, "status": {"__enum__": "ScheduleStatus.RUNNING"}}	2021-01-12 10:39:10.167914	2021-01-12 10:39:10.167914
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+1	47992fd61f2aecc862f741e1355e2b910d5850de	\\x789ced5d5b6fdb3a12fe2b819fbb814491a278de727ad9069b4d0e929c87c54921f0324cb49525af6417cd29f2df97baf9164ba165cb75db142852491439fce69be1cc8462bf8dc250c63ccfc370f4dbc9e88f68027194c04dc227f9433a1dbd3919c934d1d17d98cb0718f3306f9efc76f26df5ddb765bb9bb2d9f2fb3c8ec3a68fe276281ec3cff0587670963cb67574fb3829c528ba5090cb2c9a4ca334310d92591c9b9b90ccc6e1171ecf205fdcd411c46ae9fa3efa024998f031143d17c3999bd5e8f3ab2851b51065976b32fccb3c3e3dbbfccfe8c9b4cd258f7916d6afd4634c4dab70c2333e2ee6d50c5e343fcb32fe787af3c027708a5d050e204505250461e23a2e21ca118a8b80224ffa1a24284f6c8fc7e822caa727a93ee9355c2f24eb7b0d903dc7b542fefafa6c2becff1a6d29c8a7a2f3dfd334ee817c3ff4aad116f8cd2f2df0b8797b767176bd01904d6fdd942dcaf77ebfbaba28df6a67eb8738e5ad76bd7f10aae116282cae0784e1c3c5d5d9ed0b389c270744a1186c814173352002e7972fcdbf6afc676226765a50f31f3710839ca6d9a900a2881b088f41e073ec49a21180e49a788174b52f29755d41d8017dfaaa27da83e85bc11ffe79797e75b99d7b6aac7d7bd13ead6ba73499c51c95e3708f82173854795432ed33297dc4189598138db94b7d20d23b0af5f4957d70fdccfdd0f6b23d5390b1e7c51439a38c09465de5222e813a1ca920703c1904e6afef61972a87227214eae927f9e0caa91de4f6923d53cdcd348b92fbc51cc1c14558c0146385aeb9402e727cec118110c2546a63a601f28fc3b7f5167e70055592ade8c85ab84a47cd6baed0c2f52907ce1c1a389cfb941166fee548ea0a15489f8089e7d0400af96b63a71f8ac78b5e359fc5d37092a55f22050532d36c064b4fcade439e87ffcdd324cca759d1d3b7a75691a23ccce07fb3282b3bd33cce8bde9a5841453917b179d460df30a30c7815f718f70008f8020b47798810a14133e23b6ec01cae9571600e2bf4797c7383642f53fbf4820d6d4d2e5b83797ff1feededd5a678ecc52c712e1456bea738f1387684c048339f7385a8420464c0994f7c851d46875a200664fc5d5d45b82b44bf1b6560bc04e4f555adfaf2eac9fce9c9a02829c49290e79b492439618eaf18773c4a9189b73000550c3b5c11c208e59a534fb96258fb584362ccbf16c51139cb3248a6c54de7cdc940008d8d545127445a6b8f6ba98dc7f6a9b12f8ecdd2aa45a02962aecb41381068c0606f67d6943ea49d7de740ac9f9d35daeca2573d9205376aae36d428fad84c092c88278c5d680f232f7095a31c621214cf77034f49c6a460be897e516fab19745e93487e8ee1679c59d9d9fac48ae8d8da34f71ed4efc334bf7385e1d5345f4d7318d32cab3ed6b6b9f76ad53e6cf33b97975e6df3d53687b1cdaae2676d9c7b2f55eec338bf73f9ead5385f8d7318e3ac0b8ad6d6b9f752e85eac9320cd4d6a6dc6f65cc508329750c865f26d600ae1805242f171d5325fadf3bb59a735d96d797550b26b49b9cb390d02cd35042e721d6c924d47323f90c244b2421a4becb1d3e5a8ca98bdeb703a8a217fcca730de4c9320608625d88417ae30b8398e123e0d14172c10c2e12ed18a5090ea380bf951128e619c668f872ae55bd3ed9036a091065f69257da33086290f7400549a789172c7450253c72742e2a3b2815787ff1a8ebd148e159b26ad4dd3da0a0e619aa5461076b9c401d3da646ad40d8c6bc5180b0e34c04c8bc0e73e028cdda3b24b1b7f7d373abffc707537eae9b5e3f43e8ce10bc46de1f7804bcddd48f17bb31c66bda52f7ff6cc1bb6a3852d516fafcfdfde86371fcffe78df9fac9ee05cb8beebfb824bb3b619732181eb828f95477cd7455a51cf933f642035275c114b35e42d7ef55968a9ba376745df50a40ad636bb666b8ddb11c85a550725d0707bce7f9828649d1319e4a6d3679cd83aa1b2a3c5be77c3ef8916b661c9cf4b8bf5208e4f1f765a40ac213da8a2fdc0354cf694e1afe7481f71253da21dcf478419b11cbfa0a0d43fb3a2d7ed3f9d4d27b3e9b3fd2fbd3e61b1a386b5120e4b0d50184bcaccd2470d358989c625118879429b0bc6282601b8f457a2067c05392b5f685b1dac77331d473ef7bc3463c2a931a8884fc1749666fcfe79d8bc7559e528ab5026bcbc87ac659b1b0830111a218e448ea305c18e998dab3d8d5cd751506cffc42ea1f238a76622987496496899dc716c0336d17b1a468971b555adb488eccd9d3c1dc3f4c12cabbb5550f3348e54db1e46e2f2c0e8d428316066fec82701d60e363f3170172166c23a8778476aa3fb334bbbc5c9761938e8e2645d013fa6c56950a3ef4a6501f9e048621621a490341928e1265fc1522b13847a0acca284c133ddda51c21afc8352c2505c9818aa08bdb0f6403004ac70dbd224eb5806043430e0441e1525867515639e7d862c9ca646b0346f2d800debe657f7a6f75ed2caedeead4ecffa6b0d3b865b73e9a00ce798fa9a059a4a63ad082b2c7c9f704d1152ae465251cdcc7a868e6b7b9d0d4b9cbedf2bac7c1bb171aff32bb7d7b96dcda28372dbfadb9b1f8ddb2f7dcc34c0726fedbdec0863ad9a8312c63a8b19883056d0590b7950e8acc3c163b2b5612325c173085594ed54e2b5c6f5b0dab6ad65fc3ada36ce334fdbb66458ffa2ce9214b6f01f9414d635906322c5b09fced7d5a8cda4b02ed11f654170b9aeb6ebfcac486f4dafc392def6e3e51f8ef4fd3e131f20f4b44e2e2c7964abb143f1a80a070e76f6d7e2ac94d578c476ba3d4f002b60bafc67d721604fc5b37afb4d58b62944ce275c42c70190efaa170af92e9be6eb0741ae746a771ce452b79de6a9a27c12f3c7f5c31e0ddbc52c8aa751b230378b032097465d3901324eb932f2d7a761eeb2e171cc4dff118fa3bfdbfbdb667fffdabc371cced371d2615f909bc3cc3a50ee3cdd701de6254e6f467a2f07bc0d057d33d536ec5b4e58ec0bfefca4b20ef4bb4f55dc05fe1d0e701b0afff964db14b0f168c7bef0d767917580df759ce32ed0f73e9c6d28e0cf934ed82fd32a38dd1bf44d87ddf02fb5b252c1e5d5edc76665dca4835a987610eb061ba46c43a62de4e80bcc2282e8c0e58530631766ee7230dd50e45c4c77a316aa60072645b83d93d359d619e3c0041205897cbc695a2f8738e5c60493697e49252f1455f5b4213bb8291a9ecfdb353a2e73d4b014a6e5c5f3a2c592142b2f3633fe5adc9a4dcc84c04cb5daf2d6dae355f9f8234f543ce75afdcaf34db3d50437669e4f9fcaa8bf6a61129a7053eefdecfd45566e5857652ecf726c7bb05a055849903b26b122c8a7a736b32bce48e7f72b44699c43aaa01cbc0dee7f9b06ef40775a75b57ba9b39b8bb2c9524755de16961947f9565b1ef3cb6de07f9eafdd3ec0493dbf1399c6a919fda4ae1a9e54d89f8ede3c2f2896fc9ed3a67abf68d7ecc8ea54d875dde8059575953d9ba14d9f302d37f0d53265693a6dced8efb7bd67656a3a4d47cb861425512148dee1174b137db768bafa1f088c27691e157b0ee7a6d962b19dee7207e41a57d13e42ed571776b99ca8aee68b9dbaf9bac692250f573bd52e292a5fbc83189dbbdc6b375e51a66e15cec93b5f112d9cf17e55b106d88a37fe21412b178ec5e5ff0199e65cde	PIPELINE
+2	53f52f323e0e20f0b8ec27a3d698335b3e0918fb	\\x789cd5524d6b023110fd2b92731177ebfad15b29424b290ab6a722c3b899d5d06c12365950c4ffdecc76d50a16f1d86366de9b79ef4d760220d7e83d8078e888c986f23a286b661acddca0f36b1bc45d476015548179f0e0a8f2ca0792115fa0f614bb4e39d2ca10f896028adba23f1c8fd3420e922245caf3d1202d86fd8492fb2ca374394e7a321b653d49bc218e74f0455b0fc102353a28cef814d282b72585b532ab6e6e4bc78d48887565e2e3585bb4533cd3767f189b47001be3090dfd2afa8551078ac4555c5141d83a62b58c7e345b6e192c59b0d8f0a3763e548425d83a443aacd1484d9776f18a69037a6e30cc6e49878915f95a87df2171f5622efbc59e633841ce23e296327c1b5641a62e4f225e63a3fb347d9b7dbc4fc43e22e36c94181054a0b291be386abb9ada8fa51b626b4d36f2bdd54ab699b55fe9608595dd76dbf33c2e7ea5ff9bc9d10e5ffe1baea24ae0	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 54, true);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 6, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 3, true);
+
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedule_ticks_id_seq', 3, true);
+
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedules_id_seq', 1, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 1, false);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: schedule_ticks schedule_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks
+    ADD CONSTRAINT schedule_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_schedule_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_schedule_origin_id_key UNIQUE (schedule_origin_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: ix_schedule_ticks_schedule_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_schedule_ticks_schedule_origin_id ON public.schedule_ticks USING btree (schedule_origin_id);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

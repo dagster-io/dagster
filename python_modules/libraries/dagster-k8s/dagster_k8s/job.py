@@ -5,7 +5,6 @@ import string
 from collections import namedtuple
 
 import kubernetes
-import six
 from dagster import Array, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster import check
@@ -517,6 +516,6 @@ def get_k8s_job_name(input_1, input_2=None):
         input_2 = "".join(random.choice(letters) for i in range(20))
 
     # Creates 32-bit signed int, so could be negative
-    name_hash = hashlib.md5(six.ensure_binary(input_1 + input_2))
+    name_hash = hashlib.md5((input_1 + input_2).encode("utf-8"))
 
     return name_hash.hexdigest()

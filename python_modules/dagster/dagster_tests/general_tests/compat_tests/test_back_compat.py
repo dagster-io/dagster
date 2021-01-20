@@ -234,7 +234,7 @@ def instance_from_debug_payloads(payload_files):
     debug_payloads = []
     for input_file in payload_files:
         with GzipFile(input_file, "rb") as file:
-            blob = file.read().decode()
+            blob = file.read().decode("utf-8")
             debug_payload = deserialize_json_to_dagster_namedtuple(blob)
 
             check.invariant(isinstance(debug_payload, DebugRunPayload))
@@ -264,3 +264,99 @@ def test_event_log_asset_partition_migration():
         instance.upgrade()
 
         assert "partition" in set(get_sqlite3_columns(db_path, "event_logs"))
+
+
+def test_run_partition_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "224640159acf"
+        assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
+
+        # Make sure the schema is migrated
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        instance.upgrade()
+
+        assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
+
+        instance._run_storage._alembic_downgrade(rev="224640159acf")
+        assert get_current_alembic_version(db_path) == "224640159acf"
+
+        assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
+
+
+def test_run_partition_data_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+        from dagster.core.storage.runs.migration import RUN_PARTITIONS
+
+        # load db that has migrated schema, but not populated data for run partitions
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "375e95bad550"
+
+        # Make sure the schema is migrated
+        assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance._run_storage.upgrade()
+
+        run_storage = instance._run_storage
+        assert isinstance(run_storage, SqlRunStorage)
+
+        partition_set_name = "ingest_and_train"
+        partition_name = "2020-01-02"
+
+        # ensure old tag-based reads are working
+        assert not run_storage.has_built_index(RUN_PARTITIONS)
+        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 2
+
+        # turn on reads for the partition column, without migrating the data
+        run_storage.mark_index_built(RUN_PARTITIONS)
+
+        # ensure that no runs are returned because the data has not been migrated
+        assert run_storage.has_built_index(RUN_PARTITIONS)
+        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 0
+
+        # actually migrate the data
+        run_storage.build_missing_indexes(force_rebuild_all=True)
+
+        # ensure that we get the same partitioned runs returned
+        assert run_storage.has_built_index(RUN_PARTITIONS)
+        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 2
+
+
+def test_0_10_0_schedule_wipe():
+    src_dir = file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "b22f16781a7c"
+
+        assert "schedules" in get_sqlite3_tables(db_path)
+        assert "schedule_ticks" in get_sqlite3_tables(db_path)
+
+        assert "jobs" not in get_sqlite3_tables(db_path)
+        assert "job_ticks" not in get_sqlite3_tables(db_path)
+
+        with pytest.raises(DagsterInstanceMigrationRequired):
+            with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+                pass
+
+        with DagsterInstance.from_ref(
+            InstanceRef.from_dir(test_dir), skip_validation_checks=True
+        ) as instance:
+            instance.upgrade()
+
+        assert "schedules" not in get_sqlite3_tables(db_path)
+        assert "schedule_ticks" not in get_sqlite3_tables(db_path)
+
+        assert "jobs" in get_sqlite3_tables(db_path)
+        assert "job_ticks" in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
+            assert len(upgraded_instance.all_stored_job_state()) == 0

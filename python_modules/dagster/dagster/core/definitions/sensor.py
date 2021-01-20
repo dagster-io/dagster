@@ -1,4 +1,7 @@
+import inspect
+
 from dagster import check
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.utils import ensure_gen
 
@@ -14,6 +17,7 @@ class SensorExecutionContext(JobContext):
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
         last_completion_time (float): The last time that the sensor was evaluated (UTC).
+        last_run_key (str): The run key of the RunRequest most recently created by this sensor.
     """
 
     __slots__ = ["_last_completion_time", "_last_run_key"]
@@ -80,3 +84,19 @@ class SensorDefinition(JobDefinition):
             return check.is_list(result, of_type=(RunRequest, SkipReason))
 
         return check.is_list(result, of_type=RunRequest)
+
+
+def wrap_sensor_evaluation(sensor_name, result):
+    if inspect.isgenerator(result):
+        for item in result:
+            yield item
+
+    elif isinstance(result, (SkipReason, RunRequest)):
+        yield result
+
+    elif result is not None:
+        raise DagsterInvariantViolationError(
+            f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+            f"{result} of type {type(result)}.  Should only return SkipReason or "
+            "RunRequest objects."
+        )

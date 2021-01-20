@@ -1,12 +1,8 @@
 import sys
 
-import pytest
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 6), reason="traceback exceptions not supported in python2"
-)
 def test_syntax_error_serialized_message():
     serialized_error = None
 

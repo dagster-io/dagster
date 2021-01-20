@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {useConfirmation} from 'src/CustomConfirmationProvider';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {errorStackToYamlPath} from 'src/configeditor/ConfigEditorUtils';
 import {
@@ -188,57 +188,6 @@ interface RunPreviewState {
 }
 
 export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState> {
-  static fragments = {
-    RunPreviewValidationFragment: gql`
-      fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
-        __typename
-        ... on PipelineConfigValidationInvalid {
-          errors {
-            __typename
-            reason
-            message
-            stack {
-              entries {
-                __typename
-                ... on EvaluationStackPathEntry {
-                  fieldName
-                }
-                ... on EvaluationStackListItemEntry {
-                  listIndex
-                }
-              }
-            }
-            ... on MissingFieldConfigError {
-              field {
-                name
-              }
-            }
-            ... on MissingFieldsConfigError {
-              fields {
-                name
-              }
-            }
-            ... on FieldNotDefinedConfigError {
-              fieldName
-            }
-            ... on FieldsNotDefinedConfigError {
-              fieldNames
-            }
-          }
-        }
-        ... on PipelineNotFoundError {
-          message
-        }
-        ... on InvalidSubsetError {
-          message
-        }
-        ...PythonErrorFragment
-      }
-
-      ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `,
-  };
-
   state: RunPreviewState = {
     errorsOnly: false,
   };
@@ -484,6 +433,55 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     );
   }
 }
+
+export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
+  fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
+    __typename
+    ... on PipelineConfigValidationInvalid {
+      errors {
+        __typename
+        reason
+        message
+        stack {
+          entries {
+            __typename
+            ... on EvaluationStackPathEntry {
+              fieldName
+            }
+            ... on EvaluationStackListItemEntry {
+              listIndex
+            }
+          }
+        }
+        ... on MissingFieldConfigError {
+          field {
+            name
+          }
+        }
+        ... on MissingFieldsConfigError {
+          fields {
+            name
+          }
+        }
+        ... on FieldNotDefinedConfigError {
+          fieldName
+        }
+        ... on FieldsNotDefinedConfigError {
+          fieldNames
+        }
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+    }
+    ... on InvalidSubsetError {
+      message
+    }
+    ...PythonErrorFragment
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 const SectionTitle = styled.div`
   color: ${Colors.GRAY3};

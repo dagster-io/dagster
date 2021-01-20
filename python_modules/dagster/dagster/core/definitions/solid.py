@@ -1,3 +1,5 @@
+import warnings
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.backcompat import experimental_arg_warning
@@ -108,6 +110,11 @@ class SolidDefinition(NodeDefinition):
 
     @property
     def has_config_entry(self):
+        warnings.warn(
+            "SolidDefinition.has_config_entry is deprecated, starting in 0.10.0, because whether "
+            "the solid has configurable inputs or outputs depends on what managers are supplied "
+            "for its inputs and outputs."
+        )
         return self._config_schema or self.has_configurable_inputs or self.has_configurable_outputs
 
     @property
@@ -128,6 +135,9 @@ class SolidDefinition(NodeDefinition):
 
     def default_value_for_input(self, input_name):
         return self.input_def_named(input_name).default_value
+
+    def input_supports_dynamic_output_dep(self, input_name):
+        return True
 
     def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
         return SolidDefinition(

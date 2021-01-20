@@ -80,6 +80,39 @@ def define_dagster_checker():
     return DagsterChecker
 
 
+def register_solid_transform():
+    import astroid
+
+    def _is_solid(node):
+        if not node.decorators:
+            return False
+        return (
+            "dagster.core.definitions.decorators.solid.solid" in node.decoratornames()
+            or "dagster.core.definitions.decorators.solid._Solid" in node.decoratornames()
+            or "dagster.core.definitions.decorators.composite_solid._CompositeSolid"
+            in node.decoratornames()
+            or "dagster.core.definitions.decorators.composite_solid.composite_solid"
+            in node.decoratornames()
+        )
+
+    @astroid.inference_tip
+    def _modify_return(node, context=None):
+        module = astroid.parse(
+            f"""
+        def {node.name}(*args, **kwargs):
+            return unknown()
+            """
+        )
+
+        mock_function = next(module.igetattr("solid", context=context))
+        return iter([mock_function])
+
+    # Register a new inference result for solid decorated functions which effectively
+    # blanks out the inference by changing the return type to the output of an unknown function
+    astroid.MANAGER.register_transform(astroid.FunctionDef, _modify_return, _is_solid)
+
+
 def register(linter):
     checker = define_dagster_checker()
     linter.register_checker(checker(linter))
+    register_solid_transform()

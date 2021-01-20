@@ -1,10 +1,10 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.execution.plan.inputs import StepInput
+from dagster.core.execution.plan.inputs import StepInput, UnresolvedStepInput
 from dagster.core.execution.plan.outputs import StepOutput, StepOutputHandle
-from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
-from dagster.core.execution.plan.step import StepKind
+from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.plan.step import ExecutionStep, StepKind, UnresolvedExecutionStep
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -111,11 +111,15 @@ class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap",
 
 
 def _snapshot_from_step_input(step_input):
-    check.inst_param(step_input, "step_input", StepInput)
+    check.inst_param(step_input, "step_input", (StepInput, UnresolvedStepInput))
+    if isinstance(step_input, UnresolvedStepInput):
+        upstream_output_handles = step_input.get_step_output_handle_deps_with_placeholders()
+    else:
+        upstream_output_handles = step_input.get_step_output_handle_dependencies()
     return ExecutionStepInputSnap(
         name=step_input.name,
         dagster_type_key=step_input.dagster_type.key,
-        upstream_output_handles=step_input.get_step_output_handle_dependencies(),
+        upstream_output_handles=upstream_output_handles,
     )
 
 
@@ -127,7 +131,7 @@ def _snapshot_from_step_output(step_output):
 
 
 def _snapshot_from_execution_step(execution_step):
-    check.inst_param(execution_step, "execution_step", ExecutionStep)
+    check.inst_param(execution_step, "execution_step", (ExecutionStep, UnresolvedExecutionStep))
     return ExecutionStepSnap(
         key=execution_step.key,
         inputs=sorted(

@@ -24,8 +24,8 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     {icon: 'panel-table', text: 'Assets', href: '/instance/assets'},
   ];
 
-  if (currentPath.length) {
-    currentPath.reduce((accum: string, elem: string) => {
+  if (currentPath.length > 1) {
+    currentPath.slice(0, currentPath.length - 1).reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
       breadcrumbs.push({text: elem, href});
       return href;

@@ -211,6 +211,7 @@ class DagsterInstance:
         run_coordinator=None,
         run_launcher=None,
         settings=None,
+        skip_validation_checks=False,
         ref=None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -235,6 +236,10 @@ class DagsterInstance:
             schedule_storage, "schedule_storage", ScheduleStorage
         )
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
+
+        if self._schedule_storage and not skip_validation_checks:
+            self._schedule_storage.validate_stored_schedules(self.scheduler_class)
+
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.initialize(self)
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
@@ -287,6 +292,10 @@ class DagsterInstance:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
+    def get_for_migration():
+        return DagsterInstance.from_config(_dagster_home(), skip_validation_checks=True)
+
+    @staticmethod
     def local_temp(tempdir=None, overrides=None):
         warnings.warn(
             "To create a local DagsterInstance for a test, use the instance_for_test "
@@ -299,12 +308,14 @@ class DagsterInstance:
         return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
 
     @staticmethod
-    def from_config(config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME):
+    def from_config(
+        config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, skip_validation_checks=False
+    ):
         instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
-        return DagsterInstance.from_ref(instance_ref)
+        return DagsterInstance.from_ref(instance_ref, skip_validation_checks=skip_validation_checks)
 
     @staticmethod
-    def from_ref(instance_ref):
+    def from_ref(instance_ref, skip_validation_checks=False):
         check.inst_param(instance_ref, "instance_ref", InstanceRef)
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
@@ -317,6 +328,7 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
+            skip_validation_checks=skip_validation_checks,
             ref=instance_ref,
         )
 
@@ -418,6 +430,10 @@ class DagsterInstance:
     def scheduler(self):
         return self._scheduler
 
+    @property
+    def scheduler_class(self):
+        return self.scheduler.__class__.__name__ if self.scheduler else None
+
     # run coordinator
 
     @property
@@ -464,6 +480,7 @@ class DagsterInstance:
 
             print_fn("Updating run storage...")
             self._run_storage.upgrade()
+            self._run_storage.build_missing_indexes()
 
             print_fn("Updating event storage...")
             self._event_storage.upgrade()
@@ -480,6 +497,7 @@ class DagsterInstance:
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
         self._event_storage.reindex(print_fn)
+        self._run_storage.reindex(print_fn)
         print_fn("Done.")
 
     def dispose(self):
@@ -933,10 +951,14 @@ class DagsterInstance:
         self.check_asset_aware()
         return self._event_storage.has_asset_key(asset_key)
 
-    def events_for_asset_key(self, asset_key, partitions=None, cursor=None, limit=None):
+    def events_for_asset_key(
+        self, asset_key, partitions=None, cursor=None, limit=None, ascending=False
+    ):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self.check_asset_aware()
-        return self._event_storage.get_asset_events(asset_key, partitions, cursor, limit)
+        return self._event_storage.get_asset_events(
+            asset_key, partitions, cursor, limit, ascending=ascending, include_cursor=True
+        )
 
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

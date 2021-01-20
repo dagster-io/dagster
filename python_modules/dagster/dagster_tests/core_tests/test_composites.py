@@ -1,4 +1,5 @@
 import os
+import typing
 
 import pytest
 from dagster import (
@@ -7,7 +8,9 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
-    List,
+)
+from dagster import List as DagsterList
+from dagster import (
     Optional,
     Output,
     OutputDefinition,
@@ -29,6 +32,11 @@ from dagster.core.utility_solids import (
     input_set,
 )
 from dagster.utils.test import get_temp_dir
+
+if typing.TYPE_CHECKING:
+    List = typing.List
+else:
+    List = DagsterList
 
 
 def test_pipeline_in_pipeline():
@@ -188,14 +196,12 @@ def test_mapped_composite_config_input(composition_class):
         called["node_a"] = True
         assert one == 1
 
-    assert node_a.has_config_entry is True
     assert not node_a.input_has_default("one")
 
     @composite_solid
     def inner(inner_one):
         node_a(inner_one)
 
-    assert inner.has_config_entry
     assert not inner.has_config_mapping
 
     outer = composition_class(
@@ -205,7 +211,6 @@ def test_mapped_composite_config_input(composition_class):
     )
 
     assert not outer.input_has_default("outer_one")
-    assert outer.has_config_entry
     assert not outer.has_config_mapping
     pipe = PipelineDefinition(name="composites_pipeline", solid_defs=[outer])
 

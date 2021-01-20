@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import json
 import os
 import string
@@ -11,6 +9,7 @@ import mock
 import pytest
 from click.testing import CliRunner
 from dagster import (
+    Partition,
     PartitionSetDefinition,
     PresetDefinition,
     ScheduleDefinition,
@@ -84,7 +83,9 @@ def define_bar_schedules():
             "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
         ),
         "partitioned_schedule": partition_set.create_schedule_definition(
-            schedule_name="partitioned_schedule", cron_schedule="* * * * *"
+            schedule_name="partitioned_schedule",
+            cron_schedule="* * * * *",
+            partition_selector=lambda _context, _def: Partition("7"),
         ),
     }
 

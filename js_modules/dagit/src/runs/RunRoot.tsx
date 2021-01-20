@@ -3,7 +3,6 @@ import {IBreadcrumbProps, NonIdealState, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetsSupported} from 'src/AssetsSupported';
@@ -13,10 +12,11 @@ import {Run} from 'src/runs/Run';
 import {RunFragments} from 'src/runs/RunFragments';
 import {RunStatusTag} from 'src/runs/RunStatusTag';
 import {RunRootQuery} from 'src/runs/types/RunRootQuery';
+import {Group} from 'src/ui/Group';
 import {FontFamily} from 'src/ui/styles';
 
-export const RunRoot: React.FC<RouteComponentProps<{runId: string}>> = (props) => {
-  const runId = props.match.params.runId;
+export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
+  const {runId} = props.match.params;
 
   const {data, loading, error} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -34,18 +34,13 @@ export const RunRoot: React.FC<RouteComponentProps<{runId: string}>> = (props) =
     if (error || !run) {
       return <Mono>{runId}</Mono>;
     }
+
     return (
-      <div
-        style={{display: 'flex', flexDirection: 'row', alignItems: 'center', fontWeight: 'normal'}}
-      >
-        <Link to={`/instance/snapshots/${run.pipeline.name}@${run.pipelineSnapshotId}`}>
-          {run.pipeline.name}
-        </Link>
-        <div style={{margin: '0 8px'}}>:</div>
-        <Mono>Run {runId.slice(0, 8)}</Mono>
-        <div style={{marginLeft: '12px'}}>
+      <div style={{fontWeight: 'normal'}}>
+        <Group direction="row" spacing={8} alignItems="center">
+          <Mono>{run.id?.slice(0, 8)}</Mono>
           <RunStatusTag status={run.status} />
-        </div>
+        </Group>
       </div>
     );
   };
@@ -99,6 +94,12 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
   );
 };
 
+const Mono = styled.span`
+  font-family: ${FontFamily.monospace};
+  font-size: 14px;
+  font-weight: 600;
+`;
+
 const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
@@ -121,10 +122,4 @@ const RUN_ROOT_QUERY = gql`
   }
 
   ${RunFragments.RunFragment}
-`;
-
-const Mono = styled.span`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-weight: 600;
 `;

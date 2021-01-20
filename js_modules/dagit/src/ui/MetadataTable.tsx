@@ -8,10 +8,11 @@ type Row = {key: string; value: React.ReactNode};
 
 interface Props {
   rows: (Row | null | undefined)[];
+  spacing: 0 | 2 | 4;
 }
 
-export const MetadataTable: React.FC<Props> = (props) => {
-  const {rows} = props;
+export const MetadataTable = (props: Props) => {
+  const {rows, spacing} = props;
 
   return (
     <StyledTable>
@@ -21,12 +22,12 @@ export const MetadataTable: React.FC<Props> = (props) => {
           return (
             <tr key={key}>
               <td>
-                <Box padding={{vertical: 4, right: 32}}>
-                  <Key>{key}</Key>
+                <Box padding={{vertical: spacing, right: 32}}>
+                  <MetadataKey>{key}</MetadataKey>
                 </Box>
               </td>
               <td>
-                <Box padding={{vertical: 4}}>{value}</Box>
+                <Box padding={{vertical: spacing}}>{value}</Box>
               </td>
             </tr>
           );
@@ -36,6 +37,10 @@ export const MetadataTable: React.FC<Props> = (props) => {
   );
 };
 
+MetadataTable.defaultProps = {
+  spacing: 4,
+};
+
 const StyledTable = styled.table`
   border-spacing: 0;
   td {
@@ -43,7 +48,7 @@ const StyledTable = styled.table`
   }
 `;
 
-const Key = styled.div`
+export const MetadataKey = styled.div`
   color: ${Colors.GRAY1};
   font-weight: 400;
 `;

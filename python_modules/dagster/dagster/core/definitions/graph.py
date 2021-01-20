@@ -1,6 +1,6 @@
+import warnings
 from collections import OrderedDict
 
-import six
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -101,6 +101,7 @@ class GraphDefinition(NodeDefinition):
         self._output_mappings = _validate_out_mappings(
             check.opt_list_param(output_mappings, "output_mappings"),
             self._solid_dict,
+            self._dependency_structure,
             name,
             class_name=type(self).__name__,
         )
@@ -128,9 +129,7 @@ class GraphDefinition(NodeDefinition):
         try:
             order = toposort_flatten(backward_edges)
         except CircularDependencyError as err:
-            six.raise_from(
-                DagsterInvalidDefinitionError(str(err)), err,
-            )
+            raise DagsterInvalidDefinitionError(str(err)) from err
 
         return [self.solid_named(solid_name) for solid_name in order]
 
@@ -283,6 +282,12 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def has_config_entry(self):
+        warnings.warn(
+            "GraphDefinition.has_config_entry is deprecated, starting in 0.10.0, because whether "
+            "the graph has configurable inputs depends on what managers are supplied for its "
+            "inputs and outputs."
+        )
+
         has_child_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
         return (
             self.has_config_mapping
@@ -302,6 +307,16 @@ class GraphDefinition(NodeDefinition):
     @property
     def config_schema(self):
         return self.config_mapping.config_schema if self.has_config_mapping else None
+
+    def input_supports_dynamic_output_dep(self, input_name):
+        mapping = self.get_input_mapping(input_name)
+        internal_dynamic_handle = self.dependency_structure.get_upstream_dynamic_handle_for_solid(
+            mapping.maps_to.solid_name
+        )
+        if internal_dynamic_handle:
+            return False
+
+        return True
 
 
 def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name, class_name):
@@ -435,7 +450,7 @@ def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name
     return input_mappings, input_def_dict.values()
 
 
-def _validate_out_mappings(output_mappings, solid_dict, name, class_name):
+def _validate_out_mappings(output_mappings, solid_dict, dependency_structure, name, class_name):
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
 
@@ -471,6 +486,23 @@ def _validate_out_mappings(output_mappings, solid_dict, name, class_name):
                         name=name,
                         target_output=target_output,
                     )
+                )
+
+            if target_output.is_dynamic and not mapping.definition.is_dynamic:
+                raise DagsterInvalidDefinitionError(
+                    f'In {class_name} "{name}" can not map from {target_output.__class__.__name__} '
+                    f'"{target_output.name}" to {mapping.definition.__class__.__name__} '
+                    f'"{mapping.definition.name}". Definition types must align.'
+                )
+
+            dynamic_handle = dependency_structure.get_upstream_dynamic_handle_for_solid(
+                target_solid.name
+            )
+            if dynamic_handle and not mapping.definition.is_dynamic:
+                raise DagsterInvalidDefinitionError(
+                    f'In {class_name} "{name}" output "{mapping.definition.name}" mapping from '
+                    f'solid "{mapping.maps_from.solid_name}" must be a DynamicOutputDefinition since it is '
+                    f'downstream of dynamic output "{dynamic_handle.describe()}".'
                 )
 
         elif isinstance(mapping, OutputDefinition):

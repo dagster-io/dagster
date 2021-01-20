@@ -236,6 +236,10 @@ class RunStorage(ABC):
     def delete_run(self, run_id):
         """Remove a run from storage"""
 
+    @abstractmethod
+    def build_missing_indexes(self, print_fn=lambda _: None, force_rebuild_all=False):
+        """Call this method to run any data migrations"""
+
     def dispose(self):
         """Explicit lifecycle management."""
 

@@ -1,5 +1,3 @@
-intermediate_storage:
-  filesystem:
 solids:
   k_means_iris:
     inputs:

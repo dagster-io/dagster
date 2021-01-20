@@ -3,25 +3,11 @@ import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
 import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceStatusRoot';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
-
-const REPOSITORY_SCHEDULES_FRAGMENT = gql`
-  fragment RepositorySchedulesFragment on Repository {
-    name
-    id
-    schedules {
-      id
-      ...ScheduleFragment
-    }
-    ...RepositoryInfoFragment
-  }
-  ${REPOSITORY_INFO_FRAGMENT}
-  ${SCHEDULER_FRAGMENT}
-`;
 
 export const SCHEDULE_FRAGMENT = gql`
   fragment ScheduleFragment on Schedule {
@@ -33,6 +19,7 @@ export const SCHEDULE_FRAGMENT = gql`
     solidSelection
     mode
     partitionSet {
+      id
       name
       partitionStatusesOrError {
         ... on PartitionStatuses {
@@ -48,13 +35,31 @@ export const SCHEDULE_FRAGMENT = gql`
       id
       ...JobStateFragment
     }
-    futureTicks(limit: 1) {
+    futureTicks(limit: 5) {
       results {
         timestamp
       }
     }
   }
   ${JOB_STATE_FRAGMENT}
+`;
+
+export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
+  fragment RepositorySchedulesFragment on Repository {
+    name
+    id
+    location {
+      id
+      name
+    }
+    schedules {
+      id
+      ...ScheduleFragment
+    }
+    ...RepositoryInfoFragment
+  }
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
 `;
 
 export const SCHEDULES_ROOT_QUERY = gql`
@@ -84,9 +89,8 @@ export const SCHEDULES_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
   ${JOB_STATE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}

@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
-import {TypeExplorer} from 'src/typeexplorer/TypeExplorer';
+import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from 'src/typeexplorer/TypeExplorer';
 import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables,
@@ -66,5 +66,5 @@ const TYPE_EXPLORER_CONTAINER_QUERY = gql`
       }
     }
   }
-  ${TypeExplorer.fragments.TypeExplorerFragment}
+  ${TYPE_EXPLORER_FRAGMENT}
 `;

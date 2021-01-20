@@ -5,7 +5,6 @@ import threading
 from contextlib import contextmanager
 
 import click
-import six
 from dagster import check
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
@@ -194,18 +193,13 @@ def start_server(instance, host, port, path_prefix, app, port_lookup, port_looku
                         port_lookup_attempts,
                     )
                 else:
-                    six.raise_from(
-                        Exception(
-                            (
-                                "Another process on your machine is already listening on port {port}. "
-                                "It is possible that you have another instance of dagit "
-                                "running somewhere using the same port. Or it could be another "
-                                "random process. Either kill that process or use the -p option to "
-                                "select another port."
-                            ).format(port=port)
-                        ),
-                        os_error,
-                    )
+                    raise Exception(
+                        f"Another process on your machine is already listening on port {port}. "
+                        "It is possible that you have another instance of dagit "
+                        "running somewhere using the same port. Or it could be another "
+                        "random process. Either kill that process or use the -p option to "
+                        "select another port."
+                    ) from os_error
             else:
                 raise os_error
 

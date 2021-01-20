@@ -1,4 +1,4 @@
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
@@ -13,29 +13,38 @@ from dagster.core.definitions import (
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.execution.plan.handle import StepHandle
+from dagster.core.execution.plan.handle import (
+    ResolvedFromDynamicStepHandle,
+    StepHandle,
+    UnresolvedStepHandle,
+)
 from dagster.core.execution.resolve_versions import (
     resolve_step_output_versions_helper,
     resolve_step_versions_helper,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.mem_object_manager import mem_object_manager
+from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
-from .compute import create_compute_step
+from .compute import create_compute_step, create_unresolved_step
 from .inputs import (
     FromConfig,
     FromDefaultValue,
     FromMultipleSources,
+    FromPendingDynamicStepOutput,
     FromRootInputManager,
     FromStepOutput,
+    FromUnresolvedStepOutput,
     StepInput,
     StepInputSource,
+    UnresolvedStepInput,
 )
-from .outputs import StepOutputHandle
-from .step import ExecutionStep
+from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
+from .step import ExecutionStep, UnresolvedExecutionStep
+
+StepHandleUnion = (StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle)
 
 
 class _PlanBuilder:
@@ -49,14 +58,14 @@ class _PlanBuilder:
     execution.
     """
 
-    def __init__(self, pipeline, environment_config, mode, step_handles_to_execute):
+    def __init__(self, pipeline, environment_config, mode, step_keys_to_execute):
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.environment_config = check.inst_param(
             environment_config, "environment_config", EnvironmentConfig
         )
         check.opt_str_param(mode, "mode")
-        check.opt_list_param(step_handles_to_execute, "step_handles_to_execute", of_type=StepHandle)
-        self.step_handles_to_execute = step_handles_to_execute
+        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", str)
+        self.step_keys_to_execute = step_keys_to_execute
         self.mode_definition = (
             pipeline.get_definition().get_mode_definition(mode)
             if mode is not None
@@ -92,11 +101,12 @@ class _PlanBuilder:
 
     def set_output_handle(self, key, val):
         check.inst_param(key, "key", SolidOutputHandle)
-        check.inst_param(val, "val", StepOutputHandle)
+        check.inst_param(val, "val", (StepOutputHandle, UnresolvedStepOutputHandle))
         self.step_output_map[key] = val
 
     def build(self):
         """Builds the execution plan"""
+        check_io_manager_intermediate_storage(self.mode_definition, self.environment_config)
 
         pipeline_def = self.pipeline.get_definition()
         # Recursively build the execution plan starting at the root pipeline
@@ -104,19 +114,22 @@ class _PlanBuilder:
             pipeline_def.solids_in_topological_order, pipeline_def.dependency_structure
         )
 
-        step_dict = {step.handle: step for step in self._steps.values()}
-
-        step_handles_to_execute = (
-            self.step_handles_to_execute
-            if self.step_handles_to_execute is not None
-            else [step.handle for step in self._steps.values()]
+        full_plan = ExecutionPlan(
+            self.pipeline,
+            {step.handle: step for step in self._steps.values()},
+            [step.handle for step in self._steps.values()],
+            self.environment_config,
         )
 
-        check_object_manager_intermediate_storage(self.mode_definition, self.environment_config)
+        if self.step_keys_to_execute is not None:
+            return full_plan.build_subset_plan(self.step_keys_to_execute)
+        else:
+            return full_plan
 
-        return ExecutionPlan(
-            self.pipeline, step_dict, step_handles_to_execute, self.environment_config,
-        )
+    def storage_is_persistent(self):
+        return self.mode_definition.get_intermediate_storage_def(
+            self.environment_config.intermediate_storage.intermediate_storage_name
+        ).is_persistent
 
     def _build_from_sorted_solids(
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
@@ -126,6 +139,7 @@ class _PlanBuilder:
 
             ### 1. INPUTS
             # Create and add execution plan steps for solid inputs
+            has_unresolved_input = False
             step_inputs = []
             for input_name, input_def in solid.definition.input_dict.items():
                 step_input_source = get_step_input_source(
@@ -143,22 +157,48 @@ class _PlanBuilder:
                 if step_input_source is None:
                     continue
 
-                check.inst_param(step_input_source, "step_input_source", StepInputSource)
-                step_inputs.append(
-                    StepInput(
-                        name=input_name,
-                        dagster_type=input_def.dagster_type,
-                        source=step_input_source,
+                if isinstance(
+                    step_input_source, (FromPendingDynamicStepOutput, FromUnresolvedStepOutput)
+                ):
+                    has_unresolved_input = True
+                    step_inputs.append(
+                        UnresolvedStepInput(
+                            name=input_name,
+                            dagster_type=input_def.dagster_type,
+                            source=step_input_source,
+                        )
                     )
-                )
+                else:
+                    check.inst_param(step_input_source, "step_input_source", StepInputSource)
+                    step_inputs.append(
+                        StepInput(
+                            name=input_name,
+                            dagster_type=input_def.dagster_type,
+                            source=step_input_source,
+                        )
+                    )
 
             ### 2a. COMPUTE FUNCTION
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
-                solid_compute_step = create_compute_step(
-                    self.pipeline_name, self.environment_config, solid, step_inputs, handle
-                )
-                self.add_step(solid_compute_step)
+                if has_unresolved_input:
+                    step = create_unresolved_step(
+                        solid=solid,
+                        solid_handle=handle,
+                        step_inputs=step_inputs,
+                        environment_config=self.environment_config,
+                        pipeline_name=self.pipeline_name,
+                    )
+                else:
+                    step = create_compute_step(
+                        solid=solid,
+                        solid_handle=handle,
+                        step_inputs=step_inputs,
+                        environment_config=self.environment_config,
+                        pipeline_name=self.pipeline_name,
+                    )
+
+                self.add_step(step)
 
             ### 2b. RECURSE
             # Recurse over the solids contained in an instance of GraphDefinition
@@ -189,7 +229,16 @@ class _PlanBuilder:
                     output_def.name, handle
                 )
                 step = self.get_step_by_solid_handle(resolved_handle)
-                step_output_handle = StepOutputHandle(step.key, resolved_output_def.name)
+                if isinstance(step, ExecutionStep):
+                    step_output_handle = StepOutputHandle(step.key, resolved_output_def.name)
+                else:
+                    step_output_handle = UnresolvedStepOutputHandle(
+                        step.handle,
+                        resolved_output_def.name,
+                        step.resolved_by_step_key,
+                        step.resolved_by_output_name,
+                    )
+
                 self.set_output_handle(output_handle, step_output_handle)
 
 
@@ -209,12 +258,25 @@ def get_step_input_source(
     input_config = solid_config.inputs.get(input_name) if solid_config else None
 
     input_def = solid.definition.input_def_named(input_name)
-    if input_def.manager_key and not dependency_structure.has_deps(input_handle):
+    if input_def.root_manager_key and not dependency_structure.has_deps(input_handle):
         return FromRootInputManager(input_def=input_def, config_data=input_config)
 
     if dependency_structure.has_singular_dep(input_handle):
         solid_output_handle = dependency_structure.get_singular_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
+        if isinstance(step_output_handle, UnresolvedStepOutputHandle):
+            return FromUnresolvedStepOutput(
+                unresolved_step_output_handle=step_output_handle,
+                input_def=input_def,
+                config_data=input_config,
+            )
+
+        if solid_output_handle.output_def.is_dynamic:
+            return FromPendingDynamicStepOutput(
+                step_output_handle=step_output_handle,
+                input_def=input_def,
+                config_data=input_config,
+            )
 
         return FromStepOutput(
             step_output_handle=step_output_handle,
@@ -285,13 +347,15 @@ def get_step_input_source(
 class ExecutionPlan(
     namedtuple(
         "_ExecutionPlan",
-        "pipeline step_dict executable_map step_handles_to_execute environment_config",
+        "pipeline step_dict executable_map resolvable_map step_handles_to_execute environment_config",
     )
 ):
     def __new__(
         cls, pipeline, step_dict, step_handles_to_execute, environment_config,
     ):
-        check.list_param(step_handles_to_execute, "step_handles_to_execute", of_type=StepHandle)
+        check.list_param(
+            step_handles_to_execute, "step_handles_to_execute", of_type=StepHandleUnion,
+        )
         missing_steps = [
             step_handle.to_key()
             for step_handle in step_handles_to_execute
@@ -308,15 +372,31 @@ class ExecutionPlan(
         executable_map = {}
         for handle in step_handles_to_execute:
             step = step_dict[handle]
-            executable_map[step.key] = step.handle
+            if isinstance(step, ExecutionStep):
+                executable_map[step.key] = step.handle
+
+        resolvable_map = defaultdict(list)
+        for handle in step_handles_to_execute:
+            step = step_dict[handle]
+            if isinstance(step, UnresolvedExecutionStep):
+                if step.resolved_by_step_key not in executable_map:
+                    raise DagsterInvariantViolationError(
+                        f'UnresolvedExecutionStep "{step.key}" is resolved by "{step.resolved_by_step_key}" '
+                        "which is not part of the current step selection"
+                    )
+                resolvable_map[step.resolved_by_step_key].append(step.handle)
 
         return super(ExecutionPlan, cls).__new__(
             cls,
             pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
             step_dict=check.dict_param(
-                step_dict, "step_dict", key_type=StepHandle, value_type=ExecutionStep,
+                step_dict,
+                "step_dict",
+                key_type=StepHandleUnion,
+                value_type=(ExecutionStep, UnresolvedExecutionStep),
             ),
             executable_map=executable_map,
+            resolvable_map=resolvable_map,
             step_handles_to_execute=step_handles_to_execute,
             environment_config=check.inst_param(
                 environment_config, "environment_config", EnvironmentConfig
@@ -326,10 +406,6 @@ class ExecutionPlan(
     @property
     def steps(self):
         return list(self.step_dict.values())
-
-    @property
-    def executable_steps(self):
-        return [self.get_step_by_key(key) for key in self.executable_map]
 
     @property
     def step_keys_to_execute(self):
@@ -353,11 +429,15 @@ class ExecutionPlan(
         return step.step_output_named(step_output_handle.output_name)
 
     def get_manager_key(self, step_output_handle):
-        return self.get_step_output(step_output_handle).output_def.manager_key
+        return self.get_step_output(step_output_handle).output_def.io_manager_key
 
     def has_step(self, handle):
-        check.inst_param(handle, "handle", StepHandle)
+        check.inst_param(handle, "handle", StepHandleUnion)
         return handle in self.step_dict
+
+    def get_step(self, handle):
+        check.inst_param(handle, "handle", StepHandleUnion)
+        return self.step_dict[handle]
 
     def get_step_by_key(self, key):
         check.str_param(key, "key")
@@ -378,12 +458,17 @@ class ExecutionPlan(
     def get_all_step_deps(self):
         deps = OrderedDict()
         for step in self.step_dict.values():
-            deps[step.key] = step.get_execution_dependency_keys()
+            if isinstance(step, ExecutionStep):
+                deps[step.key] = step.get_execution_dependency_keys()
+            elif isinstance(step, UnresolvedExecutionStep):
+                deps[step.key] = step.get_all_dependency_keys()
+            else:
+                check.failed(f"Unexpected execution step type {step}")
 
         return deps
 
     def get_steps_to_execute_in_topo_order(self):
-        return [step for step_level in self.get_all_steps_by_level() for step in step_level]
+        return [step for step_level in self.get_steps_to_execute_by_level() for step in step_level]
 
     def get_steps_to_execute_by_level(self):
         return [
@@ -405,9 +490,64 @@ class ExecutionPlan(
 
         return deps
 
+    def resolve(self, resolved_by_step_key, mappings):
+        """Resolve UnresolvedExecutionSteps that depend on resolved_by_step_key, with the mapped output results"""
+        check.str_param(resolved_by_step_key, "resolved_by_step_key")
+        check.dict_param(mappings, "mappings", key_type=str, value_type=list)
+
+        resolved_steps = []
+        for unresolved_step_handle in self.resolvable_map[resolved_by_step_key]:
+            # don't resolve steps we are not executing
+            if unresolved_step_handle in self.step_handles_to_execute:
+                unresolved_step = self.step_dict[unresolved_step_handle]
+                resolved_steps += unresolved_step.resolve(resolved_by_step_key, mappings)
+
+        # update internal structures
+        for step in resolved_steps:
+            self.step_dict[step.handle] = step
+            self.executable_map[step.key] = step.handle
+
+        executable_keys = set(self.executable_map.keys())
+        resolved_step_deps = {}
+        for step in resolved_steps:
+            # respect the plans step_handles_to_execute by intersecting against the executable keys
+            resolved_step_deps[step.key] = step.get_execution_dependency_keys().intersection(
+                executable_keys
+            )
+
+        return resolved_step_deps
+
     def build_subset_plan(self, step_keys_to_execute):
         check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        step_handles_to_execute = [StepHandle.from_key(key) for key in step_keys_to_execute]
+        step_handles_to_execute = [StepHandle.parse_from_key(key) for key in step_keys_to_execute]
+
+        bad_keys = []
+        for handle in step_handles_to_execute:
+            if handle in self.step_dict:
+                pass  # no further processing required
+            elif (
+                isinstance(handle, ResolvedFromDynamicStepHandle)
+                and handle.unresolved_form in self.step_dict
+            ):
+                unresolved_step = self.step_dict[handle.unresolved_form]
+                # self.step_dict updated as side effect
+                self.resolve(
+                    unresolved_step.resolved_by_step_key,
+                    {unresolved_step.resolved_by_output_name: [handle.mapping_key]},
+                )
+                check.invariant(
+                    handle in self.step_dict,
+                    f"Handle did not resolve as expected, not found in step dict {handle}",
+                )
+            else:
+                bad_keys.append(handle.to_key())
+
+        if bad_keys:
+            raise DagsterExecutionStepNotFoundError(
+                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}: {', '.join(bad_keys)}",
+                step_keys=bad_keys,
+            )
+
         return ExecutionPlan(
             self.pipeline, self.step_dict, step_handles_to_execute, self.environment_config,
         )
@@ -425,7 +565,7 @@ class ExecutionPlan(
 
         return ActiveExecution(self, retries, sort_key_fn)
 
-    def step_key_for_single_step_plans(self):
+    def step_handle_for_single_step_plans(self):
         # Temporary hack to isolate single-step plans, which are often the representation of
         # sub-plans in a multiprocessing execution environment.  We want to attribute pipeline
         # events (like resource initialization) that are associated with the execution of these
@@ -436,7 +576,7 @@ class ExecutionPlan(
             check.invariant(
                 isinstance(only_step, ExecutionStep), "Unexpected unresolved single step plan",
             )
-            return self.step_dict[self.step_handles_to_execute[0]].key
+            return only_step.handle
 
         return None
 
@@ -455,17 +595,8 @@ class ExecutionPlan(
         check.opt_str_param(mode, "mode")
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
-        step_handles_to_execute = (
-            [StepHandle.from_key(key) for key in step_keys_to_execute]
-            if step_keys_to_execute
-            else None
-        )
-
         plan_builder = _PlanBuilder(
-            pipeline,
-            environment_config,
-            mode=mode,
-            step_handles_to_execute=step_handles_to_execute,
+            pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute,
         )
 
         # Finally, we build and return the execution plan
@@ -481,7 +612,7 @@ class ExecutionPlan(
     @property
     def artifacts_persisted(self):
         """
-        Check if all the border steps of the current run have non-in-memory object managers for reexecution.
+        Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
 
         Border steps: all the steps that don't have upstream steps to execute, i.e. indegree is 0).
         """
@@ -498,23 +629,23 @@ class ExecutionPlan(
 
         mode_def = self.pipeline_def.get_mode_definition(self.environment_config.mode)
         for step in self.get_steps_to_execute_by_level()[0]:
-            # check if all its inputs' upstream step outputs have non-in-memory object manager configured
+            # check if all its inputs' upstream step outputs have non-in-memory IO manager configured
             for step_input in step.step_inputs:
                 for step_output_handle in step_input.get_step_output_handle_dependencies():
-                    manager_key = self.get_manager_key(step_output_handle)
-                    manager_def = mode_def.resource_defs.get(manager_key)
+                    io_manager_key = self.get_manager_key(step_output_handle)
+                    manager_def = mode_def.resource_defs.get(io_manager_key)
                     if (
-                        # no object manager is configured
+                        # no IO manager is configured
                         not manager_def
-                        # object manager is non persistent
-                        or manager_def == mem_object_manager
+                        # IO manager is non persistent
+                        or manager_def == mem_io_manager
                     ):
                         return False
         return True
 
 
-def check_object_manager_intermediate_storage(mode_def, environment_config):
-    """Only one of object_manager and intermediate_storage should be set."""
+def check_io_manager_intermediate_storage(mode_def, environment_config):
+    """Only one of io_manager and intermediate_storage should be set."""
     # pylint: disable=comparison-with-callable
     from dagster.core.storage.system_storage import mem_intermediate_storage
 
@@ -523,16 +654,16 @@ def check_object_manager_intermediate_storage(mode_def, environment_config):
         intermediate_storage_def is None or intermediate_storage_def == mem_intermediate_storage
     )
 
-    object_manager = mode_def.resource_defs["object_manager"]
-    object_manager_is_default = object_manager == mem_object_manager
+    io_manager = mode_def.resource_defs["io_manager"]
+    io_manager_is_default = io_manager == mem_io_manager
 
-    if not intermediate_storage_is_default and not object_manager_is_default:
+    if not intermediate_storage_is_default and not io_manager_is_default:
         raise DagsterInvariantViolationError(
             'You have specified an intermediate storage, "{intermediate_storage_name}", and have '
-            "also specified a default object manager. You must specify only one. To avoid specifying "
+            "also specified a default IO manager. You must specify only one. To avoid specifying "
             "an intermediate storage, omit the intermediate_storage_defs argument to your"
             'ModeDefinition and omit "intermediate_storage" in your run config. To avoid '
-            'specifying a default object manager, omit the "object_manager" key from the '
+            'specifying a default IO manager, omit the "io_manager" key from the '
             "resource_defs argument to your ModeDefinition.".format(
                 intermediate_storage_name=intermediate_storage_def.name
             )

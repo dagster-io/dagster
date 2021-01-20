@@ -201,6 +201,9 @@ class ExternalRepositoryOrigin(
     def get_job_origin(self, job_name):
         return ExternalJobOrigin(self, job_name)
 
+    def get_partition_set_origin(self, partition_set_name):
+        return ExternalPartitionSetOrigin(self, partition_set_name)
+
     def get_cli_args(self):
         return self.repository_location_origin.get_cli_args() + " -r " + self.repository_name
 
@@ -242,6 +245,30 @@ class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_or
                 external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
             ),
             check.str_param(job_name, "job_name"),
+        )
+
+    def get_repo_cli_args(self):
+        return self.external_repository_origin.get_cli_args()
+
+    def get_id(self):
+        return create_snapshot_id(self)
+
+
+@whitelist_for_serdes
+class ExternalPartitionSetOrigin(
+    namedtuple("_PartitionSetOrigin", "external_repository_origin partition_set_name")
+):
+    """Serializable representation of an ExternalPartitionSet that can be used to
+       uniquely it or reload it in across process boundaries.
+    """
+
+    def __new__(cls, external_repository_origin, partition_set_name):
+        return super(ExternalPartitionSetOrigin, cls).__new__(
+            cls,
+            check.inst_param(
+                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+            ),
+            check.str_param(partition_set_name, "partition_set_name"),
         )
 
     def get_repo_cli_args(self):

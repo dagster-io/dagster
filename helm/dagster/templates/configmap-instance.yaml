@@ -10,40 +10,15 @@ metadata:
 data:
   dagster.yaml: |
     scheduler:
-      {{- if .Values.scheduler.k8sEnabled }}
-      module: dagster_k8s.scheduler
-      class: K8sScheduler
-      config:
-        load_incluster_config: {{ .Values.scheduler.loadInclusterConfig }}
-        scheduler_namespace: {{ .Values.scheduler.schedulerNamespace | default .Release.Namespace }}
-        kubeconfig_file: {{ .Values.scheduler.kubeconfigFile }}
-        {{- with $.Values.imagePullSecrets }}
-        image_pull_secrets:
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
-        service_account_name: {{ include "dagster.serviceAccountName" . }}
-        job_image: "{{- .Values.scheduler.image.repository -}}:{{- .Values.scheduler.image.tag -}}"
-        dagster_home:
-          env: DAGSTER_HOME
-        postgres_password_secret:
-          env: DAGSTER_K8S_PG_PASSWORD_SECRET
-        image_pull_policy: {{ .Values.scheduler.image.pullPolicy }}
-        instance_config_map:
-          env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
-        env_config_maps:
-          - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
-        env_secrets:
-          {{- if $.Values.scheduler.envSecrets -}}
-          {{- range $name := $.Values.scheduler.envSecrets }}
-          {{- if $name }}
-          - {{ $name }}
-          {{- end }}
-          {{- end }}
-          {{- end }}
-    {{- else }}
-      module: dagster.core.scheduler
-      class: DagsterDaemonScheduler
-    {{- end }}
+      {{- $schedulerType := .Values.scheduler.type }}
+
+      {{- if eq $schedulerType "DagsterDaemonScheduler" }}
+        {{- include "dagsterYaml.scheduler.daemon" . | indent 6 -}}
+      {{- else if eq $schedulerType "K8sScheduler" }}
+        {{- include "dagsterYaml.scheduler.k8s" . | indent 6 -}}
+      {{- else if eq $schedulerType "CustomScheduler" }}
+        {{- include "dagsterYaml.scheduler.custom" . | indent 6 -}}
+      {{- end }}
 
     schedule_storage:
       module: dagster_postgres.schedule_storage
@@ -58,54 +33,14 @@ data:
           port: {{ .Values.postgresql.service.port }}
 
     run_launcher:
-      {{- if eq (include "dagster.celery_k8s_run_launcher_enabled" .) "true" }}
-      module: dagster_celery_k8s
-      class: CeleryK8sRunLauncher
-      config:
-        dagster_home:
-          env: DAGSTER_HOME
-        instance_config_map:
-          env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
-        postgres_password_secret:
-          env: DAGSTER_K8S_PG_PASSWORD_SECRET
-        broker:  "{{ template "dagster.celery.broker_url" . }}"
-        backend: "{{ template "dagster.celery.backend_url" . }}"
-        config_source:
-        {{- if .Values.celery.configSource }}
-        {{- toYaml .Values.celery.configSource | nindent 10 }}
-        {{- end }}
-      {{- else if eq (include "dagster.k8s_run_launcher_enabled" .) "true" }}
-      module: dagster_k8s
-      class: K8sRunLauncher
-      config:
-        load_incluster_config: {{ .Values.k8sRunLauncher.loadInclusterConfig }}
-        kubeconfig_file: {{ .Values.k8sRunLauncher.kubeconfigFile }}
-        job_namespace: {{ .Values.k8sRunLauncher.jobNamespace | default .Release.Namespace }}
-        image_pull_secrets: {{- toYaml $.Values.imagePullSecrets | nindent 10 }}
-        service_account_name: {{ include "dagster.serviceAccountName" . }}
-        {{- if .Values.k8sRunLauncher.image }}
-        job_image: "{{- .Values.k8sRunLauncher.image.repository -}}:{{- .Values.k8sRunLauncher.image.tag -}}"
-        image_pull_policy: {{ .Values.k8sRunLauncher.image.pullPolicy }}
-        {{- end }}
-        dagster_home:
-          env: DAGSTER_HOME
-        instance_config_map:
-          env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
-        postgres_password_secret:
-          env: DAGSTER_K8S_PG_PASSWORD_SECRET
-        env_config_maps:
-          - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
-          {{- range $name := $.Values.k8sRunLauncher.envConfigMaps }}
-          {{- if $name }}
-          - {{ $name }}
-          {{- end }}
-          {{- end }}
-        env_secrets:
-          {{- range $name := $.Values.k8sRunLauncher.envSecrets }}
-          {{- if $name }}
-          - {{ $name }}
-          {{- end }}
-          {{- end }}
+      {{- $runLauncherType := .Values.runLauncher.type }}
+
+      {{- if eq $runLauncherType "CeleryK8sRunLauncher" }}
+        {{- include "dagsterYaml.runLauncher.celery" . | indent 6 -}}
+      {{- else if eq $runLauncherType "K8sRunLauncher" }}
+        {{- include "dagsterYaml.runLauncher.k8s" . | indent 6 -}}
+      {{- else if eq $runLauncherType "CustomRunLauncher" }}
+        {{- include "dagsterYaml.runLauncher.custom" . | indent 6 -}}
       {{- end }}
 
     run_storage:
@@ -138,4 +73,18 @@ data:
       class: QueuedRunCoordinator
       config:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
+    {{- end }}
+
+    {{- $computeLogManagerType := .Values.computeLogManager.type }}
+    {{- if not (eq $computeLogManagerType "LocalComputeLogManager") }}
+    compute_logs:
+      {{- if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.azure" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "GCSComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.gcs" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "S3ComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.s3" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
+      {{- end }}
     {{- end }}

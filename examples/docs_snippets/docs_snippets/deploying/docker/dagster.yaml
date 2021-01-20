@@ -28,10 +28,6 @@ event_log_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-scheduler:
-  module: dagster_cron.cron_scheduler
-  class: SystemCronScheduler
-
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage

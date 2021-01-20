@@ -50,7 +50,4 @@ def test_dagster_type_loader_provided_version():
     dict_param = {"version": "42"}
 
     assert _foo.loader_version == "5"
-    assert (
-        _foo.compute_loaded_input_version(dict_param)
-        == hashlib.sha1("542".encode("utf-8")).hexdigest()
-    )
+    assert _foo.compute_loaded_input_version(dict_param) == hashlib.sha1(b"542").hexdigest()

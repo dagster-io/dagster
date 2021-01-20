@@ -260,5 +260,5 @@ def test_sync_list_python_file_grpc_with_error():
             package_name=None,
         )
 
-    assert e.value.args[0].startswith("(ValueError) - ValueError: User did something bad")
+    assert e.value.args[0].startswith("ValueError: User did something bad")
     assert e.value.args[0].endswith('raise ValueError("User did something bad")\n')

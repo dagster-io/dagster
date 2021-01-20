@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, ObjectStoreOperationType, AssetStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsRowStructuredFragment
@@ -534,18 +534,26 @@ export interface LogsRowStructuredFragment_ObjectStoreOperationEvent {
   operationResult: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export interface LogsRowStructuredFragment_AssetStoreOperationEvent_assetStoreResult {
-  __typename: "AssetStoreOperationResult";
-  op: AssetStoreOperationType;
-}
-
-export interface LogsRowStructuredFragment_AssetStoreOperationEvent {
-  __typename: "AssetStoreOperationEvent";
+export interface LogsRowStructuredFragment_HandledOutputEvent {
+  __typename: "HandledOutputEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  assetStoreResult: LogsRowStructuredFragment_AssetStoreOperationEvent_assetStoreResult;
+  outputName: string;
+  managerKey: string;
+}
+
+export interface LogsRowStructuredFragment_LoadedInputEvent {
+  __typename: "LoadedInputEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  inputName: string;
+  managerKey: string;
+  upstreamOutputName: string | null;
+  upstreamStepKey: string | null;
 }
 
 export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
@@ -652,4 +660,4 @@ export interface LogsRowStructuredFragment_HookErroredEvent {
   error: LogsRowStructuredFragment_HookErroredEvent_error;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_PipelineFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_AssetStoreOperationEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent;
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_PipelineFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent;

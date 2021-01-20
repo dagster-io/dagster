@@ -14,11 +14,11 @@ The Asset Catalog is an interface inside [Dagit](/overview/dagit) that centers o
 * Runs that mutated or created the asset
 * Metadata logged by developers about the asset
 
-Developers place entries in the Asset Catalog by yielding <PyObject module="dagster" object="AssetMaterialization" /> events from inside their solids or [output managers](/overview/object-managers/object-managers).  The act of mutating or creating an asset is called a "materialization".  <PyObject module="dagster" object="AssetMaterialization" /> events may include arbitrary metadata that describes the asset at the time of the materialization.
+Developers place entries in the Asset Catalog by yielding <PyObject module="dagster" object="AssetMaterialization" /> events from inside their solids or [output managers](/overview/io-managers/io-managers).  The act of mutating or creating an asset is called a "materialization".  <PyObject module="dagster" object="AssetMaterialization" /> events may include arbitrary metadata that describes the asset at the time of the materialization.
 
 There are two general patterns for dealing with assets when using Dagster:
 * Materialize assets from inside the body of a solid.
-* Focus solid on pure business logic, and delegate the materialization of assets to ObjectManagers.
+* Focus solid on pure business logic, and delegate the materialization of assets to IOManagers.
 
 ## Recording Asset Materializations in Solids
 
@@ -47,7 +47,7 @@ We should now see a materialization event in the event log when we execute this 
 
 ## Recording Asset Materializations in Output Managers
 
-To record that an OutputManager or ObjectManager has mutated or created an asset, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method.
+To record that an OutputManager or IOManager has mutated or created an asset, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method.
 
 ```python literalinclude caption=materialization_asset_stores.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_asset_stores.py
@@ -69,7 +69,7 @@ startAfter:start_materialization_solids_marker_2
 endBefore:end_materialization_solids_marker_2
 ```
 
-Example with an ObjectManager:
+Example with an IOManager:
 
 ```python literalinclude caption=materialization_asset_stores.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_asset_stores.py

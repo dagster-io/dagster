@@ -18,6 +18,7 @@
    sections/api/apidocs/repositories
    sections/api/apidocs/schedules
    sections/api/apidocs/solids
+   sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities
    sections/api/apidocs/libraries/dagster_airflow

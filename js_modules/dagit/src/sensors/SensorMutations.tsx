@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import React from 'react';
+import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';

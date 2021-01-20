@@ -1,12 +1,12 @@
+import warnings
 from abc import ABC, abstractmethod, abstractproperty
 
-import six
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterObjectStoreError, DagsterStepOutputNotFoundError
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.object_manager import ObjectManager
+from dagster.core.storage.io_manager import IOManager
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
@@ -37,10 +37,15 @@ class IntermediateStorage(ABC):  # pylint: disable=no-init
         pass
 
 
-class IntermediateStorageAdapter(ObjectManager):
+class IntermediateStorageAdapter(IOManager):
     def __init__(self, intermediate_storage):
         self.intermediate_storage = check.inst_param(
             intermediate_storage, "intermediate_storage", IntermediateStorage
+        )
+        warnings.warn(
+            "Intermediate Storages are deprecated in 0.10.0 and will be removed in 0.11.0. "
+            "Use IO Managers instead, which gives you better control over how inputs and "
+            "outputs are handled and loaded."
         )
 
     def handle_output(self, context, obj):
@@ -53,11 +58,26 @@ class IntermediateStorageAdapter(ObjectManager):
             value=obj,
             version=context.version,
         )
-        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
-        # we set loose constraint on the return type of a custom `set_intermediate_object`, so
-        # in the deprecation cycle, we will filter out values other than structured `ObjectStoreOperation`
+
+        # Stopgap https://github.com/dagster-io/dagster/issues/3368
         if isinstance(res, ObjectStoreOperation):
-            return res
+            context.log.debug(
+                (
+                    'Stored output "{output_name}" in {object_store_name}object store{serialization_strategy_modifier} '
+                    "at {address}"
+                ).format(
+                    output_name=context.name,
+                    object_store_name=res.object_store_name,
+                    serialization_strategy_modifier=(
+                        " using {serialization_strategy_name}".format(
+                            serialization_strategy_name=res.serialization_strategy_name
+                        )
+                        if res.serialization_strategy_name
+                        else ""
+                    ),
+                    address=res.key,
+                )
+            )
 
     def load_input(self, context):
         step_context = context.step_context
@@ -66,6 +86,23 @@ class IntermediateStorageAdapter(ObjectManager):
             context.upstream_output.name,
             context.upstream_output.mapping_key,
         )
+
+        # backcompat behavior: copy intermediate from parent run to the current run destination
+        if (
+            context.upstream_output
+            and context.upstream_output.run_id == step_context.pipeline_run.parent_run_id
+        ):
+            if not self.intermediate_storage.has_intermediate(step_context, source_handle):
+                operation = self.intermediate_storage.copy_intermediate_from_run(
+                    step_context, step_context.pipeline_run.parent_run_id, source_handle
+                )
+
+                context.log.debug(
+                    "Copied object for input {input_name} from {key} to {dest_key}".format(
+                        input_name=context.name, key=operation.key, dest_key=operation.dest_key
+                    )
+                )
+
         if not self.intermediate_storage.has_intermediate(step_context, source_handle):
             raise DagsterStepOutputNotFoundError(
                 (
@@ -75,11 +112,34 @@ class IntermediateStorageAdapter(ObjectManager):
                 step_key=source_handle.step_key,
                 output_name=source_handle.output_name,
             )
-        return self.intermediate_storage.get_intermediate(
+        res = self.intermediate_storage.get_intermediate(
             context=step_context,
             dagster_type=context.dagster_type,
             step_output_handle=source_handle,
         )
+
+        # Stopgap https://github.com/dagster-io/dagster/issues/3368
+        if isinstance(res, ObjectStoreOperation):
+            context.log.debug(
+                (
+                    "Loaded input {input_name} in {object_store_name}object store{serialization_strategy_modifier} "
+                    "from {address}"
+                ).format(
+                    input_name=context.name,
+                    object_store_name=res.object_store_name,
+                    serialization_strategy_modifier=(
+                        " using {serialization_strategy_name}".format(
+                            serialization_strategy_name=res.serialization_strategy_name
+                        )
+                        if res.serialization_strategy_name
+                        else ""
+                    ),
+                    address=res.key,
+                )
+            )
+            return res.obj
+        else:
+            return res
 
 
 class ObjectStoreIntermediateStorage(IntermediateStorage):
@@ -114,17 +174,14 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 key, serialization_strategy=dagster_type.serialization_strategy
             )
         except Exception as error:  # pylint: disable=broad-except
-            six.raise_from(
-                DagsterObjectStoreError(
-                    _object_store_operation_error_message(
-                        step_output_handle=step_output_handle,
-                        op=ObjectStoreOperationType.GET_OBJECT,
-                        object_store_name=self.object_store.name,
-                        serialization_strategy_name=dagster_type.serialization_strategy.name,
-                    )
-                ),
-                error,
-            )
+            raise DagsterObjectStoreError(
+                _object_store_operation_error_message(
+                    step_output_handle=step_output_handle,
+                    op=ObjectStoreOperationType.GET_OBJECT,
+                    object_store_name=self.object_store.name,
+                    serialization_strategy_name=dagster_type.serialization_strategy.name,
+                )
+            ) from error
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.GET_OBJECT,
@@ -168,17 +225,14 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 key, value, serialization_strategy=dagster_type.serialization_strategy
             )
         except Exception as error:  # pylint: disable=broad-except
-            six.raise_from(
-                DagsterObjectStoreError(
-                    _object_store_operation_error_message(
-                        step_output_handle=step_output_handle,
-                        op=ObjectStoreOperationType.SET_OBJECT,
-                        object_store_name=self.object_store.name,
-                        serialization_strategy_name=dagster_type.serialization_strategy.name,
-                    )
-                ),
-                error,
-            )
+            raise DagsterObjectStoreError(
+                _object_store_operation_error_message(
+                    step_output_handle=step_output_handle,
+                    op=ObjectStoreOperationType.SET_OBJECT,
+                    object_store_name=self.object_store.name,
+                    serialization_strategy_name=dagster_type.serialization_strategy.name,
+                )
+            ) from error
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.SET_OBJECT,

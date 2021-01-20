@@ -15,4 +15,4 @@ def test_example_project():
         "r",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
-        assert execute_pipeline(example_pipe, run_config=run_config).success
+        assert execute_pipeline(example_pipe, mode="test", run_config=run_config).success

@@ -24,7 +24,7 @@ def test_s3_file_cache_file_present(mock_s3_resource, mock_s3_bucket):
 
     assert not file_store.has_file_object("foo")
 
-    file_store.write_binary_data("foo", "bar".encode())
+    file_store.write_binary_data("foo", b"bar")
 
     assert file_store.has_file_object("foo")
 
@@ -48,5 +48,5 @@ def test_s3_file_cache_write_file_object(mock_s3_resource, mock_s3_bucket):
         overwrite=False,
     )
 
-    stream = io.BytesIO("content".encode())
+    stream = io.BytesIO(b"content")
     file_store.write_file_object("foo", stream)

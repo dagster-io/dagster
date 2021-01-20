@@ -21,7 +21,7 @@ def _deep_merge_dicts(onto_dict, from_dict):
     return onto_dict
 
 
-def deep_merge_dicts(onto_dict, from_dict):
+def deep_merge_dicts(onto_dict: dict, from_dict: dict) -> dict:
     """
     Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
@@ -35,7 +35,7 @@ def deep_merge_dicts(onto_dict, from_dict):
     return _deep_merge_dicts(onto_dict, from_dict)
 
 
-def merge_dicts(onto_dict, from_dict):
+def merge_dicts(onto_dict: dict, from_dict: dict) -> dict:
     """
     Returns a dictionary with an entry for any key that's in either of the inputs.
     If the inputs have different values for the same key, the returned dictionary

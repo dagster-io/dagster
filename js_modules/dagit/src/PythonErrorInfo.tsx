@@ -16,58 +16,52 @@ interface IPythonErrorInfoProps {
   failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
 }
 
-export class PythonErrorInfo extends React.Component<IPythonErrorInfoProps> {
-  static fragments = {
-    PythonErrorFragment: gql`
-      fragment PythonErrorFragment on PythonError {
-        __typename
-        message
-        stack
-        cause {
-          message
-          stack
-        }
-      }
-    `,
-  };
+export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
+  const message = props.error.message;
+  const stack = (props.error as PythonErrorFragment).stack;
+  const cause = (props.error as PythonErrorFragment).cause;
 
-  render() {
-    const message = this.props.error.message;
-    const stack = (this.props.error as PythonErrorFragment).stack;
-    const cause = (this.props.error as PythonErrorFragment).cause;
+  const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
+  const context = props.contextMsg ? <ErrorHeader>{props.contextMsg}</ErrorHeader> : null;
+  const metadataEntries = props.failureMetadata?.metadataEntries;
 
-    const Wrapper = this.props.centered ? ErrorWrapperCentered : ErrorWrapper;
-    const context = this.props.contextMsg ? (
-      <ErrorHeader>{this.props.contextMsg}</ErrorHeader>
-    ) : null;
-    const metadataEntries = this.props.failureMetadata?.metadataEntries;
+  return (
+    <Wrapper>
+      {context}
+      <ErrorHeader>{message}</ErrorHeader>
+      {metadataEntries ? (
+        <div style={{marginTop: 10, marginBottom: 10}}>
+          <MetadataEntries entries={metadataEntries} />
+        </div>
+      ) : null}
+      {stack ? <Trace>{stack.join('')}</Trace> : null}
+      {cause ? (
+        <>
+          <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
+          <ErrorHeader>{cause.message}</ErrorHeader>
+          {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
+        </>
+      ) : null}
+      {props.showReload && (
+        <Button icon="refresh" onClick={() => window.location.reload()}>
+          Reload
+        </Button>
+      )}
+    </Wrapper>
+  );
+};
 
-    return (
-      <Wrapper>
-        {context}
-        <ErrorHeader>{message}</ErrorHeader>
-        {metadataEntries ? (
-          <div style={{marginTop: 10, marginBottom: 10}}>
-            <MetadataEntries entries={metadataEntries} />
-          </div>
-        ) : null}
-        {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {cause ? (
-          <>
-            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
-            <ErrorHeader>{cause.message}</ErrorHeader>
-            {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
-          </>
-        ) : null}
-        {this.props.showReload && (
-          <Button icon="refresh" onClick={() => window.location.reload()}>
-            Reload
-          </Button>
-        )}
-      </Wrapper>
-    );
+export const PYTHON_ERROR_FRAGMENT = gql`
+  fragment PythonErrorFragment on PythonError {
+    __typename
+    message
+    stack
+    cause {
+      message
+      stack
+    }
   }
-}
+`;
 
 const CauseHeader = styled.h3`
   font-weight: 400;

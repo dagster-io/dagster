@@ -19,14 +19,8 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 
         old_pipeline_snapshot_id = "88528edde2ed64da3c39cca0da8ba2f7586c1a5d"
         old_execution_plan_snapshot_id = "2246f8e5a10d21e15fbfa3773d7b2d0bc1fa9d3d"
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                '"input_hydration_schema_key" is deprecated and will be removed in 0.10.0, use '
-                '"loader_schema_key" instead.'
-            ),
-        ):
-            historical_pipeline = instance.get_historical_pipeline(old_pipeline_snapshot_id)
+
+        historical_pipeline = instance.get_historical_pipeline(old_pipeline_snapshot_id)
         pipeline_snapshot = historical_pipeline.pipeline_snapshot
         ep_snapshot = instance.get_execution_plan_snapshot(old_execution_plan_snapshot_id)
 

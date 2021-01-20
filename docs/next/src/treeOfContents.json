@@ -54,10 +54,6 @@
         "path": "/tutorial/advanced_materializations"
       },
       {
-        "name": "Advanced: Intermediates",
-        "path": "/tutorial/advanced_intermediates"
-      },
-      {
         "name": "Advanced: Organizing Pipelines in Repositories & Workspaces",
         "path": "/tutorial/advanced_repositories"
       },
@@ -119,8 +115,8 @@
         "path": "/overview/modes-resources-presets/modes-resources"
       },
       {
-        "name": "Object Managers",
-        "path": "/overview/object-managers/object-managers"
+        "name": "IO Managers",
+        "path": "/overview/io-managers/io-managers"
       },
       {
         "name": "Types",
@@ -165,21 +161,32 @@
         ]
       },
       {
-        "name": "Partitions & Schedules",
-        "path": "/overview/scheduling-partitions/partitions",
+        "name": "Partitions & Backfills",
+        "path": "/overview/partitions-backfill/partitions",
         "childPath": true,
         "children": [
           {
             "name": "Partitions",
-            "path": "/overview/scheduling-partitions/partitions"
-          },
-          {
-            "name": "Schedules",
-            "path": "/overview/scheduling-partitions/schedules"
+            "path": "/overview/partitions-backfill/partitions"
           },
           {
             "name": "Backfills",
-            "path": "/overview/scheduling-partitions/backfill"
+            "path": "/overview/partitions-backfill/backfill"
+          }
+        ]
+      },
+      {
+        "name": "Schedules & Sensors",
+        "path": "/overview/schedules-sensors/schedules",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Schedules",
+            "path": "/overview/schedules-sensors/schedules"
+          },
+          {
+            "name": "Sensors",
+            "path": "/overview/schedules-sensors/sensors"
           }
         ]
       },
@@ -188,23 +195,35 @@
         "path": "/overview/instances/dagster-instance"
       },
       {
-        "name": "Run Launchers & Executors",
-        "path": "/overview/run-launchers-executors/run-launcher",
+        "name": "Pipeline Runs",
+        "path": "/overview/pipeline-runs/run-launcher",
         "childPath": true,
         "children": [
           {
             "name": "Run Launchers",
-            "path": "/overview/run-launchers-executors/run-launcher"
+            "path": "/overview/pipeline-runs/run-launcher"
           },
           {
             "name": "Executors",
-            "path": "/overview/run-launchers-executors/executor"
+            "path": "/overview/pipeline-runs/executor"
+          },
+          {
+            "name": "Run Coordinators",
+            "path": "/overview/pipeline-runs/run-coordinator"
+          },
+          {
+            "name": "Limiting Run Concurrency",
+            "path": "/overview/pipeline-runs/limiting-run-concurrency"
           }
         ]
       },
       {
         "name": "Dagit",
         "path": "/overview/dagit"
+      },
+      {
+        "name": "Dagster Daemon",
+        "path": "/overview/daemon"
       },
       {
         "name": "GraphQL API",
@@ -305,8 +324,12 @@
             "path": "/_apidocs/hooks"
           },
           {
-            "name": "Object Managers",
-            "path": "/_apidocs/object-managers"
+            "name": "IO Managers",
+            "path": "/_apidocs/io-managers"
+          },
+          {
+            "name": "Dynamic Graphs (Experimental)",
+            "path": "/_apidocs/dynamic"
           },
           {
             "name": "Utilities",
@@ -444,16 +467,16 @@
     "path": "/deploying",
     "children": [
       {
-        "name": "Running Dagit as a service",
+        "name": "Running Dagster locally",
         "path": "/deploying/local"
       },
       {
-        "name": "Deploying on Kubernetes Pt 1",
-        "path": "/deploying/k8s_part1"
+        "name": "Deploying on Docker",
+        "path": "/deploying/docker"
       },
       {
-        "name": "Deploying on Kubernetes Pt 2",
-        "path": "/deploying/k8s_part2"
+        "name": "Deploying on Kubernetes",
+        "path": "/deploying/k8s"
       },
       {
         "name": "Using AWS for storage",
@@ -474,6 +497,16 @@
       {
         "name": "Deploying to Airflow",
         "path": "/deploying/airflow"
+      }
+    ]
+  },
+  {
+    "name": "Troubleshooting",
+    "path": "/troubleshooting",
+    "children": [
+      {
+        "name": "Debugging your schedules",
+        "path": "/troubleshooting/schedules"
       }
     ]
   },

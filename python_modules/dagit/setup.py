@@ -40,8 +40,6 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["dagit_tests"]),
         include_package_data=True,
         install_requires=[
-            # standard python 2/3 compatability things
-            "future",
             "PyYAML",
             # cli
             "click>=7.0",

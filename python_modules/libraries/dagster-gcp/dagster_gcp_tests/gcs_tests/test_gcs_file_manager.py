@@ -10,7 +10,7 @@ def test_gcs_file_manager_write():
     file_manager = GCSFileManager(storage.client.Client(), "some-bucket", "some-key")
     file_manager._client = gcs_mock  # pylint:disable=protected-access
 
-    foo_bytes = "foo".encode()
+    foo_bytes = b"foo"
 
     file_handle = file_manager.write_data(foo_bytes)
 

@@ -1,5 +1,5 @@
-intermediate_storage:
-  s3:
+resources:
+  io_manager:
     config:
       s3_bucket: your_bucket_name
 execution:

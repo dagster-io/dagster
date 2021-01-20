@@ -112,7 +112,15 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
             asset_keys["/".join(event.asset_key.path)] = event.asset_key
         return list(asset_keys.values())
 
-    def get_asset_events(self, asset_key, partitions=None, cursor=None, limit=None):
+    def get_asset_events(
+        self,
+        asset_key,
+        partitions=None,
+        cursor=None,
+        limit=None,
+        ascending=False,
+        include_cursor=False,
+    ):
         asset_events = []
         for records in self._logs.values():
             asset_events += [
@@ -124,13 +132,23 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         if partitions:
             asset_events = filter(lambda x: x.dagster_event.partition in partitions, asset_events)
 
-        asset_events = sorted(asset_events, key=lambda x: x.timestamp, reverse=True)
+        asset_events = sorted(asset_events, key=lambda x: x.timestamp, reverse=not ascending)
+
+        try:
+            cursor = int(cursor) if cursor else 0
+        except ValueError:
+            cursor = 0
 
         if cursor:
             asset_events = asset_events[cursor:]
 
         if limit:
             asset_events = asset_events[:limit]
+
+        if include_cursor:
+            asset_events = [
+                tuple([index + cursor, event]) for index, event in enumerate(asset_events)
+            ]
 
         return asset_events
 

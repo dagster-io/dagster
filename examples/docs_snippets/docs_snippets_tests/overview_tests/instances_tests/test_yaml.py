@@ -12,6 +12,7 @@ def test_yaml_schema():
         "compute_logs",
         "event_log_storage",
         "local_artifact_storage",
+        "run_coordinator",
         "run_launcher",
         "run_storage",
         "schedule_storage",
@@ -25,6 +26,5 @@ def test_yaml_schema():
 
     assert res == {
         "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
-        "intermediate_storage": {"filesystem": None},
         "loggers": {"console": {"config": {"log_level": "DEBUG"}}},
     }

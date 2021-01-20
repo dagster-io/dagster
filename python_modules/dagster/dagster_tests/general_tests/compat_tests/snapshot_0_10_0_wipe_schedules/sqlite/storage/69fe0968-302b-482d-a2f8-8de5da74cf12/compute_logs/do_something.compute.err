@@ -1,0 +1,4 @@
+2021-01-11 14:50:04 - dagster - DEBUG - foo - 69fe0968-302b-482d-a2f8-8de5da74cf12 - 26998 - do_something.compute - STEP_START - Started execution of step "do_something.compute".
+2021-01-11 14:50:04 - dagster - DEBUG - foo - 69fe0968-302b-482d-a2f8-8de5da74cf12 - 26998 - do_something.compute - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2021-01-11 14:50:04 - dagster - DEBUG - foo - 69fe0968-302b-482d-a2f8-8de5da74cf12 - 26998 - do_something.compute - OBJECT_STORE_OPERATION - Stored intermediate object for output result in memory object store using pickle.
+2021-01-11 14:50:04 - dagster - DEBUG - foo - 69fe0968-302b-482d-a2f8-8de5da74cf12 - 26998 - do_something.compute - STEP_SUCCESS - Finished execution of step "do_something.compute" in 27ms.

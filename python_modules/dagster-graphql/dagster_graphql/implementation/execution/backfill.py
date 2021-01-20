@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from dagster import check
 from dagster.core.host_representation import RepositorySelector
 from dagster.core.host_representation.external import ExternalPartitionSet

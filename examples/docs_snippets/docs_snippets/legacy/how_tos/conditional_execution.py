@@ -55,5 +55,3 @@ def exception_handling_solid(context):
         do_dangerous_thing()
     except MyException as e:
         raise Failure("Failure description", metadata_entries=[...]) from e
-        # Or in Python 2
-        # six.raise_from(Failure("Failure description"), metadata_entries=[...], e)

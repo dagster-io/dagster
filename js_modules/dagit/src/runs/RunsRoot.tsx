@@ -1,17 +1,29 @@
 import {gql, NetworkStatus} from '@apollo/client';
-import {Colors, NonIdealState, Spinner, Tab, Tabs, Tag} from '@blueprintjs/core';
+import {
+  Callout,
+  Colors,
+  Divider,
+  Icon,
+  NonIdealState,
+  Spinner,
+  Tab,
+  Tabs,
+  Tag,
+} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CursorPaginationControls} from 'src/CursorControls';
 import {Loading} from 'src/Loading';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {AllScheduledTicks, SCHEDULED_TICKS_FRAGMENT} from 'src/runs/AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
-import {RunTable} from 'src/runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
   RunsFilter,
@@ -48,9 +60,12 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
+export const RunsRoot: React.FC<RouteComponentProps> = () => {
   useDocumentTitle('Runs');
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
+  const filter = runsFilterForSearchTokens(filterTokens);
+  const [showScheduled, setShowScheduled] = React.useState(false);
+
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables
@@ -68,9 +83,9 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
       return data.pipelineRunsOrError.results;
     },
     variables: {
-      filter: runsFilterForSearchTokens(filterTokens),
-      queuedFilter: {statuses: Array.from(queuedStatuses)},
-      inProgressFilter: {statuses: Array.from(inProgressStatuses)},
+      filter,
+      queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
+      inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
     },
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
@@ -86,9 +101,10 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
     setFilterTokens([...statusTokens, ...tokensMinusStatus]);
+    setShowScheduled(false);
   };
 
-  const selectedTab = selectedTabId(filterTokens);
+  const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const tabColor = (match: string) =>
     selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
 
@@ -171,6 +187,21 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
               }
               id="done"
             />
+            <div style={{display: 'flex', alignSelf: 'stretch'}}>
+              <Divider style={{margin: '6px 0px'}} />
+            </div>
+            <Tab
+              title={
+                <TabButton
+                  color={tabColor('scheduled')}
+                  underline="never"
+                  onClick={() => setShowScheduled(true)}
+                >
+                  Scheduled
+                </TabButton>
+              }
+              id="scheduled"
+            />
           </Tabs>
           <Box padding={{bottom: 8}}>
             <RefreshableCountdown
@@ -180,14 +211,21 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
             />
           </Box>
         </Box>
-        <RunsFilter
-          tokens={filterTokens}
-          onChange={setFilterTokens}
-          loading={queryResult.loading}
-        />
+        {showScheduled ? null : (
+          <RunsFilter
+            tokens={filterTokens}
+            onChange={setFilterTokens}
+            loading={queryResult.loading}
+          />
+        )}
+        {selectedTab === 'queued' ? (
+          <Callout icon={<Icon icon="multi-select" iconSize={20} />}>
+            <Link to="/instance/config#run_coordinator">View queue configuration</Link>
+          </Callout>
+        ) : null}
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>
-            {({pipelineRunsOrError}) => {
+            {({pipelineRunsOrError, repositoriesOrError}) => {
               if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
                 return (
                   <NonIdealState
@@ -197,6 +235,15 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                   />
                 );
               }
+
+              if (showScheduled) {
+                return (
+                  <Box margin={{top: 4}}>
+                    <AllScheduledTicks repos={repositoriesOrError} />
+                  </Box>
+                );
+              }
+
               return (
                 <>
                   <RunTable
@@ -252,10 +299,14 @@ const RUNS_ROOT_QUERY = gql`
     inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
       ...CountFragment
     }
+    repositoriesOrError {
+      ...ScheduledTicksFragment
+    }
   }
 
-  ${RunTable.fragments.RunTableRunFragment}
+  ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
+  ${SCHEDULED_TICKS_FRAGMENT}
 `;
 
 const TabButton = styled(ButtonLink)`

@@ -18,8 +18,7 @@ that runs the contents of a solid. The example defines a mode that links the res
 "pyspark_step_launcher" to the `emr_pyspark_step_launcher` resource definition, and then requires
 that "pyspark_step_launcher" resource key for the solid which it wants to launch remotely.
 
-The EMR PySpark step launcher relies on the presence of an s3_resource and s3 intermediate store to
-shuttle config and events to and from EMR.
+The EMR PySpark step launcher relies on S3 to shuttle config and events to and from EMR.
 
 More generally, a step launcher is any resource that extends the StepLauncher abstract class,
 whose methods can be invoked where a solid would otherwise be executed in-process to instead launch

@@ -5,18 +5,20 @@ import * as React from 'react';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {ScheduleTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
-import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
+import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {PreviousRunsForScheduleQuery} from 'src/schedules/types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from 'src/schedules/types/ScheduleRootQuery';
 import {Group} from 'src/ui/Group';
+import {Page} from 'src/ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -35,6 +37,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   const {scheduleName, repoAddress, runTab} = props;
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
+  const [selectedRunIds, setSelectedRunIds] = React.useState<string[]>([]);
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName,
@@ -62,7 +65,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleOrError}) => {
+      {({scheduleOrError, scheduler, instance}) => {
         if (scheduleOrError.__typename !== 'Schedule') {
           return null;
         }
@@ -86,21 +89,35 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
         return (
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
-            <Group direction="column" spacing={24} padding={{vertical: 20, horizontal: 24}}>
-              <ScheduleDetails
-                repoAddress={repoAddress}
-                schedule={scheduleOrError}
-                countdownDuration={INTERVAL}
-                countdownStatus={countdownStatus}
-                onRefresh={() => onRefresh()}
-              />
-              <ScheduleTickHistory repoAddress={repoAddress} schedule={scheduleOrError} />
-              <SchedulePreviousRuns
-                repoAddress={repoAddress}
-                schedule={scheduleOrError}
-                runTab={runTab}
-              />
-            </Group>
+            <Page>
+              <Group direction="column" spacing={20}>
+                <SchedulerInfo
+                  schedulerOrError={scheduler}
+                  daemonHealth={instance.daemonHealth}
+                  errorsOnly={true}
+                />
+                <>
+                  <ScheduleDetails
+                    repoAddress={repoAddress}
+                    schedule={scheduleOrError}
+                    countdownDuration={INTERVAL}
+                    countdownStatus={countdownStatus}
+                    onRefresh={() => onRefresh()}
+                  />
+                  <ScheduleTickHistory
+                    repoAddress={repoAddress}
+                    schedule={scheduleOrError}
+                    onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                  />
+                  <SchedulePreviousRuns
+                    repoAddress={repoAddress}
+                    schedule={scheduleOrError}
+                    highlightedIds={selectedRunIds}
+                    runTab={runTab}
+                  />
+                </>
+              </Group>
+            </Page>
           </ScrollContainer>
         );
       }}
@@ -114,10 +131,11 @@ interface SchedulePreviousRunsProps {
   repoAddress: RepoAddress;
   runTab?: string;
   schedule: Schedule;
+  highlightedIds: string[];
 }
 
 const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
-  const {schedule} = props;
+  const {schedule, highlightedIds} = props;
   const {data, loading} = useQuery<PreviousRunsForScheduleQuery>(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {
@@ -131,7 +149,13 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
     pollInterval: 15 * 1000,
   });
 
-  return <PreviousRunsSection loading={loading} data={data?.pipelineRunsOrError} />;
+  return (
+    <PreviousRunsSection
+      loading={loading}
+      data={data?.pipelineRunsOrError}
+      highlightedIds={highlightedIds}
+    />
+  );
 };
 
 const SCHEDULE_ROOT_QUERY = gql`
@@ -152,10 +176,14 @@ const SCHEDULE_ROOT_QUERY = gql`
         stack
       }
     }
+    instance {
+      ...InstanceHealthFragment
+    }
   }
 
   ${SCHEDULER_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`

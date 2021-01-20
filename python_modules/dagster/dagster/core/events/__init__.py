@@ -11,14 +11,14 @@ from dagster.core.definitions import (
     ExpectationResult,
     Materialization,
     SolidHandle,
-    TypeCheck,
 )
-from dagster.core.definitions.events import AssetStoreOperationType, ObjectStoreOperationType
+from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.context.system import (
     HookContext,
     SystemExecutionContext,
     SystemStepExecutionContext,
 )
+from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
@@ -57,6 +57,8 @@ class DagsterEventType(Enum):
 
     OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
     ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
+    LOADED_INPUT = "LOADED_INPUT"
+    HANDLED_OUTPUT = "HANDLED_OUTPUT"
 
     ENGINE_EVENT = "ENGINE_EVENT"
 
@@ -75,6 +77,8 @@ STEP_EVENTS = {
     DagsterEventType.STEP_MATERIALIZATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.OBJECT_STORE_OPERATION,
+    DagsterEventType.HANDLED_OUTPUT,
+    DagsterEventType.LOADED_INPUT,
     DagsterEventType.STEP_RESTARTED,
     DagsterEventType.STEP_UP_FOR_RETRY,
 }
@@ -186,8 +190,8 @@ def log_resource_event(log_manager, pipeline_name, event):
 class DagsterEvent(
     namedtuple(
         "_DagsterEvent",
-        "event_type_value pipeline_name step_key solid_handle step_kind_value "
-        "logging_tags event_specific_data message pid",
+        "event_type_value pipeline_name step_handle solid_handle step_kind_value "
+        "logging_tags event_specific_data message pid step_key",
     )
 ):
     """Events yielded by solid and pipeline execution.
@@ -204,6 +208,7 @@ class DagsterEvent(
         event_specific_data (Any): Type must correspond to event_type_value.
         message (str)
         pid (int)
+        step_key (Optional[str]): DEPRECATED
     """
 
     @staticmethod
@@ -212,14 +217,14 @@ class DagsterEvent(
         check.inst_param(step_context, "step_context", SystemStepExecutionContext)
 
         event = DagsterEvent(
-            check.inst_param(event_type, "event_type", DagsterEventType).value,
-            step_context.pipeline_def.name,
-            step_context.step.key,
-            step_context.step.solid_handle,
-            step_context.step.kind.value,
-            step_context.logging_tags,
-            _validate_event_specific_data(event_type, event_specific_data),
-            check.opt_str_param(message, "message"),
+            event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
+            pipeline_name=step_context.pipeline_def.name,
+            step_handle=step_context.step.handle,
+            solid_handle=step_context.step.solid_handle,
+            step_kind_value=step_context.step.kind.value,
+            logging_tags=step_context.logging_tags,
+            event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
+            message=check.opt_str_param(message, "message"),
             pid=os.getpid(),
         )
 
@@ -229,21 +234,23 @@ class DagsterEvent(
 
     @staticmethod
     def from_pipeline(
-        event_type, pipeline_context, message=None, event_specific_data=None, step_key=None
+        event_type, pipeline_context, message=None, event_specific_data=None, step_handle=None
     ):
         check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
-
+        check.opt_inst_param(
+            step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
+        )
         pipeline_name = pipeline_context.pipeline_def.name
 
         event = DagsterEvent(
-            check.inst_param(event_type, "event_type", DagsterEventType).value,
-            check.str_param(pipeline_name, "pipeline_name"),
+            event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             message=check.opt_str_param(message, "message"),
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
-            step_key=step_key,
+            step_handle=step_handle,
             pid=os.getpid(),
         )
-
+        step_key = step_handle.to_key() if step_handle else None
         log_pipeline_event(pipeline_context, event, step_key)
 
         return event
@@ -261,7 +268,7 @@ class DagsterEvent(
             event_specific_data=_validate_event_specific_data(
                 DagsterEventType.ENGINE_EVENT, event_specific_data
             ),
-            step_key=execution_plan.step_key_for_single_step_plans(),
+            step_handle=execution_plan.step_handle_for_single_step_plans(),
             pid=os.getpid(),
         )
         log_resource_event(log_manager, pipeline_name, event)
@@ -271,29 +278,43 @@ class DagsterEvent(
         cls,
         event_type_value,
         pipeline_name,
-        step_key=None,
+        step_handle=None,
         solid_handle=None,
         step_kind_value=None,
         logging_tags=None,
         event_specific_data=None,
         message=None,
         pid=None,
+        # legacy
+        step_key=None,
     ):
         event_type_value, event_specific_data = _handle_back_compat(
             event_type_value, event_specific_data
         )
 
+        # old events may contain solid_handle but not step_handle
+        if solid_handle is not None and step_handle is None:
+            step_handle = StepHandle(solid_handle)
+
+        # Legacy events may have step_key set directly, preserve those to stay in sync
+        # with legacy execution plan snapshots.
+        if step_handle is not None and step_key is None:
+            step_key = step_handle.to_key()
+
         return super(DagsterEvent, cls).__new__(
             cls,
             check.str_param(event_type_value, "event_type_value"),
             check.str_param(pipeline_name, "pipeline_name"),
-            check.opt_str_param(step_key, "step_key"),
+            check.opt_inst_param(
+                step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
+            ),
             check.opt_inst_param(solid_handle, "solid_handle", SolidHandle),
             check.opt_str_param(step_kind_value, "step_kind_value"),
             check.opt_dict_param(logging_tags, "logging_tags"),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
             check.opt_str_param(message, "message"),
             check.opt_int_param(pid, "pid"),
+            check.opt_str_param(step_key, "step_key"),
         )
 
     @property
@@ -372,8 +393,12 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
     @property
-    def is_asset_store_operation(self):
-        return self.event_type == DagsterEventType.ASSET_STORE_OPERATION
+    def is_handled_output(self):
+        return self.event_type == DagsterEventType.HANDLED_OUTPUT
+
+    @property
+    def is_loaded_input(self):
+        return self.event_type == DagsterEventType.LOADED_INPUT
 
     @property
     def is_step_materialization(self):
@@ -751,13 +776,13 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def engine_event(pipeline_context, message, event_specific_data=None, step_key=None):
+    def engine_event(pipeline_context, message, event_specific_data=None, step_handle=None):
         return DagsterEvent.from_pipeline(
             DagsterEventType.ENGINE_EVENT,
             pipeline_context,
             message,
             event_specific_data=event_specific_data,
-            step_key=step_key,
+            step_handle=step_handle,
         )
 
     @staticmethod
@@ -835,43 +860,47 @@ class DagsterEvent(
                     EventMetadataEntry.path(object_store_operation_result.key, label="key")
                 ],
                 version=object_store_operation_result.version,
+                mapping_key=object_store_operation_result.mapping_key,
             ),
             message=message,
         )
 
     @staticmethod
-    def asset_store_operation(step_context, asset_store_operation):
-        from dagster.core.definitions.events import AssetStoreOperation
+    def handled_output(step_context, output_name, manager_key):
+        check.str_param(output_name, "output_name")
+        check.str_param(manager_key, "manager_key")
+        message = f'Handled output "{output_name}" using output manager ' f'"{manager_key}"'
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.HANDLED_OUTPUT,
+            step_context=step_context,
+            event_specific_data=HandledOutputData(
+                output_name=output_name, manager_key=manager_key,
+            ),
+            message=message,
+        )
 
-        check.inst_param(asset_store_operation, "asset_store_operation", AssetStoreOperation)
+    @staticmethod
+    def loaded_input(
+        step_context, input_name, manager_key, upstream_output_name=None, upstream_step_key=None
+    ):
 
-        if AssetStoreOperationType(asset_store_operation.op) == AssetStoreOperationType.SET_ASSET:
-            message = (
-                'Stored output "{output_name}" using asset store "{asset_store_key}".'
-            ).format(
-                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
-                output_name=asset_store_operation.step_output_handle.output_name,
-            )
-        elif AssetStoreOperationType(asset_store_operation.op) == AssetStoreOperationType.GET_ASSET:
-            message = (
-                'Retrieved output "{output_name}" from step "{step_key}" '
-                'using asset store "{asset_store_key}".'
-            ).format(
-                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
-                output_name=asset_store_operation.step_output_handle.output_name,
-                step_key=asset_store_operation.step_output_handle.step_key,
-            )
-        else:
-            message = ""
+        check.str_param(input_name, "input_name")
+        check.str_param(manager_key, "manager_key")
+        check.opt_str_param(upstream_output_name, "upstream_output_name")
+        check.opt_str_param(upstream_step_key, "upstream_step_key")
+
+        message = f'Loaded input "{input_name}" using input manager ' f'"{manager_key}"'
+        if upstream_output_name:
+            message += f', from output "{upstream_output_name}" of step ' f'"{upstream_step_key}"'
 
         return DagsterEvent.from_step(
-            event_type=DagsterEventType.ASSET_STORE_OPERATION,
+            event_type=DagsterEventType.LOADED_INPUT,
             step_context=step_context,
-            event_specific_data=AssetStoreOperationData(
-                op=asset_store_operation.op,
-                step_key=asset_store_operation.step_output_handle.step_key,
-                output_name=asset_store_operation.step_output_handle.output_name,
-                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
+            event_specific_data=LoadedInputData(
+                input_name=input_name,
+                manager_key=manager_key,
+                upstream_output_name=upstream_output_name,
+                upstream_step_key=upstream_step_key,
             ),
             message=message,
         )
@@ -884,7 +913,7 @@ class DagsterEvent(
         event = DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=hook_context.pipeline_def.name,
-            step_key=hook_context.step.key,
+            step_handle=hook_context.step.handle,
             solid_handle=hook_context.step.solid_handle,
             step_kind_value=hook_context.step.kind.value,
             logging_tags=hook_context.logging_tags,
@@ -907,7 +936,7 @@ class DagsterEvent(
         event = DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=hook_context.pipeline_def.name,
-            step_key=hook_context.step.key,
+            step_handle=hook_context.step.handle,
             solid_handle=hook_context.step.solid_handle,
             step_kind_value=hook_context.step.kind.value,
             logging_tags=hook_context.logging_tags,
@@ -933,7 +962,7 @@ class DagsterEvent(
         event = DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=hook_context.pipeline_def.name,
-            step_key=hook_context.step.key,
+            step_handle=hook_context.step.handle,
             solid_handle=hook_context.step.solid_handle,
             step_kind_value=hook_context.step.kind.value,
             logging_tags=hook_context.logging_tags,
@@ -975,17 +1004,15 @@ class StepExpectationResultData(namedtuple("_StepExpectationResultData", "expect
 
 
 @whitelist_for_serdes
-class AssetStoreOperationData(
-    namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
-):
-    pass
-
-
-@whitelist_for_serdes
 class ObjectStoreOperationResultData(
-    namedtuple("_ObjectStoreOperationResultData", "op value_name metadata_entries address version")
+    namedtuple(
+        "_ObjectStoreOperationResultData",
+        "op value_name metadata_entries address version mapping_key",
+    )
 ):
-    def __new__(cls, op, value_name, metadata_entries, address=None, version=None):
+    def __new__(
+        cls, op, value_name, metadata_entries, address=None, version=None, mapping_key=None
+    ):
         return super(ObjectStoreOperationResultData, cls).__new__(
             cls,
             op=check.opt_str_param(op, "op"),
@@ -993,6 +1020,7 @@ class ObjectStoreOperationResultData(
             metadata_entries=check.opt_list_param(metadata_entries, "metadata_entries"),
             address=check.opt_str_param(address, "address"),
             version=check.opt_str_param(version, "version"),
+            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
 
 
@@ -1087,6 +1115,30 @@ class HookErroredData(namedtuple("_HookErroredData", "error")):
         )
 
 
+@whitelist_for_serdes
+class HandledOutputData(namedtuple("_HandledOutputData", "output_name manager_key")):
+    def __new__(cls, output_name, manager_key):
+        return super(HandledOutputData, cls).__new__(
+            cls,
+            output_name=check.str_param(output_name, "output_name"),
+            manager_key=check.str_param(manager_key, "manager_key"),
+        )
+
+
+@whitelist_for_serdes
+class LoadedInputData(
+    namedtuple("_LoadedInputData", "input_name manager_key upstream_output_name upstream_step_key")
+):
+    def __new__(cls, input_name, manager_key, upstream_output_name=None, upstream_step_key=None):
+        return super(LoadedInputData, cls).__new__(
+            cls,
+            input_name=check.str_param(input_name, "input_name"),
+            manager_key=check.str_param(manager_key, "manager_key"),
+            upstream_output_name=check.opt_str_param(upstream_output_name, "upstream_output_name"),
+            upstream_step_key=check.opt_str_param(upstream_step_key, "upstream_step_key"),
+        )
+
+
 ###################################################################################################
 # THE GRAVEYARD
 #
@@ -1103,6 +1155,20 @@ class HookErroredData(namedtuple("_HookErroredData", "error")):
 ###################################################################################################
 
 
+@whitelist_for_serdes
+class AssetStoreOperationData(
+    namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
+):
+    pass
+
+
+@whitelist_for_serdes
+class AssetStoreOperationType(Enum):
+    # keep this around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
+    SET_ASSET = "SET_ASSET"
+    GET_ASSET = "GET_ASSET"
+
+
 def _handle_back_compat(event_type_value, event_specific_data):
     if event_type_value == "PIPELINE_PROCESS_START":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
@@ -1110,6 +1176,21 @@ def _handle_back_compat(event_type_value, event_specific_data):
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
     elif event_type_value == "PIPELINE_PROCESS_EXITED":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+    elif event_type_value == "ASSET_STORE_OPERATION":
+        if event_specific_data.op in ("GET_ASSET", AssetStoreOperationType.GET_ASSET):
+            return (
+                DagsterEventType.LOADED_INPUT.value,
+                LoadedInputData(
+                    event_specific_data.output_name, event_specific_data.asset_store_key
+                ),
+            )
+        if event_specific_data.op in ("SET_ASSET", AssetStoreOperationType.SET_ASSET):
+            return (
+                DagsterEventType.HANDLED_OUTPUT.value,
+                HandledOutputData(
+                    event_specific_data.output_name, event_specific_data.asset_store_key
+                ),
+            )
     else:
         return event_type_value, event_specific_data
 
@@ -1119,5 +1200,6 @@ register_serdes_tuple_fallbacks(
         "PipelineProcessStartedData": None,
         "PipelineProcessExitedData": None,
         "PipelineProcessStartData": None,
+        "AssetStoreOperationData": AssetStoreOperationData,
     }
 )

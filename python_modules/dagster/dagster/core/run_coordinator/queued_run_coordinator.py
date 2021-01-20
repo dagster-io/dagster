@@ -10,7 +10,6 @@ from dagster.core.events.log import DagsterEventRecord
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils.backcompat import experimental
 
 from .base import RunCoordinator
 
@@ -21,7 +20,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     alive for runs to be launched.
     """
 
-    @experimental
     def __init__(
         self,
         max_concurrent_runs=None,

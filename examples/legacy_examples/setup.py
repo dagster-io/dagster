@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 setup(
     name="dagster_examples",
@@ -35,9 +35,9 @@ setup(
             "google-cloud-storage",
             "keras; python_version < '3.9'",
             "lakehouse",
-            "matplotlib==3.0.2",
+            "matplotlib",
             "mock",
-            "moto>=1.3.7",
+            "moto>=1.3.16",
             "pandas>=1.0.0",
             "pytest-mock",
             # Pyspark 2.x is incompatible with Python 3.8+
@@ -50,6 +50,11 @@ setup(
         ],
         "dbt": ["dbt-postgres"],
         "airflow": ["dagster_airflow", "docker-compose==1.23.2"],
+        "test": [
+            # See https://github.com/dagster-io/dagster/issues/2701
+            "apache-airflow==1.10.10",
+            "docker-compose==1.23.2",
+        ],
     },
     include_package_data=True,
 )

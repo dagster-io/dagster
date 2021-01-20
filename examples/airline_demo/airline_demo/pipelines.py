@@ -1,7 +1,19 @@
 """Pipeline definitions for the airline_demo.
 """
 
-from dagster import ModeDefinition, PresetDefinition, composite_solid, pipeline
+import os
+
+from dagster import (
+    Field,
+    IOManager,
+    ModeDefinition,
+    Noneable,
+    PresetDefinition,
+    composite_solid,
+    fs_io_manager,
+    io_manager,
+    pipeline,
+)
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.file_manager import local_file_manager
@@ -12,10 +24,10 @@ from dagster_aws.s3 import (
     file_handle_to_s3,
     s3_file_cache,
     s3_file_manager,
-    s3_plus_default_intermediate_storage_defs,
     s3_resource,
 )
 from dagster_pyspark import pyspark_resource
+from pyspark.sql import SparkSession
 
 from .cache_file_from_s3 import cache_file_from_s3
 from .resources import postgres_db_info_resource, redshift_db_info_resource
@@ -37,6 +49,27 @@ from .solids import (
     westbound_delays,
 )
 
+
+class ParquetIOManager(IOManager):
+    def __init__(self, base_dir=None):
+        self._base_dir = base_dir or os.getcwd()
+
+    def _get_path(self, context):
+        return os.path.join(self._base_dir, context.run_id, context.step_key, context.name)
+
+    def handle_output(self, context, obj):
+        obj.write.parquet(self._get_path(context))
+
+    def load_input(self, context):
+        spark = SparkSession.builder.getOrCreate()
+        return spark.read.parquet(self._get_path(context.upstream_output))
+
+
+@io_manager(config_schema={"base_dir": Field(Noneable(str), is_required=False, default_value=None)})
+def local_parquet_io_manager(init_context):
+    return ParquetIOManager(base_dir=init_context.resource_config["base_dir"])
+
+
 # start_pipelines_marker_2
 test_mode = ModeDefinition(
     name="test",
@@ -48,8 +81,9 @@ test_mode = ModeDefinition(
         "s3": s3_resource,
         "file_cache": fs_file_cache,
         "file_manager": local_file_manager,
+        "io_manager": fs_io_manager,
+        "pyspark_io_manager": local_parquet_io_manager,
     },
-    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -63,8 +97,9 @@ local_mode = ModeDefinition(
         "tempfile": tempfile_resource,
         "file_cache": fs_file_cache,
         "file_manager": local_file_manager,
+        "io_manager": fs_io_manager,
+        "pyspark_io_manager": local_parquet_io_manager,
     },
-    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -78,8 +113,9 @@ prod_mode = ModeDefinition(
         "tempfile": tempfile_resource,
         "file_cache": s3_file_cache,
         "file_manager": s3_file_manager,
+        "io_manager": fs_io_manager,
+        "pyspark_io_manager": local_parquet_io_manager,
     },
-    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 # end_pipelines_marker_2

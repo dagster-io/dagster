@@ -41,8 +41,8 @@ function twoDigit(v: number) {
 }
 
 export const formatElapsedTime = (msec: number) => {
-  if (msec < 1000) {
-    return `${Math.ceil(msec)}ms`;
+  if (msec < 10000) {
+    return `${(msec / 1000).toFixed(3)}s`;
   }
 
   const sec = Math.round(msec / 1000) % 60;

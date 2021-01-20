@@ -6,7 +6,11 @@ import styled from 'styled-components/macro';
 import {ParentSolidNode, SVGLabeledParentRect} from 'src/graph/ParentSolidNode';
 import {SVGViewport, DETAIL_ZOOM, SVGViewportInteractor} from 'src/graph/SVGViewport';
 import {SolidLinks} from 'src/graph/SolidLinks';
-import {SolidNode} from 'src/graph/SolidNode';
+import {
+  SolidNode,
+  SOLID_NODE_DEFINITION_FRAGMENT,
+  SOLID_NODE_INVOCATION_FRAGMENT,
+} from 'src/graph/SolidNode';
 import {IFullPipelineLayout, IFullSolidLayout, ILayout} from 'src/graph/getFullSolidLayout';
 import {Edge, isHighlighted, isSolidHighlighted} from 'src/graph/highlighting';
 import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
@@ -205,21 +209,6 @@ export class PipelineGraphContents extends React.PureComponent<
 const EmptyHighlightedArray: never[] = [];
 
 export class PipelineGraph extends React.Component<IPipelineGraphProps> {
-  static fragments = {
-    PipelineGraphSolidFragment: gql`
-      fragment PipelineGraphSolidFragment on Solid {
-        name
-        ...SolidNodeInvocationFragment
-        definition {
-          name
-          ...SolidNodeDefinitionFragment
-        }
-      }
-      ${SolidNode.fragments.SolidNodeInvocationFragment}
-      ${SolidNode.fragments.SolidNodeDefinitionFragment}
-    `,
-  };
-
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   resolveSolidPosition = (
@@ -378,6 +367,19 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     );
   }
 }
+
+export const PIPELINE_GRAPH_SOLID_FRAGMENT = gql`
+  fragment PipelineGraphSolidFragment on Solid {
+    name
+    ...SolidNodeInvocationFragment
+    definition {
+      name
+      ...SolidNodeDefinitionFragment
+    }
+  }
+  ${SOLID_NODE_INVOCATION_FRAGMENT}
+  ${SOLID_NODE_DEFINITION_FRAGMENT}
+`;
 
 const SVGContainer = styled.svg`
   overflow: visible;

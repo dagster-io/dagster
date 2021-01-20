@@ -18,7 +18,7 @@ def create_run(instance, pipeline_handle, **kwargs):  # pylint: disable=redefine
 
 def assert_events_in_order(logs, expected_events):
 
-    logged_events = [log.dagster_event.event_type_value for log in logs]
+    logged_events = [log.dagster_event.event_type_value for log in logs if log.is_dagster_event]
     filtered_logged_events = [event for event in logged_events if event in expected_events]
 
     assert filtered_logged_events == expected_events

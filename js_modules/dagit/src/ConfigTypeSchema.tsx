@@ -133,52 +133,48 @@ function renderTypeRecursive(
   return <span>{type.givenName}</span>;
 }
 
-export class ConfigTypeSchema extends React.PureComponent<ConfigTypeSchemaProps> {
-  static fragments = {
-    ConfigTypeSchemaFragment: gql`
-      fragment ConfigTypeSchemaFragment on ConfigType {
-        ... on EnumConfigType {
-          givenName
-        }
-        ... on RegularConfigType {
-          givenName
-        }
-        key
-        description
-        isSelector
-        typeParamKeys
-        ... on CompositeConfigType {
-          fields {
-            name
-            description
-            isRequired
-            configTypeKey
-          }
-        }
-        ... on ScalarUnionConfigType {
-          scalarTypeKey
-          nonScalarTypeKey
-        }
-      }
-    `,
-  };
+export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
+  const {type, typesInScope} = props;
 
-  public render() {
-    const {type, typesInScope} = this.props;
-
-    const typeLookup = {};
-    for (const typeInScope of typesInScope) {
-      typeLookup[typeInScope.key] = typeInScope;
-    }
-
-    return (
-      <TypeSchemaContainer>
-        <DictBlockComment content={type.description} indent="" />
-        {renderTypeRecursive(type, typeLookup, 0, this.props)}
-      </TypeSchemaContainer>
-    );
+  const typeLookup = {};
+  for (const typeInScope of typesInScope) {
+    typeLookup[typeInScope.key] = typeInScope;
   }
-}
+
+  return (
+    <TypeSchemaContainer>
+      <DictBlockComment content={type.description} indent="" />
+      {renderTypeRecursive(type, typeLookup, 0, props)}
+    </TypeSchemaContainer>
+  );
+});
+
+export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
+  fragment ConfigTypeSchemaFragment on ConfigType {
+    ... on EnumConfigType {
+      givenName
+    }
+    ... on RegularConfigType {
+      givenName
+    }
+    key
+    description
+    isSelector
+    typeParamKeys
+    ... on CompositeConfigType {
+      fields {
+        name
+        description
+        isRequired
+        configTypeKey
+      }
+    }
+    ... on ScalarUnionConfigType {
+      scalarTypeKey
+      nonScalarTypeKey
+    }
+  }
+`;
 
 const TypeSchemaContainer = styled.code`
   color: ${Colors.GRAY3};

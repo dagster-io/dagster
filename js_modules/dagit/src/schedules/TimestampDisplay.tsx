@@ -2,32 +2,32 @@ import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {TimezoneContext, timestampToString, browserTimezone} from 'src/TimeComponents';
+import {TimezoneContext, timestampToString} from 'src/TimeComponents';
 import {Group} from 'src/ui/Group';
 
 interface Props {
   timestamp: number;
   timezone?: string | null;
+  format: string;
+  tooltipFormat: string;
 }
 
 export const TimestampDisplay = (props: Props) => {
-  const {timestamp, timezone} = props;
+  const {timestamp, timezone, format, tooltipFormat} = props;
   const [userTimezone] = React.useContext(TimezoneContext);
 
-  const timestampString = timestampToString(
-    {unix: timestamp, format: 'MMM D, YYYY, h:mm A z'},
-    timezone || userTimezone,
-  );
+  const timestampString = timestampToString({unix: timestamp, format}, userTimezone);
 
   return (
     <Group direction="row" spacing={8} alignItems="center">
-      <div>{timestampString}</div>
+      <TabularNums>{timestampString}</TabularNums>
       {timezone && timezone !== userTimezone ? (
         <TimestampTooltip
-          content={timestampToString(
-            {unix: timestamp, format: 'MMM D, YYYY, h:mm A z'},
-            browserTimezone(),
-          )}
+          content={
+            <TabularNums>
+              {timestampToString({unix: timestamp, format: tooltipFormat}, timezone)}
+            </TabularNums>
+          }
         >
           <Icon icon="time" iconSize={12} color={Colors.GRAY3} style={{display: 'block'}} />
         </TimestampTooltip>
@@ -35,6 +35,15 @@ export const TimestampDisplay = (props: Props) => {
     </Group>
   );
 };
+
+TimestampDisplay.defaultProps = {
+  format: 'MMM D, YYYY, h:mm A z',
+  tooltipFormat: 'MMM D, YYYY, h:mm A z',
+};
+
+const TabularNums = styled.div`
+  font-variant-numeric: tabular-nums;
+`;
 
 const TimestampTooltip = styled(Tooltip)`
   cursor: pointer;

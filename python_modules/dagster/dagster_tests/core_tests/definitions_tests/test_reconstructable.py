@@ -95,19 +95,7 @@ def test_bad_target():
         reconstructable(not_the_pipeline)
 
 
-@pytest.mark.skipif(sys.version_info.major > 2, reason="qualname check only works in py3+")
-def test_inner_scope_2():
-    def get_the_pipeline_inner():
-        return the_pipeline
-
-    with pytest.raises(
-        DagsterInvariantViolationError, match="not found at module scope in file",
-    ):
-        reconstructable(get_the_pipeline_inner)
-
-
-@pytest.mark.skipif(sys.version_info.major < 3, reason="qualname check only works in py3+")
-def test_inner_scope_3():
+def test_inner_scope():
     def get_the_pipeline_inner():
         return the_pipeline
 
@@ -118,20 +106,7 @@ def test_inner_scope_3():
         reconstructable(get_the_pipeline_inner)
 
 
-@pytest.mark.skipif(sys.version_info.major > 2, reason="qualname check only works in py3+")
-def test_inner_decorator_2():
-    @pipeline
-    def pipe():
-        the_solid()
-
-    with pytest.raises(
-        DagsterInvariantViolationError, match="not found at module scope in file",
-    ):
-        reconstructable(pipe)
-
-
-@pytest.mark.skipif(sys.version_info.major < 3, reason="qualname check only works in py3+")
-def test_inner_decorator_3():
+def test_inner_decorator():
     @pipeline
     def pipe():
         the_solid()

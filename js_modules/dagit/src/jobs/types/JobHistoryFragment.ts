@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus } from "./../../types/globalTypes";
+import { JobType, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: JobHistoryFragment
@@ -36,5 +36,6 @@ export interface JobHistoryFragment_ticks {
 export interface JobHistoryFragment {
   __typename: "JobState";
   id: string;
+  jobType: JobType;
   ticks: JobHistoryFragment_ticks[];
 }

@@ -35,8 +35,6 @@ class DagsterDockerOperator(DockerOperator):
         be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
     """
 
-    # py2 compat
-    # pylint: disable=keyword-arg-before-vararg
     def __init__(self, dagster_operator_parameters, *args):
         kwargs = dagster_operator_parameters.op_kwargs
         tmp_dir = kwargs.pop("tmp_dir", DOCKER_TEMPDIR)

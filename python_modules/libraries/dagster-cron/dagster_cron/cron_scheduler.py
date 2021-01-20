@@ -4,7 +4,6 @@ import shutil
 import stat
 import sys
 
-import six
 from crontab import CronTab
 from dagster import DagsterInstance, check, utils
 from dagster.core.host_representation import ExternalSchedule
@@ -227,7 +226,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         )
 
         with io.open(script_file, "w", encoding="utf-8") as f:
-            f.write(six.text_type(script_contents))
+            f.write(script_contents)
 
         st = os.stat(script_file)
         os.chmod(script_file, st.st_mode | stat.S_IEXEC)

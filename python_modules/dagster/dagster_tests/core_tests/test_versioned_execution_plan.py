@@ -12,6 +12,7 @@ from dagster import (
     String,
     composite_solid,
     dagster_type_loader,
+    io_manager,
     pipeline,
     resource,
     solid,
@@ -27,11 +28,11 @@ from dagster.core.execution.resolve_versions import (
     resolve_memoized_execution_plan,
     resolve_resource_versions,
 )
-from dagster.core.storage.memoizable_object_manager import MemoizableObjectManager
+from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 
-class VersionedInMemoryObjectManager(MemoizableObjectManager):
+class VersionedInMemoryIOManager(MemoizableIOManager):
     def __init__(self):
         self.values = {}
 
@@ -51,20 +52,20 @@ class VersionedInMemoryObjectManager(MemoizableObjectManager):
         return keys in self.values
 
 
-def object_manager_factory(object_manager):
-    @resource
-    def _object_manager_resource(_):
-        return object_manager
+def io_manager_factory(manager):
+    @io_manager
+    def _io_manager_resource(_):
+        return manager
 
-    return _object_manager_resource
+    return _io_manager_resource
 
 
 def test_join_and_hash():
-    assert join_and_hash("foo") == hashlib.sha1("foo".encode("utf-8")).hexdigest()
+    assert join_and_hash("foo") == hashlib.sha1(b"foo").hexdigest()
 
     assert join_and_hash("foo", None, "bar") == None
 
-    assert join_and_hash("foo", "bar") == hashlib.sha1("barfoo".encode("utf-8")).hexdigest()
+    assert join_and_hash("foo", "bar") == hashlib.sha1(b"barfoo").hexdigest()
 
     assert join_and_hash("foo", "bar", "zab") == join_and_hash("zab", "bar", "foo")
 
@@ -95,16 +96,12 @@ def versioned_solid_takes_input(_, intput):
     return 2 * intput
 
 
-def versioned_pipeline_factory(object_manager=None):
+def versioned_pipeline_factory(manager=None):
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 name="main",
-                resource_defs=(
-                    {"object_manager": object_manager_factory(object_manager)}
-                    if object_manager
-                    else {}
-                ),
+                resource_defs=({"io_manager": io_manager_factory(manager)} if manager else {}),
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -120,16 +117,12 @@ def solid_takes_input(_, intput):
     return 2 * intput
 
 
-def partially_versioned_pipeline_factory(object_manager=None):
+def partially_versioned_pipeline_factory(manager=None):
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 name="main",
-                resource_defs=(
-                    {"object_manager": object_manager_factory(object_manager)}
-                    if object_manager
-                    else {}
-                ),
+                resource_defs=({"io_manager": io_manager_factory(manager)} if manager else {}),
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
@@ -216,7 +209,7 @@ def no_version_pipeline():
 
 
 def test_resolve_memoized_execution_plan_no_stored_results():
-    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryObjectManager())
+    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryIOManager())
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
     memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
@@ -228,14 +221,14 @@ def test_resolve_memoized_execution_plan_no_stored_results():
 
 
 def test_resolve_memoized_execution_plan_yes_stored_results():
-    object_manager = VersionedInMemoryObjectManager()
-    versioned_pipeline = versioned_pipeline_factory(object_manager)
+    manager = VersionedInMemoryIOManager()
+    versioned_pipeline = versioned_pipeline_factory(manager)
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
     step_output_version = speculative_execution_plan.resolve_step_output_versions()[
         step_output_handle
     ]
-    object_manager.values[
+    manager.values[
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
@@ -254,16 +247,16 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
 
 
 def test_resolve_memoized_execution_plan_partial_versioning():
-    object_manager = VersionedInMemoryObjectManager()
+    manager = VersionedInMemoryIOManager()
 
-    partially_versioned_pipeline = partially_versioned_pipeline_factory(object_manager)
+    partially_versioned_pipeline = partially_versioned_pipeline_factory(manager)
     speculative_execution_plan = create_execution_plan(partially_versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
 
     step_output_version = speculative_execution_plan.resolve_step_output_versions()[
         step_output_handle
     ]
-    object_manager.values[
+    manager.values[
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 

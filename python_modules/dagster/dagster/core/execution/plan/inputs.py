@@ -4,21 +4,19 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import Failure, RetryRequested
-from dagster.core.definitions.events import (
-    AssetStoreOperation,
-    AssetStoreOperationType,
-    ObjectStoreOperation,
-)
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
     DagsterTypeLoadingError,
     user_code_error_boundary,
 )
-from dagster.core.storage.input_manager import InputManager
+from dagster.core.storage.io_manager import IOManager
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils import ensure_gen
 
 from .objects import TypeCheckData
+from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
+from .utils import build_resources_for_manager
 
 
 @whitelist_for_serdes
@@ -39,7 +37,7 @@ class StepInput(namedtuple("_StepInput", "name dagster_type source")):
     def __new__(
         cls, name, dagster_type, source,
     ):
-        from dagster import DagsterType
+        from dagster.core.types.dagster_type import DagsterType
 
         return super(StepInput, cls).__new__(
             cls,
@@ -65,10 +63,6 @@ def join_and_hash(*args):
         return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
-class FanInStepInputValuesWrapper(list):
-    """Wrapper to distinguish fan-in input loads from values loads of a regular list"""
-
-
 class StepInputSource(ABC):
     """How to load the data for a step input"""
 
@@ -84,10 +78,6 @@ class StepInputSource(ABC):
     def load_input_object(self, step_context):
         raise NotImplementedError()
 
-    @abstractmethod
-    def can_load_input_object(self, step_context):
-        raise NotImplementedError()
-
     def required_resource_keys(self):
         return set()
 
@@ -101,27 +91,32 @@ class FromRootInputManager(
     namedtuple("_FromRootInputManager", "input_def config_data"), StepInputSource,
 ):
     def load_input_object(self, step_context):
-        loader = getattr(step_context.resources, self.input_def.manager_key)
+        from dagster.core.events import DagsterEvent
+
+        loader = getattr(step_context.resources, self.input_def.root_manager_key)
         load_input_context = step_context.for_input_manager(
             self.input_def.name,
             self.config_data,
             metadata=self.input_def.metadata,
             dagster_type=self.input_def.dagster_type,
             resource_config=step_context.environment_config.resources[
-                self.input_def.manager_key
+                self.input_def.root_manager_key
             ].get("config", {}),
+            resources=build_resources_for_manager(self.input_def.root_manager_key, step_context),
         )
-        return _load_input_with_input_manager(loader, load_input_context)
+        yield _load_input_with_input_manager(loader, load_input_context)
+        yield DagsterEvent.loaded_input(
+            step_context,
+            input_name=self.input_def.name,
+            manager_key=self.input_def.root_manager_key,
+        )
 
     def compute_version(self, step_versions):
         # TODO: support versioning for root loaders
         return None
 
     def required_resource_keys(self):
-        return {self.input_def.manager_key}
-
-    def can_load_input_object(self, step_context):
-        return True
+        return {self.input_def.root_manager_key}
 
 
 class FromStepOutput(
@@ -131,8 +126,6 @@ class FromStepOutput(
     """This step input source is the output of a previous step"""
 
     def __new__(cls, step_output_handle, input_def, config_data, fan_in):
-        from .outputs import StepOutputHandle
-
         return super(FromStepOutput, cls).__new__(
             cls,
             step_output_handle=check.inst_param(
@@ -157,24 +150,12 @@ class FromStepOutput(
     def step_output_handle_dependencies(self):
         return [self.step_output_handle]
 
-    def can_load_input_object(self, step_context):
-        source_handle = self.step_output_handle
-        if step_context.using_object_manager(source_handle):
-            # asset store does not have a has check so assume present
-            return True
-        if self.input_def.manager_key:
-            return True
-
-        return step_context.intermediate_storage.has_intermediate(
-            context=step_context, step_output_handle=source_handle,
-        )
-
     def get_load_context(self, step_context):
-        resource_config = (
-            step_context.environment_config.resources[self.input_def.manager_key].get("config", {})
-            if self.input_def.manager_key
-            else None
+        io_manager_key = step_context.execution_plan.get_manager_key(self.step_output_handle)
+        resource_config = step_context.environment_config.resources[io_manager_key].get(
+            "config", {}
         )
+        resources = build_resources_for_manager(io_manager_key, step_context)
 
         return step_context.for_input_manager(
             self.input_def.name,
@@ -183,41 +164,31 @@ class FromStepOutput(
             self.input_def.dagster_type,
             self.step_output_handle,
             resource_config,
+            resources,
         )
 
     def load_input_object(self, step_context):
+        from dagster.core.events import DagsterEvent
+
         source_handle = self.step_output_handle
-        if self.input_def.manager_key:
-            loader = getattr(step_context.resources, self.input_def.manager_key)
-            return _load_input_with_input_manager(loader, self.get_load_context(step_context))
-
-        object_manager = step_context.get_output_manager(source_handle)
-
+        manager_key = step_context.execution_plan.get_manager_key(source_handle)
+        input_manager = step_context.get_output_manager(source_handle)
         check.invariant(
-            isinstance(object_manager, InputManager),
+            isinstance(input_manager, IOManager),
             f'Input "{self.input_def.name}" for step "{step_context.step.key}" is depending on '
             f'the manager of upstream output "{source_handle.output_name}" from step '
-            f'"{source_handle.step_key}" to load it, but that manager is not an InputManager. '
+            f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
             f"Please ensure that the resource returned for resource key "
-            f'"{step_context.execution_plan.get_manager_key(source_handle)}" is an InputManager.',
+            f'"{manager_key}" is an IOManager.',
         )
-
-        obj = _load_input_with_input_manager(object_manager, self.get_load_context(step_context))
-
-        output_def = step_context.execution_plan.get_step_output(source_handle).output_def
-
-        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
-        if isinstance(obj, ObjectStoreOperation):
-            return obj
-        else:
-            from dagster.core.storage.asset_store import AssetStoreHandle
-
-            return AssetStoreOperation(
-                AssetStoreOperationType.GET_ASSET,
-                source_handle,
-                AssetStoreHandle(output_def.manager_key, output_def.metadata),
-                obj=obj,
-            )
+        yield _load_input_with_input_manager(input_manager, self.get_load_context(step_context))
+        yield DagsterEvent.loaded_input(
+            step_context,
+            input_name=self.input_def.name,
+            manager_key=manager_key,
+            upstream_output_name=source_handle.output_name,
+            upstream_step_key=source_handle.step_key,
+        )
 
     def compute_version(self, step_versions):
         if (
@@ -231,7 +202,7 @@ class FromStepOutput(
             )
 
     def required_resource_keys(self):
-        return {self.input_def.manager_key} if self.input_def.manager_key else set()
+        return set()
 
 
 def _generate_error_boundary_msg_for_step_input(context, input_name):
@@ -255,9 +226,6 @@ class FromConfig(namedtuple("_FromConfig", "config_data dagster_type input_name"
         return super(FromConfig, cls).__new__(
             cls, config_data=config_data, dagster_type=dagster_type, input_name=input_name
         )
-
-    def can_load_input_object(self, step_context):
-        return True
 
     def load_input_object(self, step_context):
         with user_code_error_boundary(
@@ -284,9 +252,6 @@ class FromDefaultValue(namedtuple("_FromDefaultValue", "value"), StepInputSource
         cls, value,
     ):
         return super(FromDefaultValue, cls).__new__(cls, value)
-
-    def can_load_input_object(self, step_context):
-        return True
 
     def load_input_object(self, step_context):
         return self.value
@@ -323,21 +288,39 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
 
         return handles
 
-    def can_load_input_object(self, step_context):
-        return any([source.can_load_input_object(step_context) for source in self.sources])
+    def _step_output_handles_no_output(self, step_context):
+        # FIXME https://github.com/dagster-io/dagster/issues/3511
+        # this is a stopgap which asks the instance to check the event logs to find out step skipping
+        step_output_handles_with_output = set()
+        for event_record in step_context.instance.all_logs(step_context.run_id):
+            if event_record.dagster_event and event_record.dagster_event.is_successful_output:
+                step_output_handles_with_output.add(
+                    event_record.dagster_event.event_specific_data.step_output_handle
+                )
+        return set(self.step_output_handle_dependencies).difference(step_output_handles_with_output)
 
     def load_input_object(self, step_context):
-        values = []
-        for inner_source in self.sources:
-            # perform a can_load check since some upstream steps may have skipped, and
-            # we allow fan-in to continue in their absence
-            if inner_source.can_load_input_object(step_context):
-                values.append(inner_source.load_input_object(step_context))
+        from dagster.core.events import DagsterEvent
 
-        # When we're using an object store-backed intermediate store, we wrap the
-        # representing the fan-in values in a FanInStepInputValuesWrapper
-        # so we can yield the relevant object store events and unpack the values in the caller
-        return FanInStepInputValuesWrapper(values)
+        values = []
+
+        # some upstream steps may have skipped and we allow fan-in to continue in their absence
+        source_handles_to_skip = self._step_output_handles_no_output(step_context)
+
+        for inner_source in self.sources:
+            if (
+                inner_source.step_output_handle_dependencies
+                and inner_source.step_output_handle in source_handles_to_skip
+            ):
+                continue
+
+            for event_or_input_value in ensure_gen(inner_source.load_input_object(step_context)):
+                if isinstance(event_or_input_value, DagsterEvent):
+                    yield event_or_input_value
+                else:
+                    values.append(event_or_input_value)
+
+        yield values
 
     def required_resource_keys(self):
         resource_keys = set()
@@ -351,7 +334,7 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
         )
 
 
-def _load_input_with_input_manager(input_manager, context):
+def _load_input_with_input_manager(root_input_manager, context):
     with user_code_error_boundary(
         DagsterExecutionLoadInputError,
         control_flow_exceptions=[Failure, RetryRequested],
@@ -363,4 +346,136 @@ def _load_input_with_input_manager(input_manager, context):
         step_key=context.step_context.step.key,
         input_name=context.name,
     ):
-        return input_manager.load_input(context)
+        value = root_input_manager.load_input(context)
+    # close user code boundary before returning value
+    return value
+
+
+class UnresolvedStepInput(namedtuple("_UnresolvedStepInput", "name dagster_type source")):
+    """Holds information for how to resolve a StepInput once the upstream mapping is done"""
+
+    def __new__(
+        cls, name, dagster_type, source,
+    ):
+        from dagster.core.types.dagster_type import DagsterType
+
+        return super(UnresolvedStepInput, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            dagster_type=check.inst_param(dagster_type, "dagster_type", DagsterType),
+            source=check.inst_param(
+                source, "source", (FromPendingDynamicStepOutput, FromUnresolvedStepOutput)
+            ),
+        )
+
+    @property
+    def resolved_by_step_key(self):
+        return self.source.resolved_by_step_key
+
+    @property
+    def resolved_by_output_name(self):
+        return self.source.resolved_by_output_name
+
+    def resolve(self, map_key):
+        return StepInput(
+            name=self.name, dagster_type=self.dagster_type, source=self.source.resolve(map_key),
+        )
+
+    def get_step_output_handle_deps_with_placeholders(self):
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
+
+        return [self.source.get_step_output_handle_dep_with_placeholder()]
+
+
+class FromPendingDynamicStepOutput(
+    namedtuple("_FromPendingDynamicStepOutput", "step_output_handle input_def config_data"),
+):
+    """
+    This step input source models being directly downstream of a step with dynamic output.
+    Once that step completes successfully, this will resolve once per DynamicOutput.
+    """
+
+    def __new__(cls, step_output_handle, input_def, config_data):
+        # Model the unknown mapping key from known execution step
+        # using a StepOutputHandle with None mapping_key.
+        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+        check.invariant(step_output_handle.mapping_key is None)
+
+        return super(FromPendingDynamicStepOutput, cls).__new__(
+            cls,
+            step_output_handle=step_output_handle,
+            input_def=check.inst_param(input_def, "input_def", InputDefinition),
+            config_data=config_data,
+        )
+
+    @property
+    def resolved_by_step_key(self):
+        return self.step_output_handle.step_key
+
+    @property
+    def resolved_by_output_name(self):
+        return self.step_output_handle.output_name
+
+    def resolve(self, mapping_key):
+        check.str_param(mapping_key, "mapping_key")
+        return FromStepOutput(
+            step_output_handle=StepOutputHandle(
+                step_key=self.step_output_handle.step_key,
+                output_name=self.step_output_handle.output_name,
+                mapping_key=mapping_key,
+            ),
+            input_def=self.input_def,
+            config_data=self.config_data,
+            fan_in=False,
+        )
+
+    def get_step_output_handle_dep_with_placeholder(self):
+        # None mapping_key on StepOutputHandle acts as placeholder
+        return self.step_output_handle
+
+    def required_resource_keys(self):
+        return set()
+
+
+class FromUnresolvedStepOutput(
+    namedtuple("_FromUnresolvedStepOutput", "unresolved_step_output_handle input_def config_data"),
+):
+    """
+    This step input source models being downstream of another unresolved step,
+    for example indirectly downstream from a step with dynamic output.
+    """
+
+    def __new__(cls, unresolved_step_output_handle, input_def, config_data):
+        return super(FromUnresolvedStepOutput, cls).__new__(
+            cls,
+            unresolved_step_output_handle=check.inst_param(
+                unresolved_step_output_handle,
+                "unresolved_step_output_handle",
+                UnresolvedStepOutputHandle,
+            ),
+            input_def=check.inst_param(input_def, "input_def", InputDefinition),
+            config_data=config_data,
+        )
+
+    @property
+    def resolved_by_step_key(self):
+        return self.unresolved_step_output_handle.resolved_by_step_key
+
+    @property
+    def resolved_by_output_name(self):
+        return self.unresolved_step_output_handle.resolved_by_output_name
+
+    def resolve(self, mapping_key):
+        check.str_param(mapping_key, "mapping_key")
+        return FromStepOutput(
+            step_output_handle=self.unresolved_step_output_handle.resolve(mapping_key),
+            input_def=self.input_def,
+            config_data=self.config_data,
+            fan_in=False,
+        )
+
+    def get_step_output_handle_dep_with_placeholder(self):
+        return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
+
+    def required_resource_keys(self):
+        return set()

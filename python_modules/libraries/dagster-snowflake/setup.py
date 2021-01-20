@@ -1,8 +1,10 @@
-from setuptools import find_packages, setup
+from typing import Dict
+
+from setuptools import find_packages, setup  # type: ignore
 
 
-def get_version():
-    version = {}
+def get_version() -> str:
+    version: Dict[str, str] = {}
     with open("dagster_snowflake/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
@@ -21,10 +23,12 @@ if __name__ == "__main__":
         classifiers=[
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=["dagster", "snowflake-connector-python>=2.1.0"],
+        extras_require={"snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"]},
         zip_safe=False,
     )

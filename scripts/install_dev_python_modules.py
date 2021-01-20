@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -40,7 +41,7 @@ def main(quiet):
         if p.poll() is not None:
             break
         if output:
-            print(output.decode().strip())  # pylint: disable=print-call
+            print(output.decode("utf-8").strip())  # pylint: disable=print-call
 
     install_targets = []
 
@@ -52,13 +53,13 @@ def main(quiet):
 
     install_targets += [
         "awscli",
-        "-e python_modules/dagster",
+        "-e python_modules/dagster[test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagit",
         "-e python_modules/automation",
         "-e python_modules/libraries/dagster-pandas",
-        "-e python_modules/libraries/dagster-aws",
+        "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
         "-e python_modules/libraries/dagster-cron",
@@ -67,7 +68,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-dbt",
         "-e python_modules/libraries/dagster-docker",
         "-e python_modules/libraries/dagster-gcp",
-        "-e python_modules/libraries/dagster-ge",
         "-e python_modules/libraries/dagster-k8s",
         "-e python_modules/libraries/dagster-celery-k8s",
         "-e python_modules/libraries/dagster-pagerduty",
@@ -82,8 +82,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
         "-e python_modules/libraries/lakehouse",
-        "-r python_modules/dagster/dev-requirements.txt",
-        "-r python_modules/libraries/dagster-aws/dev-requirements.txt",
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
         #
@@ -95,6 +93,11 @@ def main(quiet):
         # compatible) Azure dependencies.
         # "-e python_modules/libraries/dagster-azure",
     ]
+
+    # dagster-ge depends on a great_expectations version that does not install on Windows
+    # https://github.com/dagster-io/dagster/issues/3319
+    if not os.name == "nt":
+        install_targets += ["-e python_modules/libraries/dagster-ge"]
 
     if not is_39():
         install_targets += [
@@ -121,7 +124,7 @@ def main(quiet):
         if p.poll() is not None:
             break
         if output:
-            print(output.decode().strip())  # pylint: disable=print-call
+            print(output.decode("utf-8").strip())  # pylint: disable=print-call
 
 
 if __name__ == "__main__":

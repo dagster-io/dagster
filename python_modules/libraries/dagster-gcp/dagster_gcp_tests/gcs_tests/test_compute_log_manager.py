@@ -2,7 +2,6 @@ import os
 import sys
 import tempfile
 
-import six
 from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
@@ -64,7 +63,7 @@ def test_compute_log_manager(gcs_bucket):
             assert expected in stderr.data
 
         # Check GCS directly
-        stderr_gcs = six.ensure_str(
+        stderr_gcs = (
             storage.Client()
             .get_bucket(gcs_bucket)
             .blob(
@@ -72,8 +71,10 @@ def test_compute_log_manager(gcs_bucket):
                     prefix="my_prefix", run_id=result.run_id
                 )
             )
-            .download_as_string()
+            .download_as_bytes()
+            .decode("utf-8")
         )
+
         for expected in EXPECTED_LOGS:
             assert expected in stderr_gcs
 
@@ -107,7 +108,7 @@ compute_logs:
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
-            f.write(six.ensure_binary(dagster_yaml))
+            f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
 

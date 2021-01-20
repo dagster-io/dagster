@@ -1,8 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
+from typing import TYPE_CHECKING, FrozenSet, List
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection
+
+if TYPE_CHECKING:
+    from .pipeline import PipelineDefinition
 
 
 class IPipeline(ABC):
@@ -14,11 +18,21 @@ class IPipeline(ABC):
     """
 
     @abstractmethod
-    def get_definition(self):
+    def get_definition(self) -> "PipelineDefinition":
         pass
 
     @abstractmethod
-    def subset_for_execution(self, solid_selection):
+    def subset_for_execution(self, solid_selection: List[str]) -> "IPipeline":
+        pass
+
+    @abstractproperty
+    def solids_to_execute(self) -> FrozenSet[str]:
+        pass
+
+    @abstractmethod
+    def subset_for_execution_from_existing_pipeline(
+        self, solids_to_execute: FrozenSet[str]
+    ) -> "IPipeline":
         pass
 
 
@@ -73,11 +87,11 @@ class InMemoryPipeline(IPipeline, object):
         return self._subset_for_execution(solids_to_execute)
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> List[str]:
         # a list of solid queries provided by the user
         return self._solid_selection  # List[str]
 
     @property
-    def solids_to_execute(self):
+    def solids_to_execute(self) -> FrozenSet[str]:
         # a frozenset which contains the names of the solids to execute
         return self._solids_to_execute  # FrozenSet[str]

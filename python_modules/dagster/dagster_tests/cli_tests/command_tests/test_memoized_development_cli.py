@@ -50,7 +50,7 @@ def test_execute_display_command():
                 "create_string_1_asset": {"config": {"input_str": "apple"}},
                 "take_string_1_asset": {"config": {"input_str": "apple"}},
             },
-            "resources": {"object_manager": {"config": {"base_dir": temp_dir}}},
+            "resources": {"io_manager": {"config": {"base_dir": temp_dir}}},
         }
 
         # write run config to temp file

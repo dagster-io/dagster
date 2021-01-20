@@ -29,12 +29,12 @@ Built-in primitive types
         def identity_imp(_, x):
             return x
 
-        # Explicitly typed on Python 2
+        # Explicitly typed
         @solid(
             input_defs=[InputDefinition('x', dagster_type=Any)],
             output_defs=[OutputDefinition(dagster_type=Any)]
         )
-        def identity_py2(_, x):
+        def identity(_, x):
             return x
 
         @solid(config_schema=Field(Any))
@@ -60,19 +60,19 @@ Built-in primitive types
         def empty_string(_, x: String) -> bool:
             return len(x) == 0
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[InputDefinition('x', dagster_type=Bool)],
             output_defs=[OutputDefinition(dagster_type=String)]
         )
-        def boolean_py2(_, x):
+        def boolean(_, x):
             return 'true' if x else 'false'
 
         @solid(
             input_defs=[InputDefinition('x', dagster_type=String)],
             output_defs=[OutputDefinition(dagster_type=bool)]
         )
-        def empty_string_py2(_, x):
+        def empty_string(_, x):
             return len(x) == 0
 
         @solid(config_schema=Field(Bool))
@@ -83,8 +83,7 @@ Built-in primitive types
 .. attribute:: Int
 
     Use this type for any integer input or output. At runtime, this will perform an
-    ``isinstance(value, six.integer_types)`` check -- that is, on Python 2, both ``long`` and
-    ``int`` will pass this check. In Python 3, you may also use the ordinary :py:class:`~python:int`
+    ``isinstance(value, int)`` check. You may also use the ordinary :py:class:`~python:int`
     type as an alias.
 
     **Examples:**
@@ -95,12 +94,12 @@ Built-in primitive types
         def add_3(_, x: Int) -> int:
             return x + 3
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[InputDefinition('x', dagster_type=Int)],
-            output_defs=[OutputDefinition(dagster_type=int)]
+            output_defs=[OutputDefinition(dagster_type=Int)]
         )
-        def add_3_py2(_, x):
+        def add_3(_, x):
             return x + 3
 
 
@@ -118,11 +117,12 @@ Built-in primitive types
         def div_2(_, x: Float) -> float:
             return x / 2
 
+        # Explicit
         @solid(
             input_defs=[InputDefinition('x', dagster_type=Float)],
             output_defs=[OutputDefinition(dagster_type=float)]
         )
-        def div_2_py_2(_, x):
+        def div_2(_, x):
             return x / 2
 
         @solid(config_schema=Field(Float))
@@ -133,8 +133,7 @@ Built-in primitive types
 .. attribute:: String
 
     Use this type for any string input, output, or config value. At runtime, this will perform an
-    ``isinstance(value, six.string_types)`` -- that is on Python 2, both ``unicode`` and ``str``
-    will pass this check. In Python 3, you may also use the ordinary :py:class:`~python:str` type
+    ``isinstance(value, str)`` check. You may also use the ordinary :py:class:`~python:str` type
     as an alias.
 
     **Examples:**
@@ -145,6 +144,7 @@ Built-in primitive types
         def concat(_, x: String, y: str) -> str:
             return x + y
 
+        # Explicit
         @solid(
             input_defs=[
                 InputDefinition('x', dagster_type=String),
@@ -152,7 +152,7 @@ Built-in primitive types
             ],
             output_defs=[OutputDefinition(dagster_type=str)]
         )
-        def concat_py_2(_, x, y):
+        def concat(_, x, y):
             return x + y
 
         @solid(config_schema=Field(String))
@@ -211,7 +211,7 @@ Built-in primitive types
         def nullable_concat(_, x: String, y: Optional[String]) -> String:
             return x + (y or '')
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[
                 InputDefinition('x', dagster_type=String),
@@ -219,7 +219,7 @@ Built-in primitive types
             ],
             output_defs=[OutputDefinition(dagster_type=String)]
         )
-        def nullable_concat_py2(_, x, y):
+        def nullable_concat(_, x, y):
             return x + (y or '')
 
 .. attribute:: List
@@ -237,12 +237,12 @@ Built-in primitive types
         def concat_list(_, xs: List[String]) -> String:
             return ''.join(xs)
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[InputDefinition('xs', dagster_type=List[String])],
             output_defs=[OutputDefinition(dagster_type=String)]
         )
-        def concat_list_py2(_, xs) -> String:
+        def concat_list(_, xs) -> String:
             return ''.join(xs)
 
         # Fanning in multiple outputs
@@ -282,12 +282,12 @@ Built-in primitive types
         def repeat(_, spec: Dict) -> str:
             return spec['word'] * spec['times']
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[InputDefinition('spec', dagster_type=Dict)],
             output_defs=[OutputDefinition(String)]
         )
-        def repeat_py2(_, spec):
+        def repeat(_, spec):
             return spec['word'] * spec['times']
 
 
@@ -306,12 +306,12 @@ Built-in primitive types
         def set_solid(_, set_input: Set[String]) -> List[String]:
             return sorted([x for x in set_input])
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[InputDefinition('set_input', dagster_type=Set[String])],
             output_defs=[OutputDefinition(List[String])],
         )
-        def set_solid_py2(_, set_input):
+        def set_solid(_, set_input):
             return sorted([x for x in set_input])
 
 .. attribute:: Tuple
@@ -331,12 +331,12 @@ Built-in primitive types
         def tuple_solid(_, tuple_input: Tuple[String, Int, Float]) -> List:
             return [x for x in tuple_input]
 
-        # Python 2
+        # Explicit
         @solid(
             input_defs=[InputDefinition('tuple_input', dagster_type=Tuple[String, Int, Float])],
             output_defs=[OutputDefinition(List)],
         )
-        def tuple_solid_py2(_, tuple_input):
+        def tuple_solid(_, tuple_input):
             return [x for x in tuple_input]
 
 

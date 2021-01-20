@@ -1,3 +1,5 @@
+import tempfile
+
 import pytest
 from dagster import execute_pipeline, file_relative_path
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
@@ -18,13 +20,15 @@ def test_pipelines_success(file_path, run_config_path):
 
     with pushd(file_relative_path(__file__, "../../../docs_snippets/legacy/data_science/")):
         with instance_for_test() as instance:
-            run_config = load_yaml_from_path(run_config_path) if run_config_path else None
+            run_config = load_yaml_from_path(run_config_path) if run_config_path else {}
             recon_pipeline = ReconstructablePipeline.for_file(file_path, "iris_pipeline")
 
-            pipeline_result = execute_pipeline(
-                recon_pipeline,
-                run_config=run_config,
-                instance=instance,
-                solid_selection=["k_means_iris"],  # skip download_file in tests
-            )
-            assert pipeline_result.success
+            with tempfile.TemporaryDirectory() as temp_dir:
+                run_config["resources"] = {"io_manager": {"config": {"base_dir": temp_dir}}}
+                pipeline_result = execute_pipeline(
+                    recon_pipeline,
+                    run_config=run_config,
+                    instance=instance,
+                    solid_selection=["k_means_iris"],  # skip download_file in tests
+                )
+                assert pipeline_result.success

@@ -1,7 +1,7 @@
 from collections import deque
 
 from dagster import check
-from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.resource import ResourceDefinition, ScopedResourcesBuilder
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -9,6 +9,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.plan.inputs import StepInput, UnresolvedStepInput
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -23,7 +24,13 @@ from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
-    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init, instance
+    execution_plan,
+    environment_config,
+    pipeline_run,
+    log_manager,
+    resource_keys_to_init,
+    instance,
+    resource_instances_to_override,
 ):
     generator = resource_initialization_event_generator(
         execution_plan,
@@ -32,6 +39,7 @@ def resource_initialization_manager(
         log_manager,
         resource_keys_to_init,
         instance,
+        resource_instances_to_override,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -80,6 +88,7 @@ def _core_resource_initialization_event_generator(
     resource_log_manager,
     resource_managers,
     instance,
+    resource_instances_to_override,
 ):
     pipeline_def = execution_plan.pipeline_def
     resource_instances = {}
@@ -95,7 +104,14 @@ def _core_resource_initialization_event_generator(
 
         for level in toposort(resource_dependencies):
             for resource_name in level:
-                resource_def = mode_definition.resource_defs[resource_name]
+
+                if resource_name in resource_instances_to_override:
+                    # use the given resource instances instead of re-initiating it from resource def
+                    resource_def = ResourceDefinition.hardcoded_resource(
+                        resource_instances_to_override[resource_name]
+                    )
+                else:
+                    resource_def = mode_definition.resource_defs[resource_name]
                 if not resource_name in resource_keys_to_init:
                     continue
 
@@ -142,7 +158,13 @@ def _core_resource_initialization_event_generator(
 
 
 def resource_initialization_event_generator(
-    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init, instance
+    execution_plan,
+    environment_config,
+    pipeline_run,
+    log_manager,
+    resource_keys_to_init,
+    instance,
+    resource_instances_to_override=None,
 ):
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(environment_config, "environment_config", EnvironmentConfig)
@@ -150,9 +172,10 @@ def resource_initialization_event_generator(
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     check.set_param(resource_keys_to_init, "resource_keys_to_init", of_type=str)
     check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_dict_param(resource_instances_to_override, "resource_instances_to_override")
 
-    if execution_plan.step_key_for_single_step_plans():
-        step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
+    if execution_plan.step_handle_for_single_step_plans():
+        step = execution_plan.get_step(execution_plan.step_handle_for_single_step_plans())
         resource_log_manager = log_manager.with_tags(**step.logging_tags)
     else:
         resource_log_manager = log_manager
@@ -169,6 +192,7 @@ def resource_initialization_event_generator(
             resource_log_manager=resource_log_manager,
             resource_managers=resource_managers,
             instance=instance,
+            resource_instances_to_override=resource_instances_to_override,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
@@ -283,7 +307,16 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
         resource_keys = resource_keys.union(step_input.source.required_resource_keys())
 
-        for source_handle in step_input.get_step_output_handle_dependencies():
+        if isinstance(step_input, StepInput):
+            source_handles = step_input.get_step_output_handle_dependencies()
+        elif isinstance(step_input, UnresolvedStepInput):
+            # Placeholder handles will allow lookup of the unresolved execution steps
+            # for what resources will be needed once the steps resolve
+            source_handles = step_input.get_step_output_handle_deps_with_placeholders()
+        else:
+            check.failed(f"Unexpected step input type {step_input}")
+
+        for source_handle in source_handles:
             source_manager_key = execution_plan.get_manager_key(source_handle)
             if source_manager_key:
                 resource_keys = resource_keys.union([source_manager_key])
@@ -297,8 +330,8 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
             resource_keys = resource_keys.union(
                 step_output.output_def.dagster_type.materializer.required_resource_keys()
             )
-        if step_output.output_def.manager_key:
-            resource_keys = resource_keys.union([step_output.output_def.manager_key])
+        if step_output.output_def.io_manager_key:
+            resource_keys = resource_keys.union([step_output.output_def.io_manager_key])
 
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():

@@ -16,7 +16,7 @@ FAKE_PRIVATE_RSA_KEY = (
         format=serialization.PrivateFormat.TraditionalOpenSSL,
         encryption_algorithm=serialization.NoEncryption(),
     )
-    .decode()
+    .decode("utf-8")
 )
 
 

@@ -2,6 +2,7 @@ from dagster import check
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.system import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.execution.plan.step import is_executable_step
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.backcompat import experimental
 
@@ -95,6 +96,10 @@ def resolve_step_versions_helper(execution_plan):
     step_versions = {}  # step_key (str) -> version (str)
 
     for step in execution_plan.get_all_steps_in_topo_order():
+        # do not compute versions for steps that are not executable
+        if not is_executable_step(step):
+            continue
+
         input_version_dict = {
             input_name: step_input.source.compute_version(step_versions)
             for input_name, step_input in step.step_input_dict.items()
@@ -130,6 +135,7 @@ def resolve_step_output_versions_helper(execution_plan):
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
         for step in execution_plan.steps
+        if is_executable_step(step)
         for output_name in step.step_output_dict.keys()
     }
 
@@ -153,17 +159,18 @@ def resolve_memoized_execution_plan(execution_plan):
         for output_name in step.step_output_dict.keys():
             step_output_handle = StepOutputHandle(step.key, output_name)
 
-            manager_key = execution_plan.get_manager_key(step_output_handle)
+            io_manager_key = execution_plan.get_manager_key(step_output_handle)
             # TODO: https://github.com/dagster-io/dagster/issues/3302
-            # The following code block is HIGHLY experimental. It initializes an asset store outside of
-            # the resource initialization context, and will ignore any exit hooks defined for the asset
-            # store.
+            # The following code block is HIGHLY experimental. It initializes an IO manager
+            # outside of the resource initialization context, and will ignore any exit hooks defined
+            # for the IO manager, and will not work if the IO manager requires resource keys
+            # for initialization.
             resource_config = (
-                environment_config.resources[manager_key]["config"]
-                if "config" in environment_config.resources[manager_key]
+                environment_config.resources[io_manager_key]["config"]
+                if "config" in environment_config.resources[io_manager_key]
                 else {}
             )
-            resource_def = mode_def.resource_defs[manager_key]
+            resource_def = mode_def.resource_defs[io_manager_key]
             resource_context = InitResourceContext(
                 resource_config,
                 resource_def,
@@ -171,11 +178,11 @@ def resolve_memoized_execution_plan(execution_plan):
                     pipeline_name=pipeline_def.name, run_id="", mode=environment_config.mode
                 ),
             )
-            object_manager = resource_def.resource_fn(resource_context)
+            io_manager = resource_def.resource_fn(resource_context)
             context = get_output_context(
                 execution_plan, environment_config, step_output_handle, None
             )
-            if not object_manager.has_output(context):
+            if not io_manager.has_output(context):
                 step_keys_to_execute.add(step_output_handle.step_key)
 
     return execution_plan.build_subset_plan(list(step_keys_to_execute))

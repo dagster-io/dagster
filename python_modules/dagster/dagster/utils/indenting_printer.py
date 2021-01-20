@@ -1,10 +1,8 @@
-from __future__ import print_function
-
 from contextlib import contextmanager
+from io import StringIO
 from textwrap import TextWrapper
 
 from dagster import check
-from six import StringIO
 
 LINE_LENGTH = 100
 

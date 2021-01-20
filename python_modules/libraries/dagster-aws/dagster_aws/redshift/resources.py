@@ -3,7 +3,6 @@ from contextlib import contextmanager
 
 import psycopg2
 import psycopg2.extensions
-import six
 from dagster import Field, IntSource, StringSource, check, resource
 
 
@@ -73,8 +72,6 @@ class RedshiftResource(_BaseRedshiftResource):
         with self._get_conn() as conn:
             with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
                 try:
-                    six.ensure_str(query)
-
                     self.log.info("Executing query '{query}'".format(query=query))
                     cursor.execute(query)
 
@@ -134,8 +131,6 @@ class RedshiftResource(_BaseRedshiftResource):
         with self._get_conn() as conn:
             with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
                 for query in queries:
-                    six.ensure_str(query)
-
                     try:
                         self.log.info("Executing query '{query}'".format(query=query))
                         cursor.execute(query)

@@ -111,6 +111,28 @@ def define_snowflake_config():
         is_required=False,
     )
 
+    connector = Field(
+        StringSource,
+        description="""Indicate alternative database connection engine. Permissible option is
+        'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python.""",
+        is_required=False,
+    )
+
+    cache_column_metadata = Field(
+        StringSource,
+        description="""Optional parameter when connector is set to sqlalchemy. Snowflake SQLAlchemy
+        takes a flag cache_column_metadata=True such that all of column metadata for all tables are
+        cached""",
+        is_required=False,
+    )
+
+    numpy = Field(
+        StringSource,
+        description="""Optional parameter when connector is set to sqlalchemy. To enable fetching
+        NumPy data types, add numpy=True to the connection parameters.""",
+        is_required=False,
+    )
+
     return {
         "account": account,
         "user": user,
@@ -128,4 +150,7 @@ def define_snowflake_config():
         "validate_default_parameters": validate_default_parameters,
         "paramstyle": paramstyle,
         "timezone": timezone,
+        "connector": connector,
+        "cache_column_metadata": cache_column_metadata,
+        "numpy": numpy,
     }

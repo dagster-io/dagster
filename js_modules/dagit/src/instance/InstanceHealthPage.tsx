@@ -1,4 +1,5 @@
 import {QueryResult} from '@apollo/client';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {DaemonList} from 'src/instance/DaemonList';
@@ -13,7 +14,14 @@ interface Props {
 
 export const InstanceHealthPage = (props: Props) => {
   const {queryData} = props;
-  const {data} = queryData;
+  const {data, loading} = queryData;
+
+  const daemonContent = () => {
+    if (loading && !data?.instance) {
+      return <div style={{color: Colors.GRAY3}}>Loading…</div>;
+    }
+    return data?.instance ? <DaemonList daemonHealth={data.instance.daemonHealth} /> : null;
+  };
 
   return (
     <Group direction="column" spacing={32}>
@@ -23,7 +31,7 @@ export const InstanceHealthPage = (props: Props) => {
       </Group>
       <Group direction="column" spacing={16}>
         <Subheading>Daemon statuses</Subheading>
-        {data?.instance ? <DaemonList daemonHealth={data.instance.daemonHealth} /> : null}
+        {daemonContent()}
       </Group>
     </Group>
   );

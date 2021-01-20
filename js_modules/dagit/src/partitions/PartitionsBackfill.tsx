@@ -630,6 +630,7 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
       repositorySelector: $repositorySelector
     ) {
       ... on PartitionSet {
+        id
         name
         partitionStatusesOrError {
           ... on PartitionStatuses {

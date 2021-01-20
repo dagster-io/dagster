@@ -55,17 +55,11 @@ spec:
           securityContext:
             {{- toYaml .Values.dagit.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
-          image: "{{ template "dagster.dagit_image" . }}"
+          image: {{ include "image.name" .Values.dagit.image | quote }}
           command: [
             "/bin/bash",
             "-c",
-            {{- if .Values.userDeployments.enabled }}
-            "{{ template "dagster.dagit.scheduleUpCommand" $ }}"
-            {{- else }}
-            "service cron start; \
-            /usr/local/bin/dagster schedule up; \
-            dagit -h 0.0.0.0 -p 80"
-            {{- end }}
+            "{{ template "dagster.dagit.dagitCommand" $ }}"
           ]
           env:
             - name: DAGSTER_PG_PASSWORD

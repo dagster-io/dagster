@@ -1,5 +1,6 @@
 import time
 
+import pytest
 from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
@@ -14,6 +15,7 @@ class TestSubscribeToGrpcServerEvents(
         context_variants=[GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env()]
     )
 ):
+    @pytest.mark.skip
     def test_grpc_server_handle_message_subscription(self, graphql_context):
         events = []
         test_subscriber = LocationStateSubscriber(events.append)

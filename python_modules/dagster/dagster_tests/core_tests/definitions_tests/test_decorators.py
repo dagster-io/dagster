@@ -1,6 +1,3 @@
-# encoding: utf-8
-# py27 compat
-
 import re
 from datetime import datetime, time
 
@@ -125,12 +122,7 @@ def test_solid_with_explicit_empty_outputs():
     assert (
         "Error in solid hello_world: Unexpectedly returned output foo of type "
         "<class 'str'>. Solid is explicitly defined to return no results."
-    ) in str(exc_info.value) or (
-        "Error in solid hello_world: Unexpectedly returned output foo of type "
-        "<type 'str'>. Solid is explicitly defined to return no results."
-    ) in str(
-        exc_info.value
-    )  # py2
+    ) in str(exc_info.value)
 
 
 def test_solid_with_implicit_single_output():
@@ -476,8 +468,8 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
 
             # time that's invalid since it corresponds to a partition that hasn't happened yet
             # should not execute and should throw if it tries to generate run config
-            execution_time_with_invalid_partition = datetime(
-                year=2019, month=2, day=27, hour=3, minute=25
+            execution_time_with_invalid_partition = pendulum.create(
+                year=2019, month=2, day=27, hour=3, minute=25, tz="US/Central"
             )
             context_with_invalid_time = ScheduleExecutionContext(
                 instance, execution_time_with_invalid_partition

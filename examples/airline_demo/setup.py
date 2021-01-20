@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 setup(
     name="airline_demo",
@@ -34,9 +34,9 @@ setup(
             "google-cloud-storage",
             "keras",
             "lakehouse",
-            "matplotlib==3.0.2",
+            "matplotlib",
             "mock",
-            "moto>=1.3.7",
+            "moto>=1.3.16",
             "pandas>=1.0.0",
             "pytest-mock",
             # Pyspark 2.x is incompatible with Python 3.8+

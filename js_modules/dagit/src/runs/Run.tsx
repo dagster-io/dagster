@@ -19,6 +19,7 @@ import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {LogsToolbar} from 'src/runs/LogsToolbar';
 import {RunActionButtons} from 'src/runs/RunActionButtons';
 import {RunContext} from 'src/runs/RunContext';
+import {RunDetails} from 'src/runs/RunDetails';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -259,35 +260,38 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   return (
     <RunMetadataProvider logs={allNodes}>
       {(metadata) => (
-        <SplitPanelContainer
-          ref={splitPanelContainer}
-          axis={'vertical'}
-          identifier="run-gantt"
-          firstInitialPercent={35}
-          firstMinSize={40}
-          first={gantt(metadata)}
-          second={
-            <LogsContainer>
-              <LogsToolbar
-                filter={logsFilter}
-                hideNonMatches={hideNonMatches}
-                onHideNonMatches={onHideNonMatches}
-                onSetFilter={onSetLogsFilter}
-                selection={selection}
-                steps={Object.keys(metadata.steps)}
-                metadata={metadata}
-              />
-              <LogsScrollingTable
-                focusedTime={logsFilter.focusedTime}
-                filteredNodes={hasTextFilter && hideNonMatches ? textMatchNodes : filteredNodes}
-                textMatchNodes={textMatchNodes}
-                loading={logsLoading}
-                filterKey={`${JSON.stringify(logsFilter)}-${JSON.stringify(hideNonMatches)}`}
-                metadata={metadata}
-              />
-            </LogsContainer>
-          }
-        />
+        <>
+          <RunDetails loading={logsLoading} run={run} />
+          <SplitPanelContainer
+            ref={splitPanelContainer}
+            axis={'vertical'}
+            identifier="run-gantt"
+            firstInitialPercent={35}
+            firstMinSize={40}
+            first={gantt(metadata)}
+            second={
+              <LogsContainer>
+                <LogsToolbar
+                  filter={logsFilter}
+                  hideNonMatches={hideNonMatches}
+                  onHideNonMatches={onHideNonMatches}
+                  onSetFilter={onSetLogsFilter}
+                  selection={selection}
+                  steps={Object.keys(metadata.steps)}
+                  metadata={metadata}
+                />
+                <LogsScrollingTable
+                  focusedTime={logsFilter.focusedTime}
+                  filteredNodes={hasTextFilter && hideNonMatches ? textMatchNodes : filteredNodes}
+                  textMatchNodes={textMatchNodes}
+                  loading={logsLoading}
+                  filterKey={`${JSON.stringify(logsFilter)}-${JSON.stringify(hideNonMatches)}`}
+                  metadata={metadata}
+                />
+              </LogsContainer>
+            }
+          />
+        </>
       )}
     </RunMetadataProvider>
   );

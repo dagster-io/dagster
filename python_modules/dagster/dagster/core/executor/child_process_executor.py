@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.seven import multiprocessing
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.interrupts import capture_interrupts
@@ -64,7 +65,13 @@ def _execute_command_in_child_process(event_queue, command):
             for step_event in command.execute():
                 event_queue.put(step_event)
             event_queue.put(ChildProcessDoneEvent(pid=pid))
-        except (Exception, KeyboardInterrupt):  # pylint: disable=broad-except
+
+        # pylint: disable=broad-except
+        except (
+            Exception,
+            KeyboardInterrupt,
+            DagsterExecutionInterruptedError,
+        ):
             event_queue.put(
                 ChildProcessSystemErrorEvent(
                     pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())

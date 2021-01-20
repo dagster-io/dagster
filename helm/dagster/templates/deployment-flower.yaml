@@ -48,7 +48,7 @@ spec:
           securityContext:
           {{- toYaml .Values.flower.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.flower.image.pullPolicy }}
-          image: "{{ template "dagster.flower_image" . }}"
+          image: {{ include "image.name" .Values.flower.image | quote }}
           args: ["flower"]
           env:
             - name: CELERY_BROKER_URL

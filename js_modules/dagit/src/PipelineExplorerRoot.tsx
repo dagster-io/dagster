@@ -5,7 +5,12 @@ import * as React from 'react';
 import {Redirect, RouteComponentProps, useHistory} from 'react-router-dom';
 
 import {Loading} from 'src/Loading';
-import {PipelineExplorer, PipelineExplorerOptions} from 'src/PipelineExplorer';
+import {
+  PipelineExplorer,
+  PipelineExplorerOptions,
+  PIPELINE_EXPLORER_FRAGMENT,
+  PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT,
+} from 'src/PipelineExplorer';
 import {
   PipelineExplorerPath,
   explorerPathFromString,
@@ -234,8 +239,8 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       }
     }
   }
-  ${PipelineExplorer.fragments.PipelineExplorerFragment}
-  ${PipelineExplorer.fragments.PipelineExplorerSolidHandleFragment}
+  ${PIPELINE_EXPLORER_FRAGMENT}
+  ${PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;
 
 interface ResolverProps {

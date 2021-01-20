@@ -13,14 +13,14 @@ const createTreeOfContents = () => {
     });
   }
   const examplesEntry = {
-      name: 'Examples',
-      path: '/examples',
-      children: EXAMPLES_PAGES,
+    name: 'Examples',
+    path: '/examples',
+    children: EXAMPLES_PAGES,
   };
 
   const entriesByName = Object.assign(
-    {Examples: examplesEntry},
-    ...treeOfContents.map((entry) => ({[entry.name]: entry}))
+    { Examples: examplesEntry },
+    ...treeOfContents.map((entry) => ({ [entry.name]: entry })),
   );
 
   const ORDERING = [
@@ -28,11 +28,12 @@ const createTreeOfContents = () => {
     'Tutorial',
     'Examples',
     'Overviews',
-    'API Docs',
     'Deploy',
-    'Community'
+    'Troubleshooting',
+    'Community',
+    'API Docs',
   ];
-  const result = ORDERING.map(name => entriesByName[name]);
+  const result = ORDERING.map((name) => entriesByName[name]);
   return result;
 };
 

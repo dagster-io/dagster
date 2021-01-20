@@ -191,6 +191,9 @@ class InMemoryRunStorage(RunStorage):
     def wipe(self):
         self._init_storage()
 
+    def build_missing_indexes(self, print_fn=lambda _: None, force_rebuild_all=False):
+        pass
+
     def get_run_group(self, run_id):
         check.str_param(run_id, "run_id")
         pipeline_run = self._runs.get(run_id)

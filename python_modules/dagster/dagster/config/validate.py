@@ -1,4 +1,3 @@
-import six
 from dagster import check
 from dagster.utils import ensure_single_item, frozendict
 
@@ -27,14 +26,14 @@ from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
 from .stack import EvaluationStack
 from .traversal_context import ValidationContext
 
-VALID_FLOAT_TYPES = tuple(list(six.integer_types) + [float])
+VALID_FLOAT_TYPES = tuple([int, float])
 
 
 def is_config_scalar_valid(config_type_snap, config_value):
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
     check.param_invariant(config_type_snap.kind == ConfigTypeKind.SCALAR, "config_type_snap")
     if config_type_snap.scalar_kind == ConfigScalarKind.INT:
-        return not isinstance(config_value, bool) and isinstance(config_value, six.integer_types)
+        return not isinstance(config_value, bool) and isinstance(config_value, int)
     elif config_type_snap.scalar_kind == ConfigScalarKind.STRING:
         return isinstance(config_value, str)
     elif config_type_snap.scalar_kind == ConfigScalarKind.BOOL:

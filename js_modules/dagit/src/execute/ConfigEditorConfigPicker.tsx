@@ -16,7 +16,7 @@ import styled from 'styled-components';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {IExecutionSession} from 'src/LocalStorage';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
@@ -464,6 +464,7 @@ export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
 export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
     results {
+      id
       name
       mode
       solidSelection
@@ -482,6 +483,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
     ) {
       __typename
       ... on PartitionSet {
+        id
         partitionsOrError {
           ... on Partitions {
             results {
@@ -495,7 +497,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const CONFIG_PARTITION_SELECTION_QUERY = gql`
@@ -510,6 +512,7 @@ const CONFIG_PARTITION_SELECTION_QUERY = gql`
     ) {
       __typename
       ... on PartitionSet {
+        id
         partition(partitionName: $partitionName) {
           name
           solidSelection
@@ -537,5 +540,5 @@ const CONFIG_PARTITION_SELECTION_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

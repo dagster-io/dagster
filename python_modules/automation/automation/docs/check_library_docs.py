@@ -4,7 +4,6 @@
 import os
 import sys
 
-import six
 from automation.git import git_repo_root
 
 EXPECTED_LIBRARY_README_CONTENTS = """
@@ -48,7 +47,7 @@ def check_readme_contents(readme_file, library_name):
     )
 
     with open(readme_file, "rb") as f:
-        contents = six.ensure_str(f.read()).strip()
+        contents = f.read().decode("utf-8").strip()
         if contents != expected:
             print("=" * 100)
             print("Readme %s contents do not match!" % readme_file)

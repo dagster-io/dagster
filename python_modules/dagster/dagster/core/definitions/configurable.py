@@ -122,7 +122,7 @@ def _check_configurable_param(configurable):
         (
             "Only the following types can be used with the `configured` method: ResourceDefinition, "
             "ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, LoggerDefinition, "
-            "IntermediateStorageDefinition, and SystemStorageDefinition. For usage examples of "
+            "and IntermediateStorageDefinition. For usage examples of "
             "`configured`, see https://docs.dagster.io/overview/configuration#configured"
         ),
     )
@@ -139,7 +139,6 @@ def configured(configurable, config_schema=None, **kwargs):
     * :py:class:`LoggerDefinition`
     * :py:class:`ResourceDefinition`
     * :py:class:`SolidDefinition`
-    * :py:class:`SystemStorageDefinition`
 
     If the config that will be supplied to the object is constant, you may alternatively invoke this
     and call the result with a dict of config values to be curried. Examples of both strategies

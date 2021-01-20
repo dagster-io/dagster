@@ -2,12 +2,12 @@ import atexit
 import json
 import subprocess
 import time
+from urllib import request
+from urllib.error import URLError
 
 import pytest
 import responses
 from dagster_dbt import DbtRpcClient
-from six.moves.urllib import request
-from six.moves.urllib.error import URLError
 
 TEST_HOSTNAME = "127.0.0.1"
 TEST_PORT = 8580

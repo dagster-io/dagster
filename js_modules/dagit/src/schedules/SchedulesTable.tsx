@@ -25,6 +25,7 @@ import {
   displayScheduleMutationErrors,
 } from 'src/schedules/ScheduleMutations';
 import {SchedulePartitionStatus} from 'src/schedules/SchedulePartitionStatus';
+import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {StartSchedule} from 'src/schedules/types/StartSchedule';
@@ -54,6 +55,10 @@ export const SchedulesTable: React.FC<{
     </div>
   );
 
+  const repoAddressMemo = React.useMemo(() => {
+    return {name: repoAddress.name, location: repoAddress.location};
+  }, [repoAddress.name, repoAddress.location]);
+
   return (
     <Table striped style={{width: '100%'}}>
       <thead>
@@ -61,6 +66,7 @@ export const SchedulesTable: React.FC<{
           <th style={{width: '60px'}}></th>
           <th style={{width: '300px'}}>Schedule Name</th>
           <th style={{width: '150px'}}>Schedule</th>
+          <th style={{width: '200px'}}>Next Tick</th>
           <th style={{width: '120px'}}>
             <Group direction="row" spacing={8} alignItems="center">
               Last Tick
@@ -102,7 +108,7 @@ export const SchedulesTable: React.FC<{
       </thead>
       <tbody>
         {schedules.map((schedule) => (
-          <ScheduleRow repoAddress={repoAddress} schedule={schedule} key={schedule.name} />
+          <ScheduleRow repoAddress={repoAddressMemo} schedule={schedule} key={schedule.name} />
         ))}
       </tbody>
     </Table>
@@ -176,7 +182,15 @@ const ScheduleRow: React.FC<{
     },
   );
 
-  const {name, cronSchedule, pipelineName, mode, scheduleState} = schedule;
+  const {
+    name,
+    cronSchedule,
+    executionTimezone,
+    futureTicks,
+    pipelineName,
+    mode,
+    scheduleState,
+  } = schedule;
   const {id, status, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const scheduleSelector = {
@@ -235,6 +249,17 @@ const ScheduleRow: React.FC<{
           <Tooltip position={'bottom'} content={cronSchedule}>
             {humanCronString(cronSchedule)}
           </Tooltip>
+        ) : (
+          <span style={{color: Colors.GRAY4}}>None</span>
+        )}
+      </td>
+      <td>
+        {futureTicks.results.length && status === JobStatus.RUNNING ? (
+          <TimestampDisplay
+            timestamp={futureTicks.results[0].timestamp}
+            timezone={executionTimezone}
+            format="MMM D, h:mm A"
+          />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}

@@ -10,6 +10,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    Shape,
     SolidDefinition,
     SolidInvocation,
     String,
@@ -23,7 +24,6 @@ from dagster.config.validate import process_config
 from dagster.core.definitions import create_environment_type, create_run_config_schema
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
-    define_solid_config_cls,
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import EnvironmentConfig, SolidConfig
@@ -108,7 +108,7 @@ def test_provided_default_on_resources_config():
     value = EnvironmentConfig.build(pipeline_def, {})
     assert value.resources == {
         "some_resource": {"config": {"with_default_int": 23434}},
-        "object_manager": {},
+        "io_manager": {},
     }
 
 
@@ -125,7 +125,7 @@ def test_default_environment():
 
 
 def test_solid_config():
-    solid_config_type = define_solid_config_cls(Field(Int), None, None)
+    solid_config_type = Shape({"config": Field(Int)})
     solid_inst = process_config(solid_config_type, {"config": 1})
     assert solid_inst.value["config"] == 1
 
@@ -263,7 +263,7 @@ def test_whole_environment():
         "int_config_solid": SolidConfig.from_dict({"config": 123}),
         "no_config_solid": SolidConfig.from_dict({}),
     }
-    assert env.resources == {"test_resource": {"config": 1}, "object_manager": {}}
+    assert env.resources == {"test_resource": {"config": 1}, "io_manager": {}}
 
 
 def test_solid_config_error():
@@ -551,7 +551,7 @@ def test_optional_and_required_context():
     assert env_obj.resources == {
         "optional_resource": {"config": {}},
         "required_resource": {"config": {"required_field": "foo"}},
-        "object_manager": {},
+        "io_manager": {},
     }
 
 

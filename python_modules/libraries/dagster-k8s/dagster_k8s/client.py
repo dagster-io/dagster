@@ -4,11 +4,8 @@ import time
 from enum import Enum
 
 import kubernetes
-import six
 from dagster import DagsterInstance, check
-from dagster.core.errors import _add_inner_exception_for_py2
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from six import raise_from
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -37,11 +34,8 @@ class DagsterK8sAPIRetryLimitExceeded(Exception):
         max_retries = check.int_param(kwargs.pop("max_retries"), "max_retries")
 
         check.invariant(original_exc_info[0] is not None)
-        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
         super(DagsterK8sAPIRetryLimitExceeded, self).__init__(
-            "Retry limit of {max_retries} exceeded: ".format(max_retries=max_retries) + msg,
-            *args[1:],
-            **kwargs,
+            f"Retry limit of {max_retries} exceeded: " + args[0], *args[1:], **kwargs,
         )
 
         self.k8s_api_exception = check.opt_inst_param(
@@ -58,8 +52,7 @@ class DagsterK8sUnrecoverableAPIError(Exception):
         original_exc_info = check.tuple_param(kwargs.pop("original_exc_info"), "original_exc_info")
 
         check.invariant(original_exc_info[0] is not None)
-        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
-        super(DagsterK8sUnrecoverableAPIError, self).__init__(msg, *args[1:], **kwargs)
+        super(DagsterK8sUnrecoverableAPIError, self).__init__(args[0], *args[1:], **kwargs)
 
         self.k8s_api_exception = check.opt_inst_param(
             k8s_api_exception, "k8s_api_exception", Exception
@@ -104,22 +97,16 @@ def k8s_api_retry(
             if whitelisted and remaining_attempts > 0:
                 time.sleep(timeout)
             elif whitelisted and remaining_attempts == 0:
-                raise_from(
-                    DagsterK8sAPIRetryLimitExceeded(
-                        msg_fn(),
-                        k8s_api_exception=e,
-                        max_retries=max_retries,
-                        original_exc_info=sys.exc_info(),
-                    ),
-                    e,
-                )
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
+                    original_exc_info=sys.exc_info(),
+                ) from e
             else:
-                raise_from(
-                    DagsterK8sUnrecoverableAPIError(
-                        msg_fn(), k8s_api_exception=e, original_exc_info=sys.exc_info(),
-                    ),
-                    e,
-                )
+                raise DagsterK8sUnrecoverableAPIError(
+                    msg_fn(), k8s_api_exception=e, original_exc_info=sys.exc_info(),
+                ) from e
 
 
 class KubernetesWaitingReasons:
@@ -473,9 +460,10 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 if not state.terminated.exit_code == 0:
                     raw_logs = self.retrieve_pod_logs(pod_name, namespace)
+                    message = state.terminated.message
                     raise DagsterK8sError(
-                        'Pod did not exit successfully. Failed with message: "%s" and pod logs: "%s"'
-                        % (state.terminated.message, str(raw_logs))
+                        f'Pod did not exit successfully. Failed with message: "{message}" '
+                        f'and pod logs: "{raw_logs}"'
                     )
                 else:
                     self.logger("Pod {pod_name} exitted successfully".format(pod_name=pod_name))
@@ -484,7 +472,7 @@ class DagsterKubernetesClient:
             else:
                 raise DagsterK8sError("Should not get here, unknown pod state")
 
-    def retrieve_pod_logs(self, pod_name, namespace):
+    def retrieve_pod_logs(self, pod_name: str, namespace: str) -> str:
         """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
 
         Args:
@@ -502,8 +490,6 @@ class DagsterKubernetesClient:
         # us with invalid JSON as the quotes have been switched to '
         #
         # https://github.com/kubernetes-client/python/issues/811
-        return six.ensure_str(
-            self.core_api.read_namespaced_pod_log(
-                name=pod_name, namespace=namespace, _preload_content=False
-            ).data
-        )
+        return self.core_api.read_namespaced_pod_log(
+            name=pod_name, namespace=namespace, _preload_content=False
+        ).data.decode("utf-8")

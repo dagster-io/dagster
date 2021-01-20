@@ -17,8 +17,6 @@
 import re
 from collections import namedtuple
 
-import six
-
 # log line format output by hadoop jar command
 _HADOOP_LOG4J_LINE_RE = re.compile(
     r"^\s*(?P<timestamp>\d\d\/\d\d\/\d\d \d\d\:\d\d\:\d\d)"
@@ -99,7 +97,7 @@ def parse_hadoop_log4j_records(lines):
 
     for line_num, line in enumerate(lines.split("\n")):
         # convert from bytes to unicode, if needed, and strip trailing newlines
-        line = six.ensure_str(line).rstrip("\r\n")
+        line = line.rstrip("\r\n")
 
         m = _HADOOP_LOG4J_LINE_RE.match(line) or _HADOOP_LOG4J_LINE_ALTERNATE_RE.match(line)
 

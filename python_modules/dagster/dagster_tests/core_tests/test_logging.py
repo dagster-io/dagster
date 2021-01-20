@@ -144,6 +144,7 @@ def test_multiline_logging_complex():
         "",
         "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'",
         "",
+        "Stack Trace:",
         "a stack message",
     ]
 

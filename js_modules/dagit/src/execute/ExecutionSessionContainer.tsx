@@ -29,7 +29,7 @@ import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
 import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
 import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
-import {RunPreview} from 'src/execute/RunPreview';
+import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from 'src/execute/RunPreview';
 import {SolidSelector} from 'src/execute/SolidSelector';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {scaffoldPipelineConfig} from 'src/execute/scaffoldType';
@@ -77,38 +77,6 @@ export class ExecutionSessionContainer extends React.Component<
   IExecutionSessionContainerProps,
   IExecutionSessionContainerState
 > {
-  static fragments = {
-    ExecutionSessionContainerPipelineFragment: gql`
-      fragment ExecutionSessionContainerPipelineFragment on Pipeline {
-        id
-        ...ConfigEditorGeneratorPipelineFragment
-        modes {
-          name
-          description
-        }
-      }
-      ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
-    `,
-    ExecutionSessionContainerPartitionSetsFragment: gql`
-      fragment ExecutionSessionContainerPartitionSetsFragment on PartitionSets {
-        ...ConfigEditorGeneratorPartitionSetsFragment
-      }
-      ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
-    `,
-    RunConfigSchemaOrErrorFragment: gql`
-      fragment ExecutionSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
-        __typename
-        ... on RunConfigSchema {
-          ...ConfigEditorRunConfigSchemaFragment
-        }
-        ... on ModeNotFoundError {
-          message
-        }
-      }
-      ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
-    `,
-  };
-
   state: IExecutionSessionContainerState = {
     preview: null,
     previewLoading: false,
@@ -493,12 +461,42 @@ export class ExecutionSessionContainer extends React.Component<
   }
 }
 
+export const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
+  fragment ExecutionSessionContainerPipelineFragment on Pipeline {
+    id
+    ...ConfigEditorGeneratorPipelineFragment
+    modes {
+      name
+      description
+    }
+  }
+  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+`;
+
+export const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
+  fragment ExecutionSessionContainerPartitionSetsFragment on PartitionSets {
+    ...ConfigEditorGeneratorPartitionSetsFragment
+  }
+  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
+`;
+
+export const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
+  fragment ExecutionSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
+    __typename
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      message
+    }
+  }
+  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
+`;
+
 // Normally we'd try to make the execution session container props optional and render these empty / error
 // states in the same component, but it's a lot less complicated to render them separately here.
 
-export const ExecutionSessionContainerError: React.FunctionComponent<NonIdealState['props']> = (
-  props,
-) => (
+export const ExecutionSessionContainerError: React.FC<NonIdealState['props']> = (props) => (
   <SplitPanelContainer
     axis={'vertical'}
     identifier={'execution'}
@@ -516,7 +514,7 @@ export const ExecutionSessionContainerError: React.FunctionComponent<NonIdealSta
   />
 );
 
-export const ExecutionSessionContainerLoading: React.FunctionComponent = () => (
+export const ExecutionSessionContainerLoading: React.FC = () => (
   <SplitPanelContainer
     axis={'vertical'}
     identifier={'execution'}
@@ -543,7 +541,7 @@ const PREVIEW_CONFIG_QUERY = gql`
       ...RunPreviewValidationFragment
     }
   }
-  ${RunPreview.fragments.RunPreviewValidationFragment}
+  ${RUN_PREVIEW_VALIDATION_FRAGMENT}
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;
 

@@ -1,2 +1,0 @@
-cryptography==2.6.1
-pytest-sftpserver==1.2.0

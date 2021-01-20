@@ -25,39 +25,71 @@ class SnowflakeConnection:
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
-        self.conn_args = {
-            k: context.resource_config.get(k)
-            for k in (
-                "account",
-                "user",
-                "password",
-                "database",
-                "schema",
-                "role",
-                "warehouse",
-                "autocommit",
-                "client_prefetch_threads",
-                "client_session_keep_alive",
-                "login_timeout",
-                "network_timeout",
-                "ocsp_response_cache_filename",
-                "validate_default_parameters",
-                "paramstyle",
-                "timezone",
-            )
-            if context.resource_config.get(k) is not None
-        }
+        self.connector = context.resource_config.get("connector", None)
+
+        if self.connector == "sqlalchemy":
+            self.conn_args = {
+                k: context.resource_config.get(k)
+                for k in (
+                    "account",
+                    "user",
+                    "password",
+                    "database",
+                    "schema",
+                    "role",
+                    "warehouse",
+                    "cache_column_metadata",
+                    "numpy",
+                )
+                if context.resource_config.get(k) is not None
+            }
+
+        else:
+            self.conn_args = {
+                k: context.resource_config.get(k)
+                for k in (
+                    "account",
+                    "user",
+                    "password",
+                    "database",
+                    "schema",
+                    "role",
+                    "warehouse",
+                    "autocommit",
+                    "client_prefetch_threads",
+                    "client_session_keep_alive",
+                    "login_timeout",
+                    "network_timeout",
+                    "ocsp_response_cache_filename",
+                    "validate_default_parameters",
+                    "paramstyle",
+                    "timezone",
+                )
+                if context.resource_config.get(k) is not None
+            }
 
         self.autocommit = self.conn_args.get("autocommit", False)
         self.log = context.log_manager
 
     @contextmanager
-    def get_connection(self):
-        conn = snowflake.connector.connect(**self.conn_args)
-        yield conn
-        if not self.autocommit:
-            conn.commit()
-        conn.close()
+    def get_connection(self, raw_conn=True):
+        if self.connector == "sqlalchemy":
+            from sqlalchemy import create_engine
+            from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+
+            engine = create_engine(URL(**self.conn_args))
+            conn = engine.raw_connection() if raw_conn else engine.connect()
+
+            yield conn
+            conn.close()
+            engine.dispose()
+        else:
+            conn = snowflake.connector.connect(**self.conn_args)
+
+            yield conn
+            if not self.autocommit:
+                conn.commit()
+            conn.close()
 
     def execute_query(self, sql, parameters=None, fetch_results=False):
         check.str_param(sql, "sql")

@@ -65,12 +65,15 @@ def handle_schema_errors(conn, alembic_config, msg=None):
             pass
 
         if db_revision != head_revision:
+            # Disable exception chaining since the original exception is included in the
+            # message, and the fact that the instance needs migrating should be the first
+            # thing the user sees
             raise DagsterInstanceMigrationRequired(
                 msg=msg,
                 db_revision=db_revision,
                 head_revision=head_revision,
                 original_exc_info=sys.exc_info(),
-            )
+            ) from None
 
         raise
 
@@ -113,16 +116,15 @@ def run_migrations_online(context, config, target_metadata):
     and associate a connection with the context.
 
     """
-    connectable = config.attributes.get("connection", None)
+    connection = config.attributes.get("connection", None)
 
-    if connectable is None:
+    if connection is None:
         raise Exception(
             "No connection set in alembic config. If you are trying to run this script from the "
             "command line, STOP and read the README."
         )
 
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata)
 
-        with context.begin_transaction():
-            context.run_migrations()
+    with context.begin_transaction():
+        context.run_migrations()

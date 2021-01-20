@@ -26,19 +26,6 @@ const FaviconsForStatus = {
 export class RunStatusToPageAttributes extends React.Component<{
   run: RunStatusPipelineRunFragment;
 }> {
-  static fragments = {
-    RunStatusPipelineRunFragment: gql`
-      fragment RunStatusPipelineRunFragment on PipelineRun {
-        id
-        runId
-        status
-        pipeline {
-          name
-        }
-      }
-    `,
-  };
-
   componentDidMount() {
     this.updatePageAttributes();
   }
@@ -63,3 +50,14 @@ export class RunStatusToPageAttributes extends React.Component<{
     return <span />;
   }
 }
+
+export const RUN_STATUS_PIPELINE_RUN_FRAGMENT = gql`
+  fragment RunStatusPipelineRunFragment on PipelineRun {
+    id
+    runId
+    status
+    pipeline {
+      name
+    }
+  }
+`;

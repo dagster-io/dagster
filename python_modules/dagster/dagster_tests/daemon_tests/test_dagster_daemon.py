@@ -1,8 +1,12 @@
 import datetime
 import logging
+import re
 
 import pendulum
+import pytest
+from click.testing import CliRunner
 from dagster.core.test_utils import instance_for_test
+from dagster.daemon.cli import run_command
 from dagster.daemon.controller import DagsterDaemonController
 from dagster.daemon.daemon import SchedulerDaemon
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
@@ -61,6 +65,17 @@ def _run_coordinator_ran(caplog):
             return True
 
     return False
+
+
+def test_ephemeral_instance():
+    runner = CliRunner()
+    with pytest.raises(
+        Exception,
+        match=re.escape(
+            "dagster-daemon can't run using an in-memory instance. Make sure the DAGSTER_HOME environment variable has been set correctly and that you have created a dagster.yaml file there."
+        ),
+    ):
+        runner.invoke(run_command, env={"DAGSTER_HOME": ""}, catch_exceptions=False)
 
 
 def test_different_intervals(caplog):

@@ -181,7 +181,7 @@ Returning to our `s3_to_df` solid, note the type signature of these solids.
 
 The output has type `DataFrame`, a Dagster type imported from `dagster_pyspark` that ensures a that the underlying output type is the python class `pyspark.sql.DataFrame`.
 
-The transformation solids that follow all use the `DataFrame` for their intermediate results.
+The transformation solids that follow all use the `DataFrame` for their I/O results.
 
 ### Loading data to the warehouse
 

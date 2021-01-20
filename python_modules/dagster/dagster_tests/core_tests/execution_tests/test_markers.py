@@ -30,7 +30,7 @@ def test_multiproc_markers():
         end_markers = {}
         for event in events:
             dagster_event = event.dagster_event
-            if dagster_event.is_engine_event:
+            if dagster_event and dagster_event.is_engine_event:
                 if dagster_event.engine_event_data.marker_start:
                     key = "{step}.{marker}".format(
                         step=event.step_key, marker=dagster_event.engine_event_data.marker_start

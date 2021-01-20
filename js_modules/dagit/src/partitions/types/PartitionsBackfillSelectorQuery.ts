@@ -30,6 +30,7 @@ export type PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_par
 
 export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet {
   __typename: "PartitionSet";
+  id: string;
   name: string;
   partitionStatusesOrError: PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError;
 }

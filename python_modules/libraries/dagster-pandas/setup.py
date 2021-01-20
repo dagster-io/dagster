@@ -1,16 +1,17 @@
 import os
+from typing import Dict
 
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 
-def long_description():
+def long_description() -> str:
     here = os.path.abspath(os.path.dirname(__file__))
     with open(os.path.join(here, "README.md"), "r") as fh:
         return fh.read()
 
 
-def get_version():
-    version = {}
+def get_version() -> str:
+    version: Dict[str, str] = {}
     with open("dagster_pandas/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 

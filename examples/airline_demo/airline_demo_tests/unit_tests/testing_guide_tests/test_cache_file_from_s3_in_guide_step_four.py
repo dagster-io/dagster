@@ -34,7 +34,8 @@ def unittest_for_aws_mode_def(s3_session):
 
 @mock_s3
 def test_cache_file_from_s3_step_four(snapshot):
-    s3 = boto3.client("s3")
+    # https://github.com/spulec/moto/issues/3292
+    s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="source-bucket")
     s3.create_bucket(Bucket="file-cache-bucket")
     s3.put_object(Bucket="source-bucket", Key="source-file", Body=b"foo")

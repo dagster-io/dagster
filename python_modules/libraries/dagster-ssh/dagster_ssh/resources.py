@@ -1,11 +1,11 @@
 import getpass
 import os
+from io import StringIO
 
 import paramiko
 from dagster import Field, StringSource, check, resource
 from dagster.utils import merge_dicts, mkdir_p
 from paramiko.config import SSH_PORT
-from six import StringIO
 from sshtunnel import SSHTunnelForwarder
 
 

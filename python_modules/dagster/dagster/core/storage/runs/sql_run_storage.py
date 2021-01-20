@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 
-import six
 import sqlalchemy as db
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
@@ -16,14 +15,21 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster.core.storage.tags import ROOT_RUN_ID_TAG
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
-from .schema import DaemonHeartbeatsTable, RunTagsTable, RunsTable, SnapshotsTable
+from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
+from .schema import (
+    DaemonHeartbeatsTable,
+    RunTagsTable,
+    RunsTable,
+    SecondaryIndexMigrationTable,
+    SnapshotsTable,
+)
 
 
 class SnapshotType(Enum):
@@ -73,6 +79,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
+        has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
+        partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
+        partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
         with self.connect() as conn:
             try:
                 runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -81,10 +90,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     status=pipeline_run.status.value,
                     run_body=serialize_dagster_namedtuple(pipeline_run),
                     snapshot_id=pipeline_run.pipeline_snapshot_id,
+                    partition=partition,
+                    partition_set=partition_set,
                 )
                 conn.execute(runs_insert)
             except db.exc.IntegrityError as exc:
-                six.raise_from(DagsterRunAlreadyExists, exc)
+                raise DagsterRunAlreadyExists from exc
 
             if pipeline_run.tags and len(pipeline_run.tags) > 0:
                 conn.execute(
@@ -261,6 +272,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         run = self.get_run_by_id(run_id)
         current_tags = run.tags if run.tags else {}
 
+        all_tags = merge_dicts(current_tags, new_tags)
+        partition = all_tags.get(PARTITION_NAME_TAG)
+        partition_set = all_tags.get(PARTITION_SET_TAG)
+
         with self.connect() as conn:
             conn.execute(
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
@@ -269,6 +284,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     run_body=serialize_dagster_namedtuple(
                         run.with_tags(merge_dicts(current_tags, new_tags))
                     ),
+                    partition=partition,
+                    partition_set=partition_set,
                     update_timestamp=datetime.now(),
                 )
             )
@@ -507,7 +524,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             snapshot_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
                 snapshot_id=snapshot_id,
-                snapshot_body=zlib.compress(serialize_dagster_namedtuple(snapshot_obj).encode()),
+                snapshot_body=zlib.compress(
+                    serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
+                ),
                 snapshot_type=snapshot_type.value,
             )
             conn.execute(snapshot_insert)
@@ -530,6 +549,65 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         row = self.fetchone(query)
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
+
+    def _get_partition_runs(self, partition_set_name, partition_name):
+        # utility method to help test reads off of the partition column
+        if not self.has_built_index(RUN_PARTITIONS):
+            # query by tags
+            return self.get_runs(
+                filters=PipelineRunsFilter(
+                    tags={
+                        PARTITION_SET_TAG: partition_set_name,
+                        PARTITION_NAME_TAG: partition_name,
+                    }
+                )
+            )
+        else:
+            query = (
+                self._runs_query()
+                .where(RunsTable.c.partition == partition_name)
+                .where(RunsTable.c.partition_set == partition_set_name)
+            )
+            rows = self.fetchall(query)
+            return self._rows_to_runs(rows)
+
+    # Tracking data migrations over secondary indexes
+
+    def build_missing_indexes(self, print_fn=lambda _: None, force_rebuild_all=False):
+        for migration_name, migration_fn in RUN_DATA_MIGRATIONS.items():
+            if self.has_built_index(migration_name):
+                if not force_rebuild_all:
+                    continue
+            print_fn(f"Starting data migration: {migration_name}")
+            migration_fn()(self, print_fn)
+            self.mark_index_built(migration_name)
+            print_fn(f"Finished data migration: {migration_name}")
+
+    def has_built_index(self, migration_name):
+        query = (
+            db.select([1])
+            .where(SecondaryIndexMigrationTable.c.name == migration_name)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .limit(1)
+        )
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
+
+    def mark_index_built(self, migration_name):
+        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+            name=migration_name, migration_completed=datetime.now(),
+        )
+        with self.connect() as conn:
+            try:
+                conn.execute(query)
+            except db.exc.IntegrityError:
+                conn.execute(
+                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(SecondaryIndexMigrationTable.c.name == migration_name)
+                    .values(migration_completed=datetime.now())
+                )
 
     # Daemon heartbeats
 
@@ -578,7 +656,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def wipe_daemon_heartbeats(self):
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            DaemonHeartbeatsTable.drop(conn)  # pylint: disable=no-value-for-parameter
+            conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
@@ -592,7 +670,7 @@ def defensively_unpack_pipeline_snapshot_query(logger, row):
     def _warn(msg):
         logger.warning("get-pipeline-snapshot: {msg}".format(msg=msg))
 
-    if not isinstance(row[0], six.binary_type):
+    if not isinstance(row[0], bytes):
         _warn("First entry in row is not a binary type.")
         return None
 
@@ -603,7 +681,7 @@ def defensively_unpack_pipeline_snapshot_query(logger, row):
         return None
 
     try:
-        decoded_str = uncompressed_bytes.decode()
+        decoded_str = uncompressed_bytes.decode("utf-8")
     except UnicodeDecodeError:
         _warn("Could not unicode decode decompressed bytes stored in snapshot table.")
         return None

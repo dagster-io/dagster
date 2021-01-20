@@ -1,4 +1,5 @@
-{{- if .Values.celery.enabled }}
+{{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
+{{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,10 +13,10 @@ data:
   celery.yaml: |
     execution:
       celery:
-        broker:  "{{ template "dagster.celery.broker_url" . }}"
-        backend: "{{ template "dagster.celery.backend_url" . }}"
-        config_source:
-{{- if .Values.celery.configSource }}
-{{ toYaml .Values.celery.configSource | indent 10 }}
-{{- end -}}
+        broker: {{ include "dagster.celery.broker_url" . | quote }}
+        backend: {{ include "dagster.celery.backend_url" . | quote }}
+
+        {{- if $celeryK8sRunLauncherConfig.configSource }}
+        config_source: {{- $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 10 }}
+        {{- end }}
 {{- end }}

@@ -2,8 +2,9 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {Header} from 'src/ListComponents';
 import {AssetNumericHistoricalData} from 'src/assets/AssetView';
+import {Group} from 'src/ui/Group';
+import {Subheading} from 'src/ui/Text';
 
 export const AssetValueGraph: React.FunctionComponent<{
   label: string;
@@ -93,8 +94,10 @@ export const AssetValueGraph: React.FunctionComponent<{
   };
   return (
     <div style={{marginTop: 30, width: props.width}}>
-      <Header>{props.label}</Header>
-      <Line data={graphData} height={100} options={options} key={props.width} />
+      <Group direction="column" spacing={12}>
+        <Subheading>{props.label}</Subheading>
+        <Line data={graphData} height={100} options={options} key={props.width} />
+      </Group>
     </div>
   );
 };

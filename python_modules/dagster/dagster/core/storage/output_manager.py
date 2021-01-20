@@ -13,7 +13,7 @@ class IOutputManagerDefinition:
     @abstractproperty
     def output_config_schema(self):
         """The schema for per-output configuration for outputs that are managed by this
-        input manager"""
+        manager"""
 
 
 class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
@@ -67,7 +67,7 @@ class OutputManager(ABC):
 
     @abstractmethod
     def handle_output(self, context, obj):
-        """Handles an output produced by a solid. Often, this means materializing it to persistent
+        """Handles an output produced by a solid. Usually, this means materializing it to persistent
         storage.
 
         Args:
@@ -107,7 +107,7 @@ def output_manager(
         def csv_materializer(_, _resource_config):
             write_csv("some/path")
 
-        @solid(output_defs=[OutputDefinition(manager_key="csv_materializer_key")])
+        @solid(output_defs=[OutputDefinition(io_manager_key="csv_materializer_key")])
         def my_solid(_):
             return do_stuff()
 

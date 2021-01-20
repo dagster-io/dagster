@@ -23,10 +23,9 @@ def repository_location_handle_from_run(pipeline_run):
     )
 
 
-def external_pipeline_from_run_with_repository_location_handle(
-    pipeline_run, repository_location_handle
+def external_pipeline_from_location_handle(
+    repository_location_handle, pipeline_name, solid_selection
 ):
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(
         repository_location_handle, "repository_location_handle", RepositoryLocationHandle
     )
@@ -41,8 +40,8 @@ def external_pipeline_from_run_with_repository_location_handle(
     pipeline_selector = PipelineSelector(
         location_name=repo_location.name,
         repository_name=external_repo.name,
-        pipeline_name=pipeline_run.pipeline_name,
-        solid_selection=pipeline_run.solid_selection,
+        pipeline_name=pipeline_name,
+        solid_selection=solid_selection,
     )
 
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
@@ -55,6 +54,6 @@ def external_pipeline_from_run_with_repository_location_handle(
 @contextlib.contextmanager
 def external_pipeline_from_run(pipeline_run):
     with repository_location_handle_from_run(pipeline_run) as repo_location_handle:
-        yield external_pipeline_from_run_with_repository_location_handle(
-            pipeline_run, repo_location_handle
+        yield external_pipeline_from_location_handle(
+            repo_location_handle, pipeline_run.pipeline_name, pipeline_run.solid_selection
         )

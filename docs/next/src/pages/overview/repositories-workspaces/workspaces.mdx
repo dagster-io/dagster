@@ -3,39 +3,33 @@ import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
   title="Workspaces | Dagster"
-  description="Dagster Workspace is a collection of user-defined repositories and information about where they reside."
+  description="Dagster Workspaces are collections of user-defined repositories and information about where they reside."
 />
 
 # Workspaces
 
-Tools in Dagster ecosystem such as Dagit and the Dagster CLI (we will be focusing on Dagit for this guide)
-need to be able to know what user code to load. This process is managed by Dagster _workspaces_. A workspace
-is a collection of user-defined repositories and information about where they reside. Currently we
-support repositories residing in the same environment as Dagit itself, but we also support repositories
-living in separate virtual environments, cleanly separating dependencies from Dagit and each other.
-We refer to where a repository lives as a _repository location_.
-
-Currently the only repository location type we support is a python environment. We will be adding
-other location types (e.g containers) as the system develops.
+Tools in Dagster ecosystem such as Dagit and the Dagster CLI need to know where
+to find user code in order to load it. This process is managed by Dagster _workspaces_.
+A workspace is a collection of user-defined repositories and information about where they reside.
 
 ## Workspace YAML
 
-The structure of a workspace is encoded in a yaml document. By convention is it named `workspace.yaml`.
+The structure of a workspace is encoded in a yaml document. By convention is it named
+`workspace.yaml`.
 
-The goal of the workspace.yaml is to provide enough information to load all the repositories that the tool
-wants to have access to. We support two use cases:
+Each entry in the workspace is referred to as a _repository location_. A
+repository location can include more than one repository. Each repository location
+is loaded in its own server process that Dagster tools use an RPC protocol to communicate with.
+This process separation allows multiple repository locations in different environments to be
+loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
-- Loading in the current python environment.
-- Loading in a different python environment.
+## Python environments
 
-### Loading in the current environment
+If you want to load repositories from Python code, use the `python_file` or `python_package` keys
+in your workspace YAML.
 
-The user needs to provide the system either a path to the file or the name of an installed python
-package where a repository is defined.
-
-If there is only one repository defined in the target package or file it is automatically loaded.
-
-Example yaml for loading a single repository in a file:
+If you use `python_file`, it must specify a path relative to the workspace file leading to a file
+containing at least one repository definition. For example, the repository here:
 
 ```python caption=hello_world_repository.py
 from dagster import pipeline, repository, solid
@@ -53,34 +47,52 @@ def hello_world_repository():
     return [hello_world_pipeline]
 ```
 
+could be loaded using the following workspace file in the same folder:
+
 ```yaml caption=workspace.yaml
 load_from:
   - python_file: hello_world_repository.py
 ```
 
-Now if you type `dagit` in that folder it will automatically discover `workspace.yaml` and then
-load the repository in the same python environment. However the user code will reside in its own process.
-Dagit will not load the user code into its process.
+Sometimes you might have more than one repository in scope and want to specify a specific
+one. Our schema supports this as well through the `attribute` key, which must be a repository
+name or the name of a function that returns a `RepositoryDefinition`. For example:
 
-Sometimes you might have more than one repository in scope and you want to specify a specific
-one. Our schema supports as well:
+```yaml caption=workspace.yaml
+load_from:
+  - python_file:
+      relative_path: file_with_many_repositories.py
+      attribute: hello_world_repository
+```
+
+The example above also illustrates that the `python_file` key can be a single string if the
+only configuration needed is the relative file path, but must be a map if more parameters are added.
+
+By default, if you use `python_file` your code will load with no working directory available to
+resolve imports in your code. You can supply a custom working directory for relative imports using
+the `working_directory` key. For example:
 
 ```yaml caption=workspace.yaml
 load_from:
   - python_file:
       relative_path: hello_world_repository.py
-      attribute: hello_world_repository
+      working_directory: /var/my_working_directory/
 ```
 
-You can also load from an installed package.
+`python_package` can also be used instead of `python_file` to load code from an installed Python
+package.
 
 ```yaml caption=workspace.yaml
 load_from:
-  # works if hello_world_repository is installed by pip
-  - python_package: hello_world_repository
+  - python_package: hello_world_package
 ```
 
-Similarly you can also specify an attribute:
+A deprecated `python_module` key with similar semantics also exists, but you
+should prefer using either `python_package` if the code is in an installed package and does not
+require specifying a working directory, or `python_file` if it does not.
+
+You can also specify an attribute to identify a single repository within a package, as with
+`python_file`:
 
 ```yaml caption=workspace.yaml
 load_from:
@@ -89,45 +101,59 @@ load_from:
       attribute: hello_world_repository
 ```
 
-And lastly you can load multiple repositories from multiple packages:
+## Customizing the Python environment
 
-```yaml caption=workspace.yaml
-load_from:
-  - python_package: team_one
-  - python_package: team_two
-  - python_file: path/to/team_that_refuses_to_install_packages/repo.py
-```
+By default, Dagit and other Dagster tools assume that repository locations should be loaded using the same
+Python environment that was used to load Dagster. However, it is often useful for repository
+locations to use independent environments. For example, a data engineering team running Spark can
+have dramatically different dependencies than an ML team running Tensorflow.
 
-## Loading from an external environment
-
-### Python Environment
-
-It is useful for repositories to have independent environments. A data engineering
-team running Spark can have dramatically different dependencies than an ML team
-running Tensorflow. Dagster supports this by having its tools communicate with
-those user environments over an IPC layer. In order to do this you must configure
-your workspace to load the correct repository in the correct virtual environment.
+To enable this use case, Dagster supports customizing the Python environment for each repository
+location, by adding the `executable_path` key to the YAML for a location. These environments can
+involve distinct sets of installed dependencies, or even completely different Python versions.
 
 ```yaml literalinclude caption=workspace.yaml
 file:/docs_snippets/docs_snippets/overview/repositories_workspaces/python_environment_example.yaml
 ```
 
-Note that not only could these be distinct sets of installed dependencies, but they
-could also be completely different python versions.
+## Identifying repository locations
 
-### gRPC Server
+The example above also illustrates the `location_name` key. Each repository location in a workspace
+has a unique name that is displayed in Dagit, and is also used to disambiguate
+definitions with the same name across multiple repository locations. Dagster will supply a default name
+for each location based on its workspace entry if a custom one is not supplied.
 
-Using the built in Dagster gRPC Server, it is possible to interact with repositories that are
-completely remote. This allows for complete separation between tools like the Dagster CLI and Dagit
-and your repository code.
+Renaming a repository location (or changing its workspace configuration if you're using the default
+name) may cause parts of the Dagster system that rely on that name to need to be re-configured. For
+example, you may need to restart any schedules in that repository location, since those schedules
+were marked as started using the previous repository location name. You can avoid this situation
+by giving each of your locations a unique name as soon as you add them to the workspace.
 
-The Dagster gRPC server needs to have access to your code. This server is responsible for serving
-information about your repositories over gRPC. To initialize the server, you need to run
-the `dagster api grpc` command and pass it a target.
+## Repository locations in Dagit
 
-The target can be either either a python file or python module. The server will automatically find
-and load all repositories within the specified target. If you want to manually specify where to find
-a single repository within a target, you can use the `attribute` flag.
+If you run `dagit` in the same folder as a `workspace.yaml` file, it will load all the repositories
+in each repository location defined by the workspace. (You can also specify a different workspace
+file using the `-w` command-line argument).
+
+It's possible that one or more of your repository locations can't be loaded - for example, there
+might be a syntax error or some other unrecoverable error in one of your definitions. When this occurs,
+a warning message will appear in Dagit in the left-hand panel, directing you to a status page with
+an error message and stack trace for any locations that were unable to load.
+
+### Running your own gRPC server
+
+By default, Dagster tools will automatically create a server process on your local machine for
+each of your repository locations. However, it is also possible to run your own gRPC server
+that's responsible for serving information about your repositories. This can be useful in more
+complex system architectures that deploy user code separately from Dagit.
+
+The Dagster gRPC server needs to have access to your code. To initialize the server, run
+the `dagster api grpc` command and pass it a target file or module to load.
+
+Similar to when specifying code in your `workspace.yaml`, the target can be either a
+python file or installed python package, and you can use an 'attribute' flag to
+identify a single repository within that target. The server will automatically find
+and load the specified repositories.
 
 You also need to specify a host and either a post or socket to run the server on.
 
@@ -136,16 +162,16 @@ You also need to specify a host and either a post or socket to run the server on
 dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port 4266
 dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port /path/to/socket
 
-# Load gRPC Server using python module:
-dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
-dagster api grpc --module-name my_module_name --host 0.0.0.0 --socket /path/to/socket
+# Load gRPC Server using python package:
+dagster api grpc --package-name my_package_name --host 0.0.0.0 --port 4266
+dagster api grpc --package-name my_package_name --host 0.0.0.0 --socket /path/to/socket
 
 # Specify an attribute within the target to load a specific repository:
 dagster api grpc --python-file /path/to/file.py --attribute my_repository --host 0.0.0.0 --port 4266
-dagster api grpc --module-name my_module_name --attribute my_repository --host 0.0.0.0 --port 4266
+dagster api grpc --package-name my_package_name --attribute my_repository --host 0.0.0.0 --port 4266
 ```
 
-Then, in your `workspace.yaml`, you can configure a new gRPC server repository location to load from:
+Then, in your `workspace.yaml`, you can configure a new gRPC server repository location to load:
 
 ```yaml caption=workspace.yaml
 load_from:
@@ -154,13 +180,3 @@ load_from:
       port: 4266
       location_name: 'my_grpc_server'
 ```
-
-#### Executing runs against a gRPC Server:
-
-If you are using the <PyObject module="dagster.core.launcher" object="DefaultRunLauncher"/>, which is configured by
-default on your <PyObject module="dagster" object="DagsterInstance"/>, the run launcher will launch
-runs against your hosted gRPC server. The gRPC server needs to be able to access your run storage in
-order to be able to execute launched runs.
-
-If you have implemented a custom run launcher and would like to host your code using the Dagster
-gRPC server, please reach out to us.

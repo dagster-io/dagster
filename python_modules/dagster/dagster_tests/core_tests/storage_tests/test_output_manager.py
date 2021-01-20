@@ -8,22 +8,21 @@ from dagster import (
     DagsterType,
     EventMetadataEntry,
     Failure,
+    IOManager,
     InputDefinition,
     ModeDefinition,
-    ObjectManager,
     Output,
     OutputDefinition,
-    OutputManagerDefinition,
     RetryRequested,
     dagster_type_materializer,
     execute_pipeline,
-    object_manager,
+    io_manager,
     pipeline,
+    resource,
     solid,
 )
 from dagster.core.instance import InstanceRef
-from dagster.core.storage.input_manager import input_manager
-from dagster.core.storage.output_manager import output_manager
+from dagster.core.storage.output_manager import OutputManagerDefinition, output_manager
 
 
 def test_output_manager():
@@ -33,7 +32,7 @@ def test_output_manager():
     def my_output_manager(_context, obj):
         adict["result"] = obj
 
-    @solid(output_defs=[OutputDefinition(manager_key="my_output_manager")])
+    @solid(output_defs=[OutputDefinition(io_manager_key="my_output_manager")])
     def my_solid(_):
         return 5
 
@@ -53,7 +52,7 @@ def test_configurable_output_manager():
     def my_output_manager(context, obj):
         adict["result"] = (context.config, obj)
 
-    @solid(output_defs=[OutputDefinition(name="my_output", manager_key="my_output_manager")])
+    @solid(output_defs=[OutputDefinition(name="my_output", io_manager_key="my_output_manager")])
     def my_solid(_):
         return 5
 
@@ -66,43 +65,6 @@ def test_configurable_output_manager():
     )
 
     assert adict["result"] == ("a", 5)
-
-
-def test_separate_output_manager_input_manager():
-    adict = {}
-
-    @output_manager
-    def my_output_manager(_context, obj):
-        adict["result"] = obj
-
-    @input_manager
-    def my_input_manager(_context):
-        return adict["result"]
-
-    @solid(output_defs=[OutputDefinition(manager_key="my_output_manager")])
-    def my_solid(_):
-        return 5
-
-    @solid(input_defs=[InputDefinition("input1", manager_key="my_input_manager")])
-    def my_downstream_solid(_, input1):
-        return input1 + 1
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "my_input_manager": my_input_manager,
-                    "my_output_manager": my_output_manager,
-                }
-            )
-        ]
-    )
-    def my_pipeline():
-        my_downstream_solid(my_solid())
-
-    execute_pipeline(my_pipeline)
-
-    assert adict["result"] == 5
 
 
 def test_type_materializer_and_configurable_output_manager():
@@ -120,7 +82,9 @@ def test_type_materializer_and_configurable_output_manager():
 
     @solid(
         output_defs=[
-            OutputDefinition(name="output1", manager_key="my_output_manager", dagster_type=my_type),
+            OutputDefinition(
+                name="output1", io_manager_key="my_output_manager", dagster_type=my_type
+            ),
             OutputDefinition(name="output2", dagster_type=my_type),
         ]
     )
@@ -156,7 +120,9 @@ def test_type_materializer_and_nonconfigurable_output_manager():
 
     @solid(
         output_defs=[
-            OutputDefinition(name="output1", manager_key="my_output_manager", dagster_type=my_type),
+            OutputDefinition(
+                name="output1", io_manager_key="my_output_manager", dagster_type=my_type
+            ),
             OutputDefinition(name="output2", dagster_type=my_type),
         ]
     )
@@ -214,31 +180,13 @@ def test_output_manager_with_failure():
             ],
         )
 
-    @input_manager
-    def should_not_enter(_):
-        _called_input_manager = True
-
-    @solid(output_defs=[OutputDefinition(manager_key="should_fail")])
+    @solid(output_defs=[OutputDefinition(io_manager_key="should_fail")])
     def emit_str(_):
         return "emit"
 
-    @solid(
-        input_defs=[
-            InputDefinition(name="_input_str", dagster_type=str, manager_key="should_not_enter")
-        ]
-    )
-    def should_not_call(_, _input_str):
-        _called_solid = True
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"should_fail": should_fail, "should_not_enter": should_not_enter}
-            )
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"should_fail": should_fail})])
     def simple():
-        should_not_call(emit_str())
+        emit_str()
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
@@ -264,9 +212,9 @@ def test_output_manager_with_retries():
     _called = False
     _count = {"total": 0}
 
-    @object_manager
+    @io_manager
     def should_succeed(_):
-        class FakeObjectManager(ObjectManager):
+        class FakeIOManager(IOManager):
             def load_input(self, _context):
                 return "foo"
 
@@ -275,18 +223,18 @@ def test_output_manager_with_retries():
                     _count["total"] += 1
                     raise RetryRequested(max_retries=3)
 
-        return FakeObjectManager()
+        return FakeIOManager()
 
-    @object_manager
+    @io_manager
     def should_retry(_):
-        class FakeObjectManager(ObjectManager):
+        class FakeIOManager(IOManager):
             def load_input(self, _context):
                 return "foo"
 
             def handle_output(self, _context, _obj):
                 raise RetryRequested(max_retries=3)
 
-        return FakeObjectManager()
+        return FakeIOManager()
 
     @pipeline(
         mode_defs=[
@@ -296,13 +244,13 @@ def test_output_manager_with_retries():
         ]
     )
     def simple():
-        @solid(output_defs=[OutputDefinition(manager_key="should_succeed")],)
+        @solid(output_defs=[OutputDefinition(io_manager_key="should_succeed")],)
         def source_solid(_):
             return "foo"
 
         @solid(
             input_defs=[InputDefinition("solid_input")],
-            output_defs=[OutputDefinition(manager_key="should_retry")],
+            output_defs=[OutputDefinition(io_manager_key="should_retry")],
         )
         def take_input(_, solid_input):
             return solid_input
@@ -344,7 +292,9 @@ def test_output_manager_no_input_manager():
     def output_manager_alone(_):
         raise NotImplementedError()
 
-    @solid(output_defs=[OutputDefinition(name="output_alone", manager_key="output_manager_alone")])
+    @solid(
+        output_defs=[OutputDefinition(name="output_alone", io_manager_key="output_manager_alone")]
+    )
     def emit_str(_):
         raise NotImplementedError()
 
@@ -357,7 +307,7 @@ def test_output_manager_no_input_manager():
         match='Input "_str_input" of solid "ingest_str" is connected to output "output_alone" of '
         'solid "emit_str". In mode "default", that output does not have an output manager that '
         "knows how to load inputs, so we don't know how to load the input. To address this, "
-        "assign an InputManager to this input or assign an ObjectManager to the upstream output.",
+        "assign an IOManager to the upstream output.",
     ):
 
         @pipeline(
@@ -376,7 +326,7 @@ def test_output_manager_resource_config():
     def emit_foo(context, _obj):
         assert context.resource_config["is_foo"] == "yes"
 
-    @solid(output_defs=[OutputDefinition(manager_key="emit_foo")])
+    @solid(output_defs=[OutputDefinition(io_manager_key="emit_foo")])
     def basic_solid(_):
         return "foo"
 
@@ -389,3 +339,78 @@ def test_output_manager_resource_config():
     )
 
     assert result.success
+
+
+def test_output_manager_required_resource_keys():
+    @resource
+    def foo_resource(_):
+        return "foo"
+
+    @output_manager(required_resource_keys={"foo_resource"})
+    def output_manager_reqs_resources(context, _obj):
+        assert context.resources.foo_resource == "foo"
+
+    @solid(
+        output_defs=[
+            OutputDefinition(dagster_type=str, io_manager_key="output_manager_reqs_resources")
+        ]
+    )
+    def big_solid(_):
+        return "output"
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "output_manager_reqs_resources": output_manager_reqs_resources,
+                    "foo_resource": foo_resource,
+                }
+            )
+        ]
+    )
+    def basic_pipeline():
+        big_solid()
+
+    result = execute_pipeline(basic_pipeline)
+
+    assert result.success
+
+
+def test_manager_not_provided():
+    @solid(output_defs=[OutputDefinition(io_manager_key="not_here")])
+    def solid_requires_manager(_, _input):
+        return "foo"
+
+    @pipeline
+    def basic():
+        solid_requires_manager()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Output "result" for solid "solid_requires_manager" requires io_manager_key "not_here", but no '
+        "resource has been provided. Please include a resource definition for that key in the "
+        "resource_defs of your ModeDefinition.",
+    ):
+        execute_pipeline(basic)
+
+
+def test_resource_not_output_manager():
+    @resource
+    def resource_not_manager(_):
+        return "foo"
+
+    @solid(output_defs=[OutputDefinition(io_manager_key="not_manager")])
+    def solid_requires_manager(_):
+        return "foo"
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
+    def basic():
+        solid_requires_manager()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Output "result" for solid "solid_requires_manager" requires io_manager_key '
+        '"not_manager", but the resource definition provided is not an '
+        "IOutputManagerDefinition",
+    ):
+        execute_pipeline(basic)

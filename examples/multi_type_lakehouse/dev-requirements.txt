@@ -1,3 +1,0 @@
-pandas
-pyarrow; python_version < '3.9'
-pyspark

@@ -108,6 +108,7 @@ def step_did_fail_in_records(records, step_key):
         record.step_key == step_key
         and record.dagster_event.event_type_value == DagsterEventType.STEP_FAILURE.value
         for record in records
+        if record.is_dagster_event
     )
 
 
@@ -116,6 +117,7 @@ def step_did_succeed_in_records(records, step_key):
         record.step_key == step_key
         and record.dagster_event.event_type_value == DagsterEventType.STEP_SUCCESS.value
         for record in records
+        if record.is_dagster_event
     )
 
 
@@ -129,4 +131,5 @@ def step_did_not_run_in_records(records, step_key):
             DagsterEventType.STEP_SKIPPED.value,
         )
         for record in records
+        if record.is_dagster_event
     )

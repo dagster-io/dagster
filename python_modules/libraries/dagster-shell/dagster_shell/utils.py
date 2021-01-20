@@ -24,7 +24,6 @@ import os
 import signal
 from subprocess import PIPE, STDOUT, Popen
 
-import six
 from dagster import check
 from dagster.utils import safe_tempfile_path
 
@@ -66,7 +65,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
         os.setsid()
 
     with open(shell_script_path, "rb") as f:
-        shell_command = six.ensure_str(f.read())
+        shell_command = f.read().decode("utf-8")
 
     log.info("Running command:\n{command}".format(command=shell_command))
 
@@ -89,7 +88,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     # Stream back logs as they are emitted
     if output_logging == "STREAM":
         for raw_line in iter(sub_process.stdout.readline, b""):
-            line = six.ensure_str(raw_line)
+            line = raw_line.decode("utf-8")
             log.info(line.rstrip())
             output += line
 
@@ -98,7 +97,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     # Collect and buffer all logs, then emit
     if output_logging == "BUFFER":
         output = "".join(
-            [six.ensure_str(raw_line) for raw_line in iter(sub_process.stdout.readline, b"")]
+            [raw_line.decode("utf-8") for raw_line in iter(sub_process.stdout.readline, b"")]
         )
         log.info(output)
 
@@ -138,7 +137,7 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
         log.info("Using temporary directory: %s" % tmp_path)
 
         with open(tmp_file_path, "wb") as tmp_file:
-            tmp_file.write(six.ensure_binary(shell_command))
+            tmp_file.write(shell_command.encode("utf-8"))
             tmp_file.flush()
             script_location = os.path.abspath(tmp_file.name)
             log.info("Temporary script location: {location}".format(location=script_location))

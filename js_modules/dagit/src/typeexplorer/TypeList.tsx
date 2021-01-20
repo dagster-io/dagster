@@ -4,14 +4,14 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from 'src/SidebarComponents';
-import {TypeWithTooltip} from 'src/TypeWithTooltip';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from 'src/TypeWithTooltip';
 import {TypeListFragment} from 'src/typeexplorer/types/TypeListFragment';
 
 interface ITypeListProps {
   types: Array<TypeListFragment>;
 }
 
-function groupTypes(types: Array<TypeListFragment>) {
+function groupTypes(types: TypeListFragment[]): {[key: string]: TypeListFragment[]} {
   const groups = {
     Custom: Array<TypeListFragment>(),
     'Built-in': Array<TypeListFragment>(),
@@ -26,46 +26,39 @@ function groupTypes(types: Array<TypeListFragment>) {
   return groups;
 }
 
-export class TypeList extends React.Component<ITypeListProps> {
-  static fragments = {
-    TypeListFragment: gql`
-      fragment TypeListFragment on DagsterType {
-        name
-        isBuiltin
-        ...DagsterTypeWithTooltipFragment
-      }
+export const TypeList: React.FC<ITypeListProps> = (props) => {
+  const groups = groupTypes(props.types);
+  return (
+    <>
+      <SidebarSubhead />
+      <SectionInner>
+        <SidebarTitle>Pipeline Types</SidebarTitle>
+      </SectionInner>
+      {Object.keys(groups).map((title, idx) => (
+        <SidebarSection key={idx} title={title} collapsedByDefault={idx !== 0}>
+          <UL>
+            {groups[title].map((type, i) => (
+              <TypeLI key={i}>
+                <TypeWithTooltip type={type} />
+              </TypeLI>
+            ))}
+          </UL>
+        </SidebarSection>
+      ))}
+      <H3 />
+    </>
+  );
+};
 
-      ${TypeWithTooltip.fragments.DagsterTypeWithTooltipFragment}
-    `,
-  };
-
-  renderTypes(types: TypeListFragment[]) {
-    return types.map((type, i) => (
-      <TypeLI key={i}>
-        <TypeWithTooltip type={type} />
-      </TypeLI>
-    ));
+export const TYPE_LIST_FRAGMENT = gql`
+  fragment TypeListFragment on DagsterType {
+    name
+    isBuiltin
+    ...DagsterTypeWithTooltipFragment
   }
 
-  render() {
-    const groups = groupTypes(this.props.types);
-
-    return (
-      <>
-        <SidebarSubhead />
-        <SectionInner>
-          <SidebarTitle>Pipeline Types</SidebarTitle>
-        </SectionInner>
-        {Object.keys(groups).map((title, idx) => (
-          <SidebarSection key={idx} title={title} collapsedByDefault={idx !== 0}>
-            <UL>{this.renderTypes(groups[title])}</UL>
-          </SidebarSection>
-        ))}
-        <H3 />
-      </>
-    );
-  }
-}
+  ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
+`;
 
 const TypeLI = styled.li`
   text-overflow: ellipsis;

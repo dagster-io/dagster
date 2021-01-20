@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SensorSelector, JobTickStatus } from "./../../types/globalTypes";
+import { SensorSelector, JobType, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorTickHistoryQuery
@@ -40,6 +40,7 @@ export interface SensorTickHistoryQuery_sensorOrError_Sensor_sensorState_ticks {
 export interface SensorTickHistoryQuery_sensorOrError_Sensor_sensorState {
   __typename: "JobState";
   id: string;
+  jobType: JobType;
   ticks: SensorTickHistoryQuery_sensorOrError_Sensor_sensorState_ticks[];
 }
 

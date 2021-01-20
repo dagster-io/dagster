@@ -248,27 +248,25 @@ export const GraphQueryInput = React.memo(
     isEqual(prevProps.presets, nextProps.presets),
 );
 
-(GraphQueryInput as any).fragments = {
-  SolidQueryInputSolidFragment: gql`
-    fragment SolidQueryInputSolidFragment on Solid {
-      name
-      inputs {
-        dependsOn {
-          solid {
-            name
-          }
-        }
-      }
-      outputs {
-        dependedBy {
-          solid {
-            name
-          }
+export const SOLID_QUERY_INPUT_SOLID_FRAGMENT = gql`
+  fragment SolidQueryInputSolidFragment on Solid {
+    name
+    inputs {
+      dependsOn {
+        solid {
+          name
         }
       }
     }
-  `,
-};
+    outputs {
+      dependedBy {
+        solid {
+          name
+        }
+      }
+    }
+  }
+`;
 
 const GraphQueryInputField = styled(InputGroup)`
   font-size: 14px;

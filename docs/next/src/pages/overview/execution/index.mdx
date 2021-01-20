@@ -8,11 +8,11 @@ import PyObject from 'components/PyObject';
 
 # Executing Pipelines
 
-We provide several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the [schedules](/overview/scheduling-partitions/schedules) section.
+We provide several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the [schedules](/overview/schedules-sensors/schedules) section.
 
 ## Dagit
 
-The Dagit [playground](/overview/dagit#playground) offers a way to interactively build up the configuration for a run of a pipeline. Drops downs are available for selecting any defined <PyObject module="dagster" object="PresetDefinition" displayText='Presets' /> or [partitions](/overview/scheduling-partitions/partitions)
+The Dagit [playground](/overview/dagit#playground) offers a way to interactively build up the configuration for a run of a pipeline. Drops downs are available for selecting any defined <PyObject module="dagster" object="PresetDefinition" displayText='Presets' /> or [partitions](/overview/partitions-backfill/partitions)
 
 ## CLI
 
@@ -48,10 +48,19 @@ startAfter:start_script
 endBefore:end_script
 ```
 
-If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using dagit or the cli. You will also need to configure the intermediate values between solids to be stored in a way that they can be accessed across processes.
+If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using dagit or the cli.
 
 ```python literalinclude caption=execute.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
 startAfter:start_multi_proc
 endBefore:end_multi_proc
+```
+
+You will also need to configure the intermediate values between solids to be stored in a way that they can be accessed across processes.
+See the [IO Managers Overview](/overview/io-managers/io-managers) for more details.
+
+```python literalinclude caption=pipeline_def.py
+file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
+startAfter:start_pipeline_def_multi_proc
+endBefore:end_pipeline_def_multi_proc
 ```

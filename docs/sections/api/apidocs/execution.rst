@@ -154,7 +154,7 @@ Run Config Schema
 
 Intermediate Storage
 --------------------
-.. autofunction:: object_manager_from_intermediate_storage
+.. autofunction:: io_manager_from_intermediate_storage
 
 .. autodata:: mem_intermediate_storage
   :annotation: IntermediateStorageDefinition

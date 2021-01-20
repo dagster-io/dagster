@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {TICK_TAG_FRAGMENT} from 'src/JobTick';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
@@ -60,7 +60,7 @@ export const JOB_STATE_FRAGMENT = gql`
     runningCount
   }
   ${REPOSITORY_ORIGIN_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
 `;
 

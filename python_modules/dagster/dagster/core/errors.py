@@ -21,7 +21,16 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.utils.interrupts import raise_interrupts_as
-from future.utils import raise_from
+
+
+class DagsterExecutionInterruptedError(BaseException):
+    """
+    Pipeline execution was interrupted during the execution process.
+
+    Just like KeyboardInterrupt this inherits from BaseException
+    as to not be accidentally caught by code that catches Exception
+    and thus prevent the interpreter from exiting.
+    """
 
 
 class DagsterError(Exception):
@@ -133,17 +142,6 @@ class DagsterStepOutputNotFoundError(DagsterError):
         super(DagsterStepOutputNotFoundError, self).__init__(*args, **kwargs)
 
 
-def _add_inner_exception_for_py2(msg, exc_info):
-    if sys.version_info[0] == 2:
-        return (
-            msg
-            + "\n\nThe above exception was the direct cause of the following exception:\n\n"
-            + "".join(traceback.format_exception(*exc_info))
-        )
-
-    return msg
-
-
 @contextmanager
 def raise_execution_interrupts():
     with raise_interrupts_as(DagsterExecutionInterruptedError):
@@ -191,9 +189,9 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
         except Exception as e:  # pylint: disable=W0703
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
-            raise_from(
-                error_cls(msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
-            )
+            raise error_cls(
+                msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs
+            ) from e
 
 
 class DagsterUserCodeExecutionError(DagsterError):
@@ -217,9 +215,7 @@ class DagsterUserCodeExecutionError(DagsterError):
 
         check.invariant(original_exc_info[0] is not None)
 
-        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
-
-        super(DagsterUserCodeExecutionError, self).__init__(msg, *args[1:], **kwargs)
+        super(DagsterUserCodeExecutionError, self).__init__(args[0], *args[1:], **kwargs)
 
         self.user_exception = check.opt_inst_param(user_exception, "user_exception", Exception)
         self.original_exc_info = original_exc_info
@@ -400,6 +396,10 @@ class DagsterBackfillFailedError(DagsterError):
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
 
 
+class DagsterScheduleWipeRequired(DagsterError):
+    """Indicates that the user must wipe their stored schedule state."""
+
+
 class DagsterInstanceMigrationRequired(DagsterError):
     """Indicates that the dagster instance must be migrated."""
 
@@ -498,10 +498,6 @@ class JobError(DagsterUserCodeExecutionError):
 
 class DagsterUnknownStepStateError(DagsterError):
     """When pipeline execution complete with steps in an unknown state"""
-
-
-class DagsterExecutionInterruptedError(DagsterError):
-    """Pipeline execution was interrupted during the execution process."""
 
 
 class DagsterObjectStoreError(DagsterError):

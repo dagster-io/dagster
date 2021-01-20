@@ -4,7 +4,6 @@ import errno
 import functools
 import inspect
 import os
-import pickle
 import re
 import signal
 import socket
@@ -14,16 +13,15 @@ import tempfile
 import threading
 from collections import namedtuple
 from enum import Enum
+from typing import Iterator
 from warnings import warn
 
 import _thread as thread
-import six
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
-from six.moves import configparser
 
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
@@ -38,7 +36,6 @@ EPOCH = datetime.datetime.utcfromtimestamp(0)
 PICKLE_PROTOCOL = 4
 
 
-DEFAULT_REPOSITORY_YAML_FILENAME = "repository.yaml"
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 
@@ -154,10 +151,10 @@ class frozendict(dict):
 
     __setitem__ = __readonly__
     __delitem__ = __readonly__
-    pop = __readonly__
+    pop = __readonly__  # type: ignore[assignment]
     popitem = __readonly__
     clear = __readonly__
-    update = __readonly__
+    update = __readonly__  # type: ignore[assignment]
     setdefault = __readonly__
     del __readonly__
 
@@ -178,7 +175,7 @@ class frozenlist(list):
     def __setstate__(self, state):
         self.__init__(state)
 
-    __setitem__ = __readonly__
+    __setitem__ = __readonly__  # type: ignore[assignment]
     __delitem__ = __readonly__
     append = __readonly__
     clear = __readonly__
@@ -187,7 +184,7 @@ class frozenlist(list):
     pop = __readonly__
     remove = __readonly__
     reverse = __readonly__
-    sort = __readonly__
+    sort = __readonly__  # type: ignore[assignment]
 
     def __hash__(self):
         return hash(tuple(self))
@@ -257,7 +254,7 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
             raise cpe
 
 
-def safe_tempfile_path_unmanaged():
+def safe_tempfile_path_unmanaged() -> str:
     # This gets a valid temporary file path in the safest possible way, although there is still no
     # guarantee that another process will not create a file at this path. The NamedTemporaryFile is
     # deleted when the context manager exits and the file object is closed.
@@ -273,7 +270,7 @@ def safe_tempfile_path_unmanaged():
 
 
 @contextlib.contextmanager
-def safe_tempfile_path():
+def safe_tempfile_path() -> Iterator[str]:
     try:
         path = safe_tempfile_path_unmanaged()
         yield path
@@ -453,7 +450,7 @@ def is_enum_value(value):
 
 
 def git_repository_root():
-    return six.ensure_str(subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip())
+    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
 def segfault():

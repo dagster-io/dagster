@@ -28,7 +28,7 @@ def build_key(run_id, step_key, output_name):
 
 def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):
     file_manager = S3FileManager(mock_s3_resource.meta.client, mock_s3_bucket.name, "some-key")
-    body = "foo".encode()
+    body = b"foo"
 
     file_handle = file_manager.write_data(body)
     assert mock_s3_bucket.Object(file_handle.s3_key).get()["Body"].read() == body
@@ -39,7 +39,7 @@ def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):
 
 
 def test_s3_file_manager_read(mock_s3_resource, mock_s3_bucket):
-    body = "bar".encode()
+    body = b"bar"
     remote_s3_object = mock_s3_bucket.Object("some-key/foo")
     remote_s3_object.put(Body=body)
 
@@ -96,7 +96,7 @@ def test_depends_on_s3_resource_intermediates(mock_s3_bucket):
 
 
 def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
-    bar_bytes = "bar".encode()
+    bar_bytes = b"bar"
 
     @solid(output_defs=[OutputDefinition(S3FileHandle)], required_resource_keys={"file_manager"})
     def emit_file(context):

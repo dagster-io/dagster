@@ -54,7 +54,11 @@ export class CustomAlertProvider extends React.Component {
                 const copyElement = alert?.copySelector
                   ? this.bodyRef.current!.querySelector(alert.copySelector)
                   : this.bodyRef.current;
-                copyValue(e, copyElement?.textContent || '');
+                const copyText =
+                  copyElement instanceof HTMLElement
+                    ? copyElement.innerText
+                    : copyElement?.textContent;
+                copyValue(e, copyText || '');
               }}
             >
               Copy

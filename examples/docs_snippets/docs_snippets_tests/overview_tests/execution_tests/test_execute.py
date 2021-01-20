@@ -1,7 +1,9 @@
 from dagster import (
     DagsterInstance,
+    ModeDefinition,
     execute_pipeline,
     execute_solid,
+    fs_io_manager,
     pipeline,
     reconstructable,
     solid,
@@ -14,9 +16,24 @@ def always_blue(_):
     return "blue"
 
 
-@pipeline
+# start_pipeline_def_multi_proc
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                # This section controls how values will be passed from one solid to the next.
+                # The default is in memory, so here we set it to filesystem to allow the
+                # separate subprocess to get the values
+                "io_manager": fs_io_manager
+            }
+        )
+    ]
+)
 def predict_color():
     always_blue()
+
+
+# end_pipeline_def_multi_proc
 
 
 # start_exec_pipeline
@@ -52,10 +69,6 @@ def test_multiprocess_executor():
             # This section controls how the run will be executed.
             # The multiprocess executor runs each step in its own sub process.
             "execution": {"multiprocess": {}},
-            # This section controls how values will be passed from one solid to the next.
-            # The default is in memory, so here we set it to filesystem to allow the
-            # separate subprocess to get the values
-            "intermediate_storage": {"filesystem": {}},
         },
         # The default instance for this API is an in memory ephemeral one.
         # To allow the multiple processes to coordinate we use one here

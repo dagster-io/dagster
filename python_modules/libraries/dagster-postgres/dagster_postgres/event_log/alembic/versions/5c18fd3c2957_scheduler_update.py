@@ -24,16 +24,16 @@ def upgrade():
     if instance.scheduler:
         instance.scheduler.wipe(instance)
 
-    if has_table("schedules"):
-        op.drop_table("schedules")
+    #   No longer dropping the "schedules" table here, since
+    #   the 0.10.0 migration checks for the presence of the "schedules"
+    #   table during the migration from the "schedules" table to the "jobs"
+    #   table - see create_0_10_0_schedule_ tables
+    #   if has_table("schedules"):
+    #       op.drop_table("schedules")
 
     if has_table("schedule_ticks"):
         op.drop_table("schedule_ticks")
 
 
 def downgrade():
-    if has_table("schedules"):
-        op.drop_table("schedules")
-
-    if has_table("schedule_ticks"):
-        op.drop_table("schedule_ticks")
+    pass

@@ -30,9 +30,13 @@ setup(
         "virtualenv==16.5.0",
         "wheel==0.33.6",
         "urllib3==1.25.9",
+        # resolve issue with aiohttp pin of chardet for aiohttp<=3.7.3, req'd by slackclient
+        # https://github.com/dagster-io/dagster/issues/3539
+        "chardet<4.0",
     ],
     entry_points={
         "console_scripts": [
+            "dagster-buildkite = automation.buildkite.cli:main",
             "dagster-docs = automation.docs.cli:main",
             "dagster-image = automation.docker.cli:main",
             "dagster-release = automation.release.cli:main",

@@ -1,11 +1,11 @@
 import datetime
-import warnings
 
 import pendulum
 from dagster import check
+from dagster.core.definitions.partition import Partition, PartitionSetDefinition
+from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.schedules import schedule_execution_time_iterator
-from dateutil.relativedelta import relativedelta
 
 DEFAULT_MONTHLY_FORMAT = "%Y-%m"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -13,43 +13,9 @@ DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE = "%Y-%m-%d-%H:%M"
 DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE = DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE + "%z"
 
 
-# Remove this when the 'delta' param to date_partition_range is removed
-def _delta_to_delta_range(delta):
-    check.opt_inst_param(delta, "delta", (datetime.timedelta, relativedelta))
-    if isinstance(delta, relativedelta) and delta.months > 0:
-        # Ensure that only months was set
-        check.invariant(relativedelta(months=delta.months) == delta)
-        return ("months", delta.months)
-    elif isinstance(delta, relativedelta) and delta.weeks > 0:
-        # Ensure that only weeks was set
-        check.invariant(relativedelta(weeks=delta.weeks) == delta)
-        return ("weeks", delta.weeks)
-    elif delta.days > 0:
-        # Ensure that only days was set
-        check.invariant(type(delta)(days=delta.days) == delta)
-        return ("days", delta.days)
-    elif isinstance(delta, relativedelta) and delta.hours > 0:
-        # Ensure that only hours was set
-        check.invariant(relativedelta(hours=delta.hours) == delta)
-        return ("hours", delta.hours)
-    elif isinstance(delta, relativedelta) and delta.minutes > 0:
-        # Ensure that only minutes was set
-        check.invariant(relativedelta(minutes=delta.minutes) == delta)
-        return ("minutes", delta.minutes)
-    elif delta.seconds > 0:
-        check.invariant(type(delta)(seconds=delta.seconds) == delta)
-        return ("seconds", delta.seconds)
-    else:
-        check.failed(
-            "Unable to create a partition range with delta {delta}".format(delta=repr(delta))
-        )
-
-
 def schedule_partition_range(
     start, end, cron_schedule, fmt, timezone, execution_time_to_partition_fn,
 ):
-    from dagster.core.definitions.partition import Partition
-
     check.inst_param(start, "start", datetime.datetime)
     check.opt_inst_param(end, "end", datetime.datetime)
     check.str_param(cron_schedule, "cron_schedule")
@@ -100,7 +66,7 @@ def schedule_partition_range(
 
 
 def date_partition_range(
-    start, end=None, delta=None, delta_range="days", fmt=None, inclusive=False, timezone=None,
+    start, end=None, delta_range="days", fmt=None, inclusive=False, timezone=None,
 ):
     """ Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
@@ -110,8 +76,6 @@ def date_partition_range(
         end  (Optional(datetime)): Datetime capturing the end of the partition.  By default, the
                                    current time is used.  The range is not inclusive of the end
                                    value.
-        delta (Optional(timedelta)): Timedelta representing the time duration of each partition.
-            DEPRECATED: use 'delta_range' instead, which handles timezone transitions correctly.
         delta_range (Optional(str)): string representing the time duration of each partition.
             Must be a valid argument to pendulum.period.range ("days", "hours", "months", etc.).
         fmt (Optional(str)): Format string to represent each partition by its start time
@@ -125,28 +89,14 @@ def date_partition_range(
     Returns:
         Callable[[], List[Partition]]
     """
-    from dagster.core.definitions.partition import Partition
 
     check.inst_param(start, "start", datetime.datetime)
     check.opt_inst_param(end, "end", datetime.datetime)
-    check.opt_str_param(delta_range, "delta_range")
+    check.str_param(delta_range, "delta_range")
     fmt = check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)
     check.opt_str_param(timezone, "timezone")
 
-    check.opt_inst_param(delta, "delta", (datetime.timedelta, relativedelta))
-
-    if delta:
-        check.invariant(not delta_range, "cannot supply both 'delta' and 'delta_range' parameters")
-        warnings.warn(
-            "The 'delta' argument to date_partition_range has been deprecated - use 'delta_range' "
-            "instead, which has better support for timezones. For example, if you previously "
-            "passed in delta=timedelta(days=1), pass in delta_range='days' instead. The 'delta' "
-            "argument will be removed in the dagster 0.10.0 release."
-        )
-        delta_range, delta_amount = _delta_to_delta_range(delta)
-    else:
-        check.invariant(delta_range, "Must include either a 'delta' or 'delta_range' parameter")
-        delta_amount = 1
+    delta_amount = 1
 
     if end and start > end:
         raise DagsterInvariantViolationError(
@@ -185,3 +135,98 @@ def date_partition_range(
         return date_names[:-1]
 
     return get_date_range_partitions
+
+
+def identity_partition_selector(context, partition_set_def):
+    """ Utility function for supplying a partition selector when creating a schedule from a
+    partition set made of `datetime`s that assumes the schedule always executes at the
+    partition time.
+
+    It's important that the cron string passed into `create_schedule_definition` match
+    the partition set times. For example, a schedule created from a partition set with partitions for each day at
+    midnight would create its partition selector as follows:
+
+    .. code-block:: python
+
+        partition_set = PartitionSetDefinition(
+            name='hello_world_partition_set',
+            pipeline_name='hello_world_pipeline',
+            partition_fn= date_partition_range(
+                start=datetime.datetime(2021, 1, 1),
+                delta_range="days",
+                timezone="US/Central",
+            )
+            run_config_fn_for_partition=my_run_config_fn,
+        )
+
+        schedule_definition = partition_set.create_schedule_definition(
+            "hello_world_daily_schedule",
+            "0 0 * * *",
+            partition_selector=identity_partition_selector,
+            execution_timezone="US/Central",
+        )
+    """
+
+    return create_offset_partition_selector(lambda d: d)(context, partition_set_def)
+
+
+def create_offset_partition_selector(execution_time_to_partition_fn):
+    """ Utility function for supplying a partition selector when creating a schedule from a
+    partition set made of `datetime`s that assumes a fixed time offset between the partition
+    time and the time at which the schedule executes.
+
+    It's important to keep the cron string that's supplied to
+    `PartitionSetDefinition.create_schedule_definition` in sync with the offset that's
+    supplied to this function. For example, a schedule created from a partition set with
+    partitions for each day at midnight that fills in the partition for day N at day N+1 at
+    10:00AM would create the partition selector as follows:
+
+    .. code-block:: python
+
+        partition_set = PartitionSetDefinition(
+            name='hello_world_partition_set',
+            pipeline_name='hello_world_pipeline',
+            partition_fn= date_partition_range(
+                start=datetime.datetime(2021, 1, 1),
+                delta_range="days",
+                timezone="US/Central",
+            )
+            run_config_fn_for_partition=my_run_config_fn,
+        )
+
+        schedule_definition = partition_set.create_schedule_definition(
+            "daily_10am_schedule",
+            "0 10 * * *",
+            partition_selector=create_offset_partition_selector(lambda d: d.subtract(hours=10, days=1))
+            execution_timezone="US/Central",
+        )
+
+    Args:
+        execution_time_to_partition_fn (Callable[[datetime.datetime], datetime.datetime]): A
+        function that maps the execution time of the schedule to the partition time.
+    """
+
+    check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
+
+    def offset_partition_selector(context, partition_set_def):
+        check.inst_param(context, "context", ScheduleExecutionContext)
+        check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
+
+        if not context.scheduled_execution_time:
+            partitions = partition_set_def.get_partitions()
+            if not partitions:
+                return None
+            return partitions[-1]
+
+        partition_time = execution_time_to_partition_fn(context.scheduled_execution_time)
+
+        for partition in reversed(partition_set_def.get_partitions()):
+            if partition.value.isoformat() == partition_time.isoformat():
+                return partition
+
+            if partition.value < partition_time:
+                break
+
+        return None
+
+    return offset_partition_selector

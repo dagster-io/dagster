@@ -3,13 +3,12 @@ import os
 import subprocess
 
 import pytest
-import six
 from dagster import check
 from dagster.utils import file_relative_path
 
 
 def git_repo_root():
-    return six.ensure_str(subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip())
+    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
 
 
 def assert_documented_exports(module_name, module, whitelist=None):

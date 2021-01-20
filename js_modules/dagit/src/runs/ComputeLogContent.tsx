@@ -23,17 +23,6 @@ const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
 
 export class ComputeLogContent extends React.Component<IComputeLogContentProps> {
-  static fragments = {
-    ComputeLogContentFragment: gql`
-      fragment ComputeLogContentFileFragment on ComputeLogFile {
-        path
-        cursor
-        data
-        downloadUrl
-      }
-    `,
-  };
-
   private timeout: number;
   private stdout = React.createRef<ScrollContainer>();
   private stderr = React.createRef<ScrollContainer>();
@@ -225,6 +214,15 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
     );
   }
 }
+
+export const COMPUTE_LOG_CONTENT_FRAGMENT = gql`
+  fragment ComputeLogContentFileFragment on ComputeLogFile {
+    path
+    cursor
+    data
+    downloadUrl
+  }
+`;
 
 interface IScrollContainerProps {
   content: string | null | undefined;

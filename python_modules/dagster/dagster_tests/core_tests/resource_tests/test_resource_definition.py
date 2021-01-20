@@ -24,6 +24,7 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvali
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
+from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.test_utils import instance_for_test
 
 
@@ -938,7 +939,11 @@ def test_single_step_resource_event_logs():
         result = execute_run(InMemoryPipeline(pipeline), pipeline_run, instance)
 
         assert result.success
-        log_messages = [event for event in events if isinstance(event, LogMessageRecord)]
+        log_messages = [
+            event
+            for event in events
+            if isinstance(event, LogMessageRecord) and event.level == coerce_valid_log_level("INFO")
+        ]
         assert len(log_messages) == 2
 
         resource_log_message = next(

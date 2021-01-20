@@ -112,8 +112,6 @@ def test_forward_compat_serdes_new_enum_field():
     assert unpacked.value == corge.value
 
 
-# This behavior isn't possible on 2.7 because of `inspect` limitations
-@pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
 def test_backward_compat_serdes():
     _TEST_WHITELIST_MAP = _initial_whitelist_map()
 
@@ -148,9 +146,6 @@ def serdes_test_class(klass):
     return _whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)(klass)
 
 
-@pytest.mark.skipif(
-    sys.version_info.major < 3, reason="Serdes declaration time checks python 3 only"
-)
 def test_wrong_first_arg():
     with pytest.raises(SerdesClassUsageError) as exc_info:
 
@@ -165,9 +160,6 @@ def test_wrong_first_arg():
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info.major < 3, reason="Serdes declaration time checks python 3 only"
-)
 def test_incorrect_order():
     with pytest.raises(SerdesClassUsageError) as exc_info:
 
@@ -184,9 +176,6 @@ def test_incorrect_order():
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info.major < 3, reason="Serdes declaration time checks python 3 only"
-)
 def test_missing_one_parameter():
     with pytest.raises(SerdesClassUsageError) as exc_info:
 
@@ -204,9 +193,6 @@ def test_missing_one_parameter():
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info.major < 3, reason="Serdes declaration time checks python 3 only"
-)
 def test_missing_many_parameters():
     with pytest.raises(SerdesClassUsageError) as exc_info:
 

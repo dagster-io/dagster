@@ -7,7 +7,12 @@ import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtual
 import styled from 'styled-components/macro';
 
 import {IRunMetadataDict} from 'src/RunMetadataProvider';
-import * as LogsRow from 'src/runs/LogsRow';
+import {
+  LOGS_ROW_STRUCTURED_FRAGMENT,
+  LOGS_ROW_UNSTRUCTURED_FRAGMENT,
+  Structured,
+  Unstructured,
+} from 'src/runs/LogsRow';
 import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
 import {LogsScrollingTableMessageFragment} from 'src/runs/types/LogsScrollingTableMessageFragment';
 
@@ -32,19 +37,6 @@ interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
 }
 
 export class LogsScrollingTable extends React.Component<ILogsScrollingTableProps> {
-  static fragments = {
-    LogsScrollingTableMessageFragment: gql`
-      fragment LogsScrollingTableMessageFragment on PipelineRunEvent {
-        __typename
-        ...LogsRowStructuredFragment
-        ...LogsRowUnstructuredFragment
-      }
-
-      ${LogsRow.Structured.fragments.LogsRowStructuredFragment}
-      ${LogsRow.Unstructured.fragments.LogsRowUnstructuredFragment}
-    `,
-  };
-
   table = React.createRef<LogsScrollingTableSized>();
 
   render() {
@@ -69,6 +61,17 @@ export class LogsScrollingTable extends React.Component<ILogsScrollingTableProps
     );
   }
 }
+
+export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
+  fragment LogsScrollingTableMessageFragment on PipelineRunEvent {
+    __typename
+    ...LogsRowStructuredFragment
+    ...LogsRowUnstructuredFragment
+  }
+
+  ${LOGS_ROW_STRUCTURED_FRAGMENT}
+  ${LOGS_ROW_UNSTRUCTURED_FRAGMENT}
+`;
 
 class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedProps> {
   list = React.createRef<List>();
@@ -229,13 +232,13 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     return (
       <CellMeasurer cache={this.cache} index={index} parent={parent} key={node.clientsideKey}>
         {node.__typename === 'LogMessageEvent' ? (
-          <LogsRow.Unstructured
+          <Unstructured
             node={node}
             style={{...style, width: this.props.width, ...lastRowStyles}}
             highlighted={textMatch || focusedTimeMatch}
           />
         ) : (
-          <LogsRow.Structured
+          <Structured
             node={node}
             metadata={metadata}
             style={{...style, width: this.props.width, ...lastRowStyles}}

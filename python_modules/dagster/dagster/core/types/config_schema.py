@@ -1,14 +1,14 @@
 import hashlib
 
 from dagster import check
-from dagster.config.config_type import ConfigType, ConfigTypeKind
+from dagster.config.config_type import ConfigType
 from dagster.core.decorator_utils import (
     split_function_parameters,
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils import ensure_gen, ensure_single_item
-from dagster.utils.backcompat import experimental_arg_warning, rename_warning
+from dagster.utils import ensure_gen
+from dagster.utils.backcompat import experimental_arg_warning
 
 
 class DagsterTypeLoader:
@@ -172,32 +172,6 @@ def dagster_type_loader(
     return wrapper
 
 
-def input_selector_schema(config_cls, required_resource_keys=None):
-    """
-    Deprecated in favor of dagster_type_loader.
-
-    A decorator for annotating a function that can take the selected properties
-    from a ``config_value`` in to an instance of a custom type.
-
-    Args:
-        config_cls (Selector)
-    """
-    rename_warning("dagster_type_loader", "input_selector_schema", "0.10.0")
-    from dagster.config.field import resolve_to_config_type
-
-    config_type = resolve_to_config_type(config_cls)
-    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, "config_cls")
-
-    def _wrap(func):
-        def _selector(context, config_value):
-            selector_key, selector_value = ensure_single_item(config_value)
-            return func(context, selector_key, selector_value)
-
-        return _create_type_loader_for_decorator(config_type, _selector, required_resource_keys)
-
-    return _wrap
-
-
 class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
     def __init__(self, config_type, func, required_resource_keys):
         self._config_type = check.inst_param(config_type, "config_type", ConfigType)
@@ -254,31 +228,3 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
     return lambda func: _create_output_materializer_for_decorator(
         config_type, func, required_resource_keys
     )
-
-
-def output_selector_schema(config_cls, required_resource_keys=None):
-    """
-    Deprecated in favor of dagster_type_materializer.
-
-    A decorator for a annotating a function that can take the selected properties
-    of a ``config_value`` and an instance of a custom type and materialize it.
-
-    Args:
-        config_cls (Selector):
-    """
-    rename_warning("dagster_type_materializer", "output_selector_schema", "0.10.0")
-    from dagster.config.field import resolve_to_config_type
-
-    config_type = resolve_to_config_type(config_cls)
-    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, "config_cls")
-
-    def _wrap(func):
-        def _selector(context, config_value, runtime_value):
-            selector_key, selector_value = ensure_single_item(config_value)
-            return func(context, selector_key, selector_value, runtime_value)
-
-        return _create_output_materializer_for_decorator(
-            config_type, _selector, required_resource_keys
-        )
-
-    return _wrap

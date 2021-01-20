@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/PythonErrorInfo';
 import {RunStatsQuery, RunStatsQueryVariables} from 'src/runs/types/RunStatsQuery';
 
 export const RunStats = ({runId}: {runId: string}) => {
@@ -79,7 +79,7 @@ const RUN_STATS_QUERY = gql`
       }
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const RunStatsDetailsContainer = styled.div`

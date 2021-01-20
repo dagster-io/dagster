@@ -34,7 +34,7 @@ export const HighlightedCodeBlock = (props: Props) => {
   }, [language]);
 
   return (
-    <pre ref={node} {...rest}>
+    <pre ref={node} {...rest} style={{backgroundColor: 'transparent', margin: 0, padding: 0}}>
       {value}
     </pre>
   );

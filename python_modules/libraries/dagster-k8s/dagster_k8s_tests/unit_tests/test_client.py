@@ -339,7 +339,7 @@ def test_retrieve_pod_logs():
 
     MockResponse = namedtuple("MockResponse", "data")
 
-    mock_client.core_api.read_namespaced_pod_log.side_effect = [MockResponse("a_string")]
+    mock_client.core_api.read_namespaced_pod_log.side_effect = [MockResponse(b"a_string")]
 
     assert mock_client.retrieve_pod_logs("pod", "namespace") == "a_string"
 

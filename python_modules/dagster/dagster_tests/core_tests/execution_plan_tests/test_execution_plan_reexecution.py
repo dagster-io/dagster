@@ -10,7 +10,7 @@ from dagster import (
     reexecute_pipeline,
 )
 from dagster.core.errors import (
-    DagsterInvalidSubsetError,
+    DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
     DagsterRunNotFoundError,
 )
@@ -191,7 +191,8 @@ def test_pipeline_step_key_subset_execution():
     assert get_step_output_event(step_events, "add_two")
 
     with pytest.raises(
-        DagsterInvalidSubsetError, match="No qualified steps to execute found for step_selection"
+        DagsterExecutionStepNotFoundError,
+        match="Can not build subset plan from unknown step: nope",
     ):
         reexecute_pipeline(
             pipeline_def,

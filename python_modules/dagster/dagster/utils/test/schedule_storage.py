@@ -1,9 +1,11 @@
+import re
 import sys
 import time
 
 import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
+from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -20,6 +22,10 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils.error import SerializableErrorInfo
 
+FAKE_SCHEDULER_NAME = "FakeSchedulerClassName"
+
+OTHER_FAKE_SCHEDULER_NAME = "OtherFakeSchedulerClassName"
+
 
 class TestScheduleStorage:
     """
@@ -30,8 +36,6 @@ class TestScheduleStorage:
     For example:
 
     ```
-    TestScheduleStorage.__test__ = False
-
     class TestMyStorageImplementation(TestScheduleStorage):
         __test__ = True
 
@@ -40,6 +44,8 @@ class TestScheduleStorage:
             return MyStorageImplementation()
     ```
     """
+
+    __test__ = False
 
     @pytest.fixture(name="storage", params=[])
     def schedule_storage(self, request):
@@ -59,13 +65,13 @@ class TestScheduleStorage:
 
     @classmethod
     def build_schedule(
-        cls, schedule_name, cron_schedule, status=JobStatus.STOPPED,
+        cls, schedule_name, cron_schedule, status=JobStatus.STOPPED, scheduler=FAKE_SCHEDULER_NAME
     ):
         return JobState(
             cls.fake_repo_target().get_job_origin(schedule_name),
             JobType.SCHEDULE,
             status,
-            ScheduleJobData(cron_schedule, start_timestamp=None),
+            ScheduleJobData(cron_schedule, start_timestamp=None, scheduler=scheduler),
         )
 
     @classmethod
@@ -87,6 +93,7 @@ class TestScheduleStorage:
         assert schedule.job_name == "my_schedule"
         assert schedule.job_specific_data.cron_schedule == "* * * * *"
         assert schedule.job_specific_data.start_timestamp == None
+        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
     def test_add_multiple_schedules(self, storage):
         assert storage
@@ -106,6 +113,8 @@ class TestScheduleStorage:
         assert any(s.job_name == "my_schedule_2" for s in schedules)
         assert any(s.job_name == "my_schedule_3" for s in schedules)
 
+        assert all(s.job_specific_data.scheduler == FAKE_SCHEDULER_NAME for s in schedules)
+
     def test_get_schedule_state(self, storage):
         assert storage
 
@@ -115,6 +124,7 @@ class TestScheduleStorage:
 
         assert schedule.job_name == "my_schedule"
         assert schedule.job_specific_data.start_timestamp == None
+        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
     def test_get_schedule_state_not_found(self, storage):
         assert storage
@@ -134,7 +144,9 @@ class TestScheduleStorage:
 
         new_schedule = schedule.with_status(JobStatus.RUNNING).with_data(
             ScheduleJobData(
-                cron_schedule=schedule.job_specific_data.cron_schedule, start_timestamp=now_time,
+                cron_schedule=schedule.job_specific_data.cron_schedule,
+                start_timestamp=now_time,
+                scheduler=FAKE_SCHEDULER_NAME,
             )
         )
         storage.update_job_state(new_schedule)
@@ -146,9 +158,10 @@ class TestScheduleStorage:
         assert schedule.job_name == "my_schedule"
         assert schedule.status == JobStatus.RUNNING
         assert schedule.job_specific_data.start_timestamp == now_time
+        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
         stopped_schedule = schedule.with_status(JobStatus.STOPPED).with_data(
-            ScheduleJobData(schedule.job_specific_data.cron_schedule)
+            ScheduleJobData(schedule.job_specific_data.cron_schedule, scheduler=FAKE_SCHEDULER_NAME)
         )
         storage.update_job_state(stopped_schedule)
 
@@ -159,6 +172,7 @@ class TestScheduleStorage:
         assert schedule.job_name == "my_schedule"
         assert schedule.status == JobStatus.STOPPED
         assert schedule.job_specific_data.start_timestamp == None
+        assert schedule.job_specific_data.scheduler == FAKE_SCHEDULER_NAME
 
     def test_update_schedule_not_found(self, storage):
         assert storage
@@ -532,3 +546,34 @@ class TestScheduleStorage:
 
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 2
+
+    def test_migrate_schedulers(self, storage):
+        schedule = self.build_schedule("my_schedule", "* * * * *")
+        storage.add_job_state(schedule)
+
+        # changing if its not running is fine
+        storage.validate_stored_schedules(OTHER_FAKE_SCHEDULER_NAME)
+
+        running_schedule = self.build_schedule(
+            "my_other_schedule", "* * * * *", status=JobStatus.RUNNING
+        )
+        storage.add_job_state(running_schedule)
+
+        with pytest.raises(
+            DagsterScheduleWipeRequired,
+            match=re.escape(
+                "Found a running schedule using a scheduler (FakeSchedulerClassName) "
+                "that differs from the scheduler on the instance (OtherFakeSchedulerClassName). "
+                "The most likely reason for this error is that you changed the scheduler on your "
+                "instance while it was still running schedules. To fix this, change the scheduler "
+                "on your instance back to the previous scheduler configuration and run the command "
+                "'dagster schedule wipe'. It will then be safe to change back "
+                "to OtherFakeSchedulerClassName."
+            ),
+        ):
+            storage.validate_stored_schedules(OTHER_FAKE_SCHEDULER_NAME)
+
+        storage.wipe()
+
+        # Now passes
+        storage.validate_stored_schedules(OTHER_FAKE_SCHEDULER_NAME)

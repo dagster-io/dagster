@@ -6,7 +6,7 @@ from enum import Enum
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.serdes import Persistable, whitelist_for_persistence, whitelist_for_serdes
+from dagster.serdes import Persistable, whitelist_for_persistence
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -492,9 +492,9 @@ class Output(namedtuple("_Output", "value output_name")):
 
 class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name")):
     """
-    Variant of :py:class:`Output` used to support mapping. Each DynamicOutput produced by a solid
-    will result in the downstream dag being cloned to run on that individual value. Each DynamicOutput
-    must have a unique mapping_key to distinguish it.
+    (Experimental) Variant of :py:class:`Output` used to support mapping. Each DynamicOutput
+    produced by a solid will result in the downstream dag being cloned to run on that individual
+    value. Each DynamicOutput must have a unique mapping_key to distinguish it.
 
     Args:
         value (Any):
@@ -776,37 +776,6 @@ class RetryRequested(Exception):
         self.seconds_to_wait = check.opt_int_param(seconds_to_wait, "seconds_to_wait")
 
 
-@whitelist_for_serdes
-class AssetStoreOperationType(Enum):
-    SET_ASSET = "SET_ASSET"
-    GET_ASSET = "GET_ASSET"
-
-
-@whitelist_for_serdes
-class AssetStoreOperation(
-    namedtuple("_AssetStoreOperation", "op step_output_handle asset_store_handle obj",)
-):
-    """
-    Event related AssetStore
-    """
-
-    def __new__(cls, op, step_output_handle, asset_store_handle, obj=None):
-        from dagster.core.execution.plan.outputs import StepOutputHandle
-        from dagster.core.storage.asset_store import AssetStoreHandle
-
-        return super(AssetStoreOperation, cls).__new__(
-            cls,
-            op=op,
-            step_output_handle=check.inst_param(
-                step_output_handle, "step_output_handle", StepOutputHandle
-            ),
-            asset_store_handle=check.inst_param(
-                asset_store_handle, "asset_store_handle", AssetStoreHandle
-            ),
-            obj=obj,
-        )
-
-
 class ObjectStoreOperationType(Enum):
     SET_OBJECT = "SET_OBJECT"
     GET_OBJECT = "GET_OBJECT"
@@ -817,7 +786,7 @@ class ObjectStoreOperationType(Enum):
 class ObjectStoreOperation(
     namedtuple(
         "_ObjectStoreOperation",
-        "op key dest_key obj serialization_strategy_name object_store_name value_name version",
+        "op key dest_key obj serialization_strategy_name object_store_name value_name version mapping_key",
     )
 ):
     """This event is used internally by Dagster machinery when values are written to and read from
@@ -834,7 +803,9 @@ class ObjectStoreOperation(
             employed by the operation
         object_store_name (Optional[str]): The name of the object store that performed the
             operation.
+        value_name (Optional[str]): The name of the input/output
         version (Optional[str]): (Experimental) The version of the stored data.
+        mapping_key (Optional[str]): The mapping key when a dynamic output is used.
     """
 
     def __new__(
@@ -847,6 +818,7 @@ class ObjectStoreOperation(
         object_store_name=None,
         value_name=None,
         version=None,
+        mapping_key=None,
     ):
         return super(ObjectStoreOperation, cls).__new__(
             cls,
@@ -860,6 +832,7 @@ class ObjectStoreOperation(
             object_store_name=check.opt_str_param(object_store_name, "object_store_name"),
             value_name=check.opt_str_param(value_name, "value_name"),
             version=check.opt_str_param(version, "version"),
+            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
 
     @classmethod

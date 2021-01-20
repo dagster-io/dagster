@@ -25,8 +25,8 @@ class SensorJobData(namedtuple("_SensorJobData", "last_tick_timestamp last_run_k
 
 
 @whitelist_for_serdes
-class ScheduleJobData(namedtuple("_ScheduleJobData", "cron_schedule start_timestamp")):
-    def __new__(cls, cron_schedule, start_timestamp=None):
+class ScheduleJobData(namedtuple("_ScheduleJobData", "cron_schedule start_timestamp scheduler")):
+    def __new__(cls, cron_schedule, start_timestamp=None, scheduler=None):
         return super(ScheduleJobData, cls).__new__(
             cls,
             check.str_param(cron_schedule, "cron_schedule"),
@@ -34,6 +34,7 @@ class ScheduleJobData(namedtuple("_ScheduleJobData", "cron_schedule start_timest
             # `start_date` on partition-based schedules, which is used to define
             # the range of partitions)
             check.opt_float_param(start_timestamp, "start_timestamp"),
+            check.opt_str_param(scheduler, "scheduler"),
         )
 
 

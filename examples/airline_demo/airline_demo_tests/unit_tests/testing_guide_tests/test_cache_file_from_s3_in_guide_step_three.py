@@ -47,7 +47,8 @@ def test_cache_file_from_s3_step_three_mock():
 
 @mock_s3
 def test_cache_file_from_s3_step_three_fake(snapshot):
-    s3 = boto3.client("s3")
+    # https://github.com/spulec/moto/issues/3292
+    s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket="some-bucket")
     s3.put_object(Bucket="some-bucket", Key="some-key", Body=b"foo")
 
