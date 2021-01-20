@@ -65,7 +65,9 @@ class FSFileCache(FileCache):
 def fs_file_cache(init_context):
     target_folder = init_context.resource_config["target_folder"]
 
+    overwrite = init_context.resource_config["overwrite"]
+
     if not os.path.exists(target_folder):
         mkdir_p(target_folder)
 
-    return FSFileCache(target_folder=target_folder, overwrite=False)
+    return FSFileCache(target_folder=target_folder, overwrite=overwrite)
