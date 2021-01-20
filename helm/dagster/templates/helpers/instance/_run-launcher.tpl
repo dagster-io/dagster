@@ -46,17 +46,17 @@ config:
     env: DAGSTER_K8S_PG_PASSWORD_SECRET
   env_config_maps:
     - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
-    {{- range $name := $k8sRunLauncherConfig.envConfigMaps }}
-    {{- if $name }}
-    - {{ $name }}
+    {{- range $envConfigMap := $k8sRunLauncherConfig.envConfigMaps }}
+    {{- if hasKey $envConfigMap "name" }}
+    - {{ $envConfigMap.name }}
     {{- end }}
     {{- end }}
 
   {{- if $k8sRunLauncherConfig.envSecrets }}
   env_secrets:
-    {{- range $name := $k8sRunLauncherConfig.envSecrets }}
-    {{- if $name }}
-    - {{ $name }}
+    {{- range $envSecret := $k8sRunLauncherConfig.envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    - {{ $envSecret.name }}
     {{- end }}
     {{- end }}
   {{- end }}

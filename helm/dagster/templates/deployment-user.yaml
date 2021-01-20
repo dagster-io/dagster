@@ -71,21 +71,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-{{ $deployment.name }}-user-env
-            {{- if $deployment.envConfigMaps -}}
-            {{- range $name := $deployment.envConfigMaps }}
-            {{- if $name }}
-            - configMapRef:
-                name: {{ $name }}
+            {{- range $envConfigMap := $deployment.envConfigMaps }}
+            - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
-            {{- end }}
-            {{- end }}
-            {{- if $deployment.envSecrets -}}
-            {{- range $name := $deployment.envSecrets }}
-            {{- if $name }}
-            - secretRef:
-                name: {{ $name }}
-            {{- end }}
-            {{- end }}
+            {{- range $envSecret := $deployment.envSecrets }}
+            - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
           volumeMounts:
             - name: dagster-instance

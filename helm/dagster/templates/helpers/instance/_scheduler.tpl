@@ -25,7 +25,15 @@ config:
     env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
   env_config_maps:
     - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
-  env_secrets: {{- toYaml $k8sSchedulerConfig.envSecrets | nindent 4 }}
+
+  {{- if $k8sSchedulerConfig.envSecrets }}
+  env_secrets:
+    {{- range $envSecret := $k8sSchedulerConfig.envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    - {{ $envSecret.name }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.scheduler.custom" }}

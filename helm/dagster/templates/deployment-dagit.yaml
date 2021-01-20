@@ -70,21 +70,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" . }}-dagit-env
-            {{- if .Values.dagit.envConfigMaps -}}
-            {{- range $name := .Values.dagit.envConfigMaps }}
-            {{- if $name }}
-            - configMapRef:
-                name: {{ $name }}
+            {{- range $envConfigMap := .Values.dagit.envConfigMaps }}
+            - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
-            {{- end }}
-            {{- end }}
-            {{- if .Values.dagit.envSecrets -}}
-            {{- range $name := .Values.dagit.envSecrets }}
-            {{- if $name }}
-            - secretRef:
-                name: {{ $name }}
-            {{- end }}
-            {{- end }}
+            {{- range $envSecret := .Values.dagit.envSecrets }}
+            - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
           volumeMounts:
             - name: dagster-instance

@@ -61,21 +61,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-celery-worker-env
-            {{- if $celeryK8sRunLauncherConfig.envConfigMaps -}}
-            {{- range $name := $celeryK8sRunLauncherConfig.envConfigMaps }}
-            {{- if $name }}
-            - configMapRef:
-                name: {{ $name }}
+            {{- range $envConfigMap := $celeryK8sRunLauncherConfig.envConfigMaps }}
+            - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
-            {{- end }}
-            {{- end }}
-            {{- if $celeryK8sRunLauncherConfig.envSecrets -}}
-            {{- range $name := $celeryK8sRunLauncherConfig.envSecrets }}
-            {{- if $name }}
-            - secretRef:
-                name: {{ $name }}
-            {{- end }}
-            {{- end }}
+            {{- range $envSecret := $celeryK8sRunLauncherConfig.envSecrets }}
+            - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
           volumeMounts:
             - name: dagster-instance

@@ -30,18 +30,35 @@ dagit:
     port: 80
     annotations: {}
 
-  # Additional environment variables to set on the dagit container.
-  # A Kubernetes ConfigMap will be created with these environment variables.
-  env:
-    YOUR_ENV_VAR: ""
-  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
-  # list here
-  envConfigMaps:
-    - ""
-  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
-  # as a list here
-  envSecrets:
-    - ""
+  # Additional environment variables to set.
+  # A Kubernetes ConfigMap will be created with these environment variables. See:
+  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  #
+  # Example:
+  #
+  # env:
+  #   ENV_ONE: one
+  #   ENV_TWO: two
+  env: {}
+
+  # Additional environment variables can be retrieved and set from ConfigMaps. See:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envConfigMaps:
+  #   - name: config-map
+  envConfigMaps: []
+
+  # Additional environment variables can be retrieved and set from Secrets. See:
+  # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envSecrets:
+  #   - name: secret
+  envSecrets: []
+
   # Support Node, affinity and tolerations for Dagit pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -169,12 +186,36 @@ userDeployments:
         - "-f"
         - "/example_project/example_repo/repo.py"
       port: 3030
-      env:
-        YOUR_ENV_VAR: ""
-      envConfigMaps:
-        - ""
-      envSecrets:
-        - ""
+
+      # Additional environment variables to set.
+      # A Kubernetes ConfigMap will be created with these environment variables. See:
+      # https://kubernetes.io/docs/concepts/configuration/configmap/
+      #
+      # Example:
+      #
+      # env:
+      #   ENV_ONE: one
+      #   ENV_TWO: two
+      env: {}
+
+      # Additional environment variables can be retrieved and set from ConfigMaps. See:
+      # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envConfigMaps:
+      #   - name: config-map
+      envConfigMaps: []
+
+      # Additional environment variables can be retrieved and set from Secrets. See:
+      # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envSecrets:
+      #   - name: secret
+      envSecrets: []
+
       annotations: {}
       nodeSelector: {}
       affinity: {}
@@ -223,8 +264,16 @@ pipelineRun:
     repository: "dagster/k8s-example"
     tag: "latest"
     pullPolicy: Always
-  # Additional environment variables to set on the celery/job containers
-  # A Kubernetes ConfigMap will be created with these environment variables.
+
+  # Additional environment variables to set.
+  # A Kubernetes ConfigMap will be created with these environment variables. See:
+  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  #
+  # Example:
+  #
+  # env:
+  #   ENV_ONE: one
+  #   ENV_TWO: two
   env:
     YOUR_ENV_VAR: ""
 
@@ -260,8 +309,13 @@ scheduler:
       # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
       kubeconfigFile: ~
 
-      # Additional (secret) environment variables can be retrieved and set from
-      # the Secrets enumerated as a list here
+      # Additional environment variables can be retrieved and set from Secrets. See:
+      # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envSecrets:
+      #   - name: secret
       envSecrets: []
 
     ## Uncomment this configuration will only be used if the CustomScheduler is selected.
@@ -300,10 +354,22 @@ runLauncher:
       # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
       kubeconfigFile: ~
 
-      # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
+      # Additional environment variables can be retrieved and set from ConfigMaps for the Job. See:
+      # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envConfigMaps:
+      #   - name: config-map
       envConfigMaps: []
 
-      # A list of custom Secret names from which to draw environment variables for the Job.
+      # Additional environment variables can be retrieved and set from Secrets for the Job. See:
+      # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envSecrets:
+      #   - name: secret
       envSecrets: []
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
@@ -329,15 +395,32 @@ runLauncher:
           replicaCount: 2
 
       # Additional environment variables to set on the celery/job containers
-      # A Kubernetes ConfigMap will be created with these environment variables.
+      # A Kubernetes ConfigMap will be created with these environment variables. See:
+      # https://kubernetes.io/docs/concepts/configuration/configmap/
+      #
+      # Example:
+      #
+      # env:
+      #   ENV_ONE: one
+      #   ENV_TWO: two
       env: {}
 
-      # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
-      # list here
+      # Additional environment variables can be retrieved and set from ConfigMaps. See:
+      # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envConfigMaps:
+      #   - name: config-map
       envConfigMaps: []
 
-      # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
-      # as a list here
+      # Additional environment variables can be retrieved and set from Secrets. See:
+      # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+      #
+      # Example:
+      #
+      # envSecrets:
+      #   - name: secret
       envSecrets: []
 
       # Support Node, affinity and tolerations for Celery pod assignment. See:
@@ -593,12 +676,34 @@ dagsterDaemon:
     enabled: false
     config: {}
 
-  env:
-    YOUR_ENV_VAR: ""
-  envConfigMaps:
-    - ""
-  envSecrets:
-    - ""
+  # Additional environment variables to set.
+  # A Kubernetes ConfigMap will be created with these environment variables. See:
+  # https://kubernetes.io/docs/concepts/configuration/configmap/
+  #
+  # Example:
+  #
+  # env:
+  #   ENV_ONE: one
+  #   ENV_TWO: two
+  env: {}
+
+  # Additional environment variables can be retrieved and set from ConfigMaps. See:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envConfigMaps:
+  #   - name: config-map
+  envConfigMaps: []
+
+  # Additional environment variables can be retrieved and set from Secrets. See:
+  # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+  #
+  # Example:
+  #
+  # envSecrets:
+  #   - name: secret
+  envSecrets: []
 
   annotations: {}
   nodeSelector: {}

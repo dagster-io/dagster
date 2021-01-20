@@ -9,10 +9,7 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   {{ include "dagster.shared_env" . | nindent 2 }}
-  {{- if .Values.dagit.env -}}
+
   {{- range $name, $value := .Values.dagit.env }}
-  {{- if not (empty $value) }}
   {{ $name }}: {{ $value | quote }}
-  {{- end }}
-  {{- end }}
   {{- end }}

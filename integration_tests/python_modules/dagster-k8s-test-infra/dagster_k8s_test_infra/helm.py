@@ -310,8 +310,8 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-            "envConfigMaps": [TEST_CONFIGMAP_NAME],
-            "envSecrets": [TEST_SECRET_NAME],
+            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+            "envSecrets": [{"name": TEST_SECRET_NAME}],
             "livenessProbe": {
                 "httpGet": {"path": "/dagit_info", "port": 80},
                 "periodSeconds": 20,
@@ -363,7 +363,12 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
         },
         "scheduler": {
             "type": "K8sScheduler",
-            "config": {"k8sScheduler": {"schedulerNamespace": namespace}},
+            "config": {
+                "k8sScheduler": {
+                    "schedulerNamespace": namespace,
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
+                }
+            },
         },
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
@@ -389,8 +394,8 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-            "envConfigMaps": [TEST_CONFIGMAP_NAME],
-            "envSecrets": [TEST_SECRET_NAME],
+            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+            "envSecrets": [{"name": TEST_SECRET_NAME}],
             "livenessProbe": {
                 "httpGet": {"path": "/dagit_info", "port": 80},
                 "periodSeconds": 20,
@@ -404,12 +409,23 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
         },
         "runLauncher": {
             "type": "K8sRunLauncher",
-            "config": {"k8sRunLauncher": {"jobNamespace": namespace}},
+            "config": {
+                "k8sRunLauncher": {
+                    "jobNamespace": namespace,
+                    "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
+                }
+            },
         },
         "rabbitmq": {"enabled": False},
         "scheduler": {
             "type": "K8sScheduler",
-            "config": {"k8sScheduler": {"schedulerNamespace": namespace}},
+            "config": {
+                "k8sScheduler": {
+                    "schedulerNamespace": namespace,
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
+                }
+            },
         },
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
@@ -453,8 +469,8 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-            "envConfigMaps": [TEST_CONFIGMAP_NAME],
-            "envSecrets": [TEST_SECRET_NAME],
+            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+            "envSecrets": [{"name": TEST_SECRET_NAME}],
             "livenessProbe": {
                 "httpGet": {"path": "/dagit_info", "port": 80},
                 "periodSeconds": 20,
@@ -487,6 +503,9 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                         {"name": "dagster", "replicaCount": 2},
                         {"name": "extra-queue-1", "replicaCount": 1},
                     ],
+                    "env": {"TEST_SET_ENV_VAR": "test_celery_env_var"},
+                    "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
                     "livenessProbe": {
                         "initialDelaySeconds": 15,
                         "periodSeconds": 10,
@@ -504,7 +523,12 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
         "rabbitmq": {"enabled": True},
         "scheduler": {
             "type": "K8sScheduler",
-            "config": {"k8sScheduler": {"schedulerNamespace": namespace}},
+            "config": {
+                "k8sScheduler": {
+                    "schedulerNamespace": namespace,
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
+                }
+            },
         },
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",
@@ -553,8 +577,8 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
-            "envConfigMaps": [TEST_CONFIGMAP_NAME],
-            "envSecrets": [TEST_SECRET_NAME],
+            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+            "envSecrets": [{"name": TEST_SECRET_NAME}],
             "livenessProbe": {
                 "httpGet": {"path": "/dagit_info", "port": 80},
                 "periodSeconds": 20,
@@ -603,6 +627,8 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "queuedRunCoordinator": {"enabled": True},
             "env": {"BUILDKITE": os.getenv("BUILDKITE")},
+            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+            "envSecrets": [{"name": TEST_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config
