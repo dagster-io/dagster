@@ -20,7 +20,7 @@ def test_sync_list_python_file_grpc():
         python_file=python_file,
         module_name=None,
         working_directory=None,
-        attribute=None,
+        attribute="bar_repo",
         package_name=None,
     )
 

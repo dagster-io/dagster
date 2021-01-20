@@ -100,7 +100,7 @@ class _RepositoryLocationHandleManager:
 
         return external_pipeline_from_location_handle(
             self._location_handles[origin_id],
-            pipeline_run.pipeline_name,
+            pipeline_run.external_pipeline_origin,
             pipeline_run.solid_selection,
         )
 

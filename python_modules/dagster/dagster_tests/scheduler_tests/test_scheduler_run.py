@@ -245,6 +245,18 @@ def define_multi_run_schedule_with_missing_run_key():
     )
 
 
+@pipeline
+def the_other_pipeline():
+    the_solid()
+
+
+@repository
+def the_other_repo():
+    return [
+        the_other_pipeline,
+    ]
+
+
 @repository
 def the_repo():
     return [
@@ -298,10 +310,7 @@ def instance_with_schedules(external_repo_context, overrides=None):
 @contextmanager
 def default_repo():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=__file__,
-        attribute="the_repo",
-        working_directory=os.getcwd(),
+        executable_path=sys.executable, python_file=__file__, working_directory=os.getcwd(),
     )
 
     with RepositoryLocationHandle.create_from_repository_location_origin(

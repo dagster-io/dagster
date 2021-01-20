@@ -60,6 +60,18 @@ def the_repo():
     return [the_pipeline, simple_sensor, error_sensor, always_on_sensor, run_key_sensor]
 
 
+@pipeline
+def the_other_pipeline():
+    the_solid()
+
+
+@repository
+def the_other_repo():
+    return [
+        the_other_pipeline,
+    ]
+
+
 @contextmanager
 def instance_with_sensors(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
@@ -70,10 +82,7 @@ def instance_with_sensors(external_repo_context, overrides=None):
 @contextmanager
 def default_repo():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=__file__,
-        attribute="the_repo",
-        working_directory=os.getcwd(),
+        executable_path=sys.executable, python_file=__file__, working_directory=os.getcwd(),
     )
 
     with RepositoryLocationHandle.create_from_repository_location_origin(
@@ -307,4 +316,7 @@ def test_launch_once(external_repo_context, capfd):
                 ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
             )
             captured = capfd.readouterr()
-            assert f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"
+            assert (
+                f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"
+                in captured.out
+            )

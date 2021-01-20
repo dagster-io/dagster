@@ -128,13 +128,16 @@ def launch_scheduled_runs_for_schedule(
         start_timestamp_utc = latest_tick.timestamp + 1
 
     schedule_name = schedule_state.job_name
+    repo_name = schedule_state.origin.external_repository_origin.repository_name
 
-    repo_dict = repo_location.get_repositories()
     check.invariant(
-        len(repo_dict) == 1, "Reconstructed repository location should have exactly one repository",
+        repo_location.has_repository(repo_name),
+        "Could not find repository {repo_name} in location {repo_location_name}".format(
+            repo_name=repo_name, repo_location_name=repo_location.name
+        ),
     )
-    external_repo = next(iter(repo_dict.values()))
 
+    external_repo = repo_location.get_repository(repo_name)
     external_schedule = external_repo.get_external_schedule(schedule_name)
 
     timezone_str = external_schedule.execution_timezone

@@ -127,12 +127,17 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                 job_state.origin.external_repository_origin.repository_location_origin
             ) as repo_location_handle:
                 repo_location = RepositoryLocation.from_handle(repo_location_handle)
-                repo_dict = repo_location.get_repositories()
+
+                repo_name = job_state.origin.external_repository_origin.repository_name
+
                 check.invariant(
-                    len(repo_dict) == 1,
-                    "Reconstructed repository location should have exactly one repository",
+                    repo_location.has_repository(repo_name),
+                    "Could not find repository {repo_name} in location {repo_location_name}".format(
+                        repo_name=repo_name, repo_location_name=repo_location.name
+                    ),
                 )
-                external_repo = next(iter(repo_dict.values()))
+
+                external_repo = repo_location.get_repository(repo_name)
                 if not external_repo.has_external_job(job_state.job_name):
                     continue
 

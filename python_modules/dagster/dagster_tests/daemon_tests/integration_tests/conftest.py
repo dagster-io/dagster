@@ -14,9 +14,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 def get_example_repository_location_handle():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=file_relative_path(__file__, "repo.py"),
-        attribute="example_repo",
+        executable_path=sys.executable, python_file=file_relative_path(__file__, "repo.py"),
     )
     location_name = "example_repo_location"
 
@@ -34,4 +32,4 @@ def get_example_repo_handle():
 @pytest.fixture
 def foo_pipeline_handle():
     with get_example_repo_handle() as repo_handle:
-        yield PipelineHandle("foo", repo_handle)
+        yield PipelineHandle("foo_pipeline", repo_handle)

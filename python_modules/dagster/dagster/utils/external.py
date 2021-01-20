@@ -24,18 +24,24 @@ def repository_location_handle_from_run(pipeline_run):
 
 
 def external_pipeline_from_location_handle(
-    repository_location_handle, pipeline_name, solid_selection
+    repository_location_handle, external_pipeline_origin, solid_selection
 ):
     check.inst_param(
         repository_location_handle, "repository_location_handle", RepositoryLocationHandle
     )
+    check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin)
 
     repo_location = RepositoryLocation.from_handle(repository_location_handle)
-    repo_dict = repo_location.get_repositories()
+    repo_name = external_pipeline_origin.external_repository_origin.repository_name
+    pipeline_name = external_pipeline_origin.pipeline_name
+
     check.invariant(
-        len(repo_dict) == 1, "Reconstructed repository location should have exactly one repository",
+        repo_location.has_repository(repo_name),
+        "Could not find repository {repo_name} in location {repo_location_name}".format(
+            repo_name=repo_name, repo_location_name=repo_location.name
+        ),
     )
-    external_repo = next(iter(repo_dict.values()))
+    external_repo = repo_location.get_repository(repo_name)
 
     pipeline_selector = PipelineSelector(
         location_name=repo_location.name,
@@ -55,5 +61,7 @@ def external_pipeline_from_location_handle(
 def external_pipeline_from_run(pipeline_run):
     with repository_location_handle_from_run(pipeline_run) as repo_location_handle:
         yield external_pipeline_from_location_handle(
-            repo_location_handle, pipeline_run.pipeline_name, pipeline_run.solid_selection
+            repo_location_handle,
+            pipeline_run.external_pipeline_origin,
+            pipeline_run.solid_selection,
         )

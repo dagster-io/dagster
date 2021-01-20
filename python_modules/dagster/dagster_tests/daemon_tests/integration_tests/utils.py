@@ -13,12 +13,15 @@ def setup_instance(dagster_home, instance_config):
     with open(os.path.join(dagster_home, "dagster.yaml"), "w") as file:
         file.write(instance_config)
 
-    yield DagsterInstance.get()
+    with DagsterInstance.get() as instance:
+        yield instance
 
 
 @contextlib.contextmanager
 def start_daemon():
     p = open_ipc_subprocess(["dagster-daemon", "run"])
-    yield
-    interrupt_ipc_subprocess(p)
-    seven.wait_for_process(p)
+    try:
+        yield
+    finally:
+        interrupt_ipc_subprocess(p)
+        seven.wait_for_process(p)

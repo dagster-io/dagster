@@ -40,6 +40,15 @@ def define_foo_pipeline():
     return foo_pipeline
 
 
+@pipeline(name="other_foo")
+def other_foo_pipeline():
+    do_input(do_something())
+
+
+def define_other_foo_pipeline():
+    return other_foo_pipeline
+
+
 @pipeline(name="bar")
 def bar_pipeline():
     @usable_as_dagster_type(name="InputTypeWithoutHydration")
@@ -156,3 +165,8 @@ def bar_repo():
         "partition_sets": define_baz_partitions(),
         "jobs": {"sensor_foo": sensor_foo, "sensor_error": lambda: sensor_error},
     }
+
+
+@repository
+def other_repo():
+    return {"pipelines": {"other_foo": define_other_foo_pipeline}}
