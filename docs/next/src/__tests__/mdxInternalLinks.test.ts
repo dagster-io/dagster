@@ -69,13 +69,14 @@ function isLinkLegit(
   astStore: { [filePath: string]: MdxAstNode },
 ): boolean {
   if (rawTarget.startsWith('_apidocs/')) {
-    // NOTE: this currently fails all anchored links to `_apidocs`
-    // (e.g. `_apidocs/foo#bar`)
+    // NOTE: this currently ignore all anchors in links to `_apidocs` (e.g. `_apidocs/foo#bar`)
+    // FIXME: enable testing the anchor https://github.com/dagster-io/dagster/issues/3540
+    const [target, anchor] = rawTarget.split('#');
     return fileExists(
       path.resolve(
         ROOT_DIR,
         '../sections/api/apidocs',
-        `${rawTarget.replace(/^_apidocs\//, '')}.rst`,
+        `${target.replace(/^_apidocs\//, '')}.rst`,
       ),
     );
   }
