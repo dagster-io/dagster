@@ -1,4 +1,5 @@
 from functools import update_wrapper
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
 from dagster.core.definitions.definition_config_schema import (
@@ -14,12 +15,12 @@ from ..solid import CompositeSolidDefinition
 class _CompositeSolid:
     def __init__(
         self,
-        name=None,
-        input_defs=None,
-        output_defs=None,
-        description=None,
-        config_schema=None,
-        config_fn=None,
+        name: Optional[str] = None,
+        input_defs: Optional[List[InputDefinition]] = None,
+        output_defs: Optional[List[OutputDefinition]] = None,
+        description: Optional[str] = None,
+        config_schema: Any = None,
+        config_fn: Optional[Callable[[dict], dict]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
@@ -29,7 +30,7 @@ class _CompositeSolid:
         self.config_schema = convert_user_facing_definition_config_schema(config_schema)
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
 
-    def __call__(self, fn):
+    def __call__(self, fn: Callable[..., Any]):
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -68,13 +69,13 @@ class _CompositeSolid:
 
 
 def composite_solid(
-    name=None,
-    input_defs=None,
-    output_defs=None,
-    description=None,
-    config_schema=None,
-    config_fn=None,
-):
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_defs: Optional[List[OutputDefinition]] = None,
+    description: Optional[str] = None,
+    config_schema: Optional[Dict[str, Any]] = None,
+    config_fn: Optional[Callable[[dict], dict]] = None,
+) -> _CompositeSolid:
     """Create a composite solid with the specified parameters from the decorated composition
     function.
 
