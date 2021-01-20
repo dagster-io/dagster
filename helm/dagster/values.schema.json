@@ -115,6 +115,18 @@
             ],
             "additionalProperties": false
         },
+        "ConfigMapEnvSource": {
+            "title": "ConfigMapEnvSource",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
+        },
+        "SecretEnvSource": {
+            "title": "SecretEnvSource",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretEnvSource"
+        },
         "NodeSelector": {
             "title": "NodeSelector",
             "type": "object",
@@ -177,6 +189,27 @@
                 "service": {
                     "$ref": "#/definitions/automation__helm__schema__subschema__kubernetes__Service"
                 },
+                "env": {
+                    "title": "Env",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "envConfigMaps": {
+                    "title": "Envconfigmaps",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigMapEnvSource"
+                    }
+                },
+                "envSecrets": {
+                    "title": "Envsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretEnvSource"
+                    }
+                },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
                 },
@@ -208,7 +241,19 @@
             "required": [
                 "replicaCount",
                 "image",
-                "service"
+                "service",
+                "env",
+                "envConfigMaps",
+                "envSecrets",
+                "nodeSelector",
+                "affinity",
+                "tolerations",
+                "podSecurityContext",
+                "securityContext",
+                "resources",
+                "livenessProbe",
+                "startupProbe",
+                "annotations"
             ]
         },
         "UserDeployment": {
@@ -240,18 +285,18 @@
                         "type": "string"
                     }
                 },
-                "env_config_maps": {
-                    "title": "Env Config Maps",
+                "envConfigMaps": {
+                    "title": "Envconfigmaps",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/ConfigMapEnvSource"
                     }
                 },
-                "env_secrets": {
-                    "title": "Env Secrets",
+                "envSecrets": {
+                    "title": "Envsecrets",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/SecretEnvSource"
                     }
                 },
                 "nodeSelector": {
@@ -1065,12 +1110,6 @@
             ],
             "type": "string"
         },
-        "SecretEnvSource": {
-            "title": "SecretEnvSource",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretEnvSource"
-        },
         "K8sSchedulerConfig": {
             "title": "K8sSchedulerConfig",
             "type": "object",
@@ -1232,12 +1271,6 @@
                 "name"
             ],
             "additionalProperties": false
-        },
-        "ConfigMapEnvSource": {
-            "title": "ConfigMapEnvSource",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
         },
         "CeleryK8sRunLauncherConfig": {
             "title": "CeleryK8sRunLauncherConfig",

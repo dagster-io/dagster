@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, List
 
 from pydantic import BaseModel  # pylint: disable=E0611
 
@@ -9,12 +9,15 @@ class Dagit(BaseModel):
     replicaCount: int
     image: kubernetes.Image
     service: kubernetes.Service
-    nodeSelector: Optional[kubernetes.NodeSelector]
-    affinity: Optional[kubernetes.Affinity]
-    tolerations: Optional[kubernetes.Tolerations]
-    podSecurityContext: Optional[kubernetes.PodSecurityContext]
-    securityContext: Optional[kubernetes.SecurityContext]
-    resources: Optional[kubernetes.Resources]
-    livenessProbe: Optional[kubernetes.LivenessProbe]
-    startupProbe: Optional[kubernetes.StartupProbe]
-    annotations: Optional[kubernetes.Annotations]
+    env: Dict[str, str]
+    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
+    envSecrets: List[kubernetes.SecretEnvSource]
+    nodeSelector: kubernetes.NodeSelector
+    affinity: kubernetes.Affinity
+    tolerations: kubernetes.Tolerations
+    podSecurityContext: kubernetes.PodSecurityContext
+    securityContext: kubernetes.SecurityContext
+    resources: kubernetes.Resources
+    livenessProbe: kubernetes.LivenessProbe
+    startupProbe: kubernetes.StartupProbe
+    annotations: kubernetes.Annotations

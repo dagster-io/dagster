@@ -8,4 +8,4 @@ from .rabbitmq import RabbitMQ
 from .redis import Redis
 from .run_launcher import RunLauncher
 from .scheduler import Scheduler
-from .userdeployments import UserDeployments
+from .user_deployments import UserDeployments
