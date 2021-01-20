@@ -134,7 +134,7 @@ kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
 ```
 
 Visit http://127.0.0.1:8080, navigate to the [playground](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/pipelines/example_pipe/playground), 
-select the "default" preset, and click _Launch Execution_.
+select the `default` preset, and click _Launch Execution_.
 
 You can introspect the jobs that were launched with `kubectl`:
 
@@ -309,7 +309,7 @@ kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
 ```
 
 Visit http://127.0.0.1:8080, navigate to the [playground](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/pipelines/example_pipe/playground), 
-select the "celery_k8s" preset. Notice how `intermediate_storage.s3.config.s3_bucket` is set to `dagster-test`; user can replace this string with 
+select the `celery_k8s` preset. Notice how `intermediate_storage.s3.config.s3_bucket` is set to `dagster-test`; user can replace this string with 
 any other accessible S3 bucket. Then, click _Launch Execution_.
 
 You can introspect the jobs that were launched with `kubectl`:
@@ -458,27 +458,25 @@ We cover some options that are supported out-of-the-box. We encourage users to w
 substrates are used. If you have questions, please reach out to us on [Slack](https://dagster-slackin.herokuapp.com/)!
 
 ####  Run Launcher
-The [Run Launcher](/overview/pipeline-runs/run-launcher) is responsible for 
-allocating the computational resources for run execution.
+The [Run Launcher](/overview/pipeline-runs/run-launcher) is responsible for allocating the computational resources for run execution.
 
-<PyObject module="dagster_k8s" object="K8sRunLauncher" /> [Default]: The K8sRunLauncher
-is used in the [Default Deployment](/deploying/k8s#default-deployment) example. It creates a new K8s Job per pipeline run.
+<PyObject module="dagster_k8s" object="K8sRunLauncher" /> [Default]:
 
-<PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />: 
+The K8sRunLauncher is used in the [Default Deployment](/deploying/k8s#default-deployment) example. It creates a new K8s Job per pipeline run.
+
+<PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />:
+
 The CeleryK8sRunLauncher is used in the [Advanced Deployment](/deploying/k8s#advanced-deployment) example. It creates a new K8s Job per step 
-for step-level isolation and handling concurrency limits.
+for step-level isolation and handling concurrency limits on a per-step basis.
 
 ####  Executor
 The Executor traverses the execution plan, enforcing execution order, conditional execution, handling retries, etc.
 
-With the K8sRunLauncher, users can utilize the <PyObject module="dagster" object="in_process_executor" />, the 
-the <PyObject module="dagster" object="multiprocess_executor" />, 
-the <PyObject module="dagster_celery" object="celery_executor" />, 
-<PyObject module="dagster_celery_docker" object="celery_docker_executor" />, 
+With the K8sRunLauncher, users can utilize the <PyObject module="dagster" object="in_process_executor" />, the <PyObject module="dagster" object="multiprocess_executor" />, 
+the <PyObject module="dagster_celery" object="celery_executor" />, the <PyObject module="dagster_celery_docker" object="celery_docker_executor" />, 
 or a custom Executor.
 
-With the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, user can only use the 
-<PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />. 
+With the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, user must use the <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />. 
 As seen in the [Advanced Deployment](/deploying/k8s#advanced-deployment) example, this creates a Celery task for each Step, allowing for step-level isolation and concurrency control.
 
 ####  Scheduler
