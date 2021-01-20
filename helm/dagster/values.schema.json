@@ -39,6 +39,9 @@
         },
         "runLauncher": {
             "$ref": "#/definitions/RunLauncher"
+        },
+        "dagsterDaemon": {
+            "$ref": "#/definitions/Daemon"
         }
     },
     "required": [
@@ -52,7 +55,8 @@
         "imagePullSecrets",
         "computeLogManager",
         "scheduler",
-        "runLauncher"
+        "runLauncher",
+        "dagsterDaemon"
     ],
     "definitions": {
         "PullPolicy": {
@@ -1533,6 +1537,105 @@
                         }
                     }
                 }
+            ]
+        },
+        "QueuedRunCoordinator": {
+            "title": "QueuedRunCoordinator",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "config": {
+                    "title": "Config",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "enabled",
+                "config"
+            ]
+        },
+        "Daemon": {
+            "title": "Daemon",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "queuedRunCoordinator": {
+                    "$ref": "#/definitions/QueuedRunCoordinator"
+                },
+                "env": {
+                    "title": "Env",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "envConfigMaps": {
+                    "title": "Envconfigmaps",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigMapEnvSource"
+                    }
+                },
+                "envSecrets": {
+                    "title": "Envsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretEnvSource"
+                    }
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "affinity": {
+                    "$ref": "#/definitions/Affinity"
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/SecurityContext"
+                },
+                "resources": {
+                    "$ref": "#/definitions/Resources"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/LivenessProbe"
+                },
+                "startupProbe": {
+                    "$ref": "#/definitions/StartupProbe"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                }
+            },
+            "required": [
+                "enabled",
+                "image",
+                "queuedRunCoordinator",
+                "env",
+                "envConfigMaps",
+                "envSecrets",
+                "nodeSelector",
+                "affinity",
+                "tolerations",
+                "podSecurityContext",
+                "securityContext",
+                "resources",
+                "livenessProbe",
+                "startupProbe",
+                "annotations"
             ]
         }
     }

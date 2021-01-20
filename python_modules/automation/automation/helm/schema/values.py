@@ -21,3 +21,4 @@ class HelmValues(BaseModel):
     computeLogManager: subschema.ComputeLogManager
     scheduler: subschema.Scheduler
     runLauncher: subschema.RunLauncher
+    dagsterDaemon: subschema.Daemon
