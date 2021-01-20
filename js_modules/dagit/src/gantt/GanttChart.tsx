@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Checkbox, Colors, Icon, NonIdealState, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';

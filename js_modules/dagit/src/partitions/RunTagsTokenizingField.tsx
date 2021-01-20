@@ -1,5 +1,5 @@
-import {uniq} from 'lodash';
-import React from 'react';
+import uniq from 'lodash/uniq';
+import * as React from 'react';
 
 import {RunFilterTokenType} from 'src/runs/RunsFilter';
 import {

@@ -1,5 +1,6 @@
 import {Colors, Button} from '@blueprintjs/core';
-import {uniq, flatMap} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';

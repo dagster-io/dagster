@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Button, Tab, Tabs, ButtonGroup, Colors} from '@blueprintjs/core';
-import {uniq, flatMap} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 

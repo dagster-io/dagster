@@ -1,4 +1,4 @@
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import querystring from 'query-string';
 import React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
