@@ -358,7 +358,7 @@ def _materializations_to_events(step_context, step_output_handle, materializatio
 
 def _set_objects(step_context, step_output, step_output_handle, output):
     output_def = step_output.output_def
-    output_manager = step_context.get_output_manager(step_output_handle)
+    output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
     with user_code_error_boundary(
         DagsterExecutionHandleOutputError,

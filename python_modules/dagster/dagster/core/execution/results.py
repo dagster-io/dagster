@@ -542,7 +542,7 @@ class SolidExecutionResult:
 
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
-        manager = context.get_output_manager(step_output_handle)
+        manager = context.get_io_manager(step_output_handle)
 
         res = manager.load_input(
             context.for_input_manager(

@@ -172,7 +172,7 @@ class FromStepOutput(
 
         source_handle = self.step_output_handle
         manager_key = step_context.execution_plan.get_manager_key(source_handle)
-        input_manager = step_context.get_output_manager(source_handle)
+        input_manager = step_context.get_io_manager(source_handle)
         check.invariant(
             isinstance(input_manager, IOManager),
             f'Input "{self.input_def.name}" for step "{step_context.step.key}" is depending on '

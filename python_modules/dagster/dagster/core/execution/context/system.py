@@ -22,7 +22,7 @@ from dagster.core.execution.plan.utils import build_resources_for_manager
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.output_manager import OutputManager
+from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import EnvironmentConfig
@@ -367,7 +367,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             or self.intermediate_storage_def == mem_intermediate_storage
         )
 
-    def get_output_manager(self, step_output_handle) -> OutputManager:
+    def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         # backcompat: if intermediate storage is specified, adapt it to object manager
         if self.using_default_intermediate_storage():
@@ -376,7 +376,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
             output_manager = IntermediateStorageAdapter(self.intermediate_storage)
-        return check.inst(output_manager, OutputManager)
+        return check.inst(output_manager, IOManager)
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):
