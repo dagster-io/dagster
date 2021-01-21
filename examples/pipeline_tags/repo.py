@@ -2,11 +2,13 @@
 from dagster import PresetDefinition, pipeline, repository, solid
 
 
-@solid
+@solid(tags={"metadata": "some_metadata"})
 def get_tag(context):
+    metadata = context.solid_def.tags.get("metadata")
+    context.log.info("solid has tag: {}".format(metadata))
     owner = context.pipeline_run.tags.get("owner")
     context.log.info("owner is {}".format(owner))
-    return owner
+    return metadata, owner
 
 
 @pipeline(
