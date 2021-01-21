@@ -89,8 +89,11 @@ def resolve_step_versions_helper(execution_plan):
             Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
                 If a step has no computed version, then the step key maps to None.
         """
+
+    pipeline_def = execution_plan.pipeline.get_definition()
+
     resource_versions_by_key = resolve_resource_versions(
-        execution_plan.environment_config, execution_plan.pipeline.get_definition()
+        execution_plan.environment_config, pipeline_def,
     )
 
     step_versions = {}  # step_key (str) -> version (str)
@@ -100,20 +103,24 @@ def resolve_step_versions_helper(execution_plan):
         if not is_executable_step(step):
             continue
 
+        solid_def = pipeline_def.get_solid(step.solid_handle).definition
+
         input_version_dict = {
-            input_name: step_input.source.compute_version(step_versions)
+            input_name: step_input.source.compute_version(
+                step_versions, pipeline_def, execution_plan.environment_config
+            )
             for input_name, step_input in step.step_input_dict.items()
         }
         input_versions = [version for version in input_version_dict.values()]
 
         solid_name = str(step.solid_handle)
-        solid_def_version = step.solid.definition.version
+        solid_def_version = solid_def.version
         solid_config_version = resolve_config_version(
             execution_plan.environment_config.solids[solid_name].config
         )
         hashed_resources = [
             resource_versions_by_key[resource_key]
-            for resource_key in step.solid.definition.required_resource_keys
+            for resource_key in solid_def.required_resource_keys
         ]
         solid_resources_version = join_and_hash(*hashed_resources)
         solid_version = join_and_hash(

@@ -1,18 +1,8 @@
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Union,
-)
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Set, Union
 
 from dagster import check
+from dagster.core.definitions.utils import validate_tags
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
 
@@ -49,8 +39,7 @@ class ExecutionStep(
             ("pipeline_name", str),
             ("step_input_dict", Dict[str, StepInput]),
             ("step_output_dict", Dict[str, StepOutput]),
-            ("compute_fn", Callable),
-            ("solid", "Solid"),
+            ("tags", Dict[str, str]),
             ("logging_tags", Dict[str, str]),
         ],
     )
@@ -61,12 +50,9 @@ class ExecutionStep(
         pipeline_name: str,
         step_inputs: List[StepInput],
         step_outputs: List[StepOutput],
-        compute_fn: Callable,
-        solid: "Solid",
+        tags: Optional[Dict[str, str]],
         logging_tags: Optional[Dict[str, str]] = None,
     ):
-        from dagster.core.definitions import Solid
-
         return super(ExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", (StepHandle, ResolvedFromDynamicStepHandle)),
@@ -79,16 +65,12 @@ class ExecutionStep(
                 so.name: so
                 for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            # Compute_fn is the compute function for the step.
-            # Not to be confused with the compute_fn of the passed in solid.
-            compute_fn=check.callable_param(compute_fn, "compute_fn"),
-            solid=check.inst_param(solid, "solid", Solid),
+            tags=validate_tags(check.opt_dict_param(tags, "tags", key_type=str)),
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
                     "pipeline": pipeline_name,
                     "solid": handle.solid_handle.name,
-                    "solid_definition": solid.definition.name,
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
@@ -97,14 +79,6 @@ class ExecutionStep(
     @property
     def solid_handle(self) -> "SolidHandle":
         return self.handle.solid_handle
-
-    @property
-    def tags(self) -> Dict[str, Any]:
-        return self.solid.tags
-
-    @property
-    def hook_defs(self) -> FrozenSet["HookDefinition"]:
-        return self.solid.hook_defs
 
     @property
     def key(self) -> str:
@@ -160,25 +134,25 @@ class UnresolvedExecutionStep(
         "_UnresolvedExecutionStep",
         [
             ("handle", UnresolvedStepHandle),
-            ("solid", "Solid"),
+            ("pipeline_name", str),
             ("step_input_dict", Dict[str, Union[StepInput, UnresolvedStepInput]]),
             ("step_output_dict", Dict[str, StepOutput]),
-            ("pipeline_name", str),
+            ("tags", Dict[str, str]),
         ],
     )
 ):
     def __new__(
         cls,
         handle: UnresolvedStepHandle,
-        solid: "Solid",
+        pipeline_name: str,
         step_inputs: List[Union[StepInput, UnresolvedStepInput]],
         step_outputs: List[StepOutput],
-        pipeline_name: str,
+        tags: Optional[Dict[str, str]],
     ):
         return super(UnresolvedExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", UnresolvedStepHandle),
-            solid=solid,
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             step_input_dict={
                 si.name: si
                 for si in check.list_param(
@@ -189,7 +163,7 @@ class UnresolvedExecutionStep(
                 so.name: so
                 for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
         )
 
     @property
@@ -203,10 +177,6 @@ class UnresolvedExecutionStep(
     @property
     def kind(self) -> StepKind:
         return StepKind.UNRESOLVED
-
-    @property
-    def tags(self) -> Dict[str, Any]:
-        return self.solid.tags
 
     @property
     def step_outputs(self) -> List[StepOutput]:
@@ -266,15 +236,12 @@ class UnresolvedExecutionStep(
     def resolve(
         self, resolved_by_step_key: str, mappings: Dict[str, List[str]]
     ) -> List[ExecutionStep]:
-        from .compute import _execute_core_compute
-
         check.invariant(
             self.resolved_by_step_key == resolved_by_step_key,
             "resolving dynamic output step key did not match",
         )
 
         execution_steps = []
-        solid = self.solid
 
         for output_name, mapped_keys in mappings.items():
             if self.resolved_by_output_name != output_name:
@@ -290,10 +257,7 @@ class UnresolvedExecutionStep(
                         pipeline_name=self.pipeline_name,
                         step_inputs=resolved_inputs,
                         step_outputs=self.step_outputs,
-                        compute_fn=lambda step_context, inputs: _execute_core_compute(
-                            step_context.for_compute(), inputs, solid.definition.compute_fn
-                        ),
-                        solid=solid,
+                        tags=self.tags,
                     )
                 )
 

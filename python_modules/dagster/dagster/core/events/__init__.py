@@ -492,15 +492,18 @@ class DagsterEvent(
     @staticmethod
     def step_output_event(step_context, step_output_data):
         check.inst_param(step_output_data, "step_output_data", StepOutputData)
+
+        output_def = step_context.solid.output_def_named(
+            step_output_data.step_output_handle.output_name
+        )
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
             message='Yielded output "{output_name}"{mapping_clause} of type "{output_type}".{type_check_clause}'.format(
                 output_name=step_output_data.step_output_handle.output_name,
-                output_type=step_context.step.step_output_named(
-                    step_output_data.step_output_handle.output_name
-                ).output_def.dagster_type.display_name,
+                output_type=output_def.dagster_type.display_name,
                 type_check_clause=(
                     " Warning! Type check failed."
                     if not step_output_data.type_check_data.success
@@ -539,15 +542,16 @@ class DagsterEvent(
 
     @staticmethod
     def step_input_event(step_context, step_input_data):
+        step_input = step_context.step.step_input_named(step_input_data.input_name)
+        input_def = step_input.source.get_input_def(step_context.pipeline_def)
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
             step_context=step_context,
             event_specific_data=step_input_data,
             message='Got input "{input_name}" of type "{input_type}".{type_check_clause}'.format(
                 input_name=step_input_data.input_name,
-                input_type=step_context.step.step_input_named(
-                    step_input_data.input_name
-                ).dagster_type.display_name,
+                input_type=input_def.dagster_type.display_name,
                 type_check_clause=(
                     " Warning! Type check failed."
                     if not step_input_data.type_check_data.success

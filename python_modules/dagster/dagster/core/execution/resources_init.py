@@ -303,9 +303,13 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
     # add input type, input loader, and input asset store resource keys
     for step_input in execution_step.step_inputs:
-        resource_keys = resource_keys.union(step_input.dagster_type.required_resource_keys)
+        input_def = step_input.source.get_input_def(execution_plan.pipeline_def)
 
-        resource_keys = resource_keys.union(step_input.source.required_resource_keys())
+        resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
+
+        resource_keys = resource_keys.union(
+            step_input.source.required_resource_keys(execution_plan.pipeline_def)
+        )
 
         if isinstance(step_input, StepInput):
             source_handles = step_input.get_step_output_handle_dependencies()
@@ -323,15 +327,17 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
     # add output type, output materializer, and output asset store resource keys
     for step_output in execution_step.step_outputs:
-        resource_keys = resource_keys.union(
-            step_output.output_def.dagster_type.required_resource_keys
-        )
-        if step_output.should_materialize and step_output.output_def.dagster_type.materializer:
+
+        # Load the output type
+        output_def = solid_def.output_def_named(step_output.name)
+
+        resource_keys = resource_keys.union(output_def.dagster_type.required_resource_keys)
+        if step_output.should_materialize and output_def.dagster_type.materializer:
             resource_keys = resource_keys.union(
-                step_output.output_def.dagster_type.materializer.required_resource_keys()
+                output_def.dagster_type.materializer.required_resource_keys()
             )
-        if step_output.output_def.io_manager_key:
-            resource_keys = resource_keys.union([step_output.output_def.io_manager_key])
+        if output_def.io_manager_key:
+            resource_keys = resource_keys.union([output_def.io_manager_key])
 
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():
