@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import {SearchResults} from 'src/search/SearchResults';
 import {SearchResult} from 'src/search/types';
 import {useRepoSearch} from 'src/search/useRepoSearch';
+import {Group} from 'src/ui/Group';
 import {FontFamily} from 'src/ui/styles';
 
 type State = {
@@ -106,10 +107,10 @@ export const SearchDialog = () => {
   return (
     <>
       <SearchTrigger onClick={openSearch}>
-        <div style={{display: 'flex', alignItems: 'center'}}>
-          <Icon icon="search" iconSize={14} />
-          <div style={{marginLeft: '4px'}}>Search…</div>
-        </div>
+        <Group direction="row" alignItems="center" spacing={8}>
+          <Icon icon="search" iconSize={11} color={Colors.GRAY3} style={{display: 'block'}} />
+          <div>Search…</div>
+        </Group>
       </SearchTrigger>
       <Overlay
         backdropProps={{style: {backgroundColor: 'rgba(0, 0, 0, .15)'}}}
@@ -120,12 +121,12 @@ export const SearchDialog = () => {
       >
         <Container>
           <SearchBox hasQueryString={!!queryString.length}>
-            <Icon icon="search" iconSize={18} color={Colors.GRAY3} />
+            <Icon icon="search" iconSize={18} color={Colors.LIGHT_GRAY3} />
             <SearchInput
               autoFocus
               onChange={onChange}
               onKeyDown={onKeyDown}
-              placeholder="Search…"
+              placeholder="Search pipelines, schedules, etc…"
               type="text"
               value={queryString}
             />
@@ -139,12 +140,15 @@ export const SearchDialog = () => {
 
 const SearchTrigger = styled.button`
   background-color: ${Colors.WHITE};
-  border: 1px solid ${Colors.GRAY5};
-  border-radius: 4px;
-  color: ${Colors.GRAY3};
+  border: 1px solid ${Colors.LIGHT_GRAY1};
+  border-radius: 3px;
+  color: ${Colors.GRAY1};
+  font-size: 14px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
   cursor: pointer;
-  padding: 8px 12px;
-  width: 160px;
+  padding: 4px 10px;
+  width: 100%;
 `;
 
 const Container = styled.div`
