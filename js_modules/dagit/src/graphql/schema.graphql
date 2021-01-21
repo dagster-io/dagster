@@ -10,6 +10,7 @@ type Query {
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+  jobStateOrError(jobSelector: JobSelector!): JobStateOrError!
   unloadableJobStatesOrError(jobType: JobType): JobStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
@@ -480,6 +481,7 @@ type JobState {
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
   ticks(dayRange: Int, dayOffset: Int, limit: Int): [JobTick!]!
+  nextTick: FutureJobTick
   runningCount: Int!
 }
 
@@ -520,6 +522,23 @@ enum JobTickStatus {
   SKIPPED
   SUCCESS
   FAILURE
+}
+
+type FutureJobTick {
+  timestamp: Float!
+  evaluationResult: TickEvaluation
+}
+
+type TickEvaluation {
+  runRequests: [RunRequest]
+  skipReason: String
+  error: PythonError
+}
+
+type RunRequest {
+  runKey: String
+  tags: [PipelineTag!]!
+  runConfigYaml: String!
 }
 
 type PartitionSet {
@@ -590,23 +609,6 @@ type PartitionStatus {
 type FutureJobTicks {
   results: [FutureJobTick!]!
   cursor: Float!
-}
-
-type FutureJobTick {
-  timestamp: Float!
-  evaluationResult: TickEvaluation
-}
-
-type TickEvaluation {
-  runRequests: [RunRequest]
-  skipReason: String
-  error: PythonError
-}
-
-type RunRequest {
-  runKey: String
-  tags: [PipelineTag!]!
-  runConfigYaml: String!
 }
 
 type Sensor {
@@ -751,6 +753,14 @@ union SensorsOrError = Sensors | RepositoryNotFoundError | PythonError
 
 type Sensors {
   results: [Sensor!]!
+}
+
+union JobStateOrError = JobState | PythonError
+
+input JobSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  jobName: String!
 }
 
 union JobStatesOrError = JobStates | PythonError
@@ -1507,6 +1517,10 @@ type ConfigTypeNotFoundError implements Error {
   message: String!
   pipeline: Pipeline!
   configTypeName: String!
+}
+
+type JobNotFoundError implements Error {
+  message: String!
 }
 
 type ListDagsterType implements DagsterType & WrappingDagsterType {

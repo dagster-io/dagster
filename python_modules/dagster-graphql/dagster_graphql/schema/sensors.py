@@ -1,18 +1,17 @@
-from datetime import datetime
-
 from dagster import check
 from dagster.core.host_representation import ExternalSensor, SensorSelector
-from dagster.core.scheduler.job import JobState, JobStatus
-from dagster.utils import datetime_as_float
+from dagster.core.scheduler.job import JobState
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_sensors import start_sensor, stop_sensor
+from dagster_graphql.implementation.fetch_sensors import (
+    get_sensor_next_tick,
+    start_sensor,
+    stop_sensor,
+)
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
     DauphinSensorNotFoundError,
 )
-
-SENSOR_DAEMON_INTERVAL = 30
 
 
 class DauphinSensor(dauphin.ObjectType):
@@ -54,19 +53,7 @@ class DauphinSensor(dauphin.ObjectType):
         return graphene_info.schema.type_named("JobState")(self._sensor_state)
 
     def resolve_nextTick(self, graphene_info):
-        if self._sensor_state.status != JobStatus.RUNNING:
-            return None
-
-        latest_tick = graphene_info.context.instance.get_latest_job_tick(
-            self._sensor_state.job_origin_id
-        )
-        if not latest_tick:
-            return None
-
-        next_timestamp = latest_tick.timestamp + SENSOR_DAEMON_INTERVAL
-        if next_timestamp < datetime_as_float(datetime.now()):
-            return None
-        return graphene_info.schema.type_named("FutureJobTick")(self._sensor_state, next_timestamp)
+        return get_sensor_next_tick(graphene_info, self._sensor_state)
 
 
 class DauphinSensorOrError(dauphin.Union):

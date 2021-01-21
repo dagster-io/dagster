@@ -17,6 +17,8 @@ from dagster.core.scheduler.job import (
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_schedules import get_schedule_next_tick
+from dagster_graphql.implementation.fetch_sensors import get_sensor_next_tick
 
 
 class DauphinJobTick(dauphin.ObjectType):
@@ -195,6 +197,7 @@ class DauphinJobState(dauphin.ObjectType):
         dayOffset=dauphin.Int(),
         limit=dauphin.Int(),
     )
+    nextTick = dauphin.Field("FutureJobTick")
     runningCount = dauphin.NonNull(dauphin.Int)  # remove with cron scheduler
 
     def __init__(self, job_state):
@@ -259,6 +262,13 @@ class DauphinJobState(dauphin.ObjectType):
             )
         ]
 
+    def resolve_nextTick(self, graphene_info):
+        # sensor
+        if self._job_state.job_type == JobType.SENSOR:
+            return get_sensor_next_tick(graphene_info, self._job_state)
+        else:
+            return get_schedule_next_tick(graphene_info, self._job_state)
+
     def resolve_runningCount(self, graphene_info):
         if self._job_state.job_type == JobType.SENSOR:
             return 1 if self._job_state.status == JobStatus.RUNNING else 0
@@ -302,6 +312,12 @@ class DauphinScheduleJobData(dauphin.ObjectType):
             cronSchedule=job_specific_data.cron_schedule,
             startTimestamp=job_specific_data.start_timestamp,
         )
+
+
+class DauphinJobStateOrError(dauphin.Union):
+    class Meta:
+        name = "JobStateOrError"
+        types = ("JobState", "PythonError")
 
 
 class DauphinJobStatesOrError(dauphin.Union):

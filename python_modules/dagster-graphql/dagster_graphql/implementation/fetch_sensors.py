@@ -7,6 +7,8 @@ from dagster.core.host_representation import (
     SensorSelector,
 )
 from dagster.core.scheduler.job import JobStatus
+from dagster.daemon.controller import SENSOR_DAEMON_INTERVAL
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -117,3 +119,17 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
         for external_sensor in external_sensors
         if external_sensor.pipeline_name == pipeline_selector.pipeline_name
     ]
+
+
+def get_sensor_next_tick(graphene_info, sensor_state):
+    if sensor_state.status != JobStatus.RUNNING:
+        return None
+
+    latest_tick = graphene_info.context.instance.get_latest_job_tick(sensor_state.job_origin_id)
+    if not latest_tick:
+        return None
+
+    next_timestamp = latest_tick.timestamp + SENSOR_DAEMON_INTERVAL
+    if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
+        return None
+    return graphene_info.schema.type_named("FutureJobTick")(sensor_state, next_timestamp)

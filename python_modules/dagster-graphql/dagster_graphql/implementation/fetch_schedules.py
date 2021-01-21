@@ -1,5 +1,7 @@
 from dagster import check
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
+from dagster.core.scheduler.job import JobStatus
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -109,3 +111,28 @@ def get_schedule_or_error(graphene_info, schedule_selector):
     return graphene_info.schema.type_named("Schedule")(
         graphene_info, external_schedule=external_schedule
     )
+
+
+def get_schedule_next_tick(graphene_info, schedule_state):
+    if schedule_state.status != JobStatus.RUNNING:
+        return None
+
+    repository_origin = schedule_state.origin.external_repository_origin
+    if not graphene_info.context.has_repository_location(
+        repository_origin.repository_location_origin.location_name
+    ):
+        return None
+    repository_location = graphene_info.context.get_repository_location(
+        repository_origin.repository_location_origin.location_name
+    )
+    if not repository_location.has_repository(repository_origin.repository_name):
+        return None
+
+    repository = repository_location.get_repository(repository_origin.repository_name)
+    external_schedule = repository.get_external_job(schedule_state.name)
+    time_iter = external_schedule.execution_time_iterator(
+        get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+    )
+
+    next_timestamp = next(time_iter).timestamp()
+    return graphene_info.schema.type_named("FutureJobTick")(schedule_state, next_timestamp)

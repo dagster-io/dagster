@@ -5,6 +5,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.job import JobType
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import (
+    JobSelector,
     RepositorySelector,
     RepresentedPipeline,
     ScheduleSelector,
@@ -33,7 +34,10 @@ from dagster_graphql.implementation.external import (
     get_full_external_pipeline_or_raise,
 )
 from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
-from dagster_graphql.implementation.fetch_jobs import get_unloadable_job_states_or_error
+from dagster_graphql.implementation.fetch_jobs import (
+    get_job_state_or_error,
+    get_unloadable_job_states_or_error,
+)
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_set,
     get_partition_sets_or_error,
@@ -118,6 +122,9 @@ class DauphinQuery(dauphin.ObjectType):
     )
     sensorsOrError = dauphin.Field(
         dauphin.NonNull("SensorsOrError"), repositorySelector=dauphin.NonNull("RepositorySelector"),
+    )
+    jobStateOrError = dauphin.Field(
+        dauphin.NonNull("JobStateOrError"), jobSelector=dauphin.NonNull("JobSelector"),
     )
     unloadableJobStatesOrError = dauphin.Field(
         dauphin.NonNull("JobStatesOrError"), jobType=dauphin.Argument("JobType")
@@ -252,6 +259,9 @@ class DauphinQuery(dauphin.ObjectType):
         return get_sensors_or_error(
             graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
+
+    def resolve_jobStateOrError(self, graphene_info, jobSelector):
+        return get_job_state_or_error(graphene_info, JobSelector.from_graphql_input(jobSelector))
 
     def resolve_unloadableJobStatesOrError(self, graphene_info, **kwargs):
         job_type = JobType(kwargs["jobType"]) if "jobType" in kwargs else None
@@ -817,6 +827,18 @@ class DauphinScheduleSelector(dauphin.InputObjectType):
     repositoryName = dauphin.NonNull(dauphin.String)
     repositoryLocationName = dauphin.NonNull(dauphin.String)
     scheduleName = dauphin.NonNull(dauphin.String)
+
+
+class DauphinJobSelector(dauphin.InputObjectType):
+    class Meta:
+        name = "JobSelector"
+        description = (
+            """This type represents the fields necessary to identify a schedule or sensor."""
+        )
+
+    repositoryName = dauphin.NonNull(dauphin.String)
+    repositoryLocationName = dauphin.NonNull(dauphin.String)
+    jobName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPartitionSetSelector(dauphin.InputObjectType):

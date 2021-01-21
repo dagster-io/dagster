@@ -1,8 +1,9 @@
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.host_representation import ExternalSchedule, ExternalSensor, JobSelector
 from dagster.core.scheduler.job import JobStatus
 
-from .utils import capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
@@ -30,3 +31,20 @@ def get_unloadable_job_states_or_error(graphene_info, job_type=None):
             for job_state in unloadable_states
         ]
     )
+
+
+@capture_dauphin_error
+def get_job_state_or_error(graphene_info, selector):
+    check.inst_param(selector, "selector", JobSelector)
+    location = graphene_info.context.get_repository_location(selector.location_name)
+    repository = location.get_repository(selector.repository_name)
+    external_job = repository.get_external_job(selector.job_name)
+    if not external_job or not isinstance(external_job, (ExternalSensor, ExternalSchedule)):
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named("JobNotFoundError")(selector.job_name)
+        )
+
+    job_state = graphene_info.context.instance.get_job_state(external_job.get_external_origin_id())
+    if not job_state:
+        job_state = external_job.get_default_job_state()
+    return graphene_info.schema.type_named("JobState")(job_state=job_state)
