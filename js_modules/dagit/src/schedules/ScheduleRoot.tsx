@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {ScheduleTickHistory} from 'src/jobs/TickHistory';
+import {JobTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
@@ -104,9 +104,9 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                     countdownStatus={countdownStatus}
                     onRefresh={() => onRefresh()}
                   />
-                  <ScheduleTickHistory
+                  <JobTickHistory
                     repoAddress={repoAddress}
-                    schedule={scheduleOrError}
+                    jobName={scheduleOrError.name}
                     onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
                   />
                   <SchedulePreviousRuns

@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {SensorTickHistory} from 'src/jobs/TickHistory';
+import {JobTickHistory} from 'src/jobs/TickHistory';
 import {TopNav} from 'src/nav/TopNav';
 import {SensorDetails} from 'src/sensors/SensorDetails';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
@@ -20,7 +20,7 @@ import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-const INTERVAL = 5 * 1000;
+const INTERVAL = 15 * 1000;
 
 export const SensorRoot: React.FC<{
   repoAddress: RepoAddress;
@@ -39,7 +39,7 @@ export const SensorRoot: React.FC<{
       sensorSelector,
     },
     fetchPolicy: 'cache-and-network',
-    pollInterval: 5 * 1000,
+    pollInterval: INTERVAL,
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -91,10 +91,10 @@ export const SensorRoot: React.FC<{
                   countdownStatus={countdownStatus}
                   onRefresh={() => onRefresh()}
                 />
-                <SensorTickHistory
+                <JobTickHistory
                   repoAddress={repoAddress}
-                  sensor={sensorOrError}
-                  daemonHealth={instance.daemonHealth.daemonStatus.healthy}
+                  jobName={sensorOrError.name}
+                  showRecent={true}
                   onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
                 />
                 <SensorPreviousRuns

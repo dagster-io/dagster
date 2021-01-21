@@ -120,6 +120,12 @@ export interface ExecutionTag {
   value: string;
 }
 
+export interface JobSelector {
+  repositoryName: string;
+  repositoryLocationName: string;
+  jobName: string;
+}
+
 export interface PartitionBackfillParams {
   selector: PartitionSetSelector;
   partitionNames: string[];

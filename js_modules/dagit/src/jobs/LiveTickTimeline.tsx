@@ -1,23 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
-import {Colors, Spinner} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {JobHistoryFragment_ticks} from 'src/jobs/types/JobHistoryFragment';
 import {
-  SensorTimelineQuery,
-  SensorTimelineQuery_sensorOrError_Sensor_nextTick,
-  SensorTimelineQuery_sensorOrError_Sensor_sensorState_ticks,
-} from 'src/sensors/types/SensorTimelineQuery';
+  JobTickHistoryQuery_jobStateOrError_JobState_ticks,
+  JobTickHistoryQuery_jobStateOrError_JobState_nextTick,
+} from 'src/jobs/types/JobTickHistoryQuery';
 import {JobTickStatus} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
 
-type SensorTick = SensorTimelineQuery_sensorOrError_Sensor_sensorState_ticks;
-type FutureTick = SensorTimelineQuery_sensorOrError_Sensor_nextTick;
+type FutureTick = JobTickHistoryQuery_jobStateOrError_JobState_nextTick;
+type JobTick = JobTickHistoryQuery_jobStateOrError_JobState_ticks;
 
 const COLOR_MAP = {
   [JobTickStatus.SUCCESS]: Colors.BLUE3,
@@ -26,63 +18,14 @@ const COLOR_MAP = {
   [JobTickStatus.SKIPPED]: Colors.GOLD3,
 };
 
-export const SensorTimeline: React.FC<{
-  sensorName: string;
-  repoAddress: RepoAddress;
-  onHighlightRunIds: (runIds: string[]) => void;
-  onSelectTick: (tick?: JobHistoryFragment_ticks) => void;
-}> = ({sensorName, repoAddress, onHighlightRunIds, onSelectTick}) => {
-  const sensorSelector = {
-    ...repoAddressToSelector(repoAddress),
-    sensorName,
-  };
-
-  const {data} = useQuery<SensorTimelineQuery>(SENSOR_TIMELINE_QUERY, {
-    variables: {
-      sensorSelector,
-    },
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 15 * 1000,
-    partialRefetch: true,
-  });
-
-  if (!data || data?.sensorOrError.__typename !== 'Sensor') {
-    return <Spinner />;
-  }
-
-  const {
-    sensorState: {ticks},
-    nextTick,
-  } = data.sensorOrError;
-
-  return (
-    <Group direction="column" spacing={12}>
-      <div style={{position: 'relative'}}>
-        {ticks.length ? (
-          <TickTimelineGraph
-            ticks={ticks}
-            nextTick={nextTick}
-            onHighlightRunIds={onHighlightRunIds}
-            onSelectTick={onSelectTick}
-          />
-        ) : (
-          <Box margin={{vertical: 8}} flex={{justifyContent: 'center'}}>
-            No ticks recorded
-          </Box>
-        )}
-      </div>
-    </Group>
-  );
-};
-
 const REFRESH_INTERVAL = 100;
 
-const TickTimelineGraph: React.FC<{
-  ticks: SensorTick[];
+export const LiveTickTimeline: React.FC<{
+  ticks: JobTick[];
   nextTick: FutureTick | null;
-  onHighlightRunIds: (runIds: string[]) => void;
-  onSelectTick: (tick?: JobHistoryFragment_ticks) => void;
-}> = ({ticks, nextTick, onHighlightRunIds, onSelectTick}) => {
+  onHoverTick: (JobTick?: any) => void;
+  onSelectTick: (JobTick?: any) => void;
+}> = ({ticks, nextTick, onHoverTick, onSelectTick}) => {
   const [now, setNow] = React.useState<number>(Date.now());
   const [graphNow, setGraphNow] = React.useState<number>(Date.now());
   const [isPaused, setPaused] = React.useState<boolean>(false);
@@ -195,10 +138,10 @@ const TickTimelineGraph: React.FC<{
           return;
         }
         const tick = ticks[element._index];
-        onHighlightRunIds(tick.runIds || []);
+        onHoverTick(tick);
       } else if (!elements.length && isPaused) {
         setPaused(false);
-        onHighlightRunIds([]);
+        onHoverTick(undefined);
       }
     },
 
@@ -222,7 +165,6 @@ const TickTimelineGraph: React.FC<{
             return tick.skipReason;
           }
           if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
-            onHighlightRunIds(tick.runIds);
             return tick.runIds;
           }
           if (tick.status == JobTickStatus.FAILURE && tick.error?.message) {
@@ -235,31 +177,3 @@ const TickTimelineGraph: React.FC<{
   };
   return <Line data={graphData} height={30} options={options} key="100%" />;
 };
-
-const SENSOR_TIMELINE_QUERY = gql`
-  query SensorTimelineQuery($sensorSelector: SensorSelector!) {
-    sensorOrError(sensorSelector: $sensorSelector) {
-      __typename
-      ... on Sensor {
-        id
-        nextTick {
-          timestamp
-        }
-        sensorState {
-          id
-          ticks(limit: 20) {
-            id
-            status
-            timestamp
-            skipReason
-            runIds
-            error {
-              ...PythonErrorFragment
-            }
-          }
-        }
-      }
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
