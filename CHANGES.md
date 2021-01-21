@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.10.1
+
+**Community Contributions**
+
+* Reduced image size of `k8s-example` by 25% (104 MB) (thanks @alex-treebeard and @mrdavidlaing!)
+* [dagster-snowflake] `snowflake_resource` can now be configured to use the SQLAlchemy connector (thanks @basilvetas!)
+
+**New**
+
+* When setting `userDeployments.deployments` in the Helm chart, `replicaCount` now defaults to 1 if not specified.
+
+**Bugfixes**
+
+* Fixed an issue where the Dagster daemon process couldn’t launch runs in repository locations containing more than one repository.
+* Fixed an issue where Helm chart was not correctly templating `env`, `envConfigMaps`, and `envSecrets`.
+
+**Documentation**
+
+* Added new [troubleshooting guide](https://docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
+* Added documentation for the sensor command-line interface.
+
 ## 0.10.0
 
 ### Major Changes
@@ -122,7 +143,7 @@ the 0.10.0 release._
 * Experimental support for memoization and versioning lets you execute pipelines incrementally,
   selecting which solids need to be rerun based on runtime criteria and versioning their outputs
   with configurable identifiers that capture their upstream dependencies.
-  
+
   To set up memoized step selection, users can provide a `MemoizableIOManager`, whose `has_output`
   function decides whether a given solid output needs to be computed or already exists. To execute
   a pipeline with memoized step selection, users can supply the `dagster/is_memoized_run` run tag
