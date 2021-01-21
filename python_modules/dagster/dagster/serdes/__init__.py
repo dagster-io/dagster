@@ -309,15 +309,12 @@ class ConfigurableClassData(
             check.str_param(config_yaml, "config_yaml"),
         )
 
-    def info_str(self, prefix=""):
-        return (
-            "{p}module: {module}\n"
-            "{p}class: {cls}\n"
-            "{p}config:\n"
-            "{p}  {config}".format(
-                p=prefix, module=self.module_name, cls=self.class_name, config=self.config_yaml
-            )
-        )
+    def info_dict(self):
+        return {
+            "module": self.module_name,
+            "class": self.class_name,
+            "config": yaml.safe_load(self.config_yaml),
+        }
 
     def rehydrate(self):
         from dagster.core.errors import DagsterInvalidConfigError

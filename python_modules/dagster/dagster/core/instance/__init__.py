@@ -369,54 +369,44 @@ class DagsterInstance:
         return DagsterInstance._PROCESS_TEMPDIR.name
 
     def _info(self, component):
-        prefix = "     "
         # ConfigurableClass may not have inst_data if it's a direct instantiation
         # which happens for ephemeral instances
         if isinstance(component, ConfigurableClass) and component.inst_data:
-            return component.inst_data.info_str(prefix)
+            return component.inst_data.info_dict()
         if type(component) is dict:
-            return prefix + yaml.dump(component, default_flow_style=False).replace(
-                "\n", "\n" + prefix
-            )
-        return "{}{}\n".format(prefix, component.__class__.__name__)
+            return component
+        return component.__class__.__name__
 
-    def info_str_for_component(self, component_name, component):
-        return "{component_name}:\n{component}\n".format(
-            component_name=component_name, component=self._info(component)
+    def _info_str_for_component(self, component_name, component):
+        return yaml.dump(
+            {component_name: self._info(component)}, default_flow_style=False, sort_keys=False
         )
 
-    def info_str(self):
+    def info_dict(self):
 
         settings = self._settings if self._settings else {}
 
-        return (
-            "local_artifact_storage:\n{artifact}\n"
-            "run_storage:\n{run}\n"
-            "event_log_storage:\n{event}\n"
-            "compute_logs:\n{compute}\n"
-            "schedule_storage:\n{schedule_storage}\n"
-            "scheduler:\n{scheduler}\n"
-            "run_coordinator:\n{run_coordinator}\n"
-            "run_launcher:\n{run_launcher}\n"
-            "".format(
-                artifact=self._info(self._local_artifact_storage),
-                run=self._info(self._run_storage),
-                event=self._info(self._event_storage),
-                compute=self._info(self._compute_log_manager),
-                schedule_storage=self._info(self._schedule_storage),
-                scheduler=self._info(self._scheduler),
-                run_coordinator=self._info(self._run_coordinator),
-                run_launcher=self._info(self._run_launcher),
-            )
-            + "\n".join(
-                [
-                    "{settings_key}:\n{settings_value}".format(
-                        settings_key=settings_key, settings_value=self._info(settings_value)
-                    )
-                    for settings_key, settings_value in settings.items()
-                ]
-            )
+        ret = {
+            "local_artifact_storage": self._info(self._local_artifact_storage),
+            "run_storage": self._info(self._run_storage),
+            "event_log_storage": self._info(self._event_storage),
+            "compute_logs": self._info(self._compute_log_manager),
+            "schedule_storage": self._info(self._schedule_storage),
+            "scheduler": self._info(self._scheduler),
+            "run_coordinator": self._info(self._run_coordinator),
+            "run_launcher": self._info(self._run_launcher),
+        }
+        ret.update(
+            {
+                settings_key: self._info(settings_value)
+                for settings_key, settings_value in settings.items()
+            }
         )
+
+        return ret
+
+    def info_str(self):
+        return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
     # schedule storage
 
@@ -1293,7 +1283,7 @@ class DagsterInstance:
             schedules.append(yaml.safe_dump(schedule_info, default_flow_style=False))
 
         return SchedulerDebugInfo(
-            scheduler_config_info=self.info_str_for_component("Scheduler", self.scheduler),
+            scheduler_config_info=self._info_str_for_component("Scheduler", self.scheduler),
             scheduler_info=self.scheduler.debug_info(),
             schedule_storage=schedules,
             errors=errors,
