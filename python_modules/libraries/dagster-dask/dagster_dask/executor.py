@@ -160,7 +160,7 @@ class DaskExecutor(Executor):
 
         step_levels = execution_plan.get_steps_to_execute_by_level()
 
-        pipeline_name = pipeline_context.pipeline_def.name
+        pipeline_name = pipeline_context.pipeline_name
 
         instance = pipeline_context.instance
 

@@ -49,6 +49,10 @@ class StepExecutionContext:
         return self._system_step_execution_context.pipeline_def
 
     @property
+    def pipeline_name(self) -> str:
+        return self._system_step_execution_context.pipeline_name
+
+    @property
     def mode_def(self) -> ModeDefinition:
         return self._system_step_execution_context.mode_def
 

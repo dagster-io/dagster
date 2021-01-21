@@ -102,8 +102,8 @@ class SystemExecutionContextData(
         return self.environment_config.original_config_dict
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
-        return self.pipeline.get_definition()
+    def pipeline_name(self) -> str:
+        return self.pipeline_run.pipeline_name
 
 
 class SystemExecutionContext:
@@ -142,8 +142,8 @@ class SystemExecutionContext:
         return self._execution_context_data.pipeline
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
-        return self._execution_context_data.pipeline_def
+    def pipeline_name(self) -> str:
+        return self._execution_context_data.pipeline_name
 
     @property
     def mode_def(self) -> ModeDefinition:
@@ -290,6 +290,10 @@ class SystemStepExecutionContext(SystemExecutionContext):
     @property
     def solid_def(self) -> SolidDefinition:
         return self.solid.definition
+
+    @property
+    def pipeline_def(self) -> PipelineDefinition:
+        return self._execution_context_data.pipeline.get_definition()
 
     @property
     def solid(self) -> "Solid":
@@ -449,6 +453,10 @@ class HookContext(SystemExecutionContext):
     @property
     def step(self) -> ExecutionStep:
         return self._step
+
+    @property
+    def pipeline_def(self) -> PipelineDefinition:
+        return self._execution_context_data.pipeline.get_definition()
 
     @property
     def solid(self) -> "Solid":

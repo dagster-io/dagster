@@ -321,7 +321,7 @@ def test_pipeline_name_threaded_through_context():
 
     @solid()
     def assert_name_solid(context):
-        assert context.pipeline_def.name == name
+        assert context.pipeline_name == name
 
     result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]))
 

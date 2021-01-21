@@ -75,12 +75,16 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.logging_tags
 
     @property
+    def pipeline_name(self) -> str:
+        return self._pipeline_context.pipeline_name
+
+    @property
     def pipeline_def(self) -> PipelineDefinition:
         """:class:`dagster.PipelineDefinition`: The pipeline definition for the context.
 
         This will be a dagstermill-specific shim.
         """
-        return self._pipeline_context.pipeline_def
+        return self._pipeline_context.pipeline.get_definition()
 
     @property
     def resources(self) -> Any:

@@ -155,7 +155,7 @@ def log_step_event(step_context, event):
             event_type=event_type, step_key=step_context.step.key
         ),
         dagster_event=event,
-        pipeline_name=step_context.pipeline_def.name,
+        pipeline_name=step_context.pipeline_name,
     )
 
 
@@ -169,10 +169,10 @@ def log_pipeline_event(pipeline_context, event, step_key):
     log_fn(
         event.message
         or "{event_type} for pipeline {pipeline_name}".format(
-            event_type=event_type, pipeline_name=pipeline_context.pipeline_def.name
+            event_type=event_type, pipeline_name=pipeline_context.pipeline_name
         ),
         dagster_event=event,
-        pipeline_name=pipeline_context.pipeline_def.name,
+        pipeline_name=pipeline_context.pipeline_name,
         step_key=step_key,
     )
 
@@ -218,7 +218,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
-            pipeline_name=step_context.pipeline_def.name,
+            pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,
@@ -240,7 +240,7 @@ class DagsterEvent(
         check.opt_inst_param(
             step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
         )
-        pipeline_name = pipeline_context.pipeline_def.name
+        pipeline_name = pipeline_context.pipeline_name
 
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
@@ -643,7 +643,7 @@ class DagsterEvent(
             DagsterEventType.PIPELINE_START,
             pipeline_context,
             message='Started execution of pipeline "{pipeline_name}".'.format(
-                pipeline_name=pipeline_context.pipeline_def.name
+                pipeline_name=pipeline_context.pipeline_name
             ),
         )
 
@@ -653,7 +653,7 @@ class DagsterEvent(
             DagsterEventType.PIPELINE_SUCCESS,
             pipeline_context,
             message='Finished execution of pipeline "{pipeline_name}".'.format(
-                pipeline_name=pipeline_context.pipeline_def.name
+                pipeline_name=pipeline_context.pipeline_name
             ),
         )
 
@@ -664,7 +664,7 @@ class DagsterEvent(
             DagsterEventType.PIPELINE_FAILURE,
             pipeline_context,
             message='Execution of pipeline "{pipeline_name}" failed. {context_msg}'.format(
-                pipeline_name=pipeline_context.pipeline_def.name,
+                pipeline_name=pipeline_context.pipeline_name,
                 context_msg=check.str_param(context_msg, "context_msg"),
             ),
             event_specific_data=PipelineFailureData(
@@ -678,7 +678,7 @@ class DagsterEvent(
             DagsterEventType.PIPELINE_CANCELED,
             pipeline_context,
             message='Execution of pipeline "{pipeline_name}" canceled.'.format(
-                pipeline_name=pipeline_context.pipeline_def.name
+                pipeline_name=pipeline_context.pipeline_name
             ),
             event_specific_data=PipelineCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
@@ -912,7 +912,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=hook_context.pipeline_def.name,
+            pipeline_name=hook_context.pipeline_name,
             step_handle=hook_context.step.handle,
             solid_handle=hook_context.step.solid_handle,
             step_kind_value=hook_context.step.kind.value,
@@ -923,7 +923,7 @@ class DagsterEvent(
         )
 
         hook_context.log.debug(
-            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_def.name,
+            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -935,7 +935,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=hook_context.pipeline_def.name,
+            pipeline_name=hook_context.pipeline_name,
             step_handle=hook_context.step.handle,
             solid_handle=hook_context.step.solid_handle,
             step_kind_value=hook_context.step.kind.value,
@@ -949,7 +949,7 @@ class DagsterEvent(
         )
 
         hook_context.log.error(
-            str(error), dagster_event=event, pipeline_name=hook_context.pipeline_def.name,
+            str(error), dagster_event=event, pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -961,7 +961,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=hook_context.pipeline_def.name,
+            pipeline_name=hook_context.pipeline_name,
             step_handle=hook_context.step.handle,
             solid_handle=hook_context.step.solid_handle,
             step_kind_value=hook_context.step.kind.value,
@@ -973,7 +973,7 @@ class DagsterEvent(
         )
 
         hook_context.log.debug(
-            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_def.name,
+            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_name,
         )
 
         return event
