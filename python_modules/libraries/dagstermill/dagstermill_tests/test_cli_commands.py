@@ -12,55 +12,25 @@ from dagster.check import CheckError
 from dagster.utils import file_relative_path, pushd
 from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
-# pylint: disable=anomalous-backslash-in-string
-EXPECTED_OUTPUT_REGEX = """{
- "cells": \[
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "[a-z\-]+",
-   "metadata": {},
-   "outputs": \[],
-   "source": \[
-    "import dagstermill"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "[a-z\-]+",
-   "metadata": {
-    "tags": \[
-     "parameters"
-    ]
-   },
-   "outputs": \[],
-   "source": \[
-    "context = dagstermill.get_context\(\)"
-   ]
-  }
- ],
- "metadata": {
-  "celltoolbar": "Tags",
-  "kernelspec": {
-   "display_name": "dagster",
-   "language": "python",
-   "name": "dagster"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}"""
-
 EXPECTED_IMPORT_STATEMENT = "from dagstermill.examples.repository import define_example_repository"
 
 
-def check_notebook_expected_output(notebook_path, expected_output_regex):
+def check_notebook_expected_output(notebook_path):
     with open(notebook_path, "r") as f:
-        notebook_content = f.read()
-        assert re.match(expected_output_regex, notebook_content), (
-            notebook_content + "\n\n\n\n" + expected_output_regex
-        )
+        notebook_content = json.loads(f.read())
+        assert set(notebook_content.keys()) == {"cells", "metadata", "nbformat", "nbformat_minor"}
+        assert notebook_content["metadata"] == {
+            "celltoolbar": "Tags",
+            "kernelspec": {"display_name": "dagster", "language": "python", "name": "dagster"},
+        }
+        assert len(notebook_content["cells"]) == 2
+        for key in ["cell_type", "execution_count", "metadata", "outputs", "source"]:
+            assert key in notebook_content["cells"][0]
+            assert key in notebook_content["cells"][1]
+
+        assert notebook_content["cells"][0]["source"] == ["import dagstermill"]
+        assert notebook_content["cells"][1]["metadata"] == {"tags": ["parameters"]}
+        assert notebook_content["cells"][1]["source"] == ["context = dagstermill.get_context()"]
 
 
 @contextlib.contextmanager
@@ -90,16 +60,12 @@ def scaffold(notebook_name=None, kernel=None):
 def test_scaffold():
     with pushd(file_relative_path(__file__, ".")):
         with scaffold(notebook_name="notebooks/cli_test_scaffold") as notebook_path:
-            check_notebook_expected_output(
-                notebook_path + ".ipynb", expected_output_regex=EXPECTED_OUTPUT_REGEX
-            )
+            check_notebook_expected_output(notebook_path + ".ipynb")
 
         with scaffold(
             notebook_name="notebooks/cli_test_scaffold", kernel="dagster"
         ) as notebook_path:
-            check_notebook_expected_output(
-                notebook_path + ".ipynb", expected_output_regex=EXPECTED_OUTPUT_REGEX
-            )
+            check_notebook_expected_output(notebook_path + ".ipynb")
 
         with pytest.raises(
             CheckError, match=re.escape("Could not find kernel 'foobar': available kernels are")

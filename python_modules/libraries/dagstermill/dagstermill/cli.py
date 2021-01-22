@@ -1,6 +1,7 @@
 import copy
 import os
 import subprocess
+from typing import Dict
 
 import click
 import nbformat
@@ -20,7 +21,7 @@ def get_parameters_cell():
     return parameters_cell
 
 
-def get_kernelspec(kernel):
+def get_kernelspec(kernel: str = None):
     kernelspecs = loads(subprocess.check_output(["jupyter", "kernelspec", "list", "--json"]))
 
     check.invariant(len(kernelspecs["kernelspecs"]) > 0, "No available Jupyter kernelspecs!")
@@ -52,7 +53,7 @@ def get_kernelspec(kernel):
     }
 
 
-def get_notebook_scaffolding(kernelspec):
+def get_notebook_scaffolding(kernelspec: Dict[str, str]):
     check.dict_param(kernelspec, "kernelspec", key_type=str, value_type=str)
 
     notebook = nbformat.v4.new_notebook()
@@ -70,11 +71,11 @@ def get_notebook_scaffolding(kernelspec):
     name="register-notebook", help=("Scaffolds existing notebook for dagstermill compatibility")
 )
 @click.option("--notebook", "-note", type=click.Path(exists=True), help="Path to existing notebook")
-def retroactively_scaffold_notebook(notebook):
+def retroactively_scaffold_notebook(notebook: str):
     execute_retroactive_scaffold(notebook)
 
 
-def execute_retroactive_scaffold(notebook_path):
+def execute_retroactive_scaffold(notebook_path: str):
     nb = load_notebook_node(notebook_path)
     new_nb = copy.deepcopy(nb)
     new_nb.cells = [get_import_cell(), get_parameters_cell()] + nb.cells
@@ -97,11 +98,11 @@ def execute_retroactive_scaffold(notebook_path):
         "then one called 'python3', then 'python', and then the first available kernel."
     ),
 )
-def create_notebook(notebook, force_overwrite, kernel):
+def create_notebook(notebook: str, force_overwrite: bool, kernel: str):
     execute_create_notebook(notebook, force_overwrite, kernel)
 
 
-def execute_create_notebook(notebook, force_overwrite, kernel):
+def execute_create_notebook(notebook: str, force_overwrite: bool, kernel: str):
     notebook_path = os.path.join(
         os.getcwd(), notebook if notebook.endswith(".ipynb") else notebook + ".ipynb"
     )
