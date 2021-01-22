@@ -2,7 +2,7 @@ import warnings
 from abc import abstractmethod, abstractproperty
 
 from dagster import check
-from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.utils import frozendict, frozenlist
 
 from .hook import HookDefinition
@@ -11,7 +11,7 @@ from .utils import check_valid_name, validate_tags
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
-class NodeDefinition(ConfigurableDefinition):
+class NodeDefinition(NamedConfigurableDefinition):
     def __init__(
         self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None,
     ):

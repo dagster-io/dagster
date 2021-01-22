@@ -1,11 +1,11 @@
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-class LoggerDefinition(ConfigurableDefinition):
+class LoggerDefinition(AnonymousConfigurableDefinition):
     """Core class for defining loggers.
 
     Loggers are pipeline-scoped logging handlers, which will be automatically invoked whenever
@@ -39,8 +39,7 @@ class LoggerDefinition(ConfigurableDefinition):
     def description(self):
         return self._description
 
-    def copy_for_configured(self, name, description, config_schema, _):
-        check.invariant(name is None, "LoggerDefinitions do not have names")
+    def copy_for_configured(self, description, config_schema, _):
         return LoggerDefinition(
             config_schema=config_schema,
             description=description or self.description,

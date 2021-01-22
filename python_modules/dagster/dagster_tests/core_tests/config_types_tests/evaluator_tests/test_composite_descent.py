@@ -783,30 +783,6 @@ def test_configured_composite_solid_cannot_stub_inner_solids_config():
         )
 
 
-def test_configuring_solids_without_specifying_name():
-    @solid(config_schema=int)
-    def return_int(context):
-        return context.solid_config
-
-    @composite_solid(
-        config_schema={"num": int}, config_fn=lambda cfg: {"return_int": {"config": cfg["num"]}}
-    )
-    def return_int_composite():
-        return_int()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='Missing string param "name" while attempting to configure the node "return_int',
-    ):
-        configured(return_int)(2)
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='Missing string param "name" while attempting to configure the node "return_int_composite"',
-    ):
-        configured(return_int_composite)({"num": 5})
-
-
 def test_configuring_composite_solid_with_no_config_mapping():
     @solid
     def return_run_id(context):

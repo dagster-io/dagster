@@ -27,6 +27,7 @@ Executors
 .. autodecorator:: executor
 
 .. autoclass:: ExecutorDefinition
+    :members: configured
 
 .. autoclass:: InitExecutorContext
     :members:

@@ -1,9 +1,13 @@
 from functools import update_wrapper
+from typing import Any, Dict, Optional
 
 from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
-from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.configurable import (
+    ConfiguredDefinitionConfigSchema,
+    NamedConfigurableDefinition,
+)
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import Retries, get_retries_config
@@ -11,10 +15,10 @@ from dagster.core.execution.retries import Retries, get_retries_config
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-class ExecutorDefinition(ConfigurableDefinition):
+class ExecutorDefinition(NamedConfigurableDefinition):
     """
     Args:
-        name (Optional[str]): The name of the executor.
+        name (str): The name of the executor.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
             available in `init_context.executor_config`.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
@@ -51,10 +55,50 @@ class ExecutorDefinition(ConfigurableDefinition):
 
     def copy_for_configured(self, name, description, config_schema, _):
         return ExecutorDefinition(
-            name=name or self.name,
+            name=name,
             config_schema=config_schema,
             executor_creation_fn=self.executor_creation_fn,
             description=description or self.description,
+        )
+
+    # Backcompat: Overrides configured method to provide name as a keyword argument.
+    # If no name is provided, the name is pulled off of this ExecutorDefinition.
+    def configured(
+        self,
+        config_or_config_fn: Any,
+        name: Optional[str] = None,
+        config_schema: Optional[Dict[str, Any]] = None,
+        description: Optional[str] = None,
+    ):
+        """
+        Wraps this object in an object of the same type that provides configuration to the inner
+        object.
+
+        Args:
+            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
+                that fully satisfies this object's config schema or (2) A function that accepts run
+                configuration and returns run configuration that fully satisfies this object's
+                config schema.  In the latter case, config_schema must be specified.  When
+                passing a function, it's easiest to use :py:func:`configured`.
+            name (Optional[str]): Name of the new definition. If not provided, the emitted
+                definition will inherit the name of the `ExecutorDefinition` upon which this
+                function is called.
+            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
+                that its input must satisfy.
+            description (Optional[str]): Description of the new definition. If not specified,
+                inherits the description of the definition being configured.
+
+        Returns (ConfigurableDefinition): A configured version of this object.
+        """
+
+        name = check.opt_str_param(name, "name")
+
+        new_config_schema = ConfiguredDefinitionConfigSchema(
+            self, convert_user_facing_definition_config_schema(config_schema), config_or_config_fn
+        )
+
+        return self.copy_for_configured(
+            name or self.name, description, new_config_schema, config_or_config_fn
         )
 
 

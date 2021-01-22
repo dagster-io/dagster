@@ -240,7 +240,7 @@ class PipelineDefinition(GraphDefinition):
 
         return PipelineDefinition(
             solid_defs=self._solid_defs,
-            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            name=name,
             description=description or self.description,
             dependencies=self._dependencies,
             mode_defs=self._mode_definitions,

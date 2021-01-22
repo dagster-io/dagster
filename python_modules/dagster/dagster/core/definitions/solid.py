@@ -141,7 +141,7 @@ class SolidDefinition(NodeDefinition):
 
     def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
         return SolidDefinition(
-            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            name=name,
             input_defs=self.input_defs,
             compute_fn=self.compute_fn,
             output_defs=self.output_defs,
@@ -248,7 +248,7 @@ class CompositeSolidDefinition(GraphDefinition):
             )
 
         return CompositeSolidDefinition(
-            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            name=name,
             solid_defs=self._node_defs,
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,

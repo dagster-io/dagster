@@ -41,14 +41,14 @@ def post_plot_to_slack(context, plot_path):
 
 # start_solid_marker_0
 run_cereals_models = dbt_cli_run.configured(
-    name="run_cereals_models",
     config_or_config_fn={"project-dir": PROJECT_DIR, "profiles-dir": PROFILES_DIR},
+    name="run_cereals_models",
 )
 # end_solid_marker_0
 
 test_cereals_models = dbt_cli_test.configured(
-    name="test_cereals_models",
     config_or_config_fn={"project-dir": PROJECT_DIR, "profiles-dir": PROFILES_DIR},
+    name="test_cereals_models",
 )
 
 

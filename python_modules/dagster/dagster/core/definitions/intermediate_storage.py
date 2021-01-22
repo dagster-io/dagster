@@ -1,13 +1,13 @@
 from functools import update_wrapper
 
 from dagster import check
-from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
 from .utils import check_valid_name
 
 
-class IntermediateStorageDefinition(ConfigurableDefinition):
+class IntermediateStorageDefinition(AnonymousConfigurableDefinition):
     """Defines intermediate data storage behaviors.
 
     Args:
@@ -72,9 +72,9 @@ class IntermediateStorageDefinition(ConfigurableDefinition):
     def required_resource_keys(self):
         return self._required_resource_keys
 
-    def copy_for_configured(self, name, description, config_schema, _):
+    def copy_for_configured(self, description, config_schema, _):
         return IntermediateStorageDefinition(
-            name=name or self.name,
+            name=self.name,
             is_persistent=self.is_persistent,
             required_resource_keys=self.required_resource_keys,
             config_schema=config_schema,

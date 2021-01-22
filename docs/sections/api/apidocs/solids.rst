@@ -12,6 +12,8 @@ Defining solids
 .. autodecorator:: solid
 
 .. autoclass:: SolidDefinition
+    :members: configured
+
 
 .. autodecorator:: lambda_solid
 
@@ -34,6 +36,7 @@ Composing solids
 .. autodecorator:: composite_solid
 
 .. autoclass:: CompositeSolidDefinition
+    :members: configured
 
 .. autoclass:: InputMapping
 

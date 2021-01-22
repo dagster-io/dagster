@@ -1,5 +1,5 @@
 import pytest
-from dagster import ModeDefinition, PipelineDefinition, check, configured, execute_pipeline, solid
+from dagster import ModeDefinition, PipelineDefinition, check, execute_pipeline, solid
 from dagster.core.definitions.executor import executor
 from dagster.core.execution.retries import Retries
 
@@ -72,6 +72,10 @@ def test_in_process_executor_dict_config_configured():
             marker_to_close=None,
         )
 
-    test_executor_configured = configured(test_executor)({"value": "secret testing value!!"})
+    test_executor_configured = test_executor.configured(
+        {"value": "secret testing value!!"}, "configured_test_executor"
+    )
 
-    assert_pipeline_runs_with_executor([test_executor_configured], {"test_executor": None})
+    assert_pipeline_runs_with_executor(
+        [test_executor_configured], {"configured_test_executor": None}
+    )

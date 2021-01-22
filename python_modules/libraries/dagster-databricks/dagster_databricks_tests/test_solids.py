@@ -25,7 +25,7 @@ def test_run_create_databricks_job_solid(
     )
     def test_pipe():
         create_databricks_job_solid(num_inputs=0).configured(
-            {"job": databricks_run_config, "poll_interval_sec": 0.01}, name="test"
+            {"job": databricks_run_config, "poll_interval_sec": 0.01}, "test"
         )()
 
     RUN_ID = 1
