@@ -1,5 +1,5 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Button, Colors} from '@blueprintjs/core';
+import {Button, Colors, Icon} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,6 +7,7 @@ import * as yaml from 'yaml';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/app/LocalStorage';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {ConfigEditor} from 'src/configeditor/ConfigEditor';
 import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
@@ -15,7 +16,10 @@ import {
   responseToYamlValidationResult,
 } from 'src/configeditor/ConfigEditorUtils';
 import {isHelpContextEqual} from 'src/configeditor/isHelpContextEqual';
-import {ConfigEditorConfigPicker} from 'src/execute/ConfigEditorConfigPicker';
+import {
+  ConfigEditorConfigPicker,
+  CONFIG_PARTITION_SELECTION_QUERY,
+} from 'src/execute/ConfigEditorConfigPicker';
 import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
 import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
@@ -25,6 +29,7 @@ import {SessionSettingsBar} from 'src/execute/SessionSettingsBar';
 import {SolidSelector} from 'src/execute/SolidSelector';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {scaffoldPipelineConfig} from 'src/execute/scaffoldType';
+import {ConfigEditorGeneratorPipelineFragment_presets} from 'src/execute/types/ConfigEditorGeneratorPipelineFragment';
 import {ExecutionSessionContainerPartitionSetsFragment} from 'src/execute/types/ExecutionSessionContainerPartitionSetsFragment';
 import {ExecutionSessionContainerPipelineFragment} from 'src/execute/types/ExecutionSessionContainerPipelineFragment';
 import {ExecutionSessionContainerRunConfigSchemaFragment} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
@@ -33,16 +38,20 @@ import {
   PreviewConfigQueryVariables,
 } from 'src/execute/types/PreviewConfigQuery';
 import {DagsterTag} from 'src/runs/RunTag';
-import {PipelineSelector} from 'src/types/globalTypes';
+import {PipelineSelector, RepositorySelector} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {Group} from 'src/ui/Group';
 import {SecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
 const LOADING_RUN_PREVIEW = `Checking config...`;
+
+type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 
 interface IExecutionSessionContainerProps {
   data: IStorageData;
@@ -314,6 +323,119 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     return responseToYamlValidationResult(configJSON, data.isPipelineConfigValid);
   };
 
+  const onSelectPreset = async (preset: Preset) => {
+    const tagsDict: {[key: string]: string} = [...(pipeline?.tags || []), ...preset.tags].reduce(
+      (tags, kv) => {
+        tags[kv.key] = kv.value;
+        return tags;
+      },
+      {},
+    );
+
+    onSaveSession({
+      base: {presetName: preset.name},
+      name: preset.name,
+      runConfigYaml: preset.runConfigYaml || '',
+      solidSelection: preset.solidSelection,
+      solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
+      mode: preset.mode,
+      tags: Object.entries(tagsDict).map(([key, value]) => ({key, value})),
+      needsRefresh: false,
+    });
+  };
+
+  const onSelectPartition = async (
+    repositorySelector: RepositorySelector,
+    partitionSetName: string,
+    partitionName: string,
+  ) => {
+    onConfigLoading();
+    try {
+      const {base} = currentSession;
+      const {data} = await client.query({
+        query: CONFIG_PARTITION_SELECTION_QUERY,
+        variables: {repositorySelector, partitionSetName, partitionName},
+      });
+
+      if (
+        !data ||
+        !data.partitionSetOrError ||
+        data.partitionSetOrError.__typename !== 'PartitionSet'
+      ) {
+        onConfigLoaded();
+        return;
+      }
+
+      const {partition} = data.partitionSetOrError;
+
+      let tags;
+      if (partition.tagsOrError.__typename === 'PythonError') {
+        tags = (pipeline?.tags || []).slice();
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
+        });
+      } else {
+        tags = [...(pipeline?.tags || []), ...partition.tagsOrError.results];
+      }
+
+      let runConfigYaml;
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        runConfigYaml = '';
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
+        });
+      } else {
+        runConfigYaml = partition.runConfigOrError.yaml;
+      }
+
+      onSaveSession({
+        name: partition.name,
+        base: Object.assign({}, base, {
+          partitionName: partition.name,
+        }),
+        runConfigYaml,
+        solidSelection: partition.solidSelection,
+        solidSelectionQuery:
+          partition.solidSelection === null ? '*' : partition.solidSelection.join(','),
+        mode: partition.mode,
+        tags,
+        needsRefresh: false,
+      });
+    } catch {}
+    onConfigLoaded();
+  };
+
+  const onRefreshConfig = async () => {
+    const {base} = currentSession;
+    if (!base) {
+      return;
+    }
+
+    // Handle preset-based configuration.
+    if ('presetName' in base) {
+      const {presetName} = base;
+      const matchingPreset = pipeline.presets.find((preset) => preset.name === presetName);
+      if (matchingPreset) {
+        onSelectPreset(matchingPreset);
+      }
+      return;
+    }
+
+    // Otherwise, handle partition-based configuration.
+    const {partitionName, partitionsSetName} = base;
+    const repositorySelector = repoAddressToSelector(repoAddress);
+
+    if (partitionName) {
+      onConfigLoading();
+      await onSelectPartition(repositorySelector, partitionsSetName, partitionName);
+      onConfigLoaded();
+    }
+  };
+
+  const onDismissRefreshWarning = () => {
+    onSaveSession({needsRefresh: false});
+  };
+
   const openTagEditor = () => dispatch({type: 'toggle-tag-editor', payload: true});
   const closeTagEditor = () => dispatch({type: 'toggle-tag-editor', payload: false});
 
@@ -350,6 +472,8 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               onLoaded={onConfigLoaded}
               onCreateSession={onCreateSession}
               onSaveSession={onSaveSession}
+              onSelectPreset={onSelectPreset}
+              onSelectPartition={onSelectPartition}
               repoAddress={repoAddress}
             />
             <SessionSettingsSpacer />
@@ -407,6 +531,31 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
             <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
           </SessionSettingsBar>
           {tags.length ? <TagContainer tags={tags} onRequestEdit={openTagEditor} /> : null}
+          {currentSession.base !== null && currentSession.needsRefresh ? (
+            <Box
+              padding={{vertical: 8, horizontal: 12}}
+              border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}
+            >
+              <Group direction="row" spacing={8} alignItems="center">
+                <Icon icon="warning-sign" color={Colors.GOLD3} />
+                <div>
+                  Your repository has been manually refreshed, and this configuration may now be out
+                  of date.
+                </div>
+                <Button
+                  small
+                  intent="primary"
+                  onClick={onRefreshConfig}
+                  disabled={state.configLoading}
+                >
+                  Refresh config
+                </Button>
+                <Button small onClick={onDismissRefreshWarning}>
+                  Dismiss
+                </Button>
+              </Group>
+            </Box>
+          ) : null}
           <SplitPanelContainer
             ref={editorSplitPanelContainer}
             axis="horizontal"
@@ -426,7 +575,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                   }
                 }}
                 showWhitespace={showWhitespace}
-                checkConfig={async (configJSON) => await checkConfig(configJSON)}
+                checkConfig={checkConfig}
               />
             }
             second={

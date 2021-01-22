@@ -3,6 +3,7 @@ import {Button, Icon, Intent, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SharedToaster} from 'src/app/DomUtils';
+import {useInvalidateConfigsForRepo} from 'src/app/LocalStorage';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {
   ReloadRepositoryLocationMutation,
@@ -22,6 +23,7 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
     variables: {location},
   });
   const [reloading, setReloading] = React.useState(false);
+  const invalidateConfigs = useInvalidateConfigsForRepo();
 
   const onClick = async (e: React.MouseEvent | KeyboardEvent) => {
     e.stopPropagation();
@@ -59,6 +61,14 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
       });
       onReload(location, {type: 'success'});
     }
+
+    // Update run config localStorage, which may now be out of date.
+    const repositories =
+      data?.reloadRepositoryLocation.__typename === 'RepositoryLocation'
+        ? data.reloadRepositoryLocation.repositories
+        : [];
+
+    invalidateConfigs(repositories);
 
     // clears and re-fetches all the queries bound to the UI
     apollo.resetStore();
@@ -101,6 +111,17 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
       __typename
+      ... on RepositoryLocation {
+        id
+        repositories {
+          id
+          name
+          pipelines {
+            id
+            name
+          }
+        }
+      }
       ... on ReloadNotSupported {
         message
       }

@@ -8,8 +8,23 @@
 // GraphQL mutation operation: ReloadRepositoryLocationMutation
 // ====================================================
 
+export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation_repositories_pipelines {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
+}
+
+export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation_repositories {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  pipelines: ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation_repositories_pipelines[];
+}
+
 export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation {
   __typename: "RepositoryLocation";
+  id: string;
+  repositories: ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation_repositories[];
 }
 
 export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_ReloadNotSupported {

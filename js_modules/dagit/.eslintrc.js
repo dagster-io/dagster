@@ -58,7 +58,7 @@ module.exports = {
     'react/display-name': 'off',
     '@typescript-eslint/no-unused-vars': [
       'error',
-      {argsIgnorePattern: '^_', ignoreRestSiblings: true},
+      {argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true},
     ],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
