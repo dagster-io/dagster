@@ -531,17 +531,6 @@ def dagster_steps():
         StepBuilder(":python-black:")
         # See: https://github.com/dagster-io/dagster/issues/1999
         .run("make check_black").on_integration_image(SupportedPython.V3_7).build(),
-        StepBuilder(":mypy: examples")
-        .run(
-            "pip install mypy",
-            # start small by making sure the local code type checks
-            "mypy examples/airline_demo/airline_demo "
-            "examples/legacy_examples/dagster_examples/bay_bikes "
-            "examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy* "
-            "--ignore-missing-imports",
-        )
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
     ]
 
     for m in DAGSTER_PACKAGES_WITH_CUSTOM_TESTS:
