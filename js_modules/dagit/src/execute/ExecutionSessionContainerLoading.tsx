@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {LoadingOverlay} from 'src/execute/LoadingOverlay';
 import {SessionSettingsBar} from 'src/execute/SessionSettingsBar';
+import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
 

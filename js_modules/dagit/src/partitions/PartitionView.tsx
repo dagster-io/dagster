@@ -3,7 +3,6 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {CursorHistoryControls} from 'src/CursorControls';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionGraphSet} from 'src/partitions/PartitionGraphSet';
 import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelector';
@@ -14,6 +13,7 @@ import {RunTagsSupportedTokens} from 'src/partitions/RunTagsTokenizingField';
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
 import {useQueryPersistedRunFilters} from 'src/runs/RunsFilter';
+import {CursorHistoryControls} from 'src/ui/CursorControls';
 import {RepoAddress} from 'src/workspace/types';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;

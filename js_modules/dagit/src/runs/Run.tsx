@@ -4,7 +4,6 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {
@@ -38,6 +37,7 @@ import {
   RunPipelineRunEventFragment,
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
 } from 'src/runs/types/RunPipelineRunEventFragment';
+import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
 
 interface RunProps {

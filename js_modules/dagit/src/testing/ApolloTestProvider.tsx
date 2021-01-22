@@ -14,7 +14,7 @@ interface Props {
   mocks?: any;
 }
 
-const typeDefs = loader('../schema.graphql');
+const typeDefs = loader('../graphql/schema.graphql');
 const schema = makeExecutableSchema({typeDefs});
 
 export const ApolloTestProvider = (props: Props) => {

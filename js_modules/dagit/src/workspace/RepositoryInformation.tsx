@@ -1,8 +1,8 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {RepositoryInfoFragment} from 'src/types/RepositoryInfoFragment';
-import {RepositoryOriginFragment} from 'src/types/RepositoryOriginFragment';
+import {RepositoryInfoFragment} from 'src/workspace/types/RepositoryInfoFragment';
+import {RepositoryOriginFragment} from 'src/workspace/types/RepositoryOriginFragment';
 
 export const REPOSITORY_ORIGIN_FRAGMENT = gql`
   fragment RepositoryOriginFragment on RepositoryOrigin {

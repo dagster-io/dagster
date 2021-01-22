@@ -6,11 +6,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
-import {SplitPanelContainer} from 'src/SplitPanelContainer';
-import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/VizComponents';
-import {WebsocketStatusContext} from 'src/WebsocketStatus';
 import {ROOT_SERVER_URI} from 'src/app/DomUtils';
+import {GraphQueryItem, filterByQuery} from 'src/app/GraphQueryImpl';
+import {WebsocketStatusContext} from 'src/app/WebsocketStatus';
 import {
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
@@ -41,6 +39,7 @@ import {
 import {GanttChartModeControl} from 'src/gantt/GanttChartModeControl';
 import {GanttChartTimescale} from 'src/gantt/GanttChartTimescale';
 import {GanttStatusPanel} from 'src/gantt/GanttStatusPanel';
+import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/gantt/VizComponents';
 import {ZoomSlider} from 'src/gantt/ZoomSlider';
 import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
@@ -50,6 +49,7 @@ import {StepSelection} from 'src/runs/StepSelection';
 import {Box} from 'src/ui/Box';
 import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
+import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 
 export {GanttChartMode} from 'src/gantt/Constants';
 

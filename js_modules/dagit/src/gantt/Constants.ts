@@ -1,4 +1,4 @@
-import {GraphQueryItem} from 'src/GraphQueryImpl';
+import {GraphQueryItem} from 'src/app/GraphQueryImpl';
 import {IStepState} from 'src/runs/RunMetadataProvider';
 
 export type IGanttNode = GraphQueryItem;

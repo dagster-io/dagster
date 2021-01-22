@@ -4,7 +4,6 @@ import {uniq, flatMap} from 'lodash';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Timestamp} from 'src/TimeComponents';
 import {AssetMaterializationMatrix} from 'src/assets/AssetMaterializationMatrix';
 import {AssetMaterializationTable} from 'src/assets/AssetMaterializationTable';
 import {AssetValueGraph} from 'src/assets/AssetValueGraph';
@@ -22,6 +21,7 @@ import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {MetadataTable} from 'src/ui/MetadataTable';
 import {Heading, Subheading} from 'src/ui/Text';
+import {Timestamp} from 'src/ui/TimeComponents';
 import {FontFamily} from 'src/ui/styles';
 
 interface AssetKey {

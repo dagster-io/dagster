@@ -3,7 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useConfirmation} from 'src/CustomConfirmationProvider';
+import {useConfirmation} from 'src/app/CustomConfirmationProvider';
 import {
   IStorageData,
   applyChangesToSession,

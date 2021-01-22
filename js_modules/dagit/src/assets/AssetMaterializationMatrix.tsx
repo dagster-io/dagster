@@ -4,7 +4,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Timestamp} from 'src/TimeComponents';
 import {formatElapsedTime} from 'src/app/Util';
 import {AssetNumericHistoricalData, LABEL_STEP_EXECUTION_TIME} from 'src/assets/AssetView';
 import {Sparkline} from 'src/assets/Sparkline';
@@ -21,6 +20,7 @@ import {
 } from 'src/partitions/RunMatrixUtils';
 import {MetadataEntry} from 'src/runs/MetadataEntry';
 import {titleForRun} from 'src/runs/RunUtils';
+import {Timestamp} from 'src/ui/TimeComponents';
 import {FontFamily} from 'src/ui/styles';
 
 const COL_WIDTH = 120;

@@ -3,13 +3,16 @@ import {H3, UL} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from 'src/TypeWithTooltip';
 import {
   SectionInner,
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
 } from 'src/pipelines/SidebarComponents';
+import {
+  DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT,
+  TypeWithTooltip,
+} from 'src/typeexplorer/TypeWithTooltip';
 import {TypeListFragment} from 'src/typeexplorer/types/TypeListFragment';
 
 interface ITypeListProps {

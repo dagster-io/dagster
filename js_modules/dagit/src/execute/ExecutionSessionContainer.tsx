@@ -5,7 +5,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {SecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/app/LocalStorage';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
@@ -37,6 +36,7 @@ import {
 } from 'src/execute/types/PreviewConfigQuery';
 import {DagsterTag} from 'src/runs/RunTag';
 import {PipelineSelector} from 'src/types/globalTypes';
+import {SecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 import {RepoAddress} from 'src/workspace/types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const schemaPath = path.resolve(path.join(__dirname, 'src', 'schema.graphql'));
+const schemaPath = path.resolve(path.join(__dirname, 'src', 'graphql', 'schema.graphql'));
 const schema = fs.readFileSync(schemaPath).toString();
 
 module.exports = {

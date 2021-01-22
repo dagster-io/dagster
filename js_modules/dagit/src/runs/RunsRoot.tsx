@@ -17,7 +17,6 @@ import {RouteComponentProps} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {CursorPaginationControls} from 'src/CursorControls';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {AllScheduledTicks, SCHEDULED_TICKS_FRAGMENT} from 'src/runs/AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
@@ -35,6 +34,7 @@ import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {useCountdown} from 'src/ui/Countdown';
+import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';

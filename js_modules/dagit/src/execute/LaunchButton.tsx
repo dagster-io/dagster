@@ -13,8 +13,8 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {WebsocketStatusContext} from 'src/WebsocketStatus';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
+import {WebsocketStatusContext} from 'src/app/WebsocketStatus';
 
 export interface LaunchButtonConfiguration {
   title: string;

@@ -2,8 +2,7 @@ import {useMutation} from '@apollo/client';
 import {Button, Callout, Intent, Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {useConfirmation} from 'src/CustomConfirmationProvider';
-import {RepositoryOriginInformation} from 'src/RepositoryInformation';
+import {useConfirmation} from 'src/app/CustomConfirmationProvider';
 import {TickTag} from 'src/jobs/JobTick';
 import {JobRunStatus} from 'src/jobs/JobUtils';
 import {JobStateFragment} from 'src/jobs/types/JobStateFragment';
@@ -20,6 +19,7 @@ import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {Subheading} from 'src/ui/Text';
+import {RepositoryOriginInformation} from 'src/workspace/RepositoryInformation';
 
 export const UnloadableSensors: React.FunctionComponent<{
   sensorStates: JobStateFragment[];

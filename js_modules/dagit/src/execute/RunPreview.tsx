@@ -3,9 +3,8 @@ import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useConfirmation} from 'src/CustomConfirmationProvider';
-import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {useConfirmation} from 'src/app/CustomConfirmationProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {errorStackToYamlPath} from 'src/configeditor/ConfigEditorUtils';
 import {
@@ -17,6 +16,7 @@ import {
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
 } from 'src/execute/types/RunPreviewValidationFragment';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 
 type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;

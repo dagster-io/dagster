@@ -23,10 +23,9 @@ const schemaJson = JSON.parse(result).data;
 
 // Write schema.graphql in the SDL format
 const sdl = printSchema(buildClientSchema(schemaJson));
-writeFileSync('./src/schema.graphql', sdl);
+writeFileSync('./src/graphql/schema.graphql', sdl);
 
-// Write filteredSchema.json, a reduced schema for runtime usage
-// See https://www.apollographql.com/docs/react/advanced/fragments.html
+// Write `possibleTypes.generated.json`, used for creating a mocked schema in tests.
 const possibleTypes = {};
 
 schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{name: string}]}) => {
@@ -35,4 +34,4 @@ schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{na
   }
 });
 
-writeFileSync('./src/possibleTypes.generated.json', JSON.stringify(possibleTypes));
+writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possibleTypes));

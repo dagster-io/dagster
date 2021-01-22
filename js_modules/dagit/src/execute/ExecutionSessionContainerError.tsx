@@ -1,8 +1,8 @@
 import {NonIdealState, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {SessionSettingsBar} from 'src/execute/SessionSettingsBar';
+import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 
 export const ExecutionSessionContainerError: React.FC<NonIdealState['props']> = (props) => (
   <SplitPanelContainer

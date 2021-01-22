@@ -7,8 +7,7 @@ import * as React from 'react';
 import {Route} from 'react-router';
 import styled from 'styled-components/macro';
 
-import {filterByQuery} from 'src/GraphQueryImpl';
-import {SplitPanelContainer} from 'src/SplitPanelContainer';
+import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
 import {SolidJumpBar} from 'src/pipelines/PipelineJumpComponents';
@@ -21,6 +20,7 @@ import {PipelineExplorerFragment} from 'src/pipelines/types/PipelineExplorerFrag
 import {PipelineExplorerSolidHandleFragment} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {GraphQueryInput} from 'src/ui/GraphQueryInput';
+import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 

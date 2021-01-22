@@ -3,8 +3,8 @@ import React from 'react';
 import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
-import {RepositoryInformation} from 'src/RepositoryInformation';
 import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
+import {RepositoryInformation} from 'src/workspace/RepositoryInformation';
 import {DagsterRepoOption, isRepositoryOptionEqual} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 

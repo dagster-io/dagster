@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {browserTimezone, timestampToString} from 'src/TimeComponents';
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
@@ -10,6 +9,7 @@ import {
   DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
 } from 'src/instance/types/DaemonHealthFragment';
 import {Table} from 'src/ui/Table';
+import {browserTimezone, timestampToString} from 'src/ui/TimeComponents';
 
 interface DaemonLabelProps {
   daemon: DaemonStatus;

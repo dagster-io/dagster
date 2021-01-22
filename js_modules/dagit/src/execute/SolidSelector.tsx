@@ -3,7 +3,7 @@ import {Colors, Intent, Popover} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {filterByQuery} from 'src/GraphQueryImpl';
+import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {
   SolidSelectorQuery,

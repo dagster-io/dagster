@@ -12,9 +12,9 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {filterByQuery} from 'src/GraphQueryImpl';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {SharedToaster} from 'src/app/DomUtils';
+import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {PipelineRunTag} from 'src/app/LocalStorage';
 import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {LaunchButton} from 'src/execute/LaunchButton';

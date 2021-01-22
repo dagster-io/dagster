@@ -3,11 +3,8 @@ import {Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/ConfigTypeSchema';
-import {Description} from 'src/Description';
-import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/SolidTypeSignature';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from 'src/TypeWithTooltip';
 import {breakOnUnderscores} from 'src/app/Util';
+import {Description} from 'src/pipelines/Description';
 import {
   SectionItemContainer,
   SectionSmallHeader,
@@ -27,6 +24,12 @@ import {
 } from 'src/pipelines/SidebarSolidHelpers';
 import {SidebarSolidDefinitionFragment} from 'src/pipelines/types/SidebarSolidDefinitionFragment';
 import {pluginForMetadata} from 'src/plugins';
+import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/solids/SolidTypeSignature';
+import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/typeexplorer/ConfigTypeSchema';
+import {
+  DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT,
+  TypeWithTooltip,
+} from 'src/typeexplorer/TypeWithTooltip';
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;

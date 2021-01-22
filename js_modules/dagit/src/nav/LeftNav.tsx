@@ -5,9 +5,8 @@ import {useHistory} from 'react-router';
 import {Link, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {TimezonePicker} from 'src/TimeComponents';
-import {WebsocketStatus} from 'src/WebsocketStatus';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
+import {WebsocketStatus} from 'src/app/WebsocketStatus';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
 import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';
@@ -18,6 +17,7 @@ import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
+import {TimezonePicker} from 'src/ui/TimeComponents';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 
 const KEYCODE_FOR_1 = 49;

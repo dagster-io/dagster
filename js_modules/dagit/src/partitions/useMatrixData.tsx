@@ -1,7 +1,7 @@
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
-import {filterByQuery} from 'src/GraphQueryImpl';
+import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {GanttChartLayout} from 'src/gantt/Constants';
 import {GanttChartMode} from 'src/gantt/GanttChart';
 import {buildLayout} from 'src/gantt/GanttChartLayout';

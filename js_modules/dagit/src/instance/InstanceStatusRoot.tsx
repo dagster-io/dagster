@@ -3,7 +3,6 @@ import {Tab, Tabs, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Route, Switch} from 'react-router-dom';
 
-import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {InstanceConfig} from 'src/instance/InstanceConfig';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
@@ -21,6 +20,7 @@ import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
+import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from 'src/workspace/WorkspaceContext';
 
 const POLL_INTERVAL = 15 * 1000;

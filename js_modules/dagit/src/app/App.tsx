@@ -1,16 +1,16 @@
 import * as React from 'react';
 import {BrowserRouter, Route, Switch} from 'react-router-dom';
 
-import {CustomConfirmationProvider} from 'src/CustomConfirmationProvider';
-import {CustomTooltipProvider} from 'src/CustomTooltipProvider';
-import {FallthroughRoot} from 'src/FallthroughRoot';
-import {FeatureFlagsRoot} from 'src/FeatureFlagsRoot';
-import {TimezoneProvider} from 'src/TimeComponents';
 import {CustomAlertProvider} from 'src/app/CustomAlertProvider';
+import {CustomConfirmationProvider} from 'src/app/CustomConfirmationProvider';
+import {CustomTooltipProvider} from 'src/app/CustomTooltipProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
+import {FallthroughRoot} from 'src/app/FallthroughRoot';
+import {FeatureFlagsRoot} from 'src/app/FeatureFlagsRoot';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {InstanceRoot} from 'src/instance/InstanceRoot';
 import {LeftNav} from 'src/nav/LeftNav';
+import {TimezoneProvider} from 'src/ui/TimeComponents';
 import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
