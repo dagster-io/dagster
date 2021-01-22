@@ -1,19 +1,22 @@
 import * as React from 'react';
 
 import {RunTag} from 'src/runs/RunTag';
-import {RunFragment_tags} from 'src/runs/types/RunFragment';
-import {RunTableRunFragment_tags} from 'src/runs/types/RunTableRunFragment';
 import {Box} from 'src/ui/Box';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
+interface RunTagType {
+  key: string;
+  value: string;
+}
+
 export const RunTags: React.FC<{
-  tags: RunTableRunFragment_tags[] | RunFragment_tags[];
+  tags: RunTagType[];
   onSetFilter?: (search: TokenizingFieldValue[]) => void;
 }> = React.memo(({tags, onSetFilter}) => {
   if (!tags.length) {
     return null;
   }
-  const onClick = (tag: RunTableRunFragment_tags) => {
+  const onClick = (tag: RunTagType) => {
     onSetFilter && onSetFilter([{token: 'tag', value: `${tag.key}=${tag.value}`}]);
   };
 
