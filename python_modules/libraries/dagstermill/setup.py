@@ -28,9 +28,11 @@ if __name__ == "__main__":
         ],
         install_requires=[
             "dagster",
-            # ipykernel pinned until https://github.com/nteract/papermill/issues/519 is resolved.
-            # See https://github.com/dagster-io/dagster/issues/3401
-            "ipykernel>=4.9.0,<=5.3.4",
+            # ipykernel 5.4.0 and 5.4.1 broke papermill
+            # see https://github.com/dagster-io/dagster/issues/3401,
+            # https://github.com/nteract/papermill/issues/519,
+            # https://github.com/ipython/ipykernel/issues/568
+            "ipykernel>=4.9.0,!=5.4.0,!=5.4.1",
             "nbconvert>=5.4.0,<6.0.0",
             "nteract-scrapbook>=0.2.0",
             "papermill>=1.0.0,<2.0.0",
