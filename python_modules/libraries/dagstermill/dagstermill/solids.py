@@ -18,6 +18,7 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.storage.file_manager import FileHandle
@@ -274,6 +275,8 @@ def define_dagstermill_solid(
     required_resource_keys=None,
     output_notebook=None,
     asset_key_prefix=None,
+    description=None,
+    tags=None,
 ):
     """Wrap a Jupyter notebook in a solid.
 
@@ -293,6 +296,10 @@ def define_dagstermill_solid(
             py:class:`~dagster_aws.s3.S3FileHandle`.
         asset_key_prefix (Optional[Union[List[str], str]]): If set, will be used to prefix the
             asset keys for materialized notebooks.
+        description (Optional[str]): If set, description used for solid.
+        tags (Optional[Dict[str, str]]): If set, additional tags used to annotate solid.
+            Dagster uses the tag keys `notebook_path` and `kind`, which cannot be
+            overwritten by the user.
 
     Returns:
         :py:class:`~dagster.SolidDefinition`
@@ -311,6 +318,21 @@ def define_dagstermill_solid(
 
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
+    default_description = f"This solid is backed by the notebook at {notebook_path}"
+    description = check.opt_str_param(description, "description", default=default_description)
+
+    user_tags = validate_tags(tags)
+    if tags is not None:
+        check.invariant(
+            "notebook_path" not in tags,
+            "user-defined solid tags contains the `notebook_path` key, but the `notebook_path` key is reserved for use by Dagster",
+        )
+        check.invariant(
+            "kind" not in tags,
+            "user-defined solid tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
+        )
+    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+
     return SolidDefinition(
         name=name,
         input_defs=input_defs,
@@ -325,6 +347,6 @@ def define_dagstermill_solid(
         ),
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
-        description="This solid is backed by the notebook at {path}".format(path=notebook_path),
-        tags={"notebook_path": notebook_path, "kind": "ipynb"},
+        description=description,
+        tags={**user_tags, **default_tags},
     )

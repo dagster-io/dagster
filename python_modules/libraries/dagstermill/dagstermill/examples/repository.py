@@ -79,6 +79,16 @@ def hello_world_pipeline():
     hello_world()
 
 
+hello_world_with_custom_tags_and_description = test_nb_solid(
+    "hello_world", output_defs=[], tags={"foo": "bar"}, description="custom description"
+)
+
+
+@pipeline(mode_defs=default_mode_defs)
+def hello_world_with_custom_tags_and_description_pipeline():
+    hello_world_with_custom_tags_and_description()
+
+
 hello_world_config = test_nb_solid(
     "hello_world_config",
     config_schema={"greeting": Field(String, is_required=False, default_value="hello")},
@@ -349,6 +359,7 @@ def notebook_repo():
         bad_kernel_pipeline,
         error_pipeline,
         hello_world_pipeline,
+        hello_world_with_custom_tags_and_description_pipeline,
         hello_world_config_pipeline,
         hello_world_explicit_yield_pipeline,
         hello_world_output_pipeline,
