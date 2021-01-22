@@ -14,6 +14,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ScheduleDefinition,
+    SkipReason,
     composite_solid,
     execute_pipeline,
     execute_solid,
@@ -321,6 +322,12 @@ def test_scheduler():
             )
         }
 
+    @schedule(
+        cron_schedule="* * * * *", pipeline_name="foo_pipeline", should_execute=lambda x: False
+    )
+    def always_skip_schedule(context):
+        return {}
+
     with instance_for_test() as instance:
         context_without_time = ScheduleExecutionContext(instance, None)
 
@@ -337,6 +344,14 @@ def test_scheduler():
         assert len(execution_data) == 1
         assert isinstance(execution_data[0], RunRequest)
         assert execution_data[0].run_config == {"echo_time": execution_time.isoformat()}
+
+        execution_data = always_skip_schedule.get_execution_data(context_with_time)
+        assert len(execution_data) == 1
+        assert isinstance(execution_data[0], SkipReason)
+        assert (
+            execution_data[0].skip_message
+            == "should_execute function for always_skip_schedule returned false."
+        )
 
 
 def test_schedule_decorators_sanity():
@@ -467,7 +482,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
             }
 
             # time that's invalid since it corresponds to a partition that hasn't happened yet
-            # should not execute and should throw if it tries to generate run config
+            # should not execute and should yield a SkipReason if it tries to generate run config
             execution_time_with_invalid_partition = pendulum.create(
                 year=2019, month=2, day=27, hour=3, minute=25, tz="US/Central"
             )
@@ -476,7 +491,15 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
             )
 
             execution_data = hourly_foo_schedule.get_execution_data(context_with_invalid_time)
-            assert len(execution_data) == 0
+
+            assert len(execution_data) == 1
+            skip_data = execution_data[0]
+            assert isinstance(skip_data, SkipReason)
+            assert (
+                "Partition selector did not return a partition. "
+                "Make sure that the timezone on your partition set matches your execution timezone."
+                in skip_data.skip_message
+            )
 
             valid_time = pendulum.create(
                 year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"

@@ -1,8 +1,13 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions.job import RunRequest, SkipReason
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
@@ -187,57 +192,66 @@ class PartitionSetDefinition(
         check.callable_param(partition_selector, "partition_selector")
         check.opt_str_param(execution_timezone, "execution_timezone")
 
-        def _should_execute_wrapper(context):
+        def _execution_fn(context):
             check.inst_param(context, "context", ScheduleExecutionContext)
-            selected_partition = partition_selector(context, self)
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: f"Error occurred during the execution of partition_selector for schedule {schedule_name}",
+            ):
+                selected_partition = partition_selector(context, self)
 
-            if not selected_partition or not selected_partition.name in self.get_partition_names():
-                return False
-            elif not should_execute:
-                return True
-            else:
-                return should_execute(context)
-
-        def _run_config_fn_wrapper(context):
-            check.inst_param(context, "context", ScheduleExecutionContext)
-            selected_partition = partition_selector(context, self)
-            if not selected_partition or not selected_partition.name in self.get_partition_names():
-                raise DagsterInvariantViolationError(
-                    "The partition selection function `{selector}` did not return "
-                    "a partition from PartitionSet {partition_set}".format(
-                        selector=getattr(partition_selector, "__name__", repr(partition_selector)),
-                        partition_set=self.name,
-                    )
-                )
-
-            return self.run_config_for_partition(selected_partition)
-
-        def _tags_fn_wrapper(context):
-            check.inst_param(context, "context", ScheduleExecutionContext)
-            selected_partition = partition_selector(context, self)
             if not selected_partition:
-                raise DagsterInvariantViolationError(
-                    "The partition selection function `{selector}` did not return "
-                    "a partition from PartitionSet {partition_set}".format(
-                        selector=getattr(partition_selector, "__name__", repr(partition_selector)),
-                        partition_set=self.name,
-                    )
+                yield SkipReason(
+                    "Partition selector did not return a partition. Make sure that the timezone "
+                    "on your partition set matches your execution timezone."
                 )
+                return
 
-            return self.tags_for_partition(selected_partition)
+            if selected_partition.name not in self.get_partition_names():
+                yield SkipReason(
+                    f"Partition selector returned a partition {selected_partition.name} not in the partition set."
+                )
+                return
+
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: f"Error occurred during the execution of should_execute for schedule {schedule_name}",
+            ):
+                if should_execute and not should_execute(context):
+                    yield SkipReason(
+                        "should_execute function for {schedule_name} returned false.".format(
+                            schedule_name=schedule_name
+                        )
+                    )
+                    return
+
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: f"Error occurred during the execution of run_config_fn for schedule {schedule_name}",
+            ):
+                run_config = self.run_config_for_partition(selected_partition)
+
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: f"Error occurred during the execution of tags_fn for schedule {schedule_name}",
+            ):
+                tags = self.tags_for_partition(selected_partition)
+            yield RunRequest(
+                run_key=None, run_config=run_config, tags=tags,
+            )
 
         return PartitionScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=self.pipeline_name,
-            run_config_fn=_run_config_fn_wrapper,
-            tags_fn=_tags_fn_wrapper,
+            tags_fn=None,
             solid_selection=self.solid_selection,
             mode=self.mode,
-            should_execute=_should_execute_wrapper,
+            should_execute=None,
             environment_vars=environment_vars,
             partition_set=self,
             execution_timezone=execution_timezone,
+            execution_fn=_execution_fn,
         )
 
 
@@ -257,6 +271,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         partition_set,
         run_config_fn=None,
         execution_timezone=None,
+        execution_fn=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -269,6 +284,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             should_execute=should_execute,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
+            execution_fn=execution_fn,
         )
         self._partition_set = check.inst_param(
             partition_set, "partition_set", PartitionSetDefinition
