@@ -41,7 +41,7 @@ export const DaemonList = (props: Props) => {
   }
 
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '15%'}}>Daemon</th>

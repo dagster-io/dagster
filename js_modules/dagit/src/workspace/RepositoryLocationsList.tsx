@@ -96,7 +96,7 @@ export const RepositoryLocationsList = () => {
   };
 
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th>Repository location</th>

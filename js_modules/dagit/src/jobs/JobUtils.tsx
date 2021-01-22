@@ -68,6 +68,10 @@ export const StatusTable = styled.table`
   font-size: 13px;
   border-spacing: 0;
 
+  &&&&& tr {
+    box-shadow: none;
+  }
+
   &&&&& tbody > tr > td {
     background: transparent;
     box-shadow: none;

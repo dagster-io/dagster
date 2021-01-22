@@ -60,7 +60,7 @@ export const SchedulesTable: React.FC<{
   }, [repoAddress.name, repoAddress.location]);
 
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '60px'}}></th>

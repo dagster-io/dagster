@@ -142,7 +142,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
             <SecondaryContainer>
               <OverviewSection title="Schedule">
                 {schedules.length ? (
-                  <Table striped style={{width: '100%'}}>
+                  <Table $compact>
                     <tbody>
                       {schedules.map((schedule) => (
                         <OverviewJob
@@ -162,7 +162,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
               </OverviewSection>
               <OverviewSection title="Sensor">
                 {sensors.length ? (
-                  <Table striped style={{width: '100%'}}>
+                  <Table $compact>
                     <tbody>
                       {sensors.map((sensor) => (
                         <OverviewJob
@@ -183,7 +183,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
               <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
                 <OverviewSection title="Recent runs">
                   {pipelineSnapshotOrError.runs.length ? (
-                    <Table striped>
+                    <Table $compact>
                       <tbody>
                         {pipelineSnapshotOrError.runs.map((run) => (
                           <OverviewRun run={run} key={run.runId} />
@@ -218,7 +218,7 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
   return (
     <OverviewSection title="Related assets">
       {assetKeys.length ? (
-        <Table striped style={{width: '100%'}}>
+        <Table>
           <tbody>
             {assetKeys.map((assetKey) => (
               <tr key={assetKey} style={{padding: 10, paddingBottom: 30}}>
@@ -312,7 +312,7 @@ const OverviewRun = ({run}: {run: Run}) => {
 
   return (
     <tr>
-      <td style={{maxWidth: 30, textAlign: 'center'}}>
+      <td style={{width: '20px', textAlign: 'center'}}>
         <RunStatusWithStats status={run.status} runId={run.runId} />
       </td>
       <td style={{width: '100%'}}>

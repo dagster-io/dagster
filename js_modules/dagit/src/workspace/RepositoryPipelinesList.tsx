@@ -70,7 +70,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
 
   return (
     <Page>
-      <Table striped style={{width: '100%'}}>
+      <Table>
         <thead>
           <tr>
             <th>Pipeline name</th>

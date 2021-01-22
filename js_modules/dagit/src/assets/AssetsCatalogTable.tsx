@@ -224,7 +224,7 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
           <AssetSearch assets={assets} />
         </div>
       )}
-      <Table striped style={{width: '100%'}}>
+      <Table>
         <thead>
           <tr>
             <th>Asset Key</th>

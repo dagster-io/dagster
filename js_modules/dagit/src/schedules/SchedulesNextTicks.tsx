@@ -64,7 +64,7 @@ export const SchedulesNextTicks: React.FC<{
   }
 
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '200px'}}>Timestamp</th>

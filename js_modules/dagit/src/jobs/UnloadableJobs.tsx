@@ -32,7 +32,7 @@ export const UnloadableSensors: React.FunctionComponent<{
       <Subheading>Unloadable sensors:</Subheading>
       <UnloadableSensorInfo />
 
-      <Table striped style={{width: '100%'}}>
+      <Table>
         <thead>
           <tr>
             <th style={{maxWidth: '60px'}}></th>
@@ -62,7 +62,7 @@ export const UnloadableSchedules: React.FunctionComponent<{
       <Subheading>Unloadable schedules:</Subheading>
       <UnloadableScheduleInfo />
 
-      <Table striped style={{width: '100%'}}>
+      <Table>
         <thead>
           <tr>
             <th style={{maxWidth: '60px'}}></th>

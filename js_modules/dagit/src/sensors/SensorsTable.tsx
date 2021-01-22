@@ -43,7 +43,7 @@ export const SensorsTable: React.FC<{
     </div>
   );
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '60px'}}></th>

@@ -40,7 +40,7 @@ export const WorkspaceOverviewRoot = () => {
     }
 
     return (
-      <Table striped style={{width: '100%'}}>
+      <Table>
         <thead>
           <tr>
             <th>Repository</th>

@@ -128,7 +128,7 @@ export const RunTable = (props: RunTableProps) => {
   const selectedFragments = runs.filter((run) => checkedRuns.has(run.runId));
 
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th colSpan={4}>
@@ -147,7 +147,7 @@ export const RunTable = (props: RunTableProps) => {
           </th>
           <th style={{maxWidth: '90px'}}>Pipeline Definition</th>
           <th style={{flex: 1}}>Execution Params</th>
-          <th>Timing</th>
+          <th style={{width: '180px'}}>Timing</th>
           {props.additionalColumnHeaders}
           <th />
         </tr>
@@ -213,7 +213,7 @@ const RunRow: React.FC<{
 
   return (
     <Row key={run.runId} highlighted={!!isHighlighted}>
-      <td style={{maxWidth: '36px'}}>
+      <td style={{paddingRight: '4px'}}>
         {onToggleChecked && <Checkbox checked={checked} onChange={onChange} />}
       </td>
       <td style={{width: '90px', fontFamily: FontFamily.monospace}}>
@@ -239,12 +239,12 @@ const RunRow: React.FC<{
           <div>{`Mode: ${run.mode}`}</div>
         </div>
       </td>
-      <td style={{maxWidth: '150px', whiteSpace: 'nowrap'}}>
+      <td style={{width: '180px'}}>
         <RunTime run={run} />
         {queuedStatuses.has(run.status) ? null : <RunElapsed run={run} />}
       </td>
       {additionalColumns}
-      <td style={{maxWidth: '52px'}}>
+      <td style={{width: '52px'}}>
         <RunActionsMenu run={run} />
       </td>
     </Row>

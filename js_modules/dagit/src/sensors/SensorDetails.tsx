@@ -108,7 +108,7 @@ export const SensorDetails: React.FC<{
             {
               key: 'Pipeline',
               value: (
-                <Link to={workspacePathFromAddress(repoAddress, `/pipeline/${pipelineName}`)}>
+                <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
                   {pipelineName}
                 </Link>
               ),

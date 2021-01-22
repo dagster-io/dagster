@@ -66,7 +66,7 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
         <Callout intent="primary" icon="info-sign" style={{marginBottom: '12px'}}>
           Pipelines named <strong>{pipelineName}</strong> were found in multiple repositories.
         </Callout>
-        <Table striped style={{width: '100%'}}>
+        <Table>
           <thead>
             <tr>
               <th>Repository name and location</th>

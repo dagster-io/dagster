@@ -15,7 +15,7 @@ export const AssetMaterializationTable: React.FunctionComponent<{
   materializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
 }> = ({isPartitioned, materializations}) => {
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th style={{paddingLeft: 0}}>Materialization Metadata</th>
