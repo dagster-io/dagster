@@ -37,7 +37,7 @@ def adls2_resource(context):
 
             @solid(required_resource_keys={'adls2'})
             def example_adls2_solid(context):
-                return list(context.resources.adls2.list_file_systems())
+                return list(context.resources.adls2.adls2_client.list_file_systems())
 
             result = execute_solid(
                 example_adls2_solid,
