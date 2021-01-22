@@ -467,6 +467,7 @@ type Schedule {
   scheduleState: JobState!
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int): FutureJobTicks!
+  futureTick(tickTimestamp: Int!): FutureJobTick!
 }
 
 type JobState {
@@ -593,6 +594,19 @@ type FutureJobTicks {
 
 type FutureJobTick {
   timestamp: Float!
+  evaluationResult: TickEvaluation
+}
+
+type TickEvaluation {
+  runRequests: [RunRequest]
+  skipReason: String
+  error: PythonError
+}
+
+type RunRequest {
+  runKey: String
+  tags: [PipelineTag!]!
+  runConfigYaml: String!
 }
 
 type Sensor {

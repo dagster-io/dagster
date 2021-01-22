@@ -96,7 +96,14 @@ class ExternalRepository:
             if external_job_data.job_type == JobType.SENSOR:
                 external.append(ExternalSensor(external_job_data, self._handle))
             elif external_job_data.job_type == JobType.SCHEDULE:
-                external.append(ExternalSchedule(external_job_data, self._handle))
+                external.append(
+                    ExternalSchedule(
+                        self.external_repository_data.get_external_schedule_data(
+                            external_job_data.name
+                        ),
+                        self._handle,
+                    )
+                )
         return external
 
     def has_external_job(self, job_name):
@@ -107,7 +114,7 @@ class ExternalRepository:
         if external_job_data.job_type == JobType.SENSOR:
             return ExternalSensor(external_job_data, self._handle)
         if external_job_data.job_type == JobType.SCHEDULE:
-            return ExternalSchedule(external_job_data, self._handle)
+            return self.get_external_schedule(external_job_data.name)
         return None
 
     def get_external_partition_set(self, partition_set_name):

@@ -66,7 +66,7 @@ class DauphinSensor(dauphin.ObjectType):
         next_timestamp = latest_tick.timestamp + SENSOR_DAEMON_INTERVAL
         if next_timestamp < datetime_as_float(datetime.now()):
             return None
-        return graphene_info.schema.type_named("FutureJobTick")(next_timestamp)
+        return graphene_info.schema.type_named("FutureJobTick")(self._sensor_state, next_timestamp)
 
 
 class DauphinSensorOrError(dauphin.Union):

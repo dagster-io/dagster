@@ -1,6 +1,7 @@
 import os
 
 import pendulum
+import yaml
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -54,6 +55,21 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
       futureTicks(limit: 3, cursor: $ticksAfter) {
         results {
           timestamp
+          evaluationResult {
+            runRequests {
+              runKey
+              tags {
+                key
+                value
+              }
+              runConfigYaml
+            }
+            error {
+              message
+              stack
+            }
+            skipReason
+          }
         }
         cursor
       }
@@ -283,6 +299,72 @@ def test_get_single_schedule_definition(graphql_context):
         pendulum.create(2019, 3, 3, tz="US/Central").timestamp(),
         pendulum.create(2019, 3, 4, tz="US/Central").timestamp(),
     ]
+
+
+def test_next_tick(graphql_context):
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+    graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    schedule_selector = infer_schedule_selector(
+        graphql_context, "no_config_pipeline_hourly_schedule"
+    )
+
+    # Start a single schedule, future tick run requests only available for running schedules
+    start_result = execute_dagster_graphql(
+        graphql_context, START_SCHEDULES_QUERY, variables={"scheduleSelector": schedule_selector},
+    )
+    assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
+
+    # get schedule next tick
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
+    )
+
+    future_ticks = result.data["scheduleOrError"]["futureTicks"]
+
+    assert future_ticks
+    assert len(future_ticks["results"]) == 3
+    for tick in future_ticks["results"]:
+        assert tick["evaluationResult"]
+        assert tick["evaluationResult"]["runRequests"]
+        assert len(tick["evaluationResult"]["runRequests"]) == 1
+        assert tick["evaluationResult"]["runRequests"][0]["runConfigYaml"] == yaml.dump(
+            {"intermediate_storage": {"filesystem": {}}},
+            default_flow_style=False,
+            allow_unicode=True,
+        )
+
+
+def test_next_tick_bad_schedule(graphql_context):
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+    graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    schedule_selector = infer_schedule_selector(graphql_context, "run_config_error_schedule")
+
+    # Start a single schedule, future tick run requests only available for running schedules
+    start_result = execute_dagster_graphql(
+        graphql_context, START_SCHEDULES_QUERY, variables={"scheduleSelector": schedule_selector},
+    )
+    assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
+
+    # get schedule next tick
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
+    )
+
+    future_ticks = result.data["scheduleOrError"]["futureTicks"]
+
+    assert future_ticks
+    assert len(future_ticks["results"]) == 3
+    for tick in future_ticks["results"]:
+        assert tick["evaluationResult"]
+        assert not tick["evaluationResult"]["runRequests"]
+        assert not tick["evaluationResult"]["skipReason"]
+        assert tick["evaluationResult"]["error"]
 
 
 def test_get_unloadable_job(graphql_context):
