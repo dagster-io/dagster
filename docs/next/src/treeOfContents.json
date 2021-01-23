@@ -476,7 +476,7 @@
       },
       {
         "name": "Deploying on Kubernetes",
-        "path": "/deploying/k8s"
+        "path": "/deploying/kubernetes"
       },
       {
         "name": "Using AWS for storage",

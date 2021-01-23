@@ -19,31 +19,31 @@ a [values file or command-line overrides](https://helm.sh/docs/intro/using_helm/
 will be used in this guide. References to `values.yaml` in the following sections refer to [Dagster's `values.yaml`](https://github.com/dagster-io/dagster/blob/master/helm/dagster/values.yaml).
 For users who do not use Helm, this guide is still a useful reference for the components required.
 
-In the [Default Deployment](/deploying/k8s#default-deployment) section, we go over the simplest way to get started:
-* [Default Quickstart →](/deploying/k8s#default-quickstart)
-* [Default Architecture and Walkthrough →](/deploying/k8s#default-architecture)
-* [Default Components →](/deploying/k8s#default-components)
+In the [Default Deployment](/deploying/kubernetes#default-deployment) section, we go over the simplest way to get started:
+* [Default Quickstart →](/deploying/kubernetes#default-quickstart)
+* [Default Architecture and Walkthrough →](/deploying/kubernetes#default-architecture)
+* [Default Components →](/deploying/kubernetes#default-components)
 
-In the [Advanced Deployment](/deploying/k8s#advanced-deployment) section, we build off of the [Default Deployment](/deploying/k8s#default-deployment) 
+In the [Advanced Deployment](/deploying/kubernetes#advanced-deployment) section, we build off of the [Default Deployment](/deploying/kubernetes#default-deployment)
 and add more sophisticated features including solid-level isolation and queuing mechanisms.
-* [Advanced Quickstart: Running Dagster in Production →](/deploying/k8s#advanced-quickstart)
-* [Advanced Architecture and Walkthrough →](/deploying/k8s#advanced-architecture)
-* [Advanced Components →](/deploying/k8s#advanced-components)
-* [Helm Configuration Options →](/deploying/k8s#advanced-configuration)
+* [Advanced Quickstart: Running Dagster in Production →](/deploying/kubernetes#advanced-quickstart)
+* [Advanced Architecture and Walkthrough →](/deploying/kubernetes#advanced-architecture)
+* [Advanced Components →](/deploying/kubernetes#advanced-components)
+* [Helm Configuration Options →](/deploying/kubernetes#advanced-configuration)
 
 Last, we include sections on:
-* [Tips →](/deploying/k8s#tools-and-tips)
-* [Debugging →](/deploying/k8s#debugging)
+* [Tips →](/deploying/kubernetes#tools-and-tips)
+* [Debugging →](/deploying/kubernetes#debugging)
 
 
 ## Default Deployment
 
-In this section, we cover the simplest deployment option from [quickstart](/deploying/k8s#default-quickstart), 
-to [architecture](/deploying/k8s#default-architecture), to individual [components](/deploying/k8s#default-components).
+In this section, we cover the simplest deployment option from [quickstart](/deploying/kubernetes#default-quickstart),
+to [architecture](/deploying/kubernetes#default-architecture), to individual [components](/deploying/kubernetes#default-components).
 
 ### Default Quickstart
 
-The following steps are how to get up and running with the [default architecture](/deploying/k8s#default-architecture). This example requires a Kubernetes cluster.
+The following steps are how to get up and running with the [default architecture](/deploying/kubernetes#default-architecture). This example requires a Kubernetes cluster.
 
 **Step 1:** Set up environment
 
@@ -138,7 +138,7 @@ Within Dagit, you can watch pipeline progress live update and succeed!
 
 <!-- https://excalidraw.com/#json=6263621281644544,Pf5BkEJGb8XU_U4kOTBBEg -->
 
-![k8s_architecture_1.png](/assets/images/deploying/k8s_architecture_1.png)
+![dagster-kubernetes-default-architecture.png](/assets/images/deploying/dagster-kubernetes-default-architecture.png)
 
 ### Default Walkthrough
 
@@ -239,14 +239,14 @@ updates to repositories can occur without causing downtime to any other reposito
 After updating, if there is an error with any repository, an error is surfaced for that repository within Dagit; all other repositories and Dagit will still operate normally.
 
 ## Advanced Deployment
-In this section, we build off of the [Default Deployment](/deploying/k8s#default-deployment) and add more sophisticated features.
+In this section, we build off of the [Default Deployment](/deploying/kubernetes#default-deployment) and add more sophisticated features.
 
 ### Advanced Quickstart
 
-The following steps set up the [advanced architecture](/deploying/k8s#advanced-architecture). This example requires a Kubernetes cluster and a persistent file store (we use S3 
+The following steps set up the [advanced architecture](/deploying/kubernetes#advanced-architecture). This example requires a Kubernetes cluster and a persistent file store (we use S3
 in the example). Read about [GCP documentation here](/deploying/gcp).
 
-**Step 1-4:** [Follow Step 1-4 in the Default Quickstart](/deploying/k8s#default-quickstart)
+**Step 1-4:** [Follow Step 1-4 in the Default Quickstart](/deploying/kubernetes#default-quickstart)
 
 **Step 5:** Configure Persistent Object Storage
 
@@ -315,7 +315,7 @@ Within Dagit, you can watch pipeline progress live update and succeed!
 ### Advanced Architecture
 <!-- https://excalidraw.com/#json=6263621281644544,Pf5BkEJGb8XU_U4kOTBBEg -->
 
-![k8s_architecture_2.png](/assets/images/deploying/k8s_architecture_2.png)
+![dagster-kubernetes-advanced-architecture.png](/assets/images/deploying/dagster-kubernetes-advanced-architecture.png)
 
 ### Advanced Walkthrough
 
@@ -396,7 +396,7 @@ The Celery workers poll for new Celery tasks and execute each task in order of r
 consists of launching an ephemeral Step Job (Kubernetes Job) to execute that step.
 
 Using Celery requires configuring the <PyObject
-module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" /> ([See Configuration](/deploying/k8s#advanced-configuration)).
+module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" /> ([See Configuration](/deploying/kubernetes#advanced-configuration)).
 
 ####  Daemon
 
@@ -409,11 +409,11 @@ image specified used in the User Code Deployment.
 
 ####  Dagit
 
-Building off the [prior description](/deploying/k8s#dagit), but instead, it is configured with the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
+Building off the [prior description](/deploying/kubernetes#dagit), but instead, it is configured with the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
 
 ####  Database
 
-Same as the [prior description](/deploying/k8s#database).
+Same as the [prior description](/deploying/kubernetes#database).
 
 ####  Flower <i>(Optional)</i>
 
@@ -422,7 +422,7 @@ and workers.
 
 ####  Run Worker
 
-Building off the [prior description](/deploying/k8s#run-worker), the main difference in this deployment is 
+Building off the [prior description](/deploying/kubernetes#run-worker), the main difference in this deployment is
 that the Run Worker submits steps that are ready to be executed to the corresponding Celery queue (instead of executing
 the step itself). As before, the Run Worker is responsible for traversing the execution plan.
 
@@ -433,7 +433,7 @@ polls for the Step Job completion.
 
 ####  User Code Deployment
 
-Same as the [prior description](/deploying/k8s#user-code-deployment).
+Same as the [prior description](/deploying/kubernetes#user-code-deployment).
 
 
 ### Advanced Configuration
@@ -446,11 +446,11 @@ The [Run Launcher](/overview/pipeline-runs/run-launcher) is responsible for allo
 
 <PyObject module="dagster_k8s" object="K8sRunLauncher" /> [Default]:
 
-The `K8sRunLauncher` is used in the [Default Deployment](/deploying/k8s#default-deployment) example. It creates a new Kubernetes Job per pipeline run.
+The `K8sRunLauncher` is used in the [Default Deployment](/deploying/kubernetes#default-deployment) example. It creates a new Kubernetes Job per pipeline run.
 
 <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />:
 
-The `CeleryK8sRunLauncher` is used in the [Advanced Deployment](/deploying/k8s#advanced-deployment) example. It creates a new Kubernetes Job per step 
+The `CeleryK8sRunLauncher` is used in the [Advanced Deployment](/deploying/kubernetes#advanced-deployment) example. It creates a new Kubernetes Job per step
 for step-level isolation and handling concurrency limits on a per-step basis.
 
 ####  Executor
@@ -460,16 +460,16 @@ With the K8sRunLauncher, users can utilize the <PyObject module="dagster" object
 the <PyObject module="dagster_celery" object="celery_executor" />, the <PyObject module="dagster_celery_docker" object="celery_docker_executor" />, 
 or a custom Executor.
 
-With the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, user must use the <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />. 
-As seen in the [Advanced Deployment](/deploying/k8s#advanced-deployment) example, this creates a Celery task for each Step, allowing for step-level isolation and concurrency control.
+With the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, user must use the <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
+As seen in the [Advanced Deployment](/deploying/kubernetes#advanced-deployment) example, this creates a Celery task for each Step, allowing for step-level isolation and concurrency control.
 
 ####  Scheduler
 Schedule names are generated by hashing the schedule properties, so different repositories can contain schedules with the same
 schedule name.
 
 Daemon scheduler [Default]: Uses [dagster-native scheduler](/overview/daemon). The daemon is also responsible for running sensors,
-and managing the queue of runs. This is used in both the [Default Deployment](/deploying/k8s#default-deployment) and 
-[Advanced Deployment](/deploying/k8s#advanced-deployment) examples and is our recommended approach.
+and managing the queue of runs. This is used in both the [Default Deployment](/deploying/kubernetes#default-deployment) and
+[Advanced Deployment](/deploying/kubernetes#advanced-deployment) examples and is our recommended approach.
 
 K8s CronJob scheduler [Deprecated]: Uses [Kubernetes CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) directly. 
 In order to enable the <PyObject module="dagster_k8s" object="K8sScheduler" />, set `scheduler.type` to `K8sScheduler` in the `values.yaml`.

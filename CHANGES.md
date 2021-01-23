@@ -178,7 +178,7 @@ the 0.10.0 release._
 
 ### Kubernetes/Helm
 
-* The [Dagster Kubernetes documentation](https://docs.dagster.io/deploying/k8s) has been refreshed.
+* The [Dagster Kubernetes documentation](https://docs.dagster.io/deploying/kubernetes) has been refreshed.
 
 **Helm**
 
