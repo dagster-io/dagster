@@ -29,6 +29,7 @@ from dagster.core.storage.event_log import (
 )
 from dagster.core.storage.sql import create_engine
 from dagster.seven import multiprocessing
+from watchdog.utils import platform
 
 
 @contextmanager
@@ -132,6 +133,10 @@ def test_event_log_storage_store_with_multiple_runs(event_storage_factory_cm_fn)
 
 
 @event_storage_test
+@pytest.mark.skipif(
+    platform.is_darwin(),
+    reason="watchdog's default Mac OSX FSEventsObserver sometimes fails to pick up changes",
+)
 def test_event_log_storage_watch(event_storage_factory_cm_fn):
     def evt(name):
         return DagsterEventRecord(
