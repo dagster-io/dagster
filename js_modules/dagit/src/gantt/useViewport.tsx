@@ -9,7 +9,11 @@ import {GanttViewport} from 'src/gantt/Constants';
  * It uses a ResizeObserver and an onScroll handler to monitor the viewport of the
  * container. To use, spread the returned `containerProps` onto the container div.
  */
-export const useViewport = () => {
+export const useViewport = (
+  options: {
+    initialOffset?: (el: HTMLElement) => {left: number; top: number};
+  } = {},
+) => {
   const ref = React.useRef<any>();
   const [offset, setOffset] = React.useState<{left: number; top: number}>({
     left: 0,
@@ -20,31 +24,45 @@ export const useViewport = () => {
     height: 0,
   });
 
+  const {initialOffset} = options;
+
   // Monitor the container for size changes (if possible, otherwise fall back)
   // to capturing the initial size only. (Only old FF).
-  const measureRef = () => {
+  const measureRef = React.useCallback(() => {
     if (!ref.current) {
       return;
     }
+    const onApplySize = (next: {width: number; height: number}) => {
+      setSize({width: next.width, height: next.height});
+      if (!ref.current.__sized && next.width !== 0 && initialOffset) {
+        const targetOffset = initialOffset(ref.current);
+        ref.current.scrollTop = targetOffset.top;
+        ref.current.scrollLeft = targetOffset.left;
+        setOffset(targetOffset);
+        ref.current.__sized = true;
+      }
+    };
+
     let resizeObserver: any;
-    if (ref.current instanceof HTMLElement && 'ResizeObserver' in window) {
-      resizeObserver = new window['ResizeObserver']((entries: any) => {
-        setSize({
-          width: entries[0].contentRect.width,
-          height: entries[0].contentRect.height,
+    if (ref.current instanceof HTMLElement) {
+      if ('ResizeObserver' in window) {
+        resizeObserver = new window['ResizeObserver']((entries: any) => {
+          if (entries[0].target === ref.current) {
+            onApplySize(entries[0].contentRect);
+          }
         });
-      });
-      resizeObserver.observe(ref.current);
-    } else {
-      console.warn(`No ResizeObsrever support, or useViewport is attached to a non-DOM node?`);
-      const rect = ref.current.getBoundingClientRect();
-      setSize({width: rect.width, height: rect.height});
+        resizeObserver.observe(ref.current);
+      } else {
+        console.warn(`No ResizeObserver support, or useViewport is attached to a non-DOM node?`);
+        onApplySize(ref.current.getBoundingClientRect());
+      }
     }
     return () => {
       resizeObserver?.disconnect();
     };
-  };
-  React.useEffect(measureRef, []);
+  }, [initialOffset]);
+
+  React.useEffect(measureRef, [measureRef]);
 
   // Monitor the container for scroll offset changes
   const animation = React.useRef<any>(null);
@@ -80,37 +98,39 @@ export const useViewport = () => {
       Math.max(0, targetOffset.top),
     );
 
-    if (!animated) {
+    const onDone = () => {
+      ref.current.scrollTop = targetOffset.top;
+      ref.current.scrollLeft = targetOffset.left;
       setOffset(targetOffset);
+      animation.current = null;
+    };
+    if (animated) {
+      animation.current = animate(offset, targetOffset, {
+        step: (v: any) => {
+          ref.current.scrollTop = v.top;
+          ref.current.scrollLeft = v.left;
+          setOffset({left: v.left, top: v.top});
+        },
+        done: onDone,
+      });
+    } else {
+      onDone();
     }
-    animation.current = animate(offset, targetOffset, {
-      step: (v: any) => {
-        ref.current.scrollTop = v.top;
-        ref.current.scrollLeft = v.left;
-        setOffset({
-          left: v.left,
-          top: v.top,
-        });
-      },
-      done: () => {
-        ref.current.scrollTop = targetOffset.top;
-        ref.current.scrollLeft = targetOffset.left;
-        setOffset(targetOffset);
-        animation.current = null;
-      },
-    });
   };
 
   // There are scenarios where the exported `container ref` isn't attached to a component immediately
   // (eg the parent is showing a loading state). This means it may be undefined during our initial render
   // and we need to measure it when it's actually assigned a value.
-  const setRef = React.useCallback((el: any) => {
-    if (el === ref.current) {
-      return;
-    }
-    ref.current = el;
-    measureRef();
-  }, []);
+  const setRef = React.useCallback(
+    (el: any) => {
+      if (el === ref.current) {
+        return;
+      }
+      ref.current = el;
+      measureRef();
+    },
+    [measureRef],
+  );
 
   return {
     viewport: {...offset, ...size} as GanttViewport,

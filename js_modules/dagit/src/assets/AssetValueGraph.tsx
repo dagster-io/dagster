@@ -10,7 +10,6 @@ export const AssetValueGraph: React.FunctionComponent<{
   label: string;
   width: string;
   data: AssetNumericHistoricalData[0];
-  xAxis: 'time' | 'partition';
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
 }> = (props) => {
@@ -20,7 +19,7 @@ export const AssetValueGraph: React.FunctionComponent<{
   //
   let labels: React.ReactText[] | undefined = undefined;
   let xHover = props.xHover;
-  if (props.xAxis === 'partition') {
+  if (props.data.xAxis === 'partition') {
     labels = props.data.values.map((v) => v.x);
     xHover = xHover ? labels.indexOf(xHover) : null;
   }
@@ -55,7 +54,7 @@ export const AssetValueGraph: React.FunctionComponent<{
     scales: {
       yAxes: [{scaleLabel: {display: true, labelString: 'Value'}}],
       xAxes: [
-        props.xAxis === 'time'
+        props.data.xAxis === 'time'
           ? {
               type: 'time',
               scaleLabel: {

@@ -58,8 +58,10 @@ export const AssetMaterializationMatrix: React.FunctionComponent<AssetMaterializ
   graphedLabels,
   setGraphedLabels,
 }) => {
-  const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredLabel, setHoveredLabel] = React.useState<string>('');
+  const {viewport, containerProps, onMoveToViewport} = useViewport({
+    initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
+  });
 
   const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / COL_WIDTH));
   const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / COL_WIDTH);
