@@ -71,6 +71,7 @@ def build_output_def_snap(output_def):
         dagster_type_key=output_def.dagster_type.key,
         description=output_def.description,
         is_required=output_def.is_required,
+        is_dynamic=output_def.is_dynamic,
     )
 
 
@@ -291,14 +292,17 @@ class InputDefSnap(namedtuple("_InputDefSnap", "name dagster_type_key descriptio
 
 
 @whitelist_for_serdes
-class OutputDefSnap(namedtuple("_OutputDefSnap", "name dagster_type_key description is_required")):
-    def __new__(cls, name, dagster_type_key, description, is_required):
+class OutputDefSnap(
+    namedtuple("_OutputDefSnap", "name dagster_type_key description is_required is_dynamic")
+):
+    def __new__(cls, name, dagster_type_key, description, is_required, is_dynamic=False):
         return super(OutputDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
+            is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
         )
 
 

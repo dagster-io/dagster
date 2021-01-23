@@ -13,6 +13,9 @@ interface QuerySerializer<T extends QueryPersistedDataType> {
   decode: (raw: {[key: string]: any}) => T;
   encode: (raw: T) => {[key: string]: any};
 }
+
+let currentQueryString: {[key: string]: any} = {};
+
 /**
  * This goal of this hook is to make it easy to replace `React.useState` with a version
  * that persists the value to the page querystring so it is saved across page reload, etc.
@@ -57,10 +60,9 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
 
   // We stash the query string into a ref so that the setter can operate on the /current/
   // location even if the user retains it and calls it after other query string changes.
-  const qs = React.useRef<{[key: string]: any}>({});
-  qs.current = querystring.parse(location.search);
+  currentQueryString = querystring.parse(location.search);
 
-  const qsWithDefaults = {...(defaults || {}), ...qs.current};
+  const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
   const qsDecoded = decode ? decode(qsWithDefaults) : (qsWithDefaults as T);
 
   // If `decode` yields a non-primitive type (eg: object or array), by default we yield
@@ -70,15 +72,22 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   if (!isEqual(valueRef.current, qsDecoded)) {
     valueRef.current = qsDecoded;
   }
+
   return [
     valueRef.current,
     (updated: T) => {
-      history.replace(
-        `${location.pathname}?${querystring.stringify({
-          ...qs.current,
-          ...(encode ? encode(updated) : (updated as {[key: string]: any})),
-        })}`,
-      );
+      const next = {
+        ...currentQueryString,
+        ...(encode ? encode(updated) : (updated as {[key: string]: any})),
+      };
+      // omit any keys that are equal to the defaults to keep URLs minimal
+      for (const [key, value] of Object.entries(next)) {
+        if (options.defaults && options.defaults[key] === value) {
+          delete next[key];
+        }
+      }
+      currentQueryString = next;
+      history.replace(`${location.pathname}?${querystring.stringify(next)}`);
     },
   ];
 }

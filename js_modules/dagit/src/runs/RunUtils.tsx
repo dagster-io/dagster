@@ -6,9 +6,7 @@ import * as yaml from 'yaml';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
-import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
@@ -113,8 +111,7 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunAc
 export type ReExecutionStyle =
   | {type: 'all'}
   | {type: 'from-failure'}
-  | {type: 'selection'; selection: StepSelection}
-  | {type: 'from-selected'; selection: StepSelection};
+  | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
   run: (RunFragment | RunTableRunFragment | RunActionMenuFragment) & {runConfigYaml: string};
@@ -151,21 +148,6 @@ export function getReexecutionVariables(input: {
     executionParams.executionMetadata?.tags?.push({
       key: DagsterTag.StepSelection,
       value: style.selection.query,
-    });
-  }
-  if (style.type === 'from-selected') {
-    if (!('executionPlan' in run) || !run.executionPlan) {
-      console.warn('Run execution plan must be present to launch from-selected execution');
-      return undefined;
-    }
-    const selectionAndDownstreamQuery = style.selection.keys.map((k) => `${k}*`).join(',');
-    const graph = toGraphQueryItems(run.executionPlan);
-    const graphFiltered = filterByQuery(graph, selectionAndDownstreamQuery);
-
-    executionParams.stepKeys = graphFiltered.all.map((node) => node.name);
-    executionParams.executionMetadata?.tags?.push({
-      key: DagsterTag.StepSelection,
-      value: selectionAndDownstreamQuery,
     });
   }
 

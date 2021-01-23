@@ -7,18 +7,14 @@ import {ComputeLogLink} from 'src/runs/ComputeLogModal';
 import {LogLevel} from 'src/runs/LogLevel';
 import {LogFilter, LogFilterValue} from 'src/runs/LogsProvider';
 import {IStepState, IRunMetadataDict} from 'src/runs/RunMetadataProvider';
-import {StepSelection} from 'src/runs/StepSelection';
 import {getRunFilterProviders} from 'src/runs/getRunFilterProviders';
 import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from 'src/ui/TokenizingField';
 
 interface ILogsToolbarProps {
   steps: string[];
   filter: LogFilter;
-  hideNonMatches: boolean;
   metadata: IRunMetadataDict;
-  selection: StepSelection;
 
-  onHideNonMatches: (checked: boolean) => void;
   onSetFilter: (filter: LogFilter) => void;
 }
 
@@ -37,7 +33,7 @@ const suggestionProvidersFilter = (
 };
 
 export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
-  const {steps, filter, hideNonMatches, metadata, onHideNonMatches, onSetFilter, selection} = props;
+  const {steps, filter, metadata, onSetFilter} = props;
 
   const [copyIcon, setCopyIcon] = React.useState<IconName>(IconNames.CLIPBOARD);
   const selectedStep = filter.logQuery.find((v) => v.token === 'step')?.value || null;
@@ -45,43 +41,6 @@ export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) =
     (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
 
   const filterText = filter.logQuery.reduce((accum, value) => accum + value.value, '');
-
-  const handleCheckboxChange = React.useCallback(
-    (event) => {
-      onHideNonMatches(event.target.checked);
-    },
-    [onHideNonMatches],
-  );
-
-  const handleCopy = React.useCallback(() => {
-    const logQueryTokenStrings = filter.logQuery.map((v) =>
-      v.token ? `${v.token}:${v.value}` : v.value,
-    );
-    const levelStrings = Object.keys(filter.levels).filter((key) => !!filter.levels[key]);
-
-    const params = new URLSearchParams();
-    if (selection.query && selection.query !== '*') {
-      params.append('steps', selection.query);
-    }
-
-    if (logQueryTokenStrings.length) {
-      logQueryTokenStrings.forEach((tokenString) => {
-        params.append('logs', tokenString);
-      });
-    }
-
-    if (levelStrings.length) {
-      levelStrings.forEach((levelString) => {
-        params.append('levels', levelString.toLowerCase());
-      });
-    }
-
-    const url = new URL(document.URL);
-    url.search = params.toString();
-    navigator.clipboard.writeText(url.href);
-
-    setCopyIcon(IconNames.SAVED);
-  }, [filter.levels, filter.logQuery, selection]);
 
   // Restore the clipboard icon after a delay.
   React.useEffect(() => {
@@ -108,7 +67,13 @@ export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) =
         loading={false}
       />
       {filterText ? (
-        <NonMatchCheckbox inline onChange={handleCheckboxChange} checked={hideNonMatches}>
+        <NonMatchCheckbox
+          inline
+          checked={filter.hideNonMatches}
+          onChange={(event) =>
+            onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
+          }
+        >
           Hide non-matches
         </NonMatchCheckbox>
       ) : null}
@@ -146,7 +111,15 @@ export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) =
       )}
       <div style={{minWidth: 15, flex: 1}} />
       <div style={{marginRight: '8px'}}>
-        <Button text="Copy URL" small={true} icon={copyIcon} onClick={handleCopy} />
+        <Button
+          text="Copy URL"
+          small={true}
+          icon={copyIcon}
+          onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            setCopyIcon(IconNames.SAVED);
+          }}
+        />
       </div>
       <Button
         text={'Clear'}

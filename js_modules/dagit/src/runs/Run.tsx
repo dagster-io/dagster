@@ -5,14 +5,12 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {
-  GanttChart,
-  GanttChartMode,
-  queryStringToSelection,
-  QueuedState,
-} from 'src/gantt/GanttChart';
-import {LogFilter, LogsProvider} from 'src/runs/LogsProvider';
+import {GanttChart, GanttChartMode, QueuedState} from 'src/gantt/GanttChart';
+import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
+import {LogFilter, LogsProvider, LogsProviderLogs} from 'src/runs/LogsProvider';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {LogsToolbar} from 'src/runs/LogsToolbar';
 import {RunActionButtons} from 'src/runs/RunActionButtons';
@@ -26,8 +24,6 @@ import {
   handleLaunchResult,
   ReExecutionStyle,
 } from 'src/runs/RunUtils';
-import {StepSelection} from 'src/runs/StepSelection';
-import {getRunPageFilters} from 'src/runs/getRunPageFilters';
 import {
   LaunchPipelineReexecution,
   LaunchPipelineReexecutionVariables,
@@ -37,6 +33,7 @@ import {
   RunPipelineRunEventFragment,
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
 } from 'src/runs/types/RunPipelineRunEventFragment';
+import {useQueryPersistedLogFilter} from 'src/runs/useQueryPersistedLogFilter';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
 import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
 
@@ -46,18 +43,12 @@ interface RunProps {
   run?: RunFragment;
 }
 
-export const Run = (props: RunProps) => {
+export const Run: React.FunctionComponent<RunProps> = (props) => {
   const {client, run, runId} = props;
-  const [logsFilter, setLogsFilter] = React.useState<LogFilter>(() =>
-    getRunPageFilters(document.location.search),
-  );
-
-  const [selection, setSelection] = React.useState<StepSelection>(() => {
-    const {stepQuery} = logsFilter;
-    if (!stepQuery || !run?.executionPlan) {
-      return {query: '*', keys: []};
-    }
-    return {query: stepQuery, keys: queryStringToSelection(run.executionPlan, stepQuery)};
+  const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
+  const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
+    queryKey: 'selection',
+    defaults: {selection: ''},
   });
 
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
@@ -72,57 +63,35 @@ export const Run = (props: RunProps) => {
     }
   };
 
-  const onSetLogsFilter = (logsFilter: LogFilter) => {
-    setLogsFilter(logsFilter);
+  const onSetSelectionQuery = (query: string) => {
+    setSelectionQuery(query);
+    setLogsFilter({
+      ...logsFilter,
+      logQuery: query !== '*' ? [{token: 'query', value: query}] : [],
+    });
   };
-
-  const onSetSelection = (selection: StepSelection) => {
-    setSelection(selection);
-    setLogsFilter((previous) => ({
-      ...previous,
-      logQuery: selection.query !== '*' ? [{token: 'query', value: selection.query}] : [],
-    }));
-  };
-
-  const executionPlan = run?.executionPlan;
-  const {logQuery} = logsFilter;
-  const selectedKeysForFilter = React.useMemo(() => {
-    if (executionPlan) {
-      return logQuery
-        .filter((v) => v.token && v.token === 'query')
-        .reduce((accum, v) => {
-          return [...accum, ...queryStringToSelection(executionPlan, v.value)];
-        }, []);
-    }
-    return [];
-  }, [executionPlan, logQuery]);
 
   return (
     <RunContext.Provider value={run}>
       {run && <RunStatusToPageAttributes run={run} />}
 
-      <LogsProvider
-        key={runId}
-        client={client}
-        runId={runId}
-        filter={logsFilter}
-        selectedSteps={selectedKeysForFilter}
-      >
-        {({allNodes, filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
-          <RunWithData
-            run={run}
-            runId={runId}
-            allNodes={allNodes}
-            filteredNodes={filteredNodes}
-            hasTextFilter={hasTextFilter}
-            textMatchNodes={textMatchNodes}
-            logsLoading={!loaded}
-            logsFilter={logsFilter}
-            selection={selection}
-            onSetLogsFilter={onSetLogsFilter}
-            onSetSelection={onSetSelection}
-            onShowStateDetails={onShowStateDetails}
-          />
+      <LogsProvider key={runId} client={client} runId={runId}>
+        {(logs) => (
+          <RunMetadataProvider logs={logs.allNodes}>
+            {(metadata) => (
+              <RunWithData
+                run={run}
+                runId={runId}
+                logs={logs}
+                logsFilter={logsFilter}
+                metadata={metadata}
+                selectionQuery={selectionQuery}
+                onSetLogsFilter={setLogsFilter}
+                onSetSelectionQuery={onSetSelectionQuery}
+                onShowStateDetails={onShowStateDetails}
+              />
+            )}
+          </RunMetadataProvider>
         )}
       </LogsProvider>
     </RunContext.Provider>
@@ -132,38 +101,59 @@ export const Run = (props: RunProps) => {
 interface RunWithDataProps {
   run?: RunFragment;
   runId: string;
-  selection: StepSelection;
-  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
-  filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
-  hasTextFilter: boolean;
-  textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  selectionQuery: string;
+  logs: LogsProviderLogs;
   logsFilter: LogFilter;
-  logsLoading: boolean;
+  metadata: IRunMetadataDict;
   onSetLogsFilter: (v: LogFilter) => void;
-  onSetSelection: (v: StepSelection) => void;
+  onSetSelectionQuery: (query: string) => void;
   onShowStateDetails: (stepKey: string, logs: RunPipelineRunEventFragment[]) => void;
 }
 
+/**
+ * Note: There are two places we keep a "step query string" in the Run view:
+ * selectionQuery and logsFilter.logsQuery.
+ *
+ * - selectionQuery is set when you click around in the Gannt view and is the
+ *   selection used for re-execution, etc. When set, we autofill logsFilter.logsQuery.
+ *
+ * - logsFilter.logsQuery is used for filtering the logs. It can be cleared separately
+ *   from the selectionQuery, so you can select a step but navigate elsewhere in the logs.
+ *
+ * We could revisit this in the future but I believe we iterated quite a bit to get to this
+ * solution and we should avoid locking the two filter inputs together completely.
+ */
 const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   run,
   runId,
-  allNodes,
-  filteredNodes,
-  hasTextFilter,
-  textMatchNodes,
+  logs,
   logsFilter,
-  logsLoading,
-  selection,
+  metadata,
+  selectionQuery,
   onSetLogsFilter,
-  onSetSelection,
+  onSetSelectionQuery,
 }) => {
-  const [hideNonMatches, setHideNonMatches] = React.useState(true);
   const [launchPipelineReexecution] = useMutation<
     LaunchPipelineReexecution,
     LaunchPipelineReexecutionVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const repoMatch = useRepositoryForRun(run);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
+
+  const runtimeStepKeys = Object.keys(metadata.steps);
+  const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, runtimeStepKeys);
+  const selectionStepKeys =
+    runtimeGraph && selectionQuery && selectionQuery !== '*'
+      ? filterByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
+      : [];
+
+  const logsFilterStepKeys = runtimeGraph
+    ? logsFilter.logQuery
+        .filter((v) => v.token && v.token === 'query')
+        .reduce((accum, v) => {
+          return [...accum, ...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name)];
+        }, [])
+    : [];
 
   const onLaunch = async (style: ReExecutionStyle) => {
     if (!run || run.pipeline.__typename === 'UnknownPipeline' || !repoMatch) {
@@ -181,12 +171,12 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
-    const index = selection.keys.indexOf(stepKey);
+    const index = selectionStepKeys.indexOf(stepKey);
     let newSelected: string[];
 
     if (evt.shiftKey) {
       // shift-click to multi select steps
-      newSelected = [...selection.keys];
+      newSelected = [...selectionStepKeys];
 
       if (index !== -1) {
         // deselect the step if already selected
@@ -196,7 +186,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         newSelected.push(stepKey);
       }
     } else {
-      if (selection.keys.length === 1 && index !== -1) {
+      if (selectionStepKeys.length === 1 && index !== -1) {
         // deselect the step if already selected
         newSelected = [];
       } else {
@@ -205,16 +195,11 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       }
     }
 
-    onSetSelection({
-      query: newSelected.join(', ') || '*',
-      keys: newSelected,
-    });
+    onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
-  const onHideNonMatches = (checked: boolean) => setHideNonMatches(checked);
-
   const gantt = (metadata: IRunMetadataDict) => {
-    if (logsLoading) {
+    if (logs.loading) {
       return <GanttChart.LoadingState runId={runId} />;
     }
 
@@ -222,7 +207,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       return <QueuedState runId={runId} />;
     }
 
-    if (run?.executionPlan) {
+    if (run?.executionPlan && runtimeGraph) {
       return (
         <GanttChart
           options={{
@@ -234,21 +219,21 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           toolbarActions={
             <RunActionButtons
               run={run}
-              executionPlan={run.executionPlan}
+              runtimeStepKeys={runtimeStepKeys}
               artifactsPersisted={run.executionPlan.artifactsPersisted}
               onLaunch={onLaunch}
-              selection={selection}
-              selectionStates={selection.keys.map(
+              selection={{query: selectionQuery, keys: selectionStepKeys}}
+              selectionStates={selectionStepKeys.map(
                 (key) => (key && metadata.steps[key]?.state) || IStepState.PREPARING,
               )}
             />
           }
           runId={runId}
-          plan={run.executionPlan}
+          graph={runtimeGraph}
           metadata={metadata}
-          selection={selection}
+          selection={{query: selectionQuery, keys: selectionStepKeys}}
           onClickStep={onClickStep}
-          onSetSelection={onSetSelection}
+          onSetSelection={onSetSelectionQuery}
           focusedTime={logsFilter.focusedTime}
         />
       );
@@ -258,42 +243,34 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   };
 
   return (
-    <RunMetadataProvider logs={allNodes}>
-      {(metadata) => (
-        <>
-          <RunDetails loading={logsLoading} run={run} />
-          <SplitPanelContainer
-            ref={splitPanelContainer}
-            axis={'vertical'}
-            identifier="run-gantt"
-            firstInitialPercent={35}
-            firstMinSize={40}
-            first={gantt(metadata)}
-            second={
-              <LogsContainer>
-                <LogsToolbar
-                  filter={logsFilter}
-                  hideNonMatches={hideNonMatches}
-                  onHideNonMatches={onHideNonMatches}
-                  onSetFilter={onSetLogsFilter}
-                  selection={selection}
-                  steps={Object.keys(metadata.steps)}
-                  metadata={metadata}
-                />
-                <LogsScrollingTable
-                  focusedTime={logsFilter.focusedTime}
-                  filteredNodes={hasTextFilter && hideNonMatches ? textMatchNodes : filteredNodes}
-                  textMatchNodes={textMatchNodes}
-                  loading={logsLoading}
-                  filterKey={`${JSON.stringify(logsFilter)}-${JSON.stringify(hideNonMatches)}`}
-                  metadata={metadata}
-                />
-              </LogsContainer>
-            }
-          />
-        </>
-      )}
-    </RunMetadataProvider>
+    <>
+      <RunDetails loading={logs.loading} run={run} />
+      <SplitPanelContainer
+        ref={splitPanelContainer}
+        axis={'vertical'}
+        identifier="run-gantt"
+        firstInitialPercent={35}
+        firstMinSize={40}
+        first={gantt(metadata)}
+        second={
+          <LogsContainer>
+            <LogsToolbar
+              filter={logsFilter}
+              onSetFilter={onSetLogsFilter}
+              steps={Object.keys(metadata.steps)}
+              metadata={metadata}
+            />
+            <LogsScrollingTable
+              logs={logs}
+              filter={logsFilter}
+              filterStepKeys={logsFilterStepKeys}
+              filterKey={`${JSON.stringify(logsFilter)}`}
+              metadata={metadata}
+            />
+          </LogsContainer>
+        }
+      />
+    </>
   );
 };
 

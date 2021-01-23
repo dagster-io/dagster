@@ -13,6 +13,7 @@ import {
   LEFT_INSET,
   FLAT_INSET_FROM_PARENT,
 } from 'src/gantt/Constants';
+import {isDynamicStep} from 'src/gantt/DynamicStepSupport';
 import {IRunMetadataDict, IStepAttempt, IStepState} from 'src/runs/RunMetadataProvider';
 
 export interface BuildLayoutParams {
@@ -95,7 +96,11 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (!highestYParent) {
         continue;
       }
-
+      // Don't re-order the first row of nodes that "fan out" from a dynamic output. this
+      // ensures that these nodes are always "waterfall" visually by ascending index.
+      if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
+        continue;
+      }
       const onTargetY = boxesByY[`${highestYParent.y}`];
       const taken = onTargetY.find((r) => r.x === box.x);
       if (taken) {

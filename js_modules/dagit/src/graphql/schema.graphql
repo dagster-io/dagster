@@ -120,6 +120,7 @@ type OutputDefinition {
   solidDefinition: SolidDefinition!
   name: String!
   description: String
+  isDynamic: Boolean
   type: DagsterType!
 }
 

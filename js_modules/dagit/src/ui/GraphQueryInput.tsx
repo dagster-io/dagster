@@ -2,14 +2,16 @@ import {gql} from '@apollo/client';
 import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from 'src/app/GraphQueryImpl';
+import {dynamicKeyWithoutIndex, isDynamicStep} from 'src/gantt/DynamicStepSupport';
 
 interface GraphQueryInputProps {
-  items: GraphQueryItem[];
   intent?: Intent;
+  items: GraphQueryItem[];
   value: string;
   placeholder: string;
   autoFocus?: boolean;
@@ -79,14 +81,21 @@ export const GraphQueryInput = React.memo(
       setPendingValue(props.value);
     }, [props.value]);
 
-    const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(pendingValue);
+    const lastClause = /(\*?\+*)([\w\d\[\]_-]+)(\+*\*?)$/.exec(pendingValue);
     let menu: JSX.Element | undefined = undefined;
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(() => {
+      const available = props.items.map((s) => s.name);
+      for (const name of available) {
+        if (isDynamicStep(name)) {
+          available.push(dynamicKeyWithoutIndex(name));
+        }
+      }
+
       return lastElementName && !suffix
-        ? props.items
-            .map((s) => s.name)
+        ? uniq(available)
+            .sort()
             .filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
         : [];
     }, [lastElementName, props.items, suffix]);

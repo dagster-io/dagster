@@ -41,6 +41,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps
   __typename: "ExecutionStep";
   key: string;
   outputs: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs[];
+  kind: StepKind;
 }
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs {

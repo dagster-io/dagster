@@ -69,6 +69,19 @@ describe('useQueryPersistedState', () => {
     expect(querySearch).toEqual('?cursor=basdasd&limit=100&q=Navigated');
   });
 
+  it('omits query params when their values are set to the default', async () => {
+    // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
+    let querySearch;
+    render(
+      <MemoryRouter initialEntries={['/page?q=B&cursor=basdasd&limit=100']}>
+        <Test options={{queryKey: 'q', defaults: {q: 'Navigated'}}} />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
+    await screen.getByText(`[B]`).click();
+    expect(querySearch).toEqual('?cursor=basdasd&limit=100');
+  });
+
   it('can coexist with other instances of the same hook', async () => {
     let querySearch;
     render(
@@ -166,6 +179,6 @@ describe('useQueryPersistedState', () => {
 
     await screen.getByText(`{"view":"grid"}`).click();
     await screen.getByText(`{"view":"grid","pipeline":"my_pipeline"}`).click();
-    expect(querySearch).toEqual('?pipeline=my_pipeline&view=grid');
+    expect(querySearch).toEqual('?pipeline=my_pipeline');
   });
 });

@@ -33,6 +33,7 @@ export interface SolidCardSolidDefinitionFragment_SolidDefinition_outputDefiniti
 export interface SolidCardSolidDefinitionFragment_SolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: SolidCardSolidDefinitionFragment_SolidDefinition_outputDefinitions_type;
 }
 
@@ -82,6 +83,7 @@ export interface SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outpu
 export interface SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: SolidCardSolidDefinitionFragment_CompositeSolidDefinition_outputDefinitions_type;
 }
 

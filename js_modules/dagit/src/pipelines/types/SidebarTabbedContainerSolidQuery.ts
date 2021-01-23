@@ -98,6 +98,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   name: string;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type;
   description: string | null;
+  isDynamic: boolean | null;
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
@@ -488,6 +489,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   name: string;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
   description: string | null;
+  isDynamic: boolean | null;
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {

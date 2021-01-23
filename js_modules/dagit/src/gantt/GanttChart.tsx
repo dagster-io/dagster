@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Checkbox, Colors, Icon, NonIdealState, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
@@ -29,6 +28,7 @@ import {
   MAX_SCALE,
   MIN_SCALE,
 } from 'src/gantt/Constants';
+import {isDynamicStep} from 'src/gantt/DynamicStepSupport';
 import {
   BuildLayoutParams,
   adjustLayoutWithRunMetadata,
@@ -41,8 +41,6 @@ import {GanttChartTimescale} from 'src/gantt/GanttChartTimescale';
 import {GanttStatusPanel} from 'src/gantt/GanttStatusPanel';
 import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/gantt/VizComponents';
 import {ZoomSlider} from 'src/gantt/ZoomSlider';
-import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
-import {GanttChartExecutionPlanFragment} from 'src/gantt/types/GanttChartExecutionPlanFragment';
 import {useViewport} from 'src/gantt/useViewport';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/runs/RunMetadataProvider';
 import {StepSelection} from 'src/runs/StepSelection';
@@ -71,30 +69,18 @@ export function setHighlightedGanttChartTime(timestamp: null | string, debounced
   }
 }
 
-export const queryStringToSelection = (
-  plan: GanttChartExecutionPlanFragment,
-  query: string,
-): string[] => {
-  if (query && query !== '*') {
-    const graph = toGraphQueryItems(plan);
-    const graphFiltered = filterByQuery(graph, query);
-    return graphFiltered.all.map((node) => node.name);
-  }
-  return [];
-};
-
 interface GanttChartProps {
   selection: StepSelection;
   focusedTime: number | null;
   runId: string;
-  plan: GanttChartExecutionPlanFragment;
+  graph: GraphQueryItem[];
   options?: Partial<GanttChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
   toolbarLeftActions?: React.ReactChild;
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
-  onSetSelection: (selection: StepSelection) => void;
+  onSetSelection: (query: string) => void;
 }
 
 interface GanttChartState {
@@ -119,9 +105,10 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
   }
 
   getLayout = (params: BuildLayoutParams) => {
+    const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
     if (
       !this._cachedLayoutParams ||
-      this._cachedLayoutParams.nodes !== params.nodes ||
+      names(this._cachedLayoutParams.nodes) !== names(params.nodes) ||
       this._cachedLayoutParams.mode !== params.mode
     ) {
       this._cachedLayout = buildLayout(params);
@@ -138,10 +125,7 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
   };
 
   onUpdateQuery = (query: string) => {
-    this.props.onSetSelection({
-      query: query || '*',
-      keys: queryStringToSelection(this.props.plan, query),
-    });
+    this.props.onSetSelection(query || '*');
   };
 
   onDoubleClickStep = (stepKey: string) => {
@@ -150,10 +134,8 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
   };
 
   render() {
-    const {plan, selection} = this.props;
+    const {graph, selection} = this.props;
     const {options} = this.state;
-
-    const graph = toGraphQueryItems(plan);
     const graphFiltered = filterByQuery(graph, selection.query);
 
     const layout = this.getLayout({
@@ -206,30 +188,6 @@ export class GanttChart extends React.Component<GanttChartProps, GanttChartState
     );
   }
 }
-
-export const GANTT_CHART_EXECUTION_PLAN_FRAGMENT = gql`
-  fragment GanttChartExecutionPlanFragment on ExecutionPlan {
-    steps {
-      key
-      kind
-    }
-    steps {
-      key
-      inputs {
-        dependsOn {
-          key
-          outputs {
-            name
-            type {
-              name
-            }
-          }
-        }
-      }
-    }
-    artifactsPersisted
-  }
-`;
 
 type GanttChartInnerProps = GanttChartProps &
   GanttChartState & {
@@ -528,7 +486,8 @@ const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportCont
             chart-element
             ${useDot ? 'dot' : 'box'}
             ${focusedSteps.includes(box.node.name) && 'focused'}
-            ${hoveredStep === box.node.name && 'hovered'}`}
+            ${hoveredStep === box.node.name && 'hovered'}
+            ${isDynamicStep(box.node.name) && 'dynamic'}`}
         style={{
           left: bounds.minX,
           top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
@@ -746,6 +705,9 @@ const GanttChartContainer = styled.div`
     }
     &.hovered {
       border: 1px solid ${Colors.DARK_GRAY3};
+    }
+    &.dynamic {
+      filter: brightness(125%);
     }
   }
 

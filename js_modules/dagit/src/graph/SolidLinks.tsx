@@ -9,6 +9,7 @@ import {
   IFullSolidLayout,
   ILayoutConnection,
 } from 'src/graph/getFullSolidLayout';
+import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
 
 export type Edge = {a: string; b: string};
 
@@ -32,9 +33,19 @@ const buildSVGPaths = weakmapMemoize(
     })),
 );
 
+const edgeIsDynamic = (
+  solids: PipelineGraphSolidFragment[],
+  from: {solidName: string; edgeName: string},
+) => {
+  const solid = solids.find((s) => s.name === from.solidName);
+  const outDef = solid?.definition.outputDefinitions.find((o) => o.name === from.edgeName);
+  return outDef?.isDynamic || false;
+};
+
 export const SolidLinks = React.memo(
   (props: {
     opacity: number;
+    solids: PipelineGraphSolidFragment[];
     layout: IFullPipelineLayout;
     connections: ILayoutConnection[];
     onHighlight: (arr: Edge[]) => void;
@@ -47,6 +58,11 @@ export const SolidLinks = React.memo(
           onMouseEnter={() => props.onHighlight([{a: from.solidName, b: to.solidName}])}
         >
           <StyledPath d={path} />
+          {edgeIsDynamic(props.solids, from) && (
+            <text x={to.point.x - 20} y={to.point.y + 10} width="40" style={{fontSize: 70}}>
+              *
+            </text>
+          )}
         </g>
       ))}
     </g>

@@ -6,6 +6,7 @@ import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
+import {LogFilter, LogsProviderLogs} from 'src/runs/LogsProvider';
 import {
   LOGS_ROW_STRUCTURED_FRAGMENT,
   LOGS_ROW_UNSTRUCTURED_FRAGMENT,
@@ -14,32 +15,80 @@ import {
 } from 'src/runs/LogsRow';
 import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
 import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
-import {LogsScrollingTableMessageFragment} from 'src/runs/types/LogsScrollingTableMessageFragment';
+import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
 
 interface ILogsScrollingTableProps {
-  focusedTime: number;
-  filteredNodes?: (LogsScrollingTableMessageFragment & {clientsideKey: string})[];
-  textMatchNodes?: (LogsScrollingTableMessageFragment & {clientsideKey: string})[];
-  loading: boolean;
+  logs: LogsProviderLogs;
+  filter: LogFilter;
+  filterStepKeys: string[];
 
   // We use this string to know whether the changes to `nodes` require us to
   // re-layout the entire table. Appending new rows can be done very fast, but
   // removing some rows requires the whole list be "reflowed" again. Checking
   // `nodes` for equality doesn't let us optimize for the append- case.
   filterKey: string;
-
   metadata: IRunMetadataDict;
 }
 
-interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
+interface ILogsScrollingTableSizedProps {
   width: number;
   height: number;
+
+  filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+
+  filterKey: string;
+  loading: boolean;
+  focusedTime: number;
+  metadata: IRunMetadataDict;
+}
+
+function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
+  const filteredNodes = logs.allNodes.filter((node) => {
+    const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
+    if (!filter.levels[l]) {
+      return false;
+    }
+    if (filter.sinceTime && Number(node.timestamp) < filter.sinceTime) {
+      return false;
+    }
+    return true;
+  });
+
+  const hasTextFilter = !!(filter.logQuery.length && filter.logQuery[0].value !== '');
+
+  const textMatchNodes = hasTextFilter
+    ? filteredNodes.filter((node) => {
+        return (
+          filter.logQuery.length > 0 &&
+          filter.logQuery.every((f) => {
+            if (f.token === 'query') {
+              return node.stepKey && filterStepKeys.includes(node.stepKey);
+            }
+            if (f.token === 'step') {
+              return node.stepKey && node.stepKey === f.value;
+            }
+            if (f.token === 'type') {
+              return node.__typename.toLowerCase().includes(f.value);
+            }
+            return node.message.toLowerCase().includes(f.value.toLowerCase());
+          })
+        );
+      })
+    : [];
+
+  return {
+    filteredNodes: hasTextFilter && filter.hideNonMatches ? textMatchNodes : filteredNodes,
+    textMatchNodes: textMatchNodes,
+  };
 }
 
 export class LogsScrollingTable extends React.Component<ILogsScrollingTableProps> {
   table = React.createRef<LogsScrollingTableSized>();
 
   render() {
+    const {filterKey, filterStepKeys, metadata, filter, logs} = this.props;
+
     return (
       <ColumnWidthsProvider
         onWidthsChanged={() => this.table.current && this.table.current.didResize()}
@@ -52,7 +101,11 @@ export class LogsScrollingTable extends React.Component<ILogsScrollingTableProps
                 width={width}
                 height={height}
                 ref={this.table}
-                {...this.props}
+                filterKey={filterKey}
+                loading={logs.loading}
+                metadata={metadata}
+                focusedTime={filter.focusedTime}
+                {...filterLogs(logs, filter, filterStepKeys)}
               />
             )}
           </AutoSizer>

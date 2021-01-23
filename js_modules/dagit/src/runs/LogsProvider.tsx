@@ -14,36 +14,30 @@ export interface LogFilterValue extends TokenizingFieldValue {
 }
 
 export interface LogFilter {
-  stepQuery: string;
   logQuery: LogFilterValue[];
   levels: {[key: string]: boolean};
   focusedTime: number;
   sinceTime: number;
+  hideNonMatches: boolean;
 }
 
-interface LogsFilterProviderProps {
+export interface LogsProviderLogs {
+  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  loading: boolean;
+}
+
+interface LogsProviderProps {
   client: ApolloClient<any>;
   runId: string;
-  filter: LogFilter;
-  selectedSteps: string[];
-  children: (props: {
-    hasTextFilter: boolean;
-    allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
-    filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
-    textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
-    loaded: boolean;
-  }) => React.ReactChild;
+  children: (result: LogsProviderLogs) => React.ReactChild;
 }
 
-interface LogsFilterProviderState {
+interface LogsProviderState {
   nodes: (RunPipelineRunEventFragment & {clientsideKey: string})[] | null;
 }
 
-export class LogsProvider extends React.Component<
-  LogsFilterProviderProps,
-  LogsFilterProviderState
-> {
-  state: LogsFilterProviderState = {
+export class LogsProvider extends React.Component<LogsProviderProps, LogsProviderState> {
+  state: LogsProviderState = {
     nodes: null,
   };
 
@@ -53,7 +47,7 @@ export class LogsProvider extends React.Component<
     this.subscribeToRun();
   }
 
-  componentDidUpdate(prevProps: LogsFilterProviderProps) {
+  componentDidUpdate(prevProps: LogsProviderProps) {
     if (prevProps.runId !== this.props.runId) {
       this.subscribeToRun();
     }
@@ -168,58 +162,9 @@ export class LogsProvider extends React.Component<
   render() {
     const {nodes} = this.state;
 
-    if (nodes === null) {
-      return this.props.children({
-        hasTextFilter: false,
-        allNodes: [],
-        filteredNodes: [],
-        textMatchNodes: [],
-        loaded: false,
-      });
-    }
-
-    const {filter, selectedSteps} = this.props;
-
-    const filteredNodes = nodes.filter((node) => {
-      const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
-      if (!filter.levels[l]) {
-        return false;
-      }
-      if (filter.sinceTime && Number(node.timestamp) < filter.sinceTime) {
-        return false;
-      }
-      return true;
-    });
-
-    const hasTextFilter = !!(filter.logQuery.length && filter.logQuery[0].value !== '');
-
-    const textMatchNodes = hasTextFilter
-      ? filteredNodes.filter((node) => {
-          return (
-            filter.logQuery.length > 0 &&
-            filter.logQuery.every((f) => {
-              if (f.token === 'query') {
-                return node.stepKey && selectedSteps.includes(node.stepKey);
-              }
-              if (f.token === 'step') {
-                return node.stepKey && node.stepKey === f.value;
-              }
-              if (f.token === 'type') {
-                return node.__typename.toLowerCase().includes(f.value);
-              }
-              return node.message.toLowerCase().includes(f.value.toLowerCase());
-            })
-          );
-        })
-      : [];
-
-    return this.props.children({
-      hasTextFilter,
-      allNodes: nodes,
-      filteredNodes,
-      textMatchNodes,
-      loaded: true,
-    });
+    return this.props.children(
+      nodes !== null ? {allNodes: nodes, loading: false} : {allNodes: [], loading: true},
+    );
   }
 }
 

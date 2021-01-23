@@ -290,6 +290,7 @@ export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
     }
     outputDefinitions {
       name
+      isDynamic
       type {
         displayName
       }

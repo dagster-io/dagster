@@ -153,12 +153,14 @@ export class PipelineGraphContents extends React.PureComponent<
           />
         )}
         <SolidLinks
+          solids={solids}
           layout={layout}
           opacity={0.2}
           connections={layout.connections}
           onHighlight={this.onHighlightEdges}
         />
         <SolidLinks
+          solids={solids}
           layout={layout}
           opacity={0.55}
           onHighlight={this.onHighlightEdges}
