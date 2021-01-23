@@ -481,10 +481,10 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
                 ).isoformat()
             }
 
-            # time that's invalid since it corresponds to a partition that hasn't happened yet
+            # time that's invalid since it corresponds to a partition before the start date
             # should not execute and should yield a SkipReason if it tries to generate run config
             execution_time_with_invalid_partition = pendulum.create(
-                year=2019, month=2, day=27, hour=3, minute=25, tz="US/Central"
+                year=2018, month=12, day=30, hour=3, minute=25, tz="US/Central"
             )
             context_with_invalid_time = ScheduleExecutionContext(
                 instance, execution_time_with_invalid_partition

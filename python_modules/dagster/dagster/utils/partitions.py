@@ -30,7 +30,8 @@ def schedule_partition_range(
             )
         )
 
-    def get_schedule_range_partitions():
+    def get_schedule_range_partitions(current_time=None):
+        check.opt_inst_param(current_time, "current_time", datetime.datetime)
         tz = timezone if timezone else pendulum.now().timezone.name
         _start = (
             start.in_tz(tz)
@@ -38,12 +39,18 @@ def schedule_partition_range(
             else pendulum.instance(start, tz=tz)
         )
 
-        if not end:
-            _end = pendulum.now(tz)
-        elif isinstance(end, pendulum.Pendulum):
-            _end = end.in_tz(tz)
+        if end:
+            _end = end
+        elif current_time:
+            _end = current_time
         else:
-            _end = pendulum.instance(end, tz=tz)
+            _end = pendulum.now(tz)
+
+        # coerce to the definition timezone
+        if isinstance(_end, pendulum.Pendulum):
+            _end = _end.in_tz(tz)
+        else:
+            _end = pendulum.instance(_end, tz=tz)
 
         end_timestamp = _end.timestamp()
 
@@ -105,7 +112,8 @@ def date_partition_range(
             )
         )
 
-    def get_date_range_partitions():
+    def get_date_range_partitions(current_time=None):
+        check.opt_inst_param(current_time, "current_time", datetime.datetime)
         tz = timezone if timezone else pendulum.now().timezone.name
         _start = (
             start.in_tz(tz)
@@ -113,12 +121,18 @@ def date_partition_range(
             else pendulum.instance(start, tz=tz)
         )
 
-        if not end:
-            _end = pendulum.now(tz)
-        elif isinstance(end, pendulum.Pendulum):
-            _end = end.in_tz(tz)
+        if end:
+            _end = end
+        elif current_time:
+            _end = current_time
         else:
-            _end = pendulum.instance(end, tz=tz)
+            _end = pendulum.now(tz)
+
+        # coerce to the definition timezone
+        if isinstance(_end, pendulum.Pendulum):
+            _end = _end.in_tz(tz)
+        else:
+            _end = pendulum.instance(_end, tz=tz)
 
         period = pendulum.period(_start, _end)
         date_names = [
@@ -220,7 +234,9 @@ def create_offset_partition_selector(execution_time_to_partition_fn):
 
         partition_time = execution_time_to_partition_fn(context.scheduled_execution_time)
 
-        for partition in reversed(partition_set_def.get_partitions()):
+        for partition in reversed(
+            partition_set_def.get_partitions(context.scheduled_execution_time)
+        ):
             if partition.value.isoformat() == partition_time.isoformat():
                 return partition
 

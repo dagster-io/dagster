@@ -1,5 +1,7 @@
+import inspect
 from collections import namedtuple
 
+import pendulum
 from dagster import check
 from dagster.core.definitions.job import RunRequest, SkipReason
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
@@ -40,7 +42,7 @@ def last_empty_partition(context, partition_set_def):
     partition_set_def = check.inst_param(
         partition_set_def, "partition_set_def", PartitionSetDefinition
     )
-    partitions = partition_set_def.get_partitions()
+    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
     if not partitions:
         return None
     selected = None
@@ -59,7 +61,7 @@ def first_partition(context, partition_set_def=None):
         partition_set_def, "partition_set_def", PartitionSetDefinition
     )
 
-    partitions = partition_set_def.get_partitions()
+    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
     if not partitions:
         return None
 
@@ -104,7 +106,9 @@ class PartitionSetDefinition(
         run_config_fn_for_partition=lambda _partition: {},
         tags_fn_for_partition=lambda _partition: {},
     ):
-        def _wrap(x):
+        partition_fn_param_count = len(inspect.signature(partition_fn).parameters)
+
+        def _wrap_partition(x):
             if isinstance(x, Partition):
                 return x
             if isinstance(x, str):
@@ -113,13 +117,24 @@ class PartitionSetDefinition(
                 "Expected <Partition> | <str>, received {type}".format(type=type(x))
             )
 
+        def _wrap_partition_fn(current_time=None):
+            if not current_time:
+                current_time = pendulum.now("UTC")
+
+            check.callable_param(partition_fn, "partition_fn")
+
+            if partition_fn_param_count == 1:
+                obj_list = partition_fn(current_time)
+            else:
+                obj_list = partition_fn()
+
+            return [_wrap_partition(obj) for obj in obj_list]
+
         return super(PartitionSetDefinition, cls).__new__(
             cls,
             name=check_valid_name(name),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            partition_fn=lambda: [
-                _wrap(x) for x in check.callable_param(partition_fn, "partition_fn")()
-            ],
+            partition_fn=_wrap_partition_fn,
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
@@ -143,8 +158,8 @@ class PartitionSetDefinition(
 
         return tags
 
-    def get_partitions(self):
-        return self.partition_fn()
+    def get_partitions(self, current_time=None):
+        return self.partition_fn(current_time)
 
     def get_partition(self, name):
         for partition in self.get_partitions():
@@ -153,8 +168,8 @@ class PartitionSetDefinition(
 
         check.failed("Partition name {} not found!".format(name))
 
-    def get_partition_names(self):
-        return [part.name for part in self.get_partitions()]
+    def get_partition_names(self, current_time=None):
+        return [part.name for part in self.get_partitions(current_time)]
 
     def create_schedule_definition(
         self,
@@ -207,7 +222,9 @@ class PartitionSetDefinition(
                 )
                 return
 
-            if selected_partition.name not in self.get_partition_names():
+            if selected_partition.name not in self.get_partition_names(
+                context.scheduled_execution_time
+            ):
                 yield SkipReason(
                     f"Partition selector returned a partition {selected_partition.name} not in the partition set."
                 )
