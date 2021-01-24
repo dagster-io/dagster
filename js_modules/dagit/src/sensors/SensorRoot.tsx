@@ -20,7 +20,7 @@ import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-const INTERVAL = 15 * 1000;
+const INTERVAL = 5 * 1000;
 
 export const SensorRoot: React.FC<{
   repoAddress: RepoAddress;
@@ -39,7 +39,7 @@ export const SensorRoot: React.FC<{
       sensorSelector,
     },
     fetchPolicy: 'cache-and-network',
-    pollInterval: 15 * 1000,
+    pollInterval: 5 * 1000,
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
