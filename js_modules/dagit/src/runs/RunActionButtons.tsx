@@ -185,7 +185,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
 
 function usePipelineAvailabilityErrorForRun(
   run: RunFragment | null | undefined,
-): null | {tooltip?: string; icon?: IconName; disabled: boolean} {
+): null | {tooltip?: string | JSX.Element; icon?: IconName; disabled: boolean} {
   const repoMatch = useRepositoryForRun(run);
 
   // The run hasn't loaded, so no error.
@@ -220,10 +220,23 @@ function usePipelineAvailabilityErrorForRun(
     };
   }
 
-  // We could not find a repo that contained this pipeline.
+  // We could not find a repo that contained this pipeline. Inform the user that they should
+  // load the missing repository.
+  const repoForRun = run.repositoryOrigin?.repositoryName;
+  const repoLocationForRun = run.repositoryOrigin?.repositoryLocationName;
+
+  const tooltip = (
+    <Group direction="column" spacing={8}>
+      <div>{`"${run.pipeline.name}" is not available in the current workspace.`}</div>
+      {repoForRun && repoLocationForRun ? (
+        <div>{`Load repository ${repoForRun}@${repoLocationForRun} and try again.`}</div>
+      ) : null}
+    </Group>
+  );
+
   return {
     icon: IconNames.ERROR,
-    tooltip: `"${run.pipeline.name}" is not available in the current workspace.`,
+    tooltip,
     disabled: true,
   };
 }
