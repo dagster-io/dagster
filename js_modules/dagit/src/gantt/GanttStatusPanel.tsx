@@ -52,7 +52,7 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
   );
   const isFinished = metadata?.exitedAt && metadata.exitedAt > 0;
   return (
-    <div style={{display: 'flex', flexDirection: 'column', minHeight: 0}}>
+    <div style={{display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto'}}>
       <RunGroupPanel runId={runId} />
       <SectionHeader>{isFinished ? 'Not Executed' : 'Preparing'}</SectionHeader>
       <Section>{preparing.map(renderStepItem)}</Section>
