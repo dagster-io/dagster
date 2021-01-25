@@ -258,6 +258,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
         self._required_resource_keys = get_required_resource_keys_for_step(
             step,
             execution_context_data.execution_plan,
+            execution_context_data.environment_config,
             execution_context_data.intermediate_storage_def,
         )
         self._resources = self._execution_context_data.scoped_resources_builder.build(
@@ -644,9 +645,11 @@ class InputContext(
 
 
 def _step_output_version(
-    execution_plan: "ExecutionPlan", step_output_handle: StepOutputHandle
+    execution_plan: "ExecutionPlan",
+    environment_config: "EnvironmentConfig",
+    step_output_handle: StepOutputHandle,
 ) -> Optional[str]:
-    step_output_versions = execution_plan.resolve_step_output_versions()
+    step_output_versions = execution_plan.resolve_step_output_versions(environment_config)
     return (
         step_output_versions[step_output_handle]
         if step_output_handle in step_output_versions
@@ -705,7 +708,7 @@ def get_output_context(
         solid_def=pipeline_def.get_solid(step.solid_handle).definition,
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
-        version=_step_output_version(execution_plan, step_output_handle)
+        version=_step_output_version(execution_plan, environment_config, step_output_handle)
         if MEMOIZED_RUN_TAG in execution_plan.pipeline.get_definition().tags
         else None,
         step_context=step_context,

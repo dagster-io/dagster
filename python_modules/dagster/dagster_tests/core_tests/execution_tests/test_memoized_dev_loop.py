@@ -12,6 +12,7 @@ from dagster.core.storage.event_log import ConsolidatedSqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
+from dagster.core.system_config.objects import EnvironmentConfig
 
 from .memoized_dev_loop_pipeline import asset_pipeline
 
@@ -34,7 +35,10 @@ def get_ephemeral_instance(temp_dir):
 
 def get_step_keys_to_execute(pipeline, run_config, mode, instance):
     memoized_execution_plan = resolve_memoized_execution_plan(
-        create_execution_plan(pipeline, run_config=run_config, mode=mode), run_config, instance
+        create_execution_plan(pipeline, run_config=run_config, mode=mode),
+        run_config,
+        instance,
+        EnvironmentConfig.build(pipeline, run_config=run_config, mode=mode),
     )
     return memoized_execution_plan.step_keys_to_execute
 

@@ -15,15 +15,18 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
+from dagster.core.execution.api import scoped_pipeline_context
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import unpack_value
@@ -144,10 +147,13 @@ class Manager:
         self.solid_def = solid_def
         self.pipeline = pipeline
 
-        execution_plan = create_execution_plan(
+        environment_config = EnvironmentConfig.build(
+            pipeline_def, run_config, mode=pipeline_run.mode
+        )
+
+        execution_plan = ExecutionPlan.build(
             self.pipeline,
-            run_config,
-            mode=pipeline_run.mode,
+            environment_config,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
 
@@ -166,6 +172,7 @@ class Manager:
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
+                    environment_config,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
@@ -235,7 +242,10 @@ class Manager:
         self.solid_def = solid_def
         self.pipeline = pipeline_def
 
-        execution_plan = create_execution_plan(self.pipeline, run_config, mode=mode_def.name)
+        environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode_def.name)
+
+        execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+
         with scoped_pipeline_context(
             execution_plan,
             run_config,
@@ -250,6 +260,7 @@ class Manager:
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
+                    environment_config,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,

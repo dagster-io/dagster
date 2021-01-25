@@ -155,8 +155,11 @@ def step_run_ref_to_step_context(
     )
 
     execution_plan = create_execution_plan(
-        pipeline, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
-    ).build_subset_plan([step_run_ref.step_key])
+        pipeline,
+        step_run_ref.run_config,
+        mode=step_run_ref.pipeline_run.mode,
+        step_keys_to_execute=[step_run_ref.step_key],
+    )
 
     initialization_manager = PlanExecutionContextManager(
         retry_mode=step_run_ref.retry_mode.for_inner_plan(),

@@ -11,10 +11,13 @@ from dagster import (
     pipeline,
     resource,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.log_manager import DagsterLogManager
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
@@ -70,7 +73,8 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
 
     run_id = make_new_run_id()
 
-    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
+    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -82,7 +86,7 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys),
+            execution_plan.build_subset_plan(step_keys, environment_config),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -116,7 +120,7 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"]),
+            execution_plan.build_subset_plan(["add_one"], environment_config),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,

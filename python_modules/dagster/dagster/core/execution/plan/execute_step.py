@@ -355,7 +355,9 @@ def _type_check_and_store_output(
         step_context.output_capture[step_output_handle] = output.value
 
     version = (
-        step_context.execution_plan.resolve_step_output_versions().get(step_output_handle)
+        step_context.execution_plan.resolve_step_output_versions(
+            step_context.environment_config
+        ).get(step_output_handle)
         if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
         else None
     )

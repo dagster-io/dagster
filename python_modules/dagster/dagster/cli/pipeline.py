@@ -26,8 +26,8 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterLaunchFailedError,
 )
-from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.host_representation import (
     ExternalPipeline,
@@ -43,6 +43,7 @@ from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
@@ -259,11 +260,14 @@ def execute_list_versions_command(instance, kwargs):
     pipeline_origin = get_pipeline_python_origin_from_kwargs(kwargs)
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     run_config = get_run_config_from_file_list(config)
-    execution_plan = create_execution_plan(
-        pipeline.get_definition(), run_config=run_config, mode=mode
+
+    environment_config = EnvironmentConfig.build(pipeline.get_definition(), run_config, mode=mode)
+    execution_plan = ExecutionPlan.build(pipeline, environment_config)
+
+    step_output_versions = execution_plan.resolve_step_output_versions(environment_config)
+    memoized_plan = resolve_memoized_execution_plan(
+        execution_plan, run_config, instance, environment_config
     )
-    step_output_versions = execution_plan.resolve_step_output_versions()
-    memoized_plan = resolve_memoized_execution_plan(execution_plan, run_config, instance)
     # the step keys that we need to execute are those which do not have their inputs populated.
     step_keys_not_stored = set(memoized_plan.step_keys_to_execute)
     table = []

@@ -300,7 +300,9 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(execution_plan, pipeline_def, intermediate_storage_def):
+def get_required_resource_keys_to_init(
+    execution_plan, pipeline_def, environment_config, intermediate_storage_def
+):
     resource_keys = set()
 
     if intermediate_storage_def is not None:
@@ -315,18 +317,20 @@ def get_required_resource_keys_to_init(execution_plan, pipeline_def, intermediat
             resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
         resource_keys = resource_keys.union(
-            get_required_resource_keys_for_step(step, execution_plan, intermediate_storage_def)
+            get_required_resource_keys_for_step(
+                step, execution_plan, environment_config, intermediate_storage_def
+            )
         )
 
     return frozenset(resource_keys)
 
 
-def get_required_resource_keys_for_step(execution_step, execution_plan, intermediate_storage_def):
+def get_required_resource_keys_for_step(
+    execution_step, execution_plan, environment_config, intermediate_storage_def
+):
     resource_keys = set()
 
-    mode_definition = execution_plan.pipeline_def.get_mode_definition(
-        execution_plan.environment_config.mode
-    )
+    mode_definition = execution_plan.pipeline_def.get_mode_definition(environment_config.mode)
 
     resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
 

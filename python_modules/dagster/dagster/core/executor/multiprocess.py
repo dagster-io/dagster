@@ -57,9 +57,9 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 pipeline=pipeline,
                 run_config=self.run_config,
                 mode=self.pipeline_run.mode,
-                step_keys_to_execute=self.pipeline_run.step_keys_to_execute,
+                step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
-            ).build_subset_plan([self.step_key])
+            )
 
             yield instance.report_engine_event(
                 "Executing step {} in subprocess".format(self.step_key),
