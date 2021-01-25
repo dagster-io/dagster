@@ -20,7 +20,7 @@ export interface LaunchButtonConfiguration {
   title: string;
   disabled: boolean;
   scope?: string;
-  onClick: () => void;
+  onClick: () => Promise<any>;
   icon?: IconName | JSX.Element | 'dagster-spinner';
   tooltip?: string | JSX.Element;
 }
@@ -37,10 +37,8 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
 
   const onConfigSelected = async (option: LaunchButtonConfiguration) => {
     setStarting(true);
-    option.onClick();
-    setTimeout(() => {
-      setStarting(false);
-    }, 300);
+    await option.onClick();
+    setStarting(false);
   };
 
   let forced: Partial<LaunchButtonConfiguration> = {};
