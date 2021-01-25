@@ -103,7 +103,7 @@ def create_context_creation_data(
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, intermediate_storage_def
+            execution_plan, pipeline_def, intermediate_storage_def
         ),
         execution_plan=execution_plan,
     )

@@ -165,6 +165,7 @@ class Manager:
                 solid_config=run_config.get("solids", {}).get(solid_def.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
+                    pipeline_def,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
@@ -248,6 +249,7 @@ class Manager:
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
+                    pipeline_def,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,

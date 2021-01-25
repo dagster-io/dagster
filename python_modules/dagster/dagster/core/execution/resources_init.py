@@ -300,7 +300,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(execution_plan, intermediate_storage_def):
+def get_required_resource_keys_to_init(execution_plan, pipeline_def, intermediate_storage_def):
     resource_keys = set()
 
     if intermediate_storage_def is not None:
@@ -309,11 +309,14 @@ def get_required_resource_keys_to_init(execution_plan, intermediate_storage_def)
     for step_handle, step in execution_plan.step_dict.items():
         if step_handle not in execution_plan.step_handles_to_execute:
             continue
+
+        hook_defs = pipeline_def.get_all_hooks_for_handle(step.solid_handle)
+        for hook_def in hook_defs:
+            resource_keys = resource_keys.union(hook_def.required_resource_keys)
+
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(step, execution_plan, intermediate_storage_def)
         )
-    for hook_def in execution_plan.get_all_hook_defs():
-        resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
     return frozenset(resource_keys)
 

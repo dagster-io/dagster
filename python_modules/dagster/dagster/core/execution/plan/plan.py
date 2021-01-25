@@ -1,16 +1,5 @@
 from collections import OrderedDict, defaultdict
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
 from dagster.core.definitions import (
@@ -24,7 +13,6 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
@@ -559,17 +547,6 @@ class ExecutionPlan(
     @property
     def pipeline_def(self) -> PipelineDefinition:
         return self.pipeline.get_definition()
-
-    def get_all_hook_defs(self) -> FrozenSet[HookDefinition]:
-        hook_defs: Set[HookDefinition] = set()
-        for step_handle, step in self.step_dict.items():
-            if step_handle not in self.step_handles_to_execute:
-                continue
-
-            hook_defs = hook_defs.union(
-                self.pipeline_def.get_all_hooks_for_handle(step.solid_handle)
-            )
-        return frozenset(hook_defs)
 
     def get_step_output(self, step_output_handle: StepOutputHandle) -> StepOutput:
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
