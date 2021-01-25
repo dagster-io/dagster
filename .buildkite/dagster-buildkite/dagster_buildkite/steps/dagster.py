@@ -477,7 +477,7 @@ def coverage_step():
 
 
 def pylint_steps():
-    base_paths = [".buildkite", "bin", "docs/next/src"]
+    base_paths = [".buildkite", "bin"]
     base_paths_ext = ['"%s/**.py"' % p for p in base_paths]
 
     return [
