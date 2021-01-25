@@ -206,7 +206,6 @@ def test_mix_layer_computed_mapping():
     assert 'Solid "layer_two_double_wrap" with definition "layer_two_double_wrap"' in str(
         exc_info.value
     )
-    print(str(exc_info.value))
     assert (
         'Error 1: Invalid scalar at path root:layer_three_wrap:config:number. Value "a_string"'
     ) in str(exc_info.value)
@@ -433,7 +432,6 @@ def test_direct_composite_descent_with_error():
         'Solid "layer1" with definition "wrap_coerce_to_wrong_type" has a configuration error.'
         in str(exc_info.value)
     )
-    print(str(exc_info.value))
     assert 'Error 1: Invalid scalar at path root:layer2:config. Value "214"' in str(exc_info.value)
 
 
