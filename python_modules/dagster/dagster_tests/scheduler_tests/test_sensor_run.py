@@ -9,6 +9,7 @@ from dagster import pipeline, repository, solid
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
 from dagster.core.definitions.sensor import RunRequest, SkipReason
+from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
@@ -319,4 +320,23 @@ def test_launch_once(external_repo_context, capfd):
             assert (
                 f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"
                 in captured.out
+            )
+
+            launched_run = instance.get_runs()[0]
+
+            # Manually create a new run with the same tags
+            execute_pipeline(
+                the_pipeline,
+                run_config=launched_run.run_config,
+                tags=launched_run.tags,
+                instance=instance,
+            )
+
+            # Sensor loop still executes
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
             )

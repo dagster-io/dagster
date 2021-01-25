@@ -287,7 +287,6 @@ def _get_or_create_sensor_run(
     )
 
     if len(existing_runs):
-        check.invariant(len(existing_runs) == 1)
         run = existing_runs[0]
         if run.status != PipelineRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
