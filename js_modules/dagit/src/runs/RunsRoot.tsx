@@ -30,7 +30,6 @@ import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
-import {Spinner} from 'src/ui/Spinner';
 import {Heading} from 'src/ui/Text';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
@@ -133,7 +132,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                   <Group direction="row" spacing={4} alignItems="center">
                     <div>Queued</div>
                     <CountTag
-                      loading={queryResult.loading}
+                      loading={queryResult.loading && !queryResult.data}
                       fragment={
                         queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
                           ? queryResult.data?.queuedCount
@@ -155,7 +154,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                   <Group direction="row" spacing={4} alignItems="center">
                     <div>In progress</div>
                     <CountTag
-                      loading={queryResult.loading}
+                      loading={queryResult.loading && !queryResult.data}
                       fragment={
                         queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
                           ? queryResult.data?.inProgressCount
@@ -316,7 +315,7 @@ const CountTag = (props: CountTagProps) => {
   if (loading) {
     return (
       <CountTagStyled minimal intent="none">
-        <Spinner purpose="caption-text" />
+        –
       </CountTagStyled>
     );
   }

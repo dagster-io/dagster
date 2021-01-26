@@ -345,7 +345,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
         tagProps={{minimal: true}}
         placeholder={placeholder || 'Filter…'}
         rightElement={
-          loading ? (
+          loading && open ? (
             <Box style={{alignSelf: 'center'}} margin={{right: 4}}>
               <Spinner purpose="body-text" />
             </Box>
