@@ -8,7 +8,7 @@ import PyObject from 'components/PyObject';
 
 # Asset Catalog
 
-"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.  An asset might be a table in a database that solids append to, an ML model in a model store that solids overwrite, or even slack channel that solids write messages to.
+"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.  An asset might be a table in a database that solids append to, an ML model in a model store that solids overwrite, or even a slack channel that solids write messages to.
 
 The Asset Catalog is an interface inside [Dagit](/overview/dagit) that centers on assets.  Each entry in the catalog is an asset and includes:
 * Runs that mutated or created the asset
