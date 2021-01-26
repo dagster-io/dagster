@@ -5,8 +5,6 @@ import time
 import pendulum
 from dagster import check
 from dagster.core.definitions.job import JobType
-from dagster.core.errors import DagsterSubprocessError
-from dagster.core.events import EngineEventData
 from dagster.core.host_representation import (
     ExternalPipeline,
     PipelineSelector,
@@ -275,7 +273,7 @@ def _get_or_create_sensor_run(
 
     if not run_request.run_key:
         return _create_sensor_run(
-            context, instance, repo_location, external_sensor, external_pipeline, run_request
+            instance, repo_location, external_sensor, external_pipeline, run_request
         )
 
     existing_runs = instance.get_runs(
@@ -309,27 +307,15 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        context, instance, repo_location, external_sensor, external_pipeline, run_request
+        instance, repo_location, external_sensor, external_pipeline, run_request
     )
 
 
-def _create_sensor_run(
-    context, instance, repo_location, external_sensor, external_pipeline, run_request
-):
-    execution_plan_errors = []
-    execution_plan_snapshot = None
-    try:
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline,
-            run_request.run_config,
-            external_sensor.mode,
-            step_keys_to_execute=None,
-        )
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except DagsterSubprocessError as e:
-        execution_plan_errors.extend(e.subprocess_error_infos)
-    except Exception as e:  # pylint: disable=broad-except
-        execution_plan_errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
+def _create_sensor_run(instance, repo_location, external_sensor, external_pipeline, run_request):
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline, run_request.run_config, external_sensor.mode, step_keys_to_execute=None,
+    )
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
@@ -339,19 +325,15 @@ def _create_sensor_run(
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 
-    run = instance.create_run(
+    return instance.create_run(
         pipeline_name=external_sensor.pipeline_name,
         run_id=None,
         run_config=run_request.run_config,
         mode=external_sensor.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
         solid_selection=external_sensor.solid_selection,
-        status=(
-            PipelineRunStatus.FAILURE
-            if len(execution_plan_errors) > 0
-            else PipelineRunStatus.NOT_STARTED
-        ),
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
@@ -360,18 +342,3 @@ def _create_sensor_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
     )
-
-    if len(execution_plan_errors) > 0:
-        for error in execution_plan_errors:
-            instance.report_engine_event(
-                error.message, run, EngineEventData.engine_error(error),
-            )
-        instance.report_run_failed(run)
-        context.logger.error(
-            "Failed to fetch execution plan for {sensor_name}: {error_string}".format(
-                sensor_name=external_sensor.name,
-                error_string="\n".join([error.to_string() for error in execution_plan_errors]),
-            ),
-        )
-
-    return run

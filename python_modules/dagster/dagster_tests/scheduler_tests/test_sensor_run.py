@@ -56,9 +56,21 @@ def error_sensor(context):
     raise Exception("womp womp")
 
 
+@sensor(pipeline_name="the_pipeline")
+def wrong_config_sensor(_context):
+    return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
+
+
 @repository
 def the_repo():
-    return [the_pipeline, simple_sensor, error_sensor, always_on_sensor, run_key_sensor]
+    return [
+        the_pipeline,
+        simple_sensor,
+        error_sensor,
+        wrong_config_sensor,
+        always_on_sensor,
+        run_key_sensor,
+    ]
 
 
 @pipeline
@@ -238,6 +250,58 @@ def test_error_sensor(external_repo_context, capfd):
             assert (
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor"
             ) in captured.out
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_wrong_config_sensor(external_repo_context, capfd):
+    freeze_datetime = pendulum.datetime(
+        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+    ).in_tz("US/Central")
+    with instance_with_sensors(external_repo_context) as (instance, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("wrong_config_sensor")
+            instance.add_job_state(
+                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+            )
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 0
+
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.FAILURE,
+                [],
+                "Error in config for pipeline the_pipeline",
+            )
+
+            captured = capfd.readouterr()
+            assert ("Error in config for pipeline the_pipeline") in captured.out
+
+            # Error repeats on subsequent ticks
+
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.FAILURE,
+                [],
+                "Error in config for pipeline the_pipeline",
+            )
+
+            captured = capfd.readouterr()
+            assert ("Error in config for pipeline the_pipeline") in captured.out
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
