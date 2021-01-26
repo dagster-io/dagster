@@ -318,6 +318,9 @@ class GraphDefinition(NodeDefinition):
 
         return True
 
+    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+        check.not_implemented("@graph does not yet implement configured")
+
 
 def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name, class_name):
     from .composition import MappedInputPlaceholder
