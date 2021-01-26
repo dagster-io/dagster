@@ -76,8 +76,8 @@
   },
   {
     "name": "pipeline_tags",
-    "title": "Pipeline Tags",
-    "description": "Tag a pipeline"
+    "title": "Solid and Pipeline Tags",
+    "description": "Create a pipeline with tags and a solid with tags"
   },
   {
     "name": "pipeline_unittesting",
