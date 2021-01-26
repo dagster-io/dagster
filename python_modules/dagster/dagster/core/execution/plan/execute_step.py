@@ -26,7 +26,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemStepExecutionContext, TypeCheckContext
 from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
-from dagster.core.execution.plan.outputs import StepOutput, StepOutputData, StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context
@@ -193,29 +193,7 @@ def _type_checked_event_sequence_for_input(
         )
 
 
-def _create_step_output_event(
-    step_context: SystemStepExecutionContext,
-    step_output_handle: StepOutputHandle,
-    type_check: TypeCheck,
-    success: bool,
-    version: Optional[str],
-) -> DagsterEvent:
-    return DagsterEvent.step_output_event(
-        step_context=step_context,
-        step_output_data=StepOutputData(
-            step_output_handle=step_output_handle,
-            type_check_data=TypeCheckData(
-                success=success,
-                label=step_output_handle.output_name,
-                description=type_check.description if type_check else None,
-                metadata_entries=type_check.metadata_entries if type_check else [],
-            ),
-            version=version,
-        ),
-    )
-
-
-def _type_checked_step_output_event_sequence(
+def _type_check_output(
     step_context: SystemStepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Any,
@@ -244,12 +222,18 @@ def _type_checked_step_output_event_sequence(
     ):
         type_check = _do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
 
-    yield _create_step_output_event(
-        step_context,
-        step_output_handle,
-        type_check=type_check,
-        success=type_check.success,
-        version=version,
+    yield DagsterEvent.step_output_event(
+        step_context=step_context,
+        step_output_data=StepOutputData(
+            step_output_handle=step_output_handle,
+            type_check_data=TypeCheckData(
+                success=type_check.success,
+                label=step_output_handle.output_name,
+                description=type_check.description if type_check else None,
+                metadata_entries=type_check.metadata_entries if type_check else [],
+            ),
+            version=version,
+        ),
     )
 
     if not type_check.success:
@@ -309,7 +293,7 @@ def core_dagster_event_sequence_for_step(
         ):
 
             if isinstance(user_event, (Output, DynamicOutput)):
-                for evt in _create_step_events_for_output(step_context, user_event):
+                for evt in _type_check_and_store_output(step_context, user_event):
                     yield evt
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
                 yield DagsterEvent.step_materialization(step_context, user_event)
@@ -327,20 +311,17 @@ def core_dagster_event_sequence_for_step(
     )
 
 
-def _create_step_events_for_output(
+def _type_check_and_store_output(
     step_context: SystemStepExecutionContext, output: Union[DynamicOutput, Output]
 ) -> Iterator[DagsterEvent]:
 
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
 
-    step = step_context.step
-    step_output = step.step_output_named(output.output_name)
-
     mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
     step_output_handle = StepOutputHandle(
-        step_key=step.key, output_name=output.output_name, mapping_key=mapping_key
+        step_key=step_context.step.key, output_name=output.output_name, mapping_key=mapping_key
     )
 
     version = (
@@ -349,15 +330,13 @@ def _create_step_events_for_output(
         else None
     )
 
-    for output_event in _type_checked_step_output_event_sequence(
-        step_context, step_output_handle, output, version
-    ):
+    for output_event in _type_check_output(step_context, step_output_handle, output, version):
         yield output_event
 
-    for evt in _set_objects(step_context, step_output, step_output_handle, output):
+    for evt in _store_output(step_context, step_output_handle, output):
         yield evt
 
-    for evt in _create_output_materializations(step_context, output.output_name, output.value):
+    for evt in _create_type_materializations(step_context, output.output_name, output.value):
         yield evt
 
 
@@ -384,12 +363,12 @@ def _materializations_to_events(
             yield DagsterEvent.step_materialization(step_context, materialization)
 
 
-def _set_objects(
+def _store_output(
     step_context: SystemStepExecutionContext,
-    step_output: StepOutput,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
 ) -> Iterator[DagsterEvent]:
+    step_output = step_context.step.step_output_named(output.output_name)
     output_def = step_output.output_def
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
@@ -416,9 +395,11 @@ def _set_objects(
     )
 
 
-def _create_output_materializations(
+def _create_type_materializations(
     step_context: SystemStepExecutionContext, output_name: str, value: Any
 ) -> Iterator[DagsterEvent]:
+    """If the output has any dagster type materializers, runs them."""
+
     step = step_context.step
     current_handle = step.solid_handle
 
