@@ -29,13 +29,29 @@ startAfter:start_pipeline_marker_1
 endBefore:end_pipeline_marker_1
 ```
 
-### Partition set based schedules [recommended]
+### Partition-based schedules
 
-You can create a schedule that is composed using an underlying partition set made up of `datetime`s.
-The decorated schedule function should take in a `datetime` and return the run config for the
+Partition-based schedules are useful when it's important for a successful run to exist for every
+scheduled run time.
+For example, if each run fills in a daily partition of a data warehouse table, basing your schedule
+on a partition set allows you to track which days have corresponding runs and fill in gaps
+when runs fail.
+
+The <PyObject module="dagster" object="daily_schedule" displayText="@daily_schedule"/> or <PyObject module="dagster" object="hourly_schedule" displayText="@hourly_schedule"/> API defines
+a schedule that wraps an underlying <PyObject module="dagster" object="PartitionSetDefinition"/>.
+Each partition in the set is a `datetime`.
+
+The decorated schedule function should accept a `datetime` and return the run config for the
 pipeline run associated with that partition. The scheduler will ensure that the schedule function
 is evaluated exactly once for every partition to generate run config, which is then
 used to create and launch a pipeline run.
+
+Partition-based schedules require a `start_date` that indicates when the set of partitions begins.
+The scheduler will only kick off runs for times that both come after the `start_date` and come
+after the time when the schedule was turned on (usually in Dagit). If the
+`start_date` is earlier than when the schedule is turned on, you can kick off runs for times
+between the `start_date` and when the schedule is turned on by launching a
+[backfill](/overview/partitions-backfill/backfill).
 
 The following examples demonstrate schedules with an underlying partition set, each with a
 different execution interval:
@@ -47,18 +63,23 @@ startAfter: start_part
 endBefore: end_part
 ```
 
-### Cron-string based schedules
+### Non-partition-based schedules
 
-You can also use the <PyObject module="dagster" object="schedule" displayText="@schedule"/>
-decorator to define a schedule with an arbitrary cron string. This decorator takes a cron string
-and a pipeline name as input, and should decorate a function that takes in a
+Non-partition-based schedules are useful when it's only important for a run to exist for the most
+recent scheduled run time. For example, if each run drops and recreates a data warehouse table, then
+there's usually no need to kick off runs corresponding to historical scheduled run times - those
+runs would just have the same effect as a run for the most recent.
+
+The <PyObject module="dagster" object="schedule" displayText="@schedule"/>
+decorator defines a non-partitioned-based schedule with an arbitrary cron string. This decorator
+should decorate a function that takes in a
 `ScheduleExecutionContext` and returns run config for your run. The schedule will not create a
 partition set, but you can access the execution time for your schedule by using the
 `scheduled_execution_time` property on the passed-in `ScheduleExecutionContext` (assuming you're
 using the recommended `DagsterDaemonScheduler` - the `scheduled_execution_time` property is not set
 on the deprecated `SystemCronScheduler` or `K8sScheduler`).
 
-At each time the schedule should execute, according to the cron string, the function will be
+At each time the schedule should execute the function will be
 evaluated to generate the run config and a pipeline run will be launched with the run config.
 
 ```python literalinclude caption=schedule_definition.py
