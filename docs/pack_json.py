@@ -48,9 +48,8 @@ def pack_directory_json(path_to_folder: str):
 
 
 def main():
-    # TODO: Update content directory to path in Next.js folder
     json_directory = file_relative_path(__file__, "sphinx/_build/json")
-    content_master_directory = file_relative_path(__file__, ".")
+    content_master_directory = file_relative_path(__file__, "next/content/api")
 
     directories_to_pack = {
         os.path.join(json_directory, "sections"): "sections.json",
