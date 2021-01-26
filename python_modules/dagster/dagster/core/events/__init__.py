@@ -15,9 +15,10 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster.core.execution.context.system import (
+    BaseStepExecutionContext,
     HookContext,
+    PipelineExecutionContext,
     SystemExecutionContext,
-    SystemStepExecutionContext,
 )
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.execution.plan.outputs import StepOutputData
@@ -144,7 +145,7 @@ def _validate_event_specific_data(event_type, event_specific_data):
 
 
 def log_step_event(step_context, event):
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", BaseStepExecutionContext)
     check.inst_param(event, "event", DagsterEvent)
 
     event_type = DagsterEventType(event.event_type_value)
@@ -215,7 +216,7 @@ class DagsterEvent(
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None, message=None):
 
-        check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+        check.inst_param(step_context, "step_context", BaseStepExecutionContext)
 
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
@@ -237,7 +238,7 @@ class DagsterEvent(
     def from_pipeline(
         event_type, pipeline_context, message=None, event_specific_data=None, step_handle=None
     ):
-        check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+        check.inst_param(pipeline_context, "pipeline_context", PipelineExecutionContext)
         check.opt_inst_param(
             step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
         )

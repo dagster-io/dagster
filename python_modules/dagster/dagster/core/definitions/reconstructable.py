@@ -141,7 +141,6 @@ class ReconstructablePipeline(
                 pipeline_name=self.pipeline_name,
             )
 
-        pipe.get_definition()  # verify the subset is correct
         return pipe
 
     def subset_for_execution(self, solid_selection):

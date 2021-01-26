@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.errors import DagsterError
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
@@ -30,6 +31,8 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .context.logger import InitLoggerContext
 from .context.system import (
+    HostModeExecutionContextData,
+    HostModeRunWorkerExecutionContext,
     SystemExecutionContext,
     SystemExecutionContextData,
     SystemPipelineExecutionContext,
@@ -306,6 +309,115 @@ class PipelineExecutionContextManager(ExecutionContextManager):
         )
 
 
+def host_mode_execution_context_event_generator(
+    execution_plan, recon_pipeline, run_config, pipeline_run, instance, executor, raise_on_error
+):
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
+
+    check.dict_param(run_config, "run_config", key_type=str)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(executor, "executor", Executor)
+    check.bool_param(raise_on_error, "raise_on_error")
+
+    execution_context = None
+
+    loggers = []
+
+    # Should these be configurable from the run config (without loading
+    # the full EnvironmentConfig??)
+
+    for (logger_def, logger_config) in default_system_loggers():
+        loggers.append(
+            logger_def.logger_fn(
+                InitLoggerContext(
+                    logger_config,
+                    pipeline_def=None,
+                    logger_def=logger_def,
+                    run_id=pipeline_run.run_id,
+                )
+            )
+        )
+
+    loggers.append(instance.get_logger())
+
+    log_manager = DagsterLogManager(
+        run_id=pipeline_run.run_id,
+        logging_tags=_get_logging_tags(pipeline_run),
+        loggers=loggers,
+    )
+
+    # Create an executor (again how do we pull config from run_config
+    # without going through the full EnvironmentConfig.build flow)
+    try:
+        execution_context = HostModeRunWorkerExecutionContext(
+            execution_context_data=HostModeExecutionContextData(
+                pipeline_run=pipeline_run,
+                recon_pipeline=recon_pipeline,
+                execution_plan=execution_plan,
+                instance=instance,
+                raise_on_error=raise_on_error,
+                retry_mode=executor.retries,
+            ),
+            log_manager=log_manager,
+            executor=executor,
+        )
+
+        yield execution_context
+
+    except DagsterError as dagster_error:
+        if execution_context is None:
+            user_facing_exc_info = (
+                # pylint does not know original_exc_info exists is is_user_code_error is true
+                # pylint: disable=no-member
+                dagster_error.original_exc_info
+                if dagster_error.is_user_code_error
+                else sys.exc_info()
+            )
+            error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
+
+            yield DagsterEvent.pipeline_init_failure(
+                pipeline_name=pipeline_run.pipeline_name,
+                failure_data=PipelineInitFailureData(error=error_info),
+                log_manager=log_manager,
+            )
+        else:
+            # pipeline teardown failure
+            raise dagster_error
+
+        if raise_on_error:
+            raise dagster_error
+
+
+class HostModeRunWorkerExecutionContextManager(ExecutionContextManager):
+    def __init__(
+        self,
+        execution_plan,
+        recon_pipeline,
+        run_config,
+        pipeline_run,
+        instance,
+        executor,
+        raise_on_error=False,
+    ):
+        super(HostModeRunWorkerExecutionContextManager, self).__init__(
+            host_mode_execution_context_event_generator(
+                execution_plan,
+                recon_pipeline,
+                run_config,
+                pipeline_run,
+                instance,
+                executor,
+                raise_on_error,
+            )
+        )
+
+    @property
+    def context_type(self):
+        return HostModeRunWorkerExecutionContext
+
+
 class PlanExecutionContextManager(ExecutionContextManager):
     def __init__(
         self,
@@ -542,14 +654,14 @@ def create_log_manager(context_creation_data):
 
     return DagsterLogManager(
         run_id=pipeline_run.run_id,
-        logging_tags=get_logging_tags(pipeline_run, context_creation_data.pipeline_def),
+        logging_tags=_get_logging_tags(pipeline_run),
         loggers=loggers,
     )
 
 
 def _create_context_free_log_manager(instance, pipeline_run, pipeline_def):
     """In the event of pipeline initialization failure, we want to be able to log the failure
-    without a dependency on the ExecutionContext to initialize DagsterLogManager.
+    without a dependency on the PipelineExecutionContext to initialize DagsterLogManager.
     Args:
         pipeline_run (dagster.core.storage.pipeline_run.PipelineRun)
         pipeline_def (dagster.definitions.PipelineDefinition)
@@ -572,16 +684,12 @@ def _create_context_free_log_manager(instance, pipeline_run, pipeline_def):
             )
         ]
 
-    return DagsterLogManager(
-        pipeline_run.run_id, get_logging_tags(pipeline_run, pipeline_def), loggers
-    )
+    return DagsterLogManager(pipeline_run.run_id, _get_logging_tags(pipeline_run), loggers)
 
 
-def get_logging_tags(pipeline_run, pipeline_def):
+def _get_logging_tags(pipeline_run):
     check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-
     return merge_dicts(
-        {"pipeline": pipeline_def.name},
+        {"pipeline": pipeline_run.pipeline_name},
         pipeline_run.tags if pipeline_run and pipeline_run.tags else {},
     )

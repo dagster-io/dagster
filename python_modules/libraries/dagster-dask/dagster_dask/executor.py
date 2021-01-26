@@ -234,11 +234,10 @@ class DaskExecutor(Executor):
                             dependencies.append(execution_futures_dict[key])
 
                     run_config = dict(pipeline_context.run_config, execution={"in_process": {}})
-                    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
-                    recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
+                    recon_pipeline = pipeline_context.reconstructable_pipeline
 
                     future = client.submit(
                         query_on_dask_worker,

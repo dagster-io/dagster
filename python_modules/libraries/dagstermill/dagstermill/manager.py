@@ -168,6 +168,7 @@ class Manager:
         ) as pipeline_context:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
+                pipeline_def=pipeline_def,
                 solid_config=run_config.get("solids", {}).get(solid_def.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
@@ -256,6 +257,7 @@ class Manager:
 
             self.context = DagstermillExecutionContext(
                 pipeline_context=pipeline_context,
+                pipeline_def=pipeline_def,
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,

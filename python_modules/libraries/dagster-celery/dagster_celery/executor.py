@@ -101,7 +101,7 @@ def _submit_task(app, pipeline_context, step, queue, priority, known_state):
     from .tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_context.pipeline.get_python_origin(),
+        pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
@@ -112,7 +112,7 @@ def _submit_task(app, pipeline_context, step, queue, priority, known_state):
     task = create_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        executable_dict=pipeline_context.pipeline.to_dict(),
+        executable_dict=pipeline_context.reconstructable_pipeline.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority,

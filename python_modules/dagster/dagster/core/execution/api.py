@@ -6,14 +6,16 @@ from dagster import check
 from dagster.core.definitions import IPipeline, PipelineDefinition
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import RunWorkerExecutionContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.execution.retries import RetryMode
+from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance, is_memoized_run
 from dagster.core.selector import parse_step_selection
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
@@ -27,6 +29,7 @@ from dagster.utils.interrupts import capture_interrupts
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
+    HostModeRunWorkerExecutionContextManager,
     PipelineExecutionContextManager,
     PlanExecutionContextManager,
     scoped_pipeline_context,
@@ -112,6 +115,64 @@ def execute_run_iterator(
             ),
         )
     )
+
+
+def execute_run_host_mode(
+    pipeline: ReconstructablePipeline,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    executor: Executor,
+    raise_on_error: bool = False,
+):
+    check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(instance, "instance", DagsterInstance)
+
+    if pipeline_run.status == PipelineRunStatus.CANCELED:
+        message = "Not starting execution since the run was canceled before execution could start"
+        instance.report_engine_event(
+            message,
+            pipeline_run,
+        )
+        raise DagsterInvariantViolationError(message)
+
+    check.invariant(
+        pipeline_run.status == PipelineRunStatus.NOT_STARTED
+        or pipeline_run.status == PipelineRunStatus.STARTING,
+        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
+            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+        ),
+    )
+
+    if pipeline_run.solids_to_execute:
+        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+            pipeline_run.solids_to_execute
+        )
+
+    execution_plan_snapshot = instance.get_execution_plan_snapshot(
+        pipeline_run.execution_plan_snapshot_id
+    )
+    execution_plan = ExecutionPlan.rebuild_from_snapshot(
+        pipeline,
+        pipeline_run.pipeline_name,
+        execution_plan_snapshot,
+    )
+
+    _execute_run_iterable = ExecuteRunWithPlanIterable(
+        execution_plan=execution_plan,
+        iterator=pipeline_execution_iterator,
+        execution_context_manager=HostModeRunWorkerExecutionContextManager(
+            execution_plan=execution_plan,
+            recon_pipeline=pipeline,
+            pipeline_run=pipeline_run,
+            instance=instance,
+            run_config=pipeline_run.run_config,
+            executor=executor,
+            raise_on_error=raise_on_error,
+        ),
+    )
+    event_list = list(_execute_run_iterable)
+    return event_list
 
 
 def execute_run(
@@ -733,16 +794,16 @@ def create_execution_plan(
 
 
 def pipeline_execution_iterator(
-    pipeline_context: SystemPipelineExecutionContext, execution_plan: ExecutionPlan
+    pipeline_context: RunWorkerExecutionContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
     """A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
 
     Args:
-        pipeline_context (SystemPipelineExecutionContext):
+        pipeline_context (RunWorkerExecutionContext):
         execution_plan (ExecutionPlan):
     """
-    check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+    check.inst_param(pipeline_context, "pipeline_context", RunWorkerExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
     yield DagsterEvent.pipeline_start(pipeline_context)

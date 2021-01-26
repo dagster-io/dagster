@@ -211,7 +211,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority, known_sta
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_context.pipeline.get_python_origin(),
+        pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),

@@ -17,6 +17,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     def __init__(
         self,
         pipeline_context: SystemPipelineExecutionContext,
+        pipeline_def: PipelineDefinition,
         resource_keys_to_init: Set[str],
         solid_name: str,
         solid_config: Any = None,
@@ -24,6 +25,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         self._pipeline_context = check.inst_param(
             pipeline_context, "pipeline_context", SystemPipelineExecutionContext
         )
+        self._pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
         )
@@ -84,7 +86,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
         This will be a dagstermill-specific shim.
         """
-        return self._pipeline_context.pipeline.get_definition()
+        return self._pipeline_def
 
     @property
     def resources(self) -> Any:

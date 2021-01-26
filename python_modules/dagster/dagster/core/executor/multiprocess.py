@@ -6,7 +6,7 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import RunWorkerExecutionContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
@@ -28,7 +28,7 @@ from .child_process_executor import (
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 
-class InProcessExecutorChildProcessCommand(ChildProcessCommand):
+class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
         self,
         run_config,
@@ -86,7 +86,6 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
 class MultiprocessExecutor(Executor):
     def __init__(self, pipeline, retries, max_concurrent=None):
-
         self.pipeline = check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
         self._retries = check.inst_param(retries, "retries", RetryMode)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
@@ -97,7 +96,7 @@ class MultiprocessExecutor(Executor):
         return self._retries
 
     def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+        check.inst_param(pipeline_context, "pipeline_context", RunWorkerExecutionContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         limit = self.max_concurrent
@@ -244,7 +243,7 @@ class MultiprocessExecutor(Executor):
         )
 
     def execute_step_out_of_process(self, step_context, step, errors, term_events, known_state):
-        command = InProcessExecutorChildProcessCommand(
+        command = MultiprocessExecutorChildProcessCommand(
             run_config=step_context.run_config,
             pipeline_run=step_context.pipeline_run,
             step_key=step.key,

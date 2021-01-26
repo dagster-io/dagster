@@ -4,6 +4,7 @@ Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
+from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set
 
@@ -12,6 +13,7 @@ from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -35,6 +37,239 @@ if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.definitions.resource import Resources
+
+
+class PipelineExecutionContext(ABC):
+    """
+    Context with data that can be used during pipeline or step execution, in both host mode
+    (where the process can't load any user code and has to rely on the ExecutionPlan)
+    and user mode (where the process can load any user code)
+    """
+
+    @abstractproperty
+    def pipeline_run(self) -> PipelineRun:
+        pass
+
+    @abstractproperty
+    def run_id(self) -> str:
+        return self.pipeline_run.run_id
+
+    @abstractproperty
+    def run_config(self) -> dict:
+        return self.pipeline_run.run_config
+
+    @abstractproperty
+    def pipeline_name(self) -> str:
+        pass
+
+    @abstractproperty
+    def instance(self) -> "DagsterInstance":
+        pass
+
+    @abstractproperty
+    def raise_on_error(self) -> bool:
+        pass
+
+    @abstractproperty
+    def retry_mode(self) -> RetryMode:
+        pass
+
+    @abstractproperty
+    def execution_plan(self):
+        pass
+
+    @abstractproperty
+    def log(self) -> DagsterLogManager:
+        pass
+
+    @abstractproperty
+    def logging_tags(self) -> Dict[str, str]:
+        pass
+
+    @abstractmethod
+    def has_tag(self, key: str) -> bool:
+        pass
+
+    @abstractmethod
+    def get_tag(self, key: str) -> Optional[str]:
+        pass
+
+
+class RunWorkerExecutionContext(PipelineExecutionContext):
+    """
+    Context with data that can be used during the run worker process that's responsible
+    for orchestrating individual steps. May not be able to load user code.
+    """
+
+    @abstractproperty
+    def reconstructable_pipeline(self) -> ReconstructablePipeline:
+        pass
+
+    @abstractproperty
+    def executor(self) -> Executor:
+        pass
+
+
+class BaseStepExecutionContext(PipelineExecutionContext):
+    """
+    Context with data that can be used during a single step's execution.
+    """
+
+    @abstractproperty
+    def step(self) -> ExecutionStep:
+        pass
+
+    @property
+    def solid_handle(self) -> "SolidHandle":
+        return self.step.solid_handle
+
+
+class HostModeExecutionContextData(
+    NamedTuple(
+        "_HostModeExecutionContextData",
+        [
+            ("pipeline_run", PipelineRun),
+            ("recon_pipeline", ReconstructablePipeline),
+            ("execution_plan", "ExecutionPlan"),
+            ("instance", "DagsterInstance"),
+            ("raise_on_error", bool),
+            ("retry_mode", RetryMode),
+        ],
+    )
+):
+    """
+    HostModeExecutionContextData is the data that remains constant throughout the entire
+    execution of a pipeline in host mode.
+    """
+
+
+class HostModeExecutionContext:
+    """
+    Context with data that can be used during pipeline or step execution, in host mode
+    (where the process can't load any user code and has to rely on the ExecutionPlan).
+    """
+
+    __slots__ = ["_execution_context_data", "_log_manager"]
+
+    def __init__(
+        self,
+        execution_context_data: HostModeExecutionContextData,
+        log_manager: DagsterLogManager,
+    ):
+        self._execution_context_data = check.inst_param(
+            execution_context_data, "execution_context_data", HostModeExecutionContextData
+        )
+
+        self._log_manager = check.inst_param(log_manager, "log_manager", DagsterLogManager)
+
+    @property
+    def pipeline_run(self) -> PipelineRun:
+        return self._execution_context_data.pipeline_run
+
+    @property
+    def run_id(self) -> str:
+        return self.pipeline_run.run_id
+
+    @property
+    def run_config(self) -> dict:
+        return self.pipeline_run.run_config
+
+    @property
+    def pipeline_name(self) -> str:
+        return self.pipeline_run.pipeline_name
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._execution_context_data.instance
+
+    @property
+    def raise_on_error(self) -> bool:
+        return self._execution_context_data.raise_on_error
+
+    @property
+    def execution_plan(self) -> "ExecutionPlan":
+        return self._execution_context_data.execution_plan
+
+    @property
+    def log(self) -> DagsterLogManager:
+        return self._log_manager
+
+    @property
+    def logging_tags(self) -> Dict[str, str]:
+        return self.log.logging_tags
+
+    def has_tag(self, key: str) -> bool:
+        check.str_param(key, "key")
+        return key in self.logging_tags
+
+    def get_tag(self, key: str) -> Optional[str]:
+        check.str_param(key, "key")
+        return self.logging_tags.get(key)
+
+    def for_step(self, step: ExecutionStep) -> "HostModeStepExecutionContext":
+        return HostModeStepExecutionContext(
+            execution_context_data=self._execution_context_data,
+            log_manager=self._log_manager.with_tags(**step.logging_tags),
+            step=step,
+        )
+
+    @property
+    def retry_mode(self) -> RetryMode:
+        return self._execution_context_data.retry_mode
+
+
+class HostModeRunWorkerExecutionContext(HostModeExecutionContext, RunWorkerExecutionContext):
+    """
+    Context with data that can be used in the run worker in host mode (which can orchestrate
+    steps using the ExecutionPlan but cannot load any user code).
+    """
+
+    __slots__ = ["_executor"]
+
+    def __init__(
+        self,
+        execution_context_data: HostModeExecutionContextData,
+        log_manager: DagsterLogManager,
+        executor: Executor,
+    ):
+        super(HostModeRunWorkerExecutionContext, self).__init__(
+            execution_context_data=execution_context_data,
+            log_manager=log_manager,
+        )
+        self._executor = check.inst_param(executor, "executor", Executor)
+
+    @property
+    def reconstructable_pipeline(self) -> ReconstructablePipeline:
+        return self._execution_context_data.pipeline
+
+    @property
+    def executor(self) -> Executor:
+        return self._executor
+
+
+class HostModeStepExecutionContext(HostModeExecutionContext, BaseStepExecutionContext):
+    """
+    Context for logging events about a single step in host mode (for logging events within a
+    host mode run worker).
+    """
+
+    __slots__ = ["_step"]
+
+    def __init__(
+        self,
+        execution_context_data: HostModeExecutionContextData,
+        log_manager: DagsterLogManager,
+        step: ExecutionStep,
+    ):
+        self._step = check.inst_param(step, "step", ExecutionStep)
+        super(HostModeStepExecutionContext, self).__init__(
+            execution_context_data,
+            log_manager,
+        )
+
+    @property
+    def step(self) -> ExecutionStep:
+        return self._step
 
 
 class SystemExecutionContextData(
@@ -144,10 +379,6 @@ class SystemExecutionContext:
         return self._execution_context_data.environment_config
 
     @property
-    def pipeline(self) -> IPipeline:
-        return self._execution_context_data.pipeline
-
-    @property
     def pipeline_name(self) -> str:
         return self._execution_context_data.pipeline_name
 
@@ -221,7 +452,7 @@ class SystemExecutionContext:
         return TypeCheckContext(self._execution_context_data, self.log, dagster_type)
 
 
-class SystemPipelineExecutionContext(SystemExecutionContext):
+class SystemPipelineExecutionContext(SystemExecutionContext, RunWorkerExecutionContext):
     __slots__ = ["_executor"]
 
     def __init__(
@@ -237,11 +468,19 @@ class SystemPipelineExecutionContext(SystemExecutionContext):
         self._executor = check.inst_param(executor, "executor", Executor)
 
     @property
+    def reconstructable_pipeline(self) -> ReconstructablePipeline:
+        if not isinstance(self._execution_context_data.pipeline, ReconstructablePipeline):
+            raise DagsterInvariantViolationError(
+                "reconstructable_pipeline property must be a ReconstructablePipeline"
+            )
+        return self._execution_context_data.pipeline
+
+    @property
     def executor(self) -> Executor:
         return self._executor
 
 
-class SystemStepExecutionContext(SystemExecutionContext):
+class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContext):
     __slots__ = ["_step", "_resources", "_required_resource_keys", "_step_launcher"]
 
     def __init__(
@@ -294,12 +533,12 @@ class SystemStepExecutionContext(SystemExecutionContext):
         return self._step_launcher
 
     @property
-    def solid_handle(self) -> "SolidHandle":
-        return self._step.solid_handle
-
-    @property
     def solid_def(self) -> SolidDefinition:
         return self.solid.definition
+
+    @property
+    def pipeline(self) -> IPipeline:
+        return self._execution_context_data.pipeline
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
