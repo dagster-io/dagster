@@ -7,7 +7,7 @@ from dagster.core.storage.tags import TagType, get_tag_type
 from graphql.execution.base import ResolveInfo
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_error
 
 
 def is_config_valid(pipeline_def, run_config, mode):
@@ -20,7 +20,7 @@ def is_config_valid(pipeline_def, run_config, mode):
 
 
 def get_validated_config(pipeline_def, run_config, mode):
-    from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
+    from ..schema.pipelines.config import GraphenePipelineConfigValidationInvalid
 
     check.str_param(mode, "mode")
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -31,7 +31,7 @@ def get_validated_config(pipeline_def, run_config, mode):
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
-            DauphinPipelineConfigValidationInvalid.for_validation_errors(
+            GraphenePipelineConfigValidationInvalid.for_validation_errors(
                 pipeline_def.get_external_pipeline(), validated_config.errors
             )
         )
@@ -40,39 +40,49 @@ def get_validated_config(pipeline_def, run_config, mode):
 
 
 def get_run_by_id(graphene_info, run_id):
+    from ..schema.errors import GraphenePipelineRunNotFoundError
+    from ..schema.pipelines.pipeline import GraphenePipelineRun
+
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
     if not run:
-        return graphene_info.schema.type_named("PipelineRunNotFoundError")(run_id)
+        return GraphenePipelineRunNotFoundError(run_id)
     else:
-        return graphene_info.schema.type_named("PipelineRun")(run)
+        return GraphenePipelineRun(run)
 
 
 def get_run_tags(graphene_info):
+    from ..schema.tags import GraphenePipelineTagAndValues
+
     instance = graphene_info.context.instance
     return [
-        graphene_info.schema.type_named("PipelineTagAndValues")(key=key, values=values)
+        GraphenePipelineTagAndValues(key=key, values=values)
         for key, values in instance.get_run_tags()
         if get_tag_type(key) != TagType.HIDDEN
     ]
 
 
-@capture_dauphin_error
+@capture_error
 def get_run_group(graphene_info, run_id):
+    from ..schema.errors import GrapheneRunGroupNotFoundError
+    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.runs import GrapheneRunGroup
+
     instance = graphene_info.context.instance
     result = instance.get_run_group(run_id)
 
     if result is None:
-        return graphene_info.schema.type_named("RunGroupNotFoundError")(run_id)
+        return GrapheneRunGroupNotFoundError(run_id)
     else:
         root_run_id, run_group = result
-        return graphene_info.schema.type_named("RunGroup")(
-            root_run_id=root_run_id,
-            runs=[graphene_info.schema.type_named("PipelineRun")(run) for run in run_group],
+        return GrapheneRunGroup(
+            root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
         )
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):
+    from ..schema.pipelines.pipeline import GraphenePipelineRun
+
     check.opt_inst_param(filters, "filters", PipelineRunsFilter)
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
@@ -95,7 +105,7 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     else:
         runs = instance.get_runs(cursor=cursor, limit=limit)
 
-    return [graphene_info.schema.type_named("PipelineRun")(run) for run in runs]
+    return [GraphenePipelineRun(run) for run in runs]
 
 
 def get_runs_count(graphene_info, filters):
@@ -103,7 +113,8 @@ def get_runs_count(graphene_info, filters):
 
 
 def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
-    from ..schema.runs import DauphinRunGroup
+    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.runs import GrapheneRunGroup
 
     check.opt_inst_param(filters, "filters", PipelineRunsFilter)
     check.opt_str_param(cursor, "cursor")
@@ -114,38 +125,39 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 
     for root_run_id in run_groups:
         run_groups[root_run_id]["runs"] = [
-            graphene_info.schema.type_named("PipelineRun")(run)
-            for run in run_groups[root_run_id]["runs"]
+            GraphenePipelineRun(run) for run in run_groups[root_run_id]["runs"]
         ]
 
     return [
-        DauphinRunGroup(root_run_id=root_run_id, runs=run_group["runs"])
+        GrapheneRunGroup(root_run_id=root_run_id, runs=run_group["runs"])
         for root_run_id, run_group in run_groups.items()
     ]
 
 
-@capture_dauphin_error
+@capture_error
 def validate_pipeline_config(graphene_info, selector, run_config, mode):
+    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
     ensure_valid_config(external_pipeline, mode, run_config)
-    return graphene_info.schema.type_named("PipelineConfigValidationValid")(
-        pipeline_name=external_pipeline.name
-    )
+    return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
 
 
-@capture_dauphin_error
+@capture_error
 def get_execution_plan(graphene_info, selector, run_config, mode):
+    from ..schema.execution import GrapheneExecutionPlan
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
     ensure_valid_config(external_pipeline, mode, run_config)
-    return graphene_info.schema.type_named("ExecutionPlan")(
+    return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
             external_pipeline=external_pipeline,
             mode=mode,
@@ -155,13 +167,17 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
     )
 
 
-@capture_dauphin_error
+@capture_error
 def get_stats(graphene_info, run_id):
+    from ..schema.pipelines.pipeline_run_stats import GraphenePipelineRunStatsSnapshot
+
     stats = graphene_info.context.instance.get_run_stats(run_id)
     stats.id = "stats-{run_id}"
-    return graphene_info.schema.type_named("PipelineRunStatsSnapshot")(stats)
+    return GraphenePipelineRunStatsSnapshot(stats)
 
 
 def get_step_stats(graphene_info, run_id, step_keys=None):
+    from ..schema.logs.events import GraphenePipelineRunStepStats
+
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
-    return [graphene_info.schema.type_named("PipelineRunStepStats")(stats) for stats in step_stats]
+    return [GraphenePipelineRunStepStats(stats) for stats in step_stats]

@@ -38,7 +38,7 @@ export interface SolidCardSolidDefinitionFragment_SolidDefinition_outputDefiniti
 }
 
 export interface SolidCardSolidDefinitionFragment_SolidDefinition_configField_configType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
   description: string | null;
 }

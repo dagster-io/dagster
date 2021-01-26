@@ -1,91 +1,64 @@
+import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
-from dagster.core.scheduler.job import JobTickStatsSnapshot, JobTickStatus
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_schedules import (
+from dagster.core.scheduler.job import JobTickStatsSnapshot
+
+from ...implementation.fetch_schedules import (
     reconcile_scheduler_state,
     start_schedule,
     stop_schedule,
 )
-from dagster_graphql.schema.errors import (
-    DauphinPythonError,
-    DauphinRepositoryNotFoundError,
-    DauphinScheduleNotFoundError,
-    DauphinSchedulerNotDefinedError,
+from ..errors import (
+    GraphenePythonError,
+    GrapheneRepositoryNotFoundError,
+    GrapheneScheduleNotFoundError,
+    GrapheneSchedulerNotDefinedError,
 )
-
+from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
+from ..jobs import GrapheneJobState
 from .schedules import (
-    DauphinSchedule,
-    DauphinScheduleOrError,
-    DauphinSchedules,
-    DauphinSchedulesOrError,
+    GrapheneSchedule,
+    GrapheneScheduleOrError,
+    GrapheneSchedules,
+    GrapheneSchedulesOrError,
 )
+from .ticks import GrapheneJobTickStatus
 
 
-class DauphinScheduleStatus(dauphin.Enum):
-    class Meta:
-        name = "ScheduleStatus"
-
+class GrapheneScheduleStatus(graphene.Enum):
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
     ENDED = "ENDED"
 
-
-class DauphinSchedulerOrError(dauphin.Union):
     class Meta:
+        name = "ScheduleStatus"
+
+
+class GrapheneScheduler(graphene.ObjectType):
+    scheduler_class = graphene.String()
+
+    class Meta:
+        name = "Scheduler"
+
+
+class GrapheneSchedulerOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneScheduler, GrapheneSchedulerNotDefinedError, GraphenePythonError)
         name = "SchedulerOrError"
-        types = ("Scheduler", DauphinSchedulerNotDefinedError, "PythonError")
 
 
-DauphinJobTickStatus = dauphin.Enum.from_enum(JobTickStatus)
+class GrapheneScheduleTickStatsSnapshot(graphene.ObjectType):
+    ticks_started = graphene.NonNull(graphene.Int)
+    ticks_succeeded = graphene.NonNull(graphene.Int)
+    ticks_skipped = graphene.NonNull(graphene.Int)
+    ticks_failed = graphene.NonNull(graphene.Int)
 
-
-class DauphinScheduleTick(dauphin.ObjectType):
-    class Meta:
-        name = "ScheduleTick"
-
-    tick_id = dauphin.NonNull(dauphin.String)
-    status = dauphin.NonNull("JobTickStatus")
-    timestamp = dauphin.NonNull(dauphin.Float)
-    tick_specific_data = dauphin.Field("ScheduleTickSpecificData")
-
-
-class DauphinScheduleTickSuccessData(dauphin.ObjectType):
-    class Meta:
-        name = "ScheduleTickSuccessData"
-
-    run = dauphin.Field("PipelineRun")
-
-
-class DauphinScheduleTickFailureData(dauphin.ObjectType):
-    class Meta:
-        name = "ScheduleTickFailureData"
-
-    error = dauphin.NonNull("PythonError")
-
-
-class DauphinScheduleTickSpecificData(dauphin.Union):
-    class Meta:
-        name = "ScheduleTickSpecificData"
-        types = (
-            DauphinScheduleTickSuccessData,
-            DauphinScheduleTickFailureData,
-        )
-
-
-class DauphinScheduleTickStatsSnapshot(dauphin.ObjectType):
     class Meta:
         name = "ScheduleTickStatsSnapshot"
 
-    ticks_started = dauphin.NonNull(dauphin.Int)
-    ticks_succeeded = dauphin.NonNull(dauphin.Int)
-    ticks_skipped = dauphin.NonNull(dauphin.Int)
-    ticks_failed = dauphin.NonNull(dauphin.Int)
-
     def __init__(self, stats):
-        super(DauphinScheduleTickStatsSnapshot, self).__init__(
+        super().__init__(
             ticks_started=stats.ticks_started,
             ticks_succeeded=stats.ticks_succeeded,
             ticks_skipped=stats.ticks_skipped,
@@ -94,34 +67,27 @@ class DauphinScheduleTickStatsSnapshot(dauphin.ObjectType):
         self._stats = check.inst_param(stats, "stats", JobTickStatsSnapshot)
 
 
-class DauphinScheduler(dauphin.ObjectType):
-    class Meta:
-        name = "Scheduler"
+class GrapheneReconcileSchedulerStateSuccess(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
 
-    scheduler_class = dauphin.String()
-
-
-class DauphinReconcileSchedulerStateSuccess(dauphin.ObjectType):
     class Meta:
         name = "ReconcileSchedulerStateSuccess"
 
-    message = dauphin.NonNull(dauphin.String)
 
-
-class DauphinReconcilScheduleStateMutationResult(dauphin.Union):
+class GrapheneReconcileSchedulerStateMutationResult(graphene.Union):
     class Meta:
+        types = (GraphenePythonError, GrapheneReconcileSchedulerStateSuccess)
         name = "ReconcileSchedulerStateMutationResult"
-        types = (DauphinPythonError, DauphinReconcileSchedulerStateSuccess)
 
 
-class DauphinReconcileSchedulerStateMutation(dauphin.Mutation):
-    class Meta:
-        name = "ReconcileSchedulerStateMutation"
+class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneReconcileSchedulerStateMutationResult)
 
     class Arguments:
-        repository_selector = dauphin.NonNull("RepositorySelector")
+        repository_selector = graphene.NonNull(GrapheneRepositorySelector)
 
-    Output = dauphin.NonNull("ReconcileSchedulerStateMutationResult")
+    class Meta:
+        name = "ReconcileSchedulerStateMutation"
 
     def mutate(self, graphene_info, repository_selector):
         return reconcile_scheduler_state(
@@ -129,40 +95,73 @@ class DauphinReconcileSchedulerStateMutation(dauphin.Mutation):
         )
 
 
-class DauphinScheduleStateResult(dauphin.ObjectType):
+class GrapheneScheduleStateResult(graphene.ObjectType):
+    scheduleState = graphene.NonNull(GrapheneJobState)
+
     class Meta:
         name = "ScheduleStateResult"
 
-    scheduleState = dauphin.NonNull("JobState")
 
-
-class DauphinScheduleMutationResult(dauphin.Union):
+class GrapheneScheduleMutationResult(graphene.Union):
     class Meta:
+        types = (GraphenePythonError, GrapheneScheduleStateResult)
         name = "ScheduleMutationResult"
-        types = (DauphinPythonError, DauphinScheduleStateResult)
 
 
-class DauphinStartScheduleMutation(dauphin.Mutation):
-    class Meta:
-        name = "StartScheduleMutation"
+class GrapheneStartScheduleMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneScheduleMutationResult)
 
     class Arguments:
-        schedule_selector = dauphin.NonNull("ScheduleSelector")
+        schedule_selector = graphene.NonNull(GrapheneScheduleSelector)
 
-    Output = dauphin.NonNull("ScheduleMutationResult")
+    class Meta:
+        name = "StartScheduleMutation"
 
     def mutate(self, graphene_info, schedule_selector):
         return start_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))
 
 
-class DauphinStopRunningScheduleMutation(dauphin.Mutation):
+class GrapheneStopRunningScheduleMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneScheduleMutationResult)
+
+    class Arguments:
+        schedule_origin_id = graphene.NonNull(graphene.String)
+
     class Meta:
         name = "StopRunningScheduleMutation"
 
-    class Arguments:
-        schedule_origin_id = dauphin.NonNull(dauphin.String)
-
-    Output = dauphin.NonNull("ScheduleMutationResult")
-
     def mutate(self, graphene_info, schedule_origin_id):
         return stop_schedule(graphene_info, schedule_origin_id)
+
+
+def types():
+    from .ticks import (
+        GrapheneScheduleTick,
+        GrapheneScheduleTickFailureData,
+        GrapheneScheduleTickSpecificData,
+        GrapheneScheduleTickSuccessData,
+    )
+
+    # Double check mutations don't appear twice
+    return [
+        GrapheneJobTickStatus,
+        GrapheneReconcileSchedulerStateMutation,
+        GrapheneReconcileSchedulerStateMutationResult,
+        GrapheneReconcileSchedulerStateSuccess,
+        GrapheneSchedule,
+        GrapheneScheduleMutationResult,
+        GrapheneScheduleOrError,
+        GrapheneScheduler,
+        GrapheneSchedulerOrError,
+        GrapheneSchedules,
+        GrapheneSchedulesOrError,
+        GrapheneScheduleStateResult,
+        GrapheneScheduleStatus,
+        GrapheneScheduleTick,
+        GrapheneScheduleTickFailureData,
+        GrapheneScheduleTickSpecificData,
+        GrapheneScheduleTickStatsSnapshot,
+        GrapheneScheduleTickSuccessData,
+        GrapheneStartScheduleMutation,
+        GrapheneStopRunningScheduleMutation,
+    ]

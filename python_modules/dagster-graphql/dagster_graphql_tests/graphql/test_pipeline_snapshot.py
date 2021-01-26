@@ -1,9 +1,7 @@
 import pytest
 from dagster import execute_pipeline
 from dagster.seven import json, mock
-from dagster_graphql.implementation.fetch_pipelines import (
-    _get_dauphin_pipeline_snapshot_from_instance,
-)
+from dagster_graphql.implementation.fetch_pipelines import _get_pipeline_snapshot_from_instance
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -140,4 +138,4 @@ def test_temporary_error_or_deletion_after_instance_check():
     instance.get_historical_pipeline.return_value = None
 
     with pytest.raises(UserFacingGraphQLError):
-        _get_dauphin_pipeline_snapshot_from_instance(instance, "kjdkfjd")
+        _get_pipeline_snapshot_from_instance(instance, "kjdkfjd")

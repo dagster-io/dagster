@@ -9,7 +9,7 @@
 // ====================================================
 
 export interface ConfigEditorRunConfigSchemaFragment_rootConfigType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
 }
 

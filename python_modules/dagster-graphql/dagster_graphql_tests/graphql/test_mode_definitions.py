@@ -25,6 +25,10 @@ query ModesQuery($selector: PipelineSelector!, $mode: String!)
         key
       }
     }
+    ... on PythonError {
+      message
+      stack
+    }
   }
 }
 """

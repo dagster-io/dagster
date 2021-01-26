@@ -34,7 +34,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineNot
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid_errors {
-  __typename: "RuntimeMismatchConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "SelectorTypeConfigError";
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
 }
 

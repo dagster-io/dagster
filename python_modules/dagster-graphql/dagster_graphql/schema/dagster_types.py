@@ -1,20 +1,24 @@
+import graphene
 from dagster import check
 from dagster.core.snap import PipelineSnapshot
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster_graphql import dauphin
 
-from .config_types import DauphinConfigType, to_dauphin_config_type
+from .config_types import GrapheneConfigType, to_config_type
+from .errors import (
+    GrapheneDagsterTypeNotFoundError,
+    GraphenePipelineNotFoundError,
+    GraphenePythonError,
+)
+from .util import non_null_list
 
 
 def config_type_for_schema(pipeline_snapshot, schema_key):
     return (
-        to_dauphin_config_type(pipeline_snapshot.config_schema_snapshot, schema_key)
-        if schema_key
-        else None
+        to_config_type(pipeline_snapshot.config_schema_snapshot, schema_key) if schema_key else None
     )
 
 
-def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
+def to_dagster_type(pipeline_snapshot, dagster_type_key):
     check.str_param(dagster_type_key, "dagster_type_key")
     check.inst_param(pipeline_snapshot, pipeline_snapshot, PipelineSnapshot)
 
@@ -39,66 +43,87 @@ def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
         ),
         inner_types=list(
             map(
-                lambda key: to_dauphin_dagster_type(pipeline_snapshot, key),
+                lambda key: to_dagster_type(pipeline_snapshot, key),
                 dagster_type_meta.type_param_keys,
             )
         ),
     )
 
     if dagster_type_meta.kind == DagsterTypeKind.LIST:
-        base_args["of_type"] = to_dauphin_dagster_type(
+        base_args["of_type"] = to_dagster_type(
             pipeline_snapshot, dagster_type_meta.type_param_keys[0]
         )
-        return DauphinListDagsterType(**base_args)
+        return GrapheneListDagsterType(**base_args)
     elif dagster_type_meta.kind == DagsterTypeKind.NULLABLE:
-        base_args["of_type"] = to_dauphin_dagster_type(
+        base_args["of_type"] = to_dagster_type(
             pipeline_snapshot, dagster_type_meta.type_param_keys[0]
         )
-        return DauphinNullableDagsterType(**base_args)
+        return GrapheneNullableDagsterType(**base_args)
     else:
-        return DauphinRegularDagsterType(**base_args)
+        return GrapheneRegularDagsterType(**base_args)
 
 
-class DauphinDagsterType(dauphin.Interface):
+class GrapheneDagsterType(graphene.Interface):
+    key = graphene.NonNull(graphene.String)
+    name = graphene.String()
+    display_name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+
+    is_nullable = graphene.NonNull(graphene.Boolean)
+    is_list = graphene.NonNull(graphene.Boolean)
+    is_builtin = graphene.NonNull(graphene.Boolean)
+    is_nothing = graphene.NonNull(graphene.Boolean)
+
+    input_schema_type = graphene.Field(GrapheneConfigType)
+    output_schema_type = graphene.Field(GrapheneConfigType)
+
+    inner_types = non_null_list(lambda: GrapheneDagsterType)
+
     class Meta:
         name = "DagsterType"
 
-    key = dauphin.NonNull(dauphin.String)
-    name = dauphin.String()
-    display_name = dauphin.NonNull(dauphin.String)
-    description = dauphin.String()
 
-    is_nullable = dauphin.NonNull(dauphin.Boolean)
-    is_list = dauphin.NonNull(dauphin.Boolean)
-    is_builtin = dauphin.NonNull(dauphin.Boolean)
-    is_nothing = dauphin.NonNull(dauphin.Boolean)
-
-    input_schema_type = dauphin.Field(DauphinConfigType)
-    output_schema_type = dauphin.Field(DauphinConfigType)
-
-    inner_types = dauphin.non_null_list("DagsterType")
-
-
-class DauphinRegularDagsterType(dauphin.ObjectType):
+class GrapheneRegularDagsterType(graphene.ObjectType):
     class Meta:
+        interfaces = (GrapheneDagsterType,)
         name = "RegularDagsterType"
-        interfaces = [DauphinDagsterType]
 
 
-class DauphinWrappingDagsterType(dauphin.Interface):
+class GrapheneWrappingDagsterType(graphene.Interface):
+    of_type = graphene.Field(graphene.NonNull(GrapheneDagsterType))
+
     class Meta:
         name = "WrappingDagsterType"
 
-    of_type = dauphin.Field(dauphin.NonNull(DauphinDagsterType))
 
-
-class DauphinListDagsterType(dauphin.ObjectType):
+class GrapheneListDagsterType(graphene.ObjectType):
     class Meta:
+        interfaces = (GrapheneDagsterType, GrapheneWrappingDagsterType)
         name = "ListDagsterType"
-        interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]
 
 
-class DauphinNullableDagsterType(dauphin.ObjectType):
+class GrapheneNullableDagsterType(graphene.ObjectType):
     class Meta:
+        interfaces = (GrapheneDagsterType, GrapheneWrappingDagsterType)
         name = "NullableDagsterType"
-        interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]
+
+
+class GrapheneDagsterTypeOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneRegularDagsterType,
+            GraphenePipelineNotFoundError,
+            GrapheneDagsterTypeNotFoundError,
+            GraphenePythonError,
+        )
+        name = "DagsterTypeOrError"
+
+
+types = [
+    GrapheneDagsterType,
+    GrapheneDagsterTypeOrError,
+    GrapheneListDagsterType,
+    GrapheneNullableDagsterType,
+    GrapheneRegularDagsterType,
+    GrapheneWrappingDagsterType,
+]

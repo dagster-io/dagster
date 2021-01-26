@@ -8,26 +8,27 @@ from dagster.core.host_representation import (
 )
 from graphql.execution.base import ResolveInfo
 
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_error
 
 
 def get_full_external_pipeline_or_raise(graphene_info, selector):
+    from ..schema.errors import GraphenePipelineNotFoundError
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
     if not graphene_info.context.has_external_pipeline(selector):
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named("PipelineNotFoundError")(selector=selector)
-        )
+        raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
 
     return graphene_info.context.get_full_external_pipeline(selector)
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):
+    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
+    from ..schema.pipelines.pipeline import GraphenePipeline
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
-
-    from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 
     full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
@@ -37,11 +38,11 @@ def get_external_pipeline_or_raise(graphene_info, selector):
     for solid_name in selector.solid_selection:
         if not full_pipeline.has_solid_invocation(solid_name):
             raise UserFacingGraphQLError(
-                DauphinInvalidSubsetError(
+                GrapheneInvalidSubsetError(
                     message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
                         solid_name=solid_name, pipeline_name=selector.pipeline_name
                     ),
-                    pipeline=graphene_info.schema.type_named("Pipeline")(full_pipeline),
+                    pipeline=GraphenePipeline(full_pipeline),
                 )
             )
 
@@ -49,6 +50,8 @@ def get_external_pipeline_or_raise(graphene_info, selector):
 
 
 def ensure_valid_config(external_pipeline, mode, run_config):
+    from ..schema.pipelines.config import GraphenePipelineConfigValidationInvalid
+
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.str_param(mode, "mode")
     # do not type check run_config so that validate_config_from_snap throws
@@ -60,10 +63,9 @@ def ensure_valid_config(external_pipeline, mode, run_config):
     )
 
     if not validated_config.success:
-        from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
 
         raise UserFacingGraphQLError(
-            DauphinPipelineConfigValidationInvalid.for_validation_errors(
+            GraphenePipelineConfigValidationInvalid.for_validation_errors(
                 external_pipeline, validated_config.errors
             )
         )
@@ -72,6 +74,8 @@ def ensure_valid_config(external_pipeline, mode, run_config):
 
 
 def ensure_valid_step_keys(full_external_execution_plan, step_keys):
+    from ..schema.errors import GrapheneInvalidStepError
+
     check.inst_param(
         full_external_execution_plan, "full_external_execution_plan", ExternalExecutionPlan
     )
@@ -82,9 +86,7 @@ def ensure_valid_step_keys(full_external_execution_plan, step_keys):
 
     for step_key in step_keys:
         if not full_external_execution_plan.has_step(step_key):
-            from dagster_graphql.schema.errors import DauphinInvalidStepError
-
-            raise UserFacingGraphQLError(DauphinInvalidStepError(invalid_step_key=step_key))
+            raise UserFacingGraphQLError(GrapheneInvalidStepError(invalid_step_key=step_key))
 
 
 def get_external_execution_plan_or_raise(
@@ -110,54 +112,61 @@ def get_external_execution_plan_or_raise(
     )
 
 
-@capture_dauphin_error
+@capture_error
 def fetch_repositories(graphene_info):
+    from ..schema.external import GrapheneRepository, GrapheneRepositoryConnection
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    return graphene_info.schema.type_named("RepositoryConnection")(
+    return GrapheneRepositoryConnection(
         nodes=[
-            graphene_info.schema.type_named("Repository")(
-                repository=repository, repository_location=location
-            )
+            GrapheneRepository(repository=repository, repository_location=location)
             for location in graphene_info.context.repository_locations
             for repository in location.get_repositories().values()
         ]
     )
 
 
-@capture_dauphin_error
+@capture_error
 def fetch_repository(graphene_info, repository_selector):
+    from ..schema.errors import GrapheneRepositoryNotFoundError
+    from ..schema.external import GrapheneRepository
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
     if graphene_info.context.has_repository_location(repository_selector.location_name):
         repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
-            return graphene_info.schema.type_named("Repository")(
+            return GrapheneRepository(
                 repository=repo_loc.get_repository(repository_selector.repository_name),
                 repository_location=repo_loc,
             )
 
-    return graphene_info.schema.type_named("RepositoryNotFoundError")(
+    return GrapheneRepositoryNotFoundError(
         repository_selector.location_name, repository_selector.repository_name
     )
 
 
-@capture_dauphin_error
+@capture_error
 def fetch_repository_locations(graphene_info):
+    from ..schema.external import (
+        GrapheneRepositoryLocation,
+        GrapheneRepositoryLocationConnection,
+        GrapheneRepositoryLocationLoadFailure,
+    )
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
 
     nodes = []
 
     for location_name in graphene_info.context.repository_location_names:
         node = (
-            graphene_info.schema.type_named("RepositoryLocation")(
-                graphene_info.context.get_repository_location(location_name)
-            )
+            GrapheneRepositoryLocation(graphene_info.context.get_repository_location(location_name))
             if graphene_info.context.has_repository_location(location_name)
-            else graphene_info.schema.type_named("RepositoryLocationLoadFailure")(
+            else GrapheneRepositoryLocationLoadFailure(
                 location_name, graphene_info.context.get_repository_location_error(location_name),
             )
         )
         nodes.append(node)
 
-    return graphene_info.schema.type_named("RepositoryLocationConnection")(nodes=nodes)
+    return GrapheneRepositoryLocationConnection(nodes=nodes)

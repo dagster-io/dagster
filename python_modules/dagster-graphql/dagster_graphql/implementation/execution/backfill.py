@@ -13,12 +13,15 @@ from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, RES
 from dagster.core.utils import make_new_backfill_id
 from dagster.utils import merge_dicts
 
-from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
+from ..utils import ExecutionMetadata, ExecutionParams, capture_error
 from .run_lifecycle import create_valid_pipeline_run
 
 
-@capture_dauphin_error
+@capture_error
 def create_and_launch_partition_backfill(graphene_info, backfill_params):
+    from ...schema.backfill import GraphenePartitionBackfillSuccess
+    from ...schema.errors import GraphenePartitionSetNotFoundError, GraphenePythonError
+
     partition_set_selector = backfill_params.get("selector")
     partition_set_name = partition_set_selector.get("partitionSetName")
     repository_selector = RepositorySelector.from_graphql_input(
@@ -32,7 +35,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         if partition_set.name == partition_set_selector.get("partitionSetName")
     ]
     if not matches:
-        return graphene_info.schema.type_named("PartitionSetNotFoundError")(partition_set_name)
+        return GraphenePartitionSetNotFoundError(partition_set_name)
 
     check.invariant(
         len(matches) == 1,
@@ -58,7 +61,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
     )
 
     if isinstance(result, ExternalPartitionExecutionErrorData):
-        return graphene_info.schema.type_named("PythonError")(result.error)
+        return GraphenePythonError(result.error)
 
     assert isinstance(result, ExternalPartitionSetExecutionParamData)
 
@@ -77,7 +80,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         graphene_info.context.instance.submit_run(pipeline_run.run_id, external_pipeline)
         launched_run_ids.append(pipeline_run.run_id)
 
-    return graphene_info.schema.type_named("PartitionBackfillSuccess")(
+    return GraphenePartitionBackfillSuccess(
         backfill_id=backfill_id, launched_run_ids=launched_run_ids
     )
 

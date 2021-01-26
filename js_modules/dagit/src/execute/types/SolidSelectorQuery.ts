@@ -106,7 +106,7 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_S
 }
 
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_SolidDefinition_configField_configType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
   description: string | null;
 }

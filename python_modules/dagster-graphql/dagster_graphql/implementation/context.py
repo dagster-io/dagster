@@ -6,9 +6,6 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster.core.instance import DagsterInstance
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.errors import DauphinInvalidSubsetError
-from dagster_graphql.schema.pipelines import DauphinPipeline
 from rx.subjects import Subject
 
 
@@ -100,6 +97,10 @@ class DagsterGraphQLContext:
             del self._repository_locations[name]
 
     def get_subset_external_pipeline(self, selector):
+        from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
+        from ..schema.pipelines.pipeline import GraphenePipeline
+        from .utils import UserFacingGraphQLError
+
         check.inst_param(selector, "selector", PipelineSelector)
         # We have to grab the pipeline from the location instead of the repository directly
         # since we may have to request a subset we don't have in memory yet
@@ -111,14 +112,14 @@ class DagsterGraphQLContext:
         if not subset_result.success:
             error_info = subset_result.error
             raise UserFacingGraphQLError(
-                DauphinInvalidSubsetError(
+                GrapheneInvalidSubsetError(
                     message="{message}{cause_message}".format(
                         message=error_info.message,
                         cause_message="\n{}".format(error_info.cause.message)
                         if error_info.cause
                         else "",
                     ),
-                    pipeline=DauphinPipeline(self.get_full_external_pipeline(selector)),
+                    pipeline=GraphenePipeline(self.get_full_external_pipeline(selector)),
                 )
             )
 

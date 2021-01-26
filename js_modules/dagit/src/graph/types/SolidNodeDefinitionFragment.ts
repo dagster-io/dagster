@@ -38,7 +38,7 @@ export interface SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions {
 }
 
 export interface SolidNodeDefinitionFragment_SolidDefinition_configField_configType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
   description: string | null;
 }

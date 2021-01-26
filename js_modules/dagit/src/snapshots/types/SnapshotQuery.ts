@@ -8,8 +8,8 @@
 // GraphQL query operation: SnapshotQuery
 // ====================================================
 
-export interface SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError {
-  __typename: "PipelineSnapshotNotFoundError" | "PipelineNotFoundError" | "PythonError";
+export interface SnapshotQuery_pipelineSnapshotOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "PipelineSnapshotNotFoundError" | "PythonError";
 }
 
 export interface SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshot {
@@ -18,7 +18,7 @@ export interface SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshot {
   parentSnapshotId: string | null;
 }
 
-export type SnapshotQuery_pipelineSnapshotOrError = SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshot;
+export type SnapshotQuery_pipelineSnapshotOrError = SnapshotQuery_pipelineSnapshotOrError_PipelineNotFoundError | SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshot;
 
 export interface SnapshotQuery {
   pipelineSnapshotOrError: SnapshotQuery_pipelineSnapshotOrError;

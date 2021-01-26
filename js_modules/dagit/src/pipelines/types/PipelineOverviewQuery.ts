@@ -106,7 +106,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
   description: string | null;
 }

@@ -682,7 +682,7 @@ input PipelineSelector {
   solidSelection: [String!]
 }
 
-union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
+union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
 
 type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   name: String!
@@ -1399,48 +1399,185 @@ enum LocationStateChangeEventType {
   LOCATION_ERROR
 }
 
-type RegularConfigType implements ConfigType {
-  key: String!
+type EventFloatMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  givenName: String!
+  floatValue: Float!
 }
 
-type ArrayConfigType implements ConfigType & WrappingConfigType {
-  key: String!
+type EventIntMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  ofType: ConfigType!
+  intValue: Int!
 }
 
-interface WrappingConfigType {
-  ofType: ConfigType!
+type EventJsonMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
 }
 
-type ScalarUnionConfigType implements ConfigType {
-  key: String!
+type EventMarkdownMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  scalarType: ConfigType!
-  nonScalarType: ConfigType!
-  scalarTypeKey: String!
-  nonScalarTypeKey: String!
+  mdStr: String!
 }
 
-type NullableConfigType implements ConfigType & WrappingConfigType {
-  key: String!
+type EventPathMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  ofType: ConfigType!
+  path: String!
 }
+
+type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
+type EventTextMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type EventUrlMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
+}
+
+type FieldNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldName: String!
+}
+
+type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldNames: [String!]!
+}
+
+type MissingFieldConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  field: ConfigTypeField!
+}
+
+type MissingFieldsConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fields: [ConfigTypeField!]!
+}
+
+type RuntimeMismatchConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  valueRep: String
+}
+
+type SelectorTypeConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  incomingFields: [String!]!
+}
+
+type UnknownPipeline implements PipelineReference {
+  name: String!
+  solidSelection: [String!]
+}
+
+type DeleteRunMutation {
+  Output: DeletePipelineRunResult!
+}
+
+type LaunchPartitionBackfillMutation {
+  Output: PartitionBackfillResult!
+}
+
+type LaunchPipelineExecutionMutation {
+  Output: LaunchPipelineExecutionResult!
+}
+
+type LaunchPipelineReexecutionMutation {
+  Output: LaunchPipelineReexecutionResult!
+}
+
+type ReloadRepositoryLocationMutation {
+  Output: ReloadRepositoryLocationMutationResult!
+}
+
+type TerminatePipelineExecutionMutation {
+  Output: TerminatePipelineExecutionResult!
+}
+
+type ReconcileSchedulerStateMutation {
+  Output: ReconcileSchedulerStateMutationResult!
+}
+
+enum ScheduleStatus {
+  RUNNING
+  STOPPED
+  ENDED
+}
+
+type ScheduleTick {
+  tickId: String!
+  status: JobTickStatus!
+  timestamp: Float!
+  tickSpecificData: ScheduleTickSpecificData
+}
+
+union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
+
+type ScheduleTickSuccessData {
+  run: PipelineRun
+}
+
+type ScheduleTickFailureData {
+  error: PythonError!
+}
+
+type ScheduleTickStatsSnapshot {
+  ticksStarted: Int!
+  ticksSucceeded: Int!
+  ticksSkipped: Int!
+  ticksFailed: Int!
+}
+
+type StartScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+type StopRunningScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError | PythonError
 
 type EnumConfigType implements ConfigType {
   key: String!
@@ -1466,62 +1603,47 @@ type CompositeConfigType implements ConfigType {
   fields: [ConfigTypeField!]!
 }
 
-type RuntimeMismatchConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  valueRep: String
+type RegularConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  givenName: String!
 }
 
-type MissingFieldConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  field: ConfigTypeField!
+type ArrayConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
 }
 
-type MissingFieldsConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fields: [ConfigTypeField!]!
+interface WrappingConfigType {
+  ofType: ConfigType!
 }
 
-type FieldNotDefinedConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fieldName: String!
+type NullableConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
 }
 
-type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fieldNames: [String!]!
-}
-
-type SelectorTypeConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  incomingFields: [String!]!
-}
-
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
-}
-
-type JobNotFoundError implements Error {
-  message: String!
+type ScalarUnionConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  scalarType: ConfigType!
+  nonScalarType: ConfigType!
+  scalarTypeKey: String!
+  nonScalarTypeKey: String!
 }
 
 type ListDagsterType implements DagsterType & WrappingDagsterType {
@@ -1558,6 +1680,45 @@ type NullableDagsterType implements DagsterType & WrappingDagsterType {
   ofType: DagsterType!
 }
 
+input MarshalledInput {
+  inputName: String!
+  key: String!
+}
+
+input MarshalledOutput {
+  outputName: String!
+  key: String!
+}
+
+input Retries {
+  mode: String
+  retriesPreviousAttempts: [RetriesPreviousAttempts]
+}
+
+input RetriesPreviousAttempts {
+  key: String
+  count: Int
+}
+
+input StepExecution {
+  stepKey: String!
+  marshalledInputs: [MarshalledInput!]
+  marshalledOutputs: [MarshalledOutput!]
+}
+
+input StepOutputHandle {
+  stepKey: String!
+  outputName: String!
+}
+
+type RunGroups {
+  results: [RunGroup!]!
+}
+
+type StopSensorMutation {
+  Output: StopSensorMutationResultOrError!
+}
+
 type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   name: String!
   description: String
@@ -1578,86 +1739,4 @@ type InputMapping {
 type OutputMapping {
   mappedOutput: Output!
   definition: OutputDefinition!
-}
-
-type UnknownPipeline implements PipelineReference {
-  name: String!
-  solidSelection: [String!]
-}
-
-type MissingRunIdErrorEvent {
-  invalidRunId: String!
-}
-
-type EventPathMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  path: String!
-}
-
-type EventJsonMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  jsonString: String!
-}
-
-type EventTextMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  text: String!
-}
-
-type EventUrlMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  url: String!
-}
-
-type EventMarkdownMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  mdStr: String!
-}
-
-type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  module: String!
-  name: String!
-}
-
-type EventFloatMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  floatValue: Float!
-}
-
-type EventIntMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  intValue: Int!
-}
-
-type ScheduleTick {
-  tickId: String!
-  status: JobTickStatus!
-  timestamp: Float!
-  tickSpecificData: ScheduleTickSpecificData
-}
-
-union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
-
-type ScheduleTickSuccessData {
-  run: PipelineRun
-}
-
-type ScheduleTickFailureData {
-  error: PythonError!
-}
-
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
 }
