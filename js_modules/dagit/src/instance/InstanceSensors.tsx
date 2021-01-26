@@ -1,4 +1,5 @@
 import {QueryResult} from '@apollo/client';
+import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
@@ -7,6 +8,7 @@ import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
 import {SensorInfo} from 'src/sensors/SensorInfo';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Subheading} from 'src/ui/Text';
@@ -52,12 +54,41 @@ export const InstanceSensors = (props: Props) => {
           </Group>
         ) : null;
 
+        const unloadableSensors = unloadableJobs.filter(
+          (state) => state.jobType === JobType.SENSOR,
+        );
+        const unloadableSensorsSection = unloadableSensors.length ? (
+          <UnloadableSensors sensorStates={unloadableSensors} />
+        ) : null;
+
+        if (!sensorDefinitionsSection && !unloadableSensorsSection) {
+          return (
+            <Box margin={{top: 32}}>
+              <NonIdealState
+                icon="automatic-updates"
+                title="No sensors found"
+                description={
+                  <p>
+                    This instance does not have any sensors defined. Visit the{' '}
+                    <a
+                      href="https://docs.dagster.io/overview/schedules-sensors/sensors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      sensor documentation
+                    </a>{' '}
+                    for more information about setting up sensors in Dagster.
+                  </p>
+                }
+              />
+            </Box>
+          );
+        }
+
         return (
           <Group direction="column" spacing={32}>
             {sensorDefinitionsSection}
-            <UnloadableSensors
-              sensorStates={unloadableJobs.filter((state) => state.jobType === JobType.SENSOR)}
-            />
+            {unloadableSensorsSection}
           </Group>
         );
       }}

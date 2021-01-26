@@ -1,4 +1,5 @@
 import {QueryResult} from '@apollo/client';
+import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
@@ -8,6 +9,7 @@ import {SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable} from 'src/schedules/SchedulesTable';
 import {JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Subheading} from 'src/ui/Text';
@@ -54,12 +56,42 @@ export const InstanceSchedules = React.memo((props: Props) => {
           </Group>
         ) : null;
 
+        const unloadableSchedules = unloadableJobs.filter(
+          (state) => state.jobType === JobType.SCHEDULE,
+        );
+
+        const unloadableSchedulesSection = unloadableSchedules.length ? (
+          <UnloadableSchedules scheduleStates={unloadableSchedules} />
+        ) : null;
+
+        if (!scheduleDefinitionsSection && !unloadableSchedulesSection) {
+          return (
+            <Box margin={{top: 32}}>
+              <NonIdealState
+                icon="time"
+                title="No schedules found"
+                description={
+                  <p>
+                    This instance does not have any schedules defined. Visit the{' '}
+                    <a
+                      href="https://docs.dagster.io/overview/schedules-sensors/schedules"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      scheduler documentation
+                    </a>{' '}
+                    for more information about scheduling pipeline runs in Dagster.
+                  </p>
+                }
+              />
+            </Box>
+          );
+        }
+
         return (
           <Group direction="column" spacing={32}>
             {scheduleDefinitionsSection}
-            <UnloadableSchedules
-              scheduleStates={unloadableJobs.filter((state) => state.jobType === JobType.SCHEDULE)}
-            />
+            {unloadableSchedulesSection}
           </Group>
         );
       }}
