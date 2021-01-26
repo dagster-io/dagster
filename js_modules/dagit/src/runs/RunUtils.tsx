@@ -295,11 +295,16 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
     if (stats.startTime) {
       return <Timestamp unix={stats.startTime} format={useSameDayFormat ? 'h:mm A' : undefined} />;
     }
+
     switch (status) {
       case PipelineRunStatus.FAILURE:
         return 'Failed to start';
       case PipelineRunStatus.QUEUED:
         return 'Queued';
+      case PipelineRunStatus.CANCELED:
+        return 'Canceled';
+      case PipelineRunStatus.CANCELING:
+        return 'Canceling…';
       default:
         return 'Starting…';
     }

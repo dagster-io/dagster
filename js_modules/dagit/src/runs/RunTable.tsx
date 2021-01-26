@@ -8,7 +8,7 @@ import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
-import {queuedStatuses} from 'src/runs/RunStatuses';
+import {canceledStatuses, queuedStatuses} from 'src/runs/RunStatuses';
 import {RunTags} from 'src/runs/RunTags';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from 'src/runs/RunUtils';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
@@ -241,7 +241,9 @@ const RunRow: React.FC<{
       </td>
       <td style={{width: '180px'}}>
         <RunTime run={run} />
-        {queuedStatuses.has(run.status) ? null : <RunElapsed run={run} />}
+        {queuedStatuses.has(run.status) || canceledStatuses.has(run.status) ? null : (
+          <RunElapsed run={run} />
+        )}
       </td>
       {additionalColumns}
       <td style={{width: '52px'}}>

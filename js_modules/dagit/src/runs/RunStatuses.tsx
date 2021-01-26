@@ -10,6 +10,7 @@ export const inProgressStatuses = new Set([
 
 export const successStatuses = new Set([PipelineRunStatus.SUCCESS]);
 export const failedStatuses = new Set([PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED]);
+export const canceledStatuses = new Set([PipelineRunStatus.CANCELING, PipelineRunStatus.CANCELED]);
 
 export const doneStatuses = new Set([
   PipelineRunStatus.FAILURE,
