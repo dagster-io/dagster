@@ -1,5 +1,5 @@
 """As an open source project, we collect usage statistics to inform development priorities.
-For more information, check out the docs at https://docs.dagster.io/install/telemetry/'
+For more information, check out the docs at https://docs.dagster.io/install#telemetry'
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
@@ -445,7 +445,7 @@ TELEMETRY_TEXT = """
   %(telemetry)s
 
   As an open source project, we collect usage statistics to inform development priorities. For more
-  information, read https://docs.dagster.io/install/telemetry.
+  information, read https://docs.dagster.io/install#telemetry.
 
   We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
   any data that is processed within solids and pipelines.
