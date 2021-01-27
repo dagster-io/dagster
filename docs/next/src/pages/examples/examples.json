@@ -103,11 +103,5 @@
     "name": "memoized_development",
     "title": "Memoization (Experimental)",
     "description": "Memoizing results from previous pipeline runs."
-  },
-  {
-    "name": "deploy_docker",
-    "title": "",
-    "description": ""
   }
 ]
-  
