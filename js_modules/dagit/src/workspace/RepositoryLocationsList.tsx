@@ -1,9 +1,10 @@
-import {Button, Classes, Colors, Dialog, NonIdealState, Spinner, Tag} from '@blueprintjs/core';
+import {Button, Classes, Colors, Dialog, NonIdealState, Tag} from '@blueprintjs/core';
 import React from 'react';
 
 import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 import {Table} from 'src/ui/Table';
 import {Trace} from 'src/ui/Trace';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
@@ -72,7 +73,7 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
     <ButtonLink onClick={onClick}>
       <Group direction="row" spacing={4} alignItems="center">
         Reload
-        {reloading ? <Spinner size={12} /> : null}
+        {reloading ? <Spinner purpose="body-text" /> : null}
       </Group>
     </ButtonLink>
   );

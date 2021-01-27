@@ -1,5 +1,5 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {IBreadcrumbProps, NonIdealState, Spinner} from '@blueprintjs/core';
+import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
@@ -13,6 +13,7 @@ import {RunFragments} from 'src/runs/RunFragments';
 import {RunStatusTag} from 'src/runs/RunStatusTag';
 import {RunRootQuery} from 'src/runs/types/RunRootQuery';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 import {FontFamily} from 'src/ui/styles';
 
 export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
@@ -29,7 +30,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
 
   const lastBreadcrumb = () => {
     if (loading) {
-      return <Spinner size={12} />;
+      return <Spinner purpose="body-text" />;
     }
     if (error || !run) {
       return <Mono>{runId}</Mono>;

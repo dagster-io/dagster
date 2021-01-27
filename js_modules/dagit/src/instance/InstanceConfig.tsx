@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon, Spinner} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components';
@@ -8,6 +8,7 @@ import {InstanceConfigQuery} from 'src/instance/types/InstanceConfigQuery';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
+import {Spinner} from 'src/ui/Spinner';
 import {Subheading} from 'src/ui/Text';
 
 const YamlShimStyle = createGlobalStyle`
@@ -51,7 +52,7 @@ export const InstanceConfig = React.memo(() => {
   }, [history]);
 
   if (!data) {
-    return <Spinner size={35} />;
+    return <Spinner purpose="section" />;
   }
 
   // Split by top-level yaml keys

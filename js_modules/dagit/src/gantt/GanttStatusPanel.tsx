@@ -1,4 +1,4 @@
-import {Colors, Spinner, Tooltip, Position} from '@blueprintjs/core';
+import {Colors, Tooltip, Position} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -8,6 +8,7 @@ import {boxStyleFor} from 'src/gantt/GanttChartLayout';
 import {RunGroupPanel} from 'src/gantt/RunGroupPanel';
 import {IRunMetadataDict, IStepState} from 'src/runs/RunMetadataProvider';
 import {StepSelection} from 'src/runs/StepSelection';
+import {Spinner} from 'src/ui/Spinner';
 
 interface GanttStatusPanelProps {
   metadata: IRunMetadataDict;
@@ -87,7 +88,7 @@ const StepItem: React.FunctionComponent<{
       onMouseLeave={() => onHover?.(null)}
     >
       {step.state === IStepState.RUNNING ? (
-        <Spinner size={15} />
+        <Spinner purpose="body-text" />
       ) : step.state === IStepState.UNKNOWN ? (
         <Tooltip
           // Modifiers are to prevent flickering: https://github.com/palantir/blueprint/issues/4019

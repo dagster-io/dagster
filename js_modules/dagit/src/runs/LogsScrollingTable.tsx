@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, NonIdealState, Spinner} from '@blueprintjs/core';
+import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -16,6 +16,7 @@ import {
 import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
 import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
 import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
+import {Spinner} from 'src/ui/Spinner';
 
 interface ILogsScrollingTableProps {
   logs: LogsProviderLogs;
@@ -315,7 +316,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
       <div onScroll={this.onScroll}>
         {loading && (
           <ListEmptyState>
-            <NonIdealState icon={<Spinner size={24} />} title="Fetching logs..." />
+            <NonIdealState icon={<Spinner purpose="section" />} title="Fetching logs..." />
           </ListEmptyState>
         )}
         <List

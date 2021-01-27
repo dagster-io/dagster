@@ -1,11 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {RunStatsQuery, RunStatsQueryVariables} from 'src/runs/types/RunStatsQuery';
+import {Box} from 'src/ui/Box';
+import {Spinner} from 'src/ui/Spinner';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
@@ -15,9 +16,9 @@ export const RunStats = ({runId}: {runId: string}) => {
   if (stats.loading || !stats.data) {
     return (
       <RunStatsDetailsContainer>
-        <div style={{padding: 25, textAlign: 'center'}}>
-          <Spinner size={22} />
-        </div>
+        <Box padding={24} flex={{justifyContent: 'center'}}>
+          <Spinner purpose="section" />
+        </Box>
       </RunStatsDetailsContainer>
     );
   }

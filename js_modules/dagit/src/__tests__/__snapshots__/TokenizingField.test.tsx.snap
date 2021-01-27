@@ -24,7 +24,7 @@ exports[`renders empty [snapshot] 1`] = `
           onKeyDown={[Function]}
           onKeyUp={[Function]}
           onPaste={[Function]}
-          placeholder="Filter..."
+          placeholder="Filter…"
           value=""
         />
       </div>

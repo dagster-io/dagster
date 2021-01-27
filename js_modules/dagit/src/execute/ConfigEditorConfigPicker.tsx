@@ -7,7 +7,6 @@ import {
   Intent,
   Menu,
   MenuItem,
-  Spinner,
 } from '@blueprintjs/core';
 import {Select, Suggest} from '@blueprintjs/select';
 import * as React from 'react';
@@ -29,6 +28,7 @@ import {
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
 } from 'src/execute/types/ConfigPartitionsQuery';
 import {RepositorySelector} from 'src/types/globalTypes';
+import {Spinner} from 'src/ui/Spinner';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -257,7 +257,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
           key="loading"
           inputProps={{
             ...inputProps,
-            rightElement: !value ? <Spinner size={17} /> : undefined,
+            rightElement: !value ? <Spinner purpose="body-text" /> : undefined,
           }}
           items={[]}
           itemRenderer={() => null}

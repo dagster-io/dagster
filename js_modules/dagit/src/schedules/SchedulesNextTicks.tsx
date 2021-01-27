@@ -7,7 +7,6 @@ import {
   Menu,
   MenuItem,
   Popover,
-  Spinner,
   Dialog,
   Icon,
 } from '@blueprintjs/core';
@@ -33,6 +32,7 @@ import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
+import {Spinner} from 'src/ui/Spinner';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -172,7 +172,7 @@ const NextTickMenu: React.FC<{
       evaluationResult={evaluationResult}
     />
   ) : (
-    <Spinner size={16} />
+    <Spinner purpose="body-text" />
   );
   return (
     <Group direction="row" spacing={2} alignItems="center">

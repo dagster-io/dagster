@@ -1,5 +1,5 @@
 import {gql, useApolloClient, useMutation} from '@apollo/client';
-import {Button, Icon, Intent, Spinner, Tooltip} from '@blueprintjs/core';
+import {Button, Icon, Intent, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SharedToaster} from 'src/app/DomUtils';
@@ -8,6 +8,7 @@ import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
 } from 'src/nav/types/ReloadRepositoryLocationMutation';
+import {Spinner} from 'src/ui/Spinner';
 
 type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
 type OnReload = (location: string, result: ReloadResult) => void;
@@ -87,7 +88,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
         content={'Reload metadata from this repository location.'}
       >
         <Button
-          icon={reloading ? <Spinner size={12} /> : <Icon icon="refresh" iconSize={12} />}
+          icon={reloading ? <Spinner purpose="body-text" /> : <Icon icon="refresh" iconSize={12} />}
           disabled={reloading}
           onClick={onClick}
         />

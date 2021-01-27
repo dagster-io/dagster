@@ -1,7 +1,10 @@
-import {Menu, MenuItem, Popover, Spinner, TagInput} from '@blueprintjs/core';
+import {Menu, MenuItem, Popover, TagInput} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
+
+import {Box} from 'src/ui/Box';
+import {Spinner} from 'src/ui/Spinner';
 
 export interface SuggestionProvider {
   token: string;
@@ -340,12 +343,12 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
         onAdd={() => false}
         onKeyDown={onKeyDown}
         tagProps={{minimal: true}}
-        placeholder={placeholder || 'Filter...'}
+        placeholder={placeholder || 'Filter…'}
         rightElement={
           loading ? (
-            <div style={{padding: 3}}>
-              <Spinner size={17} />
-            </div>
+            <Box style={{alignSelf: 'center'}} margin={{right: 4}}>
+              <Spinner purpose="body-text" />
+            </Box>
           ) : undefined
         }
       />

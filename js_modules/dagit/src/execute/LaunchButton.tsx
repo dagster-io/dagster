@@ -2,12 +2,10 @@ import {
   Button,
   Icon,
   IconName,
-  Intent,
   Menu,
   MenuItem,
   Popover,
   Position,
-  Spinner,
   Tooltip,
 } from '@blueprintjs/core';
 import * as React from 'react';
@@ -15,6 +13,8 @@ import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {WebsocketStatusContext} from 'src/app/WebsocketStatus';
+import {Box} from 'src/ui/Box';
+import {Spinner} from 'src/ui/Spinner';
 
 export interface LaunchButtonConfiguration {
   title: string;
@@ -227,9 +227,9 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
         disabled={disabled}
       >
         {icon === 'dagster-spinner' ? (
-          <span style={{paddingRight: 6}}>
-            <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
-          </span>
+          <Box padding={{right: 8}}>
+            <Spinner purpose="body-text" />
+          </Box>
         ) : (
           <Icon
             icon={icon}

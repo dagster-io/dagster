@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Spinner, NonIdealState, Button, Colors, Tooltip} from '@blueprintjs/core';
+import {NonIdealState, Button, Colors, Tooltip} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
@@ -14,6 +14,7 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {DagsterTag} from 'src/runs/RunTag';
 import {openRunInBrowser} from 'src/runs/RunUtils';
 import {StepEventStatus} from 'src/types/globalTypes';
+import {Spinner} from 'src/ui/Spinner';
 
 interface StepStats {
   startTime: number | null;
@@ -48,8 +49,9 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
   });
 
   if (loading || !data) {
-    return <Spinner />;
+    return <Spinner purpose="section" />;
   }
+
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState

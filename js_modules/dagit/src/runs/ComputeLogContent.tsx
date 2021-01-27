@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, Intent, Spinner} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
@@ -9,6 +9,7 @@ import {ROOT_SERVER_URI} from 'src/app/DomUtils';
 import {ExecutionStateDot} from 'src/runs/ExecutionStateDot';
 import {IStepState} from 'src/runs/RunMetadataProvider';
 import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
+import {Spinner} from 'src/ui/Spinner';
 import {FontFamily} from 'src/ui/styles';
 
 interface IComputeLogContentProps {
@@ -113,7 +114,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   renderStatus() {
     const {runState} = this.props;
     if (runState === IStepState.RUNNING) {
-      return <Spinner intent={Intent.NONE} size={11} />;
+      return <Spinner purpose="body-text" />;
     }
     return (
       <ExecutionStateDot

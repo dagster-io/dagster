@@ -1,8 +1,9 @@
-import {Spinner, Popover, Colors} from '@blueprintjs/core';
+import {Popover, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {RunStats} from 'src/runs/RunStats';
+import {Spinner} from 'src/ui/Spinner';
 
 export type IRunStatus =
   | 'SUCCESS'
@@ -60,11 +61,11 @@ interface RunStatusProps {
   size?: number;
 }
 
-export const RunStatus: React.FunctionComponent<RunStatusProps> = React.memo(({status, size}) => {
+export const RunStatus: React.FC<RunStatusProps> = React.memo(({status, size}) => {
   if (status === 'STARTED') {
     return (
       <div style={{display: 'inline-block'}}>
-        <Spinner size={size || 11} />
+        <Spinner purpose="body-text" />
       </div>
     );
   }

@@ -1,9 +1,10 @@
-import {Colors, Icon, Menu, MenuItem, Popover, Spinner} from '@blueprintjs/core';
+import {Colors, Icon, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import React from 'react';
 import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
+import {Spinner} from 'src/ui/Spinner';
 import {RepositoryInformation} from 'src/workspace/RepositoryInformation';
 import {DagsterRepoOption, isRepositoryOptionEqual} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
@@ -33,7 +34,7 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
     }
 
     if (loading) {
-      return <Spinner size={16} />;
+      return <Spinner purpose="body-text" />;
     }
 
     return <NoReposFound>No repositories found</NoReposFound>;

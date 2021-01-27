@@ -1,13 +1,5 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {
-  Checkbox,
-  Intent,
-  NonIdealState,
-  Classes,
-  Colors,
-  Spinner,
-  InputGroup,
-} from '@blueprintjs/core';
+import {Checkbox, Intent, NonIdealState, Classes, Colors, InputGroup} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -36,6 +28,7 @@ import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -161,9 +154,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
   if (!data || loading) {
     return (
-      <div style={{width: '100%', margin: '40px auto'}}>
-        <Spinner size={40} />
-      </div>
+      <Box margin={{vertical: 32}} flex={{justifyContent: 'center'}}>
+        <Spinner purpose="section" />
+      </Box>
     );
   }
 

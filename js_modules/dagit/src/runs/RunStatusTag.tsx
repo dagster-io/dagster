@@ -1,4 +1,4 @@
-import {Popover, Spinner, Tag} from '@blueprintjs/core';
+import {Popover, Tag} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -6,6 +6,7 @@ import {assertUnreachable} from 'src/app/Util';
 import {RunStats} from 'src/runs/RunStats';
 import {IRunStatus} from 'src/runs/RunStatusDots';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 
 export const RunStatusTag = (props: {status: IRunStatus}) => {
   const {status} = props;
@@ -44,7 +45,7 @@ export const RunStatusTag = (props: {status: IRunStatus}) => {
       return (
         <StatusTag minimal intent="primary">
           <Group direction="row" spacing={4} alignItems="center">
-            <Spinner size={10} />
+            <Spinner purpose="body-text" />
             <div>Started</div>
           </Group>
         </StatusTag>
