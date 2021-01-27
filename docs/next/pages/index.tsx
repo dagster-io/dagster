@@ -2,7 +2,7 @@ import Head from "next/head";
 
 export default function Home() {
   return (
-    <div className="flex h-screen items-center justify-center">
+    <div className="flex items-center justify-center">
       <Head>
         <title>Dagster Documentation</title>
         <link rel="icon" href="/favicon.ico" />
