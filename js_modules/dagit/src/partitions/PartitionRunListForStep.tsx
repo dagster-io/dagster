@@ -79,7 +79,6 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
               openRunInBrowser(
                 {runId: run.runId, pipelineName: props.pipelineName},
                 {
-                  openInNewWindow: true,
                   query: {
                     steps: props.stepName,
                     logs: `step:${props.stepName}`,

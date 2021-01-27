@@ -31,7 +31,6 @@ export const RunsQueryRefetchContext = React.createContext<{
 export function handleLaunchResult(
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
-  opts: {openInNewWindow: boolean},
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
@@ -46,7 +45,7 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchPipelineRunSuccess') {
-    openRunInBrowser(obj.run, opts);
+    openRunInBrowser(obj.run);
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -67,16 +66,11 @@ export function handleLaunchResult(
 
 export function openRunInBrowser(
   run: {runId: string; pipelineName: string},
-  opts: {openInNewWindow: boolean; query?: {[key: string]: string}},
+  opts?: {query?: {[key: string]: string}},
 ) {
-  const url = `${APP_PATH_PREFIX}/instance/runs/${run.runId}?${
-    opts.query ? qs.stringify(opts.query) : ''
+  window.location.href = `${APP_PATH_PREFIX}/instance/runs/${run.runId}?${
+    opts?.query ? qs.stringify(opts.query) : ''
   }`;
-  if (opts.openInNewWindow) {
-    window.open(url, '_blank');
-  } else {
-    window.location.href = url;
-  }
 }
 
 function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {

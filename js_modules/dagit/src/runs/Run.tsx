@@ -167,7 +167,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       repositoryName: repoMatch.match.repository.name,
     });
     const result = await launchPipelineReexecution({variables});
-    handleLaunchResult(run.pipeline.name, result, {openInNewWindow: false});
+    handleLaunchResult(run.pipeline.name, result);
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {

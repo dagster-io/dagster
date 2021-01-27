@@ -29,9 +29,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
 
     try {
       const result = await launchPipelineExecution({variables});
-      handleLaunchResult(props.pipelineName, result, {
-        openInNewWindow: true,
-      });
+      handleLaunchResult(props.pipelineName, result);
     } catch (error) {
       console.error('Error launching run:', error);
     }
