@@ -5,7 +5,7 @@ import { ExampleReferenceLink } from 'components/ExampleReference';
 
 <ExampleReferenceLink filePath="examples/hooks" />
 
-This pipeline demonstrates how to create success and failure handling policies on pipelines.
+Hooks let you define success and failure handling policies on solids in pipelines.
 
 A <PyObject module="dagster" object="success_hook" displayText="@success_hook" /> or <PyObject module="dagster" object="failure_hook" displayText="@failure_hook" /> decorated function is called a hook.
 
@@ -15,7 +15,7 @@ startAfter:start_repo_marker_0
 endBefore:end_repo_marker_0
 ```
 
-## Apply a hook on a pipeline
+## Apply a hook on every solid in a pipeline
 
 There are a few ways to apply hooks. For example, you want to send a slack message to a channel when any solid fails in a pipeline. In this case, we will be applying a hook on a pipeline, which will apply the hook on every solid instance within in that pipeline.
 

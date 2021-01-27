@@ -1,35 +1,36 @@
+"""isort:skip_file"""
 import yaml
+from dagster.seven import mock
+from dagster_slack import slack_resource
 from dagster import (
     ModeDefinition,
     ResourceDefinition,
     execute_pipeline,
-    failure_hook,
     file_relative_path,
     pipeline,
     repository,
     solid,
-    success_hook,
 )
-from dagster.seven import mock
-from dagster_slack import slack_resource
-
-slack_resource_mock = mock.MagicMock()
-
 
 # start_repo_marker_0
+from dagster import HookContext, failure_hook, success_hook
+
+
 @success_hook(required_resource_keys={"slack"})
-def slack_message_on_success(context):
-    message = "Solid {} finished successfully".format(context.solid.name)
+def slack_message_on_success(context: HookContext):
+    message = f"Solid {context.solid.name} finished successfully"
     context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
 @failure_hook(required_resource_keys={"slack"})
-def slack_message_on_failure(context):
-    message = "Solid {} failed".format(context.solid.name)
+def slack_message_on_failure(context: HookContext):
+    message = f"Solid {context.solid.name} failed"
     context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
 # end_repo_marker_0
+
+slack_resource_mock = mock.MagicMock()
 
 
 @solid
