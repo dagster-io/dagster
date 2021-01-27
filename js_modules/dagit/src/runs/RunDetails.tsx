@@ -7,11 +7,25 @@ import {RunTags} from 'src/runs/RunTags';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
 import {MetadataTable} from 'src/ui/MetadataTable';
 import {FontFamily} from 'src/ui/styles';
+
+const timingStringForStatus = (status?: PipelineRunStatus) => {
+  switch (status) {
+    case PipelineRunStatus.QUEUED:
+      return 'Queued';
+    case PipelineRunStatus.CANCELED:
+      return 'Canceled';
+    case PipelineRunStatus.CANCELING:
+      return 'Canceling…';
+    default:
+      return 'Running…';
+  }
+};
 
 const LoadingOrValue: React.FC<{
   loading: boolean;
@@ -62,7 +76,10 @@ export const RunDetails: React.FC<{
                 value: (
                   <LoadingOrValue loading={loading}>
                     {() => {
-                      if (run?.stats.__typename === 'PipelineRunStatsSnapshot') {
+                      if (
+                        run?.stats.__typename === 'PipelineRunStatsSnapshot' &&
+                        run.stats.startTime
+                      ) {
                         return (
                           <TimeElapsed
                             startUnix={run.stats.startTime}
@@ -70,7 +87,11 @@ export const RunDetails: React.FC<{
                           />
                         );
                       }
-                      return 'None';
+                      return (
+                        <div style={{color: Colors.GRAY3}}>
+                          {timingStringForStatus(run?.status)}
+                        </div>
+                      );
                     }}
                   </LoadingOrValue>
                 ),
@@ -100,7 +121,7 @@ export const RunDetails: React.FC<{
                       }
                       return (
                         <div style={{color: Colors.GRAY3}}>
-                          {run?.status === 'QUEUED' ? 'Queued' : 'Waiting…'}
+                          {timingStringForStatus(run?.status)}
                         </div>
                       );
                     }}
@@ -125,7 +146,7 @@ export const RunDetails: React.FC<{
                       }
                       return (
                         <div style={{color: Colors.GRAY3}}>
-                          {run?.status === 'QUEUED' ? 'Queued' : 'Running…'}
+                          {timingStringForStatus(run?.status)}
                         </div>
                       );
                     }}
