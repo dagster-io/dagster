@@ -24,6 +24,8 @@ import {RepoAddress} from 'src/workspace/types';
 
 import 'chartjs-plugin-zoom';
 
+const MIN_ZOOM_RANGE = 30 * 60 * 1000; // 30 minutes
+
 const COLOR_MAP = {
   [JobTickStatus.SUCCESS]: Colors.BLUE3,
   [JobTickStatus.FAILURE]: Colors.RED3,
@@ -304,7 +306,11 @@ const TickHistoryGraph: React.FC<{
     const dataMin = Math.min(...tickData.map((_) => _.x));
     const dataMax = Math.max(...tickData.map((_) => _.x));
     const buffer = (dataMax - dataMin) / 25;
-    return {min: dataMin - buffer, max: dataMax + buffer};
+    const now = Date.now();
+    return {
+      min: dataMax ? dataMin - buffer : now - MIN_ZOOM_RANGE,
+      max: dataMax ? dataMax + buffer : now,
+    };
   };
 
   const calculateBounds = () => {
@@ -443,7 +449,16 @@ const TickHistoryGraph: React.FC<{
           onZoom: ({chart}: {chart: Chart}) => {
             const {min, max} = chart.options.scales?.xAxes?.[0].ticks || {};
             if (min && max) {
-              setBounds({min, max});
+              const diff = max - min;
+              if (diff > MIN_ZOOM_RANGE) {
+                setBounds({min, max});
+              } else if (bounds) {
+                const offset = (bounds.max - bounds.min - MIN_ZOOM_RANGE) / 2;
+                setBounds({min: bounds.min + offset, max: bounds.max - offset});
+              } else {
+                const offset = (getMaxBounds().max - getMaxBounds().min - MIN_ZOOM_RANGE) / 2;
+                setBounds({min: getMaxBounds().min + offset, max: getMaxBounds().max - offset});
+              }
             }
           },
         },
