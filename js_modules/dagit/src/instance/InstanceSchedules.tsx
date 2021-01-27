@@ -13,6 +13,7 @@ import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Subheading} from 'src/ui/Text';
+import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
 
 interface Props {
   queryData: QueryResult<InstanceHealthQuery>;
@@ -48,7 +49,7 @@ export const InstanceSchedules = React.memo((props: Props) => {
               <Group direction="column" spacing={12} key={repository.name}>
                 <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
                 <SchedulesTable
-                  repoAddress={{name: repository.name, location: repository.location.name}}
+                  repoAddress={buildRepoAddress(repository.name, repository.location.name)}
                   schedules={repository.schedules}
                 />
               </Group>

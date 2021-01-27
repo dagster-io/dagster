@@ -5,6 +5,7 @@ import {useRouteMatch} from 'react-router-dom';
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {RepositorySelector} from 'src/types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
+import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 import {RepoAddress} from 'src/workspace/types';
@@ -223,7 +224,7 @@ const useWorkspaceState = () => {
     if (!repo) {
       return null;
     }
-    const address = {name: repo.repository.name, location: repo.repositoryLocation.name};
+    const address = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
     const path = repoAddressAsString(address);
     return {repo, address, path};
   }, [localStorageRepo, options, repoForPath]);
@@ -297,9 +298,5 @@ export const useScheduleSelector = (scheduleName: string) => {
   };
 };
 
-export const optionToRepoAddress = (option: DagsterRepoOption) => {
-  return {
-    name: option.repository.name,
-    location: option.repository.location.name,
-  };
-};
+export const optionToRepoAddress = (option: DagsterRepoOption) =>
+  buildRepoAddress(option.repository.name, option.repository.location.name);
