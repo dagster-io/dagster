@@ -16,6 +16,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
+from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.utils import merge_dicts
@@ -51,8 +52,6 @@ class _ScheduleLaunchContext:
         self._write()
 
 
-_DEFAULT_MAX_CATCHUP_RUNS = 5
-
 _SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
@@ -65,7 +64,7 @@ def launch_scheduled_runs(
     instance,
     logger,
     end_datetime_utc,
-    max_catchup_runs=_DEFAULT_MAX_CATCHUP_RUNS,
+    max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
     debug_crash_flags=None,
 ):
     schedules = [

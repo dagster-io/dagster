@@ -340,12 +340,28 @@ class Scheduler(abc.ABC):
         """
 
 
+DEFAULT_MAX_CATCHUP_RUNS = 5
+
+
 class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     """Default scheduler implementation that submits runs from the `dagster-daemon`
-    long-lived process.
+    long-lived process. Periodically checks each running schedule for execution times that don't
+    have runs yet and launches them.
+
+    Args:
+        max_catchup_runs (int): For partitioned schedules, controls the maximum number of past
+            partitions for each schedule that will be considered when looking for missing
+            runs (defaults to 5). Generally this parameter will only come into play if the scheduler
+            falls behind or launches after experiencing downtime. This parameter will not be checked for
+            schedules without partition sets (for example, schedules created using the @schedule
+            decorator) - only the most recent execution time will be considered for those schedules.
+
+            Note that no matter what this value is, the scheduler will never launch a run from a time
+            before the schedule was turned on (even if the start_date on the schedule is earlier) - if
+            you want to launch runs for earlier partitions, launch a backfill.
     """
 
-    def __init__(self, max_catchup_runs=None, inst_data=None):
+    def __init__(self, max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS, inst_data=None):
         self.max_catchup_runs = check.opt_int_param(max_catchup_runs, "max_catchup_runs", 5)
         self._inst_data = inst_data
 
