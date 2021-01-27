@@ -18,13 +18,13 @@ slack_resource_mock = mock.MagicMock()
 
 # start_repo_marker_0
 @success_hook(required_resource_keys={"slack"})
-def slack_on_success(context):
+def slack_message_on_success(context):
     message = "Solid {} finished successfully".format(context.solid.name)
     context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
 @failure_hook(required_resource_keys={"slack"})
-def slack_on_failure(context):
+def slack_message_on_failure(context):
     message = "Solid {} failed".format(context.solid.name)
     context.resources.slack.chat.post_message(channel="#foo", text=message)
 
@@ -57,10 +57,10 @@ mode_defs = [
 # end_repo_marker_3
 
 # start_repo_marker_1
-@slack_on_failure
+@slack_message_on_failure
 @pipeline(mode_defs=mode_defs)
 def notif_all():
-    # the hook "slack_on_failure" is applied on every solid instance within this pipeline
+    # the hook "slack_message_on_failure" is applied on every solid instance within this pipeline
     a()
     b()
 
@@ -71,7 +71,7 @@ def notif_all():
 @pipeline(mode_defs=mode_defs)
 def selective_notif():
     # only solid "a" triggers hooks: a slack message will be sent when it fails or succeeds
-    a.with_hooks({slack_on_failure, slack_on_success})()
+    a.with_hooks({slack_message_on_failure, slack_message_on_success})()
     # solid "b" won't trigger any hooks
     b()
 

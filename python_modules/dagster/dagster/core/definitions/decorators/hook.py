@@ -99,7 +99,7 @@ def success_hook(name=None, required_resource_keys=None):
         .. code-block:: python
 
             @success_hook(required_resource_keys={'slack'})
-            def slack_on_success(context):
+            def slack_message_on_success(context):
                 message = 'solid {} succeeded'.format(context.solid.name)
                 context.resources.slack.send_message(message)
 
@@ -163,7 +163,7 @@ def failure_hook(name=None, required_resource_keys=None):
         .. code-block:: python
 
             @failure_hook(required_resource_keys={'slack'})
-            def slack_on_failure(context):
+            def slack_message_on_failure(context):
                 message = 'solid {} failed'.format(context.solid.name)
                 context.resources.slack.send_message(message)
 

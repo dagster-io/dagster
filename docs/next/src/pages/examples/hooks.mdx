@@ -19,7 +19,7 @@ endBefore:end_repo_marker_0
 
 There are a few ways to apply hooks. For example, you want to send a slack message to a channel when any solid fails in a pipeline. In this case, we will be applying a hook on a pipeline, which will apply the hook on every solid instance within in that pipeline.
 
-You can simply use the hook created "slack_on_failure" above to decorate the pipeline "notif_all". Then, slack messages will be sent when any solid in the pipeline fails.
+You can simply use the hook created "slack_message_on_failure" above to decorate the pipeline "notif_all". Then, slack messages will be sent when any solid in the pipeline fails.
 
 ```python literalinclude caption=repo.py showLines startLine=61 emphasize-lines=1
 file:/hooks/repo.py

@@ -1,7 +1,7 @@
 from dagster import DagsterEventType, ModeDefinition, ResourceDefinition, execute_pipeline, pipeline
 from dagster.seven import mock
 
-from ..repo import a, notif_all, selective_notif, slack_on_failure, slack_on_success
+from ..repo import a, notif_all, selective_notif, slack_message_on_failure, slack_message_on_success
 
 
 def test_notif_all_pipeline():
@@ -41,7 +41,7 @@ def test_hook_resource():
         ]
     )
     def foo():
-        a.with_hooks({slack_on_success, slack_on_failure})()
+        a.with_hooks({slack_message_on_success, slack_message_on_failure})()
 
     execute_pipeline(foo)
     assert slack_mock.chat.post_message.call_count == 1

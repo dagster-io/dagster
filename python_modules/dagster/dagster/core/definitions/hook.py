@@ -39,10 +39,10 @@ class HookDefinition(namedtuple("_HookDefinition", "name hook_fn required_resour
             .. code-block:: python
 
                 @success_hook
-                def slack_on_success(_):
+                def slack_message_on_success(_):
                     ...
 
-                @slack_on_success
+                @slack_message_on_success
                 @pipeline
                 def a_pipeline():
                     foo(bar())
