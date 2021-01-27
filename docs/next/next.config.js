@@ -13,6 +13,7 @@ module.exports = {
   i18n: {
     locales: ["master", ...ALL_VERSIONS],
     defaultLocale:
-      process.env.NODE_ENV == "production" ? ALL_VERSIONS[0] : "master",
+      // process.env.NODE_ENV == "production" ? ALL_VERSIONS[0] : "master",
+      "master",
   },
 };
