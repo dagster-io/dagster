@@ -1,8 +1,10 @@
 import abc
+import datetime
+from typing import Iterable, Type
 
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterScheduleWipeRequired
-from dagster.core.scheduler.job import JobStatus
+from dagster.core.scheduler.job import JobState, JobStatus, JobTick, JobTickData, JobTickStatus
 
 
 class ScheduleStorage(abc.ABC):
@@ -15,7 +17,9 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def all_stored_job_state(self, repository_origin_id=None, job_type=None):
+    def all_stored_job_state(
+        self, repository_origin_id: str = None, job_type: JobType = None
+    ) -> Iterable[JobState]:
         """Return all JobStates present in storage
 
         Args:
@@ -24,7 +28,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_job_state(self, job_origin_id):
+    def get_job_state(self, job_origin_id: str) -> JobState:
         """Return the unique job with the given id
 
         Args:
@@ -32,7 +36,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def add_job_state(self, job):
+    def add_job_state(self, job: JobState):
         """Add a job to storage.
 
         Args:
@@ -40,7 +44,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def update_job_state(self, job):
+    def update_job_state(self, job: JobState):
         """Update a job in storage.
 
         Args:
@@ -48,7 +52,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def delete_job_state(self, job_origin_id):
+    def delete_job_state(self, job_origin_id: str):
         """Delete a job in storage.
 
         Args:
@@ -56,7 +60,9 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
+    def get_job_ticks(
+        self, job_origin_id: str, before: float = None, after: float = None, limit: int = None
+    ) -> Iterable[JobTick]:
         """Get the ticks for a given job.
 
         Args:
@@ -64,7 +70,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_latest_job_tick(self, job_origin_id):
+    def get_latest_job_tick(self, job_origin_id: str) -> JobTick:
         """Get the most recent tick for a given job.
 
         Args:
@@ -72,24 +78,25 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def create_job_tick(self, job_tick_data):
+    def create_job_tick(self, job_tick_data: JobTickData):
         """Add a job tick to storage.
 
         Args:
-            repository_name (str): The repository the schedule belongs to
             job_tick_data (JobTickData): The job tick to add
         """
 
     @abc.abstractmethod
-    def update_job_tick(self, tick):
+    def update_job_tick(self, tick: JobTick):
         """Update a job tick already in storage.
 
         Args:
-            tick (ScheduleTick): The job tick to update
+            tick (JobTick): The job tick to update
         """
 
     @abc.abstractmethod
-    def purge_job_ticks(self, job_origin_id, tick_status, before):
+    def purge_job_ticks(
+        self, job_origin_id: str, tick_status: JobTickStatus, before: datetime.datetime
+    ):
         """Wipe ticks for a job for a certain status and timestamp.
 
         Args:
@@ -99,7 +106,7 @@ class ScheduleStorage(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_job_tick_stats(self, job_origin_id):
+    def get_job_tick_stats(self, job_origin_id: str):
         """Get tick stats for a given job.
 
         Args:
@@ -111,10 +118,10 @@ class ScheduleStorage(abc.ABC):
         """Perform any needed migrations
         """
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
-    def validate_stored_schedules(self, scheduler_class):
+    def validate_stored_schedules(self, scheduler_class: Type):
         # Check for any running job states that reference a different scheduler,
         # prompt the user to wipe if they don't match
         stored_schedules = self.all_stored_job_state(job_type=JobType.SCHEDULE)

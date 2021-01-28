@@ -1,4 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+
+from dagster.core.events import DagsterEvent
+from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.daemon.types import DaemonHeartbeat, DaemonType
 
 
 class RunStorage(ABC):
@@ -14,7 +20,7 @@ class RunStorage(ABC):
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run):
+    def add_run(self, pipeline_run: PipelineRun):
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
@@ -25,7 +31,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def handle_run_event(self, run_id, event):
+    def handle_run_event(self, run_id: str, event: DagsterEvent):
         """Update run storage in accordance to a pipeline run related DagsterEvent
 
         Args:
@@ -34,7 +40,9 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def get_runs(self, filters=None, cursor=None, limit=None):
+    def get_runs(
+        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Iterable[PipelineRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
@@ -49,22 +57,20 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def get_runs_count(self, filters=None):
+    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
         """Return the number of runs present in the storage that match the given filters.
 
         Args:
             filters (Optional[PipelineRunsFilter]) -- The
                 :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
                 runs
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
             int: The number of runs that match the given filters.
         """
 
     @abstractmethod
-    def get_run_group(self, run_id):
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:
@@ -80,7 +86,9 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def get_run_groups(self, filters=None, cursor=None, limit=None):
+    def get_run_groups(
+        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
@@ -92,7 +100,7 @@ class RunStorage(ABC):
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
-            Dict[Dict[Union[PipelineRun, int]]]: Specifically, a dict of the form
+            Dict[str, Dict[str, Union[List[PipelineRun], int]]]: Specifically, a dict of the form
                 ``{'pipeline_run_id': {'runs': [PipelineRun, ...], 'count': int}, ...}``. The
                 instances of :py:class:`~dagster.core.pipeline_run.PipelineRun` returned in this
                 data structure correspond to all of the runs that would have been returned by
@@ -114,7 +122,7 @@ class RunStorage(ABC):
         # more than 2x total instances of PipelineRun.
 
     @abstractmethod
-    def get_run_by_id(self, run_id):
+    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
         """Get a run by its id.
 
         Args:
@@ -125,15 +133,15 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def get_run_tags(self):
+    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
 
         Returns:
-            List[Tuple[string, Set[string]]]
+            List[Tuple[str, Set[str]]]
         """
 
     @abstractmethod
-    def add_run_tags(self, run_id, new_tags):
+    def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
         """Add additional tags for a pipeline run.
 
         Args:
@@ -142,7 +150,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def has_run(self, run_id):
+    def has_run(self, run_id: str) -> bool:
         """Check if the storage contains a run.
 
         Args:
@@ -153,7 +161,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def has_pipeline_snapshot(self, pipeline_snapshot_id):
+    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
         """Check to see if storage contains a pipeline snapshot.
 
         Args:
@@ -164,7 +172,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def add_pipeline_snapshot(self, pipeline_snapshot):
+    def add_pipeline_snapshot(self, pipeline_snapshot: PipelineSnapshot) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -180,7 +188,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def get_pipeline_snapshot(self, pipeline_snapshot_id):
+    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
         """Fetch a snapshot by ID
 
         Args:
@@ -191,7 +199,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def has_execution_plan_snapshot(self, execution_plan_snapshot_id):
+    def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         """Check to see if storage contains an execution plan snapshot.
 
         Args:
@@ -202,7 +210,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def add_execution_plan_snapshot(self, execution_plan_snapshot):
+    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
         """Add an execution plan snapshot to the run store.
 
         Execution plan snapshots are content-addressable, meaning
@@ -218,7 +226,7 @@ class RunStorage(ABC):
         """
 
     @abstractmethod
-    def get_execution_plan_snapshot(self, execution_plan_snapshot_id):
+    def get_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> ExecutionPlanSnapshot:
         """Fetch a snapshot by ID
 
         Args:
@@ -233,17 +241,19 @@ class RunStorage(ABC):
         """Clears the run storage."""
 
     @abstractmethod
-    def delete_run(self, run_id):
+    def delete_run(self, run_id: str):
         """Remove a run from storage"""
 
     @abstractmethod
-    def build_missing_indexes(self, print_fn=lambda _: None, force_rebuild_all=False):
+    def build_missing_indexes(
+        self, print_fn: Callable = lambda _: None, force_rebuild_all: bool = False
+    ):
         """Call this method to run any data migrations"""
 
     def dispose(self):
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout):
+    def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     # Daemon Heartbeat Storage
@@ -254,11 +264,11 @@ class RunStorage(ABC):
     # should be split out once all metadata storages are configured together.
 
     @abstractmethod
-    def add_daemon_heartbeat(self, daemon_heartbeat):
+    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
         """Called on a regular interval by the daemon"""
 
     @abstractmethod
-    def get_daemon_heartbeats(self):
+    def get_daemon_heartbeats(self) -> Dict[DaemonType, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types"""
 
     @abstractmethod
