@@ -2,8 +2,10 @@
 # pylint: disable=unused-argument
 
 import os
+import re
 from contextlib import contextmanager
 
+import pytest
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import poll_for_finished_run, poll_for_step_start
 from dagster.utils.test.postgres_instance import postgres_instance_for_test
@@ -145,6 +147,48 @@ def test_terminate_launched_docker_run():
                 ("ENGINE_EVENT", "Process for pipeline exited"),
             ],
         )
+
+
+def test_launch_docker_invalid_image():
+    docker_image = "_invalid_format_image"
+    launcher_config = {
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
+        "network": "container:test-postgres-db-docker",
+        "image": docker_image,
+    }
+
+    if IS_BUILDKITE:
+        launcher_config["registry"] = get_buildkite_registry_config()
+
+    run_config = merge_yamls(
+        [
+            os.path.join(get_test_project_environments_path(), "env.yaml"),
+            os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+        ]
+    )
+
+    with docker_postgres_instance(
+        overrides={
+            "run_launcher": {
+                "class": "DockerRunLauncher",
+                "module": "dagster_docker",
+                "config": launcher_config,
+            }
+        }
+    ) as instance:
+        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline")
+        run = instance.create_run_for_pipeline(
+            pipeline_def=recon_pipeline.get_definition(), run_config=run_config,
+        )
+
+        external_pipeline = ReOriginatedExternalPipelineForTest(
+            get_test_project_external_pipeline("demo_pipeline")
+        )
+        with pytest.raises(
+            Exception,
+            match=re.escape("Docker image name _invalid_format_image is not correctly formatted"),
+        ):
+            instance.launch_run(run.run_id, external_pipeline)
 
 
 def test_launch_docker_image_on_instance_config():

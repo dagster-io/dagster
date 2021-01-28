@@ -10,6 +10,7 @@ from dagster.core.launcher.base import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
+from docker_image import reference
 
 DOCKER_CONTAINER_ID_TAG = "docker_container_id"
 
@@ -102,6 +103,16 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         if not docker_image:
             raise Exception("No docker image specified by the instance config or repository")
+
+        try:
+            # validate that the docker image name is valid
+            reference.Reference.parse(docker_image)
+        except Exception as e:
+            raise Exception(
+                "Docker image name {docker_image} is not correctly formatted".format(
+                    docker_image=docker_image
+                )
+            ) from e
 
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
