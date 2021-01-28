@@ -28,6 +28,8 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
+  enqueuedTime: number | null;
+  launchTime: number | null;
   startTime: number | null;
   endTime: number | null;
 }

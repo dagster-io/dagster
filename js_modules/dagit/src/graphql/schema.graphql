@@ -312,6 +312,8 @@ type PipelineRunStatsSnapshot {
   stepsFailed: Int!
   materializations: Int!
   expectations: Int!
+  enqueuedTime: Float
+  launchTime: Float
   startTime: Float
   endTime: Float
 }

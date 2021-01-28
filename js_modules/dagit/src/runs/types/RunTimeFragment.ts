@@ -13,6 +13,8 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 export interface RunTimeFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
+  enqueuedTime: number | null;
+  launchTime: number | null;
   startTime: number | null;
   endTime: number | null;
 }

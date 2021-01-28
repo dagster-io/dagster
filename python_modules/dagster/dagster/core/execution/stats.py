@@ -24,18 +24,26 @@ def build_run_stats_from_events(run_id, records):
     steps_failed = 0
     materializations = 0
     expectations = 0
+    enqueued_time = None
+    launch_time = None
     start_time = None
     end_time = None
 
     for event in records:
         if not event.is_dagster_event:
             continue
+
+        event_timestamp_float = (
+            event.timestamp
+            if isinstance(event.timestamp, float)
+            else datetime_as_float(event.timestamp)
+        )
         if event.dagster_event.event_type == DagsterEventType.PIPELINE_START:
-            start_time = (
-                event.timestamp
-                if isinstance(event.timestamp, float)
-                else datetime_as_float(event.timestamp)
-            )
+            start_time = event_timestamp_float
+        if event.dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
+            launch_time = event_timestamp_float
+        if event.dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
+            enqueued_time = event_timestamp_float
         if event.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             steps_failed += 1
         if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
@@ -56,7 +64,15 @@ def build_run_stats_from_events(run_id, records):
             )
 
     return PipelineRunStatsSnapshot(
-        run_id, steps_succeeded, steps_failed, materializations, expectations, start_time, end_time
+        run_id,
+        steps_succeeded,
+        steps_failed,
+        materializations,
+        expectations,
+        enqueued_time,
+        launch_time,
+        start_time,
+        end_time,
     )
 
 

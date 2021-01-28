@@ -255,6 +255,8 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
+  enqueuedTime: number | null;
+  launchTime: number | null;
   startTime: number | null;
   endTime: number | null;
 }

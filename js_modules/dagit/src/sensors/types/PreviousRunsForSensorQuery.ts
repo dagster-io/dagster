@@ -23,6 +23,8 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_res
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
+  enqueuedTime: number | null;
+  launchTime: number | null;
   startTime: number | null;
   endTime: number | null;
 }

@@ -251,6 +251,52 @@ def test_event_log_get_stats_without_start_and_success(event_storage_factory_cm_
         assert storage.get_stats_for_run("foo")
 
 
+@event_storage_test
+def test_event_log_get_stats_for_run(event_storage_factory_cm_fn):
+    import math
+
+    with event_storage_factory_cm_fn() as storage:
+        enqueued_time = time.time()
+        launched_time = enqueued_time + 20
+        start_time = launched_time + 50
+        storage.store_event(
+            DagsterEventRecord(
+                None,
+                "message",
+                "debug",
+                "",
+                "foo",
+                enqueued_time,
+                dagster_event=DagsterEvent(DagsterEventType.PIPELINE_ENQUEUED.value, "nonce",),
+            )
+        )
+        storage.store_event(
+            DagsterEventRecord(
+                None,
+                "message",
+                "debug",
+                "",
+                "foo",
+                launched_time,
+                dagster_event=DagsterEvent(DagsterEventType.PIPELINE_STARTING.value, "nonce",),
+            )
+        )
+        storage.store_event(
+            DagsterEventRecord(
+                None,
+                "message",
+                "debug",
+                "",
+                "foo",
+                start_time,
+                dagster_event=DagsterEvent(DagsterEventType.PIPELINE_START.value, "nonce",),
+            )
+        )
+        assert math.isclose(storage.get_stats_for_run("foo").enqueued_time, enqueued_time)
+        assert math.isclose(storage.get_stats_for_run("foo").launch_time, launched_time)
+        assert math.isclose(storage.get_stats_for_run("foo").start_time, start_time)
+
+
 def test_filesystem_event_log_storage_run_corrupted():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)
