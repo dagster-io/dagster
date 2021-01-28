@@ -1,5 +1,7 @@
 import json
 import os
+import re
+from typing import Dict
 
 from dagster.utils import file_relative_path
 
@@ -34,14 +36,51 @@ def add_data_at_route(root_data, route, data):
     curr[last] = data
 
 
+def rewrite_relative_links(root: str, file_data: Dict[str, str]):
+    """Transform relative links generated from Sphinx to work with the actual _apidocs URL.
+
+    This method mutate the `file_data` in place.
+    """
+
+    file_body = file_data.get("body")
+    if not file_body:
+        return file_data
+
+    if root.startswith("sphinx/_build/json/_modules"):
+        transformed = re.sub(
+            r"href=\"[^\"]*\"",
+            lambda matchobj: matchobj.group(0)
+            .replace(r"sections/api/apidocs/", "_apidocs/")
+            .replace("/#", "#"),
+            file_body,
+        )
+    elif root.startswith("sphinx/_build/json/sections/api/apidocs/libraries"):
+        transformed = re.sub(r"href=\"\.\./\.\./", 'href="../', file_body)
+    else:
+        transformed = re.sub(
+            r"href=\"\.\./.*?(/#.*?)\"",
+            lambda matchobj: matchobj.group(0).replace("/#", "#"),
+            file_body,
+        )
+
+        transformed = re.sub(
+            r"href=\"(\.\./)[^.]",
+            lambda matchobj: matchobj.group(0).replace(matchobj.group(1), ""),
+            transformed,
+        )
+
+    file_data["body"] = transformed
+
+
 def pack_directory_json(path_to_folder: str):
     root_data = {}
 
     for (root, _, files) in os.walk(path_to_folder):
-        for file in files:
-            if file.endswith(".fjson"):
-                route = extract_route_from_path(path_to_folder, root, file)
-                data = read_json(os.path.join(root, file))
+        for filename in files:
+            if filename.endswith(".fjson"):
+                route = extract_route_from_path(path_to_folder, root, filename)
+                data = read_json(os.path.join(root, filename))
+                rewrite_relative_links(root, data)
                 add_data_at_route(root_data, route, data)
 
     return root_data
