@@ -1,0 +1,28 @@
+import { ExampleReferenceLink } from 'components/ExampleReference';
+import { VersionedGithubLink } from 'components/VersionedComponents';
+import PyObject from 'components/PyObject';
+
+# Dynamic Graph (Experimental)
+
+<ExampleReferenceLink filePath="examples/dynamic_graph" />
+
+This pipeline demonstrates how to create a pipeline that's final structure is not determined until runtime. This is an experimental new feature, so the API may change around. At this point we can perform "map" / "for each" operations, but do not yet offer a "collect" step.
+
+In this example we have a solid `files_in_directory` that defines a <PyObject module="dagster.experimental" object="DynamicOutputDefinition" /> . This dynamic output will cause the downstream dependencies to be cloned for each <PyObject module="dagster.experimental" object="DynamicOutput" /> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject module="dagster.experimental" object="DynamicOutput" />.
+
+```python literalinclude caption=repo.py
+file:/dynamic_graph/repo.py
+startAfter:start_dynamic
+endBefore:end_dynamic
+```
+
+## Open in a playground
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#EXAMPLE=dynamic_graph/https://github.com/dagster-io/dagster)
+
+## Download
+
+```
+curl https://codeload.github.com/dagster-io/dagster/tar.gz/master | tar -xz --strip=2 dagster-master/examples/dynamic_graph
+cd dynamic_graph
+```

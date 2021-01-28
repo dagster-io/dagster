@@ -109,6 +109,19 @@ class DynamicOutputDefinition(OutputDefinition):
     (EXPERIMENTAL) Variant of :py:class:`OutputDefinition` for an output that will dynamically
     alter the graph at runtime. Each copy of :py:class:`DynamicOutput` corresponding to this
     definition that is yielded from the solid will create a copy of the downstream graph.
+
+        .. code-block:: python
+            @solid(
+                config_schema={
+                    "path": Field(str, default_value=file_relative_path(__file__, "sample"))
+                },
+                output_defs=[DynamicOutputDefinition(str)],
+            )
+            def files_in_directory(context):
+                path = context.solid_config["path"]
+                dirname, _, filenames = next(os.walk(path))
+                for file in filenames:
+                    yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
     """
 
     @property
