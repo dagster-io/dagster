@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.10.2
+
+**Community Contributions**
+
+* [docs] Update URL to telemetry info (thanks @emilmelnikov (https://github.com/dagster-io/dagster/commits?author=emilmelnikov)!)
+* [dagster-azure] Fix for listing files on ADL example (thanks @ericct!)
+
+**New**
+
+* [dagstermill] Users can now specify custom tags & descriptions for notebook solids.
+* [dagster-pagerduty / dagster-slack] Added built-in hook integrations to create pagerduty/slack alerts when solids fail.
+* [dagit] Added ability to preview runs for upcoming schedule ticks.
+
+**Bugfixes**
+
+* Fixed an issue where run start times and end times were displayed in the wrong timezone in Dagit when using Postgres storage.
+* Schedules with partitions that weren’t able to execute due to not being able to find a partition will now display the name of the partition they were unable to find on the “Last tick” entry for that schedule.
+
+* Improved timing information display for queued and canceled runs within the Runs table view and on individual Run pages in Dagit.
+* Improvements to the tick history view for schedules and sensors.
+* Fixed formatting issues on the Dagit instance configuration page.
+* Miscellaneous Dagit bugfixes and improvements.
+* The dagster pipeline launch command will now respect run concurrency limits if they are applied on your instance.
+* Fixed an issue where re-executing a run created by a sensor would cause the daemon to stop executing any additional runs from that sensor.
+* Sensor runs with invalid run configuration will no longer create a failed run - instead, an error will appear on the page for the sensor, allowing you to fix the configuration issue.
+* General dagstermill housekeeping: test refactoring & type annotations, as well as repinning ipykernel to solve #3401
+
+**Documentation**
+
+* Improved dagster-dbt example.
+* Added examples to demonstrate experimental features, including Memoized Development and Dynamic Graph.
+* Added a PR template and how to pick an issue for the first time contributors
+
 ## 0.10.1
 
 **Community Contributions**
