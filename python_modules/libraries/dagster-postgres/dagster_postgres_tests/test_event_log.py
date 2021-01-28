@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.events import DagsterEventType
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.stats import StepEventStatus
@@ -416,6 +416,39 @@ def test_load_from_config(hostname):
             from_explicit = explicit_instance._event_storage
 
             assert from_url.postgres_url == from_explicit.postgres_url
+
+
+def test_correct_timezone(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    curr_time = time.time()
+
+    event = DagsterEventRecord(
+        None,
+        "Message2",
+        "debug",
+        "",
+        "foo",
+        curr_time,
+        dagster_event=DagsterEvent(
+            DagsterEventType.PIPELINE_START.value,
+            "nonce",
+            event_specific_data=EngineEventData.in_process(999),
+        ),
+    )
+
+    event_log_storage.store_event(event)
+
+    logs = event_log_storage.get_logs_for_run("foo")
+
+    assert len(logs) == 1
+
+    log = logs[0]
+
+    stats = event_log_storage.get_stats_for_run("foo")
+
+    assert int(log.timestamp) == int(stats.start_time)
+    assert int(log.timestamp) == int(curr_time)
 
 
 def test_asset_materialization(conn_string):

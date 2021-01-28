@@ -77,7 +77,9 @@ class SqlEventLogStorage(EventLogStorage):
             run_id=event.run_id,
             event=serialize_dagster_namedtuple(event),
             dagster_event_type=dagster_event_type,
-            timestamp=utc_datetime_from_timestamp(event.timestamp),
+            # Postgres requires a datetime that is in UTC but has no timezone info set
+            # in order to be stored correctly
+            timestamp=datetime.utcfromtimestamp(event.timestamp),
             step_key=step_key,
             asset_key=asset_key_str,
             partition=partition,
