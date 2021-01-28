@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Callout, Colors} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
@@ -10,6 +10,7 @@ import {SchedulerInfoQuery} from 'src/runs/types/SchedulerInfoQuery';
 import {REPOSITORY_SCHEDULES_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SchedulerInfo, SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulesNextTicks} from 'src/schedules/SchedulesNextTicks';
+import {Alert} from 'src/ui/Alert';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 
@@ -22,23 +23,26 @@ export const AllScheduledTicks: React.FC<{repos: ScheduledTicksFragment}> = ({re
     if (repos.__typename === 'PythonError') {
       const message = repos.message;
       return (
-        <Callout intent="warning">
-          <Group direction="row" spacing={4}>
-            <div>Could not load scheduled ticks.</div>
-            <ButtonLink
-              color={Colors.BLUE3}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  title: 'Python error',
-                  body: message,
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Group>
-        </Callout>
+        <Alert
+          intent="warning"
+          title={
+            <Group direction="row" spacing={4}>
+              <div>Could not load scheduled ticks.</div>
+              <ButtonLink
+                color={Colors.BLUE3}
+                underline="always"
+                onClick={() => {
+                  showCustomAlert({
+                    title: 'Python error',
+                    body: message,
+                  });
+                }}
+              >
+                View error
+              </ButtonLink>
+            </Group>
+          }
+        />
       );
     }
 

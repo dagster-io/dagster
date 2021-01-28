@@ -1,15 +1,5 @@
 import {gql, NetworkStatus} from '@apollo/client';
-import {
-  Callout,
-  Colors,
-  Divider,
-  Icon,
-  NonIdealState,
-  Spinner,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core';
+import {Colors, Divider, NonIdealState, Spinner, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -31,6 +21,7 @@ import {CountFragment} from 'src/runs/types/CountFragment';
 import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {useCountdown} from 'src/ui/Countdown';
@@ -219,9 +210,10 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           />
         )}
         {selectedTab === 'queued' ? (
-          <Callout icon={<Icon icon="multi-select" iconSize={20} />}>
-            <Link to="/instance/config#run_coordinator">View queue configuration</Link>
-          </Callout>
+          <Alert
+            intent="info"
+            title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+          />
         ) : null}
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>

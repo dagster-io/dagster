@@ -1,9 +1,11 @@
-import {Callout, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
+import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
 import {TopNav} from 'src/nav/TopNav';
 import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
+import {Alert} from 'src/ui/Alert';
+import {Box} from 'src/ui/Box';
 import {LoadingWithProgress} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
@@ -63,9 +65,16 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
     <>
       <TopNav breadcrumbs={breadcrumbs} />
       <Page>
-        <Callout intent="primary" icon="info-sign" style={{marginBottom: '12px'}}>
-          Pipelines named <strong>{pipelineName}</strong> were found in multiple repositories.
-        </Callout>
+        <Box margin={{bottom: 12}}>
+          <Alert
+            intent="info"
+            title={
+              <div>
+                Pipelines named <strong>{pipelineName}</strong> were found in multiple repositories.
+              </div>
+            }
+          />
+        </Box>
         <Table>
           <thead>
             <tr>

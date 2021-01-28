@@ -1,6 +1,5 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {
-  Callout,
   Checkbox,
   Intent,
   NonIdealState,
@@ -32,6 +31,7 @@ import {
 import {LaunchPartitionBackfill} from 'src/partitions/types/LaunchPartitionBackfill';
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {GraphQueryInput} from 'src/ui/GraphQueryInput';
@@ -468,12 +468,21 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
         {usingDefaultRunLauncher && (
           <div style={{marginTop: 10}}>
-            <Callout intent={Intent.WARNING}>
-              Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
-              backfills is not advised, as queueing runs is not currently supported. Check your
-              instance configuration in <code>dagster.yaml</code> to configure a run launcher more
-              appropriate for launching a large number of jobs.
-            </Callout>
+            <Alert
+              intent="warning"
+              title={
+                <div>
+                  Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for
+                  launching backfills is not advised, as queueing runs is not currently supported.
+                </div>
+              }
+              description={
+                <div>
+                  Check your instance configuration in <code>dagster.yaml</code> to configure a run
+                  launcher more appropriate for launching a large number of jobs.
+                </div>
+              }
+            />
           </div>
         )}
       </div>

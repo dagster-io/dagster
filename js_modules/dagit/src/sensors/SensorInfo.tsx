@@ -1,7 +1,7 @@
-import {Callout, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
+import {Alert} from 'src/ui/Alert';
 
 export const SensorInfo: React.FC<{
   daemonHealth: DaemonHealthFragment | undefined;
@@ -23,9 +23,22 @@ export const SensorInfo: React.FC<{
   }
 
   return (
-    <Callout icon="time" intent={Intent.WARNING} title="The sensor daemon is not running.">
-      See the <a href="https://docs.dagster.io/overview/daemon">dagster-daemon documentation</a> for
-      more information on how to deploy the dagster-daemon process.
-    </Callout>
+    <Alert
+      intent="warning"
+      title="The sensor daemon is not running."
+      description={
+        <div>
+          See the{' '}
+          <a
+            href="https://docs.dagster.io/overview/daemon"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            dagster-daemon documentation
+          </a>{' '}
+          for more information on how to deploy the dagster-daemon process.
+        </div>
+      }
+    />
   );
 };

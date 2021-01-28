@@ -1,5 +1,5 @@
 import {useMutation} from '@apollo/client';
-import {Button, Callout, Intent, Colors, Switch, Tooltip} from '@blueprintjs/core';
+import {Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {useConfirmation} from 'src/app/CustomConfirmationProvider';
@@ -15,6 +15,8 @@ import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from 'src/sensors/SensorMutations';
 import {StopSensor} from 'src/sensors/types/StopSensor';
 import {JobType, JobStatus} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
+import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
@@ -83,66 +85,45 @@ export const UnloadableSchedules: React.FunctionComponent<{
   );
 };
 
-const UnloadableSensorInfo = () => {
-  const [showMore, setShowMore] = React.useState(false);
-
-  return (
-    <Callout style={{marginBottom: 20, marginTop: 20}} intent={Intent.WARNING}>
-      <div style={{display: 'flex', justifyContent: 'space-between'}}>
-        <h4 style={{margin: 0}}>
+const UnloadableSensorInfo = () => (
+  <Box margin={{vertical: 20}}>
+    <Alert
+      intent="warning"
+      title={
+        <div>
           Note: You can turn off any of the following sensors, but you cannot turn them back on.{' '}
-        </h4>
-
-        {!showMore && (
-          <Button small={true} onClick={() => setShowMore(true)}>
-            Show more info
-          </Button>
-        )}
-      </div>
-
-      {showMore && (
-        <div style={{marginTop: 10}}>
-          <p>
-            The following sensors were previously started but now cannot be loaded. They may be part
-            of a different workspace or from a sensor or repository that no longer exists in code.
-            You can turn them off, but you cannot turn them back on since they can’t be loaded.
-          </p>
         </div>
-      )}
-    </Callout>
-  );
-};
-
-const UnloadableScheduleInfo = () => {
-  const [showMore, setShowMore] = React.useState(false);
-
-  return (
-    <Callout style={{marginBottom: 20, marginTop: 20}} intent={Intent.WARNING}>
-      <div style={{display: 'flex', justifyContent: 'space-between'}}>
-        <h4 style={{margin: 0}}>
-          Note: You can turn off any of the following schedules, but you cannot turn them back on.{' '}
-        </h4>
-
-        {!showMore && (
-          <Button small={true} onClick={() => setShowMore(true)}>
-            Show more info
-          </Button>
-        )}
-      </div>
-
-      {showMore && (
-        <div style={{marginTop: 10}}>
-          <p>
-            The following schedules were previously started but now cannot be loaded. They may be
-            part of a different workspace or from a schedule or repository that no longer exists in
-            code. You can turn them off, but you cannot turn them back on since they can’t be
-            loaded.
-          </p>
+      }
+      description={
+        <div>
+          The following sensors were previously started but now cannot be loaded. They may be part
+          of a different workspace or from a sensor or repository that no longer exists in code. You
+          can turn them off, but you cannot turn them back on since they can’t be loaded.
         </div>
-      )}
-    </Callout>
-  );
-};
+      }
+    />
+  </Box>
+);
+
+const UnloadableScheduleInfo = () => (
+  <Box margin={{vertical: 20}}>
+    <Alert
+      intent="warning"
+      title={
+        <div>
+          Note: You can turn off any of the following schedules, but you cannot turn them back on.
+        </div>
+      }
+      description={
+        <div>
+          The following schedules were previously started but now cannot be loaded. They may be part
+          of a different workspace or from a schedule or repository that no longer exists in code.
+          You can turn them off, but you cannot turn them back on since they can’t be loaded.
+        </div>
+      }
+    />
+  </Box>
+);
 
 const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
   const {id, name, status, repositoryOrigin, ticks} = sensorState;
@@ -183,11 +164,7 @@ const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
             show info
           </ButtonLink>
         </Group>
-        {showRepositoryOrigin && (
-          <Callout style={{marginTop: 10}}>
-            <RepositoryOriginInformation origin={repositoryOrigin} />
-          </Callout>
-        )}
+        {showRepositoryOrigin && <RepositoryOriginInformation origin={repositoryOrigin} />}
       </td>
       <td>
         {latestTick ? (
@@ -258,11 +235,7 @@ const ScheduleStateRow: React.FunctionComponent<{
             show info
           </ButtonLink>
         </Group>
-        {showRepositoryOrigin && (
-          <Callout style={{marginTop: 10}}>
-            <RepositoryOriginInformation origin={repositoryOrigin} />
-          </Callout>
-        )}
+        {showRepositoryOrigin && <RepositoryOriginInformation origin={repositoryOrigin} />}
       </td>
       <td style={{maxWidth: 150}}>
         <div
