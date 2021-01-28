@@ -3,6 +3,7 @@ import time
 from collections import Counter
 
 import mock
+import pytest
 import yaml
 from dagster import (
     AssetKey,
@@ -174,6 +175,7 @@ def test_delete_postgres_event_log(conn_string):
     assert event_log_storage.get_logs_for_run(result.run_id) == []
 
 
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
 def test_basic_get_logs_for_run_cursor(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -237,6 +239,7 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
     assert stats_two.steps_succeeded == 1
 
 
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
 def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
