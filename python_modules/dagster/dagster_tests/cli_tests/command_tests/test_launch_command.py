@@ -2,6 +2,7 @@ import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterUserCodeProcessError
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
@@ -137,6 +138,30 @@ def test_launch_with_run_id(gen_pipeline_args):
             bad_result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
             assert bad_result.exit_code == 1
             assert isinstance(bad_result.exception, DagsterRunAlreadyExists)
+
+
+@pytest.mark.parametrize(
+    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+)
+def test_launch_queued(gen_pipeline_args):
+    runner = CliRunner()
+    run_id = "my_super_cool_run_id"
+    with default_cli_test_instance(
+        overrides={
+            "run_coordinator": {
+                "class": "QueuedRunCoordinator",
+                "module": "dagster.core.run_coordinator",
+            }
+        }
+    ) as instance:
+        with gen_pipeline_args as args:
+            result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
+            assert result.exit_code == 0
+
+            run = instance.get_run_by_id(run_id)
+            assert run is not None
+
+            assert run.status == PipelineRunStatus.QUEUED
 
 
 def test_empty_working_directory():

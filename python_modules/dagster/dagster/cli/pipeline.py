@@ -621,7 +621,7 @@ def execute_launch_command(instance, kwargs):
             run_id=kwargs.get("run_id"),
         )
 
-        return instance.launch_run(pipeline_run.run_id, external_pipeline)
+        return instance.submit_run(pipeline_run.run_id, external_pipeline)
 
 
 @click.command(
