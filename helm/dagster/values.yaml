@@ -717,7 +717,7 @@ dagsterDaemon:
     exec:
       command:
         - "dagster-daemon"
-        - "health-check"
+        - "liveness-check"
     # initialDelaySeconds: 60
     periodSeconds: 30
     failureThreshold: 3
@@ -731,7 +731,7 @@ dagsterDaemon:
     exec:
       command:
         - "dagster-daemon"
-        - "health-check"
+        - "liveness-check"
     periodSeconds: 10
     failureThreshold: 12
     timeoutSeconds: 3

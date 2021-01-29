@@ -198,10 +198,8 @@ def required_daemons(instance):
 
 def all_daemons_healthy(instance, curr_time_seconds=None):
     """
-    True if all required daemons have had a recent heartbeat
+    True if all required daemons have had a recent heartbeat with no errors
 
-    Note: this method (and its dependencies) are static because it is called by the dagit
-    process, which shouldn't need to instantiate each of the daemons.
     """
 
     statuses = [
@@ -211,7 +209,21 @@ def all_daemons_healthy(instance, curr_time_seconds=None):
     return all([status.healthy for status in statuses])
 
 
-def get_daemon_status(instance, daemon_type, curr_time_seconds=None):
+def all_daemons_live(instance, curr_time_seconds=None):
+    """
+    True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
+    """
+
+    statuses = [
+        get_daemon_status(
+            instance, daemon_type, curr_time_seconds=curr_time_seconds, ignore_errors=True
+        )
+        for daemon_type in required_daemons(instance)
+    ]
+    return all([status.healthy for status in statuses])
+
+
+def get_daemon_status(instance, daemon_type, curr_time_seconds=None, ignore_errors=False):
     curr_time_seconds = check.opt_float_param(
         curr_time_seconds, "curr_time_seconds", default=pendulum.now("UTC").float_timestamp
     )
@@ -235,10 +247,10 @@ def get_daemon_status(instance, daemon_type, curr_time_seconds=None):
     maximum_tolerated_time = (
         hearbeat_timestamp + DAEMON_HEARTBEAT_INTERVAL_SECONDS + DAEMON_HEARTBEAT_TOLERANCE_SECONDS
     )
-    has_recent_heartbeat = curr_time_seconds <= maximum_tolerated_time
+    healthy = curr_time_seconds <= maximum_tolerated_time
 
-    # check if daemon has an error
-    healthy = has_recent_heartbeat and not latest_heartbeat.errors
+    if not ignore_errors and latest_heartbeat.errors:
+        healthy = False
 
     return DaemonStatus(
         daemon_type=daemon_type,

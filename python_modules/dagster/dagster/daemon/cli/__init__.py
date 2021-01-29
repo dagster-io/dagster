@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import warnings
 
 import click
 import pendulum
@@ -10,7 +11,9 @@ from dagster.daemon.controller import (
     DagsterDaemonController,
     all_daemons_healthy,
     debug_daemon_heartbeats,
+    get_daemon_status,
 )
+from dagster.daemon.types import DaemonType
 
 
 @click.command(
@@ -34,14 +37,27 @@ def run_command():
 
 
 @click.command(
-    name="health-check", help="Check for recent heartbeats from the daemon.",
+    name="health-check", help="DEPRECATED, use liveness-check instead",
 )
 def health_check_command():
+    warnings.warn("health-check is deprecated. Use liveness-check instead.")
     with DagsterInstance.get() as instance:
         if all_daemons_healthy(instance):
             click.echo("Daemon healthy")
         else:
             click.echo("Daemon not healthy")
+            sys.exit(1)
+
+
+@click.command(
+    name="liveness-check", help="Check for recent heartbeats from the daemon.",
+)
+def liveness_check_command():
+    with DagsterInstance.get() as instance:
+        if all_daemons_healthy(instance):
+            click.echo("Daemon healthy")
+        else:
+            click.echo("Daemon(s) not running")
             sys.exit(1)
 
 
@@ -62,7 +78,18 @@ def debug_heartbeat_command():
         debug_daemon_heartbeats(instance)
 
 
-@click.group(commands={"heartbeat": debug_heartbeat_command})
+@click.command(
+    name="heartbeat-dump", help="Log all heartbeat statuses",
+)
+def debug_heartbeat_dump_command():
+    with DagsterInstance.get() as instance:
+        for daemon_type in DaemonType:
+            click.echo(get_daemon_status(instance, daemon_type))
+
+
+@click.group(
+    commands={"heartbeat": debug_heartbeat_command, "heartbeat-dump": debug_heartbeat_dump_command}
+)
 def debug_group():
     "Daemon debugging utils"
 
@@ -71,6 +98,7 @@ def create_dagster_daemon_cli():
     commands = {
         "run": run_command,
         "health-check": health_check_command,
+        "liveness-check": liveness_check_command,
         "wipe": wipe_command,
         "debug": debug_group,
     }

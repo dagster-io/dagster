@@ -5,6 +5,7 @@ from dagster.daemon.controller import (
     DAEMON_HEARTBEAT_INTERVAL_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
+    all_daemons_live,
     get_daemon_status,
 )
 from dagster.utils.error import SerializableErrorInfo
@@ -25,11 +26,14 @@ def test_healthy():
 
         controller = DagsterDaemonController(instance)
         assert not all_daemons_healthy(instance, curr_time_seconds=init_time.float_timestamp)
+        assert not all_daemons_live(instance, curr_time_seconds=init_time.float_timestamp)
 
         controller.run_iteration(init_time)
         assert all_daemons_healthy(instance, curr_time_seconds=init_time.float_timestamp)
+        assert all_daemons_live(instance, curr_time_seconds=init_time.float_timestamp)
 
         assert not all_daemons_healthy(instance, curr_time_seconds=beyond_tolerated_time)
+        assert not all_daemons_live(instance, curr_time_seconds=beyond_tolerated_time)
 
 
 def test_healthy_with_different_daemons():
@@ -47,6 +51,7 @@ def test_healthy_with_different_daemons():
         }
     ) as instance:
         assert not all_daemons_healthy(instance, curr_time_seconds=init_time.float_timestamp)
+        assert not all_daemons_live(instance, curr_time_seconds=init_time.float_timestamp)
 
 
 def test_error_daemon(monkeypatch):
@@ -69,6 +74,8 @@ def test_error_daemon(monkeypatch):
             status.last_heartbeat.errors[0].message.strip()
             == "dagster.core.errors.DagsterInvariantViolationError: foobar"
         )
+        assert not all_daemons_healthy(instance, curr_time_seconds=init_time.float_timestamp)
+        assert all_daemons_live(instance, curr_time_seconds=init_time.float_timestamp)
 
 
 def test_multiple_error_daemon(monkeypatch):
