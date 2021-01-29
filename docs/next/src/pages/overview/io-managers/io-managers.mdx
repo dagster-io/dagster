@@ -8,15 +8,21 @@ import PyObject from 'components/PyObject';
 
 # IO Managers
 
-Dagster solids have [inputs and outputs](/overview/solids-pipelines/solids#solid-inputs-and-outputs).  When a solid produces an output, what happens to it?  When a solid needs an input value, how is it loaded?  <PyObject module="dagster" object="IOManager" />s and <PyObject module="dagster" object="RootInputManager" />s.
+Dagster solids have [inputs and outputs](/overview/solids-pipelines/solids#solid-inputs-and-outputs). When a solid produces an output, what happens to it? When a solid needs an input value, how is it loaded? <PyObject module="dagster" object="IOManager" />s and <PyObject module="dagster" object="RootInputManager" />s.
 
-These APIs make it easy separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results.  Solids can focus on business logic, while IO managers handle I/O.  This separation makes it easier to test the business logic and run it in different environments.
+These APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Solids can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 ## IO managers
 
-<PyObject module="dagster" object="IOManager" />s are user-provided objects that are responsible for storing the output of a solid and loading it as input to downstream solids.  For example, an IOManager might store and load objects from files on a filesystem.  Each solid output can have its own IOManager, or multiple solid outputs can share an IOManager. The IOManager that's used for handling a particular solid output is automatically used for loading it in downstream solids.
+<PyObject module="dagster" object="IOManager" />s are user-provided objects that
+are responsible for storing the output of a solid and loading it as input to
+downstream solids. For example, an IOManager might store and load objects from
+files on a filesystem. Each solid output can have its own IOManager, or multiple
+solid outputs can share an IOManager. The IOManager that's used for handling a
+particular solid output is automatically used for loading it in downstream
+solids.
 
-<p/>
+<p />
 
 I.e. an IOManager handles the teal boxes:
 
@@ -24,21 +30,23 @@ I.e. an IOManager handles the teal boxes:
   <img src="/assets/images/overview/io-managers/io-managers.png" />
 </p>
 
-The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in memory, but this only works for the single process executor.  Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster" object="fs_io_manager"/>, <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>, <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/>, or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
+The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in memory, but this only works for the single process executor. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster" object="fs_io_manager"/>, <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>, <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/>, or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
-IOManagers are [resources](/overview/modes-resources-presets/modes-resources), which means users can supply different IOManagers for the same solid outputs in different situations.  For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
+IOManagers are [resources](/overview/modes-resources-presets/modes-resources), which means users can supply different IOManagers for the same solid outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 
 ## Root input managers (experimental)
 
-<PyObject module="dagster" object="RootInputManager" />s are user-provided objects that are responsible for loading the inputs of solids whose inputs are not connected to an upstream solid's output.
+<PyObject module="dagster" object="RootInputManager" />s are user-provided
+objects that are responsible for loading the inputs of solids whose inputs are
+not connected to an upstream solid's output.
 
 Root input managers are currently an experimental feature.
 
 ## Setting a pipeline-wide IO manager
 
-By default, all the inputs and outputs in a pipeline use the same IOManager.  This IOManager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key.  `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
+By default, all the inputs and outputs in a pipeline use the same IOManager. This IOManager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
 
-Here’s how to specify that all solid outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem.  It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
+Here’s how to specify that all solid outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
 
 ```python literalinclude caption=default_io_manager.py
 file:/docs_snippets/docs_snippets/overview/io_managers/default_io_manager.py
@@ -46,9 +54,9 @@ file:/docs_snippets/docs_snippets/overview/io_managers/default_io_manager.py
 
 ## Selecting an IO manager per output
 
-Not all the outputs in a pipeline should necessarily be stored the same way.  Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
+Not all the outputs in a pipeline should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
 
-To select the IOManager for a particular output, you can set an `io_manager_key` on the <PyObject module="dagster" object="OutputDefinition" />, and then refer to that `io_manager_key` when setting IO managers in your <PyObject module="dagster" object="ModeDefinition" />.  In this example, the output of solid1 will go to `fs_io_manager` and the output of solid2 will go to `mem_io_manager`.
+To select the IOManager for a particular output, you can set an `io_manager_key` on the <PyObject module="dagster" object="OutputDefinition" />, and then refer to that `io_manager_key` when setting IO managers in your <PyObject module="dagster" object="ModeDefinition" />. In this example, the output of solid1 will go to `fs_io_manager` and the output of solid2 will go to `mem_io_manager`.
 
 ```python literalinclude caption=io_manager_per_output.py
 file:/docs_snippets/docs_snippets/overview/io_managers/io_manager_per_output.py
@@ -58,7 +66,7 @@ endBefore:end_marker
 
 ## Providing a custom IO manager
 
-If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own IOManager.  For example, if your solids produce Pandas DataFrames that populate tables in a data warehouse, you might write the following:
+If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own IOManager. For example, if your solids produce Pandas DataFrames that populate tables in a data warehouse, you might write the following:
 
 ```python literalinclude caption=custom_io_manager.py
 file:/docs_snippets/docs_snippets/overview/io_managers/custom_io_manager.py
@@ -66,10 +74,9 @@ startAfter:start_marker
 endBefore:end_marker
 ```
 
-The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator.  It yields an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass of <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="IOManager" />.
+The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator. It yields an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass of <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="IOManager" />.
 
-The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />.  The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />.  The linked API documentation lists all the fields that are available on these objects.
-
+The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
 
 ## Providing per-output config to an IO manager
 
@@ -95,9 +102,9 @@ endBefore:execute_end_marker
 
 ## Providing per-output metadata to an IO manager (experimental)
 
-You might want to provide static metadata that controls how particular outputs are stored.  You don't plan to change the metadata at runtime, so it makes more sense to attach it to a definition rather than expose it as a configuration option.
+You might want to provide static metadata that controls how particular outputs are stored. You don't plan to change the metadata at runtime, so it makes more sense to attach it to a definition rather than expose it as a configuration option.
 
-For example, if your pipeline produces DataFrames to populate tables in a data warehouse, you might want to specify that each output always goes to a particular table.  To accomplish this, you can define `metadata` on each <PyObject module="dagster" object="OutputDefinition" />:
+For example, if your pipeline produces DataFrames to populate tables in a data warehouse, you might want to specify that each output always goes to a particular table. To accomplish this, you can define `metadata` on each <PyObject module="dagster" object="OutputDefinition" />:
 
 ```python literalinclude caption=metadata.py
 file:/docs_snippets/docs_snippets/overview/io_managers/metadata.py
@@ -107,7 +114,7 @@ endBefore:solids_end_marker
 
 The IOManager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.
 
-In this case, the table names are encoded in the pipeline definition.  If, instead, you want to be able to set them at run time, the next section describes how.
+In this case, the table names are encoded in the pipeline definition. If, instead, you want to be able to set them at run time, the next section describes how.
 
 ```python literalinclude caption=metadata.py
 file:/docs_snippets/docs_snippets/overview/io_managers/metadata.py
@@ -129,14 +136,13 @@ endBefore:end_marker
 
 Setting the `root_manager_key` on an `InputDefinition` controls how that input is loaded in pipelines where it has no upstream output.
 
-The <PyObject module="dagster" object="root_input_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator.  It yields an <PyObject module="dagster" object="RootInputManagerDefinition" />, which is a <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="RootInputManager" />.
-
+The <PyObject module="dagster" object="root_input_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator. It yields an <PyObject module="dagster" object="RootInputManagerDefinition" />, which is a <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="RootInputManager" />.
 
 ## Providing per-input config to a root input manager (experimental)
 
 When launching a run, you might want to parameterize how particular root inputs are loaded.
 
-To accomplish this, you can define an `input_config_schema` on the input manager definition.  The load function can access this config when storing or loading data, via the <PyObject module="dagster" object="InputContext" />.
+To accomplish this, you can define an `input_config_schema` on the input manager definition. The load function can access this config when storing or loading data, via the <PyObject module="dagster" object="InputContext" />.
 
 ```python literalinclude caption=config_input_manager.py
 file:/docs_snippets/docs_snippets/overview/io_managers/config_input_manager.py
@@ -154,12 +160,11 @@ endBefore:execute_end_marker
 
 ## Using a root input manager with subselection (experimental)
 
-You might want to execute a subset of solids in your pipeline and control how the inputs of those solids are loaded.  Root input managers also help in these situations, because the inputs at the beginning of the subset become the new "roots".
+You might want to execute a subset of solids in your pipeline and control how the inputs of those solids are loaded. Root input managers also help in these situations, because the inputs at the beginning of the subset become the new "roots".
 
 For example, you might have `solid1` that normally produces a table that `solid2` consumes. To debug `solid2`, you might want to run it on a different table than the one normally produced by `solid1`.
 
-To accomplish this, you can set up the `root_manager_key` on `solid2`'s `InputDefinition` to point to an input manager with the desired loading behavior.  As before, setting the `root_manager_key` on an `InputDefinition` controls how that input is loaded when it has no upstream output.
-
+To accomplish this, you can set up the `root_manager_key` on `solid2`'s `InputDefinition` to point to an input manager with the desired loading behavior. As before, setting the `root_manager_key` on an `InputDefinition` controls how that input is loaded when it has no upstream output.
 
 ```python literalinclude caption=subselection.py
 file:/docs_snippets/docs_snippets/overview/io_managers/subselection.py
@@ -167,11 +172,10 @@ startAfter:start_marker
 endBefore:end_marker
 ```
 
-When running the full pipeline, `solid2`'s input will be loaded using the IO manager on the output of `solid1`.  When running the pipeline subset, `solid2`'s input has no upstream output, so the input manager corresponding to its `root_manager_key` is used.
+When running the full pipeline, `solid2`'s input will be loaded using the IO manager on the output of `solid1`. When running the pipeline subset, `solid2`'s input has no upstream output, so the input manager corresponding to its `root_manager_key` is used.
 
 ```python literalinclude caption=subselection.py
 file:/docs_snippets/docs_snippets/overview/io_managers/subselection.py
 startAfter:start_execute_subselection
 endBefore:end_execute_subselection
 ```
-

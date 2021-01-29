@@ -8,15 +8,15 @@ import PyObject from 'components/PyObject';
 
 # Executing Pipelines
 
-We provide several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the [schedules](/overview/schedules-sensors/schedules) section.
+Dagster provides several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the [Schedules](/overview/schedules-sensors/schedules) section.
 
 ## Dagit
 
-The Dagit [playground](/overview/dagit#playground) offers a way to interactively build up the configuration for a run of a pipeline. Drops downs are available for selecting any defined <PyObject module="dagster" object="PresetDefinition" displayText='Presets' /> or [partitions](/overview/partitions-backfill/partitions)
+The Dagit [playground](/overview/dagit#playground) offers a way to interactively build up the configuration for a run of a pipeline. Dropdowns are available for selecting any defined <PyObject module="dagster" object="PresetDefinition" displayText='Presets' /> or [partitions](/overview/partitions-backfill/partitions).
 
 ## CLI
 
-The `dagster` [cli](/_apidocs/cli) includes both `dagster pipeline execute` for direct execution as well as `dagster pipeline launch` for async launching.
+The `dagster` [CLI](/_apidocs/cli) includes both `dagster pipeline execute` for direct execution as well as `dagster pipeline launch` for launching runs asynchronously using the [run launcher](/overview/pipeline-runs/run-launcher) on your instance.
 
 ```
 dagster pipeline execute -f my_pipeline.py
@@ -24,7 +24,16 @@ dagster pipeline execute -f my_pipeline.py
 
 ## Python APIs
 
-We also provide python APIs for execution that are useful when writing tests or scripts. <PyObject module="dagster" object="execute_pipeline" /> allows for execution of a full pipeline, and returns a <PyObject module="dagster" object="PipelineExecutionResult" />
+Dagster includes Python APIs for execution that are useful when writing tests or scripts.
+
+<PyObject module="dagster" object="execute_pipeline" /> allows for execution of a
+full pipeline, and returns a <PyObject
+  module="dagster"
+  object="PipelineExecutionResult"
+/>
+.
+
+<p />
 
 ```python literalinclude caption=test_pipeline.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
@@ -32,7 +41,10 @@ startAfter:start_exec_pipeline
 endBefore:end_exec_pipeline
 ```
 
-We also provide < module="dagster" object="execute_solid" /> for executing an individual solid. Under the hood this constructs an ephermal pipeline containing only this solid.
+<PyObject module="dagster" object="execute_solid" /> executes an individual solid.
+Under the hood this constructs an ephemeral pipeline containing only this solid.
+
+<p />
 
 ```python literalinclude caption=test_solid.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
@@ -40,7 +52,7 @@ startAfter:start_exec_solid
 endBefore:end_exec_solid
 ```
 
-By default the python APIs will use an ephemeral <PyObject module="dagster" object="DagsterInstance" /> to avoid reporting test runs to the instance. When using the python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior for the instance.
+By default the Python APIs will use an ephemeral <PyObject module="dagster" object="DagsterInstance" /> to avoid reporting test runs to the instance. When using the Python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior for the instance.
 
 ```python literalinclude caption=execute.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
@@ -48,7 +60,7 @@ startAfter:start_script
 endBefore:end_script
 ```
 
-If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using dagit or the cli.
+If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the Python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using Dagit or the Dagster CLI.
 
 ```python literalinclude caption=execute.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py

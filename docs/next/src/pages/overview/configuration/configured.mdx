@@ -12,7 +12,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 In many cases, the option to configure an entity at runtime is more distracting than helpful, and
 it's preferable to supply the entity's configuration at definition time.
 
-The `configured` API offers a way to do this. When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="CompositeSolidDefinition" />, <PyObject module="dagster" object="LoggerDefinition" />,
+The `configured` API offers a way to do this. When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="CompositeSolidDefinition" />, or <PyObject module="dagster" object="LoggerDefinition" />,
 it returns an interchangeable object with the given configuration "baked in".
 
 ```python literalinclude
