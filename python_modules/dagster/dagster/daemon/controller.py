@@ -11,7 +11,7 @@ from dagster.daemon.types import DaemonHeartbeat, DaemonStatus, DaemonType
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
-DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 10
+DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 60
 
 # Interval at which heartbeats are posted
 DAEMON_HEARTBEAT_INTERVAL_SECONDS = 30
