@@ -4,9 +4,9 @@ from functools import wraps
 from dagster import check
 
 EXPERIMENTAL_WARNING_HELP = (
-    "To mute warnings for experimental functionality, set"
-    " PYTHONWARNINGS=ignore::ExperimentalWarning in your environment or use one of the other"
-    " methods described at"
+    "To mute warnings for experimental functionality, invoke"
+    ' warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning) or use'
+    " one of the other methods described at"
     " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
 )
 
