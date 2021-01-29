@@ -1,5 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Checkbox, Classes, Colors, Dialog, Tabs, Tab} from '@blueprintjs/core';
+import {
+  Button,
+  Checkbox,
+  Classes,
+  Colors,
+  Dialog,
+  NonIdealState,
+  Tabs,
+  Tab,
+} from '@blueprintjs/core';
 import {TimeUnit} from 'chart.js';
 import moment from 'moment-timezone';
 import * as React from 'react';
@@ -100,6 +109,11 @@ export const JobTickHistory = ({
   const [selectedTick, setSelectedTick] = React.useState<
     JobTickHistoryQuery_jobStateOrError_JobState_ticks | undefined
   >();
+  React.useEffect(() => {
+    if (!showRecent && selectedTab === 'recent') {
+      setSelectedTab('7d');
+    }
+  }, [selectedTab, showRecent]);
   const selectedRange = TABS.find((x) => x.id === selectedTab)?.range;
   const {data} = useQuery<JobTickHistoryQuery>(JOB_TICK_HISTORY_QUERY, {
     variables: {
@@ -191,7 +205,7 @@ export const JobTickHistory = ({
           onHoverTick={onTickHover}
           onSelectTick={onTickClick}
         />
-      ) : (
+      ) : ticks.length ? (
         <>
           <Box flex={{justifyContent: 'flex-end'}}>
             <Group direction="row" spacing={16}>
@@ -202,25 +216,23 @@ export const JobTickHistory = ({
               ) : null}
             </Group>
           </Box>
-          {displayedTicks.length || selectedTab !== 'all' ? (
-            <TickHistoryGraph
-              ticks={displayedTicks}
-              selectedTick={selectedTick}
-              onSelectTick={onTickClick}
-              onHoverTick={onTickHover}
-              selectedTab={selectedTab}
-              maxBounds={
-                selectedTab === 'all'
-                  ? undefined
-                  : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
-              }
-            />
-          ) : (
-            <Box margin={{vertical: 8}} flex={{justifyContent: 'center'}}>
-              No ticks recorded
-            </Box>
-          )}
+          <TickHistoryGraph
+            ticks={displayedTicks}
+            selectedTick={selectedTick}
+            onSelectTick={onTickClick}
+            onHoverTick={onTickHover}
+            selectedTab={selectedTab}
+            maxBounds={
+              selectedTab === 'all'
+                ? undefined
+                : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
+            }
+          />
         </>
+      ) : (
+        <Box margin={{top: 16, bottom: 32}} flex={{justifyContent: 'center'}}>
+          <NonIdealState description="No ticks to display" />
+        </Box>
       )}
       <Dialog
         isOpen={
