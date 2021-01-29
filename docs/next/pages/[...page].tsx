@@ -5,6 +5,7 @@ import renderToString from "next-mdx-remote/render-to-string";
 import hydrate from "next-mdx-remote/hydrate";
 import { MdxRemote } from "next-mdx-remote/types";
 import MDXComponents from "../components/MDXComponents";
+import { NextSeo } from "next-seo";
 
 import matter from "gray-matter";
 import rehypePrism from "@mapbox/rehype-prism";
@@ -23,11 +24,17 @@ interface Props {
 export default function ExamplePage({ mdxSource, frontMatter }: Props) {
   const content = hydrate(mdxSource, { components });
   return (
-    <div className="prose max-w-none">
-      <h1>{frontMatter.title}</h1>
-      <p>{frontMatter.description}</p>
-      {content}
-    </div>
+    <>
+      <NextSeo
+        title={frontMatter.title}
+        description={frontMatter.description}
+      />
+      <div className="prose max-w-none">
+        <h1>{frontMatter.title}</h1>
+        <p>{frontMatter.description}</p>
+        {content}
+      </div>
+    </>
   );
 }
 
