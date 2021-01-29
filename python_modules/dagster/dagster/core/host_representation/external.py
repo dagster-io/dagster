@@ -496,7 +496,7 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_default_job_state(self):
+    def get_default_job_state(self, _instance):
         from dagster.core.scheduler.job import JobState, JobStatus
 
         return JobState(self.get_external_origin(), JobType.SENSOR, JobStatus.STOPPED)

@@ -39,7 +39,9 @@ class DauphinSensor(dauphin.ObjectType):
         if not self._sensor_state:
             # Also include a SensorState for a stopped sensor that may not
             # have a stored database row yet
-            self._sensor_state = self._external_sensor.get_default_job_state()
+            self._sensor_state = self._external_sensor.get_default_job_state(
+                graphene_info.context.instance
+            )
 
         super(DauphinSensor, self).__init__(
             name=external_sensor.name,

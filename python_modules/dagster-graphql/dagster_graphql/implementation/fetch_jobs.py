@@ -46,5 +46,5 @@ def get_job_state_or_error(graphene_info, selector):
 
     job_state = graphene_info.context.instance.get_job_state(external_job.get_external_origin_id())
     if not job_state:
-        job_state = external_job.get_default_job_state()
+        job_state = external_job.get_default_job_state(graphene_info.context.instance)
     return graphene_info.schema.type_named("JobState")(job_state=job_state)

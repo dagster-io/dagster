@@ -143,7 +143,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             all_state = [
                 stored_sensors_by_id.get(
                     external_sensor.get_external_origin_id(),
-                    external_sensor.get_default_job_state(),
+                    external_sensor.get_default_job_state(instance),
                 )
                 for external_sensor in external_repo.get_external_sensors()
             ]

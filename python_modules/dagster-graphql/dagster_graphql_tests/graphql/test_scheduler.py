@@ -73,6 +73,13 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
         }
         cursor
       }
+      scheduleState {
+        id
+        ticks {
+          id
+          timestamp
+        }
+      }
     }
   }
 }
@@ -231,13 +238,21 @@ def test_get_single_schedule_definition(graphql_context):
     context = graphql_context
     instance = context.instance
 
+    schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
+
+    # fetch schedule before reconcile
+    result = execute_dagster_graphql(
+        context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
+    )
+    assert result.data
+    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
+    assert result.data["scheduleOrError"]["scheduleState"]
+
     instance.reconcile_scheduler_state(
         external_repository=context.get_repository_location(
             main_repo_location_name()
         ).get_repository(main_repo_name()),
     )
-
-    schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
 
     result = execute_dagster_graphql(
         context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}

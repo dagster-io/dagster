@@ -272,6 +272,14 @@ def test_sensor_tick_range(graphql_context):
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
+    # test with no job state
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SENSOR_TICK_RANGE_QUERY,
+        variables={"sensorSelector": sensor_selector, "dayRange": None, "dayOffset": None},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 0
+
     # turn the sensor on
     graphql_context.instance.add_job_state(
         JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
