@@ -173,7 +173,7 @@ class InstanceRef(
             ),
         )
 
-        settings_keys = {"telemetry"}
+        settings_keys = {"telemetry", "sensor_settings"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
         return InstanceRef(

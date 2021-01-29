@@ -55,4 +55,5 @@ def dagster_instance_config_schema():
         "run_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
+        "sensor_settings": Field({"interval_seconds": Field(int, is_required=False)}),
     }

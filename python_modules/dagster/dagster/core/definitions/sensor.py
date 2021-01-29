@@ -59,8 +59,9 @@ class SensorDefinition(JobDefinition):
         mode (Optional[str]): The mode to apply when executing this sensor. (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.  Practically, the time elapsed between sensor evaluations
-            will be the shortest multiple of the sensor daemon evaluation interval (30 seconds) that
-            is greater than or equal to this value.
+            will be the shortest multiple of the sensor daemon evaluation interval (set on the
+            instance in the "sensors_setting" configuration map, 30 seconds by default) that is
+            greater than or equal to this value.
     """
 
     __slots__ = [

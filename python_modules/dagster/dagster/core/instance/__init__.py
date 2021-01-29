@@ -468,6 +468,10 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
+    @property
+    def sensor_settings(self):
+        return self.get_settings("sensor_settings") or {}
+
     def upgrade(self, print_fn=lambda _: None):
         with upgrading_instance(self):
 

@@ -68,6 +68,20 @@ def _run_coordinator_ran(caplog):
     return count
 
 
+def _sensor_ran(caplog):
+    count = 0
+    for log_tuple in caplog.record_tuples:
+        logger_name, _level, text = log_tuple
+
+        if (
+            logger_name == "SensorDaemon"
+            and "Not checking for any runs since no sensors have been started." in text
+        ):
+            count = count + 1
+
+    return count
+
+
 def test_ephemeral_instance():
     runner = CliRunner()
     with pytest.raises(
@@ -118,5 +132,23 @@ def test_different_intervals(caplog):
 
                 if (now - init_time).total_seconds() > 45:
                     raise Exception("Timed out waiting for schedule daemon to execute twice")
+
+                time.sleep(0.5)
+
+
+def test_set_sensor_interval(caplog):
+    with instance_for_test(overrides={"sensor_settings": {"interval_seconds": 5}}) as instance:
+
+        init_time = pendulum.now("UTC")
+        with DagsterDaemonController.create_from_instance(instance):
+            while True:
+                now = pendulum.now("UTC")
+                # Wait until the run coordinator has run three times
+                # Scheduler has only run once
+                if _sensor_ran(caplog) == 1:
+                    break
+
+                if (now - init_time).total_seconds() > 10:
+                    raise Exception("Timed out waiting for sensor daemon to execute")
 
                 time.sleep(0.5)
