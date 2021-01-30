@@ -34,6 +34,7 @@ def s3_resource(context):
     """Resource that gives solids access to S3.
 
     The underlying S3 session is created by calling :py:func:`boto3.resource('s3') <boto3:boto3.resource>`.
+    The returned resource object is an S3 client, an instance of `botocore.client.S3`.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition` in order to make it
     available to your solids.
@@ -104,7 +105,7 @@ def s3_resource(context):
 )
 def s3_file_manager(context):
     """FileManager that provides abstract access to S3.
-    
+
     Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
     """
     return S3FileManager(
