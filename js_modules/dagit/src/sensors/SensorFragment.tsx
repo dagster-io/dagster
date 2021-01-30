@@ -10,6 +10,7 @@ export const SENSOR_FRAGMENT = gql`
     pipelineName
     solidSelection
     mode
+    minIntervalSeconds
     nextTick {
       timestamp
     }

@@ -108,6 +108,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  minIntervalSeconds: number;
   nextTick: SensorsRootQuery_sensorsOrError_Sensors_results_nextTick | null;
   sensorState: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState;
 }

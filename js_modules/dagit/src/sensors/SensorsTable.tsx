@@ -6,6 +6,7 @@ import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
 import {JobRunStatus} from 'src/jobs/JobUtils';
+import {humanizeSensorInterval} from 'src/sensors/SensorDetails';
 import {
   displaySensorMutationErrors,
   START_SENSOR_MUTATION,
@@ -157,7 +158,7 @@ const SensorRow: React.FC<{
           </Group>
         </Group>
       </td>
-      <td>~ 30 seconds</td>
+      <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
       <td>
         {latestTick ? (
           <TickTag tick={latestTick} jobType={JobType.SENSOR} />

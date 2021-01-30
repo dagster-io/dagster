@@ -24,6 +24,29 @@ import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
+export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
+  if (!minIntervalSeconds) {
+    minIntervalSeconds = 30; // should query sensor interval config when available
+  }
+  minIntervalSeconds = Math.max(30, minIntervalSeconds);
+  if (minIntervalSeconds < 60 || minIntervalSeconds % 60) {
+    return `~ ${minIntervalSeconds} sec`;
+  }
+  if (minIntervalSeconds === 3600) {
+    return `~ 1 hour`;
+  }
+  if (minIntervalSeconds < 3600 || minIntervalSeconds % 3600) {
+    return `~ ${minIntervalSeconds / 60} min`;
+  }
+  if (minIntervalSeconds === 86400) {
+    return `~ 1 day`;
+  }
+  if (minIntervalSeconds < 86400 || minIntervalSeconds % 86400) {
+    return `~ ${minIntervalSeconds / 3600} hours`;
+  }
+  return `~ ${minIntervalSeconds / 86400} days`;
+};
+
 export const SensorDetails: React.FC<{
   sensor: SensorFragment;
   repoAddress: RepoAddress;
@@ -116,6 +139,10 @@ export const SensorDetails: React.FC<{
             {
               key: 'Mode',
               value: sensor.mode,
+            },
+            {
+              key: 'Frequency',
+              value: humanizeSensorInterval(sensor.minIntervalSeconds),
             },
           ]}
         />

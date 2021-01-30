@@ -301,6 +301,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  minIntervalSeconds: number;
   nextTick: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
 }
