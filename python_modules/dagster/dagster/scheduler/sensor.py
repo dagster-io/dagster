@@ -27,7 +27,8 @@ FULFILLED_TICK_STATES = [JobTickStatus.SKIPPED, JobTickStatus.SUCCESS]
 
 
 class SensorLaunchContext:
-    def __init__(self, job_state, tick, instance, logger):
+    def __init__(self, external_sensor, job_state, tick, instance, logger):
+        self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
         self._job_state = job_state
@@ -60,13 +61,21 @@ class SensorLaunchContext:
     def _write(self):
         self._instance.update_job_tick(self._tick)
         if self._tick.status in FULFILLED_TICK_STATES:
-            last_run_key = None
+            last_run_key = (
+                self._job_state.job_specific_data.last_run_key
+                if self._job_state.job_specific_data
+                else None
+            )
             if self._tick.run_keys:
                 last_run_key = self._tick.run_keys[-1]
-            elif self._job_state.job_specific_data:
-                last_run_key = self._job_state.job_specific_data.last_run_key
             self._instance.update_job_state(
-                self._job_state.with_data(SensorJobData(self._tick.timestamp, last_run_key))
+                self._job_state.with_data(
+                    SensorJobData(
+                        last_tick_timestamp=self._tick.timestamp,
+                        last_run_key=last_run_key,
+                        min_interval=self._external_sensor.min_interval_seconds,
+                    )
+                )
             )
 
     def __enter__(self):
@@ -141,6 +150,9 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                     continue
 
                 now = pendulum.now("UTC")
+                if _is_under_min_interval(job_state, now):
+                    continue
+
                 tick = instance.create_job_tick(
                     JobTickData(
                         job_origin_id=job_state.job_origin_id,
@@ -154,7 +166,9 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
                 external_sensor = external_repo.get_external_sensor(job_state.job_name)
-                with SensorLaunchContext(job_state, tick, instance, logger) as tick_context:
+                with SensorLaunchContext(
+                    external_sensor, job_state, tick, instance, logger
+                ) as tick_context:
                     _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                     _evaluate_sensor(
                         tick_context,
@@ -266,6 +280,20 @@ def _evaluate_sensor(
         context.update_state(JobTickStatus.SUCCESS)
     else:
         context.update_state(JobTickStatus.SKIPPED)
+
+
+def _is_under_min_interval(job_state, now):
+    if not job_state.job_specific_data:
+        return False
+
+    if not job_state.job_specific_data.last_tick_timestamp:
+        return False
+
+    if not job_state.job_specific_data.min_interval:
+        return False
+
+    elapsed = now.timestamp() - job_state.job_specific_data.last_tick_timestamp
+    return elapsed < job_state.job_specific_data.min_interval
 
 
 def _get_or_create_sensor_run(

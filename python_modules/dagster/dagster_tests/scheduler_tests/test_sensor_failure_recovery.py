@@ -67,7 +67,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
             launch_process = multiprocessing.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
-                args=[instance.get_ref(), frozen_datetime.add(seconds=1), debug_crash_flags],
+                args=[instance.get_ref(), frozen_datetime.add(seconds=31), debug_crash_flags],
             )
             launch_process.start()
             launch_process.join(timeout=60)
@@ -77,7 +77,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             captured = capfd.readouterr()
             assert (
                 captured.out.replace("\r\n", "\n")
-                == """2019-02-27 18:00:02 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
+                == """2019-02-27 18:00:32 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
 """
             )
 
@@ -91,7 +91,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             # successful tick rather than the failed tick
             launch_process = multiprocessing.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
-                args=[instance.get_ref(), frozen_datetime.add(seconds=2), None],
+                args=[instance.get_ref(), frozen_datetime.add(seconds=62), None],
             )
             launch_process.start()
             launch_process.join(timeout=60)
@@ -104,9 +104,9 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             captured = capfd.readouterr()
             assert (
                 captured.out.replace("\r\n", "\n")
-                == f"""2019-02-27 18:00:03 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
-2019-02-27 18:00:03 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:00:03 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor
+                == f"""2019-02-27 18:01:03 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
+2019-02-27 18:01:03 - SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:01:03 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor
 """
             )
 

@@ -5,7 +5,9 @@ from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipRe
 from dagster.core.errors import DagsterInvariantViolationError
 
 
-def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
+def sensor(
+    pipeline_name, name=None, solid_selection=None, mode=None, minimum_interval_seconds=None
+):
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
     decorated function may:
@@ -25,6 +27,10 @@ def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
             ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing runs for this sensor.
             (default: 'default')
+        minimum_interval_seconds (Optional[str]): The minimum number of seconds that will elapse
+            between sensor evaluations.  Practically, the time elapsed between sensor evaluations
+            will be the shortest multiple of the sensor daemon evaluation interval (30 seconds) that
+            is greater than or equal to this value.
     """
     check.opt_str_param(name, "name")
 
@@ -56,6 +62,7 @@ def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
             evaluation_fn=_wrapped_fn,
             solid_selection=solid_selection,
             mode=mode,
+            minimum_interval_seconds=minimum_interval_seconds,
         )
 
     return inner

@@ -61,6 +61,11 @@ def wrong_config_sensor(_context):
     return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
 
 
+@sensor(pipeline_name="the_pipeline", minimum_interval_seconds=60)
+def custom_interval_sensor(_context):
+    return SkipReason()
+
+
 @repository
 def the_repo():
     return [
@@ -70,6 +75,7 @@ def the_repo():
         wrong_config_sensor,
         always_on_sensor,
         run_key_sensor,
+        custom_interval_sensor,
     ]
 
 
@@ -187,7 +193,7 @@ def test_simple_sensor(external_repo_context, capfd):
 """
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=1)
+            freeze_datetime = freeze_datetime.add(seconds=30)
 
         with pendulum.test(freeze_datetime):
             list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
@@ -198,7 +204,9 @@ def test_simple_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
 
-            expected_datetime = pendulum.datetime(year=2019, month=2, day=28)
+            expected_datetime = pendulum.datetime(
+                year=2019, month=2, day=28, hour=0, minute=0, second=29
+            )
             validate_tick(
                 ticks[0], external_sensor, expected_datetime, JobTickStatus.SUCCESS, [run.run_id],
             )
@@ -206,9 +214,9 @@ def test_simple_sensor(external_repo_context, capfd):
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-27 18:00:00 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
-2019-02-27 18:00:00 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:00:00 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor
+                == """2019-02-27 18:00:29 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
+2019-02-27 18:00:29 - SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:00:29 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor
 """.format(
                     run_id=run.run_id
                 )
@@ -372,7 +380,9 @@ def test_launch_once(external_repo_context, capfd):
                 expected_run_ids=[run.run_id],
             )
 
-            # run again, ensure
+        # run again (after 30 seconds), to ensure that the run key maintains idempotence
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
             list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -397,6 +407,8 @@ def test_launch_once(external_repo_context, capfd):
             )
 
             # Sensor loop still executes
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
             list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
 
@@ -404,3 +416,39 @@ def test_launch_once(external_repo_context, capfd):
             validate_tick(
                 ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
             )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_custom_interval_sensor(external_repo_context):
+    freeze_datetime = pendulum.datetime(year=2019, month=2, day=28).in_tz("US/Central")
+    with instance_with_sensors(external_repo_context) as (instance, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
+            instance.add_job_state(
+                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+            )
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 0
+
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED)
+
+            freeze_datetime = freeze_datetime.add(seconds=30)
+
+        with pendulum.test(freeze_datetime):
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            # no additional tick created after 30 seconds
+            assert len(ticks) == 1
+
+            freeze_datetime = freeze_datetime.add(seconds=30)
+
+        with pendulum.test(freeze_datetime):
+            list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+
+            expected_datetime = pendulum.datetime(year=2019, month=2, day=28, hour=0, minute=1)
+            validate_tick(ticks[0], external_sensor, expected_datetime, JobTickStatus.SKIPPED)

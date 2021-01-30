@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -15,6 +16,7 @@ from .external_data import (
     ExternalPipelineData,
     ExternalRepositoryData,
     ExternalScheduleData,
+    ExternalSensorData,
 )
 from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -465,30 +467,41 @@ class ExternalSchedule:
 
 
 class ExternalSensor:
-    def __init__(self, external_job_data, handle):
-        self._external_job_data = check.inst_param(
-            external_job_data, "external_job_data", ExternalJobData,
+    def __init__(self, external_sensor_data, handle):
+        self._external_sensor_data = check.inst_param(
+            external_sensor_data, "external_sensor_data", (ExternalSensorData, ExternalJobData)
+        )  # ExternalJobData is deprecated, but supporting here for backcompat
+        check.param_invariant(
+            external_sensor_data.job_type == JobType.SENSOR, "external_sensor_data"
         )
-        check.param_invariant(external_job_data.job_type == JobType.SENSOR, "external_job_data")
         self._handle = JobHandle(
-            self._external_job_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+            self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
     @property
     def name(self):
-        return self._external_job_data.name
+        return self._external_sensor_data.name
 
     @property
     def pipeline_name(self):
-        return self._external_job_data.pipeline_name
+        return self._external_sensor_data.pipeline_name
 
     @property
     def solid_selection(self):
-        return self._external_job_data.solid_selection
+        return self._external_sensor_data.solid_selection
 
     @property
     def mode(self):
-        return self._external_job_data.mode
+        return self._external_sensor_data.mode
+
+    @property
+    def min_interval_seconds(self):
+        if (
+            isinstance(self._external_sensor_data, ExternalSensorData)
+            and self._external_sensor_data.min_interval
+        ):
+            return self._external_sensor_data.min_interval
+        return DEFAULT_SENSOR_DAEMON_INTERVAL
 
     def get_external_origin(self):
         return self._handle.get_external_origin()
@@ -497,9 +510,14 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     def get_default_job_state(self, _instance):
-        from dagster.core.scheduler.job import JobState, JobStatus
+        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
 
-        return JobState(self.get_external_origin(), JobType.SENSOR, JobStatus.STOPPED)
+        return JobState(
+            self.get_external_origin(),
+            JobType.SENSOR,
+            JobStatus.STOPPED,
+            SensorJobData(min_interval=self.min_interval_seconds),
+        )
 
 
 class ExternalPartitionSet:

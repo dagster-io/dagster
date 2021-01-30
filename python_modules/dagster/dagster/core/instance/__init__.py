@@ -1318,14 +1318,17 @@ class DagsterInstance:
                     external_sensor.get_external_origin(),
                     JobType.SENSOR,
                     JobStatus.RUNNING,
-                    SensorJobData(datetime.utcnow().timestamp()),
+                    SensorJobData(min_interval=external_sensor.min_interval_seconds),
                 )
             )
         elif job_state.status != JobStatus.RUNNING:
             # set the last completed time to the modified state time
             self.update_job_state(
                 job_state.with_status(JobStatus.RUNNING).with_data(
-                    SensorJobData(datetime.utcnow().timestamp())
+                    SensorJobData(
+                        last_tick_timestamp=datetime.utcnow().timestamp(),
+                        min_interval=external_sensor.min_interval_seconds,
+                    )
                 )
             )
 

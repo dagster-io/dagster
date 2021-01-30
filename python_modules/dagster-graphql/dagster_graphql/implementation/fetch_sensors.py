@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.host_representation import (
     ExternalSensor,
     PipelineSelector,
@@ -7,7 +8,6 @@ from dagster.core.host_representation import (
     SensorSelector,
 )
 from dagster.core.scheduler.job import JobStatus
-from dagster.daemon.controller import SENSOR_DAEMON_INTERVAL
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -135,7 +135,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if not latest_tick:
         return None
 
-    next_timestamp = latest_tick.timestamp + SENSOR_DAEMON_INTERVAL
+    next_timestamp = latest_tick.timestamp + DEFAULT_SENSOR_DAEMON_INTERVAL
     if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
         return None
     return GrapheneFutureJobTick(sensor_state, next_timestamp)

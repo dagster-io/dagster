@@ -58,7 +58,9 @@ class ExternalRepositoryData(
                 external_executable_datas, "external_executable_datas"
             ),
             external_job_datas=check.opt_list_param(
-                external_job_datas, "external_job_datas", of_type=ExternalJobData,
+                external_job_datas,
+                "external_job_datas",
+                of_type=(ExternalScheduleData, ExternalSensorData, ExternalJobData),
             ),
         )
 
@@ -192,6 +194,10 @@ class ExternalScheduleData(
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
         )
 
+    @property
+    def job_type(self):
+        return JobType.SCHEDULE
+
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionData(
@@ -225,6 +231,26 @@ class ExternalScheduleExecutionErrorData(
         )
 
 
+@whitelist_for_serdes
+class ExternalSensorData(
+    namedtuple("_ExternalSensorData", "name pipeline_name solid_selection mode min_interval")
+):
+    def __new__(cls, name, pipeline_name, solid_selection, mode, min_interval=None):
+        return super(ExternalSensorData, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            mode=check.opt_str_param(mode, "mode"),
+            min_interval=check.opt_int_param(min_interval, "min_interval"),
+        )
+
+    @property
+    def job_type(self):
+        return JobType.SENSOR
+
+
+# DEPRECATED, see https://github.com/dagster-io/dagster/issues/3644 for removal
 @whitelist_for_serdes
 class ExternalJobData(
     namedtuple("_ExternalJobData", "name job_type pipeline_name solid_selection mode")
@@ -433,12 +459,19 @@ def external_partition_set_data_from_def(partition_set_def):
 
 def external_job_from_def(job_def):
     check.inst_param(job_def, "job_def", JobDefinition)
-    return ExternalJobData(
-        name=job_def.name,
-        job_type=job_def.job_type,
-        pipeline_name=job_def.pipeline_name,
-        solid_selection=job_def.solid_selection,
-        mode=job_def.mode,
+    if isinstance(job_def, ScheduleDefinition):
+        return external_schedule_data_from_def(job_def)
+    else:
+        return external_sensor_data_from_def(job_def)
+
+
+def external_sensor_data_from_def(sensor_def):
+    return ExternalSensorData(
+        name=sensor_def.name,
+        pipeline_name=sensor_def.pipeline_name,
+        solid_selection=sensor_def.solid_selection,
+        mode=sensor_def.mode,
+        min_interval=sensor_def.minimum_interval_seconds,
     )
 
 
