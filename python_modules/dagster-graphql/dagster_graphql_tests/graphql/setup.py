@@ -1071,11 +1071,20 @@ def define_sensors():
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
+    @sensor(pipeline_name="no_config_pipeline", mode="default", minimum_interval_seconds=60)
+    def custom_interval_sensor(_):
+        return RunRequest(
+            run_key=None,
+            run_config={"intermediate_storage": {"filesystem": {}}},
+            tags={"test": "1234"},
+        )
+
     return [
         always_no_config_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
+        custom_interval_sensor,
     ]
 
 

@@ -31,6 +31,7 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
         pipelineName
         solidSelection
         mode
+        minIntervalSeconds
         sensorState {
           status
           runs {
@@ -70,6 +71,7 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       pipelineName
       solidSelection
       mode
+      minIntervalSeconds
       nextTick {
         timestamp
       }

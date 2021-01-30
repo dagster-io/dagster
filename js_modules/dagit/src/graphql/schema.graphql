@@ -620,6 +620,7 @@ type Sensor {
   solidSelection: [String]
   mode: String!
   sensorState: JobState!
+  minIntervalSeconds: Int!
   nextTick: FutureJobTick
 }
 
