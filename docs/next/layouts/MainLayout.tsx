@@ -346,15 +346,58 @@ const FeedbackModal = ({ closeFeedback }: { closeFeedback: () => void }) => {
   );
 };
 
-const Layout = ({ children }) => {
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [openFeedback, setOpenFeedback] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>("");
+const VersionNotice = () => {
   const {
     asPath,
     locale: version,
     defaultLocale: defaultVersion,
   } = useRouter();
+
+  if (version == defaultVersion) {
+    return null;
+  }
+
+  return (
+    <div className="bg-yellow-100 mb-10 shadow sm:rounded-lg">
+      <div className="px-4 py-5 sm:p-6">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">
+          {version === "master"
+            ? "You are viewing an unreleased version of the documentation."
+            : "You are viewing an outdated version of the documentation."}
+        </h3>
+        <div className="mt-2 text-sm text-gray-500">
+          {version === "master" ? (
+            <p>
+              This documentation is for an unreleased version ({version}) of
+              Dagster. The content here is not guaranteed to be correct or
+              stable. You can view the version of this page rom our latest
+              release below.
+            </p>
+          ) : (
+            <p>
+              This documentation is for an older version ({version}) of Dagster.
+              A new version of this page is available for our latest
+            </p>
+          )}
+        </div>
+        <div className="mt-3 text-sm">
+          <Link href={asPath} locale={defaultVersion}>
+            <a className="font-medium text-indigo-600 hover:text-indigo-500">
+              {" "}
+              View Latest Documentation <span aria-hidden="true">→</span>
+            </a>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Layout = ({ children }) => {
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [openFeedback, setOpenFeedback] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const { locale: version, defaultLocale: defaultVersion } = useRouter();
 
   const openSearch = () => {
     setIsSearching(true);
@@ -385,9 +428,9 @@ const Layout = ({ children }) => {
           className="flex-1 overflow-y-auto focus:outline-none"
           tabIndex={0}
         >
-          <div className="relative max-w-4xl mx-auto md:px-8 xl:px-0">
+          <div className="relative max-w-7xl mx-auto md:px-8 xl:px-0">
             <div className="pt-10 pb-16">
-              <div className="px-4 sm:px-6 md:px-0">
+              <div className="px-4 sm:px-6 md:px-0 static">
                 <div className="flex space-x-4 items-baseline">
                   <div className="flex-1">
                     <SearchBar
@@ -420,44 +463,7 @@ const Layout = ({ children }) => {
                   <SearchResults searchTerm={searchTerm} />
                 ) : (
                   <>
-                    {version !== defaultVersion && (
-                      <div className="bg-yellow-100 mb-10 shadow sm:rounded-lg">
-                        <div className="px-4 py-5 sm:p-6">
-                          <h3 className="text-lg leading-6 font-medium text-gray-900">
-                            {version === "master"
-                              ? "You are viewing an unreleased version of the documentation."
-                              : "You are viewing an outdated version of the documentation."}
-                          </h3>
-                          <div className="mt-2 text-sm text-gray-500">
-                            {version === "master" ? (
-                              <p>
-                                This documentation is for an unreleased version
-                                ({version}) of Dagster. The content here is not
-                                guaranteed to be correct or stable. You can view
-                                the version of this page rom our latest release
-                                below.
-                              </p>
-                            ) : (
-                              <p>
-                                This documentation is for an older version (
-                                {version}) of Dagster. A new version of this
-                                page is available for our latest
-                              </p>
-                            )}
-                          </div>
-                          <div className="mt-3 text-sm">
-                            <Link href={asPath} locale={defaultVersion}>
-                              <a className="font-medium text-indigo-600 hover:text-indigo-500">
-                                {" "}
-                                View Latest Documentation{" "}
-                                <span aria-hidden="true">→</span>
-                              </a>
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
+                    <VersionNotice />
                     {children}
                   </>
                 )}

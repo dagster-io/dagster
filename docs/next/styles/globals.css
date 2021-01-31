@@ -3,4 +3,7 @@
 @tailwind utilities;
 
 @layer utilities {
+  .scroll-top-margin {
+    scroll-top-margin: 100px;
+  }
 }
