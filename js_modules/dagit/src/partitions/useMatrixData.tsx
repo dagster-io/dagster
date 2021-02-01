@@ -1,7 +1,7 @@
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
-import {filterByQuery} from 'src/app/GraphQueryImpl';
+import {filterByQuery, GraphQueryItem} from 'src/app/GraphQueryImpl';
 import {GanttChartLayout} from 'src/gantt/Constants';
 import {GanttChartMode} from 'src/gantt/GanttChart';
 import {buildLayout} from 'src/gantt/GanttChartLayout';
@@ -46,6 +46,13 @@ function byStartTimeAsc(a: PartitionRunMatrixRunFragment, b: PartitionRunMatrixR
   return getStartTime(a) - getStartTime(b);
 }
 
+// BG Note: Dagit 0.10.0 removed the .compute step key suffix, but the Run Matrix takes the current
+// step tree and looks up data for each step in historical runs. For continuity across 0.10.0, we
+// match historical step keys with the .compute format as well. We can remove safely after 120 days?
+function isStepKeyForNode(node: GraphQueryItem, stepKey: string) {
+  return stepKey === node.name || stepKey === `${node.name}.compute`;
+}
+
 function buildMatrixData(
   layout: GanttChartLayout,
   partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[],
@@ -60,9 +67,8 @@ function buildMatrixData(
     runs: p.runs,
     steps: layout.boxes.map(({node}) => {
       const statuses = p.runs.map(
-        (r) => r.stepStats.find((stats) => stats.stepKey === node.name)?.status,
+        (r) => r.stepStats.find((stats) => isStepKeyForNode(node, stats.stepKey))?.status,
       );
-
       // If there was a successful run, calculate age relative to that run since it's the age of materializations.
       // If there are no sucessful runs, the age of the (red) box is just the last run time.
       const lastSuccessIdx = statuses.lastIndexOf(StepEventStatus.SUCCESS);

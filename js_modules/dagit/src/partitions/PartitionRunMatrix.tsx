@@ -274,7 +274,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         }}
       >
         <GridFloatingContainer floating={viewport.left > 0}>
-          <GridColumn disabled style={{flexShrink: 1, overflow: 'hidden'}}>
+          <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel>
               <GraphQueryInput
                 small
@@ -298,29 +298,31 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             <Divider />
             <LeftLabel style={{paddingLeft: 5}}>Runs</LeftLabel>
           </GridColumn>
-          <GridColumn disabled>
-            <TopLabel>
-              <div
-                style={{cursor: 'pointer'}}
-                className="square failure-blank"
-                title={TITLE_TOTAL_FAILURES}
-                onClick={() =>
-                  setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
-                }
-              />
-            </TopLabel>
-            {stepRows.map(({totalFailurePercent, name}, idx) => (
-              <LeftLabel
-                key={idx}
-                title={TITLE_TOTAL_FAILURES}
-                hovered={name === hovered?.stepName}
-                redness={totalFailurePercent / 100}
-              >
-                {`${totalFailurePercent}%`}
-              </LeftLabel>
-            ))}
-            <Divider />
-          </GridColumn>
+          {options.showPrevious && (
+            <GridColumn disabled>
+              <TopLabel>
+                <div
+                  style={{cursor: 'pointer'}}
+                  className="square failure-blank"
+                  title={TITLE_TOTAL_FAILURES}
+                  onClick={() =>
+                    setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
+                  }
+                />
+              </TopLabel>
+              {stepRows.map(({totalFailurePercent, name}, idx) => (
+                <LeftLabel
+                  key={idx}
+                  title={TITLE_TOTAL_FAILURES}
+                  hovered={name === hovered?.stepName}
+                  redness={totalFailurePercent / 100}
+                >
+                  {`${totalFailurePercent}%`}
+                </LeftLabel>
+              ))}
+              <Divider />
+            </GridColumn>
+          )}
           <GridColumn disabled>
             <TopLabel>
               <div
