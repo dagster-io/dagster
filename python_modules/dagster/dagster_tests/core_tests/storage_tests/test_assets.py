@@ -186,6 +186,67 @@ def test_asset_events(asset_aware_context):
 
 
 @asset_test
+def test_asset_events_range(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_pipeline(pipeline_one, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+
+        # descending
+        asset_events = event_log_storage.get_asset_events(AssetKey("asset_1"), include_cursor=True)
+        assert len(asset_events) == 3
+        [id_three, id_two, id_one] = [id for id, event in asset_events]
+
+        after_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, after_cursor=id_one
+        )
+        assert len(after_events) == 2
+        assert [id for id, event in after_events] == [id_three, id_two]
+
+        before_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, before_cursor=id_three
+        )
+        assert len(before_events) == 2
+        assert [id for id, event in before_events] == [id_two, id_one]
+
+        between_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, before_cursor=id_three, after_cursor=id_one,
+        )
+        assert len(between_events) == 1
+        assert [id for id, event in between_events] == [id_two]
+
+        # ascending
+        asset_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, ascending=True
+        )
+        assert len(asset_events) == 3
+        [id_one, id_two, id_three] = [id for id, event in asset_events]
+
+        after_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, after_cursor=id_one, ascending=True
+        )
+        assert len(after_events) == 2
+        assert [id for id, event in after_events] == [id_two, id_three]
+
+        before_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, before_cursor=id_three, ascending=True
+        )
+        assert len(before_events) == 2
+        assert [id for id, event in before_events] == [id_one, id_two]
+
+        between_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"),
+            include_cursor=True,
+            before_cursor=id_three,
+            after_cursor=id_one,
+            ascending=True,
+        )
+        assert len(between_events) == 1
+        assert [id for id, event in between_events] == [id_two]
+
+
+@asset_test
 def test_asset_run_ids(asset_aware_context):
     with asset_aware_context() as ctx:
         instance, event_log_storage = ctx

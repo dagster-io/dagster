@@ -14,7 +14,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import AssetAwareEventLogStorage, EventLogStorage
+from .base import AssetAwareEventLogStorage, EventLogStorage, extract_asset_events_cursor
 from .migration import REINDEX_DATA_MIGRATIONS, SECONDARY_INDEX_ASSET_KEY
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
@@ -470,21 +470,22 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
     def upgrade(self):
         pass
 
-    def _add_cursor_limit_to_query(self, query, cursor, limit, ascending=False):
-        """ Helper function to deal with cursor/limit pagination args """
-        try:
-            cursor = int(cursor) if cursor else None
-        except ValueError:
-            cursor = None
+    def _add_cursor_limit_to_query(
+        self, query, before_cursor, after_cursor, limit, ascending=False
+    ):
 
-        if cursor:
-            cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                SqlEventLogStorageTable.c.id == cursor
+        """ Helper function to deal with cursor/limit pagination args """
+
+        if before_cursor:
+            before_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                SqlEventLogStorageTable.c.id == before_cursor
             )
-            if ascending:
-                query = query.where(SqlEventLogStorageTable.c.id > cursor_query)
-            else:
-                query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
+            query = query.where(SqlEventLogStorageTable.c.id < before_query)
+        if after_cursor:
+            after_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                SqlEventLogStorageTable.c.id == after_cursor
+            )
+            query = query.where(SqlEventLogStorageTable.c.id > after_query)
 
         if limit:
             query = query.limit(limit)
@@ -605,10 +606,12 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         self,
         asset_key,
         partitions=None,
-        cursor=None,
+        before_cursor=None,
+        after_cursor=None,
         limit=None,
         ascending=False,
         include_cursor=False,
+        cursor=None,  # deprecated
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.opt_list_param(partitions, "partitions", of_type=str)
@@ -621,7 +624,14 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         if partitions:
             query = query.where(SqlEventLogStorageTable.c.partition.in_(partitions))
 
-        query = self._add_cursor_limit_to_query(query, cursor, limit, ascending=ascending)
+        before_cursor, after_cursor = extract_asset_events_cursor(
+            cursor, before_cursor, after_cursor, ascending
+        )
+
+        query = self._add_cursor_limit_to_query(
+            query, before_cursor, after_cursor, limit, ascending=ascending
+        )
+
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
 

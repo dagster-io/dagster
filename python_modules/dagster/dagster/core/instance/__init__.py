@@ -942,12 +942,27 @@ class DagsterInstance:
         return self._event_storage.has_asset_key(asset_key)
 
     def events_for_asset_key(
-        self, asset_key, partitions=None, cursor=None, limit=None, ascending=False
+        self,
+        asset_key,
+        partitions=None,
+        before_cursor=None,
+        after_cursor=None,
+        cursor=None,
+        limit=None,
+        ascending=False,
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self.check_asset_aware()
+
         return self._event_storage.get_asset_events(
-            asset_key, partitions, cursor, limit, ascending=ascending, include_cursor=True
+            asset_key,
+            partitions,
+            before_cursor,
+            after_cursor,
+            limit,
+            ascending=ascending,
+            include_cursor=True,
+            cursor=cursor,
         )
 
     def run_ids_for_asset_key(self, asset_key):

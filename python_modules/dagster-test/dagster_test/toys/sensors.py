@@ -53,13 +53,13 @@ def get_toys_sensors():
     @sensor(pipeline_name="log_asset_pipeline")
     def toy_asset_sensor(context):
         events = context.instance.events_for_asset_key(
-            AssetKey(["model"]), cursor=context.last_run_key, ascending=True
+            AssetKey(["model"]), after_cursor=context.last_run_key, ascending=False, limit=1
         )
 
         if not events:
             return
 
-        record_id, event = events[-1]  # take the most recent materialization
+        record_id, event = events[0]  # take the most recent materialization
         from_pipeline = event.pipeline_name
 
         yield RunRequest(

@@ -49,7 +49,9 @@ def get_asset_events(graphene_info, asset_key, partitions=None, cursor=None, lim
         return GrapheneAssetsNotSupportedError(
             message="The configured event log storage is not asset aware."
         )
-    events = instance.events_for_asset_key(asset_key, partitions, cursor, limit)
+    events = instance.events_for_asset_key(
+        asset_key, partitions=partitions, before_cursor=cursor, limit=limit
+    )
     return [
         event
         for record_id, event in events

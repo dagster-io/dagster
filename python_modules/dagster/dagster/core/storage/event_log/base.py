@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Iterable, List, Optional
 
@@ -125,10 +126,12 @@ class AssetAwareEventLogStorage(ABC):
         self,
         asset_key: AssetKey,
         partitions: List[str] = None,
-        cursor: int = None,
+        before_cursor: int = None,
+        after_cursor: int = None,
         limit: int = None,
         ascending: bool = False,
         include_cursor: bool = False,
+        cursor: int = None,  # deprecated
     ) -> Iterable[EventRecord]:
         pass
 
@@ -139,3 +142,28 @@ class AssetAwareEventLogStorage(ABC):
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey):
         """Remove asset index history from event log for given asset_key"""
+
+
+def extract_asset_events_cursor(cursor, before_cursor, after_cursor, ascending):
+    if cursor:
+        warnings.warn(
+            "Parameter `cursor` is a deprecated for `get_asset_events`. Use `before_cursor` or `after_cursor` instead"
+        )
+        if ascending and after_cursor is None:
+            after_cursor = cursor
+        if not ascending and before_cursor is None:
+            before_cursor = cursor
+
+    if after_cursor is not None:
+        try:
+            after_cursor = int(after_cursor)
+        except ValueError:
+            after_cursor = None
+
+    if before_cursor is not None:
+        try:
+            before_cursor = int(before_cursor)
+        except ValueError:
+            before_cursor = None
+
+    return before_cursor, after_cursor
