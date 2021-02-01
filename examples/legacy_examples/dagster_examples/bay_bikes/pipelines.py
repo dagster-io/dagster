@@ -107,11 +107,11 @@ TRAINING_PRESETS = [
     mode_defs=MODES, preset_defs=WEATHER_INGEST_PRESETS + TRIP_INGEST_PRESETS + TRAINING_PRESETS,
 )
 def generate_training_set_and_train_model():
-    return train_daily_bike_supply_model(weather_etl(), trip_etl())
+    train_daily_bike_supply_model(weather_etl(), trip_etl())
 
 
 @pipeline(
     mode_defs=MODES, preset_defs=WEATHER_INGEST_PRESETS,
 )
 def daily_weather_pipeline():
-    return weather_etl()
+    weather_etl()
