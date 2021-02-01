@@ -23,6 +23,8 @@
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-intersection-observer": "^8.31.0",
+    "rehype-autolink-headings": "^5.0.1",
+    "rehype-slug": "^4.0.1",
     "remark": "^13.0.0",
     "remark-mdx": "^1.6.22",
     "tailwindcss": "^2.0.2",

@@ -1,12 +1,15 @@
+import path from "path";
+import { promises as fs } from "fs";
+
 import renderToString from "next-mdx-remote/render-to-string";
 import hydrate from "next-mdx-remote/hydrate";
 import { MdxRemote } from "next-mdx-remote/types";
-import path from "path";
-import { promises as fs } from "fs";
-import matter from "gray-matter";
 import MDXComponents from "../components/MDXComponents";
-import codeTransformer from "util/codeTransformer";
+
+import matter from "gray-matter";
 import rehypePrism from "@mapbox/rehype-prism";
+import rehypeSlug from "rehype-slug";
+import rehypeLink from "rehype-autolink-headings";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -44,7 +47,30 @@ export async function getServerSideProps({ params, locale }) {
     const mdxSource = await renderToString(content, {
       components,
       mdxOptions: {
-        rehypePlugins: [rehypePrism],
+        rehypePlugins: [
+          rehypePrism,
+          rehypeSlug,
+          [
+            rehypeLink,
+            {
+              behavior: "append",
+              properties: { className: ["no-underline", "group"] },
+              content: {
+                type: "element",
+                tagName: "span",
+                properties: {
+                  className: [
+                    "ml-2",
+                    "text-gray-200",
+                    "hover:text-gray-800",
+                    "hover:underline",
+                  ],
+                },
+                children: [{ type: "text", value: "#" }],
+              },
+            },
+          ],
+        ],
       },
       scope: data,
     });
