@@ -7,6 +7,7 @@ import {CustomTooltipProvider} from 'src/app/CustomTooltipProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
 import {FallthroughRoot} from 'src/app/FallthroughRoot';
 import {FeatureFlagsRoot} from 'src/app/FeatureFlagsRoot';
+import {SettingsRoot} from 'src/app/SettingsRoot';
 import {TimezoneProvider} from 'src/app/time/TimezoneContext';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {InstanceRoot} from 'src/instance/InstanceRoot';
@@ -25,6 +26,7 @@ export const AppContent = () => {
             <Route path="/flags" component={FeatureFlagsRoot} />
             <Route path="/instance" component={InstanceRoot} />
             <Route path="/workspace" component={WorkspaceRoot} />
+            <Route path="/settings" component={SettingsRoot} />
             <Route path="*" component={FallthroughRoot} />
           </Switch>
           <CustomTooltipProvider />
