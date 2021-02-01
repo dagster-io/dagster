@@ -131,7 +131,7 @@ export const RunTable = (props: RunTableProps) => {
     <Table>
       <thead>
         <tr>
-          <th colSpan={4}>
+          <th colSpan={2}>
             <div style={{display: 'flex', alignItems: 'center'}}>
               <Checkbox
                 style={{marginBottom: 0, marginTop: 1}}
@@ -145,11 +145,13 @@ export const RunTable = (props: RunTableProps) => {
               />
             </div>
           </th>
-          <th style={{maxWidth: '90px'}}>Pipeline Definition</th>
-          <th style={{flex: 1}}>Execution Params</th>
-          <th style={{width: '180px'}}>Timing</th>
+          <th>Run ID</th>
+          <th>Pipeline</th>
+          <th style={{width: 110, minWidth: 110}}>Snapshot ID</th>
+          <th style={{width: 85}}>Mode</th>
+          <th style={{width: 160}}>Timing</th>
           {props.additionalColumnHeaders}
-          <th />
+          <th style={{width: 52}} />
         </tr>
       </thead>
       <tbody>
@@ -216,19 +218,19 @@ const RunRow: React.FC<{
       <td style={{paddingRight: '4px'}}>
         {onToggleChecked && <Checkbox checked={checked} onChange={onChange} />}
       </td>
-      <td style={{width: '90px', fontFamily: FontFamily.monospace}}>
-        <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
-      </td>
-      <td style={{maxWidth: '120px'}}>
+      <td>
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
-      <td style={{width: '100%'}}>
+      <td style={{fontFamily: FontFamily.monospace}}>
+        <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
+      </td>
+      <td>
         <Group direction="column" spacing={4}>
           <div>{run.pipelineName}</div>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
         </Group>
       </td>
-      <td style={{width: '90px'}}>
+      <td>
         <PipelineSnapshotLink
           snapshotId={run.pipelineSnapshotId || ''}
           pipelineName={run.pipelineName}
@@ -236,17 +238,17 @@ const RunRow: React.FC<{
       </td>
       <td>
         <div>
-          <div>{`Mode: ${run.mode}`}</div>
+          <div>{run.mode}</div>
         </div>
       </td>
-      <td style={{width: '180px'}}>
+      <td>
         <RunTime run={run} />
         {queuedStatuses.has(run.status) || canceledStatuses.has(run.status) ? null : (
           <RunElapsed run={run} />
         )}
       </td>
       {additionalColumns}
-      <td style={{width: '52px'}}>
+      <td>
         <RunActionsMenu run={run} />
       </td>
     </Row>
