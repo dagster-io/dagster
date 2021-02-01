@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 import time
 import warnings
 
@@ -28,12 +29,9 @@ def run_command():
                 "you have created a dagster.yaml file there."
             )
 
-        controller = DagsterDaemonController(instance)
-
-        while True:
-            curr_time = pendulum.now("UTC")
-            controller.run_iteration(curr_time)
-            time.sleep(0.5)
+        with DagsterDaemonController(instance):
+            # Wait forever until there's an interrupt or error
+            threading.Event().wait()
 
 
 @click.command(
