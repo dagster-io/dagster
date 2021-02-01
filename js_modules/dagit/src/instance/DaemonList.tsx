@@ -3,13 +3,14 @@ import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {timestampToString} from 'src/app/time/Timestamp';
+import {browserTimezone} from 'src/app/time/browserTimezone';
 import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
   DaemonHealthFragment,
   DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
 } from 'src/instance/types/DaemonHealthFragment';
 import {Table} from 'src/ui/Table';
-import {browserTimezone, timestampToString} from 'src/ui/TimeComponents';
 
 interface DaemonLabelProps {
   daemon: DaemonStatus;

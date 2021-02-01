@@ -1,13 +1,13 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {Timestamp} from 'src/app/time/Timestamp';
 import {AssetQuery_assetOrError_Asset_assetMaterializations} from 'src/assets/types/AssetQuery';
 import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {titleForRun} from 'src/runs/RunUtils';
 import {Table} from 'src/ui/Table';
-import {Timestamp} from 'src/ui/TimeComponents';
 import {FontFamily} from 'src/ui/styles';
 
 export const AssetMaterializationTable: React.FunctionComponent<{

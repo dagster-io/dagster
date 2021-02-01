@@ -2,8 +2,9 @@ import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {timestampToString} from 'src/app/time/Timestamp';
+import {TimezoneContext} from 'src/app/time/TimezoneContext';
 import {Group} from 'src/ui/Group';
-import {TimezoneContext, timestampToString} from 'src/ui/TimeComponents';
 
 interface Props {
   timestamp: number;

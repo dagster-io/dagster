@@ -5,6 +5,7 @@ import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {Timestamp} from 'src/app/time/Timestamp';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
@@ -29,7 +30,6 @@ import {
 import {JobType} from 'src/types/globalTypes';
 import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
-import {Timestamp} from 'src/ui/TimeComponents';
 import {FontFamily} from 'src/ui/styles';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';

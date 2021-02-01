@@ -7,6 +7,8 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {timestampToString, Timestamp} from 'src/app/time/Timestamp';
+import {TimezoneContext} from 'src/app/time/TimezoneContext';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
@@ -17,7 +19,6 @@ import {RunFragment} from 'src/runs/types/RunFragment';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
 import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
 import {ExecutionParams, PipelineRunStatus} from 'src/types/globalTypes';
-import {Timestamp, TimezoneContext, timestampToString} from 'src/ui/TimeComponents';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/workspace/RepositoryInformation';
 
 export function titleForRun(run: {runId: string}) {
