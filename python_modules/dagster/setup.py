@@ -79,7 +79,8 @@ if __name__ == "__main__":
             'psutil >= 1.0; platform_system=="Windows"',
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
-            "pytz",
+            # Compatibility with the Snowflake connector
+            "pytz < 2021.0",
             "docstring-parser==0.7.1",
         ],
         extras_require={
