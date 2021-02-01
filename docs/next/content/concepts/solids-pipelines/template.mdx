@@ -1,0 +1,82 @@
+# Concept Name
+
+Here you should include a short one sentence description of the main concept.
+
+<div className="w-full h-48 bg-gray-50 flex items-center justify-center">
+  Image describing concept if applicable
+</div>
+
+### Relevant APIs
+
+| Name                                                              | Description                                                                                                                  |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="solid" displayText="@solid" /> | The decorator used to define solids.                                                                                         |
+| <PyObject module="dagster" object="InputDefinition" />            | Decorator used to define solids. More information can be found on the [Inputs and Outputs](/inputs-and-outputs) page         |
+| <PyObject module="dagster" object="OutputDefinition" />           | Decorator used to define solids. More information can be found on the [Inputs and Outputs](/inputs-and-outputs) page         |
+| <PyObject module="dagster" object="SolidDefinition"  />           | Base class for solids. Users most often use the solid decoroator, but the base class is useful when writing solid factories. |
+
+The core abstraction of Dagster is the _solid_. A solid is a functional unit of computation. It has defined inputs and
+outputs, and multiple solids can be wired together to form a <PyObject module="dagster" object="PipelineDefinition" displayText="Pipeline" /> by
+defining dependencies between solid inputs and outputs.
+
+A solid has a number of properties:
+
+- Coarse-grained and for use in batch computations.
+- Defines inputs and outputs, optionally typed within the Dagster type system.
+- Embeddable in a dependency graph (pipeline) that is constructed by connecting the inputs and outputs of
+  multiple solids.
+- Emits a stream of typed, structured events — such as expectations and materializations —
+  corresponding to the semantics of its computation.
+- Exposes self-describing, strongly typed configuration.
+- Testable and reusable.
+
+## Defining a solid
+
+There are two ways to define a solid:
+
+1.  Wrap a python function in the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator
+    _\[Preferred]_
+2.  Construct a <PyObject module="dagster" object="SolidDefinition"/> object
+
+**Method 1: Using the decorator**
+
+To use the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator,
+wrap a function that takes a `context` argument as the first
+parameter. The context is provides access to system information such as
+resources and solid configuration. See [Solid Context](#solid-context) for more information.
+
+```python file=/overview/solids_pipelines/solid_definition.py start=1 end=10
+# pylint: disable=unused-argument
+
+from dagster import Int, Output, OutputDefinition, SolidDefinition, solid
+
+
+# start_solid_definition_marker_0
+@solid
+def my_solid(context):
+    return 1
+
+
+# end_solid_definition_marker_0
+
+# start_solid_definition_marker_1
+def _return_one(_context, inputs):
+    yield Output(1)
+
+
+solid = SolidDefinition(
+    name="my_solid", input_defs=[], output_defs=[OutputDefinition(Int)], compute_fn=_return_one,
+)
+# end_solid_definition_marker_1
+
+```
+
+```python file=/overview/solids_pipelines/solid_definition.py startAfter=start_solid_definition_marker_1 endBefore=end_solid_definition_marker_1
+def _return_one(_context, inputs):
+    yield Output(1)
+
+
+solid = SolidDefinition(
+    name="my_solid", input_defs=[], output_defs=[OutputDefinition(Int)], compute_fn=_return_one,
+)
+```

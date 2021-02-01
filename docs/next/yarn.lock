@@ -2908,6 +2908,13 @@ fast-json-stable-stringify@^2.0.0:
   resolved "https://registry.yarnpkg.com/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz#874bf69c6f404c2b5d99c481341399fd55892633"
   integrity sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==
 
+fault@^1.0.0:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/fault/-/fault-1.0.4.tgz#eafcfc0a6d214fc94601e170df29954a4f842f13"
+  integrity sha512-CJ0HCB5tL5fYTEA7ToAq5+kTwd++Borf1/bifxd9iT70QcXr4MRrO3Llf8Ifs70q+SJcGHFtnIE/Nw6giCtECA==
+  dependencies:
+    format "^0.2.0"
+
 figgy-pudding@^3.5.1:
   version "3.5.2"
   resolved "https://registry.yarnpkg.com/figgy-pudding/-/figgy-pudding-3.5.2.tgz#b4eee8148abb01dcf1d1ac34367d59e12fa61d6e"
@@ -2993,6 +3000,11 @@ for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
   integrity sha1-gQaNKVqBQuwKxybG4iAMMPttXoA=
+
+format@^0.2.0:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/format/-/format-0.2.2.tgz#d6170107e9efdc4ed30c9dc39016df942b5cb58b"
+  integrity sha1-1hcBB+nv3E7TDJ3DkBbflCtctYs=
 
 forwarded@~0.1.2:
   version "0.1.2"
@@ -3974,6 +3986,13 @@ mdast-util-from-markdown@^0.8.0:
     parse-entities "^2.0.0"
     unist-util-stringify-position "^2.0.0"
 
+mdast-util-frontmatter@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/mdast-util-frontmatter/-/mdast-util-frontmatter-0.2.0.tgz#8bd5cd55e236c03e204a036f7372ebe9e6748240"
+  integrity sha512-FHKL4w4S5fdt1KjJCwB0178WJ0evnyyQr5kXTM3wrOVpytD0hrkvd+AOOjU9Td8onOejCkmZ+HQRT3CZ3coHHQ==
+  dependencies:
+    micromark-extension-frontmatter "^0.2.0"
+
 mdast-util-to-hast@10.0.1:
   version "10.0.1"
   resolved "https://registry.yarnpkg.com/mdast-util-to-hast/-/mdast-util-to-hast-10.0.1.tgz#0cfc82089494c52d46eb0e3edb7a4eb2aea021eb"
@@ -4045,6 +4064,13 @@ methods@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/methods/-/methods-1.1.2.tgz#5529a4d67654134edcc5266656835b0f851afcee"
   integrity sha1-VSmk1nZUE07cxSZmVoNbD4Ua/O4=
+
+micromark-extension-frontmatter@^0.2.0:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/micromark-extension-frontmatter/-/micromark-extension-frontmatter-0.2.2.tgz#61b8e92e9213e1d3c13f5a59e7862f5ca98dfa53"
+  integrity sha512-q6nPLFCMTLtfsctAuS0Xh4vaolxSFUWUWR6PZSrXXiRy+SANGllpcqdXFv2z07l0Xz/6Hl40hK0ffNCJPH2n1A==
+  dependencies:
+    fault "^1.0.0"
 
 micromark@~2.11.0:
   version "2.11.2"
@@ -4599,6 +4625,11 @@ path-browserify@1.0.1:
   resolved "https://registry.yarnpkg.com/path-browserify/-/path-browserify-1.0.1.tgz#d98454a9c3753d5790860f16f68867b9e46be1fd"
   integrity sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==
 
+path-data-parser@0.1.0, path-data-parser@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/path-data-parser/-/path-data-parser-0.1.0.tgz#8f5ba5cc70fc7becb3dcefaea08e2659aba60b8c"
+  integrity sha512-NOnmBpt5Y2RWbuv0LMzsayp3lVylAHLPUTut412ZA3l+C4uw4ZVkQbjShYCQ8TCpUMdPapr4YjUqLYD6v68j+w==
+
 path-dirname@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/path-dirname/-/path-dirname-1.0.2.tgz#cc33d24d525e099a5388c0336c6e32b9160609e0"
@@ -4675,6 +4706,19 @@ pnp-webpack-plugin@1.6.4:
   integrity sha512-7Wjy+9E3WwLOEL30D+m8TSTF7qJJUJLONBnwQp0518siuMxUQUbgZwssaFX+QKlZkjHZcw/IpZCt/H0srrntSg==
   dependencies:
     ts-pnp "^1.1.6"
+
+points-on-curve@0.2.0, points-on-curve@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/points-on-curve/-/points-on-curve-0.2.0.tgz#7dbb98c43791859434284761330fa893cb81b4d1"
+  integrity sha512-0mYKnYYe9ZcqMCWhUjItv/oHjvgEsfKvnUTg8sAtnHr3GVy7rGkXCb6d5cSyqrWqL4k81b9CPg3urd+T7aop3A==
+
+points-on-path@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/points-on-path/-/points-on-path-0.2.1.tgz#553202b5424c53bed37135b318858eacff85dd52"
+  integrity sha512-25ClnWWuw7JbWZcgqY/gJ4FQWadKxGWk+3kR/7kD0tCaDtPPMj7oHu2ToLaVhfpnHrZzYby2w6tUA0eOIuUg8g==
+  dependencies:
+    path-data-parser "0.1.0"
+    points-on-curve "0.2.0"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
@@ -5194,10 +5238,30 @@ rehype-slug@^4.0.1:
     hast-util-to-string "^1.0.0"
     unist-util-visit "^2.0.0"
 
+remark-extract-frontmatter@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/remark-extract-frontmatter/-/remark-extract-frontmatter-3.1.0.tgz#8ac209bf5e7377578ebfd6dc3504e9fccabea112"
+  integrity sha512-16TIAq0QTGs2GrbFi9azDxfcjwacf25W33h8zXAwiUbdW9lJN5KPaY6TZ7u2iSPTOSbIYBYmj9E0Q+8e+eGGPQ==
+
 remark-footnotes@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/remark-footnotes/-/remark-footnotes-2.0.0.tgz#9001c4c2ffebba55695d2dd80ffb8b82f7e6303f"
   integrity sha512-3Clt8ZMH75Ayjp9q4CorNeyjwIxHFcTkaektplKGl2A1jNGEUey8cKL0ZC5vJwfcD5GFGsNLImLG/NGzWIzoMQ==
+
+remark-frontmatter@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/remark-frontmatter/-/remark-frontmatter-3.0.0.tgz#ca5d996361765c859bd944505f377d6b186a6ec6"
+  integrity sha512-mSuDd3svCHs+2PyO29h7iijIZx4plX0fheacJcAoYAASfgzgVIcXGYSq9GFyYocFLftQs8IOmmkgtOovs6d4oA==
+  dependencies:
+    mdast-util-frontmatter "^0.2.0"
+    micromark-extension-frontmatter "^0.2.0"
+
+remark-macro@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/remark-macro/-/remark-macro-1.0.7.tgz#616f0523e0f0c2ca4f62edeaa7bf367916c5925b"
+  integrity sha512-PEFsUzV+tS4iTHb2dqzzCFORQUtuQZxWXPoLsdfF4G52N3xrfc6j4+5HoghS7Lb4z/DBs5pYONTXw/ceYfNSJQ==
+  dependencies:
+    unist-util-visit "^1.4.0"
 
 remark-mdx@1.6.22, remark-mdx@^1.6.22:
   version "1.6.22"
@@ -5341,6 +5405,15 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
   dependencies:
     hash-base "^3.0.0"
     inherits "^2.0.1"
+
+roughjs@^4.3.1:
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/roughjs/-/roughjs-4.3.1.tgz#b7af0b205c94bc3b79ee5a7eae1e09d5063bc3fe"
+  integrity sha512-m42+OBaBR7x5UhIKyjBCnWqqkaEkBKLkXvHv4pOWJXPofvMnQY4ZcFEQlqf3coKKyZN2lfWMyx7QXSg2GD7SGA==
+  dependencies:
+    path-data-parser "^0.1.0"
+    points-on-curve "^0.2.0"
+    points-on-path "^0.2.1"
 
 run-queue@^1.0.0, run-queue@^1.0.3:
   version "1.0.3"
@@ -6209,6 +6282,11 @@ unist-util-generated@^1.0.0:
   resolved "https://registry.yarnpkg.com/unist-util-generated/-/unist-util-generated-1.1.6.tgz#5ab51f689e2992a472beb1b35f2ce7ff2f324d4b"
   integrity sha512-cln2Mm1/CZzN5ttGK7vkoGw+RZ8VcUH6BtGbq98DDtRGquAAOXig1mrBQYelOwMXYS8rK+vZDyyojSjp7JX+Lg==
 
+unist-util-is@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/unist-util-is/-/unist-util-is-3.0.0.tgz#d9e84381c2468e82629e4a5be9d7d05a2dd324cd"
+  integrity sha512-sVZZX3+kspVNmLWBPAB6r+7D9ZgAFPNWm66f7YNb420RlQSbn+n8rG8dGZSkrER7ZIXGQYNm5pqC3v3HopH24A==
+
 unist-util-is@^4.0.0:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/unist-util-is/-/unist-util-is-4.0.4.tgz#3e9e8de6af2eb0039a59f50c9b3e99698a924f50"
@@ -6240,6 +6318,13 @@ unist-util-stringify-position@^2.0.0:
   dependencies:
     "@types/unist" "^2.0.2"
 
+unist-util-visit-parents@^2.0.0:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/unist-util-visit-parents/-/unist-util-visit-parents-2.1.2.tgz#25e43e55312166f3348cae6743588781d112c1e9"
+  integrity sha512-DyN5vD4NE3aSeB+PXYNKxzGsfocxp6asDc2XXE3b0ekO2BaRUpBicbbUygfSvYfUz1IkmjFR1YF7dPklraMZ2g==
+  dependencies:
+    unist-util-is "^3.0.0"
+
 unist-util-visit-parents@^3.0.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/unist-util-visit-parents/-/unist-util-visit-parents-3.1.1.tgz#65a6ce698f78a6b0f56aa0e88f13801886cdaef6"
@@ -6256,6 +6341,13 @@ unist-util-visit@2.0.3, unist-util-visit@^2.0.0, unist-util-visit@^2.0.2:
     "@types/unist" "^2.0.0"
     unist-util-is "^4.0.0"
     unist-util-visit-parents "^3.0.0"
+
+unist-util-visit@^1.4.0:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/unist-util-visit/-/unist-util-visit-1.4.1.tgz#4724aaa8486e6ee6e26d7ff3c8685960d560b1e3"
+  integrity sha512-AvGNk7Bb//EmJZyhtRUnNMEpId/AZ5Ph/KUpTI09WHQuDZHKovQ1oEv3mfmKpWKtoMzyMC4GLBm1Zy5k12fjIw==
+  dependencies:
+    unist-util-visit-parents "^2.0.0"
 
 universalify@^2.0.0:
   version "2.0.0"
@@ -6494,6 +6586,11 @@ yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
+
+yaml@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-1.10.0.tgz#3b593add944876077d4d683fee01081bd9fff31e"
+  integrity sha512-yr2icI4glYaNG+KWONODapy2/jDdMSDnrONSjblABjD9B4Z5LgiircSt8m8sRZFNi08kG9Sm0uSHtEmP3zaEGg==
 
 yn@3.1.1:
   version "3.1.1"

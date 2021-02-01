@@ -43,10 +43,14 @@ const Counter = () => {
     </div>
   );
 };
+const Example = ({ children }) => {
+  return <div className="bg-gray-200 px-8 py-4">{children}</div>;
+};
 
 export default {
   ExampleComponent,
   AlertComponent,
   PyObject,
   Counter,
+  Example,
 };

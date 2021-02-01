@@ -18,7 +18,10 @@ export default () => async (tree) => {
     codes.push([node, index, parent]);
   });
 
-  const optionKeys = ["lines", "startAfter", "endBefore", "dedent"];
+  const optionKeys = ["lines", "startafter", "endbefore", "dedent", "trim"];
+
+  let totalSnapshots = 0;
+  let updatedSnapshots = [];
 
   for (const [node] of codes) {
     const meta = (node.meta || "").split(" ");
@@ -30,8 +33,9 @@ export default () => async (tree) => {
     const metaOptions: {
       lines?: string;
       dedent?: string;
-      startAfter?: string;
-      endBefore?: string;
+      startafter?: string;
+      endbefore?: string;
+      trim?: boolean;
     } = {};
     for (const option of optionKeys) {
       const needle = `${option}=`;
@@ -45,16 +49,33 @@ export default () => async (tree) => {
     const fileAbsPath = path.join(DOCS_SNIPPET, filePath);
     try {
       const content = await fs.readFile(fileAbsPath, "utf8");
-      const contentWithLimit = limitSnippetLines(
+      let contentWithLimit = limitSnippetLines(
         content,
         metaOptions.lines,
         metaOptions.dedent,
-        metaOptions.startAfter,
-        metaOptions.endBefore
+        metaOptions.startafter,
+        metaOptions.endbefore
       );
-      node.value = `${contentWithLimit}`;
+
+      if (metaOptions.trim) {
+        contentWithLimit = contentWithLimit.trim();
+      }
+
+      totalSnapshots++;
+      if (node.value !== contentWithLimit) {
+        updatedSnapshots.push(node.meta);
+        node.value = `${contentWithLimit}`;
+      }
     } catch (err) {
       node.value = err.message;
     }
+  }
+
+  console.log(`✅ ${totalSnapshots} snapshots parsed`);
+  if (updatedSnapshots.length) {
+    console.log(`⚡️ ${updatedSnapshots.length} updated:`);
+    console.log(`\t${updatedSnapshots.join("\n\t")}`);
+  } else {
+    console.log(`✨ No snapshots were updated`);
   }
 };

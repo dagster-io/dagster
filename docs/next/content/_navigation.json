@@ -101,10 +101,10 @@
         "children": [
           {
             "title": "Solids",
-            "path": "/overview/solids-pipelines/solids"
+            "path": "/concepts/solids-pipelines/solids"
           },
           {
-            "title": "Inputs and Outputs",
+            "title": "Solid Inputs and Outputs",
             "path": "/overview/solids-pipelines/inputs-and-outputs"
           },
           {
@@ -112,16 +112,12 @@
             "path": "/overview/solids-pipelines/inputs-and-outputs"
           },
           {
-            "title": "Pipelines",
-            "path": "/overview/solids-pipelines/pipelines"
-          },
-          {
             "title": "Solid Events",
             "path": "/overview/solids-pipelines/solid-events"
           },
           {
-            "title": "Solid Factories",
-            "path": "/overview/solids-pipelines/solid-factories"
+            "title": "Pipelines",
+            "path": "/overview/solids-pipelines/pipelines"
           },
           {
             "title": "Testing Solids and Pipelines",

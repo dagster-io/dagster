@@ -12,7 +12,6 @@ import rehypeSlug from "rehype-slug";
 import rehypeLink from "rehype-autolink-headings";
 
 const components: MdxRemote.Components = MDXComponents;
-
 interface Props {
   mdxSource: MdxRemote.Source;
   frontMatter: {
@@ -23,7 +22,13 @@ interface Props {
 
 export default function ExamplePage({ mdxSource, frontMatter }: Props) {
   const content = hydrate(mdxSource, { components });
-  return <div className="prose max-w-none">{content}</div>;
+  return (
+    <div className="prose max-w-none">
+      <h1>{frontMatter.title}</h1>
+      <p>{frontMatter.description}</p>
+      {content}
+    </div>
+  );
 }
 
 const basePathForVersion = (version: string) => {

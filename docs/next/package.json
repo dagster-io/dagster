@@ -26,10 +26,15 @@
     "rehype-autolink-headings": "^5.0.1",
     "rehype-slug": "^4.0.1",
     "remark": "^13.0.0",
+    "remark-extract-frontmatter": "^3.1.0",
+    "remark-frontmatter": "^3.0.0",
+    "remark-macro": "^1.0.7",
     "remark-mdx": "^1.6.22",
+    "roughjs": "^4.3.1",
     "tailwindcss": "^2.0.2",
     "to-vfile": "^6.1.0",
-    "ts-node": "^9.1.1"
+    "ts-node": "^9.1.1",
+    "yaml": "^1.10.0"
   },
   "devDependencies": {
     "@types/classnames": "^2.2.11",
