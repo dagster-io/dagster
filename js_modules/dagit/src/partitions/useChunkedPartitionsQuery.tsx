@@ -23,6 +23,7 @@ interface DataState {
   runs: PartitionSetLoaderRunFragment[];
   partitionNames: string[];
   loading: boolean;
+  loadingPercent: number;
   cursorStack: string[];
   cursor: string | null;
 }
@@ -33,6 +34,7 @@ const InitialDataState: DataState = {
   cursor: null,
   cursorStack: [],
   loading: false,
+  loadingPercent: 0,
 };
 
 /**
@@ -50,7 +52,7 @@ export function useChunkedPartitionsQuery(
 
   const version = React.useRef(0);
   const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
-  const {cursor, loading, cursorStack} = dataState;
+  const {cursor, loading, loadingPercent, cursorStack} = dataState;
 
   React.useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
@@ -59,7 +61,7 @@ export function useChunkedPartitionsQuery(
     const v = version.current + 1;
     version.current = v;
 
-    setDataState((dataState) => ({...dataState, runs: [], loading: true}));
+    setDataState((dataState) => ({...dataState, runs: [], loading: true, loadingPercent: 0}));
 
     const runTags = runsFilter.map((token) => {
       const [key, value] = token.value.split('=');
@@ -92,13 +94,14 @@ export function useChunkedPartitionsQuery(
           namesResult.data.partitionSetOrError.partitionsOrError.results.map((r) => r.name)) ||
         [];
 
-      setDataState((state) => ({...state, partitionNames}));
+      setDataState((state) => ({...state, partitionNames, loadingPercent: 0.05}));
 
       // Load runs in each of these partitions incrementally, running several queries in parallel
       // to maximize the throughput we can achieve from the GraphQL interface.
       const parallelQueries = 5;
       for (let ii = partitionNames.length; ii >= 0; ii -= parallelQueries) {
-        const sliceNames = partitionNames.slice(Math.max(ii - parallelQueries, 0), ii);
+        const sliceStartIdx = Math.max(ii - parallelQueries, 0);
+        const sliceNames = partitionNames.slice(sliceStartIdx, ii);
         const fetched = await Promise.all(
           sliceNames.map((partitionName) =>
             fetchRunsForFilter(client, {
@@ -119,7 +122,9 @@ export function useChunkedPartitionsQuery(
         setDataState((state) => ({
           ...state,
           runs: [...state.runs].concat(...fetched),
-          loading: ii > 0,
+          loading: sliceStartIdx > 0,
+          loadingPercent:
+            0.05 + 0.95 * ((partitionNames.length - sliceStartIdx) / partitionNames.length),
         }));
       }
 
@@ -132,7 +137,7 @@ export function useChunkedPartitionsQuery(
           return clearInterval(timer);
         }
 
-        setDataState((state) => ({...state, loading: true}));
+        setDataState((state) => ({...state, loading: true, loadingPercent: 0}));
 
         // Fetch the 10 most recent runs for the pipeline so we pick up on new runs being launched.
         // Note: this may be insufficient but seems like it will handle the 99% case where runs
@@ -181,6 +186,7 @@ export function useChunkedPartitionsQuery(
 
   return {
     loading,
+    loadingPercent,
     partitions: assemblePartitions(dataState),
     paginationProps: {
       hasPrevCursor: cursor !== null,
@@ -191,6 +197,7 @@ export function useChunkedPartitionsQuery(
         }
         setDataState({
           loading: false,
+          loadingPercent: 0,
           cursorStack: cursorStack.slice(0, cursorStack.length - 1),
           cursor: cursorStack.length ? cursorStack[cursorStack.length - 1] : null,
           partitionNames: [],
@@ -200,6 +207,7 @@ export function useChunkedPartitionsQuery(
       advanceCursor: () => {
         setDataState({
           loading: false,
+          loadingPercent: 0,
           cursorStack: cursor ? [...cursorStack, cursor] : cursorStack,
           cursor: dataState.partitionNames[0],
           partitionNames: [],

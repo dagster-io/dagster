@@ -7,7 +7,8 @@ type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
 
 export const Spinner: React.FC<{
   purpose: SpinnerPurpose;
-}> = ({purpose}) => {
+  value?: number;
+}> = ({purpose, value}) => {
   const size = () => {
     switch (purpose) {
       case 'page':
@@ -22,7 +23,7 @@ export const Spinner: React.FC<{
     }
   };
 
-  return <SlowSpinner size={size()} />;
+  return <SlowSpinner size={size()} value={value} />;
 };
 
 const SlowSpinner = styled(BlueprintSpinner)`

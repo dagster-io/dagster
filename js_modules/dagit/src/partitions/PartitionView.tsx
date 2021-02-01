@@ -38,11 +38,11 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [pageSize, setPageSize] = useQueryPersistedState<number | 'all'>({
     encode: (val) => ({pageSize: val}),
-    decode: (qs) => Number(qs.pageSize || 30),
+    decode: (qs) => (qs.pageSize === 'all' ? 'all' : Number(qs.pageSize || 30)),
   });
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
-  const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
+  const {loading, loadingPercent, partitions, paginationProps} = useChunkedPartitionsQuery(
     partitionSet.name,
     pageSize,
     runTags,
@@ -103,7 +103,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         </Button>
         {loading && (
           <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>
-            <Spinner purpose="body-text" />
+            <Spinner purpose="body-text" value={loadingPercent} />
             <div style={{width: 5}} />
             Loading partitions…
           </div>
