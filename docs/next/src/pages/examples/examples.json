@@ -15,11 +15,6 @@
     "description": "Record that a solid materialized an asset"
   },
   {
-    "name": "basic_pyspark",
-    "title": "PySpark",
-    "description": "Run PySpark code in solids"
-  },
-  {
     "name": "conditional_execution",
     "title": "Conditional Execution",
     "description": "Conditionally execute part of a pipeline"
@@ -70,16 +65,6 @@
     "description": "Deploy Dagster on Kubernetes"
   },
   {
-    "name": "simple_lakehouse",
-    "title": "Lakehouse (Experimental)",
-    "description": "Define a computation graph in terms of the tables it produces."
-  },
-  {
-    "name": "multi_type_lakehouse",
-    "title": "Lakehouse with Pandas and Pyspark (Experimental)",
-    "description": "Use the Lakehouse API with multiple compute types."
-  },
-  {
     "name": "multi_location",
     "title": "Multi-Location Workspace",
     "description": "Setup a Dagster workspace with multiple locations."
@@ -100,13 +85,28 @@
     "description": "Unit-test a pipeline"
   },
   {
-    "name": "memoized_development",
-    "title": "Memoization (Experimental)",
-    "description": "Memoizing results from previous pipeline runs."
+    "name": "basic_pyspark",
+    "title": "PySpark",
+    "description": "Run PySpark code in solids"
   },
   {
     "name": "dynamic_graph",
     "title": "Dynamic Graph (Experimental)",
     "description": "Determine graph structure at runtime"
+  },
+  {
+    "name": "simple_lakehouse",
+    "title": "Lakehouse (Experimental)",
+    "description": "Define a computation graph in terms of the tables it produces."
+  },
+  {
+    "name": "multi_type_lakehouse",
+    "title": "Lakehouse w/ Two Types (Experimental)",
+    "description": "Use the Lakehouse API with multiple compute types."
+  },
+  {
+    "name": "memoized_development",
+    "title": "Memoization (Experimental)",
+    "description": "Memoizing results from previous pipeline runs."
   }
 ]
