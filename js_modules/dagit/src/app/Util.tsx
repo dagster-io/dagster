@@ -146,6 +146,7 @@ const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 export enum FeatureFlag {
   DebugConsoleLogging = 'DebugConsoleLogging',
   LeftNav = 'LeftNav',
+  AssetCatalog = 'AssetCatalog',
 }
 
 export function getFeatureFlags(): FeatureFlag[] {

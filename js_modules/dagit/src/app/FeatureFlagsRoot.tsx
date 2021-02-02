@@ -20,13 +20,16 @@ export const FeatureFlagsRoot = () => {
     <div style={{padding: 30, paddingTop: 0}}>
       <h4>Experimental Features</h4>
       <div>
-        {
-          <Checkbox
-            label={'Debug Console Logging'}
-            checked={flags.includes(FeatureFlag.DebugConsoleLogging)}
-            onChange={() => toggleFlag(FeatureFlag.DebugConsoleLogging)}
-          />
-        }
+        <Checkbox
+          label={'Debug Console Logging'}
+          checked={flags.includes(FeatureFlag.DebugConsoleLogging)}
+          onChange={() => toggleFlag(FeatureFlag.DebugConsoleLogging)}
+        />
+        <Checkbox
+          label={'New Asset Catalog'}
+          checked={flags.includes(FeatureFlag.AssetCatalog)}
+          onChange={() => toggleFlag(FeatureFlag.AssetCatalog)}
+        />
       </div>
     </div>
   );

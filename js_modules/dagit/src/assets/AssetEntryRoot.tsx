@@ -1,9 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Breadcrumbs, IBreadcrumbProps} from '@blueprintjs/core';
+import {Colors, Breadcrumbs, IBreadcrumbProps, Icon} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {featureEnabled, FeatureFlag} from 'src/app/Util';
 import {AssetView} from 'src/assets/AssetView';
 import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
 import {AssetEntryRootQuery} from 'src/assets/types/AssetEntryRootQuery';
@@ -25,7 +27,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
   });
 
   const pathDetails = () => {
-    if (currentPath.length === 1) {
+    if (currentPath.length === 1 || featureEnabled(FeatureFlag.AssetCatalog)) {
       return <Link to="/instance/assets">Asset</Link>;
     }
 
@@ -57,13 +59,28 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     <Page>
       <Group direction="column" spacing={20}>
         <PageHeader
-          title={<Heading>{currentPath.slice(-1)}</Heading>}
+          title={
+            <Box flex={{alignItems: 'center'}}>
+              {currentPath
+                .map<React.ReactNode>((p, i) => <Heading key={i}>{p}</Heading>)
+                .reduce((prev, curr, i) => [
+                  prev,
+                  <Box key={`separator_${i}`} padding={4}>
+                    <Icon icon={IconNames.CHEVRON_RIGHT} iconSize={18} />
+                  </Box>,
+                  curr,
+                ])}
+            </Box>
+          }
           icon="th"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetNotFoundError') {
+              if (featureEnabled(FeatureFlag.AssetCatalog)) {
+                return <AssetsCatalogTable />;
+              }
               return <AssetsCatalogTable prefixPath={currentPath} />;
             }
 

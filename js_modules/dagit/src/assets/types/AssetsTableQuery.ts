@@ -41,7 +41,3 @@ export type AssetsTableQuery_assetsOrError = AssetsTableQuery_assetsOrError_Asse
 export interface AssetsTableQuery {
   assetsOrError: AssetsTableQuery_assetsOrError;
 }
-
-export interface AssetsTableQueryVariables {
-  prefixPath?: string[] | null;
-}
