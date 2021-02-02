@@ -1,5 +1,7 @@
 import traceback
 from collections import namedtuple
+from types import TracebackType
+from typing import List, Tuple, Type, Union
 
 from dagster.serdes import whitelist_for_serdes
 
@@ -9,8 +11,10 @@ class SerializableErrorInfo(namedtuple("SerializableErrorInfo", "message stack c
     # serdes log
     # * added cause - default to None in constructor to allow loading old entries
     #
-    def __new__(cls, message, stack, cls_name, cause=None):
-        return super(SerializableErrorInfo, cls).__new__(cls, message, stack, cls_name, cause)
+    def __new__(
+        cls, message: str, stack: List[str], cls_name: str, cause: "SerializableErrorInfo" = None
+    ):
+        return super().__new__(cls, message, stack, cls_name, cause)
 
     def to_string(self):
         stack_str = "\nStack Trace:\n" + "".join(self.stack) if self.stack else ""
@@ -23,7 +27,7 @@ class SerializableErrorInfo(namedtuple("SerializableErrorInfo", "message stack c
         return "{err.message}{stack}{cause}".format(err=self, stack=stack_str, cause=cause_str)
 
 
-def _serializable_error_info_from_tb(tb):
+def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> SerializableErrorInfo:
     return SerializableErrorInfo(
         # usually one entry, multiple lines for SyntaxError
         "".join(list(tb.format_exception_only())),
@@ -33,5 +37,9 @@ def _serializable_error_info_from_tb(tb):
     )
 
 
-def serializable_error_info_from_exc_info(exc_info):
+def serializable_error_info_from_exc_info(
+    exc_info: Union[
+        Tuple[Type[BaseException], BaseException, TracebackType], Tuple[None, None, None]
+    ]
+) -> SerializableErrorInfo:
     return _serializable_error_info_from_tb(traceback.TracebackException(*exc_info))
