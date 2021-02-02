@@ -6,6 +6,9 @@
 // and update all existing usage of it
 
 import { useState } from "react";
+import VersionedLink from "./VersionedLink";
+import data from "../content/api/searchindex.json";
+import React, { useContext } from "react";
 
 const ExampleComponent = () => {
   return <span className="text-red-400 font-bold">Hello!</span>;
@@ -15,11 +18,44 @@ const AlertComponent = ({ children }) => {
   return <div className="flex bg-yellow-200 items-center">{children}</div>;
 };
 
-const PyObject = ({ object, displayText }) => {
+export const SearchIndexContext = React.createContext(null);
+
+const PyObject: React.FunctionComponent<{
+  module: string;
+  object: string;
+  displayText?: string;
+}> = ({ module, object, displayText }) => {
+  const value = useContext(SearchIndexContext);
+  if (!value) {
+    return null;
+  }
+
+  const objects = value.objects as any;
+  const moduleObjects = objects[module];
+  const objectData = moduleObjects && moduleObjects[object];
+
+  if (!moduleObjects || !objectData) {
+    // TODO: broken link
+    // https://github.com/dagster-io/dagster/issues/2939
+    return (
+      <a className="no-underline hover:underline" href="#">
+        <code className="bg-red-100 p-1">{displayText || object}</code>
+      </a>
+    );
+  }
+
+  const fileIndex = objectData[0];
+  // TODO: refer to all anchors available in apidocs
+  // https://github.com/dagster-io/dagster/issues/3568
+  const doc = data.docnames[fileIndex];
+  const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
+
   return (
-    <a className="no-underline hover:underline" href="#">
-      <code className="bg-blue-100 p-1">{displayText || object}</code>
-    </a>
+    <VersionedLink href={link + "#" + module + "." + object}>
+      <a className="no-underline hover:underline">
+        <code className="bg-blue-100 p-1">{displayText || object}</code>
+      </a>
+    </VersionedLink>
   );
 };
 
@@ -53,4 +89,5 @@ export default {
   PyObject,
   Counter,
   Example,
+  VersionedLink,
 };

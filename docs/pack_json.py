@@ -86,6 +86,11 @@ def pack_directory_json(path_to_folder: str):
     return root_data
 
 
+def copy_searchindex(src_dir, dest_dir, src_file="searchindex.json", dest_file="searchindex.json"):
+    """Copy searchindex.json built by Sphinx to the next directory."""
+    write_json(os.path.join(src_dir, src_file), read_json(os.path.join(dest_dir, dest_file)))
+
+
 def main():
     json_directory = file_relative_path(__file__, "sphinx/_build/json")
     content_master_directory = file_relative_path(__file__, "next/content/api")
@@ -98,6 +103,8 @@ def main():
     for directory, output_file in directories_to_pack.items():
         data = pack_directory_json(directory)
         write_json(os.path.join(content_master_directory, output_file), data)
+
+    copy_searchindex(content_master_directory, json_directory)
 
 
 if __name__ == "__main__":

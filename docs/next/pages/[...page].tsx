@@ -4,7 +4,7 @@ import { promises as fs } from "fs";
 import renderToString from "next-mdx-remote/render-to-string";
 import hydrate from "next-mdx-remote/hydrate";
 import { MdxRemote } from "next-mdx-remote/types";
-import MDXComponents from "../components/MDXComponents";
+import MDXComponents, { SearchIndexContext } from "../components/MDXComponents";
 import { NextSeo } from "next-seo";
 
 import matter from "gray-matter";
@@ -13,16 +13,28 @@ import rehypeSlug from "rehype-slug";
 import rehypeLink from "rehype-autolink-headings";
 
 const components: MdxRemote.Components = MDXComponents;
+
 interface Props {
   mdxSource: MdxRemote.Source;
   frontMatter: {
     title: string;
     description: string;
   };
+  searchIndex: any;
 }
 
-export default function ExamplePage({ mdxSource, frontMatter }: Props) {
-  const content = hydrate(mdxSource, { components });
+export default function ExamplePage({
+  mdxSource,
+  frontMatter,
+  searchIndex,
+}: Props) {
+  const content = hydrate(mdxSource, {
+    components,
+    provider: {
+      component: SearchIndexContext.Provider,
+      props: { value: searchIndex },
+    },
+  });
   return (
     <>
       <NextSeo
@@ -50,14 +62,23 @@ export async function getServerSideProps({ params, locale }) {
   const { page } = params;
 
   const basePath = basePathForVersion(locale);
-  const pathToFile = path.resolve(basePath, page.join("/") + ".mdx");
-
+  const pathToMdxFile = path.resolve(basePath, page.join("/") + ".mdx");
   try {
-    const source = await fs.readFile(pathToFile);
+    // versioned searchindex
+    const pathToSearchindex = path.resolve(basePath, "api/searchindex.json");
+    const buffer = await fs.readFile(pathToSearchindex);
+    const searchIndex = JSON.parse(buffer.toString());
+
+    // versioned mdx
+    const source = await fs.readFile(pathToMdxFile);
     const { content, data } = matter(source);
 
     const mdxSource = await renderToString(content, {
       components,
+      provider: {
+        component: SearchIndexContext.Provider,
+        props: { value: searchIndex },
+      },
       mdxOptions: {
         rehypePlugins: [
           rehypePrism,
@@ -86,11 +107,11 @@ export async function getServerSideProps({ params, locale }) {
       },
       scope: data,
     });
-
     return {
       props: {
         mdxSource: mdxSource,
         frontMatter: data,
+        searchIndex: searchIndex,
       },
     };
   } catch (err) {
