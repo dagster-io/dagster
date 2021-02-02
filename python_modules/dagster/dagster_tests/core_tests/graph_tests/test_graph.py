@@ -1,6 +1,7 @@
 from dagster import solid
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.graph import GraphDefinition
+from dagster.core.execution.execute import execute_in_process
 
 
 def get_solids():
@@ -23,6 +24,10 @@ def test_basic_graph():
         return add(emit_one(), emit_one())
 
     assert isinstance(get_two, GraphDefinition)
+
+    result = execute_in_process(get_two)
+
+    assert result.success
 
 
 def test_composite_graph():

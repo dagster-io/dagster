@@ -140,6 +140,12 @@ class GraphDefinition(NodeDefinition):
         """
         return list(set(self._solid_dict.values()))
 
+    @property
+    def node_defs(self):
+        """List[NodeDefinition]: List of nodes in the graph.
+        """
+        return self._node_defs
+
     def has_solid_named(self, name):
         """Return whether or not there is a top level solid with this name in the graph.
 
