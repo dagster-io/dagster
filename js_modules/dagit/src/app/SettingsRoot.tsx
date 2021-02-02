@@ -57,6 +57,18 @@ export const SettingsRoot = () => {
                   />
                 ),
               },
+              {
+                key: 'Simplified left nav',
+                value: (
+                  <Switch
+                    checked={flags.includes(FeatureFlag.LeftNav)}
+                    onChange={() => {
+                      toggleFlag(FeatureFlag.LeftNav);
+                      window.location.reload();
+                    }}
+                  />
+                ),
+              },
             ]}
           />
         </Group>

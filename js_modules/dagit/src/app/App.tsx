@@ -11,7 +11,7 @@ import {SettingsRoot} from 'src/app/SettingsRoot';
 import {TimezoneProvider} from 'src/app/time/TimezoneContext';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {InstanceRoot} from 'src/instance/InstanceRoot';
-import {LeftNav} from 'src/nav/LeftNav';
+import {LeftNavBranch} from 'src/nav/LeftNavBranch';
 import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
@@ -20,7 +20,7 @@ export const AppContent = () => {
   return (
     <div style={{display: 'flex', height: '100%'}}>
       <WorkspaceProvider>
-        <LeftNav />
+        <LeftNavBranch />
         <CustomConfirmationProvider>
           <Switch>
             <Route path="/flags" component={FeatureFlagsRoot} />

@@ -145,15 +145,14 @@ const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
   DebugConsoleLogging = 'DebugConsoleLogging',
+  LeftNav = 'LeftNav',
 }
 
 export function getFeatureFlags(): FeatureFlag[] {
   return getJSONForKey(DAGIT_FLAGS_KEY) || [];
 }
 
-function featureEnabled(flag: FeatureFlag): boolean {
-  return getFeatureFlags().includes(flag);
-}
+export const featureEnabled = (flag: FeatureFlag) => getFeatureFlags().includes(flag);
 
 export function setFeatureFlags(flags: FeatureFlag[]) {
   if (!(flags instanceof Array)) {

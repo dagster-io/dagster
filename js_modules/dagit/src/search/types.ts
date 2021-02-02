@@ -5,6 +5,7 @@ export enum SearchResultType {
   Repository,
   Run,
   Schedule,
+  Sensor,
   Solid,
 }
 

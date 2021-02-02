@@ -26,6 +26,9 @@ const flexPropertiesToCSS = (flex: FlexProperties) => {
     ${flex.wrap
       ? `flex-wrap: ${flex.wrap};`
       : null}
+    ${flex.shrink !== null && flex.shrink !== undefined
+      ? `flex-shrink: ${flex.shrink};`
+      : null}
   `;
 };
 

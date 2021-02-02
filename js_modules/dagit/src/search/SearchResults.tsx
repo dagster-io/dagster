@@ -6,12 +6,10 @@ import styled from 'styled-components';
 
 import {SearchResult, SearchResultType} from 'src/search/types';
 
-const MAX_RESULTS = 10;
-
 const iconForType = (type: SearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
-      return 'document';
+      return 'th';
     case SearchResultType.Pipeline:
       return 'diagram-tree';
     case SearchResultType.Repository:
@@ -20,12 +18,46 @@ const iconForType = (type: SearchResultType): IconName => {
       return 'history';
     case SearchResultType.Schedule:
       return 'time';
+    case SearchResultType.Sensor:
+      return 'automatic-updates';
     case SearchResultType.Solid:
       return 'git-commit';
     default:
       return 'cube';
   }
 };
+
+interface ItemProps {
+  result: Fuse.FuseResult<SearchResult>;
+  isHighlight: boolean;
+}
+
+const SearchResultItem: React.FC<ItemProps> = React.memo(({result, isHighlight}) => {
+  const {item} = result;
+  const element = React.useRef<HTMLLIElement>(null);
+
+  React.useEffect(() => {
+    if (element.current && isHighlight) {
+      element.current.scrollIntoView({block: 'nearest'});
+    }
+  }, [isHighlight]);
+
+  return (
+    <Item isHighlight={isHighlight} ref={element}>
+      <ResultLink to={item.href}>
+        <Icon
+          iconSize={16}
+          icon={iconForType(item.type)}
+          color={isHighlight ? Colors.WHITE : Colors.GRAY3}
+        />
+        <div style={{marginLeft: '12px'}}>
+          <Label isHighlight={isHighlight}>{item.label}</Label>
+          <Description isHighlight={isHighlight}>{item.description}</Description>
+        </div>
+      </ResultLink>
+    </Item>
+  );
+});
 
 interface Props {
   highlight: number;
@@ -42,25 +74,9 @@ export const SearchResults = (props: Props) => {
 
   return (
     <List hasResults={!!results.length}>
-      {results.slice(0, MAX_RESULTS).map((result, ii) => {
-        const {item} = result;
-        const isHighlight = highlight === ii;
-        return (
-          <Item isHighlight={isHighlight} key={item.key}>
-            <ResultLink to={item.href}>
-              <Icon
-                iconSize={16}
-                icon={iconForType(item.type)}
-                color={isHighlight ? Colors.WHITE : Colors.GRAY3}
-              />
-              <div style={{marginLeft: '12px'}}>
-                <Label isHighlight={isHighlight}>{item.label}</Label>
-                <Description isHighlight={isHighlight}>{item.description}</Description>
-              </div>
-            </ResultLink>
-          </Item>
-        );
-      })}
+      {results.map((result, ii) => (
+        <SearchResultItem key={result.item.key} isHighlight={highlight === ii} result={result} />
+      ))}
     </List>
   );
 };
