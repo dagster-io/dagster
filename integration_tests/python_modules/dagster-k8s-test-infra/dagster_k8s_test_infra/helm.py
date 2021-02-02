@@ -565,7 +565,9 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                         "define_demo_execution_repo",
                     ],
                     "port": 3030,
-                    "env": {"BUILDKITE": os.getenv("BUILDKITE")},
+                    "env": (
+                        {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}
+                    ),
                     "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
                     "service": {
                         "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}
@@ -626,7 +628,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "queuedRunCoordinator": {"enabled": True},
-            "env": {"BUILDKITE": os.getenv("BUILDKITE")},
+            "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
