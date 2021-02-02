@@ -22,6 +22,7 @@ import { parse as yaml } from "yaml";
         emphasis: "_",
         strong: "*",
         listItemIndent: "one",
+        rule: "-",
       },
     })
     .use(mdx)
