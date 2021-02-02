@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.3
+
+**Bugfixes**
+
+* Updated the `-n`/`--max_workers` default value for the `dagster api grpc` command to be `None`. When set to `None`, the gRPC server will use the default number of workers which is based on the CPU count. If you were previously setting this value to `1`, we recommend removing the argument or increasing the number. 
+
 ## 0.10.2
 
 **Community Contributions**

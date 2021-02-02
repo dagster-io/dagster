@@ -398,7 +398,7 @@ def grpc_command(
     port=None,
     socket=None,
     host="localhost",
-    max_workers=1,
+    max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,

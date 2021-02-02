@@ -386,7 +386,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
 
 @contextmanager
 def ephemeral_grpc_api_client(
-    loadable_target_origin=None, force_port=False, max_retries=10, max_workers=1
+    loadable_target_origin=None, force_port=False, max_retries=10, max_workers=None
 ):
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.bool_param(force_port, "force_port")

@@ -737,7 +737,7 @@ class DagsterGrpcServer:
         host="localhost",
         port=None,
         socket=None,
-        max_workers=1,
+        max_workers=None,
         loadable_target_origin=None,
         heartbeat=False,
         heartbeat_timeout=30,
@@ -748,7 +748,7 @@ class DagsterGrpcServer:
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
         check.opt_str_param(socket, "socket")
-        check.int_param(max_workers, "max_workers")
+        check.opt_int_param(max_workers, "max_workers")
         check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
@@ -768,8 +768,9 @@ class DagsterGrpcServer:
 
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
-            max_workers > 1 if heartbeat else True,
-            "max_workers must be greater than 1 if heartbeat is True",
+            max_workers is None or max_workers > 1 if heartbeat else True,
+            "max_workers must be greater than 1 or set to None if heartbeat is True. "
+            "If set to None, the server will use the gRPC default.",
         )
 
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
@@ -890,7 +891,7 @@ def open_server_process(
     port,
     socket,
     loadable_target_origin=None,
-    max_workers=1,
+    max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
@@ -898,7 +899,7 @@ def open_server_process(
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
-    check.int_param(max_workers, "max_workers")
+    check.opt_int_param(max_workers, "max_workers")
 
     from dagster.core.test_utils import get_mocked_system_timezone
 
@@ -919,7 +920,7 @@ def open_server_process(
             ]
             + (["--port", str(port)] if port else [])
             + (["--socket", socket] if socket else [])
-            + ["-n", str(max_workers)]
+            + (["-n", str(max_workers)] if max_workers else [])
             + (["--heartbeat"] if heartbeat else [])
             + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
             + (["--lazy-load-user-code"] if lazy_load_user_code else [])
@@ -950,7 +951,7 @@ def open_server_process(
 def open_server_process_on_dynamic_port(
     max_retries=10,
     loadable_target_origin=None,
-    max_workers=1,
+    max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
@@ -995,7 +996,7 @@ class GrpcServerProcess:
         loadable_target_origin=None,
         force_port=False,
         max_retries=10,
-        max_workers=1,
+        max_workers=None,
         heartbeat=False,
         heartbeat_timeout=30,
         lazy_load_user_code=False,
@@ -1008,15 +1009,16 @@ class GrpcServerProcess:
         check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
         check.bool_param(force_port, "force_port")
         check.int_param(max_retries, "max_retries")
-        check.int_param(max_workers, "max_workers")
+        check.opt_int_param(max_workers, "max_workers")
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.bool_param(lazy_load_user_code, "lazy_load_user_code")
         check.opt_str_param(fixed_server_id, "fixed_server_id")
         check.invariant(
-            max_workers > 1 if heartbeat else True,
-            "max_workers must be greater than 1 if heartbeat is True",
+            max_workers is None or max_workers > 1 if heartbeat else True,
+            "max_workers must be greater than 1 or set to None if heartbeat is True. "
+            "If set to None, the server will use the gRPC default.",
         )
 
         if seven.IS_WINDOWS or force_port:
