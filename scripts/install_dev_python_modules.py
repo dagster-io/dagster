@@ -101,7 +101,6 @@ def main(quiet):
             "-e python_modules/libraries/dagstermill",
             '-e "examples/legacy_examples[full]"',
             '-e "examples/airline_demo[full]"',
-            "-r docs-requirements.txt",
         ]
 
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
