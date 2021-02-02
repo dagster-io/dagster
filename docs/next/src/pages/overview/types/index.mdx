@@ -187,7 +187,7 @@ endBefore:end_make_usable
 This approach does have downsides. Importing these types will causes a
 global side effect as there is an internal registry which manages these
 types. This can introduce challenges in terms of testability and also
-can causes in behavior based on import order.
+can cause changes in behavior based on import order.
 
 Additionally some of the most useful patterns in the ecosystem are to
 use type factories to programmatically create Dagster types, such as in
