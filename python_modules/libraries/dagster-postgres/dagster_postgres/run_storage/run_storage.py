@@ -123,7 +123,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)
                 .values(  # pylint: disable=no-value-for-parameter
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
-                    daemon_type=daemon_heartbeat.daemon_type.value,
+                    daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_dagster_namedtuple(daemon_heartbeat),
                 )

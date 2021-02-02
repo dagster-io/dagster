@@ -4,7 +4,7 @@ from abc import abstractclassmethod, abstractmethod
 
 import pendulum
 from dagster import DagsterInstance, check
-from dagster.daemon.types import DaemonHeartbeat, DaemonType
+from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler import execute_scheduler_iteration
 from dagster.scheduler.sensor import execute_sensor_iteration
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -49,7 +49,7 @@ class DagsterDaemon:
     @abstractclassmethod
     def daemon_type(cls):
         """
-        returns: DaemonType
+        returns: str
         """
 
     def run_loop(self):
@@ -120,7 +120,7 @@ class DagsterDaemon:
                 "message reoccurs, you may have multiple daemons running which is not supported. "
                 "Last heartbeat daemon id: {}, "
                 "Current daemon_id: {}".format(
-                    daemon_type.value, last_stored_heartbeat.daemon_id, self._daemon_uuid,
+                    daemon_type, last_stored_heartbeat.daemon_id, self._daemon_uuid,
                 )
             )
 
@@ -157,7 +157,7 @@ class SchedulerDaemon(DagsterDaemon):
 
     @classmethod
     def daemon_type(cls):
-        return DaemonType.SCHEDULER
+        return "SCHEDULER"
 
     def run_iteration(self):
         return execute_scheduler_iteration(self._instance, self._logger, self._max_catchup_runs)
@@ -166,7 +166,7 @@ class SchedulerDaemon(DagsterDaemon):
 class SensorDaemon(DagsterDaemon):
     @classmethod
     def daemon_type(cls):
-        return DaemonType.SENSOR
+        return "SENSOR"
 
     def run_iteration(self):
         return execute_sensor_iteration(self._instance, self._logger)

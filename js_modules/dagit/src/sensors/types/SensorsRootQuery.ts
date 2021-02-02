@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorsRootQuery
@@ -223,7 +223,7 @@ export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHe
 
 export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];

@@ -6,7 +6,8 @@ from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.daemon.types import DaemonHeartbeat, DaemonType
+from dagster.daemon.daemon import SensorDaemon
+from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
 
 
@@ -896,25 +897,25 @@ class TestRunStorage:
         # test insert
         added_heartbeat = DaemonHeartbeat(
             timestamp=pendulum.from_timestamp(1000).float_timestamp,
-            daemon_type=DaemonType.SENSOR,
+            daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         assert len(storage.get_daemon_heartbeats()) == 1
-        stored_heartbeat = storage.get_daemon_heartbeats()[DaemonType.SENSOR]
+        stored_heartbeat = storage.get_daemon_heartbeats()[SensorDaemon.daemon_type()]
         assert stored_heartbeat == added_heartbeat
 
         # test update
         second_added_heartbeat = DaemonHeartbeat(
             timestamp=pendulum.from_timestamp(2000).float_timestamp,
-            daemon_type=DaemonType.SENSOR,
+            daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
         )
         storage.add_daemon_heartbeat(second_added_heartbeat)
         assert len(storage.get_daemon_heartbeats()) == 1
-        stored_heartbeat = storage.get_daemon_heartbeats()[DaemonType.SENSOR]
+        stored_heartbeat = storage.get_daemon_heartbeats()[SensorDaemon.daemon_type()]
         assert stored_heartbeat == second_added_heartbeat
 
     def test_wipe_heartbeats(self, storage):
@@ -922,7 +923,7 @@ class TestRunStorage:
 
         added_heartbeat = DaemonHeartbeat(
             timestamp=pendulum.from_timestamp(1000).float_timestamp,
-            daemon_type=DaemonType.SENSOR,
+            daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
         )

@@ -619,7 +619,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 conn.execute(
                     DaemonHeartbeatsTable.insert().values(  # pylint: disable=no-value-for-parameter
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
-                        daemon_type=daemon_heartbeat.daemon_type.value,
+                        daemon_type=daemon_heartbeat.daemon_type,
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_dagster_namedtuple(daemon_heartbeat),
                     )
@@ -627,9 +627,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             except db.exc.IntegrityError:
                 conn.execute(
                     DaemonHeartbeatsTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(
-                        DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type.value
-                    )
+                    .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
                     .values(  # pylint: disable=no-value-for-parameter
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
@@ -641,7 +639,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
-            heartbeats = [deserialize_json_to_dagster_namedtuple(row.body) for row in rows]
+            heartbeats = []
+            for row in rows:
+                heartbeats.append(deserialize_json_to_dagster_namedtuple(row.body))
             return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self):

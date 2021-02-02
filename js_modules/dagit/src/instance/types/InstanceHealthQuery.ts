@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { DaemonType, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceHealthQuery
@@ -25,7 +25,7 @@ export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_las
 
 export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];

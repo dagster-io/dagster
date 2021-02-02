@@ -1,6 +1,7 @@
 import pytest
 from dagster.core.scheduler import DagsterDaemonScheduler
-from dagster.daemon.types import DaemonHeartbeat, DaemonType
+from dagster.daemon.daemon import SensorDaemon
+from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils.error import SerializableErrorInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -11,19 +12,19 @@ INDIVIDUAL_DAEMON_QUERY = """
 query InstanceDetailSummaryQuery {
     instance {
         daemonHealth {
-            sensor: daemonStatus(daemonType: SENSOR){
+            sensor: daemonStatus(daemonType: "SENSOR") {
                 daemonType
                 required
                 healthy
                 lastHeartbeatTime
             }
-            run_coordinator: daemonStatus(daemonType: QUEUED_RUN_COORDINATOR){
+            run_coordinator: daemonStatus(daemonType: "QUEUED_RUN_COORDINATOR") {
                 daemonType
                 required
                 healthy
                 lastHeartbeatTime
             }
-            scheduler: daemonStatus(daemonType: SCHEDULER){
+            scheduler: daemonStatus(daemonType: "SCHEDULER") {
                 daemonType
                 required
                 healthy
@@ -53,7 +54,7 @@ DAEMON_HEALTH_QUERY = """
 query InstanceDetailSummaryQuery {
     instance {
         daemonHealth {
-            sensor: daemonStatus(daemonType: SENSOR){
+            sensor: daemonStatus(daemonType: "SENSOR"){
                 lastHeartbeatErrors {
                     message
                 }
@@ -70,7 +71,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
             pytest.skip("The daemon isn't compatible with an in-memory instance")
         graphql_context.instance.add_daemon_heartbeat(
             DaemonHeartbeat(
-                timestamp=100.0, daemon_type=DaemonType.SENSOR, daemon_id=None, errors=None
+                timestamp=100.0, daemon_type=SensorDaemon.daemon_type(), daemon_id=None, errors=None
             )
         )
         results = execute_dagster_graphql(graphql_context, INDIVIDUAL_DAEMON_QUERY)
@@ -112,24 +113,24 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                 "daemonHealth": {
                     "allDaemonStatuses": [
                         {
-                            "daemonType": "SCHEDULER",
-                            "required": scheduler_required,
-                            "healthy": False if scheduler_required else None,
-                            "lastHeartbeatTime": None,
-                        },
-                        {
                             "daemonType": "SENSOR",
                             "required": True,
                             "healthy": False,
                             "lastHeartbeatTime": None,
                         },
-                        {
-                            "daemonType": "QUEUED_RUN_COORDINATOR",
-                            "required": False,
-                            "healthy": None,
-                            "lastHeartbeatTime": None,
-                        },
                     ]
+                    + (
+                        [
+                            {
+                                "daemonType": "SCHEDULER",
+                                "required": True,
+                                "healthy": False if scheduler_required else None,
+                                "lastHeartbeatTime": None,
+                            }
+                        ]
+                        if scheduler_required
+                        else []
+                    ),
                 }
             }
         }
@@ -140,7 +141,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
         graphql_context.instance.add_daemon_heartbeat(
             DaemonHeartbeat(
                 timestamp=100.0,
-                daemon_type=DaemonType.SENSOR,
+                daemon_type=SensorDaemon.daemon_type(),
                 daemon_id=None,
                 errors=[
                     SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None)

@@ -4,8 +4,6 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { DaemonType } from "./../../types/globalTypes";
-
 // ====================================================
 // GraphQL query operation: SchedulerInfoQuery
 // ====================================================
@@ -50,7 +48,7 @@ export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_last
 
 export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];

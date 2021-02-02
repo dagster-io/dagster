@@ -14,7 +14,7 @@ from dagster.daemon.daemon import (
     get_default_daemon_logger,
 )
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster.daemon.types import DaemonHeartbeat, DaemonStatus, DaemonType
+from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 60
@@ -116,11 +116,11 @@ def required_daemons(instance):
     """
     Return which daemon types are required by the instance
     """
-    daemons = [DaemonType.SENSOR]
+    daemons = [SensorDaemon.daemon_type()]
     if isinstance(instance.scheduler, DagsterDaemonScheduler):
-        daemons.append(DaemonType.SCHEDULER)
+        daemons.append(SchedulerDaemon.daemon_type())
     if isinstance(instance.run_coordinator, QueuedRunCoordinator):
-        daemons.append(DaemonType.QUEUED_RUN_COORDINATOR)
+        daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
     return daemons
 
 

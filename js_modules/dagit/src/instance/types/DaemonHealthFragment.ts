@@ -4,8 +4,6 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { DaemonType } from "./../../types/globalTypes";
-
 // ====================================================
 // GraphQL fragment: DaemonHealthFragment
 // ====================================================
@@ -25,7 +23,7 @@ export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors {
 
 export interface DaemonHealthFragment_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors[];

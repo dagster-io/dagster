@@ -890,22 +890,16 @@ type RunLauncher {
 }
 
 type DaemonHealth {
-  daemonStatus(daemonType: DaemonType): DaemonStatus!
+  daemonStatus(daemonType: String): DaemonStatus!
   allDaemonStatuses: [DaemonStatus!]!
 }
 
 type DaemonStatus {
-  daemonType: DaemonType!
+  daemonType: String
   required: Boolean!
   healthy: Boolean
   lastHeartbeatTime: Float
   lastHeartbeatErrors: [PythonError!]!
-}
-
-enum DaemonType {
-  SENSOR
-  SCHEDULER
-  QUEUED_RUN_COORDINATOR
 }
 
 union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError

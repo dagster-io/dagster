@@ -13,7 +13,6 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.daemon.daemon import DagsterDaemon
-from dagster.daemon.types import DaemonType
 from dagster.utils.backcompat import experimental
 from dagster.utils.external import external_pipeline_from_location_handle
 
@@ -138,7 +137,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
     @classmethod
     def daemon_type(cls):
-        return DaemonType.QUEUED_RUN_COORDINATOR
+        return "QUEUED_RUN_COORDINATOR"
 
     def run_iteration(self):
         in_progress_runs = self._get_in_progress_runs()

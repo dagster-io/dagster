@@ -3,8 +3,8 @@ import sys
 import graphene
 from dagster import DagsterInstance, check
 from dagster.core.launcher.base import RunLauncher
-from dagster.daemon.controller import get_daemon_status
-from dagster.daemon.types import DaemonStatus, DaemonType
+from dagster.daemon.controller import get_daemon_status, required_daemons
+from dagster.daemon.types import DaemonStatus
 
 from .errors import GraphenePythonError
 from .util import non_null_list
@@ -24,17 +24,8 @@ class GrapheneRunLauncher(graphene.ObjectType):
         return self._run_launcher.__class__.__name__
 
 
-class GrapheneDaemonType(graphene.Enum):
-    SENSOR = "SENSOR"
-    SCHEDULER = "SCHEDULER"
-    QUEUED_RUN_COORDINATOR = "QUEUED_RUN_COORDINATOR"
-
-    class Meta:
-        name = "DaemonType"
-
-
 class GrapheneDaemonStatus(graphene.ObjectType):
-    daemonType = graphene.NonNull(GrapheneDaemonType)
+    daemonType = graphene.String()
     required = graphene.NonNull(graphene.Boolean)
     healthy = graphene.Boolean()
     lastHeartbeatTime = graphene.Float()
@@ -63,7 +54,7 @@ class GrapheneDaemonStatus(graphene.ObjectType):
 
 class GrapheneDaemonHealth(graphene.ObjectType):
     daemonStatus = graphene.Field(
-        graphene.NonNull(GrapheneDaemonStatus), daemon_type=graphene.Argument(GrapheneDaemonType)
+        graphene.NonNull(GrapheneDaemonStatus), daemon_type=graphene.Argument(graphene.String)
     )
     allDaemonStatuses = non_null_list(GrapheneDaemonStatus)
 
@@ -72,26 +63,16 @@ class GrapheneDaemonHealth(graphene.ObjectType):
 
     def __init__(self, instance):
         super().__init__()
-
-        self._daemon_statuses = {
-            DaemonType.SCHEDULER.value: get_daemon_status(  # pylint: disable=no-member
-                instance, DaemonType.SCHEDULER
-            ),
-            DaemonType.SENSOR.value: get_daemon_status(  # pylint: disable=no-member
-                instance, DaemonType.SENSOR
-            ),
-            DaemonType.QUEUED_RUN_COORDINATOR.value: get_daemon_status(  # pylint: disable=no-member
-                instance, DaemonType.QUEUED_RUN_COORDINATOR
-            ),
-        }
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
 
     def resolve_daemonStatus(self, _graphene_info, daemon_type):
-        check.str_param(daemon_type, "daemon_type")  # DaemonType
-        return GrapheneDaemonStatus(self._daemon_statuses[daemon_type])
+        check.str_param(daemon_type, "daemon_type")
+        return GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type))
 
     def resolve_allDaemonStatuses(self, _graphene_info):
         return [
-            GrapheneDaemonStatus(daemon_status) for daemon_status in self._daemon_statuses.values()
+            GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type))
+            for daemon_type in required_daemons(self._instance)
         ]
 
 

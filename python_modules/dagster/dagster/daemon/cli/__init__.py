@@ -13,8 +13,8 @@ from dagster.daemon.controller import (
     all_daemons_healthy,
     debug_daemon_heartbeats,
     get_daemon_status,
+    required_daemons,
 )
-from dagster.daemon.types import DaemonType
 
 
 @click.command(
@@ -81,7 +81,7 @@ def debug_heartbeat_command():
 )
 def debug_heartbeat_dump_command():
     with DagsterInstance.get() as instance:
-        for daemon_type in DaemonType:
+        for daemon_type in required_daemons(instance):
             click.echo(get_daemon_status(instance, daemon_type))
 
 

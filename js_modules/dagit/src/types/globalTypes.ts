@@ -13,12 +13,6 @@ export enum ComputeIOType {
   STDOUT = "STDOUT",
 }
 
-export enum DaemonType {
-  QUEUED_RUN_COORDINATOR = "QUEUED_RUN_COORDINATOR",
-  SCHEDULER = "SCHEDULER",
-  SENSOR = "SENSOR",
-}
-
 export enum EvaluationErrorReason {
   FIELDS_NOT_DEFINED = "FIELDS_NOT_DEFINED",
   FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",

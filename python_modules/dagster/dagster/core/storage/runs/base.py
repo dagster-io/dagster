@@ -4,7 +4,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 from dagster.core.events import DagsterEvent
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
-from dagster.daemon.types import DaemonHeartbeat, DaemonType
+from dagster.daemon.types import DaemonHeartbeat
 
 
 class RunStorage(ABC):
@@ -268,7 +268,7 @@ class RunStorage(ABC):
         """Called on a regular interval by the daemon"""
 
     @abstractmethod
-    def get_daemon_heartbeats(self) -> Dict[DaemonType, DaemonHeartbeat]:
+    def get_daemon_heartbeats(self) -> Dict[str, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types"""
 
     @abstractmethod

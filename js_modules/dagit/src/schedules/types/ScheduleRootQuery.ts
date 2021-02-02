@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, PipelineRunStatus, JobType, JobStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
+import { ScheduleSelector, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -180,7 +180,7 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastH
 
 export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
