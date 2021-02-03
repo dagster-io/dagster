@@ -512,8 +512,7 @@
                 "port",
                 "brokerDbNumber",
                 "backendDbNumber"
-            ],
-            "additionalProperties": false
+            ]
         },
         "Flower": {
             "title": "Flower",

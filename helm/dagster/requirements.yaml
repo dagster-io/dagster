@@ -8,3 +8,7 @@ dependencies:
     version: 6.16.3
     repository: https://kubernetes-charts.storage.googleapis.com/
     condition: rabbitmq.enabled
+  - name: redis
+    version: 6.0.10
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
