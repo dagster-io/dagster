@@ -21,7 +21,8 @@ def generate_materializations(
                     EventMetadataEntry.json(data=node_result.node, label="Node"),
                     EventMetadataEntry.text(text=str(node_result.status), label="Status"),
                     EventMetadataEntry.float(
-                        value=node_result.execution_time, label="Execution Time (seconds)",
+                        value=node_result.execution_time,
+                        label="Execution Time (seconds)",
                     ),
                     EventMetadataEntry.text(
                         text=node_result.node["config"]["materialized"],

@@ -50,7 +50,11 @@ query RequiredResourceQuery($selector: PipelineSelector!) {
 
 def test_mode_fetch_resources(graphql_context, snapshot):
     selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
-    result = execute_dagster_graphql(graphql_context, RESOURCE_QUERY, {"selector": selector},)
+    result = execute_dagster_graphql(
+        graphql_context,
+        RESOURCE_QUERY,
+        {"selector": selector},
+    )
 
     assert not result.errors
     assert result.data
@@ -67,7 +71,9 @@ def test_mode_fetch_resources(graphql_context, snapshot):
 def test_required_resources(graphql_context, snapshot):
     selector = infer_pipeline_selector(graphql_context, "required_resource_pipeline")
     result = execute_dagster_graphql(
-        graphql_context, REQUIRED_RESOURCE_QUERY, {"selector": selector},
+        graphql_context,
+        REQUIRED_RESOURCE_QUERY,
+        {"selector": selector},
     )
 
     assert not result.errors

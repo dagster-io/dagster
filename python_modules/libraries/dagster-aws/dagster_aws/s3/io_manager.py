@@ -6,7 +6,10 @@ from dagster.utils import PICKLE_PROTOCOL
 
 class PickledObjectS3IOManager(IOManager):
     def __init__(
-        self, s3_bucket, s3_session, s3_prefix=None,
+        self,
+        s3_bucket,
+        s3_session,
+        s3_prefix=None,
     ):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
         self.s3_prefix = check.str_param(s3_prefix, "s3_prefix")

@@ -65,7 +65,11 @@ def check_compute_logs(manager, result, execution_date_fmt):
 
 
 def get_dag():
-    dag = DAG(dag_id="dag", default_args=default_args, schedule_interval=None,)
+    dag = DAG(
+        dag_id="dag",
+        default_args=default_args,
+        schedule_interval=None,
+    )
 
     templated_command = """
     echo '{{ ds }}'
@@ -73,7 +77,10 @@ def get_dag():
 
     # pylint: disable=unused-variable
     t1 = BashOperator(
-        task_id="templated", depends_on_past=False, bash_command=templated_command, dag=dag,
+        task_id="templated",
+        depends_on_past=False,
+        bash_command=templated_command,
+        dag=dag,
     )
 
     return dag
@@ -105,7 +112,8 @@ def test_pipeline_auto_tag():
 
         # When tags are not set, run with current time
         result = execute_pipeline(
-            pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag), instance=instance,
+            pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag),
+            instance=instance,
         )
 
         post_execute_time = get_current_datetime_in_utc()

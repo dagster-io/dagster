@@ -155,7 +155,10 @@ def _build_execution_param_list_for_backfill(
                 run_config=partition_data.run_config,
                 mode=external_partition_set.mode,
                 execution_metadata=ExecutionMetadata(
-                    run_id=None, tags=tags, root_run_id=root_run_id, parent_run_id=parent_run_id,
+                    run_id=None,
+                    tags=tags,
+                    root_run_id=root_run_id,
+                    parent_run_id=parent_run_id,
                 ),
                 step_keys=backfill_params["reexecutionSteps"],
             )

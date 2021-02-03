@@ -411,7 +411,9 @@ def _check_execute_external_pipeline_args(
                     "You have attempted to execute pipeline {name} with mode {mode}. "
                     "Available modes: {modes}"
                 ).format(
-                    name=external_pipeline.name, mode=mode, modes=external_pipeline.available_modes,
+                    name=external_pipeline.name,
+                    mode=mode,
+                    modes=external_pipeline.available_modes,
                 )
             )
     else:
@@ -460,7 +462,12 @@ def _create_external_pipeline_run(
     check.opt_str_param(run_id, "run_id")
 
     run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
-        external_pipeline, run_config, mode, preset, tags, solid_selection,
+        external_pipeline,
+        run_config,
+        mode,
+        preset,
+        tags,
+        solid_selection,
     )
 
     pipeline_name = external_pipeline.name
@@ -481,13 +488,17 @@ def _create_external_pipeline_run(
         )
 
     external_pipeline_subset = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+        subset_pipeline_result.external_pipeline_data,
+        external_repo.handle,
     )
 
     pipeline_mode = mode or external_pipeline_subset.get_default_mode_name()
 
     external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline_subset, run_config, pipeline_mode, step_keys_to_execute=None,
+        external_pipeline_subset,
+        run_config,
+        pipeline_mode,
+        step_keys_to_execute=None,
     )
     if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
         raise DagsterLaunchFailedError(
@@ -517,7 +528,13 @@ def _create_external_pipeline_run(
 
 
 def do_execute_command(
-    pipeline, instance, config, mode=None, tags=None, solid_selection=None, preset=None,
+    pipeline,
+    instance,
+    config,
+    mode=None,
+    tags=None,
+    solid_selection=None,
+    preset=None,
 ):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -707,7 +724,8 @@ def get_config_from_args(kwargs):
         except JSONDecodeError:
             raise click.UsageError(
                 "Invalid JSON-string given for `--config-json`: {}\n\n{}".format(
-                    config_json, serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
+                    config_json,
+                    serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
                 )
             )
 
@@ -785,7 +803,9 @@ def validate_partition_slice(partition_names, name, value):
     help="The name of the partition set over which we want to backfill.",
 )
 @click.option(
-    "--all", type=click.STRING, help="Specify to select all partitions to backfill.",
+    "--all",
+    type=click.STRING,
+    help="Specify to select all partitions to backfill.",
 )
 @click.option(
     "--from",
@@ -823,7 +843,8 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
     )
 
     external_pipeline = get_external_pipeline_from_external_repo(
-        external_repo, cli_args.get("pipeline"),
+        external_repo,
+        cli_args.get("pipeline"),
     )
 
     noprompt = cli_args.get("noprompt")
@@ -867,7 +888,8 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
 
     # Resolve partitions to backfill
     partition_names_or_error = repo_location.get_external_partition_names(
-        repo_handle, partition_set_name,
+        repo_handle,
+        partition_set_name,
     )
 
     if isinstance(partition_names_or_error, ExternalPartitionExecutionErrorData):

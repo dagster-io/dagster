@@ -51,7 +51,8 @@ class ExecutionPlanSnapshot(
 class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData", "error")):
     def __new__(cls, error):
         return super(ExecutionPlanSnapshotErrorData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -106,7 +107,9 @@ class ExecutionStepOutputSnap(namedtuple("_ExecutionStepOutputSnap", "name dagst
 class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap", "key value")):
     def __new__(cls, key, value):
         return super(ExecutionPlanMetadataItemSnap, cls).__new__(
-            cls, check.str_param(key, "key"), check.str_param(value, "value"),
+            cls,
+            check.str_param(key, "key"),
+            check.str_param(value, "value"),
         )
 
 

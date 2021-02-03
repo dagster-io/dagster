@@ -177,7 +177,10 @@ def test_server_down():
             assert not launcher.can_terminate(pipeline_run.run_id)
 
             instance.add_run_tags(
-                pipeline_run.run_id, {GRPC_INFO_TAG: original_run_tags,},
+                pipeline_run.run_id,
+                {
+                    GRPC_INFO_TAG: original_run_tags,
+                },
             )
 
             assert launcher.terminate(pipeline_run.run_id)

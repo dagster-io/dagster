@@ -47,7 +47,8 @@ class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=
 
 
 LowercaseString = create_any_type(
-    "LowercaseString", serialization_strategy=UppercaseSerializationStrategy("uppercase"),
+    "LowercaseString",
+    serialization_strategy=UppercaseSerializationStrategy("uppercase"),
 )
 
 
@@ -147,7 +148,10 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["return_one"]),
+        run_config,
+        pipeline_run,
+        instance,
     ) as context:
 
         resource = context.scoped_resources_builder.build(required_resource_keys={"adls2"}).adls2
@@ -172,7 +176,10 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["add_one"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["add_one"]),
+        run_config,
+        pipeline_run,
+        instance,
     ) as context:
         step_output_handle = StepOutputHandle("add_one")
         assert intermediate_storage.has_intermediate(context, step_output_handle)
@@ -353,11 +360,19 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, run_config=run_config,)
+    result = execute_pipeline(
+        pipe,
+        run_config=run_config,
+    )
     assert result.success
 
     execution_plan = create_execution_plan(pipe, run_config)
-    with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
+    with scoped_pipeline_context(
+        execution_plan,
+        run_config,
+        pipeline_run,
+        instance,
+    ) as context:
         resource = context.scoped_resources_builder.build(required_resource_keys={"adls2"}).adls2
         intermediate_storage = ADLS2IntermediateStorage(
             run_id=result.run_id,

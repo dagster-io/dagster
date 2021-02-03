@@ -34,7 +34,9 @@ def reyielder(_context, res):
     yield Output((res["statistics"], res["results"]))
 
 
-@pipeline(mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],)
+@pipeline(
+    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
+)
 def hello_world_pandas_pipeline():
     return reyielder(
         ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(

@@ -41,7 +41,10 @@ def test_type_check():
 
 
 def test_sort():
-    with open(script_relative_path("../../../docs_snippets/intro_tutorial/cereal.csv"), "r",) as fd:
+    with open(
+        script_relative_path("../../../docs_snippets/intro_tutorial/cereal.csv"),
+        "r",
+    ) as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
     execute_solid(sort_by_calories, input_values={"cereals": cereals})

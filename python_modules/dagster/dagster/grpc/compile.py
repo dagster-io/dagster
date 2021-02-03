@@ -67,7 +67,8 @@ def protoc():
     #    See: https://github.com/grpc/grpc/issues/22914
     with safe_tempfile_path() as tempfile_path:
         shutil.copyfile(
-            GENERATED_GRPC_PATH, tempfile_path,
+            GENERATED_GRPC_PATH,
+            tempfile_path,
         )
         with open(tempfile_path, "r") as generated:
             with open(GENERATED_GRPC_PATH, "w") as rewritten:
@@ -85,7 +86,8 @@ def protoc():
 
     with safe_tempfile_path() as tempfile_path:
         shutil.copyfile(
-            GENERATED_PB2_PATH, tempfile_path,
+            GENERATED_PB2_PATH,
+            tempfile_path,
         )
         with open(tempfile_path, "r") as generated:
             with open(GENERATED_PB2_PATH, "w") as rewritten:

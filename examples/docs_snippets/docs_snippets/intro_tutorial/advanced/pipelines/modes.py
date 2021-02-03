@@ -161,7 +161,9 @@ if __name__ == "__main__":
         "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
     }
     result = execute_pipeline(
-        pipeline=modes_pipeline, mode="unittest", run_config=run_config,
+        pipeline=modes_pipeline,
+        mode="unittest",
+        run_config=run_config,
     )
     # end_modes_main
     assert result.success

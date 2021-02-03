@@ -186,8 +186,10 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                 except Exception:  # pylint: disable=broad-except
                     try:
                         with open(executed_notebook_path, "rb") as fd:
-                            executed_notebook_file_handle = compute_context.resources.file_manager.write(
-                                fd, mode="wb", ext="ipynb"
+                            executed_notebook_file_handle = (
+                                compute_context.resources.file_manager.write(
+                                    fd, mode="wb", ext="ipynb"
+                                )
                             )
                             executed_notebook_materialization_path = (
                                 executed_notebook_file_handle.path_desc
@@ -214,7 +216,8 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
 
             system_compute_context.log.debug(
                 "Notebook execution complete for {name} at {executed_notebook_path}.".format(
-                    name=name, executed_notebook_path=executed_notebook_path,
+                    name=name,
+                    executed_notebook_path=executed_notebook_path,
                 )
             )
 

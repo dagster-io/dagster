@@ -219,7 +219,8 @@ def athena_config():
 
 
 @resource(
-    config_schema=athena_config(), description="Resource for connecting to AWS Athena",
+    config_schema=athena_config(),
+    description="Resource for connecting to AWS Athena",
 )
 def athena_resource(context):
     """This resource enables connecting to AWS Athena and issuing queries against it.
@@ -256,7 +257,8 @@ def athena_resource(context):
 
 
 @resource(
-    config_schema=athena_config(), description="Fake resource for connecting to AWS Athena",
+    config_schema=athena_config(),
+    description="Fake resource for connecting to AWS Athena",
 )
 def fake_athena_resource(context):
     return FakeAthenaResource(

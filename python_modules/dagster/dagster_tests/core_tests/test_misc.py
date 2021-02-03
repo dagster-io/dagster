@@ -82,11 +82,15 @@ def test_config_from_pkg_resources():
 
     bad_defs = [
         ("dagster_tests.core_tests.definitions_tests", "does_not_exist.yaml"),
-        ("dagster_tests.core_tests.definitions_tests", "bad_file_binary.yaml",),
+        (
+            "dagster_tests.core_tests.definitions_tests",
+            "bad_file_binary.yaml",
+        ),
     ]
 
     for bad_def in bad_defs:
         with pytest.raises(
-            DagsterInvariantViolationError, match="Encountered error attempting to parse yaml",
+            DagsterInvariantViolationError,
+            match="Encountered error attempting to parse yaml",
         ):
             config_from_pkg_resources([bad_def])

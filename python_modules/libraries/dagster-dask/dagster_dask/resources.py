@@ -73,7 +73,9 @@ class DaskResource:
                 Permissive(
                     {
                         "address": Field(
-                            String, description="Address of a Scheduler server.", is_required=False,
+                            String,
+                            description="Address of a Scheduler server.",
+                            is_required=False,
                         ),
                         "timeout": Field(
                             Int,
@@ -91,7 +93,9 @@ class DaskResource:
                             is_required=False,
                         ),
                         "security": Field(
-                            Bool, description="Optional security information.", is_required=False,
+                            Bool,
+                            description="Optional security information.",
+                            is_required=False,
                         ),
                         "asynchronous": Field(
                             Bool,

@@ -85,7 +85,9 @@ def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(required_resource_keys={"pyspark_step_launcher", "pyspark"},)
+@solid(
+    required_resource_keys={"pyspark_step_launcher", "pyspark"},
+)
 def do_nothing_solid(_):
     pass
 

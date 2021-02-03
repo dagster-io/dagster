@@ -30,7 +30,7 @@ def flatten_dict(d):
 def parse_spark_config(spark_conf):
     """For each key-value pair in spark conf, we need to pass to CLI in format:
 
-        --conf "key=value"
+    --conf "key=value"
     """
 
     spark_conf_list = flatten_dict(spark_conf)
@@ -52,8 +52,7 @@ def construct_spark_shell_command(
     application_arguments=None,
     spark_home=None,
 ):
-    """Constructs the spark-submit command for a Spark job.
-    """
+    """Constructs the spark-submit command for a Spark job."""
     check.opt_str_param(master_url, "master_url")
     check.str_param(application_jar, "application_jar")
     spark_conf = check.opt_dict_param(spark_conf, "spark_conf")

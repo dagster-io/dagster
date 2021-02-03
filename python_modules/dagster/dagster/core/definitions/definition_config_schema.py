@@ -102,7 +102,8 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
 
     def _invoke_user_config_fn(self, processed_config):
         with user_code_error_boundary(
-            DagsterConfigMappingFunctionError, _get_user_code_error_str_lambda(self.parent_def),
+            DagsterConfigMappingFunctionError,
+            _get_user_code_error_str_lambda(self.parent_def),
         ):
             return {"config": self._config_fn(processed_config.get("config", {}))}
 

@@ -43,7 +43,12 @@ def get_step_output(logs, step_key):
 def execute_modes_query(context, pipeline_name, mode):
     selector = infer_pipeline_selector(context, pipeline_name)
     return execute_dagster_graphql(
-        context, MODE_QUERY, variables={"selector": selector, "mode": mode,},
+        context,
+        MODE_QUERY,
+        variables={
+            "selector": selector,
+            "mode": mode,
+        },
     )
 
 

@@ -45,8 +45,7 @@ def cli():
     "--name", prompt='Name of library (ex: "foo" will create dagster-foo)', help="Name of library"
 )
 def library(name):
-    """Scaffolds a Dagster library <NAME> in python_modules/libraries/dagster-<NAME>.
-    """
+    """Scaffolds a Dagster library <NAME> in python_modules/libraries/dagster-<NAME>."""
     template_library_path = os.path.join(ASSETS_PATH, "dagster-library-tmpl")
     new_template_library_path = os.path.abspath(
         "python_modules/libraries/dagster-{name}".format(name=name)
@@ -85,8 +84,7 @@ def library(name):
 @cli.command()
 @click.option("--name", prompt="Name of example to create", help="Name of example")
 def example(name):
-    """Scaffolds a Dagster example in the top-level examples/ folder.
-    """
+    """Scaffolds a Dagster example in the top-level examples/ folder."""
     template_library_path = os.path.join(ASSETS_PATH, "dagster-example-tmpl")
     new_template_library_path = os.path.abspath("examples/{name}".format(name=name))
     doc_path = os.path.abspath("./docs/next/src/pages/examples/{name}.mdx".format(name=name))

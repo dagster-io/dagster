@@ -487,7 +487,9 @@ def _define_spark_python_task():
 
 def _define_spark_submit_task():
     parameters = Field(
-        [String], description="Command-line parameters passed to spark submit.", is_required=True,
+        [String],
+        description="Command-line parameters passed to spark submit.",
+        is_required=True,
     )
     return Field(
         Shape(fields={"parameters": parameters}),
@@ -528,7 +530,8 @@ def define_databricks_submit_custom_run_config():
 
 def define_databricks_submit_run_config():
     return Field(
-        Shape(fields=_define_submit_run_fields()), description="Databricks job run configuration",
+        Shape(fields=_define_submit_run_fields()),
+        description="Databricks job run configuration",
     )
 
 

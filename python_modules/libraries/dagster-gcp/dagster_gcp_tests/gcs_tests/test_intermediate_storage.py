@@ -44,7 +44,8 @@ class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=
 
 
 LowercaseString = create_any_type(
-    "LowercaseString", serialization_strategy=UppercaseSerializationStrategy("uppercase"),
+    "LowercaseString",
+    serialization_strategy=UppercaseSerializationStrategy("uppercase"),
 )
 
 
@@ -120,12 +121,17 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["return_one"]),
+        run_config,
+        pipeline_run,
+        instance,
     ) as context:
         intermediate_storage = GCSIntermediateStorage(
             gcs_bucket,
             run_id,
-            client=context.scoped_resources_builder.build(required_resource_keys={"gcs"},).gcs,
+            client=context.scoped_resources_builder.build(
+                required_resource_keys={"gcs"},
+            ).gcs,
         )
         assert intermediate_storage.has_intermediate(context, StepOutputHandle("return_one"))
         assert (
@@ -144,7 +150,10 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["return_one"]),
+        run_config,
+        pipeline_run,
+        instance,
     ) as context:
         assert intermediate_storage.has_intermediate(context, StepOutputHandle("add_one"))
         assert (
@@ -322,16 +331,26 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, run_config=run_config,)
+    result = execute_pipeline(
+        pipe,
+        run_config=run_config,
+    )
     assert result.success
 
     execution_plan = create_execution_plan(pipe, run_config)
-    with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
+    with scoped_pipeline_context(
+        execution_plan,
+        run_config,
+        pipeline_run,
+        instance,
+    ) as context:
         intermediate_storage = GCSIntermediateStorage(
             run_id=result.run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
-            client=context.scoped_resources_builder.build(required_resource_keys={"gcs"},).gcs,
+            client=context.scoped_resources_builder.build(
+                required_resource_keys={"gcs"},
+            ).gcs,
         )
         assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
         assert (

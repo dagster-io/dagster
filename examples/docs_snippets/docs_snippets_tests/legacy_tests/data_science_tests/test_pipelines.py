@@ -11,9 +11,18 @@ from dagster.utils.yaml_utils import load_yaml_from_path
 @pytest.mark.parametrize(
     "file_path,run_config_path",
     [
-        ["iris_pipeline.py", None,],
-        ["iris_pipeline_2.py", "iris_pipeline_dev.yaml",],
-        ["iris_pipeline_3.py", "iris_pipeline_dev.yaml",],
+        [
+            "iris_pipeline.py",
+            None,
+        ],
+        [
+            "iris_pipeline_2.py",
+            "iris_pipeline_dev.yaml",
+        ],
+        [
+            "iris_pipeline_3.py",
+            "iris_pipeline_dev.yaml",
+        ],
     ],
 )
 def test_pipelines_success(file_path, run_config_path):

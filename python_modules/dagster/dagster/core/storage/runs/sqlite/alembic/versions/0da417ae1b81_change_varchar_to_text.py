@@ -22,18 +22,24 @@ def upgrade():
     if has_table("runs"):
         with op.batch_alter_table("runs") as batch_op:
             batch_op.alter_column(
-                "pipeline_name", type_=sa.Text, existing_type=sa.String,
+                "pipeline_name",
+                type_=sa.Text,
+                existing_type=sa.String,
             )
             batch_op.alter_column("run_body", type_=sa.Text, existing_type=sa.String)
             batch_op.alter_column("partition", type_=sa.Text, existing_type=sa.String)
             batch_op.alter_column(
-                "partition_set", type_=sa.Text, existing_type=sa.String,
+                "partition_set",
+                type_=sa.Text,
+                existing_type=sa.String,
             )
 
     if has_table("secondary_indexes"):
         with op.batch_alter_table("secondary_indexes") as batch_op:
             batch_op.alter_column(
-                "name", type_=sa.Text, existing_type=sa.String,
+                "name",
+                type_=sa.Text,
+                existing_type=sa.String,
             )
 
     if has_table("run_tags"):
@@ -46,18 +52,24 @@ def downgrade():
     if has_table("runs"):
         with op.batch_alter_table("runs") as batch_op:
             batch_op.alter_column(
-                "pipeline_name", type_=sa.String, existing_type=sa.Text,
+                "pipeline_name",
+                type_=sa.String,
+                existing_type=sa.Text,
             )
             batch_op.alter_column("run_body", type_=sa.String, existing_type=sa.Text)
             batch_op.alter_column("partition", type_=sa.String, existing_type=sa.Text)
             batch_op.alter_column(
-                "partition_set", type_=sa.String, existing_type=sa.Text,
+                "partition_set",
+                type_=sa.String,
+                existing_type=sa.Text,
             )
 
     if has_table("secondary_indexes"):
         with op.batch_alter_table("secondary_indexes") as batch_op:
             batch_op.alter_column(
-                "name", type_=sa.String, existing_type=sa.Text,
+                "name",
+                type_=sa.String,
+                existing_type=sa.Text,
             )
 
     if has_table("run_tags"):

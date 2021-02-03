@@ -32,16 +32,24 @@ DataFrameUtilities = {
             Shape(
                 {
                     "labels": Field(
-                        Any, is_required=False, description="Index or column labels to drop.",
+                        Any,
+                        is_required=False,
+                        description="Index or column labels to drop.",
                     ),
                     "axis": Field(
-                        Any, is_required=False, description="Drop labesl from index or columns.",
+                        Any,
+                        is_required=False,
+                        description="Drop labesl from index or columns.",
                     ),
                     "columns": Field(
-                        Any, is_required=False, description="Equivalent to labels with axis=1.",
+                        Any,
+                        is_required=False,
+                        description="Equivalent to labels with axis=1.",
                     ),
                     "errors": Field(
-                        String, is_required=False, description='If "ignore", supress errors.',
+                        String,
+                        is_required=False,
+                        description='If "ignore", supress errors.',
                     ),
                 }
             ),
@@ -55,10 +63,14 @@ DataFrameUtilities = {
             Shape(
                 {
                     "frac": Field(
-                        Float, is_required=False, description="Fraction of axis items to return.",
+                        Float,
+                        is_required=False,
+                        description="Fraction of axis items to return.",
                     ),
                     "replace": Field(
-                        Bool, is_required=False, description="Sample with or without replacement.",
+                        Bool,
+                        is_required=False,
+                        description="Sample with or without replacement.",
                     ),
                     "random_state": Field(
                         Int,
@@ -93,7 +105,9 @@ DataFrameUtilities = {
             Permissive(
                 {
                     "other": Field(
-                        String, is_required=True, description="Set index to specified column.",
+                        String,
+                        is_required=True,
+                        description="Set index to specified column.",
                     ),
                     "drop": Field(
                         Bool,
@@ -122,10 +136,14 @@ DataFrameUtilities = {
             Shape(
                 {
                     "divisions": Field(
-                        Any, is_required=False, description="List of partitions to be used.",
+                        Any,
+                        is_required=False,
+                        description="List of partitions to be used.",
                     ),
                     "npartitions": Field(
-                        Int, is_required=False, description="Number of partitions of output.",
+                        Int,
+                        is_required=False,
+                        description="Number of partitions of output.",
                     ),
                     "partition_size": Field(
                         Any,

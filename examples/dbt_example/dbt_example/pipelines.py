@@ -18,7 +18,11 @@ CEREALS_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9
     mode_defs=[
         ModeDefinition(
             name="prod",
-            resource_defs={"db": postgres, "slack": slack_resource, "io_manager": fs_io_manager,},
+            resource_defs={
+                "db": postgres,
+                "slack": slack_resource,
+                "io_manager": fs_io_manager,
+            },
         ),
         ModeDefinition(
             name="dev",

@@ -46,5 +46,6 @@ def external_pipeline_from_recon_pipeline(recon_pipeline, solid_selection, repos
         pipeline_def = recon_pipeline.get_definition()
 
     return ExternalPipeline(
-        external_pipeline_data_from_def(pipeline_def), repository_handle=repository_handle,
+        external_pipeline_data_from_def(pipeline_def),
+        repository_handle=repository_handle,
     )

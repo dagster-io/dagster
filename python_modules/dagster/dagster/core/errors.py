@@ -50,8 +50,8 @@ class DagsterInvalidDefinitionError(DagsterError):
 
 class DagsterInvalidSubsetError(DagsterError):
     """Indicates that a subset of a pipeline is invalid because either:
-        - One or more solids in the specified subset do not exist on the pipeline.'
-        - The subset produces an invalid pipeline.
+    - One or more solids in the specified subset do not exist on the pipeline.'
+    - The subset produces an invalid pipeline.
     """
 
 
@@ -291,7 +291,7 @@ class DagsterTypeMaterializationError(DagsterUserCodeExecutionError):
 class DagsterUnknownResourceError(DagsterError, AttributeError):
     # inherits from AttributeError as it is raised within a __getattr__ call... used to support
     # object hasattr method
-    """ Indicates that an unknown resource was accessed in the body of an execution step. May often
+    """Indicates that an unknown resource was accessed in the body of an execution step. May often
     happen by accessing a resource in the compute function of a solid without first supplying the
     solid with the correct `required_resource_keys` argument.
     """
@@ -353,7 +353,7 @@ class DagsterSubprocessError(DagsterError):
 
 class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
-     was communicating with."""
+    was communicating with."""
 
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo
@@ -367,8 +367,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
 
 class DagsterLaunchFailedError(DagsterError):
-    """Indicates an error while attempting to launch a pipeline run.
-    """
+    """Indicates an error while attempting to launch a pipeline run."""
 
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo
@@ -382,8 +381,7 @@ class DagsterLaunchFailedError(DagsterError):
 
 
 class DagsterBackfillFailedError(DagsterError):
-    """Indicates an error while attempting to launch a backfill.
-    """
+    """Indicates an error while attempting to launch a backfill."""
 
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo

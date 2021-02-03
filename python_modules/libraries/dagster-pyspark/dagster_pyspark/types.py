@@ -56,7 +56,12 @@ WriteCompressionTextOptions = Enum(
 
 WriteCompressionOrcOptions = Enum(
     "WriteCompressionOrc",
-    [EnumValue("none"), EnumValue("snappy"), EnumValue("zlib"), EnumValue("lzo"),],
+    [
+        EnumValue("none"),
+        EnumValue("snappy"),
+        EnumValue("zlib"),
+        EnumValue("lzo"),
+    ],
 )
 
 
@@ -822,7 +827,11 @@ def dataframe_materializer(_context, config, spark_df):
                         is_required=True,
                         description="a JDBC URL of the form ``jdbc:subprotocol:subname``.",
                     ),
-                    "table": Field(String, is_required=True, description="the name of the table.",),
+                    "table": Field(
+                        String,
+                        is_required=True,
+                        description="the name of the table.",
+                    ),
                     "column": Field(
                         String,
                         is_required=False,
@@ -846,7 +855,9 @@ def dataframe_materializer(_context, config, spark_df):
                         description="the maximum value of ``column`` used to decide partition stride.",
                     ),
                     "numPartitions": Field(
-                        Int, is_required=False, description="the number of partitions",
+                        Int,
+                        is_required=False,
+                        description="the number of partitions",
                     ),
                     "predicates": Field(
                         list,
@@ -879,7 +890,9 @@ def dataframe_materializer(_context, config, spark_df):
             "table": Permissive(
                 {
                     "tableName": Field(
-                        String, is_required=True, description="string, name of the table.",
+                        String,
+                        is_required=True,
+                        description="string, name of the table.",
                     ),
                 }
             ),

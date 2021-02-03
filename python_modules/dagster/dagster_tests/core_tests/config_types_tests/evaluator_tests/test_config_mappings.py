@@ -172,7 +172,8 @@ def test_config_mapper_throws():
 
     with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
         execute_pipeline(
-            wrap_pipeline, {"solids": {"do_stuff": {"config": {"does_not_matter": "blah"}}}},
+            wrap_pipeline,
+            {"solids": {"do_stuff": {"config": {"does_not_matter": "blah"}}}},
         )
 
     assert (
@@ -748,7 +749,8 @@ def test_nested_empty_config_input():
         double_wrap()
 
     res = execute_pipeline(
-        wrap_pipeline, run_config={"solids": {"double_wrap": {"inputs": {"num": {"value": 2}}}}},
+        wrap_pipeline,
+        run_config={"solids": {"double_wrap": {"inputs": {"num": {"value": 2}}}}},
     )
     assert res.result_for_handle("double_wrap.number").output_value() == 2
     assert res.result_for_solid("double_wrap").output_values == {"result": 4}

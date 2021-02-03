@@ -72,10 +72,12 @@ def test_two_modes(snapshot):
         solid_defs=[],
         mode_defs=[
             ModeDefinition(
-                "mode_one", resource_defs={"value": dummy_resource({"mode_one_field": String})},
+                "mode_one",
+                resource_defs={"value": dummy_resource({"mode_one_field": String})},
             ),
             ModeDefinition(
-                "mode_two", resource_defs={"value": dummy_resource({"mode_two_field": Int})},
+                "mode_two",
+                resource_defs={"value": dummy_resource({"mode_two_field": Int})},
             ),
         ],
     )

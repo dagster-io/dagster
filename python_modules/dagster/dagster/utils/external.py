@@ -52,7 +52,8 @@ def external_pipeline_from_location_handle(
 
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
     external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+        subset_pipeline_result.external_pipeline_data,
+        external_repo.handle,
     )
     return external_pipeline
 

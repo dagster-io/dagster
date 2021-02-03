@@ -189,7 +189,8 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
                 "Sensor failed for {sensor_name} : {error_info}".format(
-                    sensor_name=job_state.job_name, error_info=error_info.to_string(),
+                    sensor_name=job_state.job_name,
+                    error_info=error_info.to_string(),
                 )
             )
         yield error_info
@@ -214,7 +215,8 @@ def _evaluate_sensor(
     if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
         context.logger.error(
             "Failed to resolve sensor for {sensor_name} : {error_info}".format(
-                sensor_name=external_sensor.name, error_info=sensor_runtime_data.error.to_string(),
+                sensor_name=external_sensor.name,
+                error_info=sensor_runtime_data.error.to_string(),
             )
         )
         context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
@@ -243,7 +245,8 @@ def _evaluate_sensor(
     )
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
     external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+        subset_pipeline_result.external_pipeline_data,
+        external_repo.handle,
     )
 
     for run_request in sensor_runtime_data.run_requests:
@@ -308,7 +311,8 @@ def _get_or_create_sensor_run(
     existing_runs = instance.get_runs(
         PipelineRunsFilter(
             tags=merge_dicts(
-                PipelineRun.tags_for_sensor(external_sensor), {RUN_KEY_TAG: run_request.run_key},
+                PipelineRun.tags_for_sensor(external_sensor),
+                {RUN_KEY_TAG: run_request.run_key},
             )
         )
     )
@@ -342,14 +346,18 @@ def _get_or_create_sensor_run(
 
 def _create_sensor_run(instance, repo_location, external_sensor, external_pipeline, run_request):
     external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline, run_request.run_config, external_sensor.mode, step_keys_to_execute=None,
+        external_pipeline,
+        run_request.run_config,
+        external_sensor.mode,
+        step_keys_to_execute=None,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(
-        merge_dicts(pipeline_tags, run_request.tags), PipelineRun.tags_for_sensor(external_sensor),
+        merge_dicts(pipeline_tags, run_request.tags),
+        PipelineRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key

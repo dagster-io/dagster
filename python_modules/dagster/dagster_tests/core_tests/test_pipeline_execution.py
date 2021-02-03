@@ -168,7 +168,9 @@ def test_diamond_toposort():
 def test_external_diamond_toposort():
     with RepositoryLocationHandle.create_from_repository_location_origin(
         location_origin_from_python_file(
-            python_file=__file__, attribute="create_diamond_pipeline", working_directory=None,
+            python_file=__file__,
+            attribute="create_diamond_pipeline",
+            working_directory=None,
         )
     ) as handle:
         repo_location = RepositoryLocation.from_handle(handle)
@@ -580,7 +582,8 @@ def test_pipeline_wrapping_types():
     ).success
 
     assert execute_pipeline(
-        wrapping_test, run_config={"solids": {"double_string_for_all": {"inputs": {"value": []}}}},
+        wrapping_test,
+        run_config={"solids": {"double_string_for_all": {"inputs": {"value": []}}}},
     ).success
 
     assert execute_pipeline(
@@ -725,7 +728,10 @@ def test_reexecution_fs_storage():
     assert pipeline_result.result_for_solid("add_one").output_value() == 2
 
     reexecution_result = reexecute_pipeline(
-        pipeline_def, pipeline_result.run_id, run_config=run_config, instance=instance,
+        pipeline_def,
+        pipeline_result.run_id,
+        run_config=run_config,
+        instance=instance,
     )
 
     assert reexecution_result.success
@@ -737,7 +743,10 @@ def test_reexecution_fs_storage():
     assert reexecution_run.root_run_id == pipeline_result.run_id
 
     grandchild_result = reexecute_pipeline(
-        pipeline_def, reexecution_result.run_id, run_config=run_config, instance=instance,
+        pipeline_def,
+        reexecution_result.run_id,
+        run_config=run_config,
+        instance=instance,
     )
 
     assert grandchild_result.success
@@ -784,7 +793,10 @@ def test_reexecution_fs_storage_with_solid_selection():
 
     # Case 2: re-execute a pipeline when the original pipeline has solid selection
     pipeline_result_solid_selection = execute_pipeline(
-        pipeline_def, run_config=run_config, instance=instance, solid_selection=["return_one"],
+        pipeline_def,
+        run_config=run_config,
+        instance=instance,
+        solid_selection=["return_one"],
     )
     assert pipeline_result_solid_selection.success
     assert len(pipeline_result_solid_selection.solid_result_list) == 1

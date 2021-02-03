@@ -8,8 +8,7 @@ from dagster_k8s.utils import (
 
 
 def wait_for_job_ready(job_name, namespace):
-    """Wait for a dagster-k8s job to be ready
-    """
+    """Wait for a dagster-k8s job to be ready"""
     check.str_param(job_name, "job_name")
     check.str_param(namespace, "namespace")
 

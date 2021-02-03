@@ -18,7 +18,8 @@ def construct_pod_spec(name, cmd):
 
 def construct_pod_manifest(name, cmd):
     return kubernetes.client.V1Pod(
-        metadata=kubernetes.client.V1ObjectMeta(name=name), spec=construct_pod_spec(name, cmd),
+        metadata=kubernetes.client.V1ObjectMeta(name=name),
+        spec=construct_pod_spec(name, cmd),
     )
 
 
@@ -114,7 +115,8 @@ def test_wait_for_job(cluster_provider):  # pylint: disable=unused-argument
                 wait_for_job_success("sayhi2", namespace=namespace, wait_timeout=1)
 
             with pytest.raises(
-                DagsterK8sError, match="Encountered failed job pods for job fail with status:",
+                DagsterK8sError,
+                match="Encountered failed job pods for job fail with status:",
             ):
                 api.create_namespaced_job(
                     body=construct_job_manifest("fail", 'echo "whoops!"; exit 1'),

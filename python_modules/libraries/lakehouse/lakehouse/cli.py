@@ -39,7 +39,8 @@ def update_cli(module, mode, assets):
     asset_defs = lakehouse.query_assets(assets)
 
     execute_pipeline(
-        lakehouse.build_pipeline_definition("update_" + assets, asset_defs), mode=mode,
+        lakehouse.build_pipeline_definition("update_" + assets, asset_defs),
+        mode=mode,
     )
 
 

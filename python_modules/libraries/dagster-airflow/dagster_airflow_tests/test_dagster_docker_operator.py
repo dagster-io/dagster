@@ -35,7 +35,10 @@ def test_init_modified_docker_operator(dagster_docker_image):
             run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="",
             mode="default",
-            op_kwargs={"image": dagster_docker_image, "api_version": "auto",},
+            op_kwargs={
+                "image": dagster_docker_image,
+                "api_version": "auto",
+            },
             pipeline_snapshot=nonce_pipeline_snapshot,
             execution_plan_snapshot=nonce_execution_plan_snapshot,
             instance_ref=instance.get_ref(),

@@ -22,7 +22,12 @@ class DbtRpcOutput(namedtuple("_DbtRpcOutput", "result state start end elapsed")
     """
 
     def __new__(
-        cls, result: DbtResult, state: str, start: str, end: str, elapsed: float,
+        cls,
+        result: DbtResult,
+        state: str,
+        start: str,
+        end: str,
+        elapsed: float,
     ):
         return super().__new__(
             cls,

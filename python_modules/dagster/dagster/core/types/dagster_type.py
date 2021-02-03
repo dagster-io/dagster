@@ -102,12 +102,16 @@ class DagsterType:
 
         if name is None:
             check.param_invariant(
-                bool(key), "key", "If name is not provided, must provide key.",
+                bool(key),
+                "key",
+                "If name is not provided, must provide key.",
             )
             self.key, self._name = key, None
         elif key is None:
             check.param_invariant(
-                bool(name), "name", "If key is not provided, must provide name.",
+                bool(name),
+                "name",
+                "If key is not provided, must provide name.",
             )
             self.key, self._name = name, name
         else:
@@ -127,7 +131,8 @@ class DagsterType:
             PickleSerializationStrategy(),
         )
         self.required_resource_keys = check.opt_set_param(
-            required_resource_keys, "required_resource_keys",
+            required_resource_keys,
+            "required_resource_keys",
         )
 
         self._type_check_fn = check.callable_param(type_check_fn, "type_check_fn")
@@ -246,7 +251,9 @@ def _validate_type_check_fn(fn, name):
         if args[0] not in possible_names:
             DagsterInvalidDefinitionError(
                 'type_check function on type "{name}" must have first '
-                'argument named "context" (or _, _context, context_).'.format(name=name,)
+                'argument named "context" (or _, _context, context_).'.format(
+                    name=name,
+                )
             )
         return True
 
@@ -516,7 +523,9 @@ class PythonObjectDagsterType(DagsterType):
                     "Value of type {value_type} failed type check for Dagster type {dagster_type}, "
                     "expected value to be of Python type {expected_type}."
                 ).format(
-                    value_type=type(value), dagster_type=self._name, expected_type=self.type_str,
+                    value_type=type(value),
+                    dagster_type=self._name,
+                    expected_type=self.type_str,
                 ),
             )
 

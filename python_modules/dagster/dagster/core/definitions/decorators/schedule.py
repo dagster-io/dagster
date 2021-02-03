@@ -444,7 +444,11 @@ def my_schedule_definition(_):
     fmt = DEFAULT_DATE_FORMAT
 
     execution_time_to_partition_fn = (
-        lambda d: pendulum.instance(d).replace(hour=0, minute=0).subtract(days=1,)
+        lambda d: pendulum.instance(d)
+        .replace(hour=0, minute=0)
+        .subtract(
+            days=1,
+        )
     )
 
     partition_fn = schedule_partition_range(

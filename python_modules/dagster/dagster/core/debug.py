@@ -15,7 +15,12 @@ class DebugRunPayload(
     )
 ):
     def __new__(
-        cls, version, pipeline_run, event_list, pipeline_snapshot, execution_plan_snapshot,
+        cls,
+        version,
+        pipeline_run,
+        event_list,
+        pipeline_snapshot,
+        execution_plan_snapshot,
     ):
         return super(DebugRunPayload, cls).__new__(
             cls,

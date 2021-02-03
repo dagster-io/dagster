@@ -47,7 +47,8 @@ class StepInputData(
 
 class StepInput(
     NamedTuple(
-        "_StepInput", [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
+        "_StepInput",
+        [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
     )
 ):
     """Holds information for how to prepare an input for an ExecutionStep"""
@@ -119,7 +120,10 @@ class StepInputSource(ABC):
 
 
 class FromRootInputManager(
-    NamedTuple("_FromRootInputManager", [("solid_handle", SolidHandle), ("input_name", str)],),
+    NamedTuple(
+        "_FromRootInputManager",
+        [("solid_handle", SolidHandle), ("input_name", str)],
+    ),
     StepInputSource,
 ):
     def load_input_object(
@@ -145,7 +149,9 @@ class FromRootInputManager(
         )
         yield _load_input_with_input_manager(loader, load_input_context)
         yield DagsterEvent.loaded_input(
-            step_context, input_name=input_def.name, manager_key=input_def.root_manager_key,
+            step_context,
+            input_name=input_def.name,
+            manager_key=input_def.root_manager_key,
         )
 
     def compute_version(self, step_versions, pipeline_def, environment_config) -> Optional[str]:
@@ -285,7 +291,9 @@ class FromConfig(
 
     def __new__(cls, solid_handle: SolidHandle, input_name: str):
         return super(FromConfig, cls).__new__(
-            cls, solid_handle=solid_handle, input_name=input_name,
+            cls,
+            solid_handle=solid_handle,
+            input_name=input_name,
         )
 
     def load_input_object(self, step_context: "SystemStepExecutionContext") -> Any:
@@ -323,7 +331,10 @@ class FromConfig(
 
 
 class FromDefaultValue(
-    NamedTuple("_FromDefaultValue", [("solid_handle", SolidHandle), ("input_name", str)],),
+    NamedTuple(
+        "_FromDefaultValue",
+        [("solid_handle", SolidHandle), ("input_name", str)],
+    ),
     StepInputSource,
 ):
     """This step input source is the default value declared on the InputDefinition"""
@@ -351,7 +362,11 @@ class FromDefaultValue(
 class FromMultipleSources(
     NamedTuple(
         "_FromMultipleSources",
-        [("solid_handle", SolidHandle), ("input_name", str), ("sources", List[StepInputSource]),],
+        [
+            ("solid_handle", SolidHandle),
+            ("input_name", str),
+            ("sources", List[StepInputSource]),
+        ],
     ),
     StepInputSource,
 ):
@@ -466,7 +481,10 @@ class FromPendingDynamicStepOutput(
     """
 
     def __new__(
-        cls, step_output_handle: StepOutputHandle, solid_handle: SolidHandle, input_name: str,
+        cls,
+        step_output_handle: StepOutputHandle,
+        solid_handle: SolidHandle,
+        input_name: str,
     ):
         # Model the unknown mapping key from known execution step
         # using a StepOutputHandle with None mapping_key.
@@ -587,7 +605,10 @@ class UnresolvedStepInput(
     """Holds information for how to resolve a StepInput once the upstream mapping is done"""
 
     def __new__(
-        cls, name, dagster_type_key, source,
+        cls,
+        name,
+        dagster_type_key,
+        source,
     ):
         return super(UnresolvedStepInput, cls).__new__(
             cls,

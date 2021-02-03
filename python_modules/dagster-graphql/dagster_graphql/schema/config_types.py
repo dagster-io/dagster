@@ -120,7 +120,10 @@ class GrapheneArrayConfigType(ConfigTypeMixin, graphene.ObjectType):
         name = "ArrayConfigType"
 
     def resolve_of_type(self, _graphene_info):
-        return to_config_type(self._config_schema_snapshot, self._config_type_snap.inner_type_key,)
+        return to_config_type(
+            self._config_schema_snapshot,
+            self._config_type_snap.inner_type_key,
+        )
 
 
 class GrapheneScalarUnionConfigType(ConfigTypeMixin, graphene.ObjectType):
@@ -226,7 +229,8 @@ class GrapheneCompositeConfigType(ConfigTypeMixin, graphene.ObjectType):
         return sorted(
             [
                 GrapheneConfigTypeField(
-                    config_schema_snapshot=self._config_schema_snapshot, field_snap=field_snap,
+                    config_schema_snapshot=self._config_schema_snapshot,
+                    field_snap=field_snap,
                 )
                 for field_snap in self._config_type_snap.fields
             ],

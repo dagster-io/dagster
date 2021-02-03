@@ -4,7 +4,8 @@ from dagster.core.definitions.decorators import monthly_schedule
 
 
 @monthly_schedule(
-    pipeline_name="compute_total_stock_volume", start_date=datetime.datetime(2018, 1, 1),
+    pipeline_name="compute_total_stock_volume",
+    start_date=datetime.datetime(2018, 1, 1),
 )
 def daily_stock_schedule(date):
 

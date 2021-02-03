@@ -73,14 +73,17 @@ def define_out_of_process_context(python_file, fn_name, instance):
         [
             ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 loadable_target_origin=LoadableTargetOrigin(
-                    executable_path=sys.executable, python_file=python_file, attribute=fn_name,
+                    executable_path=sys.executable,
+                    python_file=python_file,
+                    attribute=fn_name,
                 ),
                 location_name=main_repo_location_name(),
             )
         ]
     ) as workspace:
         yield DagsterGraphQLContext(
-            workspace=workspace, instance=instance,
+            workspace=workspace,
+            instance=instance,
         )
 
 

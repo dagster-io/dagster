@@ -101,7 +101,9 @@ def gcs_to_bigquery(context):
     bq.load_table_from_uri(source_uris, destination, job_config=load_job_config).result()
 
 
-@solid(input_defs=[InputDefinition("start", Nothing)],)
+@solid(
+    input_defs=[InputDefinition("start", Nothing)],
+)
 def explore_visits_by_hour(context):
     bq = context.resources.bigquery
 

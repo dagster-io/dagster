@@ -49,35 +49,40 @@ def _base_compute(context):
         if context.solid_config.get("materialization_text") is not None:
             metadata_entries.append(
                 EventMetadataEntry.text(
-                    context.solid_config.get("materialization_text"), context.solid.name,
+                    context.solid_config.get("materialization_text"),
+                    context.solid.name,
                 )
             )
 
         if context.solid_config.get("materialization_url") is not None:
             metadata_entries.append(
                 EventMetadataEntry.url(
-                    context.solid_config.get("materialization_url"), context.solid.name,
+                    context.solid_config.get("materialization_url"),
+                    context.solid.name,
                 )
             )
 
         if context.solid_config.get("materialization_path") is not None:
             metadata_entries.append(
                 EventMetadataEntry.path(
-                    context.solid_config.get("materialization_path"), context.solid.name,
+                    context.solid_config.get("materialization_path"),
+                    context.solid.name,
                 )
             )
 
         if context.solid_config.get("materialization_json") is not None:
             metadata_entries.append(
                 EventMetadataEntry.json(
-                    context.solid_config.get("materialization_json"), context.solid.name,
+                    context.solid_config.get("materialization_json"),
+                    context.solid.name,
                 )
             )
 
         if context.solid_config.get("materialization_value") is not None:
             metadata_entries = [
                 EventMetadataEntry.float(
-                    context.solid_config.get("materialization_value"), context.solid.name,
+                    context.solid_config.get("materialization_value"),
+                    context.solid.name,
                 )
             ]
 
@@ -233,7 +238,10 @@ def longitudinal_config(partition):
             "persist_model": {
                 "config": {
                     "materialization_key": "model",
-                    "materialization_json": {"traffic": traffic_data_size, "cost": cost_data_size,},
+                    "materialization_json": {
+                        "traffic": traffic_data_size,
+                        "cost": cost_data_size,
+                    },
                     "partition": partition.name,
                 }
             },

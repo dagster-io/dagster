@@ -26,7 +26,9 @@ def airflow_extra_cmds_fn(version):
         "docker-compose up -d --remove-orphans",
         network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            "postgres", "test-postgres-db-airflow", "POSTGRES_TEST_DB_HOST",
+            "postgres",
+            "test-postgres-db-airflow",
+            "POSTGRES_TEST_DB_HOST",
         ),
         "popd",
     ]
@@ -74,7 +76,9 @@ def deploy_docker_example_extra_cmds_fn(_):
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         network_buildkite_container("docker_example_network"),
         connect_sibling_docker_container(
-            "docker_example_network", "docker_example_dagit", "DEPLOY_DOCKER_DAGIT_HOST",
+            "docker_example_network",
+            "docker_example_dagit",
+            "DEPLOY_DOCKER_DAGIT_HOST",
         ),
         "popd",
     ]
@@ -102,7 +106,9 @@ def celery_docker_extra_cmds_fn(version):
         "docker-compose up -d --remove-orphans",
         network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            "postgres", "test-postgres-db-celery-docker", "POSTGRES_TEST_DB_HOST",
+            "postgres",
+            "test-postgres-db-celery-docker",
+            "POSTGRES_TEST_DB_HOST",
         ),
         "popd",
     ]
@@ -116,7 +122,9 @@ def docker_extra_cmds_fn(version):
         "docker-compose up -d --remove-orphans",
         network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            "postgres", "test-postgres-db-docker", "POSTGRES_TEST_DB_HOST",
+            "postgres",
+            "test-postgres-db-docker",
+            "POSTGRES_TEST_DB_HOST",
         ),
         "popd",
     ]
@@ -191,7 +199,9 @@ def postgres_extra_cmds_fn(_):
         connect_sibling_docker_container("postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"),
         network_buildkite_container("postgres_multi"),
         connect_sibling_docker_container(
-            "postgres_multi", "test-run-storage-db", "POSTGRES_TEST_RUN_STORAGE_DB_HOST",
+            "postgres_multi",
+            "test-run-storage-db",
+            "POSTGRES_TEST_RUN_STORAGE_DB_HOST",
         ),
         connect_sibling_docker_container(
             "postgres_multi",
@@ -302,7 +312,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             # "-postgres_instance_deployed_grpc_env",
         ],
     ),
-    ModuleBuildSpec("python_modules/libraries/dagster-dbt", extra_cmds_fn=dbt_extra_cmds_fn,),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagster-dbt",
+        extra_cmds_fn=dbt_extra_cmds_fn,
+    ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-airflow",
         env_vars=[
@@ -322,7 +335,8 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
     ),
     ModuleBuildSpec(
-        "python_modules/libraries/dagster-azure", env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
+        "python_modules/libraries/dagster-azure",
+        env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-celery",
@@ -525,12 +539,18 @@ def dagster_steps():
     steps += pylint_steps()
     steps += [
         StepBuilder(":isort:")
-        .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code",)
+        .run(
+            "pip install isort>=4.3.21",
+            "make isort",
+            "git diff --exit-code",
+        )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder(":python-black:")
         # See: https://github.com/dagster-io/dagster/issues/1999
-        .run("make check_black").on_integration_image(SupportedPython.V3_7).build(),
+        .run("pip install -e python_modules/dagster[test]", "make check_black")
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
 
     for m in DAGSTER_PACKAGES_WITH_CUSTOM_TESTS:

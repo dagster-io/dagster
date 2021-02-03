@@ -208,11 +208,13 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
     # FIXME add an output to this
     tutorial_LR = test_nb_solid(
-        "tutorial_LR", input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+        "tutorial_LR",
+        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
     )
 
     tutorial_RF = test_nb_solid(
-        "tutorial_RF", input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+        "tutorial_RF",
+        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
     )
 
     @pipeline(mode_defs=default_mode_defs)
@@ -230,7 +232,9 @@ def resource_solid(context):
 
 
 hello_world_resource = test_nb_solid(
-    "hello_world_resource", input_defs=[InputDefinition("nonce")], required_resource_keys={"list"},
+    "hello_world_resource",
+    input_defs=[InputDefinition("nonce")],
+    required_resource_keys={"list"},
 )
 
 hello_world_resource_with_exception = test_nb_solid(

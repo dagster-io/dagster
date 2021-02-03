@@ -35,14 +35,12 @@ class DagsterModule(namedtuple("_DagsterModule", "name is_library additional_ste
 
     @property
     def version_file_path(self):
-        """Absolute path to this module's version.py file.
-        """
+        """Absolute path to this module's version.py file."""
         return os.path.join(self.module_path, self.normalized_module_name, "version.py")
 
     @property
     def should_publish(self):
-        """Only packages with a version.py file should be published.
-        """
+        """Only packages with a version.py file should be published."""
         return os.path.exists(self.version_file_path)
 
     @property

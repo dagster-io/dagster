@@ -65,12 +65,14 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
     def resolve_dependsOn(self, _graphene_info):
         return [
             GrapheneExecutionStep(
-                self._external_execution_plan, self._external_execution_plan.get_step_by_key(key),
+                self._external_execution_plan,
+                self._external_execution_plan.get_step_by_key(key),
             )
             # We filter at this layer to ensure that we do not return outputs that
             # do not exist in the execution plan
             for key in filter(
-                self._external_execution_plan.key_in_plan, self._step_input_snap.upstream_step_keys,
+                self._external_execution_plan.key_in_plan,
+                self._step_input_snap.upstream_step_keys,
             )
         ]
 
@@ -132,7 +134,8 @@ class GrapheneExecutionStep(graphene.ObjectType):
     def resolve_outputs(self, _graphene_info):
         return [
             GrapheneExecutionStepOutput(
-                self._external_execution_plan.represented_pipeline.pipeline_snapshot, out,
+                self._external_execution_plan.represented_pipeline.pipeline_snapshot,
+                out,
             )
             for out in self._step_snap.outputs
         ]

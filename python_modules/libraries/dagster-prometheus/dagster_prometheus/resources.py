@@ -4,8 +4,7 @@ from prometheus_client.exposition import default_handler
 
 
 class PrometheusResource:
-    """Integrates with Prometheus via the prometheus_client library.
-    """
+    """Integrates with Prometheus via the prometheus_client library."""
 
     def __init__(self, gateway, timeout):
         self.gateway = check.str_param(gateway, "gateway")

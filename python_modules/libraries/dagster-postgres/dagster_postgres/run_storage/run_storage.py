@@ -45,7 +45,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool,
+            self.postgres_url,
+            isolation_level="AUTOCOMMIT",
+            poolclass=db.pool.NullPool,
         )
 
         self._index_migration_cache = {}
@@ -96,7 +98,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         return PostgresRunStorage(postgres_url)
 
     def connect(self):
-        return create_pg_connection(self._engine, __file__, "run",)
+        return create_pg_connection(
+            self._engine,
+            __file__,
+            "run",
+        )
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)

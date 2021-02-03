@@ -49,7 +49,10 @@ def pg_hostname():
 @pytest.fixture(scope="function")
 def postgres(pg_hostname):  # pylint: disable=redefined-outer-name
     conn_string = get_conn_string(
-        username="dbt_example", password="dbt_example", hostname=pg_hostname, db_name="dbt_example",
+        username="dbt_example",
+        password="dbt_example",
+        hostname=pg_hostname,
+        db_name="dbt_example",
     )
 
     if not BUILDKITE:

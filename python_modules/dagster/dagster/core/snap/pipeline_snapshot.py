@@ -293,7 +293,10 @@ def construct_config_type_from_snap(config_type_snap, config_snap_map):
 
 @whitelist_for_serdes
 class PipelineSnapshotLineage(
-    namedtuple("_PipelineSnapshotLineage", "parent_snapshot_id solid_selection solids_to_execute",)
+    namedtuple(
+        "_PipelineSnapshotLineage",
+        "parent_snapshot_id solid_selection solids_to_execute",
+    )
 ):
     def __new__(cls, parent_snapshot_id, solid_selection=None, solids_to_execute=None):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)

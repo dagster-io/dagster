@@ -331,7 +331,9 @@ class IntermediateStorageConfig(
         return super(IntermediateStorageConfig, cls).__new__(
             cls,
             intermediate_storage_name=check.opt_str_param(
-                intermediate_storage_name, "intermediate_storage_name", "in_memory",
+                intermediate_storage_name,
+                "intermediate_storage_name",
+                "in_memory",
             ),
             intermediate_storage_config=check.opt_dict_param(
                 intermediate_storage_config, "intermediate_storage_config", key_type=str

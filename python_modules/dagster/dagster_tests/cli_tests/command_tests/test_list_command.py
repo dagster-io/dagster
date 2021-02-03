@@ -64,7 +64,9 @@ def test_list_command_grpc_socket():
 
         with server_process.create_ephemeral_client() as api_client:
             execute_list_command(
-                {"grpc_socket": api_client.socket}, no_print, instance,
+                {"grpc_socket": api_client.socket},
+                no_print,
+                instance,
             )
             execute_list_command(
                 {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
@@ -117,7 +119,9 @@ def test_list_command_deployed_grpc():
             assert result.exit_code != 0
 
             execute_list_command(
-                {"grpc_port": api_client.port}, no_print, instance,
+                {"grpc_port": api_client.port},
+                no_print,
+                instance,
             )
 
             # Can't supply both port and socket
@@ -189,7 +193,8 @@ def test_list_command_cli():
     assert result.exit_code == 2
 
     result = runner.invoke(
-        pipeline_list_command, ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
+        pipeline_list_command,
+        ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
     )
     assert_correct_bar_repository_output(result)
 

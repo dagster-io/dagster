@@ -614,8 +614,7 @@ def opt_nullable_dict_param(
     value_type: Type = None,
     value_class: Type = None,
 ) -> Optional[Dict]:
-    """Ensures argument obj is either a dictionary or None;
-    """
+    """Ensures argument obj is either a dictionary or None;"""
     from dagster.utils import frozendict
 
     if obj is not None and not isinstance(obj, (frozendict, dict)):
@@ -888,7 +887,9 @@ def class_param(obj: Any, param_name: str) -> Union[ParameterCheckError, type]:
     if not inspect.isclass(obj):
         return ParameterCheckError(
             'Param "{name}" is not a class. Got {obj} which is type {obj_type}.'.format(
-                name=param_name, obj=repr(obj), obj_type=type(obj),
+                name=param_name,
+                obj=repr(obj),
+                obj_type=type(obj),
             )
         )
     return obj

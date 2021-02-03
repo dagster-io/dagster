@@ -35,7 +35,9 @@ class _Hook:
             )
 
         hook_def = HookDefinition(
-            name=self.name, hook_fn=fn, required_resource_keys=self.required_resource_keys,
+            name=self.name,
+            hook_fn=fn,
+            required_resource_keys=self.required_resource_keys,
         )
         update_wrapper(hook_def, fn)
         return hook_def

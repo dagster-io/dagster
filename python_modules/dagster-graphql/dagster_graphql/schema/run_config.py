@@ -71,7 +71,10 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
 
     def resolve_isRunConfigValid(self, graphene_info, **kwargs):
         return resolve_is_run_config_valid(
-            graphene_info, self._represented_pipeline, self._mode, kwargs.get("runConfigData", {}),
+            graphene_info,
+            self._represented_pipeline,
+            self._mode,
+            kwargs.get("runConfigData", {}),
         )
 
 

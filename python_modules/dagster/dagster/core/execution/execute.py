@@ -38,10 +38,16 @@ def execute_in_process(
 
     node_defs = [node]
 
-    mode_def = ModeDefinition("created", resource_defs=resources, logger_defs=loggers,)
+    mode_def = ModeDefinition(
+        "created",
+        resource_defs=resources,
+        logger_defs=loggers,
+    )
 
     pipeline_def = PipelineDefinition(
-        node_defs, name=f"ephemeral_{node.name}_node_pipeline", mode_defs=[mode_def],
+        node_defs,
+        name=f"ephemeral_{node.name}_node_pipeline",
+        mode_defs=[mode_def],
     )
 
     pipeline = InMemoryPipeline(pipeline_def)
@@ -50,7 +56,9 @@ def execute_in_process(
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def, run_config=run_config, mode=mode_def.name,
+            pipeline_def=pipeline_def,
+            run_config=run_config,
+            mode=mode_def.name,
         )
 
         _execute_run_iterable = ExecuteRunWithPlanIterable(

@@ -11,7 +11,10 @@ args = {
 
 simple_dag = models.DAG(dag_id="simple_dag", default_args=args, schedule_interval=None)
 
-run_this_last = DummyOperator(task_id="sink_task", dag=simple_dag,)
+run_this_last = DummyOperator(
+    task_id="sink_task",
+    dag=simple_dag,
+)
 
 for i in range(3):
     task = BashOperator(

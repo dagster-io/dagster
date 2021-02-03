@@ -173,7 +173,10 @@ def test_fan_in_manual():
             dependencies={
                 "collect": {
                     "stuff": MultiDependencyDefinition(
-                        [DependencyDefinition("emit_num"), MappedInputPlaceholder,]
+                        [
+                            DependencyDefinition("emit_num"),
+                            MappedInputPlaceholder,
+                        ]
                     )
                 }
             },
@@ -192,7 +195,8 @@ def test_fan_in_manual():
         )
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Unsatisfied MappedInputPlaceholder at index 3",
+        DagsterInvalidDefinitionError,
+        match="Unsatisfied MappedInputPlaceholder at index 3",
     ):
         _missing_placeholder = CompositeSolidDefinition(
             name="manual_composite",

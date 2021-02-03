@@ -13,7 +13,9 @@ query InstanceDetailSummaryQuery {
 
 class TestNonQueued(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.in_memory_instance_in_process_env(),]
+        context_variants=[
+            GraphQLContextVariant.in_memory_instance_in_process_env(),
+        ]
     )
 ):
     def test_get_individual_daemons(self, graphql_context):

@@ -87,7 +87,10 @@ def repo():
 
 if __name__ == "__main__":
     # start_repo_main
-    with open(file_relative_path(__file__, "prod.yaml"), "r",) as fd:
+    with open(
+        file_relative_path(__file__, "prod.yaml"),
+        "r",
+    ) as fd:
         run_config = yaml.safe_load(fd.read())
     result = execute_pipeline(notif_all, run_config=run_config, mode="prod")
     # end_repo_main

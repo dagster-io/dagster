@@ -30,8 +30,7 @@ GRPC_REPOSITORY_LOCATION_HANDLE_TYPES = (
 
 
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
-    """Launches runs against running GRPC servers.
-    """
+    """Launches runs against running GRPC servers."""
 
     def __init__(self, inst_data=None):
         self._instance_weakref = None

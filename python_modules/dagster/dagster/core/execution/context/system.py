@@ -201,7 +201,9 @@ class SystemExecutionContext:
         check.inst_param(step, "step", ExecutionStep)
 
         return SystemStepExecutionContext(
-            self._execution_context_data, self._log_manager.with_tags(**step.logging_tags), step,
+            self._execution_context_data,
+            self._log_manager.with_tags(**step.logging_tags),
+            step,
         )
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":

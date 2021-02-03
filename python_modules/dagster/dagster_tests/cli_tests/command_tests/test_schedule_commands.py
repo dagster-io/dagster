@@ -42,7 +42,10 @@ def test_schedules_up(gen_schedule_args):
         runner = CliRunner()
         with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
-            result = runner.invoke(schedule_up_command, cli_args,)
+            result = runner.invoke(
+                schedule_up_command,
+                cli_args,
+            )
             assert result.exit_code == 0
             assert "Changes:\n" in result.output
             assert "  + foo_schedule (add)" in result.output
@@ -79,14 +82,23 @@ def test_schedules_start_and_stop(gen_schedule_args):
             _instance.return_value = instance
             runner = CliRunner()
 
-            result = runner.invoke(schedule_up_command, cli_args,)
+            result = runner.invoke(
+                schedule_up_command,
+                cli_args,
+            )
 
-            result = runner.invoke(schedule_start_command, cli_args + ["foo_schedule"],)
+            result = runner.invoke(
+                schedule_start_command,
+                cli_args + ["foo_schedule"],
+            )
 
             assert result.exit_code == 0
             assert "Started schedule foo_schedule\n" == result.output
 
-            result = runner.invoke(schedule_stop_command, cli_args + ["foo_schedule"],)
+            result = runner.invoke(
+                schedule_stop_command,
+                cli_args + ["foo_schedule"],
+            )
 
             assert result.exit_code == 0
             assert "Stopped schedule foo_schedule\n" == result.output
@@ -98,7 +110,10 @@ def test_schedules_start_empty(gen_schedule_args):
         runner = CliRunner()
         with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
-            result = runner.invoke(schedule_start_command, cli_args,)
+            result = runner.invoke(
+                schedule_start_command,
+                cli_args,
+            )
 
             assert result.exit_code == 0
             assert "Noop: dagster schedule start was called without any arguments" in result.output
@@ -112,7 +127,10 @@ def test_schedules_start_all(gen_schedule_args):
             _instance.return_value = instance
             result = runner.invoke(schedule_up_command, cli_args)
 
-            result = runner.invoke(schedule_start_command, cli_args + ["--start-all"],)
+            result = runner.invoke(
+                schedule_start_command,
+                cli_args + ["--start-all"],
+            )
 
             assert result.exit_code == 0
             assert result.output == "Started all schedules for repository bar\n"
@@ -126,7 +144,11 @@ def test_schedules_wipe_correct_delete_message(gen_schedule_args):
             _instance.return_value = instance
             result = runner.invoke(schedule_up_command, cli_args)
 
-            result = runner.invoke(schedule_wipe_command, cli_args, input="DELETE\n",)
+            result = runner.invoke(
+                schedule_wipe_command,
+                cli_args,
+                input="DELETE\n",
+            )
 
             if result.exception:
                 raise result.exception
@@ -134,7 +156,10 @@ def test_schedules_wipe_correct_delete_message(gen_schedule_args):
             assert result.exit_code == 0
             assert "Turned off all schedules and deleted all schedule history" in result.output
 
-            result = runner.invoke(schedule_up_command, cli_args + ["--preview"],)
+            result = runner.invoke(
+                schedule_up_command,
+                cli_args + ["--preview"],
+            )
 
             # Verify schedules were wiped
             assert result.exit_code == 0
@@ -151,7 +176,11 @@ def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
             _instance.return_value = instance
             result = runner.invoke(schedule_up_command, cli_args)
 
-            result = runner.invoke(schedule_wipe_command, cli_args, input="WRONG\n",)
+            result = runner.invoke(
+                schedule_wipe_command,
+                cli_args,
+                input="WRONG\n",
+            )
 
             assert result.exit_code == 0
             assert (
@@ -159,7 +188,10 @@ def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
                 in result.output
             )
 
-            result = runner.invoke(schedule_up_command, cli_args + ["--preview"],)
+            result = runner.invoke(
+                schedule_up_command,
+                cli_args + ["--preview"],
+            )
 
             # Verify schedules were not wiped
             assert result.exit_code == 0
@@ -178,9 +210,15 @@ def test_schedules_restart(gen_schedule_args):
 
             result = runner.invoke(schedule_up_command, cli_args)
 
-            result = runner.invoke(schedule_start_command, cli_args + ["foo_schedule"],)
+            result = runner.invoke(
+                schedule_start_command,
+                cli_args + ["foo_schedule"],
+            )
 
-            result = runner.invoke(schedule_restart_command, cli_args + ["foo_schedule"],)
+            result = runner.invoke(
+                schedule_restart_command,
+                cli_args + ["foo_schedule"],
+            )
 
             assert result.exit_code == 0
             assert "Restarted schedule foo_schedule" in result.output
@@ -195,10 +233,14 @@ def test_schedules_restart_all(gen_schedule_args):
 
             result = runner.invoke(schedule_up_command, cli_args)
 
-            result = runner.invoke(schedule_start_command, cli_args + ["foo_schedule"],)
+            result = runner.invoke(
+                schedule_start_command,
+                cli_args + ["foo_schedule"],
+            )
 
             result = runner.invoke(
-                schedule_restart_command, cli_args + ["foo_schedule", "--restart-all-running"],
+                schedule_restart_command,
+                cli_args + ["foo_schedule", "--restart-all-running"],
             )
             assert result.exit_code == 0
             assert result.output == "Restarted all running schedules for repository bar\n"

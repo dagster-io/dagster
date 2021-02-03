@@ -253,7 +253,8 @@ class CompositeSolidDefinition(GraphDefinition):
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,
             config_mapping=ConfigMapping(
-                self._config_mapping.config_fn, config_schema=config_schema,
+                self._config_mapping.config_fn,
+                config_schema=config_schema,
             ),
             dependencies=self.dependencies,
             description=description or self.description,

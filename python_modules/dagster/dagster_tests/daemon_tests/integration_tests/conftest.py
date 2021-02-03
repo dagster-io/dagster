@@ -14,7 +14,8 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 def get_example_repository_location_handle():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable, python_file=file_relative_path(__file__, "repo.py"),
+        executable_path=sys.executable,
+        python_file=file_relative_path(__file__, "repo.py"),
     )
     location_name = "example_repo_location"
 

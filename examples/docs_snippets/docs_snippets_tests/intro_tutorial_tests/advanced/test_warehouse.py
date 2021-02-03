@@ -30,7 +30,11 @@ def test_warehouse_resource(postgres):
         "resources": {"warehouse": {"config": {"conn_str": postgres}}},
     }
     with pushd(script_relative_path("../../../docs_snippets/intro_tutorial/advanced/pipelines/")):
-        result = execute_pipeline(pipeline=modes_pipeline, mode="dev", run_config=run_config,)
+        result = execute_pipeline(
+            pipeline=modes_pipeline,
+            mode="dev",
+            run_config=run_config,
+        )
     assert result.success
 
     if not BUILDKITE:

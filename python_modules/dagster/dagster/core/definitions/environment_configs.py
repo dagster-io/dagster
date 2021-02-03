@@ -377,7 +377,11 @@ def define_isolid_field(solid, handle, dependency_structure, resource_defs, igno
 
 
 def define_solid_dictionary_cls(
-    solids, ignored_solids, dependency_structure, resource_defs, parent_handle=None,
+    solids,
+    ignored_solids,
+    dependency_structure,
+    resource_defs,
+    parent_handle=None,
 ):
     check.list_param(solids, "solids", of_type=Solid)
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Solid)

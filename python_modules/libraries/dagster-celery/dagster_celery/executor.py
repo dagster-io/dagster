@@ -114,13 +114,20 @@ def _submit_task(app, pipeline_context, step, queue, priority):
         executable_dict=pipeline_context.pipeline.to_dict(),
     )
     return task_signature.apply_async(
-        priority=priority, queue=queue, routing_key="{queue}.execute_plan".format(queue=queue),
+        priority=priority,
+        queue=queue,
+        routing_key="{queue}.execute_plan".format(queue=queue),
     )
 
 
 class CeleryExecutor(Executor):
     def __init__(
-        self, retries, broker=None, backend=None, include=None, config_source=None,
+        self,
+        retries,
+        broker=None,
+        backend=None,
+        include=None,
+        config_source=None,
     ):
         self.broker = check.opt_str_param(broker, "broker", default=broker_url)
         self.backend = check.opt_str_param(backend, "backend", default=result_backend)

@@ -40,7 +40,11 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
     """
 
     def __init__(
-        self, bucket, local_dir=None, inst_data=None, prefix="dagster",
+        self,
+        bucket,
+        local_dir=None,
+        inst_data=None,
+        prefix="dagster",
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
         self._prefix = check.str_param(prefix, "prefix")

@@ -13,7 +13,10 @@ def _return_one(context):
 
 
 solid_def = SolidDefinition(
-    name="my_solid", input_defs=[], output_defs=[OutputDefinition(Int)], compute_fn=_return_one,
+    name="my_solid",
+    input_defs=[],
+    output_defs=[OutputDefinition(Int)],
+    compute_fn=_return_one,
 )
 
 # my_logging_solid_start
@@ -116,7 +119,10 @@ def multiple_output_solid(context):
 
 # x_solid_start
 def x_solid(
-    arg, name="default_name", input_defs=None, **kwargs,
+    arg,
+    name="default_name",
+    input_defs=None,
+    **kwargs,
 ):
     """
     Args:

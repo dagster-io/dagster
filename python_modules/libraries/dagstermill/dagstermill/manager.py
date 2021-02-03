@@ -35,7 +35,7 @@ from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
-    """ Utility class to explicitly manage setup/teardown of resource events. Overrides the default
+    """Utility class to explicitly manage setup/teardown of resource events. Overrides the default
     `generate_teardown_events` method so that teardown is deferred until explicitly called by the
     dagstermill Manager
     """
@@ -160,7 +160,8 @@ class Manager:
                 pipeline_context=pipeline_context,
                 solid_config=run_config.get("solids", {}).get(solid_def.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    execution_plan, pipeline_context.intermediate_storage_def,
+                    execution_plan,
+                    pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
             )
@@ -242,7 +243,8 @@ class Manager:
                 pipeline_context=pipeline_context,
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    execution_plan, pipeline_context.intermediate_storage_def,
+                    execution_plan,
+                    pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
             )

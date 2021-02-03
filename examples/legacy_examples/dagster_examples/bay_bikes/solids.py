@@ -80,7 +80,9 @@ def download_zipfile_from_url(context, file_name: str, base_url: str):
     target = os.path.join(context.resources.volume, file_name)
     if not os.path.exists(target):
         _download_zipfile_from_url(
-            url, target, context.solid_config["chunk_size"],
+            url,
+            target,
+            context.solid_config["chunk_size"],
         )
     yield AssetMaterialization(
         asset_key=file_name,
@@ -106,7 +108,11 @@ def download_zipfile_from_url(context, file_name: str, base_url: str):
             is_required=False,
             description=("A one-character string used to separate fields."),
         ),
-        "compression": Field(str, default_value="infer", is_required=False,),
+        "compression": Field(
+            str,
+            default_value="infer",
+            is_required=False,
+        ),
     },
     required_resource_keys={"volume"},
 )
@@ -139,7 +145,9 @@ def upload_pickled_object_to_gcs_bucket(context, value: Any, bucket_name: str, f
     yield AssetMaterialization(
         asset_key=gcs_url,
         description="Serialized object to Google Cloud Storage Bucket",
-        metadata_entries=[EventMetadataEntry.text(gcs_url, "google cloud storage URI"),],
+        metadata_entries=[
+            EventMetadataEntry.text(gcs_url, "google cloud storage URI"),
+        ],
     )
     yield Output(value)
 
@@ -198,7 +206,10 @@ def create_download_table_as_dataframe_solid(name, expected_dagster_pandas_dataf
         name=name,
     )
     def download_table_as_dataframe(context, table_name: str) -> DataFrame:
-        dataframe = read_sql_table(table_name, context.resources.postgres_db.engine,)
+        dataframe = read_sql_table(
+            table_name,
+            context.resources.postgres_db.engine,
+        )
         # flatten dataframe
         dataframe = json_normalize(dataframe.to_dict("records"))
         dataframe.columns = [column.split(".")[-1] for column in dataframe.columns]

@@ -8,7 +8,10 @@ from .test_cli_commands import backfill_command_contexts
 
 
 def run_test_backfill(
-    execution_args, instance, expected_count=None, error_message=None,
+    execution_args,
+    instance,
+    expected_count=None,
+    error_message=None,
 ):
 
     run_test_backfill_inner(execution_args, instance, expected_count, error_message)
@@ -36,7 +39,9 @@ def test_backfill_no_partition_sets(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(cli_args, {"pipeline": "foo"})
         run_test_backfill(
-            args, instance, error_message="No partition sets found",
+            args,
+            instance,
+            error_message="No partition sets found",
         )
 
 
@@ -45,7 +50,9 @@ def test_backfill_multiple_partition_set_matches(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(cli_args, {"pipeline": "baz"})
         run_test_backfill(
-            args, instance, error_message="No partition set specified",
+            args,
+            instance,
+            error_message="No partition set specified",
         )
 
 
@@ -61,7 +68,9 @@ def test_backfill_no_named_partition_set(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(cli_args, {"pipeline": "baz", "partition_set": "nonexistent"})
         run_test_backfill(
-            args, instance, error_message="No partition set found",
+            args,
+            instance,
+            error_message="No partition set found",
         )
 
 
@@ -70,7 +79,9 @@ def test_backfill_error_partition_names(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
         args = merge_dicts(cli_args, {"pipeline": "baz", "partition_set": "error_name_partitions"})
         run_test_backfill(
-            args, instance, error_message="Failure fetching partition names",
+            args,
+            instance,
+            error_message="Failure fetching partition names",
         )
 
 
@@ -81,7 +92,9 @@ def test_backfill_error_partition_config(backfill_args_context):
             cli_args, {"pipeline": "baz", "partition_set": "error_config_partitions"}
         )
         run_test_backfill(
-            args, instance, error_message="Backfill failed",
+            args,
+            instance,
+            error_message="Backfill failed",
         )
 
 

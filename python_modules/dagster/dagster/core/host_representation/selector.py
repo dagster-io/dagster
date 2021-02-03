@@ -11,7 +11,11 @@ class PipelineSelector(
     """
 
     def __new__(
-        cls, location_name, repository_name, pipeline_name, solid_selection,
+        cls,
+        location_name,
+        repository_name,
+        pipeline_name,
+        solid_selection,
     ):
         return super(PipelineSelector, cls).__new__(
             cls,

@@ -174,7 +174,9 @@ def instantiate_app_with_views(context, app_path_prefix):
     )
 
     bp.add_url_rule(
-        "/download_debug/<string:run_id>", "download_dump_view", download_dump_view(context),
+        "/download_debug/<string:run_id>",
+        "download_dump_view",
+        download_dump_view(context),
     )
 
     # these routes are specifically for the Dagit UI and are not part of the graphql

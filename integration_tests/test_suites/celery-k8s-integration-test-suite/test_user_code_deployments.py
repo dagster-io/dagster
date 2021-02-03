@@ -18,7 +18,8 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 @mark_user_code_deployment
 @pytest.mark.integration
 def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-argument
-    dagster_instance_for_user_deployments, helm_namespace_for_user_deployments,
+    dagster_instance_for_user_deployments,
+    helm_namespace_for_user_deployments,
 ):
     namespace = helm_namespace_for_user_deployments
     pipeline_name = "demo_pipeline_celery"

@@ -119,7 +119,11 @@ def test_download_weather_report_from_weather_api_200(mocker, setup_dark_sky, mo
     os.environ["DARK_SKY_API_KEY"] = "uuids-will-never-collide"
     solid_result = execute_solid(
         download_weather_report_from_weather_api,
-        ModeDefinition(resource_defs={"credentials_vault": credentials_vault,}),
+        ModeDefinition(
+            resource_defs={
+                "credentials_vault": credentials_vault,
+            }
+        ),
         run_config={
             "resources": {
                 "credentials_vault": {
@@ -164,13 +168,22 @@ def compose_training_data_env_dict():
         },
         "solids": {
             "produce_training_set": {"config": {"memory_length": 1}},
-            "produce_trip_dataset": {"inputs": {"trip_table_name": "trips"},},
+            "produce_trip_dataset": {
+                "inputs": {"trip_table_name": "trips"},
+            },
             "produce_weather_dataset": {
-                "solids": {"load_entire_weather_table": {"config": {"subsets": ["time"]},}},
+                "solids": {
+                    "load_entire_weather_table": {
+                        "config": {"subsets": ["time"]},
+                    }
+                },
                 "inputs": {"weather_table_name": "weather"},
             },
             "upload_training_set_to_gcs": {
-                "inputs": {"bucket_name": BUCKET_NAME, "file_name": TRAINING_FILE_NAME,}
+                "inputs": {
+                    "bucket_name": BUCKET_NAME,
+                    "file_name": TRAINING_FILE_NAME,
+                }
             },
         },
     }
@@ -195,7 +208,8 @@ def generate_test_training_set_pipeline():
     )
     return upload_training_set_to_gcs(
         produce_training_set(
-            transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset(),
+            transform_into_traffic_dataset(produce_trip_dataset()),
+            produce_weather_dataset(),
         )
     )
 
@@ -395,9 +409,15 @@ def run_config_dict():
                         }
                     },
                     "load_baybike_data_into_dataframe": {
-                        "inputs": {"target_csv_file_in_archive": {"value": "",}}
+                        "inputs": {
+                            "target_csv_file_in_archive": {
+                                "value": "",
+                            }
+                        }
                     },
-                    "insert_trip_data_into_table": {"inputs": {"table_name": "test_trips"},},
+                    "insert_trip_data_into_table": {
+                        "inputs": {"table_name": "test_trips"},
+                    },
                 }
             }
         },

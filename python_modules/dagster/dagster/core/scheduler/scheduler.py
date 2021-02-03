@@ -22,7 +22,7 @@ class DagsterSchedulerError(DagsterError):
 class DagsterScheduleReconciliationError(DagsterError):
     """Error raised during schedule state reconcilation. During reconcilation, exceptions that are
     raised when trying to start or stop a schedule are collected and passed to this wrapper exception.
-    The individual exceptions can be accessed by the `errors` property. """
+    The individual exceptions can be accessed by the `errors` property."""
 
     def __init__(self, preamble, errors, *args, **kwargs):
         self.errors = errors
@@ -276,8 +276,7 @@ class Scheduler(abc.ABC):
 
     @abc.abstractmethod
     def debug_info(self):
-        """Returns debug information about the scheduler
-        """
+        """Returns debug information about the scheduler"""
 
     @abc.abstractmethod
     def start_schedule(self, instance, external_schedule):

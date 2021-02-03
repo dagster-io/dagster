@@ -18,14 +18,13 @@ DOCKER_CONTAINER_ID_TAG = "docker_container_id"
 class DockerRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs in a Docker container.
 
-        image (Optional[str]): The docker image to be used if the repository does not specify one.
-        registry (Optional[Dict[str, str]]): Information for using a non-local docker registry.
-            If set, should include ``url``, ``username``, and ``password`` keys.
-        env_vars (Optional[List[str]]): The list of environment variables names to forward to the
-            docker container.
-        network (Optional[str]): Name of the network this container to which to connect the
-            launched container at creation time.
-"""
+    image (Optional[str]): The docker image to be used if the repository does not specify one.
+    registry (Optional[Dict[str, str]]): Information for using a non-local docker registry.
+        If set, should include ``url``, ``username``, and ``password`` keys.
+    env_vars (Optional[List[str]]): The list of environment variables names to forward to the
+        docker container.
+    network (Optional[str]): Name of the network this container to which to connect the
+        launched container at creation time."""
 
     def __init__(self, inst_data=None, image=None, registry=None, env_vars=None, network=None):
         self._instance_weakref = None
@@ -151,14 +150,16 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         self._instance.report_engine_event(
             message="Launching run in a new container {container_id} with image {docker_image}".format(
-                container_id=container.id, docker_image=docker_image,
+                container_id=container.id,
+                docker_image=docker_image,
             ),
             pipeline_run=run,
             cls=self.__class__,
         )
 
         self._instance.add_run_tags(
-            run.run_id, {DOCKER_CONTAINER_ID_TAG: container.id},
+            run.run_id,
+            {DOCKER_CONTAINER_ID_TAG: container.id},
         )
 
         container.start()

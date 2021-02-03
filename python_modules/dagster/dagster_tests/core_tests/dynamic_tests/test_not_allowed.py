@@ -27,7 +27,8 @@ def add(_, x, y):
 
 def test_composite():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Definition types must align",
+        DagsterInvalidDefinitionError,
+        match="Definition types must align",
     ):
 
         @composite_solid(output_defs=[OutputDefinition()])
@@ -59,7 +60,8 @@ def test_fan_in():
 
 def test_multi_direct():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
+        DagsterInvalidDefinitionError,
+        match="cannot be downstream of more than one dynamic output",
     ):
 
         @pipeline
@@ -72,7 +74,8 @@ def test_multi_direct():
 
 def test_multi_indirect():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
+        DagsterInvalidDefinitionError,
+        match="cannot be downstream of more than one dynamic output",
     ):
 
         @pipeline
@@ -85,7 +88,8 @@ def test_multi_indirect():
 
 def test_multi_composite_out():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
+        DagsterInvalidDefinitionError,
+        match="cannot be downstream of more than one dynamic output",
     ):
 
         @composite_solid(output_defs=[DynamicOutputDefinition()])
@@ -129,7 +133,8 @@ def test_direct_dep():
         dynamic_solid().map(_add)
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="cannot be downstream of more than one dynamic output",
+        DagsterInvalidDefinitionError,
+        match="cannot be downstream of more than one dynamic output",
     ):
 
         @pipeline

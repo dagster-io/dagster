@@ -80,7 +80,9 @@ def test_fetch_snapshot_or_error_by_snapshot_id_success(graphql_context, snapsho
 
 def test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        graphql_context, SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID, {"snapshotId": "notthere"},
+        graphql_context,
+        SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID,
+        {"snapshotId": "notthere"},
     )
 
     assert not result.errors

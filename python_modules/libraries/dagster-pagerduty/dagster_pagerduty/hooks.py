@@ -6,13 +6,15 @@ from dagster.core.execution.context.system import HookContext
 
 def _default_summary_fn(context: HookContext) -> str:
     return "Solid {solid_name} on pipeline {pipeline_name} failed!".format(
-        solid_name=context.solid.name, pipeline_name=context.pipeline_name,
+        solid_name=context.solid.name,
+        pipeline_name=context.pipeline_name,
     )
 
 
 def _dedup_key_fn(context: HookContext) -> str:
     return "{pipeline_name}|{solid_name}".format(
-        pipeline_name=context.pipeline_name, solid_name=context.solid.name,
+        pipeline_name=context.pipeline_name,
+        solid_name=context.solid.name,
     )
 
 

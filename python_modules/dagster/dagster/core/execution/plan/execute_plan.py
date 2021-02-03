@@ -219,7 +219,8 @@ def _dagster_event_sequence_for_step(
                 yield DagsterEvent.step_retry_event(
                     step_context,
                     StepRetryData(
-                        error=retry_err_info, seconds_to_wait=retry_request.seconds_to_wait,
+                        error=retry_err_info,
+                        seconds_to_wait=retry_request.seconds_to_wait,
                     ),
                 )
 
@@ -240,7 +241,8 @@ def _dagster_event_sequence_for_step(
     # case (3) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:
         yield _step_failure_event_from_exc_info(
-            step_context, dagster_user_error.original_exc_info,
+            step_context,
+            dagster_user_error.original_exc_info,
         )
 
         if step_context.raise_on_error:

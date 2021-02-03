@@ -38,7 +38,9 @@ def dynamic_pipeline():
 
 
 def test_map():
-    result = execute_pipeline(dynamic_pipeline,)
+    result = execute_pipeline(
+        dynamic_pipeline,
+    )
     assert result.success
 
 
@@ -52,7 +54,9 @@ def test_reexec_from_parent_basic():
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={"storage": {"filesystem": {}},},
+            run_config={
+                "storage": {"filesystem": {}},
+            },
             step_selection=["emit"],
             instance=instance,
         )
@@ -74,7 +78,9 @@ def test_reexec_from_parent_1():
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={"storage": {"filesystem": {}},},
+            run_config={
+                "storage": {"filesystem": {}},
+            },
             step_selection=["multiply_inputs[0]"],
             instance=instance,
         )
@@ -99,7 +105,9 @@ def test_reexec_from_parent_dynamic_fails():
             reexecute_pipeline(
                 pipeline=dynamic_pipeline,
                 parent_run_id=parent_run_id,
-                run_config={"storage": {"filesystem": {}},},
+                run_config={
+                    "storage": {"filesystem": {}},
+                },
                 step_selection=["multiply_inputs[?]"],
                 instance=instance,
             )
@@ -115,7 +123,9 @@ def test_reexec_from_parent_2():
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={"storage": {"filesystem": {}},},
+            run_config={
+                "storage": {"filesystem": {}},
+            },
             step_selection=["multiply_by_two[1]"],
             instance=instance,
         )
@@ -135,7 +145,9 @@ def test_reexec_from_parent_3():
         reexec_result = reexecute_pipeline(
             pipeline=dynamic_pipeline,
             parent_run_id=parent_run_id,
-            run_config={"storage": {"filesystem": {}},},
+            run_config={
+                "storage": {"filesystem": {}},
+            },
             step_selection=["multiply_inputs[1]", "multiply_by_two[2]"],
             instance=instance,
         )

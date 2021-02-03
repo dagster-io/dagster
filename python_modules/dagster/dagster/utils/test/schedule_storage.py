@@ -85,7 +85,8 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_job_state(schedule)
         schedules = storage.all_stored_job_state(
-            self.fake_repo_target().get_id(), JobType.SCHEDULE,
+            self.fake_repo_target().get_id(),
+            JobType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -316,7 +317,9 @@ class TestScheduleStorage:
             )
 
         for x in range(4):
-            storage.create_job_tick(self.build_tick(current_time, JobTickStatus.SKIPPED),)
+            storage.create_job_tick(
+                self.build_tick(current_time, JobTickStatus.SKIPPED),
+            )
 
         for x in range(5):
             storage.create_job_tick(

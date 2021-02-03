@@ -9,7 +9,11 @@ from ..output import OutputDefinition
 
 class _Graph:
     def __init__(
-        self, name=None, description=None, input_defs=None, output_defs=None,
+        self,
+        name=None,
+        description=None,
+        input_defs=None,
+        output_defs=None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -62,7 +66,10 @@ class _Graph:
 
 
 def graph(
-    name=None, description=None, input_defs=None, output_defs=None,
+    name=None,
+    description=None,
+    input_defs=None,
+    output_defs=None,
 ):
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -96,5 +103,8 @@ def graph(
         return _Graph()(name)
 
     return _Graph(
-        name=name, description=description, input_defs=input_defs, output_defs=output_defs,
+        name=name,
+        description=description,
+        input_defs=input_defs,
+        output_defs=output_defs,
     )

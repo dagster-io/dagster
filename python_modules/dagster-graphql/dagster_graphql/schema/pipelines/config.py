@@ -133,7 +133,8 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 reason=error.reason,
                 fields=[
                     GrapheneConfigTypeField(
-                        config_schema_snapshot=config_schema_snapshot, field_snap=field_snap,
+                        config_schema_snapshot=config_schema_snapshot,
+                        field_snap=field_snap,
                     )
                     for field_snap in error.error_data.field_snaps
                 ],

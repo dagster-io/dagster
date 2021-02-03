@@ -53,14 +53,23 @@ def test_launch_pipeline_cli(pipeline_cli_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo"),],
+    "gen_pipeline_args",
+    [
+        python_bar_cli_args("foo"),
+        grpc_server_bar_cli_args("foo"),
+    ],
 )
 def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
     runner = CliRunner()
     with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
-                pipeline_launch_command, args + ["--solid-selection", "do_something",],
+                pipeline_launch_command,
+                args
+                + [
+                    "--solid-selection",
+                    "do_something",
+                ],
             )
             assert result.exit_code == 0
             runs = instance.get_runs()
@@ -71,14 +80,23 @@ def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo"),],
+    "gen_pipeline_args",
+    [
+        python_bar_cli_args("foo"),
+        grpc_server_bar_cli_args("foo"),
+    ],
 )
 def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
     runner = CliRunner()
     with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
-                pipeline_launch_command, args + ["--solid-selection", "*do_something+",],
+                pipeline_launch_command,
+                args
+                + [
+                    "--solid-selection",
+                    "*do_something+",
+                ],
             )
             assert result.exit_code == 0
             runs = instance.get_runs()
@@ -89,14 +107,23 @@ def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo"),],
+    "gen_pipeline_args",
+    [
+        python_bar_cli_args("foo"),
+        grpc_server_bar_cli_args("foo"),
+    ],
 )
 def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
     runner = CliRunner()
     with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
-                pipeline_launch_command, args + ["--solid-selection", "*do_something+,do_input",],
+                pipeline_launch_command,
+                args
+                + [
+                    "--solid-selection",
+                    "*do_something+,do_input",
+                ],
             )
             assert result.exit_code == 0
             runs = instance.get_runs()
@@ -107,13 +134,21 @@ def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+    "gen_pipeline_args",
+    [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
 )
 def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
     runner = CliRunner()
     with default_cli_test_instance() as _instance:
         with gen_pipeline_args as args:
-            result = runner.invoke(pipeline_launch_command, args + ["--solid-selection", "a, b",],)
+            result = runner.invoke(
+                pipeline_launch_command,
+                args
+                + [
+                    "--solid-selection",
+                    "a, b",
+                ],
+            )
             assert result.exit_code == 1
             assert "No qualified solids to execute found for solid_selection" in str(
                 result.exception
@@ -121,27 +156,43 @@ def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+    "gen_pipeline_args",
+    [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
 )
 def test_launch_with_run_id(gen_pipeline_args):
     runner = CliRunner()
     run_id = "my_super_cool_run_id"
     with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
-            result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
+            result = runner.invoke(
+                pipeline_launch_command,
+                args
+                + [
+                    "--run-id",
+                    run_id,
+                ],
+            )
             assert result.exit_code == 0
 
             run = instance.get_run_by_id(run_id)
             assert run is not None
 
             # running it again should fail since run_id has to be unique
-            bad_result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
+            bad_result = runner.invoke(
+                pipeline_launch_command,
+                args
+                + [
+                    "--run-id",
+                    run_id,
+                ],
+            )
             assert bad_result.exit_code == 1
             assert isinstance(bad_result.exception, DagsterRunAlreadyExists)
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+    "gen_pipeline_args",
+    [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
 )
 def test_launch_queued(gen_pipeline_args):
     runner = CliRunner()
@@ -155,7 +206,14 @@ def test_launch_queued(gen_pipeline_args):
         }
     ) as instance:
         with gen_pipeline_args as args:
-            result = runner.invoke(pipeline_launch_command, args + ["--run-id", run_id,],)
+            result = runner.invoke(
+                pipeline_launch_command,
+                args
+                + [
+                    "--run-id",
+                    run_id,
+                ],
+            )
             assert result.exit_code == 0
 
             run = instance.get_run_by_id(run_id)

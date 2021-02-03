@@ -159,10 +159,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     )
     repo_def = recon_repo.get_definition()
     repo_handle = RepositoryHandle(
-        repository_name=repo_def.name, repository_location_handle=location_handle,
+        repository_name=repo_def.name,
+        repository_location_handle=location_handle,
     )
     fake_external_pipeline = external_pipeline_from_recon_pipeline(
-        recon_pipeline, solid_selection=None, repository_handle=repo_handle,
+        recon_pipeline,
+        solid_selection=None,
+        repository_handle=repo_handle,
     )
 
     # Launch the run in a fake Dagster instance.
@@ -171,7 +174,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         pipeline_name = "demo_pipeline"
         run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
         run = create_run_for_test(
-            instance, pipeline_name=pipeline_name, run_config=run_config, tags=tags,
+            instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            tags=tags,
         )
         celery_k8s_run_launcher.launch_run(instance, run, fake_external_pipeline)
 

@@ -144,7 +144,12 @@ def test_aggregate_constraint():
     def column_mean_validation_function(data):
         return (data.mean() == 1, {})
 
-    df = DataFrame({"foo": [1, 2], "bar": [1, 1],})
+    df = DataFrame(
+        {
+            "foo": [1, 2],
+            "bar": [1, 1],
+        }
+    )
     aggregate_val = ColumnAggregateConstraintWithMetadata(
         "Confirms column means equal to 1",
         column_mean_validation_function,
@@ -165,7 +170,12 @@ def test_multi_agg_constraint():
         """checks column mean equal to 1.5"""
         return (data.mean() == 1.5, {})
 
-    df = DataFrame({"foo": [1, 2], "bar": [1, 1],})
+    df = DataFrame(
+        {
+            "foo": [1, 2],
+            "bar": [1, 1],
+        }
+    )
     aggregate_val = MultiAggregateConstraintWithMetadata(
         "Confirms column means equal to 1",
         dict([("bar", [column_val_1, column_val_2]), ("foo", [column_val_1, column_val_2])]),

@@ -102,7 +102,12 @@ class JobDefinition:
     ]
 
     def __init__(
-        self, name, job_type, pipeline_name, mode="default", solid_selection=None,
+        self,
+        name,
+        job_type,
+        pipeline_name,
+        mode="default",
+        solid_selection=None,
     ):
         self._name = check_valid_name(name)
         self._job_type = check.inst_param(job_type, "job_type", JobType)

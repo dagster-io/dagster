@@ -509,7 +509,8 @@ def test_asset_events_error_parsing(conn_string):
         event_log_storage.store_event(event)
 
     with mock.patch(
-        "dagster.core.storage.event_log.sql_event_log.logging.warning", side_effect=mock_log,
+        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+        side_effect=mock_log,
     ):
         with mock.patch(
             "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",

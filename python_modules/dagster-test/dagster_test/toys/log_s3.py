@@ -10,7 +10,10 @@ from dagster import (
 
 
 @solid(
-    config_schema={"bucket": Field(str, is_required=True), "s3_key": Field(str, is_required=True),}
+    config_schema={
+        "bucket": Field(str, is_required=True),
+        "s3_key": Field(str, is_required=True),
+    }
 )
 def read_s3_key(context):
     s3_key = context.solid_config["s3_key"]

@@ -38,12 +38,18 @@ def test_sensors_start_and_stop(gen_sensor_args):
             _instance.return_value = instance
             runner = CliRunner()
 
-            result = runner.invoke(sensor_start_command, cli_args + ["foo_sensor"],)
+            result = runner.invoke(
+                sensor_start_command,
+                cli_args + ["foo_sensor"],
+            )
 
             assert result.exit_code == 0
             assert "Started sensor foo_sensor\n" == result.output
 
-            result = runner.invoke(sensor_stop_command, cli_args + ["foo_sensor"],)
+            result = runner.invoke(
+                sensor_stop_command,
+                cli_args + ["foo_sensor"],
+            )
 
             assert result.exit_code == 0
             assert "Stopped sensor foo_sensor\n" == result.output
@@ -55,7 +61,10 @@ def test_sensors_start_empty(gen_sensor_args):
         runner = CliRunner()
         with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
-            result = runner.invoke(sensor_start_command, cli_args,)
+            result = runner.invoke(
+                sensor_start_command,
+                cli_args,
+            )
 
             assert result.exit_code == 2
             assert "Missing sensor name argument" in result.output
@@ -68,7 +77,10 @@ def test_sensors_start_all(gen_sensor_args):
         with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
 
-            result = runner.invoke(sensor_start_command, cli_args + ["--start-all"],)
+            result = runner.invoke(
+                sensor_start_command,
+                cli_args + ["--start-all"],
+            )
 
             assert result.exit_code == 0
             assert result.output == "Started all sensors for repository bar\n"
@@ -101,7 +113,10 @@ def test_sensor_preview(gen_sensor_args):
         with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
 
-            result = runner.invoke(sensor_preview_command, cli_args + ["foo_sensor"],)
+            result = runner.invoke(
+                sensor_preview_command,
+                cli_args + ["foo_sensor"],
+            )
 
             assert result.exit_code == 0
             assert result.output == "Sensor returning run requests for 1 run(s):\n\nfoo: FOO\n\n"

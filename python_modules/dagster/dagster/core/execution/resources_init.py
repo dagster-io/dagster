@@ -45,8 +45,7 @@ def resource_initialization_manager(
 
 
 def _resolve_resource_dependencies(resource_defs):
-    """Generates a dictionary that maps resource key to resource keys it requires for initialization
-    """
+    """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
     }
@@ -97,7 +96,9 @@ def _core_resource_initialization_event_generator(
     try:
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                execution_plan, resource_log_manager, resource_keys_to_init,
+                execution_plan,
+                resource_log_manager,
+                resource_keys_to_init,
             )
 
         resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
@@ -218,7 +219,7 @@ def resource_initialization_event_generator(
 
 
 class InitializedResource:
-    """ Utility class to wrap the untyped resource object emitted from the user-supplied
+    """Utility class to wrap the untyped resource object emitted from the user-supplied
     resource function.  Used for distinguishing from the framework-yielded events in an
     `EventGenerationManager`-wrapped event stream.
     """

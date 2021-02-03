@@ -36,7 +36,9 @@ class TestComputeLogs(OutOfProcessExecutingGraphQLContextTestMatrix):
         run_id = payload["run"]["runId"]
 
         result = execute_dagster_graphql(
-            graphql_context, COMPUTE_LOGS_QUERY, variables={"runId": run_id, "stepKey": "spew"},
+            graphql_context,
+            COMPUTE_LOGS_QUERY,
+            variables={"runId": run_id, "stepKey": "spew"},
         )
         compute_logs = result.data["pipelineRunOrError"]["computeLogs"]
         snapshot.assert_match(compute_logs)
@@ -52,7 +54,12 @@ class TestComputeLogs(OutOfProcessExecutingGraphQLContextTestMatrix):
         subscription = execute_dagster_graphql(
             graphql_context,
             COMPUTE_LOGS_SUBSCRIPTION,
-            variables={"runId": run_id, "stepKey": "spew", "ioType": "STDOUT", "cursor": "0",},
+            variables={
+                "runId": run_id,
+                "stepKey": "spew",
+                "ioType": "STDOUT",
+                "cursor": "0",
+            },
         )
         results = []
         subscription.subscribe(lambda x: results.append(x.data))

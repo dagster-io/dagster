@@ -113,8 +113,7 @@ def get_helm_test_namespace(should_cleanup=True):
 
 @contextmanager
 def helm_test_resources(namespace, should_cleanup=True):
-    """Create a couple of resources to test Helm interaction w/ pre-existing resources.
-    """
+    """Create a couple of resources to test Helm interaction w/ pre-existing resources."""
     check.str_param(namespace, "namespace")
     check.bool_param(should_cleanup, "should_cleanup")
 
@@ -177,8 +176,7 @@ def helm_test_resources(namespace, should_cleanup=True):
 
 @contextmanager
 def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name):
-    """Install helm chart.
-    """
+    """Install helm chart."""
     check.str_param(namespace, "namespace")
     check.bool_param(should_cleanup, "should_cleanup")
     check.str_param(helm_install_name, "helm_install_name")

@@ -305,7 +305,8 @@ def run_test_with_builtin_type(type_to_test, loader_version, type_value):
         }
     }
     speculative_execution_plan = create_execution_plan(
-        versioned_pipeline_ext_input_builtin_type, run_config=run_config,
+        versioned_pipeline_ext_input_builtin_type,
+        run_config=run_config,
     )
 
     versions = speculative_execution_plan.resolve_step_versions()
@@ -338,7 +339,8 @@ def run_test_with_builtin_type(type_to_test, loader_version, type_value):
 
 
 @solid(
-    version="42", input_defs=[InputDefinition("default_input", String, default_value="DEFAULTVAL")],
+    version="42",
+    input_defs=[InputDefinition("default_input", String, default_value="DEFAULTVAL")],
 )
 def versioned_solid_default_value(_, default_input):
     return default_input * 4
@@ -432,7 +434,9 @@ def modes_pipeline():
 def test_resource_versions():
     run_config = {
         "resources": {
-            "test_resource": {"config": {"input_str": "apple"},},
+            "test_resource": {
+                "config": {"input_str": "apple"},
+            },
             "test_resource_no_version": {"config": {"input_str": "banana"}},
         }
     }
@@ -524,7 +528,10 @@ def test_step_versions_composite_solid():
         "loggers": {"console": {"config": {"log_level": "ERROR"}}},
     }
 
-    speculative_execution_plan = create_execution_plan(wrap_pipeline, run_config=run_config,)
+    speculative_execution_plan = create_execution_plan(
+        wrap_pipeline,
+        run_config=run_config,
+    )
 
     versions = speculative_execution_plan.resolve_step_versions()
 

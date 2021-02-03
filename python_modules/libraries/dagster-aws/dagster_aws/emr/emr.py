@@ -48,7 +48,11 @@ class EmrError(Exception):
 
 class EmrJobRunner:
     def __init__(
-        self, region, check_cluster_every=30, aws_access_key_id=None, aws_secret_access_key=None,
+        self,
+        region,
+        check_cluster_every=30,
+        aws_access_key_id=None,
+        aws_secret_access_key=None,
     ):
         """This object encapsulates various utilities for interacting with EMR clusters and invoking
         steps (jobs) on them.

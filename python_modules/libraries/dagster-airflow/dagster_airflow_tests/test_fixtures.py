@@ -20,7 +20,8 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 def postgres_instance(overrides=None):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
-            file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-airflow",
+            file_relative_path(__file__, "docker-compose.yml"),
+            "test-postgres-db-airflow",
         ) as pg_conn_string:
             TestPostgresInstance.clean_run_storage(pg_conn_string)
             TestPostgresInstance.clean_event_log_storage(pg_conn_string)

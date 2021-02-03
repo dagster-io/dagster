@@ -35,7 +35,13 @@ def test_backcompat_resource_tags():
 
 
 def test_bad_deprecated_resource_tags():
-    @pipeline(tags={K8S_RESOURCE_REQUIREMENTS_KEY: {"other": {"cpu": "250m", "memory": "64Mi"},}})
+    @pipeline(
+        tags={
+            K8S_RESOURCE_REQUIREMENTS_KEY: {
+                "other": {"cpu": "250m", "memory": "64Mi"},
+            }
+        }
+    )
     def resource_tags_pipeline():
         pass
 

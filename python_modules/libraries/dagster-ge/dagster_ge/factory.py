@@ -110,11 +110,15 @@ def ge_validation_solid_factory(
         )
         res = convert_to_json_serializable(results.list_validation_results())[0]
         md_str = render_multiple_validation_result_pages_markdown(
-            validation_operator_result=results, run_info_at_end=True,
+            validation_operator_result=results,
+            run_info_at_end=True,
         )
         meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
         yield ExpectationResult(
-            success=res["success"], metadata_entries=[meta_stats,],
+            success=res["success"],
+            metadata_entries=[
+                meta_stats,
+            ],
         )
         yield Output(res)
 

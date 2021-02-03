@@ -110,7 +110,12 @@ def created_workspace_load_target(kwargs):
         return WorkspaceFileTarget(paths=list(kwargs["workspace"]))
     if kwargs.get("python_file"):
         _check_cli_arguments_none(
-            kwargs, "module_name", "package_name", "grpc_host", "grpc_port", "grpc_socket",
+            kwargs,
+            "module_name",
+            "package_name",
+            "grpc_host",
+            "grpc_port",
+            "grpc_socket",
         )
         working_directory = get_working_directory_from_kwargs(kwargs)
         return PythonFileTarget(
@@ -129,7 +134,8 @@ def created_workspace_load_target(kwargs):
             "grpc_socket",
         )
         return ModuleTarget(
-            module_name=kwargs.get("module_name"), attribute=kwargs.get("attribute"),
+            module_name=kwargs.get("module_name"),
+            attribute=kwargs.get("attribute"),
         )
     if kwargs.get("package_name"):
         _check_cli_arguments_none(
@@ -141,11 +147,16 @@ def created_workspace_load_target(kwargs):
             "grpc_socket",
         )
         return PackageTarget(
-            package_name=kwargs.get("package_name"), attribute=kwargs.get("attribute"),
+            package_name=kwargs.get("package_name"),
+            attribute=kwargs.get("attribute"),
         )
     if kwargs.get("grpc_port"):
         _check_cli_arguments_none(
-            kwargs, "attribute", "working_directory", "empty_working_directory", "grpc_socket",
+            kwargs,
+            "attribute",
+            "working_directory",
+            "empty_working_directory",
+            "grpc_socket",
         )
         return GrpcServerTarget(
             port=kwargs.get("grpc_port"),
@@ -154,7 +165,10 @@ def created_workspace_load_target(kwargs):
         )
     elif kwargs.get("grpc_socket"):
         _check_cli_arguments_none(
-            kwargs, "attribute", "working_directory", "empty_working_directory",
+            kwargs,
+            "attribute",
+            "working_directory",
+            "empty_working_directory",
         )
         return GrpcServerTarget(
             port=None,
@@ -167,7 +181,9 @@ def created_workspace_load_target(kwargs):
 
 def location_origins_from_load_target(load_target):
     if isinstance(load_target, WorkspaceFileTarget):
-        return location_origins_from_yaml_paths(load_target.paths,)
+        return location_origins_from_yaml_paths(
+            load_target.paths,
+        )
     elif isinstance(load_target, PythonFileTarget):
         return [
             location_origin_from_python_file(
@@ -177,13 +193,25 @@ def location_origins_from_load_target(load_target):
             )
         ]
     elif isinstance(load_target, ModuleTarget):
-        return [location_origin_from_module_name(load_target.module_name, load_target.attribute,)]
+        return [
+            location_origin_from_module_name(
+                load_target.module_name,
+                load_target.attribute,
+            )
+        ]
     elif isinstance(load_target, PackageTarget):
-        return [location_origin_from_package_name(load_target.package_name, load_target.attribute,)]
+        return [
+            location_origin_from_package_name(
+                load_target.package_name,
+                load_target.attribute,
+            )
+        ]
     elif isinstance(load_target, GrpcServerTarget):
         return [
             GrpcServerRepositoryLocationOrigin(
-                port=load_target.port, socket=load_target.socket, host=load_target.host,
+                port=load_target.port,
+                socket=load_target.socket,
+                host=load_target.host,
             )
         ]
     elif isinstance(load_target, EmptyWorkspaceTarget):
@@ -504,12 +532,14 @@ def get_repository_python_origin_from_kwargs(kwargs):
         elif kwargs.get("module_name"):
             _check_cli_arguments_none(kwargs, "python_file", "working_directory", "package_name")
             code_pointer = CodePointer.from_module(
-                kwargs.get("module_name"), kwargs.get("attribute"),
+                kwargs.get("module_name"),
+                kwargs.get("attribute"),
             )
         elif kwargs.get("package_name"):
             _check_cli_arguments_none(kwargs, "python_file", "working_directory", "module_name")
             code_pointer = CodePointer.from_python_package(
-                kwargs.get("package_name"), kwargs.get("attribute"),
+                kwargs.get("package_name"),
+                kwargs.get("attribute"),
             )
         else:
             check.failed("Must specify a Python file or module name")

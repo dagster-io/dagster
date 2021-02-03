@@ -111,7 +111,10 @@ def _format_field_diff(field_diff):
                 expected_value=expected_value,
                 candidate_value=candidate_value,
             )
-            for field_name, (expected_value, candidate_value,) in field_diff.items()
+            for field_name, (
+                expected_value,
+                candidate_value,
+            ) in field_diff.items()
         ]
     )
 
@@ -587,7 +590,9 @@ class DagsterInstance:
                 )
 
         full_execution_plan = execution_plan or create_execution_plan(
-            pipeline_def, run_config=run_config, mode=mode,
+            pipeline_def,
+            run_config=run_config,
+            mode=mode,
         )
         check.invariant(
             len(full_execution_plan.step_keys_to_execute) == len(full_execution_plan.steps)
@@ -864,7 +869,8 @@ class DagsterInstance:
                 raise DagsterRunConflict(
                     "Found conflicting existing run with same id {run_id}. Runs differ in:"
                     "\n{field_diff}".format(
-                        run_id=pipeline_run.run_id, field_diff=_format_field_diff(field_diff),
+                        run_id=pipeline_run.run_id,
+                        field_diff=_format_field_diff(field_diff),
                     ),
                 )
             return candidate_run
@@ -999,7 +1005,12 @@ class DagsterInstance:
         self._subscribers[run_id].append(cb)
 
     def report_engine_event(
-        self, message, pipeline_run, engine_event_data=None, cls=None, step_key=None,
+        self,
+        message,
+        pipeline_run,
+        engine_event_data=None,
+        cls=None,
+        step_key=None,
     ):
         """
         Report a EngineEvent that occurred outside of a pipeline execution context.
@@ -1011,7 +1022,10 @@ class DagsterInstance:
         check.str_param(message, "message")
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
         engine_event_data = check.opt_inst_param(
-            engine_event_data, "engine_event_data", EngineEventData, EngineEventData([]),
+            engine_event_data,
+            "engine_event_data",
+            EngineEventData,
+            EngineEventData([]),
         )
 
         if cls:
@@ -1048,7 +1062,11 @@ class DagsterInstance:
         from dagster.core.events.log import DagsterEventRecord
 
         check.inst_param(run, "run", PipelineRun)
-        message = check.opt_str_param(message, "message", "Sending pipeline termination request.",)
+        message = check.opt_str_param(
+            message,
+            "message",
+            "Sending pipeline termination request.",
+        )
         canceling_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
             pipeline_name=run.pipeline_name,
@@ -1069,7 +1087,9 @@ class DagsterInstance:
         self.handle_new_event(event_record)
 
     def report_run_canceled(
-        self, pipeline_run, message=None,
+        self,
+        pipeline_run,
+        message=None,
     ):
         from dagster.core.events import DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord
@@ -1177,7 +1197,9 @@ class DagsterInstance:
 
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
-                error.message, run, EngineEventData.engine_error(error),
+                error.message,
+                run,
+                EngineEventData.engine_error(error),
             )
             self.report_run_failed(run)
             raise
@@ -1229,7 +1251,9 @@ class DagsterInstance:
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
-                error.message, run, EngineEventData.engine_error(error),
+                error.message,
+                run,
+                EngineEventData.engine_error(error),
             )
             self.report_run_failed(run)
             raise

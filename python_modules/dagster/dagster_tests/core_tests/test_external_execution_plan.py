@@ -55,7 +55,10 @@ def test_using_file_system_for_subplan():
     run_config = {"storage": {"filesystem": {}}}
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, run_config=run_config,)
+    execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+    )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -95,7 +98,10 @@ def test_using_intermediates_file_system_is_persistent():
     pipeline = define_inty_pipeline()
 
     run_config = {"intermediate_storage": {"filesystem": {}}}
-    execution_plan = create_execution_plan(pipeline, run_config=run_config,)
+    execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+    )
 
     assert execution_plan.artifacts_persisted
 
@@ -106,7 +112,10 @@ def test_using_intermediates_file_system_for_subplan():
     run_config = {"intermediate_storage": {"filesystem": {}}}
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, run_config=run_config,)
+    execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+    )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -148,7 +157,10 @@ def test_using_intermediates_to_override():
     run_config = {"storage": {"filesystem": {}}, "intermediate_storage": {"in_memory": {}}}
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, run_config=run_config,)
+    execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+    )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )

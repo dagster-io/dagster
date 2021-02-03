@@ -10,7 +10,10 @@ def test_external_schedule_execution_data_api_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_handle() as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
-                instance, repository_handle, "foo_schedule", None,
+                instance,
+                repository_handle,
+                "foo_schedule",
+                None,
             )
             assert isinstance(execution_data, ExternalScheduleExecutionData)
             assert len(execution_data.run_requests) == 1
@@ -23,7 +26,10 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_handle() as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
-                instance, repository_handle, "foo_schedule_never_execute", None,
+                instance,
+                repository_handle,
+                "foo_schedule_never_execute",
+                None,
             )
             assert isinstance(execution_data, ExternalScheduleExecutionData)
             assert len(execution_data.run_requests) == 0
@@ -34,7 +40,10 @@ def test_include_execution_time_grpc():
         with get_bar_repo_handle() as repository_handle:
             execution_time = get_current_datetime_in_utc()
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
-                instance, repository_handle, "foo_schedule_echo_time", execution_time,
+                instance,
+                repository_handle,
+                "foo_schedule_echo_time",
+                execution_time,
             )
 
             assert isinstance(execution_data, ExternalScheduleExecutionData)

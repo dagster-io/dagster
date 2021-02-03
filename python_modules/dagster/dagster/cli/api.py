@@ -138,7 +138,8 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
             write_stream_fn(event)
     finally:
         instance.report_engine_event(
-            "Process for pipeline exited (pid: {pid}).".format(pid=pid), pipeline_run,
+            "Process for pipeline exited (pid: {pid}).".format(pid=pid),
+            pipeline_run,
         )
 
 
@@ -587,7 +588,8 @@ def _launch_scheduled_executions(
 
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
     external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+        subset_pipeline_result.external_pipeline_data,
+        external_repo.handle,
     )
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
@@ -627,7 +629,10 @@ def _launch_run(
     errors = []
     try:
         external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
+            external_pipeline,
+            run_config,
+            external_schedule.mode,
+            step_keys_to_execute=None,
         )
         execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
     except DagsterSubprocessError as e:
@@ -664,7 +669,9 @@ def _launch_run(
     if len(errors) > 0:
         for error in errors:
             instance.report_engine_event(
-                error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error),
+                error.message,
+                possibly_invalid_pipeline_run,
+                EngineEventData.engine_error(error),
             )
         instance.report_run_failed(possibly_invalid_pipeline_run)
         tick_context.stream.send(

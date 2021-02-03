@@ -6,7 +6,12 @@ setup(
     author_email="hello@elementl.com",
     packages=["ge_example"],
     include_package_data=True,
-    install_requires=["dagster", "dagit", "dagster-ge", "great_expectations",],
+    install_requires=[
+        "dagster",
+        "dagit",
+        "dagster-ge",
+        "great_expectations",
+    ],
     author="Elementl",
     license="Apache-2.0",
     description="Dagster example for using the Great Expectations integration.",

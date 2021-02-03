@@ -21,7 +21,12 @@ def sync_list_repositories_grpc(api_client):
 
 
 def sync_list_repositories_ephemeral_grpc(
-    executable_path, python_file, module_name, working_directory, attribute, package_name,
+    executable_path,
+    python_file,
+    module_name,
+    working_directory,
+    attribute,
+    package_name,
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
 

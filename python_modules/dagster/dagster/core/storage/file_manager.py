@@ -57,7 +57,7 @@ class LocalFileHandle(FileHandle):
 
 class FileManager(ABC):  # pylint: disable=no-init
     """Base class for all file managers in dagster.
-    
+
     The file manager is an interface that can be implemented by resources to provide abstract
     access to a file system such as local disk, S3, or other cloud storage.
 
@@ -78,7 +78,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         boundaries. For files that must be available across solid boundaries, use the
         :py:meth:`~dagster.core.storage.file_manager.FileManager.read`,
         :py:meth:`~dagster.core.storage.file_manager.FileManager.read_data`,
-        :py:meth:`~dagster.core.storage.file_manager.FileManager.write`, and 
+        :py:meth:`~dagster.core.storage.file_manager.FileManager.write`, and
         :py:meth:`~dagster.core.storage.file_manager.FileManager.write_data` methods.
 
         Args:
@@ -93,7 +93,7 @@ class FileManager(ABC):  # pylint: disable=no-init
     def delete_local_temp(self):
         """Delete all local temporary files created by previous calls to
         :py:meth:`~dagster.core.storage.file_manager.FileManager.copy_handle_to_local_temp`.
-        
+
         Should typically only be called by framework implementors.
         """
         raise NotImplementedError()
@@ -101,7 +101,7 @@ class FileManager(ABC):  # pylint: disable=no-init
     @abstractmethod
     def read(self, file_handle: FileHandle, mode: str = "rb") -> Union[TextIO, BinaryIO]:
         """Return a file-like stream for the file handle.
-        
+
         This may incur an expensive network call for file managers backed by object stores
         such as S3.
 
@@ -163,7 +163,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 @resource(config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)})
 def local_file_manager(init_context):
     """FileManager that provides abstract access to a local filesystem.
-    
+
     Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
 
     Examples:

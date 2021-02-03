@@ -134,8 +134,7 @@ class CompleteCompositionContext(
         "_CompositionContext", "name solid_defs dependencies input_mappings output_mapping_dict"
     )
 ):
-    """The processed information from capturing solid invocations during a composition function.
-    """
+    """The processed information from capturing solid invocations during a composition function."""
 
     def __new__(cls, name, source, invocations, output_mapping_dict, pending_invocations):
 
@@ -260,12 +259,20 @@ class CallableNode:
         # then **kwargs
         for input_name, output_node in kwargs.items():
             self._process_argument_node(
-                node_name, output_node, input_name, input_bindings, "(passed by keyword)",
+                node_name,
+                output_node,
+                input_name,
+                input_bindings,
+                "(passed by keyword)",
             )
 
         # the node name is potentially reassigned for aliasing
         resolved_node_name = current_context().observe_invocation(
-            self.given_alias, self.node_def, input_bindings, self.tags, self.hook_defs,
+            self.given_alias,
+            self.node_def,
+            input_bindings,
+            self.tags,
+            self.hook_defs,
         )
 
         if len(self.node_def.output_defs) == 0:
@@ -391,8 +398,7 @@ class CallableNode:
 
 
 class InvokedNode(namedtuple("_InvokedNode", "node_name, node_def input_bindings tags hook_defs")):
-    """The metadata about a solid invocation saved by the current composition context.
-    """
+    """The metadata about a solid invocation saved by the current composition context."""
 
     def __new__(cls, node_name, node_def, input_bindings, tags=None, hook_defs=None):
         return super(cls, InvokedNode).__new__(
@@ -406,8 +412,7 @@ class InvokedNode(namedtuple("_InvokedNode", "node_name, node_def input_bindings
 
 
 class InvokedSolidOutputHandle:
-    """The return value for an output when invoking a solid in a composition function.
-    """
+    """The return value for an output when invoking a solid in a composition function."""
 
     def __init__(self, solid_name, output_name):
         self.solid_name = check.str_param(solid_name, "solid_name")
@@ -767,8 +772,7 @@ def do_composition(
 
 
 def _get_validated_config_mapping(name, config_schema, config_fn):
-    """Config mapping must set composite config_schema and config_fn or neither.
-    """
+    """Config mapping must set composite config_schema and config_fn or neither."""
 
     if config_fn is None and config_schema is None:
         return None

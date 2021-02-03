@@ -235,7 +235,7 @@ class EmrPySparkStepLauncher(StepLauncher):
             self._log_logs_from_s3(log, emr_step_id)
 
     def wait_for_completion(self, log, s3, run_id, step_key, emr_step_id, check_interval=15):
-        """ We want to wait for the EMR steps to complete, and while that's happening, we want to
+        """We want to wait for the EMR steps to complete, and while that's happening, we want to
         yield any events that have been written to S3 for us by the remote process.
         After the the EMR steps complete, we want a final chance to fetch events before finishing
         the step.

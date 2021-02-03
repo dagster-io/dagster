@@ -173,7 +173,12 @@ class RepositoryData:
                 partition_sets,
             ),
         )
-        self._jobs = _CacheingDefinitionIndex(JobDefinition, "JobDefinition", "job", jobs,)
+        self._jobs = _CacheingDefinitionIndex(
+            JobDefinition,
+            "JobDefinition",
+            "job",
+            jobs,
+        )
         self._all_pipelines = None
         self._solids = None
         self._all_solids = None
@@ -276,7 +281,10 @@ class RepositoryData:
                 jobs[definition.name] = definition
 
         return RepositoryData(
-            pipelines=pipelines, partition_sets=partition_sets, schedules=schedules, jobs=jobs,
+            pipelines=pipelines,
+            partition_sets=partition_sets,
+            schedules=schedules,
+            jobs=jobs,
         )
 
     def get_pipeline_names(self):
@@ -517,7 +525,10 @@ class RepositoryDefinition:
     """
 
     def __init__(
-        self, name, repository_data, description=None,
+        self,
+        name,
+        repository_data,
+        description=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")

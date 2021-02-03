@@ -179,7 +179,8 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
     assert result_multi_overlap.result_for_solid("multiply_two").output_value() == 6
 
     with pytest.raises(
-        DagsterExecutionStepNotFoundError, match="Can not build subset plan from unknown step: a",
+        DagsterExecutionStepNotFoundError,
+        match="Can not build subset plan from unknown step: a",
     ):
         reexecute_pipeline(
             foo_pipeline,

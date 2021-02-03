@@ -5,7 +5,8 @@ from docs_snippets.overview.schedules_partitions.pipeline import my_data_pipelin
 
 def test_pipeline():
     result = execute_pipeline(
-        my_data_pipeline, {"solids": {"process_data_for_date": {"config": {"date": "2018-05-01"}}}},
+        my_data_pipeline,
+        {"solids": {"process_data_for_date": {"config": {"date": "2018-05-01"}}}},
     )
     assert result.success
 

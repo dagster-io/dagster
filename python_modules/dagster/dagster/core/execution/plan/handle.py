@@ -12,7 +12,8 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", SolidHandle)])):
 
     def __new__(cls, solid_handle: Optional[SolidHandle]):
         return super(StepHandle, cls).__new__(
-            cls, solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            cls,
+            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
         )
 
     def to_key(self) -> str:
@@ -40,7 +41,8 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle",
 
     def __new__(cls, solid_handle: Optional[SolidHandle]):
         return super(UnresolvedStepHandle, cls).__new__(
-            cls, solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            cls,
+            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
         )
 
     def to_key(self):

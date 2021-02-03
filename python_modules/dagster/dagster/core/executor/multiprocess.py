@@ -30,7 +30,14 @@ DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
-        self, run_config, pipeline_run, step_key, instance_ref, term_event, recon_pipeline, retries,
+        self,
+        run_config,
+        pipeline_run,
+        step_key,
+        instance_ref,
+        term_event,
+        recon_pipeline,
+        retries,
     ):
         self.run_config = run_config
         self.pipeline_run = pipeline_run

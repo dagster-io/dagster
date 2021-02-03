@@ -224,7 +224,10 @@ def test_asset_events_range(asset_aware_context):
         assert [id for id, event in before_events] == [id_two, id_one]
 
         between_events = event_log_storage.get_asset_events(
-            AssetKey("asset_1"), include_cursor=True, before_cursor=id_three, after_cursor=id_one,
+            AssetKey("asset_1"),
+            include_cursor=True,
+            before_cursor=id_three,
+            after_cursor=id_one,
         )
         assert len(between_events) == 1
         assert [id for id, event in between_events] == [id_two]

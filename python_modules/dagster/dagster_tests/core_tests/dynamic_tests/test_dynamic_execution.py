@@ -63,7 +63,10 @@ def test_map_multi():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}},},
+            run_config={
+                "storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+            },
             instance=instance,
         )
         assert result.success

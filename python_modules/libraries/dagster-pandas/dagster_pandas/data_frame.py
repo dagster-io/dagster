@@ -288,7 +288,10 @@ def create_structured_dataframe_type(
             typechecks_succeeded = typechecks_succeeded and result_val
             result_dict = result.metadata_entries[0].entry_data.data
             metadata.append(
-                EventMetadataEntry.json(result_dict, "{}-constraint-metadata".format(key),)
+                EventMetadataEntry.json(
+                    result_dict,
+                    "{}-constraint-metadata".format(key),
+                )
             )
             constraint_clauses.append("{} failing constraints, {}".format(key, result.description))
         # returns aggregates, then column, then dataframe

@@ -146,7 +146,8 @@ def test_non_pipeline_in_pipelines():
 
 def test_schedule_partitions():
     @daily_schedule(
-        pipeline_name="foo", start_date=datetime.datetime(2020, 1, 1),
+        pipeline_name="foo",
+        start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_foo(_date):
         return {}

@@ -10,7 +10,9 @@ def test_dask_pipeline():
             file_relative_path(__file__, "../../docs_snippets/deploying/dask_hello_world.yaml")
         )
         result = execute_pipeline(
-            reconstructable(dask_pipeline), run_config=run_config, instance=instance,
+            reconstructable(dask_pipeline),
+            run_config=run_config,
+            instance=instance,
         )
         assert result.success
         assert result.result_for_solid("hello_world").output_value() == "Hello, World!"

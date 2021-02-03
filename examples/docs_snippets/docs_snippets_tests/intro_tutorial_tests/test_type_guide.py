@@ -303,7 +303,10 @@ def test_make_usable_as_dagster_type():
             assert num % 2 is 0
             self.num = num
 
-    EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType",)
+    EvenDagsterType = PythonObjectDagsterType(
+        EvenType,
+        name="EvenDagsterType",
+    )
 
     make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 

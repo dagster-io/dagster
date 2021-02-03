@@ -38,8 +38,7 @@ class SnapshotType(Enum):
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
-    """Base class for SQL based run storages
-    """
+    """Base class for SQL based run storages"""
 
     @abstractmethod
     def connect(self):
@@ -334,7 +333,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             db.select([RunsTable.c.run_body])
             .select_from(
                 root_to_run.join(
-                    RunsTable, root_to_run.c.run_id == RunsTable.c.run_id, isouter=True,
+                    RunsTable,
+                    root_to_run.c.run_id == RunsTable.c.run_id,
+                    isouter=True,
                 )
             )
             .alias("run_group")
@@ -384,7 +385,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         runs_augmented = (
             db.select(
-                [runs.c.run_id.label("run_id"), all_descendant_runs.c.value.label("root_run_id"),]
+                [
+                    runs.c.run_id.label("run_id"),
+                    all_descendant_runs.c.value.label("root_run_id"),
+                ]
             )
             .select_from(
                 runs.join(
@@ -522,12 +526,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.inst_param(snapshot_type, "snapshot_type", SnapshotType)
 
         with self.connect() as conn:
-            snapshot_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                snapshot_id=snapshot_id,
-                snapshot_body=zlib.compress(
-                    serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
-                ),
-                snapshot_type=snapshot_type.value,
+            snapshot_insert = (
+                SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    snapshot_id=snapshot_id,
+                    snapshot_body=zlib.compress(
+                        serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
+                    ),
+                    snapshot_type=snapshot_type.value,
+                )
             )
             conn.execute(snapshot_insert)
             return snapshot_id
@@ -596,8 +602,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return len(results) > 0
 
     def mark_index_built(self, migration_name):
-        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-            name=migration_name, migration_completed=datetime.now(),
+        query = (
+            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+                name=migration_name,
+                migration_completed=datetime.now(),
+            )
         )
         with self.connect() as conn:
             try:

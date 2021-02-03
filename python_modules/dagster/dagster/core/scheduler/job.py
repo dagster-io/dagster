@@ -282,11 +282,16 @@ def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_rea
 
 class JobTickStatsSnapshot(
     namedtuple(
-        "JobTickStatsSnapshot", ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
+        "JobTickStatsSnapshot",
+        ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
     )
 ):
     def __new__(
-        cls, ticks_started, ticks_succeeded, ticks_skipped, ticks_failed,
+        cls,
+        ticks_started,
+        ticks_succeeded,
+        ticks_skipped,
+        ticks_failed,
     ):
         return super(JobTickStatsSnapshot, cls).__new__(
             cls,

@@ -21,7 +21,10 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     """
 
     def __init__(
-        self, logger_fn, config_schema=None, description=None,
+        self,
+        logger_fn,
+        config_schema=None,
+        description=None,
     ):
         self._logger_fn = check.callable_param(logger_fn, "logger_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
@@ -66,7 +69,9 @@ def logger(config_schema=None, description=None):
 
     def _wrap(logger_fn):
         return LoggerDefinition(
-            logger_fn=logger_fn, config_schema=config_schema, description=description,
+            logger_fn=logger_fn,
+            config_schema=config_schema,
+            description=description,
         )
 
     return _wrap

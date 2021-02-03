@@ -254,7 +254,9 @@ class PartitionSetDefinition(
             ):
                 tags = self.tags_for_partition(selected_partition)
             yield RunRequest(
-                run_key=None, run_config=run_config, tags=tags,
+                run_key=None,
+                run_config=run_config,
+                tags=tags,
             )
 
         return PartitionScheduleDefinition(

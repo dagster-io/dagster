@@ -263,7 +263,12 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
 
 def execute_solid(
-    solid_def, mode_def=None, input_values=None, tags=None, run_config=None, raise_on_error=True,
+    solid_def,
+    mode_def=None,
+    input_values=None,
+    tags=None,
+    run_config=None,
+    raise_on_error=True,
 ):
     """Execute a single solid in an ephemeral pipeline.
 

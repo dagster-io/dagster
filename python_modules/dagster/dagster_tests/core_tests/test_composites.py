@@ -548,7 +548,9 @@ def test_composite_skippable_output_result(composition_decorator):
         return {"foo_output": foo_solid(), "one_output": emit_one()}
 
     @composition_decorator(
-        output_defs=[OutputDefinition(Optional[float], name="foo_output", is_required=False),]
+        output_defs=[
+            OutputDefinition(Optional[float], name="foo_output", is_required=False),
+        ]
     )
     def baz_composite():
         return {"foo_output": echo(foo_solid())}

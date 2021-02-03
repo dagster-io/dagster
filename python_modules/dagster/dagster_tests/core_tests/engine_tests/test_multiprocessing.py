@@ -199,7 +199,8 @@ def define_subdag_pipeline():
                 return
 
     @solid(
-        input_defs=[InputDefinition("after", Nothing)], config_schema=Field(String),
+        input_defs=[InputDefinition("after", Nothing)],
+        config_schema=Field(String),
     )
     def writer(context):
         with open(context.solid_config, "w") as fd:
@@ -207,7 +208,8 @@ def define_subdag_pipeline():
         return
 
     @lambda_solid(
-        input_defs=[InputDefinition("after", Nothing)], output_def=OutputDefinition(Nothing),
+        input_defs=[InputDefinition("after", Nothing)],
+        output_def=OutputDefinition(Nothing),
     )
     def noop():
         pass
@@ -233,7 +235,10 @@ def test_separate_sub_dags():
                 run_config={
                     "intermediate_storage": {"filesystem": {}},
                     "execution": {"multiprocess": {"config": {"max_concurrent": 2}}},
-                    "solids": {"waiter": {"config": filename}, "writer": {"config": filename},},
+                    "solids": {
+                        "waiter": {"config": filename},
+                        "writer": {"config": filename},
+                    },
                 },
                 instance=instance,
             )

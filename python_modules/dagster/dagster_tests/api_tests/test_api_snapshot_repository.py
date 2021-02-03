@@ -63,7 +63,9 @@ def giant_pipeline():
 @repository
 def giant_repo():
     return {
-        "pipelines": {"giant": giant_pipeline,},
+        "pipelines": {
+            "giant": giant_pipeline,
+        },
     }
 
 
@@ -91,7 +93,8 @@ def test_giant_external_repository_grpc():
             match=re.escape("Received message larger than max"),
         ):
             sync_get_external_repositories_grpc(
-                repository_location_handle.client, repository_location_handle,
+                repository_location_handle.client,
+                repository_location_handle,
             )
 
 

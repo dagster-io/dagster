@@ -35,7 +35,9 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             "new": {
                 "size": {"num_workers": 1},
                 "spark_version": "6.5.x-scala2.11",
-                "nodes": {"node_types": {"node_type_id": "Standard_DS3_v2"},},
+                "nodes": {
+                    "node_types": {"node_type_id": "Standard_DS3_v2"},
+                },
             },
         },
         "libraries": [
@@ -114,7 +116,9 @@ def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(required_resource_keys={"pyspark_step_launcher", "pyspark"},)
+@solid(
+    required_resource_keys={"pyspark_step_launcher", "pyspark"},
+)
 def do_nothing_solid(_):
     pass
 

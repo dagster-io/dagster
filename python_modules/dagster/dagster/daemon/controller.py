@@ -206,7 +206,7 @@ def get_daemon_status(instance, daemon_type, curr_time_seconds=None, ignore_erro
 
 
 def debug_daemon_heartbeats(instance):
-    daemon = SensorDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,)
+    daemon = SensorDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp

@@ -9,7 +9,12 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, "materialization_pipeline")
         logs = sync_execute_get_events(
             context=graphql_context,
-            variables={"executionParams": {"selector": selector, "mode": "default",}},
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                }
+            },
         )
 
         materializations = [log for log in logs if log["__typename"] == "StepMaterializationEvent"]

@@ -13,7 +13,13 @@ from .utils import check_valid_name, validate_tags
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
     def __init__(
-        self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None,
+        self,
+        name,
+        input_defs,
+        output_defs,
+        description=None,
+        tags=None,
+        positional_inputs=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")

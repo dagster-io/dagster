@@ -8,13 +8,11 @@ from dagster.core.scheduler.job import JobState, JobStatus, JobTick, JobTickData
 
 
 class ScheduleStorage(abc.ABC):
-    """Abstract class for managing persistance of scheduler artifacts
-    """
+    """Abstract class for managing persistance of scheduler artifacts"""
 
     @abc.abstractmethod
     def wipe(self):
-        """Delete all schedules from storage
-        """
+        """Delete all schedules from storage"""
 
     @abc.abstractmethod
     def all_stored_job_state(
@@ -115,8 +113,7 @@ class ScheduleStorage(abc.ABC):
 
     @abc.abstractmethod
     def upgrade(self):
-        """Perform any needed migrations
-        """
+        """Perform any needed migrations"""
 
     def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""

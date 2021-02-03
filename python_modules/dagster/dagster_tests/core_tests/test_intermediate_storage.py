@@ -223,5 +223,6 @@ def test_error_message():
 
     with pytest.raises(DagsterObjectStoreError):
         execute_pipeline(
-            repro, run_config={"storage": {"filesystem": {}}},
+            repro,
+            run_config={"storage": {"filesystem": {}}},
         )

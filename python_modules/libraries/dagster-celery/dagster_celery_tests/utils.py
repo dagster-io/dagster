@@ -48,7 +48,10 @@ def execute_pipeline_on_celery(
                 "execution": {"celery": {}},
             }
             result = execute_pipeline(
-                pipeline_def, run_config=run_config, instance=wrapped_instance, tags=tags,
+                pipeline_def,
+                run_config=run_config,
+                instance=wrapped_instance,
+                tags=tags,
             )
             yield result
 

@@ -101,12 +101,15 @@ def instance_with_sensors(external_repo_context, overrides=None):
 @contextmanager
 def default_repo():
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable, python_file=__file__, working_directory=os.getcwd(),
+        executable_path=sys.executable,
+        python_file=__file__,
+        working_directory=os.getcwd(),
     )
 
     with RepositoryLocationHandle.create_from_repository_location_origin(
         ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=loadable_target_origin, location_name="test_location",
+            loadable_target_origin=loadable_target_origin,
+            location_name="test_location",
         )
     ) as handle:
         yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
@@ -164,7 +167,12 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_simple_sensor(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
@@ -182,7 +190,10 @@ def test_simple_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
             )
 
             captured = capfd.readouterr()
@@ -208,7 +219,11 @@ def test_simple_sensor(external_repo_context, capfd):
                 year=2019, month=2, day=28, hour=0, minute=0, second=29
             )
             validate_tick(
-                ticks[0], external_sensor, expected_datetime, JobTickStatus.SUCCESS, [run.run_id],
+                ticks[0],
+                external_sensor,
+                expected_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id],
             )
 
             captured = capfd.readouterr()
@@ -226,7 +241,12 @@ def test_simple_sensor(external_repo_context, capfd):
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_error_sensor(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
@@ -263,7 +283,12 @@ def test_error_sensor(external_repo_context, capfd):
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_wrong_config_sensor(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
@@ -315,12 +340,20 @@ def test_wrong_config_sensor(external_repo_context, capfd):
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_launch_failure(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
     ).in_tz("US/Central")
     with instance_with_sensors(
         external_repo_context,
         overrides={
-            "run_launcher": {"module": "dagster.core.test_utils", "class": "ExplodingRunLauncher",},
+            "run_launcher": {
+                "module": "dagster.core.test_utils",
+                "class": "ExplodingRunLauncher",
+            },
         },
     ) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
@@ -352,7 +385,12 @@ def test_launch_failure(external_repo_context, capfd):
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_launch_once(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
@@ -388,7 +426,10 @@ def test_launch_once(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
             validate_tick(
-                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
             )
             captured = capfd.readouterr()
             assert (
@@ -414,7 +455,10 @@ def test_launch_once(external_repo_context, capfd):
 
             assert len(ticks) == 3
             validate_tick(
-                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
             )
 
 

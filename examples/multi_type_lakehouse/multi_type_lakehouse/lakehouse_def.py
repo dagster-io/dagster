@@ -114,7 +114,10 @@ def make_multi_type_lakehouse():
         },
     )
 
-    return Lakehouse(mode_defs=[dev_mode], in_memory_type_resource_keys={SparkDF: ["pyspark"]},)
+    return Lakehouse(
+        mode_defs=[dev_mode],
+        in_memory_type_resource_keys={SparkDF: ["pyspark"]},
+    )
 
 
 multi_type_lakehouse = make_multi_type_lakehouse()

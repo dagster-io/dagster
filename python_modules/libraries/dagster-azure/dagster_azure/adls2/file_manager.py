@@ -44,7 +44,9 @@ class ADLS2FileHandle(FileHandle):
     def adls2_path(self):
         """str: The file's ADLS2 URL."""
         return "adfss://{file_system}@{account}.dfs.core.windows.net/{key}".format(
-            file_system=self.file_system, account=self.account, key=self.key,
+            file_system=self.file_system,
+            account=self.account,
+            key=self.key,
         )
 
 
@@ -66,7 +68,8 @@ class ADLS2FileManager(FileManager):
             temp_file_obj = self._temp_file_manager.tempfile()
             temp_name = temp_file_obj.name
             file = self._client.get_file_client(
-                file_system=file_handle.file_system, file_path=file_handle.key,
+                file_system=file_handle.file_system,
+                file_path=file_handle.key,
             )
             download = file.download_file()
             with open(temp_name, "wb") as file_obj:

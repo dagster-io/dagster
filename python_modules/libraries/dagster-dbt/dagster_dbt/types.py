@@ -171,7 +171,10 @@ class DbtResult(namedtuple("_DbtResult", "logs results generated_at elapsed_time
         elapsed_time = check.float_elem(d, "elapsed_time")
 
         return cls(
-            logs=logs, results=results, generated_at=generated_at, elapsed_time=elapsed_time,
+            logs=logs,
+            results=results,
+            generated_at=generated_at,
+            elapsed_time=elapsed_time,
         )
 
     def __len__(self) -> int:

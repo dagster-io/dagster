@@ -14,7 +14,12 @@ DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE = DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE + "
 
 
 def schedule_partition_range(
-    start, end, cron_schedule, fmt, timezone, execution_time_to_partition_fn,
+    start,
+    end,
+    cron_schedule,
+    fmt,
+    timezone,
+    execution_time_to_partition_fn,
 ):
     check.inst_param(start, "start", datetime.datetime)
     check.opt_inst_param(end, "end", datetime.datetime)
@@ -26,7 +31,8 @@ def schedule_partition_range(
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt), end=end.strftime(fmt),
+                start=start.strftime(fmt),
+                end=end.strftime(fmt),
             )
         )
 
@@ -73,9 +79,14 @@ def schedule_partition_range(
 
 
 def date_partition_range(
-    start, end=None, delta_range="days", fmt=None, inclusive=False, timezone=None,
+    start,
+    end=None,
+    delta_range="days",
+    fmt=None,
+    inclusive=False,
+    timezone=None,
 ):
-    """ Utility function that returns a partition generating function to be used in creating a
+    """Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
 
     Args:
@@ -108,7 +119,8 @@ def date_partition_range(
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt), end=end.strftime(fmt),
+                start=start.strftime(fmt),
+                end=end.strftime(fmt),
             )
         )
 
@@ -152,7 +164,7 @@ def date_partition_range(
 
 
 def identity_partition_selector(context, partition_set_def):
-    """ Utility function for supplying a partition selector when creating a schedule from a
+    """Utility function for supplying a partition selector when creating a schedule from a
     partition set made of `datetime`s that assumes the schedule always executes at the
     partition time.
 
@@ -185,7 +197,7 @@ def identity_partition_selector(context, partition_set_def):
 
 
 def create_offset_partition_selector(execution_time_to_partition_fn):
-    """ Utility function for supplying a partition selector when creating a schedule from a
+    """Utility function for supplying a partition selector when creating a schedule from a
     partition set made of `datetime`s that assumes a fixed time offset between the partition
     time and the time at which the schedule executes.
 

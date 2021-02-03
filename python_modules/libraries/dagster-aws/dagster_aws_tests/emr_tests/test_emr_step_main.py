@@ -29,7 +29,10 @@ def start_event_writing_thread(events_queue):
 
     event_writing_thread = Thread(
         target=event_writing_loop,
-        kwargs=dict(events_queue=events_queue, put_events_fn=put_events_in_queue,),
+        kwargs=dict(
+            events_queue=events_queue,
+            put_events_fn=put_events_in_queue,
+        ),
     )
     event_writing_thread.start()
     return event_writing_thread, written_events

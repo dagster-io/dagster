@@ -6,7 +6,8 @@ from dagster import check
 class EvaluationStack(namedtuple("_EvaluationStack", "entries")):
     def __new__(cls, entries):
         return super(EvaluationStack, cls).__new__(
-            cls, check.list_param(entries, "entries", of_type=EvaluationStackEntry),
+            cls,
+            check.list_param(entries, "entries", of_type=EvaluationStackEntry),
         )
 
     @property
@@ -33,7 +34,8 @@ class EvaluationStackPathEntry(
 ):
     def __new__(cls, field_name):
         return super(EvaluationStackPathEntry, cls).__new__(
-            cls, check.str_param(field_name, "field_name"),
+            cls,
+            check.str_param(field_name, "field_name"),
         )
 
 

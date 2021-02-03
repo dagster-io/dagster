@@ -125,7 +125,10 @@ def define_sleepy_pipeline():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                "external", resource_defs={"first_step_launcher": local_external_step_launcher,},
+                "external",
+                resource_defs={
+                    "first_step_launcher": local_external_step_launcher,
+                },
             ),
         ]
     )
@@ -148,7 +151,10 @@ def initialize_step_context(scratch_dir, instance):
     )
 
     initialization_manager = PipelineExecutionContextManager(
-        plan, pipeline_run.run_config, pipeline_run, instance,
+        plan,
+        pipeline_run.run_config,
+        pipeline_run,
+        instance,
     )
     for _ in initialization_manager.prepare_context():
         pass

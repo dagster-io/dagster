@@ -124,7 +124,8 @@ class DagsterGraphQLContext:
             )
 
         return ExternalPipeline(
-            subset_result.external_pipeline_data, repository_handle=external_repository.handle,
+            subset_result.external_pipeline_data,
+            repository_handle=external_repository.handle,
         )
 
     def has_external_pipeline(self, selector):

@@ -133,13 +133,17 @@ def test_execute_multi_mode_with_resources():
     pipeline_def = define_multi_mode_with_resources_pipeline()
 
     add_mode_result = execute_pipeline(
-        pipeline=pipeline_def, mode="add_mode", run_config={"resources": {"op": {"config": 2}}},
+        pipeline=pipeline_def,
+        mode="add_mode",
+        run_config={"resources": {"op": {"config": 2}}},
     )
 
     assert add_mode_result.result_for_solid("apply_to_three").output_value() == 5
 
     mult_mode_result = execute_pipeline(
-        pipeline=pipeline_def, mode="mult_mode", run_config={"resources": {"op": {"config": 3}}},
+        pipeline=pipeline_def,
+        mode="mult_mode",
+        run_config={"resources": {"op": {"config": 3}}},
     )
 
     assert mult_mode_result.result_for_solid("apply_to_three").output_value() == 9

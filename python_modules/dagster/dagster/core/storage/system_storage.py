@@ -17,16 +17,18 @@ from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStor
 
 
 def build_intermediate_storage_from_object_store(
-    object_store, init_context, root_for_run_id=lambda _: "",
+    object_store,
+    init_context,
+    root_for_run_id=lambda _: "",
 ):
     """constructs an IntermediateStorage object from an object store and an init_context
-        Call from within an intermediate_storage_definition
-        Args:
-            object_store(ObjectStore): The object store on which to base the intermediate store.
-            init_context(InitIntermediateStorageContext):  the context from which to create the intermediates manager
-            root_for_run_id_creator(Callable[[str], str]):
-                        a function that converts from your run ID to the root of your object storage paths
-        """
+    Call from within an intermediate_storage_definition
+    Args:
+        object_store(ObjectStore): The object store on which to base the intermediate store.
+        init_context(InitIntermediateStorageContext):  the context from which to create the intermediates manager
+        root_for_run_id_creator(Callable[[str], str]):
+                    a function that converts from your run ID to the root of your object storage paths
+    """
     object_store = check.inst_param(object_store, "object_store", ObjectStore)
     root_for_run_id = check.callable_param(root_for_run_id, "root_for_run_id")
     init_context = check.inst_param(init_context, "init_context", InitIntermediateStorageContext)

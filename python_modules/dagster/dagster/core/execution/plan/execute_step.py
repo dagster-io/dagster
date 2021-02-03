@@ -194,7 +194,8 @@ def _type_checked_event_sequence_for_input(
     if not type_check.success:
         raise DagsterTypeCheckDidNotPass(
             description='Type check failed for step input "{input_name}" - expected type "{dagster_type}".'.format(
-                input_name=input_name, dagster_type=dagster_type.display_name,
+                input_name=input_name,
+                dagster_type=dagster_type.display_name,
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -249,7 +250,8 @@ def _type_check_output(
     if not type_check.success:
         raise DagsterTypeCheckDidNotPass(
             description='Type check failed for step output "{output_name}" - expected type "{dagster_type}".'.format(
-                output_name=output.output_name, dagster_type=dagster_type.display_name,
+                output_name=output.output_name,
+                dagster_type=dagster_type.display_name,
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -475,7 +477,9 @@ def _user_event_sequence_for_step_compute_fn(
     check.dict_param(evaluated_inputs, "evaluated_inputs", key_type=str)
 
     gen = execute_core_compute(
-        step_context.for_compute(), evaluated_inputs, step_context.solid_def.compute_fn,
+        step_context.for_compute(),
+        evaluated_inputs,
+        step_context.solid_def.compute_fn,
     )
 
     for event in iterate_with_context(

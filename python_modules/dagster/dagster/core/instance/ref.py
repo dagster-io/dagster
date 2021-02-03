@@ -149,7 +149,9 @@ class InstanceRef(
             config_value,
             "scheduler",
             ConfigurableClassData(
-                "dagster.core.scheduler", "DagsterDaemonScheduler", yaml.dump({}),
+                "dagster.core.scheduler",
+                "DagsterDaemonScheduler",
+                yaml.dump({}),
             ),
         )
 
@@ -164,7 +166,11 @@ class InstanceRef(
         run_launcher_data = configurable_class_data_or_default(
             config_value,
             "run_launcher",
-            ConfigurableClassData("dagster", "DefaultRunLauncher", yaml.dump({}),),
+            ConfigurableClassData(
+                "dagster",
+                "DefaultRunLauncher",
+                yaml.dump({}),
+            ),
         )
 
         settings_keys = {"telemetry"}

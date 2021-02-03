@@ -37,7 +37,8 @@ def get_main_recon_repo():
 def graphql_postgres_instance(overrides):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
-            file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-graphql",
+            file_relative_path(__file__, "docker-compose.yml"),
+            "test-postgres-db-graphql",
         ) as pg_conn_string:
             TestPostgresInstance.clean_run_storage(pg_conn_string)
             TestPostgresInstance.clean_event_log_storage(pg_conn_string)
@@ -121,7 +122,8 @@ class InstanceManagers:
                 )
 
         return MarkedManager(
-            _readonly_in_memory_instance, [Marks.in_memory_instance, Marks.readonly],
+            _readonly_in_memory_instance,
+            [Marks.in_memory_instance, Marks.readonly],
         )
 
     @staticmethod
@@ -162,7 +164,8 @@ class InstanceManagers:
                 yield instance
 
         return MarkedManager(
-            _readonly_postgres_instance, [Marks.postgres_instance, Marks.readonly],
+            _readonly_postgres_instance,
+            [Marks.postgres_instance, Marks.readonly],
         )
 
     @staticmethod
@@ -223,7 +226,10 @@ class InstanceManagers:
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
-                        "run_launcher": {"module": "dagster", "class": "DefaultRunLauncher",},
+                        "run_launcher": {
+                            "module": "dagster",
+                            "class": "DefaultRunLauncher",
+                        },
                     },
                 ) as instance:
                     yield instance
@@ -248,7 +254,8 @@ class InstanceManagers:
                 yield instance
 
         return MarkedManager(
-            _postgres_instance, [Marks.postgres_instance, Marks.sync_run_launcher],
+            _postgres_instance,
+            [Marks.postgres_instance, Marks.sync_run_launcher],
         )
 
     @staticmethod
@@ -256,7 +263,12 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance_with_default_hijack():
             with graphql_postgres_instance(
-                overrides={"run_launcher": {"module": "dagster", "class": "DefaultRunLauncher",},}
+                overrides={
+                    "run_launcher": {
+                        "module": "dagster",
+                        "class": "DefaultRunLauncher",
+                    },
+                }
             ) as instance:
                 yield instance
 
@@ -306,7 +318,8 @@ class EnvironmentManagers:
             with Workspace(
                 [
                     ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                        loadable_target_origin=loadable_target_origin, location_name="test",
+                        loadable_target_origin=loadable_target_origin,
+                        location_name="test",
                     )
                 ]
             ) as workspace:
@@ -770,34 +783,34 @@ def graphql_context_variants_fixture(context_variants):
 
 def make_graphql_context_test_suite(context_variants, recon_repo=None):
     """
-    Arguments:
+        Arguments:
 
-    runs (List[GraphQLContextVariant]): List of runs to run per test in this class.
-    recon_repo (ReconstructableRepository): Repository to run against. Defaults
-    to "define_repository" in setup.py
+        runs (List[GraphQLContextVariant]): List of runs to run per test in this class.
+        recon_repo (ReconstructableRepository): Repository to run against. Defaults
+        to "define_repository" in setup.py
 
-    This is the base class factory for test suites in the dagster-graphql test.
+        This is the base class factory for test suites in the dagster-graphql test.
 
-    The goal of this suite is to make it straightforward to run tests
-    against multiple graphql_contexts, have a coherent lifecycle for those
-    contexts.
+        The goal of this suite is to make it straightforward to run tests
+        against multiple graphql_contexts, have a coherent lifecycle for those
+        contexts.
 
-    GraphQLContextVariant has a number of static methods to provide common run configurations
-    as well as common groups of run configuration
+        GraphQLContextVariant has a number of static methods to provide common run configurations
+        as well as common groups of run configuration
 
-    One can also make bespoke GraphQLContextVariants which specific implementations
-    of DagsterInstance, RepositoryLocation, and so forth. See that class
-    for more details.
+        One can also make bespoke GraphQLContextVariants which specific implementations
+        of DagsterInstance, RepositoryLocation, and so forth. See that class
+        for more details.
 
-Example:
+    Example:
 
-class TestAThing(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.in_memory_in_process_start()]
-    )
-):
-    def test_graphql_context_exists(self, graphql_context):
-        assert graphql_context
+    class TestAThing(
+        make_graphql_context_test_suite(
+            context_variants=[GraphQLContextVariant.in_memory_in_process_start()]
+        )
+    ):
+        def test_graphql_context_exists(self, graphql_context):
+            assert graphql_context
     """
     check.list_param(context_variants, "context_variants", of_type=GraphQLContextVariant)
     recon_repo = check.inst_param(

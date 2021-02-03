@@ -109,7 +109,8 @@ def test_yield_unserializable_result():
         pipeline_name="hello_world_output_pipeline",
         solid_handle=SolidHandle("hello_world_output", None),
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "hello_world_output_pipeline",
+            "dagstermill.examples.repository",
+            "hello_world_output_pipeline",
         ).to_dict(),
     ) as manager:
         with pytest.raises(TypeError):
@@ -118,7 +119,8 @@ def test_yield_unserializable_result():
 
 def test_in_pipeline_manager_bad_solid():
     with pytest.raises(
-        check.CheckError, match=("hello_world_pipeline has no solid named foobar"),
+        check.CheckError,
+        match=("hello_world_pipeline has no solid named foobar"),
     ):
         with in_pipeline_manager(solid_handle=SolidHandle("foobar", None)) as _manager:
             pass
@@ -152,7 +154,8 @@ def test_in_pipeline_manager_solid_config():
         pipeline_name="hello_world_config_pipeline",
         solid_handle=SolidHandle("hello_world_config", None),
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "hello_world_config_pipeline",
+            "dagstermill.examples.repository",
+            "hello_world_config_pipeline",
         ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {"greeting": "hello"}
@@ -167,7 +170,8 @@ def test_in_pipeline_manager_solid_config():
             }
         },
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "hello_world_config_pipeline",
+            "dagstermill.examples.repository",
+            "hello_world_config_pipeline",
         ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {"greeting": "bonjour"}
@@ -177,12 +181,15 @@ def test_in_pipeline_manager_solid_config():
         solid_handle=SolidHandle("goodbye_config", None),
         run_config={
             "solids": {
-                "hello_world_config": {"config": {"greeting": "bonjour"},},
+                "hello_world_config": {
+                    "config": {"greeting": "bonjour"},
+                },
                 "goodbye_config": {"config": {"farewell": "goodbye"}},
             }
         },
         executable_dict=ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "hello_world_config_pipeline",
+            "dagstermill.examples.repository",
+            "hello_world_config_pipeline",
         ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {"farewell": "goodbye"}
@@ -196,7 +203,8 @@ def test_in_pipeline_manager_with_resources():
         with in_pipeline_manager(
             pipeline_name="resource_pipeline",
             executable_dict=ReconstructablePipeline.for_module(
-                "dagstermill.examples.repository", "resource_pipeline",
+                "dagstermill.examples.repository",
+                "resource_pipeline",
             ).to_dict(),
             solid_handle=SolidHandle("hello_world_resource", None),
             run_config={"resources": {"list": {"config": path}}},

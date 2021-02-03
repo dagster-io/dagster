@@ -150,7 +150,11 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
 
 class _ResourceDecoratorCallable:
     def __init__(
-        self, config_schema=None, description=None, required_resource_keys=None, version=None,
+        self,
+        config_schema=None,
+        description=None,
+        required_resource_keys=None,
+        version=None,
     ):
         self.config_schema = config_schema  # checked by underlying definition
         self.description = check.opt_str_param(description, "description")

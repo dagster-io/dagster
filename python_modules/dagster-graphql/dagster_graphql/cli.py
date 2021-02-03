@@ -43,7 +43,11 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
 
     query = query.strip("'\" \n\t")
 
-    context = DagsterGraphQLContext(workspace=workspace, instance=instance, version=__version__,)
+    context = DagsterGraphQLContext(
+        workspace=workspace,
+        instance=instance,
+        version=__version__,
+    )
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 
@@ -181,7 +185,10 @@ PREDEFINED_QUERIES = {
     "execution queries, since pipeline execution causes logs to print to stdout and stderr.",
 )
 @click.option(
-    "--remap-sigterm", is_flag=True, default=False, help="Remap SIGTERM signal to SIGINT handler",
+    "--remap-sigterm",
+    is_flag=True,
+    default=False,
+    help="Remap SIGTERM signal to SIGINT handler",
 )
 def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwargs):
     query = None
@@ -216,7 +223,11 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
         instance = DagsterInstance.get()
         with get_workspace_from_kwargs(kwargs) as workspace:
             execute_query_from_cli(
-                workspace, query, instance, variables, output,
+                workspace,
+                query,
+                instance,
+                variables,
+                output,
             )
 
 

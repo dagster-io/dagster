@@ -65,8 +65,7 @@ def test_composite_solid_output():
 
 
 def test_composite_solid_upstream_output():
-    """Is the io_manager_key on the inner or outer upstream solid used for loading downstream inputs?
-    """
+    """Is the io_manager_key on the inner or outer upstream solid used for loading downstream inputs?"""
 
     @solid(output_defs=[OutputDefinition(io_manager_key="inner_manager")])
     def my_solid(_):

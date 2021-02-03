@@ -56,15 +56,14 @@ def test_noneable_string_source_array():
     assert process_config(Noneable(Array(StringSource)), []).success
     assert process_config(Noneable(Array(StringSource)), None).success
     assert (
-        (
-            'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
-            "which is not set. In order for this execution to succeed it must be set in "
-            "this environment."
-        )
-        in process_config(Noneable(Array(StringSource)), ["test", {"env": "DAGSTER_TEST_ENV_VAR"}])
-        .errors[0]
-        .message
-    )
+        'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
+        "which is not set. In order for this execution to succeed it must be set in "
+        "this environment."
+    ) in process_config(
+        Noneable(Array(StringSource)), ["test", {"env": "DAGSTER_TEST_ENV_VAR"}]
+    ).errors[
+        0
+    ].message
 
     with environ({"DAGSTER_TEST_ENV_VAR": "baz"}):
         assert process_config(

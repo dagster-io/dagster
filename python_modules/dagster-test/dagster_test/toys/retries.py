@@ -31,7 +31,13 @@ def retry_solid(context):
             name="pass_after_retry",
             run_config={
                 "solids": {
-                    "retry_solid": {"config": {"delay": 2, "work_on_attempt": 2, "max_retries": 1,}}
+                    "retry_solid": {
+                        "config": {
+                            "delay": 2,
+                            "work_on_attempt": 2,
+                            "max_retries": 1,
+                        }
+                    }
                 }
             },
         )

@@ -36,7 +36,12 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_before_run_created(external_repo_context, crash_location, crash_signal, capfd):
     frozen_datetime = pendulum.datetime(
-        year=2019, month=2, day=28, hour=0, minute=0, second=1,
+        year=2019,
+        month=2,
+        day=28,
+        hour=0,
+        minute=0,
+        second=1,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(frozen_datetime):
@@ -125,7 +130,12 @@ def test_failure_after_run_created_before_run_launched(
     external_repo_context, crash_location, crash_signal, capfd
 ):
     frozen_datetime = pendulum.datetime(
-        year=2019, month=2, day=28, hour=0, minute=0, second=0,
+        year=2019,
+        month=2,
+        day=28,
+        hour=0,
+        minute=0,
+        second=0,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(frozen_datetime):
@@ -192,7 +202,12 @@ def test_failure_after_run_created_before_run_launched(
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_after_run_launched(external_repo_context, crash_location, crash_signal, capfd):
     frozen_datetime = pendulum.datetime(
-        year=2019, month=2, day=28, hour=0, minute=0, second=0,
+        year=2019,
+        month=2,
+        day=28,
+        hour=0,
+        minute=0,
+        second=0,
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(frozen_datetime):

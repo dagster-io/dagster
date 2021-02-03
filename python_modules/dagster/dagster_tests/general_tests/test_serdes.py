@@ -321,7 +321,10 @@ def test_from_storage_dict():
         def from_storage_dict(cls, storage_dict):
             # instead of the DeprecatedAlphabet, directly invoke the namedtuple constructor
             return super(DeprecatedAlphabet, cls).__new__(
-                cls, storage_dict.get("a"), storage_dict.get("b"), storage_dict.get("c"),
+                cls,
+                storage_dict.get("a"),
+                storage_dict.get("b"),
+                storage_dict.get("c"),
             )
 
     assert "DeprecatedAlphabet" in _TEST_WHITELIST_MAP["persistence"]

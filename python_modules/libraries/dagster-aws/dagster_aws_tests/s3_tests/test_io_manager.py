@@ -50,7 +50,10 @@ def define_inty_pipeline():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource,},
+                resource_defs={
+                    "io_manager": s3_pickle_io_manager,
+                    "s3": test_s3_resource,
+                },
             )
         ]
     )

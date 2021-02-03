@@ -195,7 +195,8 @@ def test_add_pipeline():
 @pytest.mark.notebook_test
 def test_notebook_dag():
     with exec_for_test(
-        "notebook_dag_pipeline", {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
+        "notebook_dag_pipeline",
+        {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
         assert result.result_for_solid("add_two_numbers").output_value() == 3
@@ -272,7 +273,9 @@ def test_hello_world_reexecution():
 def test_resources_notebook():
     with safe_tempfile_path() as path:
         with exec_for_test(
-            "resource_pipeline", {"resources": {"list": {"config": path}}}, mode="prod",
+            "resource_pipeline",
+            {"resources": {"list": {"config": path}}},
+            mode="prod",
         ) as result:
             assert result.success
 

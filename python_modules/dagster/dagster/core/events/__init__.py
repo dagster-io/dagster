@@ -589,7 +589,8 @@ class DagsterEvent(
             step_context=step_context,
             event_specific_data=success,
             message='Finished execution of step "{step_key}" in {duration}.'.format(
-                step_key=step_context.step.key, duration=format_duration(success.duration_ms),
+                step_key=step_context.step.key,
+                duration=format_duration(success.duration_ms),
             ),
         )
 
@@ -723,7 +724,8 @@ class DagsterEvent(
                 ", ".join(sorted(resource_init_times.keys()))
             ),
             event_specific_data=EngineEventData(
-                metadata_entries=metadata_entries, marker_end="resources",
+                metadata_entries=metadata_entries,
+                marker_end="resources",
             ),
         )
 
@@ -736,7 +738,9 @@ class DagsterEvent(
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Initialization of resources [{}] failed.".format(", ".join(resource_keys)),
             event_specific_data=EngineEventData(
-                metadata_entries=[], marker_end="resources", error=error,
+                metadata_entries=[],
+                marker_end="resources",
+                error=error,
             ),
         )
 
@@ -749,7 +753,10 @@ class DagsterEvent(
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Teardown of resources [{}] failed.".format(", ".join(resource_keys)),
             event_specific_data=EngineEventData(
-                metadata_entries=[], marker_start=None, marker_end=None, error=error,
+                metadata_entries=[],
+                marker_start=None,
+                marker_end=None,
+                error=error,
             ),
         )
 
@@ -878,7 +885,8 @@ class DagsterEvent(
             event_type=DagsterEventType.HANDLED_OUTPUT,
             step_context=step_context,
             event_specific_data=HandledOutputData(
-                output_name=output_name, manager_key=manager_key,
+                output_name=output_name,
+                manager_key=manager_key,
             ),
             message=message_override or message,
         )
@@ -932,7 +940,9 @@ class DagsterEvent(
         )
 
         hook_context.log.debug(
-            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_name,
+            event.message,
+            dagster_event=event,
+            pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -958,7 +968,9 @@ class DagsterEvent(
         )
 
         hook_context.log.error(
-            str(error), dagster_event=event, pipeline_name=hook_context.pipeline_name,
+            str(error),
+            dagster_event=event,
+            pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -982,7 +994,9 @@ class DagsterEvent(
         )
 
         hook_context.log.debug(
-            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_name,
+            event.message,
+            dagster_event=event,
+            pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -1120,7 +1134,8 @@ class PipelineCanceledData(namedtuple("_PipelineCanceledData", "error")):
 class HookErroredData(namedtuple("_HookErroredData", "error")):
     def __new__(cls, error):
         return super(HookErroredData, cls).__new__(
-            cls, error=check.inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.inst_param(error, "error", SerializableErrorInfo),
         )
 
 

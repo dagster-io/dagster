@@ -9,8 +9,7 @@ from .base import RunCoordinator
 
 
 class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
-    """Immediately send runs to the run launcher.
-    """
+    """Immediately send runs to the run launcher."""
 
     def __init__(self, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)

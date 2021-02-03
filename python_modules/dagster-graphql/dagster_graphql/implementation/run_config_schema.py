@@ -24,7 +24,10 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
     if not external_pipeline.has_mode(mode):
         raise UserFacingGraphQLError(GrapheneModeNotFoundError(mode=mode, selector=selector))
 
-    return GrapheneRunConfigSchema(represented_pipeline=external_pipeline, mode=mode,)
+    return GrapheneRunConfigSchema(
+        represented_pipeline=external_pipeline,
+        mode=mode,
+    )
 
 
 @capture_error
@@ -56,7 +59,8 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_c
                 pipeline_name=represented_pipeline.name,
                 errors=[
                     GraphenePipelineConfigValidationError.from_dagster_error(
-                        represented_pipeline.config_schema_snapshot, err,
+                        represented_pipeline.config_schema_snapshot,
+                        err,
                     )
                     for err in validated_config.errors
                 ],

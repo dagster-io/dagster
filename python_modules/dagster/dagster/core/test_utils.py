@@ -298,7 +298,9 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
-        return cls(inst_data=inst_data,)
+        return cls(
+            inst_data=inst_data,
+        )
 
     @property
     def inst_data(self):
@@ -332,7 +334,9 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
-        return cls(inst_data=inst_data,)
+        return cls(
+            inst_data=inst_data,
+        )
 
     @property
     def inst_data(self):

@@ -53,7 +53,10 @@ def test_execution_plan_for_composite_solid():
         pipeline_def=composite_pipeline, execution_plan=execution_plan
     )
     events = execute_plan(
-        execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
+        execution_plan,
+        run_config=run_config,
+        pipeline_run=pipeline_run,
+        instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [
@@ -89,7 +92,10 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
 
     events = execute_plan(
-        execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
+        execution_plan,
+        run_config=run_config,
+        pipeline_run=pipeline_run,
+        instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [

@@ -314,7 +314,9 @@ def get_step_input_source(
 
         if solid_output_handle.output_def.is_dynamic:
             return FromPendingDynamicStepOutput(
-                step_output_handle=step_output_handle, solid_handle=handle, input_name=input_name,
+                step_output_handle=step_output_handle,
+                solid_handle=handle,
+                input_name=input_name,
             )
 
         return FromStepOutput(
@@ -392,7 +394,11 @@ class ExecutionPlan(
     )
 ):
     def __new__(
-        cls, pipeline, step_dict, step_handles_to_execute, environment_config,
+        cls,
+        pipeline,
+        step_dict,
+        step_handles_to_execute,
+        environment_config,
     ):
         check.list_param(
             step_handles_to_execute,
@@ -555,7 +561,8 @@ class ExecutionPlan(
             # don't resolve steps we are not executing
             if unresolved_step_handle in self.step_handles_to_execute:
                 unresolved_step = cast(
-                    UnresolvedExecutionStep, self.step_dict[unresolved_step_handle],
+                    UnresolvedExecutionStep,
+                    self.step_dict[unresolved_step_handle],
                 )
                 resolved_steps += unresolved_step.resolve(resolved_by_step_key, mappings)
 
@@ -608,7 +615,10 @@ class ExecutionPlan(
             )
 
         return ExecutionPlan(
-            self.pipeline, self.step_dict, step_handles_to_execute, self.environment_config,
+            self.pipeline,
+            self.step_dict,
+            step_handles_to_execute,
+            self.environment_config,
         )
 
     def resolve_step_versions(self) -> Dict[str, Optional[str]]:
@@ -618,7 +628,9 @@ class ExecutionPlan(
         return resolve_step_output_versions_helper(self)
 
     def start(
-        self, retries: Retries, sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        self,
+        retries: Retries,
+        sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -635,7 +647,8 @@ class ExecutionPlan(
         if len(self.step_handles_to_execute) == 1:
             only_step = self.step_dict[self.step_handles_to_execute[0]]
             check.invariant(
-                isinstance(only_step, ExecutionStep), "Unexpected unresolved single step plan",
+                isinstance(only_step, ExecutionStep),
+                "Unexpected unresolved single step plan",
             )
             return cast(ExecutionStep, only_step).handle
 
@@ -662,7 +675,10 @@ class ExecutionPlan(
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         plan_builder = _PlanBuilder(
-            pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute,
+            pipeline,
+            environment_config,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
         )
 
         # Finally, we build and return the execution plan

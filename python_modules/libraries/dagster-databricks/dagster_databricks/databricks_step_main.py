@@ -26,7 +26,9 @@ if "DATABRICKS_TOKEN" not in os.environ:
 
 
 def main(
-    step_run_ref_filepath, setup_filepath, pipeline_zip,
+    step_run_ref_filepath,
+    setup_filepath,
+    pipeline_zip,
 ):
     # Extract any zip files to a temporary directory and add that temporary directory
     # to the site path so the contained files can be imported.

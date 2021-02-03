@@ -136,14 +136,12 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def solids(self):
-        """List[Solid]: Top-level solids in the graph.
-        """
+        """List[Solid]: Top-level solids in the graph."""
         return list(set(self._solid_dict.values()))
 
     @property
     def node_defs(self):
-        """List[NodeDefinition]: List of nodes in the graph.
-        """
+        """List[NodeDefinition]: List of nodes in the graph."""
         return self._node_defs
 
     def has_solid_named(self, name):
@@ -254,7 +252,8 @@ class GraphDefinition(NodeDefinition):
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
-            mapping.maps_from.output_name, SolidHandle(mapped_solid.name, handle),
+            mapping.maps_from.output_name,
+            SolidHandle(mapped_solid.name, handle),
         )
 
     def default_value_for_input(self, input_name):
@@ -449,8 +448,10 @@ def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name
         if dependency_structure.has_multi_deps(input_handle):
             for idx, dep in enumerate(dependency_structure.get_multi_deps(input_handle)):
                 if dep is MappedInputPlaceholder:
-                    mapping_str = "{input_handle.solid_name}.{input_handle.input_name}.{idx}".format(
-                        input_handle=input_handle, idx=idx
+                    mapping_str = (
+                        "{input_handle.solid_name}.{input_handle.input_name}.{idx}".format(
+                            input_handle=input_handle, idx=idx
+                        )
                     )
                     if mapping_str not in mapping_keys:
                         raise DagsterInvalidDefinitionError(

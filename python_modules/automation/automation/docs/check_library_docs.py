@@ -30,8 +30,7 @@ def get_library_module_directories():
 
 
 def check_readme_exists(readme_file, library_name):
-    """Verify that a README.md is provided for a Dagster package
-    """
+    """Verify that a README.md is provided for a Dagster package"""
     exists = os.path.exists(readme_file) and os.path.isfile(readme_file)
     if not exists:
         print("Missing README.md for library %s!" % library_name)

@@ -82,7 +82,8 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
     check.invariant(
         os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
         "File {abs_path} is not underneath package dir {abs_package_dir}".format(
-            abs_path=abs_path, abs_package_dir=abs_package_dir,
+            abs_path=abs_path,
+            abs_package_dir=abs_package_dir,
         ),
     )
 
@@ -159,7 +160,11 @@ def step_run_ref_to_step_context(
     retries = step_run_ref.retries.for_inner_plan()
 
     initialization_manager = PlanExecutionContextManager(
-        retries, execution_plan, step_run_ref.run_config, step_run_ref.pipeline_run, instance,
+        retries,
+        execution_plan,
+        step_run_ref.run_config,
+        step_run_ref.pipeline_run,
+        instance,
     )
     for _ in initialization_manager.prepare_context():
         pass

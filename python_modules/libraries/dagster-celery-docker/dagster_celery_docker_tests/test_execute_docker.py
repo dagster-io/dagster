@@ -31,7 +31,10 @@ def test_execute_celery_docker_image_on_executor_config():
     docker_image = get_test_project_docker_image()
     docker_config = {
         "image": docker_image,
-        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
+        "env_vars": [
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+        ],
         "network": "container:test-postgres-db-celery-docker",
     }
 
@@ -72,7 +75,10 @@ def test_execute_celery_docker_image_on_executor_config():
 def test_execute_celery_docker_image_on_pipeline_config():
     docker_image = get_test_project_docker_image()
     docker_config = {
-        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
+        "env_vars": [
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+        ],
         "network": "container:test-postgres-db-celery-docker",
     }
 

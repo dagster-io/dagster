@@ -146,7 +146,9 @@ class TestReloadRepositoriesOutOfProcess(
 
         # can be reloaded again successfully
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"},
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": "test"},
         )
 
         assert result
@@ -173,7 +175,9 @@ class TestReloadRepositoriesInProcess(
 
     def test_location_not_found(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "nope"},
+            graphql_context,
+            RELOAD_REPOSITORY_LOCATION_QUERY,
+            {"repositoryLocationName": "nope"},
         )
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocationNotFound"
 
@@ -202,7 +206,9 @@ mutation ($repositoryLocationName: String!) {
 
 class TestReloadRepositoriesManagedGrpc(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),]
+        context_variants=[
+            GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
+        ]
     )
 ):
     def test_managed_grpc_reload_location(self, graphql_context):

@@ -156,6 +156,9 @@ def test_post_process_config():
     )
     assert post_process_config(
         noneable_permissive_config_type, {"args": {"foo": "wow", "mau": "mau"}}
-    ).value["args"] == {"foo": "wow", "mau": "mau",}
+    ).value["args"] == {
+        "foo": "wow",
+        "mau": "mau",
+    }
     assert post_process_config(noneable_permissive_config_type, {"args": {}}).value["args"] == {}
     assert post_process_config(noneable_permissive_config_type, None).value["args"] == None

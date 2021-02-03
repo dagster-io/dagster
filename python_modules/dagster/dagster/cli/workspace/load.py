@@ -35,14 +35,22 @@ def location_origins_from_yaml_paths(yaml_paths):
         )
 
         origins_by_name = merge_dicts(
-            origins_by_name, location_origins_from_config(workspace_config, yaml_path),
+            origins_by_name,
+            location_origins_from_config(workspace_config, yaml_path),
         )
 
     return list(origins_by_name.values())
 
 
 def load_workspace_from_config(workspace_config, yaml_path):
-    return Workspace(list(location_origins_from_config(workspace_config, yaml_path,).values()),)
+    return Workspace(
+        list(
+            location_origins_from_config(
+                workspace_config,
+                yaml_path,
+            ).values()
+        ),
+    )
 
 
 def location_origins_from_config(workspace_config, yaml_path):
@@ -149,11 +157,16 @@ def location_origin_from_package_name(
         attribute=attribute,
         package_name=package_name,
     )
-    return _create_python_env_location_origin(loadable_target_origin, location_name,)
+    return _create_python_env_location_origin(
+        loadable_target_origin,
+        location_name,
+    )
 
 
 def _location_origin_from_python_file_config(
-    python_file_config, yaml_path, default_executable_path=sys.executable,
+    python_file_config,
+    yaml_path,
+    default_executable_path=sys.executable,
 ):
     check.str_param(yaml_path, "yaml_path")
 
@@ -166,7 +179,11 @@ def _location_origin_from_python_file_config(
     ) = _get_python_file_config_data(python_file_config, yaml_path, default_executable_path)
 
     return location_origin_from_python_file(
-        absolute_path, attribute, working_directory, location_name, executable_path,
+        absolute_path,
+        attribute,
+        working_directory,
+        location_name,
+        executable_path,
     )
 
 
@@ -189,7 +206,11 @@ def _get_python_file_config_data(python_file_config, yaml_path, default_executab
 
 
 def location_origin_from_python_file(
-    python_file, attribute, working_directory, location_name=None, executable_path=sys.executable,
+    python_file,
+    attribute,
+    working_directory,
+    location_name=None,
+    executable_path=sys.executable,
 ):
     check.str_param(python_file, "python_file")
     check.opt_str_param(attribute, "attribute")
@@ -204,7 +225,10 @@ def location_origin_from_python_file(
         attribute=attribute,
     )
 
-    return _create_python_env_location_origin(loadable_target_origin, location_name,)
+    return _create_python_env_location_origin(
+        loadable_target_origin,
+        location_name,
+    )
 
 
 def _location_origin_from_grpc_server_config(grpc_server_config, yaml_path):
@@ -226,7 +250,10 @@ def _location_origin_from_grpc_server_config(grpc_server_config, yaml_path):
         host = "localhost"
 
     return GrpcServerRepositoryLocationOrigin(
-        port=port, socket=socket, host=host, location_name=location_name,
+        port=port,
+        socket=socket,
+        host=host,
+        location_name=location_name,
     )
 
 

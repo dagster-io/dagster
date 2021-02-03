@@ -205,7 +205,8 @@ def serialize_value(val):
 
 def deserialize_value(val):
     return _unpack_value(
-        seven.json.loads(check.str_param(val, "val")), whitelist_map=_WHITELIST_MAP,
+        seven.json.loads(check.str_param(val, "val")),
+        whitelist_map=_WHITELIST_MAP,
     )
 
 
@@ -216,7 +217,10 @@ def serialize_dagster_namedtuple(nt, **json_kwargs):
 
 
 def unpack_value(val):
-    return _unpack_value(val, whitelist_map=_WHITELIST_MAP,)
+    return _unpack_value(
+        val,
+        whitelist_map=_WHITELIST_MAP,
+    )
 
 
 def _unpack_value(val, whitelist_map):

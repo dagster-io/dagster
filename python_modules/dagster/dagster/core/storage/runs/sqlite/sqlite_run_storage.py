@@ -84,7 +84,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         conn = engine.connect()
         try:
             with handle_schema_errors(
-                conn, get_alembic_config(__file__), msg="Sqlite run storage requires migration",
+                conn,
+                get_alembic_config(__file__),
+                msg="Sqlite run storage requires migration",
             ):
                 yield conn
         finally:
@@ -122,8 +124,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             os.unlink(path_to_old_db)
 
     def delete_run(self, run_id):
-        """ Override the default sql delete run implementation until we can get full
-        support on cascading deletes """
+        """Override the default sql delete run implementation until we can get full
+        support on cascading deletes"""
         check.str_param(run_id, "run_id")
         remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
         remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)

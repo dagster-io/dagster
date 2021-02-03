@@ -55,7 +55,8 @@ def test_notebook_view():
         [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
-            workspace, DagsterInstance.ephemeral(),
+            workspace,
+            DagsterInstance.ephemeral(),
         ).test_client() as client:
             res = client.get("/dagit/notebook?path={}".format(notebook_path))
 
@@ -69,7 +70,8 @@ def test_index_view():
         [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
-            workspace, DagsterInstance.ephemeral(),
+            workspace,
+            DagsterInstance.ephemeral(),
         ).test_client() as client:
             res = client.get("/")
 
@@ -100,7 +102,8 @@ def test_graphql_view():
         [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
-            workspace, DagsterInstance.ephemeral(),
+            workspace,
+            DagsterInstance.ephemeral(),
         ).test_client() as client:
             res = client.get("/graphql")
         assert b"Must provide query string" in res.data
@@ -260,13 +263,17 @@ def test_valid_path_prefix():
 
 @mock.patch("gevent.pywsgi.WSGIServer.serve_forever")
 def test_dagit_logs(
-    server_mock, caplog,
+    server_mock,
+    caplog,
 ):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
-            result = runner.invoke(ui, ["-w", workspace_path],)
+            result = runner.invoke(
+                ui,
+                ["-w", workspace_path],
+            )
             assert result.exit_code == 0, str(result.exception)
 
             expected_repo_stats = {

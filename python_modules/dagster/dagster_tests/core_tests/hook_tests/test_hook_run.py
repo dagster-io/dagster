@@ -106,7 +106,10 @@ def test_hook_accumulation():
             "composite_2.solid_3",
         },
         "solid_1_hook": {"composite_2.composite_1.solid_1"},
-        "composite_1_hook": {"composite_2.composite_1.solid_1", "composite_2.composite_1.solid_2",},
+        "composite_1_hook": {
+            "composite_2.composite_1.solid_1",
+            "composite_2.composite_1.solid_2",
+        },
     }
 
 

@@ -44,7 +44,9 @@ def test_grpc_watch_thread_server_update():
         client = DagsterGrpcClient(port=port)
         watch_interval = 1
         shutdown_event, watch_thread = create_grpc_watch_thread(
-            client, on_updated=on_updated, watch_interval=watch_interval,
+            client,
+            on_updated=on_updated,
+            watch_interval=watch_interval,
         )
         watch_thread.start()
         time.sleep(watch_interval * 3)

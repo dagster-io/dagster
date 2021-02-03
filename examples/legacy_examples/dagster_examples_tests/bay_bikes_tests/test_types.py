@@ -94,7 +94,10 @@ def test_validate_training_data_ok():
 
 @pytest.mark.parametrize(
     "bad_training_data",
-    [(array([[[]], [[]]]), array([])), (array([[[1, 2], [2, 3]], [[4, 5], [5, 6]]]), array([3])),],
+    [
+        (array([[[]], [[]]]), array([])),
+        (array([[[1, 2], [2, 3]], [[4, 5], [5, 6]]]), array([3])),
+    ],
 )
 def test_validate_training_data_failure(bad_training_data):
     assert not check_dagster_type(TrainingSet, bad_training_data).success

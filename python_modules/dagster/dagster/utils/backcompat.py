@@ -82,7 +82,9 @@ def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=Non
     """
     warnings.warn(
         '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}" instead.'.format(
-            old_name=old_name, new_name=new_name, breaking_version=breaking_version,
+            old_name=old_name,
+            new_name=new_name,
+            breaking_version=breaking_version,
         )
         + ((" " + additional_warn_txt) if additional_warn_txt else ""),
         stacklevel=stacklevel,

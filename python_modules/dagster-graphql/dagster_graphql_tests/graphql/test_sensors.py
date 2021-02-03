@@ -162,7 +162,9 @@ class TestSensors(ReadonlyGraphQLContextTestMatrix):
     def test_get_sensors(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
-            graphql_context, GET_SENSORS_QUERY, variables={"repositorySelector": selector},
+            graphql_context,
+            GET_SENSORS_QUERY,
+            variables={"repositorySelector": selector},
         )
 
         assert result.data
@@ -174,7 +176,9 @@ class TestSensors(ReadonlyGraphQLContextTestMatrix):
     def test_get_sensor(self, graphql_context, snapshot):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
         result = execute_dagster_graphql(
-            graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector},
+            graphql_context,
+            GET_SENSOR_QUERY,
+            variables={"sensorSelector": sensor_selector},
         )
 
         assert result.data
@@ -188,7 +192,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
     def test_start_sensor(self, graphql_context):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
         result = execute_dagster_graphql(
-            graphql_context, START_SENSORS_QUERY, variables={"sensorSelector": sensor_selector},
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
         )
         assert result.data
 
@@ -199,13 +205,17 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         # start sensor
         start_result = execute_dagster_graphql(
-            graphql_context, START_SENSORS_QUERY, variables={"sensorSelector": sensor_selector},
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
         )
         assert start_result.data["startSensor"]["sensorState"]["status"] == JobStatus.RUNNING.value
 
         job_origin_id = start_result.data["startSensor"]["jobOriginId"]
         result = execute_dagster_graphql(
-            graphql_context, STOP_SENSORS_QUERY, variables={"jobOriginId": job_origin_id},
+            graphql_context,
+            STOP_SENSORS_QUERY,
+            variables={"jobOriginId": job_origin_id},
         )
         assert result.data
         assert result.data["stopSensor"]["jobState"]["status"] == JobStatus.STOPPED.value
@@ -326,6 +336,10 @@ def test_sensor_tick_range(graphql_context):
     result = execute_dagster_graphql(
         graphql_context,
         GET_SENSOR_TICK_RANGE_QUERY,
-        variables={"sensorSelector": sensor_selector, "dayRange": 2, "dayOffset": None,},
+        variables={
+            "sensorSelector": sensor_selector,
+            "dayRange": 2,
+            "dayOffset": None,
+        },
     )
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 2

@@ -107,7 +107,7 @@ def pushd(path):
 
 
 def safe_isfile(path):
-    """"Backport of Python 3.8 os.path.isfile behavior.
+    """ "Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
@@ -383,7 +383,7 @@ class frozentags(frozendict):
 
 
 class EventGenerationManager:
-    """ Utility class that wraps an event generator function, that also yields a single instance of
+    """Utility class that wraps an event generator function, that also yields a single instance of
     a typed object.  All events yielded before the typed object are yielded through the method
     `generate_setup_events` and all events yielded after the typed object are yielded through the
     method `generate_teardown_events`.
