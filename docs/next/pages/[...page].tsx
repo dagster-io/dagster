@@ -190,6 +190,19 @@ export function getStaticPaths({}) {
           locale: "master",
         },
       },
+
+      {
+        params: {
+          page: ["concepts", "solids-pipelines", "pipelines"],
+          locale: "master",
+        },
+      },
+      {
+        params: {
+          page: ["concepts", "io-management", "io-manager"],
+          locale: "master",
+        },
+      },
     ],
     fallback: true,
   };

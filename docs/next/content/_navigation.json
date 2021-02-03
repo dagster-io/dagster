@@ -94,7 +94,7 @@
   {
     "title": "Main Concepts",
     "icon": "Menu",
-    "path": "/concepts/solids-pipelines/solids",
+    "path": "/concepts",
     "children": [
       {
         "title": "Solids & Pipelines",
@@ -291,6 +291,15 @@
           {
             "title": "Run Launcher",
             "path": "/overview/run-launchers-executors/run-launcher"
+          }
+        ]
+      },
+      {
+        "title": "Template",
+        "children": [
+          {
+            "title": "Concept Template",
+            "path": "/concepts/template/template"
           }
         ]
       }
