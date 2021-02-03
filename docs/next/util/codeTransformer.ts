@@ -1,8 +1,7 @@
-import visit from "unist-util-visit";
 import { promises as fs } from "fs";
-import path from "path";
-
 import { limitSnippetLines } from "./limit";
+import path from "path";
+import visit from "unist-util-visit";
 
 const DAGSTER_REPO =
   process.env.DAGSTER_REPO || path.join(__dirname, "../../../");
@@ -36,7 +35,10 @@ export default () => async (tree) => {
       startafter?: string;
       endbefore?: string;
       trim?: boolean;
-    } = {};
+    } = {
+      trim: true,
+    };
+
     for (const option of optionKeys) {
       const needle = `${option}=`;
       const value = meta.find((m) => m.startsWith(needle));

@@ -77,12 +77,12 @@ export default function MdxPage({
       </div>
       <aside className="hidden relative xl:block flex-none w-96 flex-shrink-0 border-gray-200">
         {/* Start secondary column (hidden on smaller screens) */}
-        <div className="flex flex-col justify-between overflow-y-auto sticky top-24 max-h-(screen-16) py-6 px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 border px-4 py-4">
+        <div className="flex flex-col justify-between  sticky top-24  py-6 px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 border px-4 py-4 relative overflow-y-scroll max-h-(screen-16)">
             <div className="uppercase text-sm font-semibold text-gray-500">
               On this page
             </div>
-            <div className="mt-6">
+            <div className="mt-6 ">
               <SidebarNavigation items={tableOfContents.items} />
             </div>
           </div>
@@ -148,7 +148,7 @@ export async function getStaticProps({ params, locale }) {
 
     // 3. Extract table of contents from MDX
     const tree = remark().use(mdx).parse(content);
-    const node = generateToc(tree, { maxDepth: 3 });
+    const node = generateToc(tree, { maxDepth: 4 });
     const tableOfContents = getItems(node.map, {});
 
     // 4. Render MDX

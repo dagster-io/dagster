@@ -94,7 +94,7 @@
   {
     "title": "Main Concepts",
     "icon": "Menu",
-    "path": "/",
+    "path": "/concepts/solids-pipelines/solids",
     "children": [
       {
         "title": "Solids & Pipelines",
@@ -104,16 +104,12 @@
             "path": "/concepts/solids-pipelines/solids"
           },
           {
-            "title": "Solid Inputs and Outputs",
-            "path": "/concepts/solids-pipelines/inputs-and-outputs"
-          },
-          {
-            "title": "Solid Configuration",
-            "path": "/concepts/solids-pipelines/configuration"
-          },
-          {
             "title": "Solid Events",
             "path": "/concepts/solids-pipelines/solid-events"
+          },
+          {
+            "title": "Solid Hooks",
+            "path": "/concepts/solids-pipelines/solid-hooks"
           },
           {
             "title": "Pipelines",
