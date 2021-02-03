@@ -1,0 +1,169 @@
+# Solids
+
+Solids are the functional unit of compuation in Dagster, and contain the core logic of your orchestration graph.
+
+<img src="/images/solids.png" />
+
+## Relevant APIs
+
+| Name                                                              | Description                                                                                                                  |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="solid" displayText="@solid" /> | The decorator used to define solids.                                                                                         |
+| <PyObject module="dagster" object="InputDefinition" />            | Decorator used to define solids. More information can be found on the [Inputs and Outputs](/inputs-and-outputs) page         |
+| <PyObject module="dagster" object="OutputDefinition" />           | Decorator used to define solids. More information can be found on the [Inputs and Outputs](/inputs-and-outputs) page         |
+| <PyObject module="dagster" object="SolidDefinition"  />           | Base class for solids. Users most often use the solid decoroator, but the base class is useful when writing solid factories. |
+
+## Overview
+
+A solid is a unit of computation in your pipeline. Your solids will contain the core business logic you want to orchestrate. Solids have several important properties:
+
+- They have defined [inputs and outputs](...), which can be optionally typed
+- They can be configured, using a strongly typed [configuration system](...)
+- They can be connected to other solids by using inputs and outputs to form a [Pipeline](...)
+- They can emit a stream of typed, structured events, such as <PyObject module="dagster" object="ExpectationResult"/> and <PyObject module="dagster" object="AssetMaterialization"/>
+
+Solids are meant to be **individually testable** and **reusable**. Dagster provides several APIs to help organize your computations into solids, making it easy to create a trustable library of solids to use across your organization.
+
+---
+
+## Defining a solid
+
+To define a solid, use the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator. The decorated function is referred to as the `compute_fn` must have `context` as the first argument. The context is provides access to system information such as resources and solid configuration. See [Solid Context](#solid-context) for more information.
+
+```python file=/overview/solids_pipelines/solid_definition.py startafter=start_solid_definition_marker_0 endbefore=end_solid_definition_marker_0
+@solid
+def my_solid(context):
+    return 1
+```
+
+### Solid Inputs and Outputs
+
+Dependencies between solids are defined using <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" /> and <PyObject module="dagster" object="OutputDefinition" displayText="OutputDefinitions" />.
+
+Input and Output definitions have a few important properties:
+
+- They are named
+- They are optionally typed. These types are validated at runtime.
+- (Advanced Concept) They can be linked to an <PyObject module="dagster" object="IOManager"/>. More information can be found on the [IOManager](...) page.
+
+#### Inputs
+
+Inputs are arguments to a solid's `compute_fn`, and are specified using <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" />.
+They can be passed from outputs of other solids, or stubbed using config.
+
+A solid only executes once all of its inputs have been resolved, which
+means that the all of the outputs that the solid depends on have been
+successfully yielded.
+
+The argument names of the `compute_fn` must match the <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" /> names,
+and must be in the same order after the context argument.
+
+For example, if we wanted a solid with an input of type `str` and an input of type `int`:
+
+```python file=/legacy/how_tos/solids.py startafter=input_example_solid_start endbefore=input_example_solid_end
+@solid(
+    input_defs=[
+        InputDefinition(name="a", dagster_type=str),
+        InputDefinition(name="b", dagster_type=int),
+    ]
+)
+def my_input_example_solid(context, a, b):
+    pass
+```
+
+#### Outputs
+
+Outputs are yielded from a solid's `compute_fn`. A solid can yield
+multiple outputs.
+
+```python file=/legacy/how_tos/solids.py startafter=my_input_output_example_solid_start endbefore=my_input_output_example_solid_end
+@solid(
+    input_defs=[
+        InputDefinition(name="a", dagster_type=int),
+        InputDefinition(name="b", dagster_type=int),
+    ],
+    output_defs=[
+        OutputDefinition(name="sum", dagster_type=int),
+        OutputDefinition(name="difference", dagster_type=int),
+    ],
+)
+def my_input_output_example_solid(context, a, b):
+    yield Output(a + b, output_name="sum")
+    yield Output(a - b, output_name="difference")
+```
+
+## Using a solid
+
+Solids are used within a <PyObject module="dagster" object="pipeline" displayText="@pipeline" />. You can see more information on the [Pipelines](...) page. You can also execute a single solid, usually within a test context, using the <PyObject module="dagster" object="execute_solid" /> function. More information can be found at [Testing Pipelines and Solids](...)
+
+## Examples
+
+### With inputs
+
+```python
+@solid(input_defs=[...])
+def addder(_context, value_a, value_b):
+  return value_a + value_b
+```
+
+### With multiple outputs
+
+Here we have a solid that emits multiple outputs. Notice how we have to use `yield` here instead of return since we more than one output. It is also imporant to wrap the output in the `Output` class, in order to help differentiate different outputs.
+
+```python
+@solid(input_defs=[...])
+def addder(_context, value_a, value_b):
+  return value_a + value_b
+```
+
+## Patterns
+
+The way we tell Dagster that one solid should execute after another solid is by declaring that one of the inputs of the former solid depends on one of the outputs of the latter solid. If the former solid doesn't depend on something produced by the latter solid, it theoretically shouldn't need to execute after it.
+
+However, sometimes it doesn't make sense to use Dagster's inputs/outputs to model the dependency. For example, if one solid creates a particular table in a database and another solid consumes that table, then the data is flowing through the database, not through inputs and outputs defined in Dagster.
+
+In this situation, we can use the Nothing Dagster type to model the dependency between the two solids. We are passing "nothing" via Dagster between the two solids. By hooking up a "nothing" output of the first solid to a "nothing" input of the second solid, Dagster understands that the second should execute after the first.
+
+```python
+@solid
+def create_table_1(_) -> Nothing:
+    get_database_connection().execute("create table_1 as select * from some_source_table")
+
+
+@solid(input_defs=[InputDefinition("start", Nothing)])
+def create_table_2(_):
+    get_database_connection().execute("create table_2 as select * from table_1")
+
+
+@pipeline
+def my_pipeline():
+    create_table_2(create_table_1())
+```
+
+### Solid Factory
+
+You may find the need to create utilities that help generate solids. In most cases, you should parameterize solid behavior by adding solid configuration. You should reach for this pattern if you find yourself needing to vary the arguments to the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator or <PyObject module="dagster" object="SolidDefinition"/> themselves, since they cannot be modified based on solid configuration.
+
+To create a solid factory, you define a function that returns a <PyObject module="dagster" object="SolidDefinition"/> , either directly or by decorating a function with the solid dectorator.
+
+```python
+def x_solid(
+    arg, name="default_name", input_defs=None, **kwargs,
+):
+    """
+    Args:
+        args (any): One or more arguments used to generate the nwe solid
+        name (str): The name of the new solid.
+        input_defs (list[InputDefinition]): Any input definitions for the new solid. Default: None.
+
+    Returns:
+        function: The new solid.
+    """
+
+    @solid(name=name, input_defs=input_defs or [InputDefinition("start", Nothing)], **kwargs)
+    def _x_solid(context):
+        # Solid logic here
+        pass
+
+    return _x_solid
+```

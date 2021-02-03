@@ -2,6 +2,7 @@ import MDXComponents, {
   SearchIndexContext,
 } from "../components/mdx/MDXComponents";
 
+import Link from "next/link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
 import SidebarNavigation from "components/mdx/SidebarNavigation";
@@ -28,6 +29,53 @@ interface Props {
   searchIndex: any;
   tableOfContents: any;
 }
+
+export const VersionNotice = () => {
+  const {
+    asPath,
+    locale: version,
+    defaultLocale: defaultVersion,
+  } = useRouter();
+
+  if (version == defaultVersion) {
+    return null;
+  }
+
+  return (
+    <div className="bg-yellow-100 mb-10 mt-6 shadow sm:rounded-lg">
+      <div className="px-4 py-5 sm:p-6">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">
+          {version === "master"
+            ? "You are viewing an unreleased version of the documentation."
+            : "You are viewing an outdated version of the documentation."}
+        </h3>
+        <div className="mt-2 text-sm text-gray-500">
+          {version === "master" ? (
+            <p>
+              This documentation is for an unreleased version ({version}) of
+              Dagster. The content here is not guaranteed to be correct or
+              stable. You can view the version of this page rom our latest
+              release below.
+            </p>
+          ) : (
+            <p>
+              This documentation is for an older version ({version}) of Dagster.
+              A new version of this page is available for our latest
+            </p>
+          )}
+        </div>
+        <div className="mt-3 text-sm">
+          <Link href={asPath} locale={defaultVersion}>
+            <a className="font-medium text-indigo-600 hover:text-indigo-500">
+              {" "}
+              View Latest Documentation <span aria-hidden="true">→</span>
+            </a>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function MdxPage({
   mdxSource,
@@ -70,6 +118,8 @@ export default function MdxPage({
         tabIndex={0}
       >
         {/* Start main area*/}
+
+        <VersionNotice />
         <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
           <div className="prose max-w-none">{content}</div>
         </div>

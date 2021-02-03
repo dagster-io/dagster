@@ -1,4 +1,4 @@
-const ALL_VERSIONS = [];
+const ALL_VERSIONS = ["0.9.19", "0.9.20", "0.9.21"];
 
 module.exports = {
   async redirects() {

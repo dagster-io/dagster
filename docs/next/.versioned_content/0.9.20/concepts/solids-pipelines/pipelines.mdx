@@ -1,0 +1,61 @@
+# Pipeline
+
+A pipeline is a set of solids which have data dependencies on each other to create a directed acyclic graph, or DAG.
+
+<img src="/images/pipelines.png" />
+
+## Relevant APIs
+
+| Name                                                                    | Description                                                                                                          |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> | The decorator used to define solids.                                                                                 |
+| <PyObject module="dagster" object="PipelineDefinition" />               | Decorator used to define solids. More information can be found on the [Inputs and Outputs](/inputs-and-outputs) page |
+
+## Overview
+
+A solid is a unit of computation in your pipeline. Your solids will contain the core business logic you want to orchestrate. Solids have several important properties:
+
+- They have defined [inputs and outputs](...), which can be optionally typed
+- They can be configured, using a strongly typed [configuration system](...)
+- They can be connected to other solids by using inputs and outputs to form a [Pipeline](...)
+- They can emit a stream of typed, structured events, such as <PyObject module="dagster" object="ExpectationResult"/> and <PyObject module="dagster" object="AssetMaterialization"/>
+
+Solids are meant to be **individually testable** and **reusable**. Dagster provides several APIs to help organize your computations into solids, making it easy to create a trustable library of solids to use across your organization.
+
+---
+
+## Defining a pipeline
+
+There are two ways to define a pipeline:
+
+1.  Using the <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> decorator
+    _\[Preferred\]_
+2.  Construct a <PyObject module="dagster" object="PipelineDefinition"/> object
+
+**Method 1: Using the decorator**
+
+To use the <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> decorator,
+we wrap a function that composes a set of solids.
+
+Within the body of the function that is decorated, we use function calls to indicate the dependency structure of the solids making up the pipeline.
+
+```python literalinclude caption=solids.py
+file=/docs_snippets/docs_snippets/overview/solids_pipelines/pipeline_definition.py
+lineno-start:
+startAfter:start_pipeline_definition_marker_0
+endBefore:end_pipeline_definition_marker_0
+```
+
+**Method 2: Constructing the PipelineDefinition object**
+
+To construct a <PyObject module="dagster" object="PipelineDefinition"/> object, you need to pass the constructor a pipeline name,
+list of solid definitions, and a dictionary defining the dependency structure.
+
+The dependency structure declares the dependencies of each solid’s inputs on the outputs of other solids in the pipeline. Keys of the top level dict are either the string names of solids in the pipeline or, in the case of aliased solids, SolidInvocations. Values of the top level dict are themselves dicts, which map input names belonging to the solid or aliased solid to DependencyDefinitions.
+
+```python literalinclude caption=solids.py
+file=/docs_snippets/docs_snippets/overview/solids_pipelines/pipeline_definition.py
+lineno-start:
+startAfter:start_pipeline_definition_marker_1
+endBefore:end_pipeline_definition_marker_1
+```
