@@ -178,15 +178,19 @@
         ]
       },
       {
-        "title": "Inputs and Outputs",
+        "title": "IO Management",
         "children": [
           {
-            "title": "IOManagers",
-            "path": "/overview/configuration/run-config"
+            "title": "IO Managers",
+            "path": "/concepts/io-management/io-managers"
           },
           {
-            "title": "Writing custom IO Managers",
-            "path": "/overview/configuration/run-config"
+            "title": "Custom IO Managers",
+            "path": "/concepts/io-management/custom-io-managers"
+          },
+          {
+            "title": "Dagster Type Loaders",
+            "path": "/concepts/io-management/dagster-type-loaders"
           }
         ]
       },
