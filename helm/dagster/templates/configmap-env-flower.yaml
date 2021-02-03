@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "dagster.fullname" . }}-flower-env
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  {{ include "dagster.shared_env" . | nindent 2 }}
+
+  {{- range $name, $value := .Values.flower.env }}
+  {{ $name }}: {{ $value | quote }}
+  {{- end }}
