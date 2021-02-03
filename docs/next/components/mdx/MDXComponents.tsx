@@ -5,18 +5,10 @@
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
 
-import { useState } from "react";
-import VersionedLink from "../VersionedLink";
-import data from "../../content/api/searchindex.json";
 import React, { useContext } from "react";
 
-const ExampleComponent = () => {
-  return <span className="text-red-400 font-bold">Hello!</span>;
-};
-
-const AlertComponent = ({ children }) => {
-  return <div className="flex bg-yellow-200 items-center">{children}</div>;
-};
+import VersionedLink from "../VersionedLink";
+import data from "../../content/api/searchindex.json";
 
 export const SearchIndexContext = React.createContext(null);
 
@@ -59,35 +51,7 @@ const PyObject: React.FunctionComponent<{
   );
 };
 
-const Counter = () => {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div className="flex items-center space-x-4">
-      <div>{count}</div>
-      <div>
-        <button
-          className="p-4 bg-green-100"
-          onClick={() => setCount(count + 1)}
-        >
-          +
-        </button>
-        <button className="p-4 bg-red-100" onClick={() => setCount(count - 1)}>
-          -
-        </button>
-      </div>
-    </div>
-  );
-};
-const Example = ({ children }) => {
-  return <div className="bg-gray-200 px-8 py-4">{children}</div>;
-};
-
 export default {
-  ExampleComponent,
-  AlertComponent,
   PyObject,
-  Counter,
-  Example,
   VersionedLink,
 };

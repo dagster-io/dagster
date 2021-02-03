@@ -1,7 +1,7 @@
-import { useRouter } from "next/router";
 import React from "react";
-import navigation from "../content/_navigation.json";
 import VersionedLink from "./VersionedLink";
+import navigation from "../content/_navigation.json";
+import { useRouter } from "next/router";
 
 function flatten(yx: any) {
   const xs = JSON.parse(JSON.stringify(yx));

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+
 import cx from "classnames";
 
-// After parsing the AST, we generate a sidebar navigation tree like this:
+// By parsing the AST, we generate a sidebar navigation tree like this:
 //
 // {"items": [{
 //   "url": "#something-if",
@@ -20,7 +21,6 @@ import cx from "classnames";
 //     "url": "#something-iffi",
 //     "title": "Something iffi"
 //   }]}
-//
 
 // Given the tree, get all the IDS
 const getIds = (items) => {
@@ -90,8 +90,10 @@ const renderItems = (items, activeId, depth) => {
   );
 };
 
-export default ({ items }) => {
+const SidebarNavigation = ({ items }) => {
   const idList = getIds(items);
   const activeId = useActiveId(idList);
   return renderItems(items[0].items, activeId, 0);
 };
+
+export default SidebarNavigation;

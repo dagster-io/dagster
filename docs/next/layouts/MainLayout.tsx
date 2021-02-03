@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+
+import Link from "next/link";
+import Pagination from "components/Pagination";
 import Sidebar from "../components/Sidebar";
 import { useRouter } from "next/router";
-import Link from "next/link";
 
 const VersionNotice = () => {
   const {
@@ -183,7 +185,14 @@ const Layout = ({ children }) => {
               </div>
             </div>
             <Header />
-            <div className="w-full relative z-0 flex">{children}</div>
+            <div className="w-full relative z-0 flex justify-center">
+              <VersionNotice />
+              {children}
+            </div>
+          </div>
+
+          <div className="pb-24">
+            <Pagination />
           </div>
         </div>
       </div>
