@@ -59,6 +59,7 @@ if __name__ == "__main__":
             # cli
             "click>=5.0",
             "coloredlogs>=6.1, <=14.0",
+            "Jinja2",
             "PyYAML",
             # core (not explicitly expressed atm)
             "alembic>=1.2.1",
