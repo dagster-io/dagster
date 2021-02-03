@@ -274,8 +274,7 @@ pipelineRun:
   # env:
   #   ENV_ONE: one
   #   ENV_TWO: two
-  env:
-    YOUR_ENV_VAR: ""
+  env: {}
 
 ####################################################################################################
 # Scheduler: Configuration for the scheduler
