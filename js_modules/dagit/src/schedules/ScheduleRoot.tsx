@@ -96,26 +96,24 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                   daemonHealth={instance.daemonHealth}
                   errorsOnly={true}
                 />
-                <>
-                  <ScheduleDetails
-                    repoAddress={repoAddress}
-                    schedule={scheduleOrError}
-                    countdownDuration={INTERVAL}
-                    countdownStatus={countdownStatus}
-                    onRefresh={() => onRefresh()}
-                  />
-                  <JobTickHistory
-                    repoAddress={repoAddress}
-                    jobName={scheduleOrError.name}
-                    onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-                  />
-                  <SchedulePreviousRuns
-                    repoAddress={repoAddress}
-                    schedule={scheduleOrError}
-                    highlightedIds={selectedRunIds}
-                    runTab={runTab}
-                  />
-                </>
+                <ScheduleDetails
+                  repoAddress={repoAddress}
+                  schedule={scheduleOrError}
+                  countdownDuration={INTERVAL}
+                  countdownStatus={countdownStatus}
+                  onRefresh={() => onRefresh()}
+                />
+                <JobTickHistory
+                  repoAddress={repoAddress}
+                  jobName={scheduleOrError.name}
+                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                />
+                <SchedulePreviousRuns
+                  repoAddress={repoAddress}
+                  schedule={scheduleOrError}
+                  highlightedIds={selectedRunIds}
+                  runTab={runTab}
+                />
               </Group>
             </Page>
           </ScrollContainer>
