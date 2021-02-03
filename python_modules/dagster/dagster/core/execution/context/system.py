@@ -364,16 +364,20 @@ class SystemStepExecutionContext(SystemExecutionContext):
 
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
-        # backcompat: if intermediate storage is specified, adapt it to object manager
-        if self.using_default_intermediate_storage():
-            output_def = self.pipeline_def.get_solid(step_output.solid_handle).output_def_named(
-                step_output.name
-            )
-            output_manager = getattr(self.resources, output_def.io_manager_key)
-        else:
+        io_manager_key = (
+            self.pipeline_def.get_solid(step_output.solid_handle)
+            .output_def_named(step_output.name)
+            .io_manager_key
+        )
+
+        # backcompat: if intermediate storage is specified and the user hasn't overridden
+        # io_manager_key on the output, use the intermediate storage.
+        if io_manager_key == "io_manager" and not self.using_default_intermediate_storage():
             from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
             output_manager = IntermediateStorageAdapter(self.intermediate_storage)
+        else:
+            output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
 

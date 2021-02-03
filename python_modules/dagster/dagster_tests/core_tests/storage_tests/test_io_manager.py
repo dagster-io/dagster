@@ -288,6 +288,32 @@ def test_set_io_manager_configure_intermediate_storage():
         execute_pipeline(my_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})
 
 
+def test_io_manager_key_intermediate_storage():
+    called = {"called": False}
+
+    @io_manager
+    def custom_io_manager(_):
+        class CustomIOManager(IOManager):
+            def handle_output(self, _, _obj):
+                called["called"] = True
+
+            def load_input(self, _):
+                pass
+
+        return CustomIOManager()
+
+    @solid(output_defs=[OutputDefinition(io_manager_key="my_key")])
+    def solid1(_):
+        return 5
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_key": custom_io_manager})])
+    def my_pipeline():
+        solid1()
+
+    execute_pipeline(my_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})
+    assert called["called"]
+
+
 def test_fan_in():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
