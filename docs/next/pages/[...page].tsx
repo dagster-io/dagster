@@ -14,6 +14,7 @@ import path from "path";
 import rehypePlugins from "components/mdx/rehypePlugins";
 import remark from "remark";
 import renderToString from "next-mdx-remote/render-to-string";
+import { useRouter } from "next/router";
 import visit from "unist-util-visit";
 
 const components: MdxRemote.Components = MDXComponents;
@@ -34,6 +35,22 @@ export default function MdxPage({
   searchIndex,
   tableOfContents,
 }: Props) {
+  const router = useRouter();
+
+  // If the page is not yet generated, this will be displayed
+  // initially until getStaticProps() finishes running
+  if (router.isFallback) {
+    return (
+      <div className="w-full my-12 h-96 animate-pulse prose max-w-none">
+        <div className="bg-gray-200 px-4 w-48 h-12"></div>
+        <div className="bg-gray-200 mt-12 px-4 w-1/2 h-6"></div>
+        <div className="bg-gray-200 mt-5 px-4 w-2/3 h-6"></div>
+        <div className="bg-gray-200 mt-5 px-4 w-1/3 h-6"></div>
+        <div className="bg-gray-200 mt-5 px-4 w-1/2 h-6"></div>
+      </div>
+    );
+  }
+
   const content = hydrate(mdxSource, {
     components,
     provider: {
@@ -113,7 +130,7 @@ function getItems(node, current) {
   return {};
 }
 
-export async function getServerSideProps({ params, locale }) {
+export async function getStaticProps({ params, locale }) {
   const { page } = params;
 
   const basePath = basePathForVersion(locale);
@@ -154,6 +171,7 @@ export async function getServerSideProps({ params, locale }) {
         searchIndex: searchIndex,
         tableOfContents,
       },
+      revalidate: 10, // In seconds
     };
   } catch (err) {
     console.error(err);
@@ -161,4 +179,18 @@ export async function getServerSideProps({ params, locale }) {
       notFound: true,
     };
   }
+}
+
+export function getStaticPaths({}) {
+  return {
+    paths: [
+      {
+        params: {
+          page: ["concepts", "solids-pipelines", "solids"],
+          locale: "master",
+        },
+      },
+    ],
+    fallback: true,
+  };
 }

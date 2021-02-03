@@ -105,23 +105,23 @@
           },
           {
             "title": "Solid Inputs and Outputs",
-            "path": "/overview/solids-pipelines/inputs-and-outputs"
+            "path": "/concepts/solids-pipelines/inputs-and-outputs"
           },
           {
             "title": "Solid Configuration",
-            "path": "/overview/solids-pipelines/inputs-and-outputs"
+            "path": "/concepts/solids-pipelines/configuration"
           },
           {
             "title": "Solid Events",
-            "path": "/overview/solids-pipelines/solid-events"
+            "path": "/concepts/solids-pipelines/solid-events"
           },
           {
             "title": "Pipelines",
-            "path": "/overview/solids-pipelines/pipelines"
+            "path": "/concepts/solids-pipelines/pipelines"
           },
           {
             "title": "Testing Solids and Pipelines",
-            "path": "/overview/solids-pipelines/solid-factories"
+            "path": "/concepts/solids-pipelines/solid-factories"
           }
         ]
       },

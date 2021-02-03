@@ -51,7 +51,9 @@ const useActiveId = (itemIds) => {
       { rootMargin: `0% 0% -95% 0%` }
     );
     itemIds.forEach((id) => {
-      observer.observe(document.getElementById(id));
+      if (document.getElementById(id)) {
+        observer.observe(document.getElementById(id));
+      }
     });
     return () => {
       itemIds.forEach((id) => {
