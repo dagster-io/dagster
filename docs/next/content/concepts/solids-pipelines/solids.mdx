@@ -103,6 +103,8 @@ def addder(_context, value_a, value_b):
   return value_a + value_b
 ```
 
+## Patterns
+
 ### Nothing depdency
 
 The way we tell Dagster that one solid should execute after another solid is by declaring that one of the inputs of the former solid depends on one of the outputs of the latter solid. If the former solid doesn't depend on something produced by the latter solid, it theoretically shouldn't need to execute after it.
@@ -126,8 +128,6 @@ def create_table_2(_):
 def my_pipeline():
     create_table_2(create_table_1())
 ```
-
-## Patterns
 
 ### Solid Factory
 

@@ -1,11 +1,12 @@
 import path from "path";
 import { promises as fs } from "fs";
-import cx from "classnames";
 
 import renderToString from "next-mdx-remote/render-to-string";
 import hydrate from "next-mdx-remote/hydrate";
 import { MdxRemote } from "next-mdx-remote/types";
-import MDXComponents, { SearchIndexContext } from "../components/MDXComponents";
+import MDXComponents, {
+  SearchIndexContext,
+} from "../components/mdx/MDXComponents";
 import { NextSeo } from "next-seo";
 
 import matter from "gray-matter";
@@ -18,7 +19,7 @@ import generateTOC from "mdast-util-toc";
 import remark from "remark";
 import mdx from "remark-mdx";
 import visit from "unist-util-visit";
-import { useEffect, useState } from "react";
+import SidebarNavigation from "components/mdx/SidebarNavigation";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -32,89 +33,12 @@ interface Props {
   tableOfContents: any;
 }
 
-const getIds = (items) => {
-  return items.reduce((acc, item) => {
-    if (item.url) {
-      // url has a # as first character, remove it to get the raw CSS-id
-      acc.push(item.url.slice(1));
-    }
-    if (item.items) {
-      acc.push(...getIds(item.items));
-    }
-    return acc;
-  }, []);
-};
-
-const useActiveId = (itemIds) => {
-  const [activeId, setActiveId] = useState(`test`);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: `0% 0% -95% 0%` }
-    );
-    itemIds.forEach((id) => {
-      observer.observe(document.getElementById(id));
-    });
-    return () => {
-      itemIds.forEach((id) => {
-        observer.unobserve(document.getElementById(id));
-      });
-    };
-  }, [itemIds]);
-  return activeId;
-};
-
-const renderItems = (items, activeId, depth) => {
-  const margins = ["ml-0", "ml-4", "ml-8", "ml-12"];
-
-  return (
-    <ol>
-      {items.map((item) => {
-        return (
-          <li key={item.url} className="mt-3">
-            <a
-              href={item.url}
-              className={cx(margins[depth], "font-semibold text-sm", {
-                "text-gray-800 underline": activeId === item.url.slice(1),
-                "text-gray-500": activeId !== item.url.slice(1),
-              })}
-            >
-              {item.title}
-            </a>
-            {item.items && renderItems(item.items, activeId, depth + 1)}
-          </li>
-        );
-      })}
-    </ol>
-  );
-};
-
-const TableOfContents = ({ items }) => {
-  const idList = getIds(items);
-  const activeId = useActiveId(idList);
-  return (
-    <div className="border px-4 py-4">
-      <div className="uppercase text-sm font-bold text-gray-800 mb-6">
-        On this page
-      </div>
-      {renderItems(items[0].items, activeId, 0)}
-    </div>
-  );
-};
-
 export default function ExamplePage({
   mdxSource,
   frontMatter,
   searchIndex,
   tableOfContents,
 }: Props) {
-
   const content = hydrate(mdxSource, {
     components,
     provider: {
@@ -125,23 +49,34 @@ export default function ExamplePage({
 
   return (
     <>
-     <NextSeo
+      <NextSeo
         title={frontMatter.title}
         description={frontMatter.description}
       />
-    <div className="w-full flex relative">
-      <div className="min-w-0 flex-auto pt-10 pr-12 pb-24 lg:pb-96 prose max-w-none">
-        <h1>{frontMatter.title}</h1>
-        <p>{frontMatter.description}</p>
-        {content}
-      </div>
-
-      <div className="hidden xl:text-sm xl:block flex-none w-72 pl-8 mr-8">
-        <div className="flex flex-col justify-between overflow-y-auto sticky  pt-10 pb-6 top-10">
-          <TableOfContents items={tableOfContents.items} />
+      <div
+        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-8"
+        tabIndex={0}
+      >
+        {/* Start main area*/}
+        <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
+          <div className="prose max-w-none">{content}</div>
         </div>
+        {/* End main area */}
       </div>
-    </div>
+      <aside className="hidden relative xl:block flex-none w-96 flex-shrink-0 border-gray-200">
+        {/* Start secondary column (hidden on smaller screens) */}
+        <div className="flex flex-col justify-between overflow-y-auto sticky top-24 max-h-(screen-16) py-6 px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 border px-4 py-4">
+            <div className="uppercase text-sm font-semibold text-gray-500">
+              On this page
+            </div>
+            <div className="mt-6">
+              <SidebarNavigation items={tableOfContents.items} />
+            </div>
+          </div>
+        </div>
+        {/* End secondary column */}
+      </aside>
     </>
   );
 }

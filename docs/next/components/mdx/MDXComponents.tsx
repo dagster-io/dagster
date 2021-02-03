@@ -6,8 +6,8 @@
 // and update all existing usage of it
 
 import { useState } from "react";
-import VersionedLink from "./VersionedLink";
-import data from "../content/api/searchindex.json";
+import VersionedLink from "../VersionedLink";
+import data from "../../content/api/searchindex.json";
 import React, { useContext } from "react";
 
 const ExampleComponent = () => {

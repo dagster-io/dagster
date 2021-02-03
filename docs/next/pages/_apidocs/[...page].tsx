@@ -5,12 +5,18 @@ const ApiDocsPage = ({ body, data, page, curr }) => {
   const markup = { __html: body };
 
   return (
-    <div className="flex justify-center mt-10">
+    <>
       <div
-        className="prose prose-sm max-w-3xl"
-        dangerouslySetInnerHTML={markup}
-      />
-    </div>
+        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-8"
+        tabIndex={0}
+      >
+        {/* Start main area*/}
+        <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
+          <div className="prose max-w-none" dangerouslySetInnerHTML={markup} />
+        </div>
+        {/* End main area */}
+      </div>
+    </>
   );
 };
 
