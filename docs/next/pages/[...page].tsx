@@ -249,7 +249,7 @@ export function getStaticPaths({}) {
       },
       {
         params: {
-          page: ["concepts", "io-management", "io-manager"],
+          page: ["concepts", "io-management", "io-managers"],
           locale: "master",
         },
       },
