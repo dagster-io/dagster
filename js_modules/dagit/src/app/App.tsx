@@ -14,6 +14,7 @@ import {InstanceRoot} from 'src/instance/InstanceRoot';
 import {LeftNavBranch} from 'src/nav/LeftNavBranch';
 import {AllSchedulesRoot} from 'src/schedules/AllSchedulesRoot';
 import {AllSensorsRoot} from 'src/sensors/AllSensorsRoot';
+import {AllPipelinesRoot} from 'src/workspace/AllPipelinesRoot';
 import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
@@ -28,6 +29,7 @@ export const AppContent = () => {
             <Route path="/flags" component={FeatureFlagsRoot} />
             <Route path="/instance" component={InstanceRoot} />
             <Route path="/workspace" component={WorkspaceRoot} />
+            <Route path="/pipelines" component={AllPipelinesRoot} />
             <Route path="/schedules" component={AllSchedulesRoot} />
             <Route path="/sensors" component={AllSensorsRoot} />
             <Route path="/settings" component={SettingsRoot} />

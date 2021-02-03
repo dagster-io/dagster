@@ -15,7 +15,6 @@ import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {LogsToolbar} from 'src/runs/LogsToolbar';
 import {RunActionButtons} from 'src/runs/RunActionButtons';
 import {RunContext} from 'src/runs/RunContext';
-import {RunDetails} from 'src/runs/RunDetails';
 import {IRunMetadataDict, IStepState, RunMetadataProvider} from 'src/runs/RunMetadataProvider';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 import {
@@ -244,7 +243,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
   return (
     <>
-      <RunDetails loading={logs.loading} run={run} />
+      {/* <RunDetails loading={logs.loading} run={run} /> */}
       <SplitPanelContainer
         ref={splitPanelContainer}
         axis={'vertical'}

@@ -258,27 +258,34 @@ export const useRepositoryOptions = () => {
   return {options, loading, error};
 };
 
+// todo dish: Delete this.
 export const useActiveRepo = () => {
   const {activeRepo} = React.useContext(WorkspaceContext);
   return activeRepo;
 };
 
-export const useRepository = () => {
-  const {activeRepo} = React.useContext(WorkspaceContext);
-  return activeRepo?.repo.repository;
+export const useRepository = (repoAddress: RepoAddress) => {
+  const {options} = useRepositoryOptions();
+  return options.find(
+    (option) =>
+      option.repository.name === repoAddress.name &&
+      option.repositoryLocation.name === repoAddress.location,
+  );
 };
 
 export const useRepositorySelector = (): RepositorySelector => {
-  const repository = useRepository();
+  const active = useActiveRepo();
   return {
-    repositoryLocationName: repository?.location.name || '',
-    repositoryName: repository?.name || '',
+    repositoryLocationName: active?.repo.repository.location.name || '',
+    repositoryName: active?.repo.repository.name || '',
   };
 };
 
 export const useActivePipelineForName = (pipelineName: string) => {
-  const repository = useRepository();
-  return repository?.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
+  const active = useActiveRepo();
+  return (
+    active?.repo.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null
+  );
 };
 
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {

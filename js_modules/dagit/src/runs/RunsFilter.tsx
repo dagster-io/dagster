@@ -11,7 +11,7 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
 } from 'src/ui/TokenizingField';
-import {useRepository, useRepositorySelector} from 'src/workspace/WorkspaceContext';
+import {useActiveRepo, useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';
 
@@ -148,13 +148,13 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   onChange,
   enabledFilters,
 }) => {
-  const repository = useRepository();
+  const activeRepo = useActiveRepo();
   const repositorySelector = useRepositorySelector();
   const suggestions = searchSuggestionsForRuns(
     useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
       fetchPolicy: 'cache-and-network',
-      skip: !repository,
-      variables: repository ? {repositorySelector} : {},
+      skip: !activeRepo,
+      variables: activeRepo ? {repositorySelector} : {},
     }),
     enabledFilters,
   );

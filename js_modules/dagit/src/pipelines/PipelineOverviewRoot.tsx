@@ -3,7 +3,6 @@ import {Colors, NonIdealState, Tooltip} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {Timestamp} from 'src/app/time/Timestamp';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
@@ -28,6 +27,7 @@ import {
   RUN_TIME_FRAGMENT,
 } from 'src/runs/RunUtils';
 import {JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
@@ -101,8 +101,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
         const sensors = pipelineSnapshotOrError.sensors;
 
         return (
-          <RootContainer>
-            <MainContainer>
+          <Box flex={{direction: 'row'}} padding={20}>
+            <Box style={{flexBasis: '50%'}} margin={{right: 32}}>
               <OverviewSection title="Definition">
                 <div
                   style={{
@@ -138,8 +138,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
               <OverviewSection title="Description">
                 {pipelineSnapshotOrError.description || 'No description provided'}
               </OverviewSection>
-            </MainContainer>
-            <SecondaryContainer>
+            </Box>
+            <Box style={{flexBasis: '25%'}} margin={{right: 32}}>
               <OverviewSection title="Schedule">
                 {schedules.length ? (
                   <Table $compact>
@@ -195,11 +195,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   )}
                 </OverviewSection>
               </RunsQueryRefetchContext.Provider>
-            </SecondaryContainer>
-            <SecondaryContainer>
+            </Box>
+            <div style={{flexBasis: '25%'}}>
               <OverviewAssets runs={pipelineSnapshotOrError.runs} />
-            </SecondaryContainer>
-          </RootContainer>
+            </div>
+          </Box>
         );
       }}
     </Loading>
@@ -346,24 +346,6 @@ const OverviewSection = ({title, children}: {title: string; children: any}) => {
     </div>
   );
 };
-
-const RootContainer = styled.div`
-  flex: 1;
-  display: flex;
-  overflow: auto;
-`;
-
-const MainContainer = styled.div`
-  flex: 2;
-  max-width: 1200px;
-  padding: 20px;
-`;
-
-const SecondaryContainer = ({children}: {children: React.ReactNode}) => (
-  <div style={{maxWidth: 600, padding: 20, flex: 1}}>
-    <div style={{maxWidth: '25vw'}}>{children}</div>
-  </div>
-);
 
 const OVERVIEW_JOB_FRAGMENT = gql`
   fragment OverviewJobFragment on JobState {

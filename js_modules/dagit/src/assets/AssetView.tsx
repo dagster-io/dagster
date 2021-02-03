@@ -22,7 +22,7 @@ import {titleForRun} from 'src/runs/RunUtils';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {MetadataTable} from 'src/ui/MetadataTable';
-import {Heading, Subheading} from 'src/ui/Text';
+import {Subheading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
 interface AssetKey {
@@ -85,9 +85,9 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
   const latestEvent = latest && latest.materializationEvent;
 
   return (
-    <div>
-      <Group direction="column" spacing={12}>
-        <Heading>{asset.key.path[asset.key.path.length - 1]}</Heading>
+    <>
+      <Group direction="column" spacing={8}>
+        <Subheading>Details</Subheading>
         <MetadataTable
           rows={[
             latest.partition
@@ -120,7 +120,6 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
           ].filter(Boolean)}
         />
       </Group>
-
       <div style={{display: 'flex', marginTop: 20}}>
         <Subheading>Materializations over Time</Subheading>
         <div style={{flex: 1}} />
@@ -184,7 +183,7 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
           )}
         </>
       )}
-    </div>
+    </>
   );
 };
 

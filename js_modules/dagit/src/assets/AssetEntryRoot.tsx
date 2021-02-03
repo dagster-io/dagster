@@ -1,41 +1,66 @@
 import {gql, useQuery} from '@apollo/client';
-import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
+import {Colors, NonIdealState, Breadcrumbs, IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetView} from 'src/assets/AssetView';
 import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
 import {AssetEntryRootQuery} from 'src/assets/types/AssetEntryRootQuery';
-import {TopNav} from 'src/nav/TopNav';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
+import {Heading} from 'src/ui/Text';
 
 export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
-  const currentPath = (match.params['0'] || '')
+  const currentPath: string[] = (match.params['0'] || '')
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);
+
   const queryResult = useQuery<AssetEntryRootQuery>(ASSET_ENTRY_ROOT_QUERY, {
     variables: {assetKey: {path: currentPath}},
   });
 
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {icon: 'panel-table', text: 'Assets', href: '/instance/assets'},
-  ];
+  const pathDetails = () => {
+    if (currentPath.length === 1) {
+      return <Link to="/instance/assets">Asset</Link>;
+    }
 
-  if (currentPath.length > 1) {
+    const breadcrumbs: IBreadcrumbProps[] = [];
     currentPath.slice(0, currentPath.length - 1).reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
       breadcrumbs.push({text: elem, href});
       return href;
     }, '/instance/assets');
-  }
+
+    return (
+      <Box flex={{direction: 'row', alignItems: 'center'}} style={{maxWidth: 500}}>
+        <div style={{marginRight: '5px'}}>
+          <Link to="/instance/assets">Asset</Link> in
+        </div>
+        <Breadcrumbs
+          breadcrumbRenderer={({text, href}) => (
+            <Link to={href || '#'}>
+              <span style={{fontSize: '14px'}}>{text}</span>
+            </Link>
+          )}
+          items={breadcrumbs}
+        />
+      </Box>
+    );
+  };
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', width: '100%', overflow: 'auto'}}>
-      <TopNav breadcrumbs={breadcrumbs} />
-      <Page style={{flexGrow: 1}}>
+    <Page>
+      <Group direction="column" spacing={20}>
+        <PageHeader
+          title={<Heading>{currentPath.slice(-1)}</Heading>}
+          icon="th"
+          description={<PathDetails>{pathDetails()}</PathDetails>}
+        />
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetsNotSupportedError') {
@@ -71,8 +96,8 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
             );
           }}
         </Loading>
-      </Page>
-    </div>
+      </Group>
+    </Page>
   );
 };
 
@@ -84,6 +109,20 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
+`;
+
+const PathDetails = styled.div`
+  color: ${Colors.GRAY2};
+
+  .bp3-breadcrumbs {
+    height: auto;
+  }
+
+  .bp3-breadcrumbs-collapsed {
+    position: relative;
+    top: 2px;
+    margin-left: 2px;
+  }
 `;
 
 const ASSET_ENTRY_ROOT_QUERY = gql`

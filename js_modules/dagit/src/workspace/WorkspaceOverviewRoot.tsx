@@ -1,18 +1,18 @@
-import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TopNav} from 'src/nav/TopNav';
+import {Group} from 'src/ui/Group';
 import {LoadingSpinner} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Table} from 'src/ui/Table';
+import {Heading} from 'src/ui/Text';
 import {useRepositoryOptions} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-
-  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'cube', text: 'Workspace'}];
 
   const content = () => {
     if (loading) {
@@ -77,9 +77,11 @@ export const WorkspaceOverviewRoot = () => {
   };
 
   return (
-    <>
-      <TopNav breadcrumbs={breadcrumbs} />
-      <Page>{content()}</Page>
-    </>
+    <Page>
+      <Group direction="column" spacing={16}>
+        <PageHeader title={<Heading>Workspace</Heading>} />
+        {content()}
+      </Group>
+    </Page>
   );
 };

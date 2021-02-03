@@ -18,8 +18,10 @@ import {Box} from 'src/ui/Box';
 import {CountdownStatus, useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {MetadataTable} from 'src/ui/MetadataTable';
+import {PageHeader} from 'src/ui/PageHeader';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
+import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
@@ -92,68 +94,81 @@ export const SensorDetails: React.FC<{
   const latestTick = ticks.length ? ticks[0] : null;
 
   return (
-    <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-      <Group direction="column" spacing={12}>
-        <Group alignItems="center" direction="row" spacing={8}>
-          <Heading>{name}</Heading>
-          <Box margin={{left: 4}}>
-            <Switch
-              checked={status === JobStatus.RUNNING}
-              inline
-              large
-              disabled={toggleOffInFlight || toggleOnInFlight}
-              innerLabelChecked="on"
-              innerLabel="off"
-              onChange={onChangeSwitch}
-              style={{margin: '4px 0 0 0'}}
+    <Group direction="column" spacing={16}>
+      <PageHeader
+        title={
+          <Group alignItems="center" direction="row" spacing={8}>
+            <Heading>{name}</Heading>
+            <Box margin={{left: 4}}>
+              <Switch
+                checked={status === JobStatus.RUNNING}
+                inline
+                large
+                disabled={toggleOffInFlight || toggleOnInFlight}
+                innerLabelChecked="on"
+                innerLabel="off"
+                onChange={onChangeSwitch}
+                style={{margin: '4px 0 0 0'}}
+              />
+            </Box>
+            {sensor.nextTick && daemonHealth && status === JobStatus.RUNNING ? (
+              <Group direction="row" spacing={4}>
+                <div>Next tick:</div>
+                <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
+              </Group>
+            ) : null}
+          </Group>
+        }
+        icon="automatic-updates"
+        description={
+          <>
+            <Link to={workspacePathFromAddress(repoAddress, '/sensors')}>Sensor</Link> in{' '}
+            <Link to={workspacePathFromAddress(repoAddress)}>
+              {repoAddressAsString(repoAddress)}
+            </Link>
+          </>
+        }
+        right={
+          <Box margin={{top: 4}}>
+            <RefreshableCountdown
+              refreshing={countdownRefreshing}
+              seconds={seconds}
+              onRefresh={onRefresh}
             />
           </Box>
-          {sensor.nextTick && daemonHealth && status === JobStatus.RUNNING ? (
-            <Group direction="row" spacing={4}>
-              <div>Next tick:</div>
-              <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
-            </Group>
-          ) : null}
-        </Group>
-        <MetadataTable
-          rows={[
-            {
-              key: 'Latest tick',
-              value: latestTick ? (
-                <Group direction="row" spacing={8} alignItems="center">
-                  <TimestampDisplay timestamp={latestTick.timestamp} />
-                  <TickTag tick={latestTick} jobType={JobType.SENSOR} />
-                </Group>
-              ) : (
-                'Sensor has never run'
-              ),
-            },
-            {
-              key: 'Pipeline',
-              value: (
-                <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
-                  {pipelineName}
-                </Link>
-              ),
-            },
-            {
-              key: 'Mode',
-              value: sensor.mode,
-            },
-            {
-              key: 'Frequency',
-              value: humanizeSensorInterval(sensor.minIntervalSeconds),
-            },
-          ]}
-        />
-      </Group>
-      <Box margin={{top: 4}}>
-        <RefreshableCountdown
-          refreshing={countdownRefreshing}
-          seconds={seconds}
-          onRefresh={onRefresh}
-        />
-      </Box>
-    </Box>
+        }
+      />
+      <MetadataTable
+        rows={[
+          {
+            key: 'Latest tick',
+            value: latestTick ? (
+              <Group direction="row" spacing={8} alignItems="center">
+                <TimestampDisplay timestamp={latestTick.timestamp} />
+                <TickTag tick={latestTick} jobType={JobType.SENSOR} />
+              </Group>
+            ) : (
+              'Sensor has never run'
+            ),
+          },
+          {
+            key: 'Pipeline',
+            value: (
+              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
+                {pipelineName}
+              </Link>
+            ),
+          },
+          {
+            key: 'Mode',
+            value: sensor.mode,
+          },
+          {
+            key: 'Frequency',
+            value: humanizeSensorInterval(sensor.minIntervalSeconds),
+          },
+        ]}
+      />
+    </Group>
   );
 };

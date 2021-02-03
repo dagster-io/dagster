@@ -11,9 +11,10 @@ import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {AllSchedulesQuery} from 'src/schedules/types/AllSchedulesQuery';
 import {JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Heading} from 'src/ui/Text';
 
 const POLL_INTERVAL = 15 * 1000;
@@ -32,14 +33,16 @@ export const AllSchedulesRoot = () => {
   });
 
   return (
-    <Page style={{height: '100vh', width: '100%', overflowY: 'auto'}}>
-      <Box flex={{alignItems: 'flex-end', justifyContent: 'space-between'}} margin={{bottom: 20}}>
-        <Heading>Schedules</Heading>
-        <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
-      </Box>
-      <Loading allowStaleData queryResult={queryResult}>
-        {(data) => <AllSchedules {...data} />}
-      </Loading>
+    <Page>
+      <Group direction="column" spacing={16}>
+        <PageHeader
+          title={<Heading>Schedules</Heading>}
+          right={<QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />}
+        />
+        <Loading allowStaleData queryResult={queryResult}>
+          {(data) => <AllSchedules {...data} />}
+        </Loading>
+      </Group>
     </Page>
   );
 };

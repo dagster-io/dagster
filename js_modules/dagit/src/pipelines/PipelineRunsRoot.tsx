@@ -22,7 +22,6 @@ import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginate
 import {Box} from 'src/ui/Box';
 import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
-import {ScrollContainer} from 'src/ui/ListComponents';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
@@ -75,56 +74,54 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
-      <ScrollContainer style={{height: '100%'}}>
-        <Page>
-          <Box
-            flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-            margin={{bottom: 8}}
-          >
-            <Group direction="column" spacing={8}>
-              <Group direction="row" spacing={8}>
-                {permanentTokens.map(({token, value}) => (
-                  <Tag minimal key={token}>{`${token}:${value}`}</Tag>
-                ))}
-              </Group>
-              <RunsFilter
-                enabledFilters={ENABLED_FILTERS}
-                tokens={filterTokens}
-                onChange={setFilterTokens}
-                loading={queryResult.loading}
-              />
+      <Page>
+        <Box
+          flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
+          margin={{bottom: 8}}
+        >
+          <Group direction="column" spacing={8}>
+            <Group direction="row" spacing={8}>
+              {permanentTokens.map(({token, value}) => (
+                <Tag minimal key={token}>{`${token}:${value}`}</Tag>
+              ))}
             </Group>
-            <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
-          </Box>
+            <RunsFilter
+              enabledFilters={ENABLED_FILTERS}
+              tokens={filterTokens}
+              onChange={setFilterTokens}
+              loading={queryResult.loading}
+            />
+          </Group>
+          <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+        </Box>
 
-          <Loading queryResult={queryResult} allowStaleData={true}>
-            {({pipelineRunsOrError}) => {
-              if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
-                return (
-                  <NonIdealState
-                    icon={IconNames.ERROR}
-                    title="Query Error"
-                    description={pipelineRunsOrError.message}
-                  />
-                );
-              }
-              const runs = pipelineRunsOrError.results;
-              const displayed = runs.slice(0, PAGE_SIZE);
-              const {hasNextCursor, hasPrevCursor} = paginationProps;
+        <Loading queryResult={queryResult} allowStaleData={true}>
+          {({pipelineRunsOrError}) => {
+            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <>
-                  <RunTable runs={displayed} onSetFilter={setFilterTokens} />
-                  {hasNextCursor || hasPrevCursor ? (
-                    <div style={{marginTop: '20px'}}>
-                      <CursorPaginationControls {...paginationProps} />
-                    </div>
-                  ) : null}
-                </>
+                <NonIdealState
+                  icon={IconNames.ERROR}
+                  title="Query Error"
+                  description={pipelineRunsOrError.message}
+                />
               );
-            }}
-          </Loading>
-        </Page>
-      </ScrollContainer>
+            }
+            const runs = pipelineRunsOrError.results;
+            const displayed = runs.slice(0, PAGE_SIZE);
+            const {hasNextCursor, hasPrevCursor} = paginationProps;
+            return (
+              <>
+                <RunTable runs={displayed} onSetFilter={setFilterTokens} />
+                {hasNextCursor || hasPrevCursor ? (
+                  <div style={{marginTop: '20px'}}>
+                    <CursorPaginationControls {...paginationProps} />
+                  </div>
+                ) : null}
+              </>
+            );
+          }}
+        </Loading>
+      </Page>
     </RunsQueryRefetchContext.Provider>
   );
 };

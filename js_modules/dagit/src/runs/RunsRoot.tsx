@@ -29,6 +29,7 @@ import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Heading} from 'src/ui/Text';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
@@ -95,7 +96,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   return (
     <Page>
       <Group direction="column" spacing={8}>
-        <Heading>Runs</Heading>
+        <PageHeader title={<Heading>Runs</Heading>} />
         <Box
           border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}

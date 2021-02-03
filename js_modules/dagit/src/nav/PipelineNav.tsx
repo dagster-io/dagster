@@ -1,24 +1,28 @@
-import {IBreadcrumbProps, IconName} from '@blueprintjs/core';
+import {IconName, Tab, Tabs, Colors} from '@blueprintjs/core';
 import React from 'react';
-import {useRouteMatch} from 'react-router-dom';
+import {Link, useRouteMatch} from 'react-router-dom';
 
-import {TopNav} from 'src/nav/TopNav';
 import {
   explorerPathFromString,
   explorerPathToString,
   PipelineExplorerPath,
 } from 'src/pipelines/PipelinePathUtils';
-import {useActiveRepo} from 'src/workspace/WorkspaceContext';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
+import {PageHeader} from 'src/ui/PageHeader';
+import {Heading} from 'src/ui/Text';
+import {useRepository} from 'src/workspace/WorkspaceContext';
+import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-interface Tab {
+interface TabConfig {
   title: string;
   pathComponent: string;
   icon: IconName;
 }
 
-const pipelineTabs: {[key: string]: Tab} = {
+const pipelineTabs: {[key: string]: TabConfig} = {
   overview: {title: 'Overview', pathComponent: 'overview', icon: 'dashboard'},
   definition: {title: 'Definition', pathComponent: '', icon: 'diagram-tree'},
   playground: {
@@ -40,7 +44,7 @@ const pipelineTabs: {[key: string]: Tab} = {
 
 const currentOrder = ['overview', 'definition', 'playground', 'runs', 'partitions'];
 
-export function tabForPipelinePathComponent(component?: string): Tab {
+export function tabForPipelinePathComponent(component?: string): TabConfig {
   const tabList = Object.keys(pipelineTabs);
   const match =
     tabList.find((t) => pipelineTabs[t].pathComponent === component) ||
@@ -74,7 +78,7 @@ interface Props {
 
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
-  const activeRepo = useActiveRepo();
+  const repo = useRepository(repoAddress);
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
   ]);
@@ -82,18 +86,36 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const active = tabForPipelinePathComponent(match!.params.tab);
   const explorerPath = explorerPathFromString(match!.params.selector);
 
-  const hasPartitionSet = activeRepo?.repo.repository.partitionSets
+  const hasPartitionSet = repo?.repository.partitionSets
     .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
-
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {text: 'Pipelines', icon: 'diagram-tree'},
-    {text: explorerPath.pipelineName},
-  ];
 
   const tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
     .map(tabForKey(repoAddress, explorerPath));
 
-  return <TopNav activeTab={active.title} breadcrumbs={breadcrumbs} tabs={tabs} />;
+  return (
+    <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
+      <PageHeader
+        title={<Heading>{explorerPath.pipelineName}</Heading>}
+        icon="diagram-tree"
+        description={
+          <>
+            <Link to={workspacePathFromAddress(repoAddress, '/pipelines')}>Pipeline</Link> in{' '}
+            <Link to={workspacePathFromAddress(repoAddress)}>
+              {repoAddressAsString(repoAddress)}
+            </Link>
+          </>
+        }
+      />
+      <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+        <Tabs large={false} selectedTabId={active.title}>
+          {tabs.map((tab) => {
+            const {href, text} = tab;
+            return <Tab key={text} id={text} title={<Link to={href}>{text}</Link>} />;
+          })}
+        </Tabs>
+      </Box>
+    </Group>
+  );
 };

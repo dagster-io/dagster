@@ -18,6 +18,7 @@ import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Heading} from 'src/ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from 'src/workspace/WorkspaceContext';
@@ -40,7 +41,7 @@ export const InstanceStatusRoot = (props: Props) => {
     <Page>
       <Group direction="column" spacing={24}>
         <Group direction="column" spacing={12}>
-          <Heading>Instance status</Heading>
+          <PageHeader title={<Heading>Instance status</Heading>} />
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
             border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}

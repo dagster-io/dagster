@@ -9,6 +9,7 @@ import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {MetadataTable} from 'src/ui/MetadataTable';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Heading, Subheading} from 'src/ui/Text';
 
 export const SettingsRoot = () => {
@@ -32,7 +33,7 @@ export const SettingsRoot = () => {
   return (
     <Page style={{height: '100vh', overflowY: 'auto'}}>
       <Group direction="column" spacing={24}>
-        <Heading>Settings</Heading>
+        <PageHeader title={<Heading>Settings</Heading>} />
         <Group direction="column" spacing={16}>
           <Subheading>User preferences</Subheading>
           <MetadataTable

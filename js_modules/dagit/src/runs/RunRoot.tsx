@@ -1,25 +1,28 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
+import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
-import styled from 'styled-components';
+import {Link} from 'react-router-dom';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {TopNav} from 'src/nav/TopNav';
 import {AssetsSupported} from 'src/runs/AssetsSupported';
 import {Run} from 'src/runs/Run';
+import {RunConfigDialog, RunDetails} from 'src/runs/RunDetails';
 import {RunFragments} from 'src/runs/RunFragments';
 import {RunStatusTag} from 'src/runs/RunStatusTag';
 import {RunRootQuery} from 'src/runs/types/RunRootQuery';
+import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Spinner} from 'src/ui/Spinner';
+import {Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
 export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
   const {runId} = props.match.params;
 
-  const {data, loading, error} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
+  const {data, loading} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: {runId},
@@ -27,29 +30,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
 
   const run =
     data?.pipelineRunOrError.__typename === 'PipelineRun' ? data.pipelineRunOrError : null;
-
-  const lastBreadcrumb = () => {
-    if (loading) {
-      return <Spinner purpose="body-text" />;
-    }
-    if (error || !run) {
-      return <Mono>{runId}</Mono>;
-    }
-
-    return (
-      <div style={{fontWeight: 'normal'}}>
-        <Group direction="row" spacing={8} alignItems="center">
-          <Mono>{run.id?.slice(0, 8)}</Mono>
-          <RunStatusTag status={run.status} />
-        </Group>
-      </div>
-    );
-  };
-
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {text: 'Runs', icon: 'history', href: '/instance/runs'},
-    {text: lastBreadcrumb()},
-  ];
+  const snapshotID = run?.pipelineSnapshotId;
 
   return (
     <div
@@ -62,7 +43,42 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
         overflow: 'hidden',
       }}
     >
-      <TopNav breadcrumbs={breadcrumbs} />
+      <Box
+        padding={{top: 16, bottom: 12, horizontal: 20}}
+        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+        flex={{direction: 'row', alignItems: 'flex-start'}}
+      >
+        <PageHeader
+          title={
+            <Group direction="row" spacing={12} alignItems="flex-end">
+              <Heading style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</Heading>
+              {loading || !run ? (
+                <Spinner purpose="body-text" />
+              ) : (
+                <RunStatusTag status={run.status} />
+              )}
+            </Group>
+          }
+          icon="history"
+          description={
+            <>
+              <Link to="/instance/runs">Run</Link> of{' '}
+              {run?.pipeline.name && snapshotID ? (
+                <span>
+                  <Link to={`/instance/snapshots/${run.pipeline.name}@${snapshotID}`}>
+                    {run.pipeline.name}@
+                    <span style={{fontFamily: FontFamily.monospace}}>{snapshotID.slice(0, 8)}</span>
+                  </Link>
+                </span>
+              ) : (
+                <span>…</span>
+              )}
+            </>
+          }
+          metadata={run ? <RunDetails run={run} loading={loading} /> : null}
+          right={run ? <RunConfigDialog run={run} /> : null}
+        />
+      </Box>
       <RunById data={data} runId={runId} />
     </div>
   );
@@ -94,12 +110,6 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
     </AssetsSupported.Provider>
   );
 };
-
-const Mono = styled.span`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-weight: 600;
-`;
 
 const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
