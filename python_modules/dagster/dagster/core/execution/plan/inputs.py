@@ -216,6 +216,7 @@ class FromStepOutput(
         self, step_context: "SystemStepExecutionContext"
     ) -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
+        from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
         source_handle = self.step_output_handle
         manager_key = step_context.execution_plan.get_manager_key(source_handle)
@@ -235,6 +236,9 @@ class FromStepOutput(
             manager_key=manager_key,
             upstream_output_name=source_handle.output_name,
             upstream_step_key=source_handle.step_key,
+            message_override=f'Loaded input "{self.input_name}" using intermediate storage'
+            if isinstance(input_manager, IntermediateStorageAdapter)
+            else None,
         )
 
     def compute_version(

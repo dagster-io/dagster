@@ -870,22 +870,27 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def handled_output(step_context, output_name, manager_key):
+    def handled_output(step_context, output_name, manager_key, message_override=None):
         check.str_param(output_name, "output_name")
         check.str_param(manager_key, "manager_key")
-        message = f'Handled output "{output_name}" using output manager ' f'"{manager_key}"'
+        message = f'Handled output "{output_name}" using output manager "{manager_key}"'
         return DagsterEvent.from_step(
             event_type=DagsterEventType.HANDLED_OUTPUT,
             step_context=step_context,
             event_specific_data=HandledOutputData(
                 output_name=output_name, manager_key=manager_key,
             ),
-            message=message,
+            message=message_override or message,
         )
 
     @staticmethod
     def loaded_input(
-        step_context, input_name, manager_key, upstream_output_name=None, upstream_step_key=None
+        step_context,
+        input_name,
+        manager_key,
+        upstream_output_name=None,
+        upstream_step_key=None,
+        message_override=None,
     ):
 
         check.str_param(input_name, "input_name")
@@ -893,7 +898,7 @@ class DagsterEvent(
         check.opt_str_param(upstream_output_name, "upstream_output_name")
         check.opt_str_param(upstream_step_key, "upstream_step_key")
 
-        message = f'Loaded input "{input_name}" using input manager ' f'"{manager_key}"'
+        message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
         if upstream_output_name:
             message += f', from output "{upstream_output_name}" of step ' f'"{upstream_step_key}"'
 
@@ -906,7 +911,7 @@ class DagsterEvent(
                 upstream_output_name=upstream_output_name,
                 upstream_step_key=upstream_step_key,
             ),
-            message=message,
+            message=message_override or message,
         )
 
     @staticmethod

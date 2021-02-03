@@ -97,3 +97,27 @@ def test_intermediate_storage_reexecution():
         instance=instance,
     )
     assert partial_reexecution_result.success
+
+
+def test_intermediate_storage_event_message():
+    @solid
+    def return_one(_):
+        return 1
+
+    @solid
+    def plus_one(_, one):
+        return one + 1
+
+    @pipeline
+    def foo():
+        plus_one(return_one())
+
+    run_config = {"intermediate_storage": {"filesystem": {}}}
+
+    result = execute_pipeline(foo, run_config=run_config)
+
+    for i in filter(lambda i: i.is_handled_output, result.event_list):
+        assert "output manager" not in i.message
+
+    for i in filter(lambda i: i.is_loaded_input, result.event_list):
+        assert "input manager" not in i.message
