@@ -41,6 +41,7 @@ class OutputDefinition:
         is_required=None,
         io_manager_key=None,
         metadata=None,
+        asset_key_fn=None,  # pylint: disable=unused-argument
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
         self._dagster_type = resolve_dagster_type(dagster_type)

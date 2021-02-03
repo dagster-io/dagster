@@ -32,7 +32,7 @@ def parse_asset_key_string(s):
 
 
 @whitelist_for_persistence
-class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
+class AssetKey(namedtuple("_AssetKey", "path partition"), Persistable):
     """ Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -72,7 +72,7 @@ class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
             represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path=None):
+    def __new__(cls, path=None, partition=None):  # pylint: disable=unused-argument
         if isinstance(path, str):
             path = [path]
         elif isinstance(path, list):

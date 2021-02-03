@@ -72,6 +72,7 @@ class InputDefinition:
         default_value=_NoValueSentinel,
         root_manager_key=None,
         metadata=None,
+        asset_key_fn=None,  # pylint: disable=unused-argument
     ):
         ""
         self._name = check_valid_name(name)
