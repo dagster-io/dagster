@@ -16,6 +16,7 @@ class RunLauncherType(str, Enum):
 class CeleryWorkerQueue(BaseModel):
     replicaCount: int = Field(gt=0)
     name: str
+    labels: Optional[kubernetes.Labels]
 
     class Config:
         extra = Extra.forbid

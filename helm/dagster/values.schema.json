@@ -1256,6 +1256,12 @@
             ],
             "type": "string"
         },
+        "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
+        },
         "CeleryWorkerQueue": {
             "title": "CeleryWorkerQueue",
             "type": "object",
@@ -1268,6 +1274,17 @@
                 "name": {
                     "title": "Name",
                     "type": "string"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Labels"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

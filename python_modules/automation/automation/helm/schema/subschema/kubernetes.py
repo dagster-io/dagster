@@ -15,6 +15,15 @@ class Annotations(BaseModel):
         }
 
 
+class Labels(BaseModel):
+    class Config:
+        schema_extra = {
+            "$ref": create_definition_ref(
+                "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
+            )
+        }
+
+
 class PullPolicy(str, Enum):
     ALWAYS = "Always"
     IF_NOT_PRESENT = "IfNotPresent"
