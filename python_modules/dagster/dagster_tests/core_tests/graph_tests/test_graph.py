@@ -3,7 +3,7 @@ from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.graph import GraphDefinition
 
 
-def test_basic_graph():
+def get_solids():
     @solid
     def emit_one(_):
         return 1
@@ -12,8 +12,28 @@ def test_basic_graph():
     def add(_, x, y):
         return x + y
 
-    @graph
-    def add_one(a):
-        return add(emit_one(), a)
+    return emit_one, add
 
-    assert isinstance(add_one, GraphDefinition)
+
+def test_basic_graph():
+    emit_one, add = get_solids()
+
+    @graph
+    def get_two():
+        return add(emit_one(), emit_one())
+
+    assert isinstance(get_two, GraphDefinition)
+
+
+def test_composite_graph():
+    emit_one, add = get_solids()
+
+    @graph
+    def add_one(x):
+        return add(emit_one(), x)
+
+    @graph
+    def add_two(x):
+        return add(add_one(x), emit_one())
+
+    assert isinstance(add_two, GraphDefinition)

@@ -4,7 +4,7 @@ from collections import OrderedDict
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
 from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
@@ -84,6 +84,7 @@ class GraphDefinition(NodeDefinition):
         self._node_defs = _check_node_defs_arg(name, node_defs)
         # TODO: backcompat for now
         self._solid_defs = self._node_defs
+        self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._solid_dict = create_execution_structure(
             node_defs, self._dependencies, graph_definition=self
@@ -213,6 +214,9 @@ class GraphDefinition(NodeDefinition):
     @property
     def has_config_mapping(self):
         return self._config_mapping is not None
+
+    def all_dagster_types(self):
+        return self._dagster_type_dict.values()
 
     def get_input_mapping(self, input_name):
         check.str_param(input_name, "input_name")

@@ -10,7 +10,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
-from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import str_format_set
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -189,8 +189,6 @@ class PipelineDefinition(GraphDefinition):
                 )
             seen_modes.add(mode_def.name)
 
-        self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_node_defs)
-
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         self._preset_defs = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
@@ -341,9 +339,6 @@ class PipelineDefinition(GraphDefinition):
     def dagster_type_named(self, name):
         check.str_param(name, "name")
         return self._dagster_type_dict[name]
-
-    def all_dagster_types(self):
-        return self._dagster_type_dict.values()
 
     @property
     def all_solid_defs(self):
