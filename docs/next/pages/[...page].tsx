@@ -312,11 +312,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const basePath = basePathForVersion(version);
   const pathToMdxFile = path.join(basePath, "/", asPath + ".mdx");
-  const githubLink = path.join(
-    "https://github.com/dagster-io/dagster/tree/0110-docs/docs/next/content",
-    "/",
-    asPath + ".mdx"
-  );
+  const githubLink = new URL(
+    path.join(
+      "dagster-io/dagster/tree/0110-docs/docs/next/content",
+      "/",
+      asPath + ".mdx"
+    ),
+    "https://github.com"
+  ).href;
 
   const pathToSearchindex = path.resolve(basePath, "api/searchindex.json");
 
