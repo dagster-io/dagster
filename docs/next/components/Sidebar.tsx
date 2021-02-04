@@ -3,13 +3,24 @@ import { Menu, Transition } from "@headlessui/react";
 import Icons from "../components/Icons";
 import Link from "./Link";
 import cx from "classnames";
-import navigation from "../content/_navigation.json";
+import masterNavigation from "../content/_navigation.json";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { useVersion } from "../util/useVersion";
+import versionedNavigation from "../.versioned_content/_versioned_navigation.json";
 
-const getCurrentSection = () => {
-  const { asPath } = useRouter();
+const useNavigation = () => {
+  const { version } = useVersion();
+
+  if (version === "master") {
+    return masterNavigation;
+  }
+
+  return versionedNavigation[version];
+};
+
+const getCurrentSection = (navigation) => {
+  const { asPath } = useVersion();
   const match = navigation.find(
     (item) => item.path !== "/" && asPath.startsWith(item.path)
   );
@@ -17,7 +28,8 @@ const getCurrentSection = () => {
 };
 
 const TopLevelNavigation = () => {
-  const currentSection = getCurrentSection();
+  const navigation = useNavigation();
+  const currentSection = getCurrentSection(navigation);
 
   return (
     <div className="space-y-1">
@@ -55,7 +67,8 @@ const TopLevelNavigation = () => {
 };
 
 const SecondaryNavigation = () => {
-  const currentSection = getCurrentSection();
+  const navigation = useNavigation();
+  const currentSection = getCurrentSection(navigation);
 
   if (!currentSection?.children) {
     return null;
@@ -206,7 +219,7 @@ const VersionDropdown = () => {
 };
 
 const RecursiveNavigation = ({ section }) => {
-  const { asPath, locale: version } = useRouter();
+  const { asPath } = useVersion();
 
   return (
     <Link href={section.path}>

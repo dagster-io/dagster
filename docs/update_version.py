@@ -1,10 +1,22 @@
 # pylint: disable=no-value-for-parameter
 
+import json
 import os
 import shutil
 
 import click
 from dagster import file_relative_path
+
+
+def read_json(filename):
+    with open(filename) as f:
+        data = json.load(f)
+        return data
+
+
+def write_json(filename, data):
+    with open(filename, "w") as f:
+        json.dump(data, f, sort_keys=True)
 
 
 @click.command()
@@ -27,7 +39,7 @@ def main(version, overwrite):
             "Are you sure you want to overwrite version {}? This is a dangerous action, make sure "
             "that the docs haven't drifted from the version that you are attempting to overwrite. "
             "It is okay if there is an error in old docs, it can be fixed in future releases.\n\n"
-            "Enter the version number to continue "
+            "Enter the versld;fkjasion number to continue "
         )
 
         if value == version:
@@ -43,6 +55,20 @@ def main(version, overwrite):
         shutil.rmtree(latest_directory)
 
     shutil.copytree(content_directory, latest_directory)
+
+    # Create master navigation file
+    versioned_navigation = {}
+    for (root, _, files) in os.walk(versioned_content_directory):
+        for filename in files:
+            if filename == "_navigation.json":
+                version = root.split("/")[-1]
+                data = read_json(os.path.join(root, filename))
+                versioned_navigation[version] = data
+
+    write_json(
+        os.path.join(versioned_content_directory, "_versioned_navigation.json"),
+        versioned_navigation,
+    )
 
 
 if __name__ == "__main__":

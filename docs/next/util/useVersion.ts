@@ -46,7 +46,6 @@ export function versionFromPage(page: string | string[]) {
 
 export const useVersion = () => {
   const router = useRouter();
-
   const [asPath, setAsPath] = useState("/");
 
   useEffect(() => {

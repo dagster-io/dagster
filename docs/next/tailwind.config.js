@@ -11,6 +11,9 @@ module.exports = {
   theme: {
     extend: {
       display: ["group-hover"],
+      height: (theme) => ({
+        "(screen-16)": `calc(100vh - ${theme("spacing.60")})`,
+      }),
       maxHeight: (theme) => ({
         "(screen-16)": `calc(100vh - ${theme("spacing.60")})`,
       }),

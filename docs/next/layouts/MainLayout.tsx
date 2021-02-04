@@ -4,7 +4,11 @@ import { Router, useRouter } from "next/router";
 import Pagination from "components/Pagination";
 import Sidebar from "../components/Sidebar";
 
-const FeedbackModal = ({ closeFeedback }: { closeFeedback: () => void }) => {
+export const FeedbackModal = ({
+  closeFeedback,
+}: {
+  closeFeedback: () => void;
+}) => {
   const { asPath, locale: version } = useRouter();
   const [currentPage, setCurrentPage] = useState<string>(asPath);
 
