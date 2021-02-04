@@ -3,21 +3,9 @@ import { Menu, Transition } from "@headlessui/react";
 import Icons from "../components/Icons";
 import Link from "./Link";
 import cx from "classnames";
-import masterNavigation from "../content/_navigation.json";
-import { useRouter } from "next/router";
+import { useNavigation } from "../util/useNavigation";
 import { useState } from "react";
 import { useVersion } from "../util/useVersion";
-import versionedNavigation from "../.versioned_content/_versioned_navigation.json";
-
-const useNavigation = () => {
-  const { version } = useVersion();
-
-  if (version === "master") {
-    return masterNavigation;
-  }
-
-  return versionedNavigation[version];
-};
 
 const getCurrentSection = (navigation) => {
   const { asPath } = useVersion();

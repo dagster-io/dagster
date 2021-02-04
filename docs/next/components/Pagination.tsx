@@ -1,27 +1,16 @@
+import { flatten, useNavigation } from "util/useNavigation";
+
 import Link from "./Link";
 import React from "react";
-import navigation from "../content/_navigation.json";
 import { useRouter } from "next/router";
-
-function flatten(yx: any) {
-  const xs = JSON.parse(JSON.stringify(yx));
-
-  return xs.reduce((acc: any, x: any) => {
-    acc = acc.concat(x);
-    if (x.children) {
-      acc = acc.concat(flatten(x.children));
-      x.children = [];
-    }
-    return acc;
-  }, []);
-}
-
-const flattenedNavigation = flatten(navigation).filter(
-  (n: { path: any }) => n.path
-);
 
 const Pagination = () => {
   const { asPath } = useRouter();
+  const navigation = useNavigation();
+  const flattenedNavigation = flatten(navigation).filter(
+    (n: { path: any }) => n.path
+  );
+
   const currentIndex = flattenedNavigation.findIndex(
     (n: { path: string }) => n.path === asPath
   );

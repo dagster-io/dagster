@@ -482,10 +482,6 @@
             "path": "/_apidocs/hooks"
           },
           {
-            "title": "Asset Stores (Experimental)",
-            "path": "/_apidocs/assets"
-          },
-          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },

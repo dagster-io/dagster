@@ -85,9 +85,98 @@ const Cross = () => {
   );
 };
 
+const LinkGrid = ({ children }) => {
+  return (
+    <div className="rounded-lg bg-gray-200 p-4 overflow-hidden shadow divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
+      {children}
+    </div>
+  );
+};
+
+interface LinkGridItem {
+  title: string;
+  href: string;
+  description: string;
+}
+
+function hashCode(str) {
+  return str
+    .split("")
+    .reduce(
+      (prevHash, currVal) =>
+        ((prevHash << 5) - prevHash + currVal.charCodeAt(0)) | 0,
+      0
+    );
+}
+
+const getColorForString = (s: string) => {
+  const colors = [
+    ["bg-yellow-100 text-yellow-800"],
+    ["bg-green-100 text-green-800"],
+    ["bg-blue-100 text-blue-800"],
+    ["bg-red-100 text-red-800"],
+    ["bg-indigo-100 text-indigo-800"],
+    ["bg-pink-100 text-pink-800"],
+    ["bg-purple-100 text-purple-800"],
+    ["bg-gray-100 text-gray-800"],
+  ];
+
+  return colors[Math.abs(hashCode(s)) % colors.length];
+};
+
+const Badge = ({ text }) => {
+  const colors = getColorForString(text);
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium ${colors}`}
+    >
+      {text}
+    </span>
+  );
+};
+
+const LinkGridItem = ({ title, href, children, tags = [] }) => {
+  return (
+    <div className="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 hover:bg-gray-50 transition-colors">
+      <div className="mt-8">
+        <h3 className="text-lg font-medium">
+          <Link href={href}>
+            <a className="focus:outline-none">
+              {/* Extend touch target to entire panel */}
+              <span className="absolute inset-0" aria-hidden="true" />
+              {title}
+            </a>
+          </Link>
+        </h3>
+        <p className="mt-2 text-sm text-gray-500">{children}</p>
+      </div>
+      <span
+        className="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-gray-400"
+        aria-hidden="true"
+      >
+        <svg
+          className="h-6 w-6"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M20 4h1a1 1 0 00-1-1v1zm-1 12a1 1 0 102 0h-2zM8 3a1 1 0 000 2V3zM3.293 19.293a1 1 0 101.414 1.414l-1.414-1.414zM19 4v12h2V4h-2zm1-1H8v2h12V3zm-.707.293l-16 16 1.414 1.414 16-16-1.414-1.414z" />
+        </svg>
+      </span>
+      <div className="space-x-2">
+        {tags.map((tag) => (
+          <Badge text={tag} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default {
   PyObject,
   Link,
   Check,
   Cross,
+  LinkGrid,
+  LinkGridItem,
 };

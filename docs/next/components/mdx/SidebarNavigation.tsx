@@ -76,7 +76,7 @@ const renderItems = (items, activeId, depth) => {
           <li key={item.url} className="mt-3">
             <a
               href={item.url}
-              className={cx(MARGINS[depth], "font-semibold text-sm p-2", {
+              className={cx(MARGINS[depth], "font-semibold text-sm pl-2", {
                 "text-gray-800 underline bg-blue-50":
                   activeId === item.url.slice(1),
                 "text-gray-500": activeId !== item.url.slice(1),
@@ -93,9 +93,12 @@ const renderItems = (items, activeId, depth) => {
 };
 
 const SidebarNavigation = ({ items }) => {
+  if (!items) {
+    return null;
+  }
   const idList = getIds(items);
   const activeId = useActiveId(idList);
-  return renderItems(items[0].items, activeId, 0);
+  return renderItems(items, activeId, 0);
 };
 
 export default SidebarNavigation;

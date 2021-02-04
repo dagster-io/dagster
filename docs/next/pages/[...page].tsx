@@ -9,6 +9,7 @@ import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
 import SidebarNavigation from "components/mdx/SidebarNavigation";
+import { allPaths } from "util/useNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
 import hydrate from "next-mdx-remote/hydrate";
@@ -129,7 +130,9 @@ function MDXRenderer({ data }: { data: MDXData }) {
               On this page
             </div>
             <div className="mt-6 ">
-              <SidebarNavigation items={tableOfContents.items} />
+              {tableOfContents.items[0].items && (
+                <SidebarNavigation items={tableOfContents.items[0].items} />
+              )}
             </div>
           </div>
         </div>
@@ -264,7 +267,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { version, asPath } = versionFromPage(page);
 
   const { sphinxPrefix, asPath: subPath } = sphinxPrefixFromPage(asPath);
-  if (sphinxPrefix) {
+  // If the subPath == "/", then we continue onto the MDX render to render the _apidocs.mdx page
+  if (sphinxPrefix && subPath !== "/") {
     try {
       return getSphinxData(sphinxPrefix, version, subPath.split("/").splice(1));
     } catch (err) {
@@ -327,27 +331,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: [
-      {
-        params: {
-          page: ["concepts", "solids-pipelines", "solids"],
-          locale: "master",
-        },
-      },
-
-      {
-        params: {
-          page: ["concepts", "solids-pipelines", "pipelines"],
-          locale: "master",
-        },
-      },
-      {
-        params: {
-          page: ["concepts", "io-management", "io-managers"],
-          locale: "master",
-        },
-      },
-    ],
+    paths: allPaths(),
     fallback: true,
   };
 }
