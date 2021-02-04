@@ -8,7 +8,7 @@ from dagster import hourly_schedule
 )
 def my_hourly_schedule(_context):
     """
-    A Schedule Definition. This example schedule runs a pipeline every hour.
+    A schedule definition. This example schedule runs a pipeline every hour.
 
     For more hints on scheduling pipeline runs in Dagster, see our documentation overview on
     Schedules:
