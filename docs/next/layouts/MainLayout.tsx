@@ -303,7 +303,7 @@ const Header = ({ openFeedback }) => {
           {/* Github Icon */}
           <a href="https://github.com/dagster-io/dagster">
             <svg
-              className="h-6 w-6 text-gray-400 hover:text-gray-900"
+              className="h-6 w-6 text-gray-400 hover:text-gray-900 transition transform hover:scale-105 hover:rotate-6"
               role="img"
               viewBox="0 0 24 24"
               fill="currentColor"
@@ -315,7 +315,7 @@ const Header = ({ openFeedback }) => {
           </a>
           <a href="https://github.com/dagster-io/dagster">
             <svg
-              className="h-6 w-6 text-gray-400 hover:text-yellow-500"
+              className="h-6 w-6 text-gray-400 hover:text-yellow-500 transition transform hover:scale-105 hover:rotate-6"
               role="img"
               viewBox="0 0 24 24"
               fill="currentColor"
@@ -327,7 +327,7 @@ const Header = ({ openFeedback }) => {
           </a>
           <a href="https://github.com/dagster-io/dagster">
             <svg
-              className="h-6 w-6 text-gray-400 hover:text-pink-500"
+              className="h-6 w-6 text-gray-400 hover:text-pink-500 transition transform hover:scale-105 hover:rotate-6"
               role="img"
               viewBox="0 0 24 24"
               fill="currentColor"
@@ -339,7 +339,7 @@ const Header = ({ openFeedback }) => {
           </a>
           <a href="https://github.com/dagster-io/dagster">
             <svg
-              className="h-7 w-7 text-gray-400 hover:text-blue-500"
+              className="h-7 w-7 text-gray-400 hover:text-blue-500 transition transform hover:scale-105 hover:rotate-6"
               role="img"
               viewBox="0 0 20 20"
               fill="currentColor"

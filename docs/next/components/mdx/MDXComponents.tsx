@@ -16,7 +16,15 @@ const PyObject: React.FunctionComponent<{
   module: string;
   object: string;
   displayText?: string;
-}> = ({ module, object, displayText }) => {
+  pluralize?: boolean;
+  decorator?: boolean;
+}> = ({
+  module = "dagster",
+  object,
+  displayText,
+  pluralize = false,
+  decorator = false,
+}) => {
   const value = useContext(SearchIndexContext);
   if (!value) {
     return null;
@@ -26,12 +34,20 @@ const PyObject: React.FunctionComponent<{
   const moduleObjects = objects[module];
   const objectData = moduleObjects && moduleObjects[object];
 
+  let textValue = displayText || object;
+  if (pluralize) {
+    textValue += "s";
+  }
+  if (decorator) {
+    textValue = "@" + textValue;
+  }
+
   if (!moduleObjects || !objectData) {
     // TODO: broken link
     // https://github.com/dagster-io/dagster/issues/2939
     return (
       <a className="no-underline hover:underline" href="#">
-        <code className="bg-red-100 p-1">{displayText || object}</code>
+        <code className="bg-red-100 p-1">{textValue}</code>
       </a>
     );
   }
@@ -45,7 +61,7 @@ const PyObject: React.FunctionComponent<{
   return (
     <Link href={link + "#" + module + "." + object}>
       <a className="no-underline hover:underline">
-        <code className="bg-blue-100 p-1">{displayText || object}</code>
+        <code className="bg-blue-100 p-1">{textValue}</code>
       </a>
     </Link>
   );
@@ -172,6 +188,34 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
   );
 };
 
+const Warning = ({ children }) => {
+  return (
+    <div className="bg-yellow-50 border-l-4 border-yellow-400 px-4 my-4">
+      <div className="flex items-center">
+        <div className="flex-shrink-0">
+          {/* Heroicon name: solid/exclamation */}
+          <svg
+            className="h-5 w-5 text-yellow-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <p className="text-sm text-yellow-700">{children}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default {
   PyObject,
   Link,
@@ -179,4 +223,5 @@ export default {
   Cross,
   LinkGrid,
   LinkGridItem,
+  Warning,
 };

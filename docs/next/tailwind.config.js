@@ -8,9 +8,15 @@ module.exports = {
     "./layouts/**/*.{js,jsx,ts,tsx}",
   ],
   darkMode: "class",
-  theme: {
+  variants: {
     extend: {
       display: ["group-hover"],
+      scale: ["group-hover"],
+      rotate: ["group-hover"],
+    },
+  },
+  theme: {
+    extend: {
       height: (theme) => ({
         "(screen-16)": `calc(100vh - ${theme("spacing.60")})`,
       }),
@@ -36,9 +42,6 @@ module.exports = {
         },
       }),
     },
-  },
-  variants: {
-    extend: {},
   },
   plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
 };

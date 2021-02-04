@@ -214,7 +214,10 @@ const RecursiveNavigation = ({ section }) => {
       <a
         className={cx(
           "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-gray-900 hover:bg-gray-50",
-          { "bg-blue-100": section.path === asPath }
+          {
+            "bg-blue-100 text-gray-900 hover:bg-blue-100":
+              section.path === asPath,
+          }
         )}
       >
         <span>{section.title}</span>
