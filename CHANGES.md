@@ -2,9 +2,19 @@
 
 ## 0.10.3
 
+**New**
+
+* [dagster] Sensors can now specify a `minimum_interval_seconds` argument, which determines the minimum amount of time between sensor evaluations.
+* [dagit] After manually reloading the current repository, users will now be prompted to regenerate preset-based or partition-set based run configs in the Playground view. This helps ensure that the generated run config is up to date when launching new runs. The prompt does not occur when the repository is automatically reloaded.
+
 **Bugfixes**
 
-* Updated the `-n`/`--max_workers` default value for the `dagster api grpc` command to be `None`. When set to `None`, the gRPC server will use the default number of workers which is based on the CPU count. If you were previously setting this value to `1`, we recommend removing the argument or increasing the number. 
+* Updated the `-n`/`--max_workers` default value for the `dagster api grpc` command to be `None`. When set to `None`, the gRPC server will use the default number of workers which is based on the CPU count. If you were previously setting this value to `1`, we recommend removing the argument or increasing the number.
+* Fixed issue loading the schedule tick history graph for new schedules that have not been turned on.
+* In Dagit, newly launched runs will open in the current tab instead of a new tab.
+* Dagit bugfixes and improvements, including changes to loading state spinners.
+* When a user specifies both an intermediate storage and an IO manager for a particular output, we no longer silently ignore the IO manager
+
 
 ## 0.10.2
 
