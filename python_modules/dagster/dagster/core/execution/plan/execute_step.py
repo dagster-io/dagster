@@ -193,9 +193,10 @@ def _type_checked_event_sequence_for_input(
 
     if not type_check.success:
         raise DagsterTypeCheckDidNotPass(
-            description='Type check failed for step input "{input_name}" - expected type "{dagster_type}".'.format(
-                input_name=input_name,
-                dagster_type=dagster_type.display_name,
+            description=(
+                f'Type check failed for step input "{input_name}" - '
+                f'expected type "{dagster_type.display_name}". '
+                f"Description: {type_check.description}."
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
