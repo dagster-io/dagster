@@ -221,6 +221,7 @@ interface UnstructuredProps {
 export class Unstructured extends React.Component<UnstructuredProps> {
   onExpand = () => {
     showCustomAlert({
+      title: 'Log',
       body: <div style={{whiteSpace: 'pre-wrap'}}>{this.props.node.message}</div>,
     });
   };
