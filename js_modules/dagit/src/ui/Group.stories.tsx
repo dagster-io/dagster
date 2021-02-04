@@ -4,8 +4,9 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Box} from 'src/ui/Box';
+import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
-import {Body, Code} from 'src/ui/Text';
+import {Body, Code, Heading, Subheading} from 'src/ui/Text';
 import {AlignItems, Spacing} from 'src/ui/types';
 
 // eslint-disable-next-line import/no-default-export
@@ -101,6 +102,30 @@ export const EmptyChildren = () => {
         <ExampleText>United States</ExampleText>
       </Group>
     </Group>
+  );
+};
+
+export const PointerEventsTest = () => {
+  return (
+    <div>
+      <ButtonLink
+        color={{link: Colors.BLUE3, hover: Colors.ORANGE3}}
+        onClick={() => console.log('Clicked!')}
+      >
+        <strong>Try to click me!</strong>
+      </ButtonLink>
+      <Group direction="column" spacing={32}>
+        <Group direction="column" spacing={32}>
+          <Heading>Heading</Heading>
+          <div style={{width: '500px'}}>
+            This is a Group within a Group, which results in overlapping negative margins. We want
+            to be sure that the user can still interact with elements that are overlapped by the
+            relevant margins.
+          </div>
+        </Group>
+        <Subheading>Subheading</Subheading>
+      </Group>
+    </div>
   );
 };
 
