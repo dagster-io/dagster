@@ -119,20 +119,24 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
     @experimental
     def __init__(
-        self,
-        instance,
-        interval_seconds,
-        max_concurrent_runs,
-        daemon_uuid,
-        thread_shutdown_event,
-        tag_concurrency_limits=None,
+        self, instance, interval_seconds, max_concurrent_runs, tag_concurrency_limits=None,
     ):
-        super(QueuedRunCoordinatorDaemon, self).__init__(
-            instance, interval_seconds, daemon_uuid, thread_shutdown_event
-        )
+        super(QueuedRunCoordinatorDaemon, self).__init__(instance, interval_seconds)
         self._max_concurrent_runs = check.int_param(max_concurrent_runs, "max_concurrent_runs")
         self._tag_concurrency_limits = check.opt_list_param(
-            tag_concurrency_limits, "tag_concurrency_limits"
+            tag_concurrency_limits, "tag_concurrency_limits",
+        )
+
+    @staticmethod
+    def create_from_instance(instance):
+        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
+        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
+
+        return QueuedRunCoordinatorDaemon(
+            instance,
+            interval_seconds=instance.run_coordinator.dequeue_interval_seconds,
+            max_concurrent_runs=max_concurrent_runs,
+            tag_concurrency_limits=tag_concurrency_limits,
         )
 
     @classmethod

@@ -1,8 +1,5 @@
 # pylint: disable=redefined-outer-name
 
-import threading
-import uuid
-
 import pytest
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
@@ -45,13 +42,7 @@ def test_attempt_to_launch_runs_filter(instance):
         instance, run_id="non-queued-run", status=PipelineRunStatus.NOT_STARTED,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(
-        instance,
-        interval_seconds=5,
-        max_concurrent_runs=10,
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
-    )
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
     list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run"]
@@ -66,13 +57,7 @@ def test_attempt_to_launch_runs_no_queued(instance):
         instance, run_id="non-queued-run", status=PipelineRunStatus.NOT_STARTED,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(
-        instance,
-        interval_seconds=5,
-        max_concurrent_runs=10,
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
-    )
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
     list(coordinator.run_iteration())
 
     assert instance.run_launcher.queue() == []
@@ -101,11 +86,7 @@ def test_get_queued_runs_max_runs(instance, num_in_progress_runs):
         )
 
     coordinator = QueuedRunCoordinatorDaemon(
-        instance,
-        interval_seconds=5,
-        max_concurrent_runs=max_runs,
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
+        instance, interval_seconds=5, max_concurrent_runs=max_runs,
     )
     list(coordinator.run_iteration())
 
@@ -121,13 +102,7 @@ def test_priority(instance):
         instance, run_id="hi-pri-run", status=PipelineRunStatus.QUEUED, tags={PRIORITY_TAG: "3"},
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(
-        instance,
-        interval_seconds=5,
-        max_concurrent_runs=10,
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
-    )
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
     list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == [
@@ -145,13 +120,7 @@ def test_priority_on_malformed_tag(instance):
         tags={PRIORITY_TAG: "foobar"},
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(
-        instance,
-        interval_seconds=5,
-        max_concurrent_runs=10,
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
-    )
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
     list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
@@ -172,8 +141,6 @@ def test_tag_limits(instance):
         interval_seconds=5,
         max_concurrent_runs=10,
         tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
     )
     list(coordinator.run_iteration())
 
@@ -204,8 +171,6 @@ def test_multiple_tag_limits(instance):
             {"key": "database", "value": "tiny", "limit": 1},
             {"key": "user", "value": "johann", "limit": 2},
         ],
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
     )
     list(coordinator.run_iteration())
 
@@ -233,8 +198,6 @@ def test_overlapping_tag_limits(instance):
             {"key": "foo", "limit": 2},
             {"key": "foo", "value": "bar", "limit": 1},
         ],
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
     )
     list(coordinator.run_iteration())
 
@@ -268,13 +231,7 @@ def test_location_handles_reused(instance, monkeypatch):
         mocked_create_location_handle,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(
-        instance,
-        interval_seconds=5,
-        max_concurrent_runs=10,
-        daemon_uuid=str(uuid.uuid4()),
-        thread_shutdown_event=threading.Event(),
-    )
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
     list(coordinator.run_iteration())
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run", "queued-run-2"]

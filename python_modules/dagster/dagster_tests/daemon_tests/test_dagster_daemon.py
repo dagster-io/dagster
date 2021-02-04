@@ -17,7 +17,7 @@ def test_scheduler_instance():
             "scheduler": {"module": "dagster.core.scheduler", "class": "DagsterDaemonScheduler",},
         }
     ) as instance:
-        with DagsterDaemonController(instance) as controller:
+        with DagsterDaemonController.create_from_instance(instance) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 2
@@ -33,7 +33,7 @@ def test_run_coordinator_instance():
             },
         }
     ) as instance:
-        with DagsterDaemonController(instance) as controller:
+        with DagsterDaemonController.create_from_instance(instance) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 3
@@ -88,7 +88,7 @@ def test_different_intervals(caplog):
         }
     ) as instance:
         init_time = pendulum.now("UTC")
-        with DagsterDaemonController(instance):
+        with DagsterDaemonController.create_from_instance(instance):
             while True:
                 now = pendulum.now("UTC")
                 # Wait until the run coordinator has run three times

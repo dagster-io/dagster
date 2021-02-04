@@ -3,12 +3,12 @@ import uuid
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.instance import DagsterInstance
 from dagster.core.run_coordinator import QueuedRunCoordinator
 from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.daemon.daemon import (
     DAEMON_HEARTBEAT_INTERVAL_SECONDS,
+    DagsterDaemon,
     SchedulerDaemon,
     SensorDaemon,
     get_default_daemon_logger,
@@ -28,59 +28,30 @@ def _sorted_quoted(strings):
 
 
 class DagsterDaemonController:
-    def __init__(self, instance):
+    @staticmethod
+    def create_from_instance(instance):
+        check.inst_param(instance, "instance", DagsterInstance)
+        return DagsterDaemonController(instance, create_daemons_from_instance(instance))
+
+    def __init__(self, instance, daemons):
+
         self._daemon_uuid = str(uuid.uuid4())
 
         self._daemons = {}
         self._daemon_threads = {}
 
-        self._instance = instance
-
-        self._daemon_shutdown_event = threading.Event()
-
-        self._logger = get_default_daemon_logger("dagster-daemon")
-
-        # Separate instance for each daemon since each is in its own thread
-        if isinstance(instance.scheduler, DagsterDaemonScheduler):
-            max_catchup_runs = instance.scheduler.max_catchup_runs
-            self._add_daemon(
-                SchedulerDaemon(
-                    DagsterInstance.get(),
-                    interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,
-                    max_catchup_runs=max_catchup_runs,
-                    daemon_uuid=self._daemon_uuid,
-                    thread_shutdown_event=self._daemon_shutdown_event,
-                )
-            )
-
-        self._add_daemon(
-            SensorDaemon(
-                DagsterInstance.get(),
-                interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL,
-                daemon_uuid=self._daemon_uuid,
-                thread_shutdown_event=self._daemon_shutdown_event,
-            )
-        )
-
-        if isinstance(instance.run_coordinator, QueuedRunCoordinator):
-            max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
-            tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
-            self._add_daemon(
-                QueuedRunCoordinatorDaemon(
-                    DagsterInstance.get(),
-                    interval_seconds=instance.run_coordinator.dequeue_interval_seconds,
-                    max_concurrent_runs=max_concurrent_runs,
-                    tag_concurrency_limits=tag_concurrency_limits,
-                    daemon_uuid=self._daemon_uuid,
-                    thread_shutdown_event=self._daemon_shutdown_event,
-                )
-            )
-
-        assert set(required_daemons(instance)) == self._daemons.keys()
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+        self._daemons = {
+            daemon.daemon_type(): daemon
+            for daemon in check.list_param(daemons, "daemons", of_type=DagsterDaemon)
+        }
 
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
 
+        self._daemon_shutdown_event = threading.Event()
+
+        self._logger = get_default_daemon_logger("dagster-daemon")
         self._logger.info(
             "instance is configured with the following daemons: {}".format(
                 _sorted_quoted(type(daemon).__name__ for daemon in self.daemons)
@@ -90,7 +61,7 @@ class DagsterDaemonController:
         for daemon_type, daemon in self._daemons.items():
             self._daemon_threads[daemon_type] = threading.Thread(
                 target=daemon.run_loop,
-                args=(),
+                args=(self._daemon_uuid, self._daemon_shutdown_event),
                 name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
             )
             self._daemon_threads[daemon_type].start()
@@ -137,6 +108,25 @@ class DagsterDaemonController:
     @property
     def daemons(self):
         return list(self._daemons.values())
+
+
+def create_daemons_from_instance(instance):
+    daemon_types = required_daemons(instance)
+
+    daemons = []
+
+    # Separate instance for each daemon since each is in its own thread
+    for daemon_type in daemon_types:
+        if daemon_type == SchedulerDaemon.daemon_type():
+            daemons.append(SchedulerDaemon.create_from_instance(DagsterInstance.get()))
+        elif daemon_type == SensorDaemon.daemon_type():
+            daemons.append(SensorDaemon.create_from_instance(DagsterInstance.get()))
+        elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
+            daemons.append(QueuedRunCoordinatorDaemon.create_from_instance(DagsterInstance.get()))
+        else:
+            raise Exception("Unexpected daemon type {daemon_type}".format(daemon_type=daemon_type))
+
+    return daemons
 
 
 def required_daemons(instance):
@@ -216,13 +206,7 @@ def get_daemon_status(instance, daemon_type, curr_time_seconds=None, ignore_erro
 
 
 def debug_daemon_heartbeats(instance):
-    daemon_uuid = str(uuid.uuid4())
-    daemon = SensorDaemon(
-        instance,
-        interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,
-        daemon_uuid=daemon_uuid,
-        thread_shutdown_event=threading.Event(),
-    )
+    daemon = SensorDaemon(instance, interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,)
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp

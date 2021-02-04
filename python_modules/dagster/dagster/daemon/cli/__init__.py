@@ -12,6 +12,7 @@ from dagster.daemon.controller import (
     DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
+    create_daemons_from_instance,
     debug_daemon_heartbeats,
     get_daemon_status,
     required_daemons,
@@ -30,7 +31,9 @@ def run_command():
                 "you have created a dagster.yaml file there."
             )
 
-        with DagsterDaemonController(instance) as controller:
+        with DagsterDaemonController(
+            instance, create_daemons_from_instance(instance)
+        ) as controller:
             while True:
                 # Wait until a daemon has been unhealthy for a long period of time
                 # before potentially restarting it due to a hanging or failed daemon
