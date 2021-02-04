@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Router, useRouter } from "next/router";
 
-import Link from "next/link";
 import Pagination from "components/Pagination";
 import Sidebar from "../components/Sidebar";
 

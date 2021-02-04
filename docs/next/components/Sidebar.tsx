@@ -1,12 +1,12 @@
 import { Menu, Transition } from "@headlessui/react";
 
 import Icons from "../components/Icons";
-import Link from "next/link";
-import VersionedLink from "./VersionedLink";
+import Link from "./Link";
 import cx from "classnames";
 import navigation from "../content/_navigation.json";
 import { useRouter } from "next/router";
 import { useState } from "react";
+import { useVersion } from "../util/useVersion";
 
 const getCurrentSection = () => {
   const { asPath } = useRouter();
@@ -25,7 +25,7 @@ const TopLevelNavigation = () => {
         const match = item == currentSection;
 
         return (
-          <VersionedLink key={item.path} href={item.path}>
+          <Link key={item.path} href={item.path}>
             <a
               className={cx(
                 "group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-900",
@@ -47,7 +47,7 @@ const TopLevelNavigation = () => {
               </svg>
               {item.title}
             </a>
-          </VersionedLink>
+          </Link>
         );
       })}
     </div>
@@ -97,7 +97,7 @@ const SecondaryNavigation = () => {
 };
 
 const VersionDropdown = () => {
-  const { locale: currentVersion, locales: versions, asPath } = useRouter();
+  const { version: currentVersion, versions, asPath } = useVersion();
 
   return (
     <div className="z-20 px-3 relative inline-block text-left">
@@ -160,7 +160,7 @@ const VersionDropdown = () => {
                   <div className="py-1">
                     {versions.map((version) => {
                       return (
-                        <Link href={asPath} locale={version}>
+                        <Link href={asPath} version={version}>
                           <Menu.Item>
                             {({ active }) => (
                               <a
@@ -209,7 +209,7 @@ const RecursiveNavigation = ({ section }) => {
   const { asPath, locale: version } = useRouter();
 
   return (
-    <VersionedLink href={section.path}>
+    <Link href={section.path}>
       <a
         className={cx(
           "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-gray-900 hover:bg-gray-50",
@@ -218,7 +218,7 @@ const RecursiveNavigation = ({ section }) => {
       >
         <span>{section.title}</span>
       </a>
-    </VersionedLink>
+    </Link>
   );
 };
 

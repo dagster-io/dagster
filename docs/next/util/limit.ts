@@ -57,7 +57,6 @@ export const limitSnippetLines = (
 
   let result = dedentedElements;
   if (fromTo) {
-    console.log(fromTo);
     let desiredLineNumbers = parseLineNumbersToSet(
       fromTo,
       dedentedElements.length

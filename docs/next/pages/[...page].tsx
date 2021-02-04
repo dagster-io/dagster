@@ -1,8 +1,11 @@
 import MDXComponents, {
   SearchIndexContext,
 } from "../components/mdx/MDXComponents";
+import { SphinxPrefix, sphinxPrefixFromPage } from "../util/useSphinx";
+import { useVersion, versionFromPage } from "../util/useVersion";
 
-import Link from "next/link";
+import { GetStaticProps } from "next";
+import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
 import SidebarNavigation from "components/mdx/SidebarNavigation";
@@ -20,7 +23,7 @@ import visit from "unist-util-visit";
 
 const components: MdxRemote.Components = MDXComponents;
 
-interface Props {
+type MDXData = {
   mdxSource: MdxRemote.Source;
   frontMatter: {
     title: string;
@@ -28,14 +31,26 @@ interface Props {
   };
   searchIndex: any;
   tableOfContents: any;
+};
+
+type HTMLData = {
+  body: string;
+};
+
+enum PageType {
+  MDX = "MDX",
+  HTML = "HTML",
 }
 
+type Props =
+  | {
+      type: PageType.MDX;
+      data: MDXData;
+    }
+  | { type: PageType.HTML; data: HTMLData };
+
 export const VersionNotice = () => {
-  const {
-    asPath,
-    locale: version,
-    defaultLocale: defaultVersion,
-  } = useRouter();
+  const { asPath, version, defaultVersion } = useVersion();
 
   if (version == defaultVersion) {
     return null;
@@ -65,7 +80,7 @@ export const VersionNotice = () => {
           )}
         </div>
         <div className="mt-3 text-sm">
-          <Link href={asPath} locale={defaultVersion}>
+          <Link href={asPath} version={defaultVersion}>
             <a className="font-medium text-indigo-600 hover:text-indigo-500">
               {" "}
               View Latest Documentation <span aria-hidden="true">→</span>
@@ -77,27 +92,8 @@ export const VersionNotice = () => {
   );
 };
 
-export default function MdxPage({
-  mdxSource,
-  frontMatter,
-  searchIndex,
-  tableOfContents,
-}: Props) {
-  const router = useRouter();
-
-  // If the page is not yet generated, this will be displayed
-  // initially until getStaticProps() finishes running
-  if (router.isFallback) {
-    return (
-      <div className="w-full my-12 h-96 animate-pulse prose max-w-none">
-        <div className="bg-gray-200 px-4 w-48 h-12"></div>
-        <div className="bg-gray-200 mt-12 px-4 w-1/2 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-2/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/2 h-6"></div>
-      </div>
-    );
-  }
+function MDXRenderer({ data }: { data: MDXData }) {
+  const { mdxSource, frontMatter, searchIndex, tableOfContents } = data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -143,6 +139,50 @@ export default function MdxPage({
   );
 }
 
+function HTMLRenderer({ data }: { data: HTMLData }) {
+  const { body } = data;
+  const markup = { __html: body };
+
+  return (
+    <>
+      <div
+        className="flex-1 min-w-0 relative z-0 focus:outline-none pt-8"
+        tabIndex={0}
+      >
+        {/* Start main area*/}
+        <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
+          <div className="prose max-w-none" dangerouslySetInnerHTML={markup} />
+        </div>
+        {/* End main area */}
+      </div>
+    </>
+  );
+}
+
+export default function MdxPage(props: Props) {
+  const router = useRouter();
+
+  // If the page is not yet generated, this will be displayed
+  // initially until getStaticProps() finishes running
+  if (router.isFallback) {
+    return (
+      <div className="w-full my-12 h-96 animate-pulse prose max-w-none">
+        <div className="bg-gray-200 px-4 w-48 h-12"></div>
+        <div className="bg-gray-200 mt-12 px-4 w-1/2 h-6"></div>
+        <div className="bg-gray-200 mt-5 px-4 w-2/3 h-6"></div>
+        <div className="bg-gray-200 mt-5 px-4 w-1/3 h-6"></div>
+        <div className="bg-gray-200 mt-5 px-4 w-1/2 h-6"></div>
+      </div>
+    );
+  }
+
+  if (props.type == PageType.MDX) {
+    return <MDXRenderer data={props.data} />;
+  } else {
+    return <HTMLRenderer data={props.data} />;
+  }
+}
+
 const basePathForVersion = (version: string) => {
   if (version === "master") {
     return path.resolve("content");
@@ -180,11 +220,62 @@ function getItems(node, current) {
   return {};
 }
 
-export async function getStaticProps({ params, locale }) {
-  const { page } = params;
+async function getSphinxData(
+  sphinxPrefix: SphinxPrefix,
+  version: string,
+  page: string[]
+) {
+  const basePath = basePathForVersion(version);
+  if (sphinxPrefix === SphinxPrefix.API_DOCS) {
+    const pathToFile = path.resolve(basePath, "api/sections.json");
+    const buffer = await fs.readFile(pathToFile);
+    const {
+      api: { apidocs: data },
+    } = JSON.parse(buffer.toString());
 
-  const basePath = basePathForVersion(locale);
-  const pathToMdxFile = path.resolve(basePath, page.join("/") + ".mdx");
+    let curr = data;
+    for (const part of page) {
+      curr = curr[part];
+    }
+
+    const { body } = curr;
+
+    return {
+      props: { type: PageType.HTML, data: { body } },
+    };
+  } else {
+    const pathToFile = path.resolve(basePath, "api/modules.json");
+    const buffer = await fs.readFile(pathToFile);
+    const data = JSON.parse(buffer.toString());
+    let curr = data;
+    for (const part of page) {
+      curr = curr[part];
+    }
+
+    const { body } = curr;
+    return {
+      props: { type: PageType.HTML, data: { body } },
+    };
+  }
+}
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const { page } = params;
+  const { version, asPath } = versionFromPage(page);
+
+  const { sphinxPrefix, asPath: subPath } = sphinxPrefixFromPage(asPath);
+  if (sphinxPrefix) {
+    try {
+      return getSphinxData(sphinxPrefix, version, subPath.split("/").splice(1));
+    } catch (err) {
+      console.log(err);
+      return { notFound: true };
+    }
+  }
+
+  const basePath = basePathForVersion(version);
+  const pathToMdxFile = path.join(basePath, "/", asPath + ".mdx");
+
   const pathToSearchindex = path.resolve(basePath, "api/searchindex.json");
 
   try {
@@ -216,10 +307,13 @@ export async function getStaticProps({ params, locale }) {
 
     return {
       props: {
-        mdxSource: mdxSource,
-        frontMatter: data,
-        searchIndex: searchIndex,
-        tableOfContents,
+        type: PageType.MDX,
+        data: {
+          mdxSource: mdxSource,
+          frontMatter: data,
+          searchIndex: searchIndex,
+          tableOfContents,
+        },
       },
       revalidate: 10, // In seconds
     };
@@ -229,7 +323,7 @@ export async function getStaticProps({ params, locale }) {
       notFound: true,
     };
   }
-}
+};
 
 export function getStaticPaths({}) {
   return {

@@ -1,5 +1,5 @@
+import Link from "./Link";
 import React from "react";
-import VersionedLink from "./VersionedLink";
 import navigation from "../content/_navigation.json";
 import { useRouter } from "next/router";
 
@@ -32,7 +32,7 @@ const Pagination = () => {
     <nav className="mt-12 border-t border-gray-200 px-4 flex items-center justify-between sm:px-0">
       <div className="-mt-px w-0 flex-1 flex">
         {prev && (
-          <VersionedLink href={prev.path}>
+          <Link href={prev.path}>
             <a className="border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
               {/* Heroicon name: arrow-narrow-left */}
               <svg
@@ -50,12 +50,12 @@ const Pagination = () => {
               </svg>
               {prev.title}
             </a>
-          </VersionedLink>
+          </Link>
         )}
       </div>
       <div className="-mt-px w-0 flex-1 flex justify-end">
         {next && (
-          <VersionedLink href={next.path}>
+          <Link href={next.path}>
             <a className="border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
               {next.title}
               {/* Heroicon name: arrow-narrow-right */}
@@ -73,7 +73,7 @@ const Pagination = () => {
                 />
               </svg>
             </a>
-          </VersionedLink>
+          </Link>
         )}
       </div>
     </nav>

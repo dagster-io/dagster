@@ -7,7 +7,7 @@
 
 import React, { useContext } from "react";
 
-import VersionedLink from "../VersionedLink";
+import Link from "../Link";
 import data from "../../content/api/searchindex.json";
 
 export const SearchIndexContext = React.createContext(null);
@@ -43,11 +43,11 @@ const PyObject: React.FunctionComponent<{
   const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
 
   return (
-    <VersionedLink href={link + "#" + module + "." + object}>
+    <Link href={link + "#" + module + "." + object}>
       <a className="no-underline hover:underline">
         <code className="bg-blue-100 p-1">{displayText || object}</code>
       </a>
-    </VersionedLink>
+    </Link>
   );
 };
 
@@ -87,7 +87,7 @@ const Cross = () => {
 
 export default {
   PyObject,
-  VersionedLink,
+  Link,
   Check,
   Cross,
 };
