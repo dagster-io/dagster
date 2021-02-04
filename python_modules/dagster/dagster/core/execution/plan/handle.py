@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple, Union
+from typing import NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
@@ -10,7 +10,7 @@ from dagster.serdes import whitelist_for_serdes
 class StepHandle(NamedTuple("_StepHandle", [("solid_handle", SolidHandle)])):
     """A reference to an ExecutionStep that was determined statically"""
 
-    def __new__(cls, solid_handle: SolidHandle):
+    def __new__(cls, solid_handle: Optional[SolidHandle]):
         return super(StepHandle, cls).__new__(
             cls, solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
         )
@@ -38,7 +38,7 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", SolidHandle)])):
 class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle", SolidHandle)])):
     """A reference to an UnresolvedExecutionStep in an execution"""
 
-    def __new__(cls, solid_handle: SolidHandle):
+    def __new__(cls, solid_handle: Optional[SolidHandle]):
         return super(UnresolvedStepHandle, cls).__new__(
             cls, solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
         )
@@ -62,7 +62,7 @@ class ResolvedFromDynamicStepHandle(
     completed successfully.
     """
 
-    def __new__(cls, solid_handle: SolidHandle, mapping_key: str):
+    def __new__(cls, solid_handle: Optional[SolidHandle], mapping_key: str):
         return super(ResolvedFromDynamicStepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),

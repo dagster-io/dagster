@@ -132,6 +132,8 @@ def mkdir_p(path):
             raise
 
 
+# TODO: Make frozendict generic for type annotations
+# https://github.com/dagster-io/dagster/issues/3641
 class frozendict(dict):
     def __readonly__(self, *args, **kwargs):
         raise RuntimeError("Cannot modify ReadOnlyDict")

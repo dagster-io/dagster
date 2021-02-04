@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -7,9 +8,14 @@ from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags
 
 from .hook import HookDefinition
-from .input import FanInInputPointer, InputDefinition, InputPointer
+from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
+
+if TYPE_CHECKING:
+    from .composition import MappedInputPlaceholder
+    from .graph import GraphDefinition
+    from .solid import NodeDefinition
 
 
 class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
@@ -53,7 +59,13 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
 
     """
 
-    def __new__(cls, name, alias=None, tags=None, hook_defs=None):
+    def __new__(
+        cls,
+        name: str,
+        alias: Optional[str] = None,
+        tags: Dict[str, str] = None,
+        hook_defs: FrozenSet[HookDefinition] = None,
+    ):
         name = check.str_param(name, "name")
         alias = check.opt_str_param(alias, "alias")
         tags = frozentags(check.opt_dict_param(tags, "tags", value_type=str, key_type=str))
@@ -72,7 +84,14 @@ class Solid:
             Definition of the Node.
     """
 
-    def __init__(self, name, definition, graph_definition, tags=None, hook_defs=None):
+    def __init__(
+        self,
+        name: str,
+        definition: "NodeDefinition",
+        graph_definition: "GraphDefinition",
+        tags: Dict[str, str] = None,
+        hook_defs: Optional[Set[HookDefinition]] = None,
+    ):
         from .graph import GraphDefinition
         from .solid import NodeDefinition
 
@@ -102,28 +121,28 @@ class Solid:
     def output_handles(self):
         return self._output_handles.values()
 
-    def input_handle(self, name):
+    def input_handle(self, name: str) -> "SolidInputHandle":
         check.str_param(name, "name")
         return self._input_handles[name]
 
-    def output_handle(self, name):
+    def output_handle(self, name: str) -> "SolidOutputHandle":
         check.str_param(name, "name")
         return self._output_handles[name]
 
-    def has_input(self, name):
+    def has_input(self, name: str) -> bool:
         return self.definition.has_input(name)
 
-    def input_def_named(self, name):
+    def input_def_named(self, name: str) -> InputDefinition:
         return self.definition.input_def_named(name)
 
-    def has_output(self, name):
+    def has_output(self, name: str) -> bool:
         return self.definition.has_output(name)
 
-    def output_def_named(self, name):
+    def output_def_named(self, name: str) -> OutputDefinition:
         return self.definition.output_def_named(name)
 
     @property
-    def is_composite(self):
+    def is_composite(self) -> bool:
         from .graph import GraphDefinition
 
         return isinstance(self.definition, GraphDefinition)
@@ -137,19 +156,19 @@ class Solid:
         return self.definition.output_dict
 
     @property
-    def tags(self):
+    def tags(self) -> frozentags:
         return self.definition.tags.updated_with(self._additional_tags)
 
-    def container_maps_input(self, input_name):
+    def container_maps_input(self, input_name: str) -> bool:
         return (
             self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
             is not None
         )
 
-    def container_mapped_input(self, input_name):
+    def container_mapped_input(self, input_name: str) -> InputMapping:
         return self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
 
-    def container_maps_fan_in_input(self, input_name, fan_in_index):
+    def container_maps_fan_in_input(self, input_name: str, fan_in_index: int) -> bool:
         return (
             self.graph_definition.input_mapping_for_pointer(
                 FanInInputPointer(self.name, input_name, fan_in_index)
@@ -157,19 +176,19 @@ class Solid:
             is not None
         )
 
-    def container_mapped_fan_in_input(self, input_name, fan_in_index):
+    def container_mapped_fan_in_input(self, input_name: str, fan_in_index: int) -> InputMapping:
         return self.graph_definition.input_mapping_for_pointer(
             FanInInputPointer(self.name, input_name, fan_in_index)
         )
 
     @property
-    def hook_defs(self):
+    def hook_defs(self) -> Optional[Set[HookDefinition]]:
         return self._hook_defs
 
 
 @whitelist_for_serdes
 class SolidHandle(namedtuple("_SolidHandle", "name parent")):
-    def __new__(cls, name, parent):
+    def __new__(cls, name: str, parent: Optional["SolidHandle"]):
         return super(SolidHandle, cls).__new__(
             cls, check.str_param(name, "name"), check.opt_inst_param(parent, "parent", SolidHandle),
         )
@@ -178,7 +197,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         return self.to_string()
 
     @property
-    def path(self):
+    def path(self) -> List[str]:
         """Return a list representation of the handle.
 
         Inverse of SolidHandle.from_path.
@@ -201,7 +220,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         """
         return self.parent.to_string() + "." + self.name if self.parent else self.name
 
-    def is_or_descends_from(self, handle):
+    def is_or_descends_from(self, handle: "SolidHandle") -> bool:
         """Check if the handle is or descends from another handle.
 
         Args:
@@ -219,7 +238,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
                 return False
         return True
 
-    def pop(self, ancestor):
+    def pop(self, ancestor: "SolidHandle") -> Optional["SolidHandle"]:
         """Return a copy of the handle with some of its ancestors pruned.
 
         Args:
@@ -247,7 +266,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
 
         return SolidHandle.from_path(self.path[len(ancestor.path) :])
 
-    def with_ancestor(self, ancestor):
+    def with_ancestor(self, ancestor: "SolidHandle") -> Optional["SolidHandle"]:
         """Returns a copy of the handle with an ancestor grafted on.
 
         Args:
@@ -271,7 +290,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         return SolidHandle.from_path((ancestor.path if ancestor else []) + self.path)
 
     @staticmethod
-    def from_path(path):
+    def from_path(path: List[str]) -> Optional["SolidHandle"]:
         check.list_param(path, "path", of_type=str)
 
         cur = None
@@ -280,14 +299,14 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         return cur
 
     @staticmethod
-    def from_string(handle_str):
+    def from_string(handle_str: str) -> Optional["SolidHandle"]:
         check.str_param(handle_str, "handle_str")
 
         path = handle_str.split(".")
         return SolidHandle.from_path(path)
 
     @classmethod
-    def from_dict(cls, dict_repr):
+    def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["SolidHandle"]:
         """This method makes it possible to load a potentially nested SolidHandle after a
         roundtrip through json.loads(json.dumps(SolidHandle._asdict()))"""
 
@@ -308,14 +327,14 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
 
 
 class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
-    def __new__(cls, solid, input_def):
+    def __new__(cls, solid: Solid, input_def: InputDefinition):
         return super(SolidInputHandle, cls).__new__(
             cls,
             check.inst_param(solid, "solid", Solid),
             check.inst_param(input_def, "input_def", InputDefinition),
         )
 
-    def _inner_str(self):
+    def _inner_str(self) -> str:
         return struct_to_string(
             "SolidInputHandle", solid_name=self.solid.name, input_name=self.input_def.name,
         )
@@ -333,23 +352,23 @@ class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
         return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
 
     @property
-    def solid_name(self):
+    def solid_name(self) -> str:
         return self.solid.name
 
     @property
-    def input_name(self):
+    def input_name(self) -> str:
         return self.input_def.name
 
 
 class SolidOutputHandle(namedtuple("_SolidOutputHandle", "solid output_def")):
-    def __new__(cls, solid, output_def):
+    def __new__(cls, solid: Solid, output_def: OutputDefinition):
         return super(SolidOutputHandle, cls).__new__(
             cls,
             check.inst_param(solid, "solid", Solid),
             check.inst_param(output_def, "output_def", OutputDefinition),
         )
 
-    def _inner_str(self):
+    def _inner_str(self) -> str:
         return struct_to_string(
             "SolidOutputHandle", solid_name=self.solid.name, output_name=self.output_def.name,
         )
@@ -363,18 +382,18 @@ class SolidOutputHandle(namedtuple("_SolidOutputHandle", "solid output_def")):
     def __hash__(self):
         return hash((self.solid.name, self.output_def.name))
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         return self.solid.name == other.solid.name and self.output_def.name == other.output_def.name
 
-    def describe(self):
+    def describe(self) -> str:
         return f"{self.solid_name}:{self.output_def.name}"
 
     @property
-    def solid_name(self):
+    def solid_name(self) -> str:
         return self.solid.name
 
     @property
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return self.output_def.is_dynamic
 
 
@@ -382,15 +401,19 @@ class InputToOutputHandleDict(defaultdict):
     def __init__(self):
         defaultdict.__init__(self, list)
 
-    def __getitem__(self, key):
+    def __getitem__(
+        self, key: SolidInputHandle
+    ) -> Union[SolidOutputHandle, List[SolidOutputHandle]]:
         check.inst_param(key, "key", SolidInputHandle)
         return defaultdict.__getitem__(self, key)
 
-    def __setitem__(self, key, val):
+    def __setitem__(
+        self, key: SolidInputHandle, val: Union[SolidOutputHandle, List[SolidOutputHandle]]
+    ):
         check.inst_param(key, "key", SolidInputHandle)
         if not (isinstance(val, SolidOutputHandle) or isinstance(val, list)):
             check.failed(
-                "Value must be SolidOutoutHandle or List[SolidOutputHandle], got {val}".format(
+                "Value must be SolidOutputHandle or List[SolidOutputHandle], got {val}".format(
                     val=type(val)
                 )
             )
@@ -398,7 +421,9 @@ class InputToOutputHandleDict(defaultdict):
         return defaultdict.__setitem__(self, key, val)
 
 
-def _create_handle_dict(solid_dict, dep_dict):
+def _create_handle_dict(
+    solid_dict: Dict[str, Solid], dep_dict: Dict[str, Any]
+) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
     check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Solid)
@@ -435,10 +460,10 @@ def _create_handle_dict(solid_dict, dep_dict):
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids, dep_dict):
+    def from_definitions(solids: Dict[str, Solid], dep_dict: Dict[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
-    def __init__(self, solid_names, handle_dict):
+    def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):
         self._solid_names = solid_names
         self._handle_dict = check.inst_param(handle_dict, "handle_dict", InputToOutputHandleDict)
 
@@ -447,13 +472,13 @@ class DependencyStructure:
         # count during the GraphQL query in particular
 
         # solid_name => input_handle => list[output_handle]
-        self._solid_input_index = defaultdict(dict)
+        self._solid_input_index: dict = defaultdict(dict)
 
         # solid_name => output_handle => list[input_handle]
-        self._solid_output_index = defaultdict(lambda: defaultdict(list))
+        self._solid_output_index: dict = defaultdict(lambda: defaultdict(list))
 
         # solid_name => dynamic output_handle
-        self._solid_dynamic_index = {}
+        self._solid_dynamic_index: dict = {}
 
         for input_handle, output_handle_or_list in self._handle_dict.items():
             if isinstance(output_handle_or_list, list):  # fan-in dep
@@ -494,7 +519,9 @@ class DependencyStructure:
                     input_handle
                 )
 
-    def _validate_and_set_dynamic_output(self, input_handle, output_handle):
+    def _validate_and_set_dynamic_output(
+        self, input_handle: SolidInputHandle, output_handle: SolidOutputHandle
+    ) -> Any:
         """Helper function for populating _solid_dynamic_index"""
 
         if not input_handle.solid.definition.input_supports_dynamic_output_dep(
@@ -518,7 +545,7 @@ class DependencyStructure:
                 f'"{self._solid_dynamic_index[input_handle.solid_name].describe()}"'
             )
 
-    def all_upstream_outputs_from_solid(self, solid_name):
+    def all_upstream_outputs_from_solid(self, solid_name: str) -> List[SolidOutputHandle]:
         check.str_param(solid_name, "solid_name")
 
         # flatten out all outputs that feed into the inputs of this solid
@@ -528,7 +555,7 @@ class DependencyStructure:
             for output_handle in output_handle_list
         ]
 
-    def input_to_upstream_outputs_for_solid(self, solid_name):
+    def input_to_upstream_outputs_for_solid(self, solid_name: str) -> Any:
         """
         Returns a Dict[SolidInputHandle, List[SolidOutputHandle]] that encodes
         where all the the inputs are sourced from upstream. Usually the
@@ -538,7 +565,7 @@ class DependencyStructure:
         check.str_param(solid_name, "solid_name")
         return self._solid_input_index[solid_name]
 
-    def output_to_downstream_inputs_for_solid(self, solid_name):
+    def output_to_downstream_inputs_for_solid(self, solid_name: str) -> Any:
         """
         Returns a Dict[SolidOutputHandle, List[SolidInputHandle]] that
         represents all the downstream inputs for each output in the
@@ -547,11 +574,11 @@ class DependencyStructure:
         check.str_param(solid_name, "solid_name")
         return self._solid_output_index[solid_name]
 
-    def has_singular_dep(self, solid_input_handle):
+    def has_singular_dep(self, solid_input_handle: SolidInputHandle) -> bool:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         return isinstance(self._handle_dict.get(solid_input_handle), SolidOutputHandle)
 
-    def get_singular_dep(self, solid_input_handle):
+    def get_singular_dep(self, solid_input_handle: SolidInputHandle) -> SolidOutputHandle:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         dep = self._handle_dict[solid_input_handle]
         check.invariant(
@@ -562,11 +589,11 @@ class DependencyStructure:
         )
         return dep
 
-    def has_multi_deps(self, solid_input_handle):
+    def has_multi_deps(self, solid_input_handle: SolidInputHandle) -> bool:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         return isinstance(self._handle_dict.get(solid_input_handle), list)
 
-    def get_multi_deps(self, solid_input_handle):
+    def get_multi_deps(self, solid_input_handle: SolidInputHandle) -> List[SolidOutputHandle]:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         dep = self._handle_dict[solid_input_handle]
         check.invariant(
@@ -575,11 +602,11 @@ class DependencyStructure:
         )
         return dep
 
-    def has_deps(self, solid_input_handle):
+    def has_deps(self, solid_input_handle: SolidInputHandle) -> bool:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         return solid_input_handle in self._handle_dict
 
-    def get_deps_list(self, solid_input_handle):
+    def get_deps_list(self, solid_input_handle: SolidInputHandle) -> List[SolidOutputHandle]:
         check.inst_param(solid_input_handle, "solid_input_handle", SolidInputHandle)
         check.invariant(self.has_deps(solid_input_handle))
         if self.has_singular_dep(solid_input_handle):
@@ -587,16 +614,16 @@ class DependencyStructure:
         else:
             return self.get_multi_deps(solid_input_handle)
 
-    def input_handles(self):
+    def input_handles(self) -> List[SolidInputHandle]:
         return list(self._handle_dict.keys())
 
-    def items(self):
+    def items(self,) -> Iterable[Tuple[SolidInputHandle, SolidOutputHandle]]:
         return self._handle_dict.items()
 
-    def get_upstream_dynamic_handle_for_solid(self, solid_name):
+    def get_upstream_dynamic_handle_for_solid(self, solid_name: str) -> Any:
         return self._solid_dynamic_index.get(solid_name)
 
-    def debug_str(self):
+    def debug_str(self) -> str:
         if not self.items():
             return "DependencyStructure: EMPTY"
 
@@ -613,11 +640,11 @@ class DependencyStructure:
 
 class IDependencyDefinition(ABC):  # pylint: disable=no-init
     @abstractmethod
-    def get_solid_dependencies(self):
+    def get_solid_dependencies(self) -> List["IDependencyDefinition"]:
         pass
 
     @abstractmethod
-    def is_multi(self):
+    def is_multi(self) -> bool:
         pass
 
 
@@ -659,7 +686,7 @@ class DependencyDefinition(
         description (Optional[str]): Human-readable description of this dependency.
     """
 
-    def __new__(cls, solid, output=DEFAULT_OUTPUT, description=None):
+    def __new__(cls, solid: str, output: str = DEFAULT_OUTPUT, description: Optional[str] = None):
         return super(DependencyDefinition, cls).__new__(
             cls,
             check.str_param(solid, "solid"),
@@ -667,10 +694,10 @@ class DependencyDefinition(
             check.opt_str_param(description, "description"),
         )
 
-    def get_solid_dependencies(self):
+    def get_solid_dependencies(self) -> List[IDependencyDefinition]:
         return [self]
 
-    def is_multi(self):
+    def is_multi(self) -> bool:
         return False
 
 
@@ -719,7 +746,7 @@ class MultiDependencyDefinition(
         description (Optional[str]): Human-readable description of this dependency.
     """
 
-    def __new__(cls, dependencies):
+    def __new__(cls, dependencies: List[Union[DependencyDefinition, "MappedInputPlaceholder"]]):
         from .composition import MappedInputPlaceholder
 
         deps = check.list_param(dependencies, "dependencies")
@@ -740,11 +767,11 @@ class MultiDependencyDefinition(
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
-    def get_solid_dependencies(self):
+    def get_solid_dependencies(self) -> List[IDependencyDefinition]:
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
-    def is_multi(self):
+    def is_multi(self) -> bool:
         return True
 
-    def get_dependencies_and_mappings(self):
+    def get_dependencies_and_mappings(self) -> List:
         return self.dependencies

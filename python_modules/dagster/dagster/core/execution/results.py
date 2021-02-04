@@ -16,6 +16,17 @@ def _construct_events_by_step_key(event_list):
     return dict(events_by_step_key)
 
 
+class ExecutionResult:
+    def __init__(self, node_def, event_list):
+        self.node_def = node_def
+        self.event_list = event_list
+
+    @property
+    def success(self):
+        """bool: Whether all steps in the execution were successful."""
+        return all([not event.is_failure for event in self.event_list])
+
+
 class GraphExecutionResult:
     def __init__(
         self,

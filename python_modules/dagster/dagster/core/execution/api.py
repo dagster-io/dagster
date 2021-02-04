@@ -103,9 +103,9 @@ def execute_run_iterator(
     )
 
     return iter(
-        _ExecuteRunWithPlanIterable(
+        ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            iterator=_pipeline_execution_iterator,
+            iterator=pipeline_execution_iterator,
             execution_context_manager=PipelineExecutionContextManager(
                 execution_plan=execution_plan,
                 pipeline_run=pipeline_run,
@@ -192,9 +192,9 @@ def execute_run(
     if is_memoized_run(pipeline_run.tags):
         execution_plan = resolve_memoized_execution_plan(execution_plan)
 
-    _execute_run_iterable = _ExecuteRunWithPlanIterable(
+    _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
-        iterator=_pipeline_execution_iterator,
+        iterator=pipeline_execution_iterator,
         execution_context_manager=PipelineExecutionContextManager(
             execution_plan=execution_plan,
             pipeline_run=pipeline_run,
@@ -278,7 +278,7 @@ def execute_pipeline_iterator(
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     """
 
-    with _ephemeral_instance_if_missing(instance) as execute_instance:
+    with ephemeral_instance_if_missing(instance) as execute_instance:
         (
             pipeline,
             run_config,
@@ -308,7 +308,7 @@ def execute_pipeline_iterator(
 
 
 @contextmanager
-def _ephemeral_instance_if_missing(
+def ephemeral_instance_if_missing(
     instance: Optional[DagsterInstance],
 ) -> Iterator[DagsterInstance]:
     if instance:
@@ -362,7 +362,7 @@ def execute_pipeline(
     For the asynchronous version, see :py:func:`execute_pipeline_iterator`.
     """
 
-    with _ephemeral_instance_if_missing(instance) as execute_instance:
+    with ephemeral_instance_if_missing(instance) as execute_instance:
         return _logged_execute_pipeline(
             pipeline,
             instance=execute_instance,
@@ -470,7 +470,7 @@ def reexecute_pipeline(
 
     check.str_param(parent_run_id, "parent_run_id")
 
-    with _ephemeral_instance_if_missing(instance) as execute_instance:
+    with ephemeral_instance_if_missing(instance) as execute_instance:
         (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
             pipeline=pipeline, run_config=run_config, mode=mode, preset=preset, tags=tags,
         )
@@ -564,7 +564,7 @@ def reexecute_pipeline_iterator(
 
     check.str_param(parent_run_id, "parent_run_id")
 
-    with _ephemeral_instance_if_missing(instance) as execute_instance:
+    with ephemeral_instance_if_missing(instance) as execute_instance:
         (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
             pipeline=pipeline,
             run_config=run_config,
@@ -622,7 +622,7 @@ def execute_plan_iterator(
     run_config = check.opt_dict_param(run_config, "run_config")
 
     return iter(
-        _ExecuteRunWithPlanIterable(
+        ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
             iterator=inner_plan_execution_iterator,
             execution_context_manager=PlanExecutionContextManager(
@@ -694,7 +694,7 @@ def create_execution_plan(
     )
 
 
-def _pipeline_execution_iterator(
+def pipeline_execution_iterator(
     pipeline_context: SystemPipelineExecutionContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
     """A complete execution of a pipeline. Yields pipeline start, success,
@@ -759,7 +759,7 @@ def _pipeline_execution_iterator(
             yield event
 
 
-class _ExecuteRunWithPlanIterable:
+class ExecuteRunWithPlanIterable:
     """Utility class to consolidate execution logic.
 
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
