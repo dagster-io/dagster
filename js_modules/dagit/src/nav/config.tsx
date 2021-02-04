@@ -39,14 +39,14 @@ export const config: NavItemConfig[][] = [
     {
       label: 'Schedules',
       icon: 'time',
-      to: '/workspace/schedules',
-      matchingPaths: ['/workspace/schedules', '/workspace/:repoPath/schedules/*'],
+      to: '/schedules',
+      matchingPaths: ['/schedules', '/workspace/:repoPath/schedules/*'],
     },
     {
       label: 'Sensors',
       icon: 'automatic-updates',
-      to: '/workspace/sensors',
-      matchingPaths: ['/workspace/sensors', '/workspace/:repoPath/sensors/*'],
+      to: '/sensors',
+      matchingPaths: ['/sensors', '/workspace/:repoPath/sensors/*'],
     },
   ],
   [

@@ -31,7 +31,7 @@ export const UnloadableSensors: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable sensors:</Subheading>
+      <Subheading>Unloadable sensors</Subheading>
       <UnloadableSensorInfo />
 
       <Table>
@@ -61,7 +61,7 @@ export const UnloadableSchedules: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable schedules:</Subheading>
+      <Subheading>Unloadable schedules</Subheading>
       <UnloadableScheduleInfo />
 
       <Table>
