@@ -34,6 +34,8 @@ class DagsterDaemonController:
         self._daemons = {}
         self._daemon_threads = {}
 
+        self._instance = instance
+
         self._daemon_shutdown_event = threading.Event()
 
         self._logger = get_default_daemon_logger("dagster-daemon")
@@ -93,13 +95,38 @@ class DagsterDaemonController:
             )
             self._daemon_threads[daemon_type].start()
 
+        self._start_time = pendulum.now("UTC")
+
     def __enter__(self):
         return self
+
+    def _daemon_thread_healthy(self, daemon_type):
+        thread = self._daemon_threads[daemon_type]
+
+        if not thread.is_alive():
+            return False
+
+        return get_daemon_status(self._instance, daemon_type, ignore_errors=True).healthy
+
+    def check_daemons(self):
+        failed_daemons = [
+            daemon_type
+            for daemon_type in self._daemon_threads
+            if not self._daemon_thread_healthy(daemon_type)
+        ]
+
+        if failed_daemons:
+            raise Exception(
+                "Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}".format(
+                    failed_daemons=failed_daemons
+                )
+            )
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._daemon_shutdown_event.set()
         for thread in self._daemon_threads.values():
-            thread.join()
+            if thread.is_alive():
+                thread.join(timeout=30)
 
     def _add_daemon(self, daemon):
         self._daemons[daemon.daemon_type()] = daemon
