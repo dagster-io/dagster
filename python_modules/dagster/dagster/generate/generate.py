@@ -50,6 +50,7 @@ def generate_new_repo(path: str):
             with open(dst_file_path, "w") as f:
                 template = env.get_template(name=src_relative_file_path)
                 f.write(template.render(repo_name=repo_name))
+                f.write("\n")
 
 
 def _should_skip_file(path):
