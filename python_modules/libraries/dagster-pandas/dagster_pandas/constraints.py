@@ -96,7 +96,7 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = "Violated {constraint_name} ({constraint_description}) for Column Name ({column_name}) ".format(
+        base_message = 'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'.format(
             constraint_name=self.constraint_name,
             constraint_description=self.constraint_description,
             column_name=self.column_name,
@@ -897,7 +897,7 @@ class ColumnConstraint(Constraint):
 
 class ColumnDTypeFnConstraint(ColumnConstraint):
     """
-    A column constraint that applies a pandas dtype validation function to a columns dtypes.
+    A column constraint that applies a pandas dtype validation function to a columns dtype.
 
     Args:
         type_fn (Callable[[Set[str]], bool]): This is a function that takes the pandas columns dtypes and
@@ -906,21 +906,17 @@ class ColumnDTypeFnConstraint(ColumnConstraint):
 
     def __init__(self, type_fn):
         self.type_fn = check.callable_param(type_fn, "type_fn")
-        description = "{fn} must evaluate to True for column dtypes".format(
-            fn=self.type_fn.__name__
-        )
+        description = f'Dtype must satisfy "{self.type_fn.__name__}"'
         super(ColumnDTypeFnConstraint, self).__init__(
             error_description=description, markdown_description=description
         )
 
     def validate(self, dataframe, column_name):
-        received_dtypes = dataframe[column_name].dtype
-        if not self.type_fn(received_dtypes):
+        column_dtype = dataframe[column_name].dtype
+        if not self.type_fn(column_dtype):
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description="{base_error_message}. Dtypes received: {received_dtypes}.".format(
-                    base_error_message=self.error_description, received_dtypes=received_dtypes
-                ),
+                constraint_description=f'{self.error_description}, but was "{column_dtype}"',
                 column_name=column_name,
             )
 
