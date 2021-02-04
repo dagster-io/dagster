@@ -345,7 +345,7 @@ def _schedule_tick_context(instance, stream, tick_data):
     "-n",
     type=click.INT,
     required=False,
-    default=1,
+    default=None,
     help="Maximum number of (threaded) workers to use in the GRPC server",
 )
 @click.option(
