@@ -3,6 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from 'src/instance/types/DaemonHealthFragment';
+import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Trace} from 'src/ui/Trace';
@@ -37,41 +38,88 @@ const DaemonHealthTag = (props: Props) => {
   );
 };
 
+type State = {
+  shown: boolean;
+  page: number;
+};
+
+type Action = {type: 'show'} | {type: 'hide'} | {type: 'page'; page: number};
+
+const reducer = (state: State, action: Action) => {
+  switch (action.type) {
+    case 'show':
+      return {shown: true, page: 0};
+    case 'hide':
+      return {shown: false, page: 0};
+    case 'page':
+      return {...state, page: action.page};
+    default:
+      return state;
+  }
+};
+
+const initialState = {shown: false, page: 0};
+
 export const DaemonHealth = (props: Props) => {
   const {daemon} = props;
-  const [showDialog, setShowDialog] = React.useState(false);
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const {shown, page} = state;
+
+  const errors = daemon.lastHeartbeatErrors;
+  const errorCount = errors.length;
+
+  const show = () => dispatch({type: 'show'});
+  const hide = () => dispatch({type: 'hide'});
+  const prev = () => dispatch({type: 'page', page: page === 0 ? errorCount - 1 : page - 1});
+  const next = () => dispatch({type: 'page', page: page === errorCount - 1 ? 0 : page + 1});
 
   const metadata = () => {
-    if (daemon.lastHeartbeatErrors.length > 0) {
+    if (errorCount > 0) {
       return (
         <>
-          <ButtonLink color={Colors.BLUE2} underline="hover" onClick={() => setShowDialog(true)}>
-            View error
+          <ButtonLink color={Colors.BLUE2} underline="hover" onClick={show}>
+            {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
           <Dialog
-            isOpen={showDialog}
+            isOpen={shown}
             title="Daemon error"
-            onClose={() => setShowDialog(false)}
-            style={{maxWidth: '80%', minWidth: '50%'}}
+            onClose={hide}
+            style={{maxWidth: '80%', minWidth: '70%'}}
           >
             <div className={Classes.DIALOG_BODY}>
               <Group direction="column" spacing={12}>
-                <div>
-                  Error running daemon type <strong>{daemon.daemonType}</strong>. Try restarting the
-                  daemon after resolving the issue.
-                </div>
+                {errorCount === 1 ? (
+                  <div>
+                    Error running daemon type <strong>{daemon.daemonType}</strong>. Try restarting
+                    the daemon after resolving the issue.
+                  </div>
+                ) : (
+                  <div>
+                    {errorCount} errors running daemon type <strong>{daemon.daemonType}</strong>.
+                    Try restarting the daemon after resolving the issues.
+                  </div>
+                )}
                 <Trace>
                   <Group direction="column" spacing={12}>
-                    <div>{daemon.lastHeartbeatErrors[0].message}</div>
-                    <div>{daemon.lastHeartbeatErrors[0].stack}</div>
+                    <div>{errors[page].message}</div>
+                    <div>{errors[page].stack}</div>
                   </Group>
                 </Trace>
               </Group>
             </div>
             <div className={Classes.DIALOG_FOOTER}>
-              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-                <Button onClick={() => setShowDialog(false)}>OK</Button>
-              </div>
+              <Box flex={{alignItems: 'center', justifyContent: 'space-between'}}>
+                {errorCount > 1 ? (
+                  <Group direction="row" spacing={12} alignItems="center">
+                    <ButtonLink onClick={prev}>&larr; Previous</ButtonLink>
+                    <span>{`${page + 1} of ${errorCount}`}</span>
+                    <ButtonLink onClick={next}>Next &rarr;</ButtonLink>
+                  </Group>
+                ) : (
+                  <div />
+                )}
+                <Button onClick={hide}>OK</Button>
+              </Box>
             </div>
           </Dialog>
         </>
