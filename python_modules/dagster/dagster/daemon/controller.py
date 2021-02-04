@@ -174,10 +174,10 @@ class DagsterDaemonController:
             self._last_heartbeat_times[daemon_type] = curr_time
             self._instance.add_daemon_heartbeat(
                 DaemonHeartbeat(
-                    pendulum.now("UTC").float_timestamp,
-                    daemon_type,
-                    self._daemon_uuid,
-                    self._last_iteration_exceptions[daemon_type],
+                    timestamp=pendulum.now("UTC").float_timestamp,
+                    daemon_type=daemon_type,
+                    daemon_id=self._daemon_uuid,
+                    errors=self._last_iteration_exceptions[daemon_type],
                 )
             )
 
