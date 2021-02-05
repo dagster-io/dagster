@@ -3,23 +3,24 @@ import { Router, useRouter } from "next/router";
 
 import Pagination from "components/Pagination";
 import Sidebar from "../components/Sidebar";
+import { Transition } from "@headlessui/react";
 
 export const FeedbackModal = ({
+  isOpen,
   closeFeedback,
 }: {
+  isOpen: boolean;
   closeFeedback: () => void;
 }) => {
   const { asPath, locale: version } = useRouter();
   const [currentPage, setCurrentPage] = useState<string>(asPath);
 
   return (
-    <div className="fixed inset-0 overflow-hidden z-40">
-      <div className="absolute inset-0 overflow-hidden">
-        <section
-          className="absolute inset-y-0 pl-16 max-w-full right-0 flex"
-          aria-labelledby="slide-over-heading"
-        >
-          {/*
+    <section
+      className="absolute inset-y-0 pl-16 max-w-full right-0 flex z-50"
+      aria-labelledby="slide-over-heading"
+    >
+      {/*
   Slide-over panel, show/hide based on slide-over state.
   Entering: "transform transition ease-in-out duration-500 sm:duration-700"
     From: "translate-x-full"
@@ -28,230 +29,239 @@ export const FeedbackModal = ({
     From: "translate-x-0"
     To: "translate-x-full"
 */}
-          <div className="w-screen max-w-md">
-            <form className="h-full divide-y divide-gray-200 flex flex-col bg-gray-100 shadow-xl">
-              <div className="flex-1 h-0 overflow-y-auto">
-                <div className="py-6 px-4 bg-gray-800 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <h2
-                      id="slide-over-heading"
-                      className="text-lg font-medium text-white"
+      <Transition
+        show={isOpen}
+        enter="transform transition ease-in-out duration-100 sm:duration-200"
+        enterFrom="translate-x-full"
+        enterTo="translate-x-0"
+        leave="transform transition ease-in-out duration-100 sm:duration-200"
+        leaveFrom="translate-x-0"
+        leaveTo="translate-x-full"
+      >
+        <div className="w-screen max-w-md h-full">
+          <form className="h-full divide-y divide-gray-200 flex flex-col bg-gray-100 shadow-xl">
+            <div className="flex-1 h-0 overflow-y-auto">
+              <div className="py-6 px-4 bg-gray-800 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <h2
+                    id="slide-over-heading"
+                    className="text-lg font-medium text-white"
+                  >
+                    Submit Feedback
+                  </h2>
+                  <div className="ml-3 h-7 flex items-center">
+                    <button
+                      type="button"
+                      onClick={closeFeedback}
+                      className="bg-gray-700 rounded-md text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
                     >
-                      Submit Feedback
-                    </h2>
-                    <div className="ml-3 h-7 flex items-center">
-                      <button
-                        onClick={closeFeedback}
-                        className="bg-gray-700 rounded-md text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+                      <span className="sr-only">Close panel</span>
+                      {/* Heroicon name: x */}
+                      <svg
+                        className="h-6 w-6"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
                       >
-                        <span className="sr-only">Close panel</span>
-                        {/* Heroicon name: x */}
-                        <svg
-                          className="h-6 w-6"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    <p className="text-sm text-gray-300">
-                      Feedback helps us improve our documentation so you can be
-                      more productive. Please let us know about anything!
-                    </p>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-                <div className="flex-1 flex flex-col justify-between">
-                  <div className="px-4 divide-y divide-gray-200 sm:px-6">
-                    <div className="space-y-6 pt-6 pb-5">
-                      <div>
-                        <label
-                          htmlFor="project_name"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Page
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="project_name"
-                            id="project_name"
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            value={currentPage}
-                            onChange={(event) =>
-                              setCurrentPage(event.target.value)
-                            }
-                          />
-                        </div>
+                <div className="mt-6">
+                  <p className="text-sm text-gray-300">
+                    Feedback helps us improve our documentation so you can be
+                    more productive. Please let us know about anything!
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="px-4 divide-y divide-gray-200 sm:px-6">
+                  <div className="space-y-6 pt-6 pb-5">
+                    <div>
+                      <label
+                        htmlFor="project_name"
+                        className="block text-sm font-medium text-gray-900"
+                      >
+                        Page
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          name="project_name"
+                          id="project_name"
+                          className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                          value={currentPage}
+                          onChange={(event) =>
+                            setCurrentPage(event.target.value)
+                          }
+                        />
                       </div>
-                      <div>
-                        <label
-                          htmlFor="project_name"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Documentation Version
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="project_name"
-                            id="project_name"
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            value={version}
-                            onChange={(event) =>
-                              setCurrentPage(event.target.value)
-                            }
-                          />
-                        </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="project_name"
+                        className="block text-sm font-medium text-gray-900"
+                      >
+                        Documentation Version
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          name="project_name"
+                          id="project_name"
+                          className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                          value={version}
+                          onChange={(event) =>
+                            setCurrentPage(event.target.value)
+                          }
+                        />
                       </div>
-                      <div>
-                        <label
-                          htmlFor="description"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Description
-                        </label>
-                        <div className="mt-1">
-                          <textarea
-                            id="description"
-                            name="description"
-                            rows={4}
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            defaultValue={""}
-                          />
-                        </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="description"
+                        className="block text-sm font-medium text-gray-900"
+                      >
+                        Description
+                      </label>
+                      <div className="mt-1">
+                        <textarea
+                          id="description"
+                          name="description"
+                          rows={4}
+                          className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                          defaultValue={""}
+                        />
                       </div>
+                    </div>
 
-                      <fieldset>
-                        <legend className="sr-only">
-                          Submit as Public Github Issue
-                        </legend>
-                        <div className="bg-white rounded-md -space-y-px">
-                          {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
-                          <div className="relative border rounded-tl-md rounded-tr-md p-4 flex">
-                            <div className="flex items-center h-5">
-                              <input
-                                id="settings-option-0"
-                                name="privacy_setting"
-                                type="radio"
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
-                                defaultChecked
-                              />
-                            </div>
-                            <label
-                              htmlFor="settings-option-0"
-                              className="ml-3 flex flex-col cursor-pointer"
-                            >
-                              {/* On: "text-indigo-900", Off: "text-gray-900" */}
-                              <span className="block text-sm font-medium">
-                                Submit as public Github Issue
-                              </span>
-                              {/* On: "text-indigo-700", Off: "text-gray-500" */}
-                              <span className="block text-sm">
-                                Submit this feedback to our public issue tracker
-                                at{" "}
-                                <a href="#" className="underline">
-                                  https://github.com/dagster-io/dagster/issues
-                                </a>
-                              </span>
-                            </label>
+                    <fieldset>
+                      <legend className="sr-only">
+                        Submit as Public Github Issue
+                      </legend>
+                      <div className="bg-white rounded-md -space-y-px">
+                        {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
+                        <div className="relative border rounded-tl-md rounded-tr-md p-4 flex">
+                          <div className="flex items-center h-5">
+                            <input
+                              id="settings-option-0"
+                              name="privacy_setting"
+                              type="radio"
+                              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                              defaultChecked
+                            />
                           </div>
-                          {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
-                          <div className="relative border border-gray-200 p-4 flex">
-                            <div className="flex items-center h-5">
-                              <input
-                                id="settings-option-1"
-                                name="privacy_setting"
-                                type="radio"
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
-                              />
-                            </div>
-                            <label
-                              htmlFor="settings-option-1"
-                              className="ml-3 flex flex-col cursor-pointer"
-                            >
-                              {/* On: "text-indigo-900", Off: "text-gray-900" */}
-                              <span className="block text-sm font-medium">
-                                Private to Dagster Team
-                              </span>
-                              {/* On: "text-indigo-700", Off: "text-gray-500" */}
-                              <span className="block text-sm">
-                                Send this feedback privately to the Dagster team
-                              </span>
-                            </label>
+                          <label
+                            htmlFor="settings-option-0"
+                            className="ml-3 flex flex-col cursor-pointer"
+                          >
+                            {/* On: "text-indigo-900", Off: "text-gray-900" */}
+                            <span className="block text-sm font-medium">
+                              Submit as public Github Issue
+                            </span>
+                            {/* On: "text-indigo-700", Off: "text-gray-500" */}
+                            <span className="block text-sm">
+                              Submit this feedback to our public issue tracker
+                              at{" "}
+                              <a href="#" className="underline">
+                                https://github.com/dagster-io/dagster/issues
+                              </a>
+                            </span>
+                          </label>
+                        </div>
+                        {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
+                        <div className="relative border border-gray-200 p-4 flex">
+                          <div className="flex items-center h-5">
+                            <input
+                              id="settings-option-1"
+                              name="privacy_setting"
+                              type="radio"
+                              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                            />
                           </div>
-                          {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
+                          <label
+                            htmlFor="settings-option-1"
+                            className="ml-3 flex flex-col cursor-pointer"
+                          >
+                            {/* On: "text-indigo-900", Off: "text-gray-900" */}
+                            <span className="block text-sm font-medium">
+                              Private to Dagster Team
+                            </span>
+                            {/* On: "text-indigo-700", Off: "text-gray-500" */}
+                            <span className="block text-sm">
+                              Send this feedback privately to the Dagster team
+                            </span>
+                          </label>
                         </div>
-                      </fieldset>
-
-                      <div>
-                        <label
-                          htmlFor="project_name"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Your Github Handle (Optional)
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="project_name"
-                            id="project_name"
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            placeholder="@yourusername"
-                          />
-                        </div>
+                        {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
                       </div>
+                    </fieldset>
 
-                      <div>
-                        <label
-                          htmlFor="project_name"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Your Email (Optional)
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="project_name"
-                            id="project_name"
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            placeholder="@yourusername"
-                          />
-                        </div>
+                    <div>
+                      <label
+                        htmlFor="project_name"
+                        className="block text-sm font-medium text-gray-900"
+                      >
+                        Your Github Handle (Optional)
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          name="project_name"
+                          id="project_name"
+                          className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                          placeholder="@yourusername"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="project_name"
+                        className="block text-sm font-medium text-gray-900"
+                      >
+                        Your Email (Optional)
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          name="project_name"
+                          id="project_name"
+                          className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                          placeholder="@yourusername"
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex-shrink-0 px-4 py-4 flex justify-end">
-                <button
-                  type="button"
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={closeFeedback}
-                  className="ml-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Submit Feedback
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-      </div>
-    </div>
+            </div>
+            <div className="flex-shrink-0 px-4 py-4 flex justify-end">
+              <button
+                type="button"
+                className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={closeFeedback}
+                className="ml-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Submit Feedback
+              </button>
+            </div>
+          </form>
+        </div>
+      </Transition>
+    </section>
   );
 };
 
@@ -362,15 +372,15 @@ const Layout = ({ children }) => {
   const closeFeedback = () => {
     setOpenFeedback(false);
   };
-  const openFeedback = () => {
-    setOpenFeedback(true);
+
+  const toggleFeedback = () => {
+    setOpenFeedback(!isFeedbackOpen);
   };
 
   return (
     <>
-      {isFeedbackOpen && <FeedbackModal closeFeedback={closeFeedback} />}
-
       <div className="h-screen flex overflow-hidden bg-white">
+        <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
         <Sidebar />
         <div className="w-full overflow-y-scroll">
           <div className="max-w-7xl mx-auto">
@@ -410,7 +420,7 @@ const Layout = ({ children }) => {
                   </div>
                 </div>
               </div>
-              <Header openFeedback={openFeedback} />
+              <Header openFeedback={toggleFeedback} />
 
               <div className="w-full relative z-0 flex justify-center pb-96">
                 {children}

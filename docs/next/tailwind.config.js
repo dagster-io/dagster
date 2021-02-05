@@ -13,10 +13,20 @@ module.exports = {
       display: ["group-hover"],
       scale: ["group-hover"],
       rotate: ["group-hover"],
+      animation: ["hover"],
     },
   },
   theme: {
     extend: {
+      animation: {
+        wiggle: "wiggle 1s ease-in-out infinite",
+      },
+      keyframes: {
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
+        },
+      },
       height: (theme) => ({
         "(screen-16)": `calc(100vh - ${theme("spacing.60")})`,
       }),

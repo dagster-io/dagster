@@ -1,16 +1,16 @@
 export default function Custom404() {
   return (
-    <div className="h-(screen-16) w-full flex justify-center items-center">
+    <div className="h-96 mt-96 w-full flex justify-center items-center">
       <div className="flex flex-col justify-center items-center max-w-3xl prose mx-12">
         <img
-          className="animate-bounce"
+          className="animate-wiggle hover:animate-spin"
           src="https://docs.dagster.io/assets/logos/small.png"
         />
         <h1>404: Not Found</h1>
         <h2>The page you are looking for does not exist. </h2>
         <p>
           If it should, please use the
-          <span className="px-2 py-1 ml-2 text-gray-500 text-sm border border-gray-200 rounded-md hover:bg-gray-100">
+          <span className="px-2 py-1 ml-2 text-gray-500 text-sm border border-gray-200 rounded-md hover:bg-gray-100 cursor-default">
             Share Feedback
           </span>{" "}
           button at the top of this page to let us know
