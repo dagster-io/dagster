@@ -9,7 +9,7 @@ import styled from 'styled-components';
 
 import {QueryCountdown} from 'src/app/QueryCountdown';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {AllScheduledTicks, SCHEDULED_TICKS_FRAGMENT} from 'src/runs/AllScheduledTicks';
+import {AllScheduledTicks} from 'src/runs/AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
@@ -205,7 +205,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
         ) : null}
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>
-            {({pipelineRunsOrError, repositoriesOrError}) => {
+            {({pipelineRunsOrError}) => {
               if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
                 return (
                   <NonIdealState
@@ -219,7 +219,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               if (showScheduled) {
                 return (
                   <Box margin={{top: 4}}>
-                    <AllScheduledTicks repos={repositoriesOrError} />
+                    <AllScheduledTicks />
                   </Box>
                 );
               }
@@ -279,14 +279,10 @@ const RUNS_ROOT_QUERY = gql`
     inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
       ...CountFragment
     }
-    repositoriesOrError {
-      ...ScheduledTicksFragment
-    }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
-  ${SCHEDULED_TICKS_FRAGMENT}
 `;
 
 const TabButton = styled(ButtonLink)`
