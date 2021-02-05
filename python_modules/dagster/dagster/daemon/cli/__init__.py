@@ -17,6 +17,7 @@ from dagster.daemon.controller import (
     get_daemon_status,
     required_daemons,
 )
+from dagster.utils.interrupts import capture_interrupts, raise_interrupts_as
 
 
 @click.command(
@@ -24,22 +25,25 @@ from dagster.daemon.controller import (
     help="Run any daemons configured on the DagsterInstance.",
 )
 def run_command():
-    with DagsterInstance.get() as instance:
-        if instance.is_ephemeral:
-            raise Exception(
-                "dagster-daemon can't run using an in-memory instance. Make sure "
-                "the DAGSTER_HOME environment variable has been set correctly and that "
-                "you have created a dagster.yaml file there."
-            )
+    with capture_interrupts():
+        with DagsterInstance.get() as instance:
+            if instance.is_ephemeral:
+                raise Exception(
+                    "dagster-daemon can't run using an in-memory instance. Make sure "
+                    "the DAGSTER_HOME environment variable has been set correctly and that "
+                    "you have created a dagster.yaml file there."
+                )
 
-        with DagsterDaemonController(
-            instance, create_daemons_from_instance(instance)
-        ) as controller:
-            while True:
-                # Wait until a daemon has been unhealthy for a long period of time
-                # before potentially restarting it due to a hanging or failed daemon
-                time.sleep(2 * DAEMON_HEARTBEAT_TOLERANCE_SECONDS)
-                controller.check_daemons()
+            with DagsterDaemonController(
+                instance, create_daemons_from_instance(instance)
+            ) as controller:
+                while True:
+                    # Wait until a daemon has been unhealthy for a long period of time
+                    # before potentially restarting it due to a hanging or failed daemon
+                    with raise_interrupts_as(KeyboardInterrupt):
+                        time.sleep(2 * DAEMON_HEARTBEAT_TOLERANCE_SECONDS)
+
+                    controller.check_daemons()
 
 
 @click.command(
