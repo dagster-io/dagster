@@ -246,7 +246,10 @@ export const boxStyleFor = (
   },
 ) => {
   // Not running and not viewing waterfall? We always use a nice blue
-  if (!context.metadata.firstLogAt && context.options.mode !== GanttChartMode.WATERFALL_TIMED) {
+  if (
+    !context.metadata.startedPipelineAt &&
+    context.options.mode !== GanttChartMode.WATERFALL_TIMED
+  ) {
     return {background: `${ROUNDING_GRADIENT}, #2491eb`};
   }
 
@@ -384,8 +387,8 @@ export const adjustLayoutWithRunMetadata = (
   // step ordering, etc. should obey the constraints we already planned for). We just push
   // boxes around on their existing rows.
   if (options.mode === GanttChartMode.WATERFALL_TIMED) {
-    const firstLogAt = metadata.firstLogAt || nowMs;
-    const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt) * scale;
+    const startedPipelineAt = metadata.startedPipelineAt || nowMs;
+    const xForMs = (time: number) => LEFT_INSET + (time - startedPipelineAt) * scale;
     const widthForMs = ({start, end}: {start: number; end?: number}) =>
       Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
 
