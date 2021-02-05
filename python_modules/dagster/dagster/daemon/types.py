@@ -26,9 +26,10 @@ class DaemonHeartbeat(
         cls, timestamp, daemon_type, daemon_id, errors=None, error=None
     ):  # we need to keep error around forever now in the attr graveyard
         check.opt_inst_param(error, "error", SerializableErrorInfo)
-        check.opt_list_param(errors, "errors", of_type=SerializableErrorInfo)
+        errors = check.opt_list_param(errors, "errors", of_type=SerializableErrorInfo)
         if error and not errors:
             errors = [error]
+
         return super(DaemonHeartbeat, cls).__new__(
             cls,
             timestamp=check.float_param(timestamp, "timestamp"),

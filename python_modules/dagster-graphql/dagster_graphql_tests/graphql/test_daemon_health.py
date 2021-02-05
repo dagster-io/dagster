@@ -70,7 +70,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
             pytest.skip("The daemon isn't compatible with an in-memory instance")
         graphql_context.instance.add_daemon_heartbeat(
             DaemonHeartbeat(
-                timestamp=100.0, daemon_type=DaemonType.SENSOR, daemon_id=None, errors=[]
+                timestamp=100.0, daemon_type=DaemonType.SENSOR, daemon_id=None, errors=None
             )
         )
         results = execute_dagster_graphql(graphql_context, INDIVIDUAL_DAEMON_QUERY)

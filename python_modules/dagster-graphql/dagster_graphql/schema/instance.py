@@ -56,7 +56,7 @@ class GrapheneDaemonStatus(graphene.ObjectType):
             lastHeartbeatErrors=[
                 GraphenePythonError(error) for error in daemon_status.last_heartbeat.errors
             ]
-            if daemon_status.last_heartbeat
+            if daemon_status.last_heartbeat and daemon_status.last_heartbeat.errors
             else [],
         )
 
