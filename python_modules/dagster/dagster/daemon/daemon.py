@@ -35,8 +35,7 @@ def get_default_daemon_logger(daemon_name):
 
 
 class DagsterDaemon:
-    def __init__(self, instance, interval_seconds):
-        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+    def __init__(self, interval_seconds):
         self._logger = get_default_daemon_logger(type(self).__name__)
         self.interval_seconds = check.int_param(interval_seconds, "interval_seconds")
 
@@ -52,19 +51,22 @@ class DagsterDaemon:
         """
 
     def run_loop(self, daemon_uuid, daemon_shutdown_event):
-        while not daemon_shutdown_event.is_set():
-            curr_time = pendulum.now("UTC")
+        # Each loop runs in its own thread with its own instance
+        with DagsterInstance.get() as instance:
+            while not daemon_shutdown_event.is_set():
+                curr_time = pendulum.now("UTC")
 
-            if (
-                not self._last_iteration_time
-                or (curr_time - self._last_iteration_time).total_seconds() >= self.interval_seconds
-            ):
-                self._last_iteration_time = curr_time
-                self._run_iteration(curr_time, daemon_uuid)
+                if (
+                    not self._last_iteration_time
+                    or (curr_time - self._last_iteration_time).total_seconds()
+                    >= self.interval_seconds
+                ):
+                    self._last_iteration_time = curr_time
+                    self._run_iteration(instance, curr_time, daemon_uuid)
 
-            daemon_shutdown_event.wait(0.5)
+                daemon_shutdown_event.wait(0.5)
 
-    def _run_iteration(self, curr_time, daemon_uuid):
+    def _run_iteration(self, instance, curr_time, daemon_uuid):
         # Build a list of any exceptions encountered during the iteration.
         # Once the iteration completes, this is copied to last_iteration_exceptions
         # which is used in the heartbeats. This guarantees that heartbeats contain the full
@@ -72,7 +74,7 @@ class DagsterDaemon:
         self._current_iteration_exceptions = []
         first_iteration = not self._last_heartbeat_time
 
-        daemon_generator = self.run_iteration()
+        daemon_generator = self.run_iteration(instance)
 
         while True:
             try:
@@ -93,12 +95,12 @@ class DagsterDaemon:
                     # wait until first iteration completes, since we report any errors from the previous
                     # iteration in the heartbeat. After the first iteration, start logging a heartbeat
                     # every time the generator yields.
-                    self._check_add_heartbeat(curr_time, daemon_uuid)
+                    self._check_add_heartbeat(instance, curr_time, daemon_uuid)
 
         if first_iteration:
-            self._check_add_heartbeat(curr_time, daemon_uuid)
+            self._check_add_heartbeat(instance, curr_time, daemon_uuid)
 
-    def _check_add_heartbeat(self, curr_time, daemon_uuid):
+    def _check_add_heartbeat(self, instance, curr_time, daemon_uuid):
         if (
             self._last_heartbeat_time
             and (curr_time - self._last_heartbeat_time).total_seconds()
@@ -108,7 +110,7 @@ class DagsterDaemon:
 
         daemon_type = self.daemon_type()
 
-        last_stored_heartbeat = self._instance.get_daemon_heartbeats().get(daemon_type)
+        last_stored_heartbeat = instance.get_daemon_heartbeats().get(daemon_type)
         if (
             self._last_heartbeat_time  # not the first heartbeat
             and last_stored_heartbeat
@@ -125,7 +127,7 @@ class DagsterDaemon:
 
         self._last_heartbeat_time = curr_time
 
-        self._instance.add_daemon_heartbeat(
+        instance.add_daemon_heartbeat(
             DaemonHeartbeat(
                 curr_time.float_timestamp,
                 daemon_type,
@@ -135,7 +137,7 @@ class DagsterDaemon:
         )
 
     @abstractmethod
-    def run_iteration(self):
+    def run_iteration(self, instance):
         """
         Execute the daemon. In order to avoid blocking the controller thread for extended periods,
         daemons can yield control during this method. Yields can be either NoneType or a
@@ -147,9 +149,9 @@ class DagsterDaemon:
 
 class SchedulerDaemon(DagsterDaemon):
     def __init__(
-        self, instance, interval_seconds, max_catchup_runs,
+        self, interval_seconds, max_catchup_runs,
     ):
-        super(SchedulerDaemon, self).__init__(instance, interval_seconds)
+        super(SchedulerDaemon, self).__init__(interval_seconds)
         self._max_catchup_runs = max_catchup_runs
 
     @staticmethod
@@ -159,27 +161,25 @@ class SchedulerDaemon(DagsterDaemon):
         from dagster.daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
 
         return SchedulerDaemon(
-            instance,
-            interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,
-            max_catchup_runs=max_catchup_runs,
+            interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS, max_catchup_runs=max_catchup_runs,
         )
 
     @classmethod
     def daemon_type(cls):
         return "SCHEDULER"
 
-    def run_iteration(self):
-        return execute_scheduler_iteration(self._instance, self._logger, self._max_catchup_runs)
+    def run_iteration(self, instance):
+        return execute_scheduler_iteration(instance, self._logger, self._max_catchup_runs)
 
 
 class SensorDaemon(DagsterDaemon):
     @staticmethod
-    def create_from_instance(instance):
-        return SensorDaemon(instance, interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
+    def create_from_instance(_instance):
+        return SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
 
     @classmethod
     def daemon_type(cls):
         return "SENSOR"
 
-    def run_iteration(self):
-        return execute_sensor_iteration(self._instance, self._logger)
+    def run_iteration(self, instance):
+        return execute_sensor_iteration(instance, self._logger)

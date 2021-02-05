@@ -42,8 +42,8 @@ def test_attempt_to_launch_runs_filter(instance):
         instance, run_id="non-queued-run", status=PipelineRunStatus.NOT_STARTED,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
-    list(coordinator.run_iteration())
+    coordinator = QueuedRunCoordinatorDaemon(interval_seconds=5, max_concurrent_runs=10,)
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run"]
 
@@ -57,8 +57,8 @@ def test_attempt_to_launch_runs_no_queued(instance):
         instance, run_id="non-queued-run", status=PipelineRunStatus.NOT_STARTED,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
-    list(coordinator.run_iteration())
+    coordinator = QueuedRunCoordinatorDaemon(interval_seconds=5, max_concurrent_runs=10,)
+    list(coordinator.run_iteration(instance))
 
     assert instance.run_launcher.queue() == []
 
@@ -85,10 +85,8 @@ def test_get_queued_runs_max_runs(instance, num_in_progress_runs):
             instance, run_id=run_id, status=PipelineRunStatus.QUEUED,
         )
 
-    coordinator = QueuedRunCoordinatorDaemon(
-        instance, interval_seconds=5, max_concurrent_runs=max_runs,
-    )
-    list(coordinator.run_iteration())
+    coordinator = QueuedRunCoordinatorDaemon(interval_seconds=5, max_concurrent_runs=max_runs,)
+    list(coordinator.run_iteration(instance))
 
     assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
 
@@ -102,8 +100,8 @@ def test_priority(instance):
         instance, run_id="hi-pri-run", status=PipelineRunStatus.QUEUED, tags={PRIORITY_TAG: "3"},
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
-    list(coordinator.run_iteration())
+    coordinator = QueuedRunCoordinatorDaemon(interval_seconds=5, max_concurrent_runs=10,)
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == [
         "hi-pri-run",
@@ -120,8 +118,8 @@ def test_priority_on_malformed_tag(instance):
         tags={PRIORITY_TAG: "foobar"},
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
-    list(coordinator.run_iteration())
+    coordinator = QueuedRunCoordinatorDaemon(interval_seconds=5, max_concurrent_runs=10,)
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
 
@@ -137,12 +135,11 @@ def test_tag_limits(instance):
         instance, run_id="large-1", status=PipelineRunStatus.QUEUED, tags={"database": "large"},
     )
     coordinator = QueuedRunCoordinatorDaemon(
-        instance,
         interval_seconds=5,
         max_concurrent_runs=10,
         tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
     )
-    list(coordinator.run_iteration())
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "large-1"]
 
@@ -164,7 +161,6 @@ def test_multiple_tag_limits(instance):
         instance, run_id="run-4", status=PipelineRunStatus.QUEUED, tags={"user": "johann"},
     )
     coordinator = QueuedRunCoordinatorDaemon(
-        instance,
         interval_seconds=5,
         max_concurrent_runs=10,
         tag_concurrency_limits=[
@@ -172,7 +168,7 @@ def test_multiple_tag_limits(instance):
             {"key": "user", "value": "johann", "limit": 2},
         ],
     )
-    list(coordinator.run_iteration())
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
@@ -191,7 +187,6 @@ def test_overlapping_tag_limits(instance):
         instance, run_id="run-4", status=PipelineRunStatus.QUEUED, tags={"foo": "other"},
     )
     coordinator = QueuedRunCoordinatorDaemon(
-        instance,
         interval_seconds=5,
         max_concurrent_runs=10,
         tag_concurrency_limits=[
@@ -199,7 +194,7 @@ def test_overlapping_tag_limits(instance):
             {"key": "foo", "value": "bar", "limit": 1},
         ],
     )
-    list(coordinator.run_iteration())
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
@@ -231,8 +226,8 @@ def test_location_handles_reused(instance, monkeypatch):
         mocked_create_location_handle,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10,)
-    list(coordinator.run_iteration())
+    coordinator = QueuedRunCoordinatorDaemon(interval_seconds=5, max_concurrent_runs=10,)
+    list(coordinator.run_iteration(instance))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run", "queued-run-2"]
     assert len(method_calls) == 1
