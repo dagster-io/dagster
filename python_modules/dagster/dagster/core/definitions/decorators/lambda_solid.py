@@ -1,4 +1,5 @@
 from functools import update_wrapper, wraps
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from dagster import check
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -10,15 +11,24 @@ from ..output import OutputDefinition
 from ..solid import SolidDefinition
 from .solid import validate_solid_fn
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.compute import SolidExecutionContext
+
 
 class _LambdaSolid:
-    def __init__(self, name=None, input_defs=None, output_def=None, description=None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        input_defs: Optional[List[InputDefinition]] = None,
+        output_def: Optional[OutputDefinition] = None,
+        description: Optional[str] = None,
+    ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
         self.output_def = check.opt_inst_param(output_def, "output_def", OutputDefinition)
         self.description = check.opt_str_param(description, "description")
 
-    def __call__(self, fn):
+    def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -50,7 +60,12 @@ class _LambdaSolid:
         return solid_def
 
 
-def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
+def lambda_solid(
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    description: Optional[str] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_def: Optional[OutputDefinition] = None,
+) -> Union[_LambdaSolid, SolidDefinition]:
     """Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
@@ -108,7 +123,9 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
     )
 
 
-def _create_lambda_solid_compute_wrapper(fn, input_defs, output_def):
+def _create_lambda_solid_compute_wrapper(
+    fn: Callable[..., Any], input_defs: List[InputDefinition], output_def: OutputDefinition
+) -> Callable[["SolidExecutionContext", List[InputDefinition]], Any]:
     check.callable_param(fn, "fn")
     check.list_param(input_defs, "input_defs", of_type=InputDefinition)
     check.inst_param(output_def, "output_def", OutputDefinition)
@@ -120,7 +137,7 @@ def _create_lambda_solid_compute_wrapper(fn, input_defs, output_def):
     ]
 
     @wraps(fn)
-    def compute(_context, input_defs):
+    def compute(_context: "SolidExecutionContext", input_defs: List[InputDefinition]) -> Any:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
