@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any, Callable, Optional, Set
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -17,7 +18,12 @@ class HookDefinition(namedtuple("_HookDefinition", "name hook_fn required_resour
             hook.
     """
 
-    def __new__(cls, name, hook_fn, required_resource_keys=None):
+    def __new__(
+        cls,
+        name: str,
+        hook_fn: Callable[..., Any],
+        required_resource_keys: Optional[Set[str]] = None,
+    ):
         return super(HookDefinition, cls).__new__(
             cls,
             name=check_valid_name(name),

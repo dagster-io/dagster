@@ -1,4 +1,5 @@
 from functools import update_wrapper
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Set, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -7,15 +8,22 @@ from ...decorator_utils import split_function_parameters, validate_decorated_fn_
 from ..events import HookExecutionResult
 from ..hook import HookDefinition
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.system import HookContext
+    from dagster.core.events import DagsterEvent
+
 
 class _Hook:
-    def __init__(self, name=None, required_resource_keys=None):
+    def __init__(
+        self, name: Optional[str] = None, required_resource_keys: Optional[Set[str]] = None
+    ):
         self.name = check.opt_str_param(name, "name")
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
         )
 
-    def __call__(self, fn):
+    def __call__(self, fn: Callable[["HookContext", List["DagsterEvent"]], Any]) -> HookDefinition:
+
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -39,11 +47,14 @@ class _Hook:
             hook_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )
-        update_wrapper(hook_def, fn)
+        update_wrapper(cast(Callable[..., Any], hook_def), fn)
         return hook_def
 
 
-def event_list_hook(name=None, required_resource_keys=None):
+def event_list_hook(
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+) -> Union[HookDefinition, _Hook]:
     """Create a generic hook with the specified parameters from the decorated function.
 
     This decorator is currently used internally by Dagster machinery to support success_hook and
@@ -88,7 +99,13 @@ def event_list_hook(name=None, required_resource_keys=None):
     return _Hook(name=name, required_resource_keys=required_resource_keys)
 
 
-def success_hook(name=None, required_resource_keys=None):
+def success_hook(
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+) -> Union[
+    Union[HookDefinition, _Hook],
+    Callable[[Callable[["HookContext"], Any]], Union[HookDefinition, _Hook]],
+]:
     """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:
@@ -112,7 +129,8 @@ def success_hook(name=None, required_resource_keys=None):
 
     """
 
-    def wrapper(fn):
+    def wrapper(fn: Callable[["HookContext"], Any]) -> Union[HookDefinition, _Hook]:
+
         check.callable_param(fn, "fn")
 
         expected_positionals = ["context"]
@@ -133,7 +151,9 @@ def success_hook(name=None, required_resource_keys=None):
             _name = name
 
         @event_list_hook(_name, required_resource_keys)
-        def _success_hook(context, event_list):
+        def _success_hook(
+            context: "HookContext", event_list: List["DagsterEvent"]
+        ) -> HookExecutionResult:
             for event in event_list:
                 if event.is_step_success:
                     fn(context)
@@ -152,7 +172,12 @@ def success_hook(name=None, required_resource_keys=None):
     return wrapper
 
 
-def failure_hook(name=None, required_resource_keys=None):
+def failure_hook(
+    name: Optional[str] = None, required_resource_keys: Optional[Set[str]] = None
+) -> Union[
+    Union[HookDefinition, _Hook],
+    Callable[[Callable[["HookContext"], Any]], Union[HookDefinition, _Hook]],
+]:
     """Create a hook on step failure events with the specified parameters from the decorated function.
 
     Args:
@@ -176,7 +201,7 @@ def failure_hook(name=None, required_resource_keys=None):
 
     """
 
-    def wrapper(fn):
+    def wrapper(fn: Callable[["HookContext"], Any]) -> Union[HookDefinition, _Hook]:
         check.callable_param(fn, "fn")
 
         expected_positionals = ["context"]
@@ -197,7 +222,9 @@ def failure_hook(name=None, required_resource_keys=None):
             _name = name
 
         @event_list_hook(_name, required_resource_keys)
-        def _failure_hook(context, event_list):
+        def _failure_hook(
+            context: "HookContext", event_list: List["DagsterEvent"]
+        ) -> HookExecutionResult:
             for event in event_list:
                 if event.is_step_failure:
                     fn(context)
