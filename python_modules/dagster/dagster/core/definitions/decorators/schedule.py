@@ -1,5 +1,6 @@
 import datetime
 import warnings
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
@@ -17,22 +18,25 @@ from dagster.utils.partitions import (
 from ..mode import DEFAULT_MODE_NAME
 from ..schedule import ScheduleDefinition
 
+if TYPE_CHECKING:
+    from dagster import ScheduleExecutionContext, Partition
+
 # Error messages are long
 # pylint: disable=C0301
 
 
 def schedule(
-    cron_schedule,
-    pipeline_name,
-    name=None,
-    tags=None,
-    tags_fn=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    execution_timezone=None,
-):
+    cron_schedule: str,
+    pipeline_name: str,
+    name: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    tags_fn: Optional[Callable[["ScheduleExecutionContext"], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    execution_timezone: Optional[str] = None,
+) -> Callable[[Callable[["ScheduleExecutionContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -65,7 +69,7 @@ def schedule(
             with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
 
-    def inner(fn):
+    def inner(fn: Callable[["ScheduleExecutionContext"], Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -88,19 +92,19 @@ def schedule(
 
 
 def monthly_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_day_of_month=1,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_day_of_month: int = 1,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[datetime.datetime] = None,
+    execution_timezone: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs monthly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -195,14 +199,19 @@ def my_schedule_definition(_):
         execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -229,19 +238,19 @@ def my_schedule_definition(_):
 
 
 def weekly_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_day_of_week=0,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_day_of_week: int = 0,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[datetime.datetime] = None,
+    execution_timezone: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs weekly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -333,14 +342,19 @@ def my_schedule_definition(_):
         execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -367,18 +381,18 @@ def my_schedule_definition(_):
 
 
 def daily_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[datetime.datetime] = None,
+    execution_timezone: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs daily.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -460,14 +474,19 @@ def my_schedule_definition(_):
         execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -494,18 +513,18 @@ def my_schedule_definition(_):
 
 
 def hourly_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[str] = None,
+    execution_timezone: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs hourly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -597,14 +616,19 @@ def my_schedule_definition(_):
         execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
