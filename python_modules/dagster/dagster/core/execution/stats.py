@@ -1,5 +1,6 @@
 from collections import defaultdict, namedtuple
 from enum import Enum
+from typing import Any, Dict, Iterable, List
 
 from dagster import check
 from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
@@ -82,8 +83,10 @@ class StepEventStatus(Enum):
     FAILURE = "FAILURE"
 
 
-def build_run_step_stats_from_events(run_id, records):
-    by_step_key = defaultdict(dict)
+def build_run_step_stats_from_events(
+    run_id: str, records: Iterable[EventRecord]
+) -> List["RunStepKeyStatsSnapshot"]:
+    by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for event in records:
         if not event.is_dagster_event:
             continue
@@ -99,7 +102,7 @@ def build_run_step_stats_from_events(run_id, records):
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.FAILURE
         if event.dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
-            by_step_key[step_key]["attempts"] = by_step_key[step_key].get("attempts") + 1
+            by_step_key[step_key]["attempts"] = int(by_step_key[step_key].get("attempts") or 0) + 1
         if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SUCCESS

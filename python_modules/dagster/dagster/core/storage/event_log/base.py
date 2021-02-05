@@ -43,7 +43,7 @@ class EventLogStorage(ABC):
         """Get a summary of events that have ocurred in a run."""
         return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
-    def get_step_stats_for_run(self, run_id: str, step_keys=None) -> RunStepKeyStatsSnapshot:
+    def get_step_stats_for_run(self, run_id: str, step_keys=None) -> List[RunStepKeyStatsSnapshot]:
         """Get per-step stats for a pipeline run."""
         logs = self.get_logs_for_run(run_id)
         if step_keys:
