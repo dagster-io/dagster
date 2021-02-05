@@ -1,4 +1,5 @@
 from functools import update_wrapper
+from typing import Any, Callable, List, Optional, Union
 
 from dagster import check
 
@@ -10,10 +11,10 @@ from ..output import OutputDefinition
 class _Graph:
     def __init__(
         self,
-        name=None,
-        description=None,
-        input_defs=None,
-        output_defs=None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        input_defs: Optional[List[InputDefinition]] = None,
+        output_defs: Optional[List[OutputDefinition]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -25,7 +26,7 @@ class _Graph:
             output_defs, "output_defs", of_type=OutputDefinition
         )
 
-    def __call__(self, fn):
+    def __call__(self, fn: Callable[..., Any]) -> GraphDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -66,11 +67,11 @@ class _Graph:
 
 
 def graph(
-    name=None,
-    description=None,
-    input_defs=None,
-    output_defs=None,
-):
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_defs: Optional[List[OutputDefinition]] = None,
+) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a
