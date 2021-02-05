@@ -5,6 +5,7 @@ from dagster import check
 from dagster.grpc.client import DagsterGrpcClient
 
 WATCH_INTERVAL = 1
+REQUEST_TIMEOUT = 2
 MAX_RECONNECT_ATTEMPTS = 10
 
 
@@ -70,7 +71,7 @@ def watch_grpc_server_thread(
                 break
 
             curr = current_server_id()
-            new_server_id = client.get_server_id()
+            new_server_id = client.get_server_id(timeout=REQUEST_TIMEOUT)
             if curr is None:
                 set_server_id(new_server_id)
             elif curr != new_server_id:
@@ -87,7 +88,7 @@ def watch_grpc_server_thread(
                 return False
 
             try:
-                new_server_id = client.get_server_id()
+                new_server_id = client.get_server_id(timeout=REQUEST_TIMEOUT)
                 if current_server_id() == new_server_id:
                     # Intermittent failure, was able to reconnect to the same server
                     on_reconnected()

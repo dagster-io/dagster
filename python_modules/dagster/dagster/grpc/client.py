@@ -106,8 +106,8 @@ class DagsterGrpcClient:
                 "echo": res.echo,
             }
 
-    def get_server_id(self):
-        res = self._query("GetServerId", api_pb2.Empty)
+    def get_server_id(self, timeout=None):
+        res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)
         return res.server_id
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args):

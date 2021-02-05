@@ -10,7 +10,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.context import ProcessContext
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
@@ -53,7 +53,7 @@ def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
 def define_in_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    return DagsterGraphQLContext(
+    return ProcessContext(
         workspace=Workspace(
             [
                 InProcessRepositoryLocationOrigin(
@@ -62,14 +62,22 @@ def define_in_process_context(python_file, fn_name, instance):
             ]
         ),
         instance=instance,
-    )
+    ).create_request_context()
 
 
 @contextmanager
 def define_out_of_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    with Workspace(
+    with define_out_of_process_workspace(python_file, fn_name) as workspace:
+        yield ProcessContext(
+            workspace=workspace,
+            instance=instance,
+        ).create_request_context()
+
+
+def define_out_of_process_workspace(python_file, fn_name):
+    return Workspace(
         [
             ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 loadable_target_origin=LoadableTargetOrigin(
@@ -80,11 +88,7 @@ def define_out_of_process_context(python_file, fn_name, instance):
                 location_name=main_repo_location_name(),
             )
         ]
-    ) as workspace:
-        yield DagsterGraphQLContext(
-            workspace=workspace,
-            instance=instance,
-        )
+    )
 
 
 def infer_repository(graphql_context):

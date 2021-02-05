@@ -292,9 +292,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-sqlite_instance_hosted_user_process_env",
             "-sqlite_instance_multi_location",
             "-sqlite_instance_managed_grpc_env",
-            # Temporarily disabling due to thread-safety issues with
-            # deployed gRPC servers (https://github.com/dagster-io/dagster/issues/3404)
-            # "-sqlite_instance_deployed_grpc_env",
+            "-sqlite_instance_deployed_grpc_env",
         ],
     ),
     ModuleBuildSpec(
@@ -307,9 +305,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-postgres_instance_hosted_user_process_env",
             "-postgres_instance_multi_location",
             "-postgres_instance_managed_grpc_env",
-            # Temporarily disabling due to thread-safety issues with
-            # deployed gRPC servers (https://github.com/dagster-io/dagster/issues/3404)
-            # "-postgres_instance_deployed_grpc_env",
+            "-postgres_instance_deployed_grpc_env",
         ],
     ),
     ModuleBuildSpec(

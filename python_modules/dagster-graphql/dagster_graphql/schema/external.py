@@ -197,7 +197,11 @@ class GrapheneLocationStateChangeSubscription(graphene.ObjectType):
 
 
 def get_location_state_change_observable(graphene_info):
-    context = graphene_info.context
+
+    # This observerable lives on the process context and is never modified/destroyed, so we can
+    # access it directly
+    context = graphene_info.context.process_context
+
     return context.location_state_events.map(
         lambda event: GrapheneLocationStateChangeSubscription(
             event=GrapheneLocationStateChangeEvent(

@@ -10,17 +10,17 @@ def test_multi_location_error():
         assert isinstance(cli_workspace, Workspace)
         assert len(cli_workspace.repository_location_handles) == 1
 
-        assert len(cli_workspace.repository_location_errors) == 1
-
         assert cli_workspace.has_repository_location_handle("working_location")
         assert not cli_workspace.has_repository_location_handle("broken_location")
 
-        assert not cli_workspace.has_repository_location_error("working_location")
-        assert cli_workspace.has_repository_location_error("broken_location")
+        workspace_snapshot = cli_workspace.create_snapshot()
+        assert len(workspace_snapshot.repository_location_errors) == 1
+        assert not workspace_snapshot.has_repository_location_error("working_location")
+        assert workspace_snapshot.has_repository_location_error("broken_location")
 
         assert (
             "No module named"
-            in cli_workspace.get_repository_location_error("broken_location").message
+            in workspace_snapshot.get_repository_location_error("broken_location").message
         )
 
 
@@ -31,13 +31,14 @@ def test_workspace_with_only_error():
     ) as cli_workspace:
         assert isinstance(cli_workspace, Workspace)
         assert len(cli_workspace.repository_location_handles) == 0
-
-        assert len(cli_workspace.repository_location_errors) == 1
-
         assert not cli_workspace.has_repository_location_handle("broken_location")
-        assert cli_workspace.has_repository_location_error("broken_location")
+
+        workspace_snapshot = cli_workspace.create_snapshot()
+        assert len(workspace_snapshot.repository_location_errors) == 1
+
+        assert workspace_snapshot.has_repository_location_error("broken_location")
 
         assert (
             "No module named"
-            in cli_workspace.get_repository_location_error("broken_location").message
+            in workspace_snapshot.get_repository_location_error("broken_location").message
         )

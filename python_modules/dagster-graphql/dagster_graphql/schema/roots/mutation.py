@@ -293,15 +293,18 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         if not graphene_info.context.is_reload_supported(location_name):
             return GrapheneReloadNotSupported(location_name)
 
-        graphene_info.context.reload_repository_location(location_name)
+        # The current GraphQL context is a RequestContext, which contains a reference to the
+        # repository locations that were present in the root ProcessContext the start of the
+        # GraphQL request. Reloading a repository location modifies the ProcessContext, rendeirng
+        # our current RequestContext outdated. Therefore, `reload_repository_location` returns
+        # an updated request context for us to use.
+        new_context = graphene_info.context.reload_repository_location(location_name)
 
-        if graphene_info.context.has_repository_location(location_name):
-            return GrapheneRepositoryLocation(
-                graphene_info.context.get_repository_location(location_name)
-            )
+        if new_context.has_repository_location(location_name):
+            return GrapheneRepositoryLocation(new_context.get_repository_location(location_name))
         else:
             return GrapheneRepositoryLocationLoadFailure(
-                location_name, graphene_info.context.get_repository_location_error(location_name)
+                location_name, new_context.get_repository_location_error(location_name)
             )
 
 

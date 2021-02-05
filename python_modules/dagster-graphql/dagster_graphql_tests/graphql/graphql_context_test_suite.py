@@ -26,7 +26,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test.postgres_instance import TestPostgresInstance
-from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.context import ProcessContext
 
 
 def get_main_recon_repo():
@@ -739,7 +739,7 @@ def manage_graphql_context(context_variant, recon_repo=None):
     recon_repo = recon_repo if recon_repo else get_main_recon_repo()
     with context_variant.instance_mgr() as instance:
         with context_variant.environment_mgr(recon_repo) as workspace:
-            yield DagsterGraphQLContext(instance=instance, workspace=workspace)
+            yield ProcessContext(instance=instance, workspace=workspace).create_request_context()
 
 
 class _GraphQLContextTestSuite(ABC):

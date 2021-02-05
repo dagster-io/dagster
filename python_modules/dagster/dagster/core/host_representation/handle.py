@@ -44,6 +44,9 @@ class RepositoryLocationHandle(ABC):
     def __exit__(self, exception_type, exception_value, traceback):
         self.cleanup()
 
+    def __del__(self):
+        self.cleanup()
+
     def cleanup(self):
         pass
 
@@ -82,45 +85,50 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         socket = self.origin.socket
         host = self.origin.host
 
-        self.client = DagsterGrpcClient(port=port, socket=socket, host=host)
-        list_repositories_response = sync_list_repositories_grpc(self.client)
+        self._watch_thread_shutdown_event = None
+        self._watch_thread = None
 
-        self.server_id = sync_get_server_id(self.client)
-        self.repository_names = set(
-            symbol.repository_name for symbol in list_repositories_response.repository_symbols
-        )
+        try:
+            self.client = DagsterGrpcClient(port=port, socket=socket, host=host)
+            list_repositories_response = sync_list_repositories_grpc(self.client)
 
-        self._state_subscribers = []
-        watch_thread_shutdown_event, watch_thread = create_grpc_watch_thread(
-            self.client,
-            on_updated=lambda new_server_id: self._send_state_event_to_subscribers(
-                LocationStateChangeEvent(
-                    LocationStateChangeEventType.LOCATION_UPDATED,
-                    location_name=self.location_name,
-                    message="Server has been updated.",
-                    server_id=new_server_id,
-                )
-            ),
-            on_error=lambda: self._send_state_event_to_subscribers(
-                LocationStateChangeEvent(
-                    LocationStateChangeEventType.LOCATION_ERROR,
-                    location_name=self.location_name,
-                    message="Unable to reconnect to server. You can reload the server once it is "
-                    "reachable again",
-                )
-            ),
-        )
-        self._watch_thread_shutdown_event = watch_thread_shutdown_event
-        self._watch_thread = watch_thread
+            self.server_id = sync_get_server_id(self.client)
+            self.repository_names = set(
+                symbol.repository_name for symbol in list_repositories_response.repository_symbols
+            )
 
-        # Temporarily disabling due to thread-safety issues ith
-        # deployed gRPC servers (https://github.com/dagster-io/dagster/issues/3404)
-        # self._watch_thread.start()
+            self._state_subscribers = []
+            self._watch_thread_shutdown_event, self._watch_thread = create_grpc_watch_thread(
+                self.client,
+                on_updated=lambda new_server_id: self._send_state_event_to_subscribers(
+                    LocationStateChangeEvent(
+                        LocationStateChangeEventType.LOCATION_UPDATED,
+                        location_name=self.location_name,
+                        message="Server has been updated.",
+                        server_id=new_server_id,
+                    )
+                ),
+                on_error=lambda: self._send_state_event_to_subscribers(
+                    LocationStateChangeEvent(
+                        LocationStateChangeEventType.LOCATION_ERROR,
+                        location_name=self.location_name,
+                        message="Unable to reconnect to server. You can reload the server once it is "
+                        "reachable again",
+                    )
+                ),
+            )
 
-        self.executable_path = list_repositories_response.executable_path
-        self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
+            self._watch_thread.start()
 
-        self.container_image = self._reload_current_image()
+            self.executable_path = list_repositories_response.executable_path
+            self.repository_code_pointer_dict = (
+                list_repositories_response.repository_code_pointer_dict
+            )
+
+            self.container_image = self._reload_current_image()
+        except:
+            self.cleanup()
+            raise
 
     def add_state_subscriber(self, subscriber):
         self._state_subscribers.append(subscriber)
@@ -131,7 +139,13 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             subscriber.handle_event(event)
 
     def cleanup(self):
-        self._watch_thread_shutdown_event.set()
+        if self._watch_thread_shutdown_event:
+            self._watch_thread_shutdown_event.set()
+            self._watch_thread_shutdown_event = None
+
+        if self._watch_thread:
+            self._watch_thread.join()
+            self._watch_thread = None
 
     @property
     def port(self):

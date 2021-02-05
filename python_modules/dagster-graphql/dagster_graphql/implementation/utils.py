@@ -31,9 +31,9 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(context, data):
-    from dagster_graphql.implementation.context import DagsterGraphQLContext
+    from dagster_graphql.implementation.context import RequestContext
 
-    check.inst_param(context, "context", DagsterGraphQLContext)
+    check.inst_param(context, "context", RequestContext)
 
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
