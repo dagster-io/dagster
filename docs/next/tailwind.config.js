@@ -28,10 +28,10 @@ module.exports = {
         },
       },
       height: (theme) => ({
-        "(screen-16)": `calc(100vh - ${theme("spacing.60")})`,
+        "(screen-60)": `calc(100vh - ${theme("spacing.60")})`,
       }),
       maxHeight: (theme) => ({
-        "(screen-16)": `calc(100vh - ${theme("spacing.60")})`,
+        "(screen-60)": `calc(100vh - ${theme("spacing.60")})`,
       }),
       typography: (theme) => ({
         DEFAULT: {
