@@ -1,4 +1,4 @@
-import {gql, NetworkStatus} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {Colors, Divider, NonIdealState, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
@@ -7,6 +7,7 @@ import {RouteComponentProps} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {QueryCountdown} from 'src/app/QueryCountdown';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {AllScheduledTicks, SCHEDULED_TICKS_FRAGMENT} from 'src/runs/AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
@@ -24,12 +25,10 @@ import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
-import {useCountdown} from 'src/ui/Countdown';
 import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
@@ -82,12 +81,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     pageSize: PAGE_SIZE,
   });
 
-  const countdownStatus = queryResult.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
-  const timeRemaining = useCountdown({
-    duration: POLL_INTERVAL,
-    status: countdownStatus,
-  });
-
   const setStatusFilter = (statuses: PipelineRunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
@@ -98,8 +91,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const tabColor = (match: string) =>
     selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
-
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
 
   return (
     <Page>
@@ -195,11 +186,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             />
           </Tabs>
           <Box padding={{bottom: 8}}>
-            <RefreshableCountdown
-              refreshing={countdownRefreshing}
-              seconds={Math.floor(timeRemaining / 1000)}
-              onRefresh={() => queryResult.refetch()}
-            />
+            <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
           </Box>
         </Box>
         {showScheduled ? null : (

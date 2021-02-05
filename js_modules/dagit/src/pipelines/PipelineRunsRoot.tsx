@@ -1,8 +1,9 @@
-import {gql, NetworkStatus} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {NonIdealState, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {QueryCountdown} from 'src/app/QueryCountdown';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
 import {
@@ -19,13 +20,11 @@ import {
 } from 'src/runs/RunsFilter';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {Box} from 'src/ui/Box';
-import {useCountdown} from 'src/ui/Countdown';
 import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
 import {ScrollContainer} from 'src/ui/ListComponents';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
 const PAGE_SIZE = 25;
@@ -74,13 +73,6 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     },
   });
 
-  const countdownStatus = queryResult.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
-  const timeRemaining = useCountdown({
-    duration: POLL_INTERVAL,
-    status: countdownStatus,
-  });
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer style={{height: '100%'}}>
@@ -102,11 +94,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 loading={queryResult.loading}
               />
             </Group>
-            <RefreshableCountdown
-              refreshing={countdownRefreshing}
-              seconds={Math.floor(timeRemaining / 1000)}
-              onRefresh={() => queryResult.refetch()}
-            />
+            <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
           </Box>
 
           <Loading queryResult={queryResult} allowStaleData={true}>

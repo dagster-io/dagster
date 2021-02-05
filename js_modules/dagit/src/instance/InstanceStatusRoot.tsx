@@ -1,9 +1,10 @@
-import {gql, NetworkStatus, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Tab, Tabs, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Route, Switch} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {QueryCountdown} from 'src/app/QueryCountdown';
 import {InstanceConfig} from 'src/instance/InstanceConfig';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {InstanceHealthPage} from 'src/instance/InstanceHealthPage';
@@ -15,10 +16,8 @@ import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {Box} from 'src/ui/Box';
-import {useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from 'src/workspace/WorkspaceContext';
@@ -37,15 +36,6 @@ export const InstanceStatusRoot = (props: Props) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const {networkStatus, refetch} = queryData;
-
-  const countdownStatus = networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
-  const timeRemaining = useCountdown({
-    duration: POLL_INTERVAL,
-    status: countdownStatus,
-  });
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-
   return (
     <Page>
       <Group direction="column" spacing={24}>
@@ -62,11 +52,7 @@ export const InstanceStatusRoot = (props: Props) => {
               <Tab id="config" title={<Link to="/instance/config">Configuration</Link>} />
             </Tabs>
             <Box padding={{bottom: 8}}>
-              <RefreshableCountdown
-                refreshing={countdownRefreshing}
-                seconds={Math.floor(timeRemaining / 1000)}
-                onRefresh={() => refetch()}
-              />
+              <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryData} />
             </Box>
           </Box>
         </Group>

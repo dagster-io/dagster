@@ -1,4 +1,4 @@
-import {gql, NetworkStatus, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Button, Tooltip} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
@@ -6,6 +6,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {QueryCountdown} from 'src/app/QueryCountdown';
 import {
   PartitionProgressQuery,
   PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results,
@@ -21,9 +22,7 @@ import {
 import {TerminationDialog} from 'src/runs/TerminationDialog';
 import {POLL_INTERVAL} from 'src/runs/useCursorPaginatedQuery';
 import {Box} from 'src/ui/Box';
-import {useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {stringFromValue, TokenizingFieldValue} from 'src/ui/TokenizingField';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
@@ -42,25 +41,17 @@ export const PartitionProgress = (props: Props) => {
   const [shouldPoll, setShouldPoll] = React.useState(true);
   const [isTerminating, setIsTerminating] = React.useState(false);
 
-  const {data, networkStatus, refetch} = useQuery<PartitionProgressQuery>(
-    PARTITION_PROGRESS_QUERY,
-    {
-      fetchPolicy: 'network-only',
-      pollInterval: shouldPoll ? POLL_INTERVAL : undefined,
-      notifyOnNetworkStatusChange: true,
-      variables: {
-        filter: {pipelineName, tags},
-        limit: 100000,
-      },
+  const queryResult = useQuery<PartitionProgressQuery>(PARTITION_PROGRESS_QUERY, {
+    fetchPolicy: 'network-only',
+    pollInterval: shouldPoll ? POLL_INTERVAL : undefined,
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      filter: {pipelineName, tags},
+      limit: 100000,
     },
-  );
-
-  const countdownStatus = networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
-  const timeRemaining = useCountdown({
-    duration: POLL_INTERVAL,
-    status: countdownStatus,
   });
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
+
+  const {data, refetch} = queryResult;
 
   const results:
     | PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results[]
@@ -167,11 +158,7 @@ export const PartitionProgress = (props: Props) => {
         ) : null}
       </Group>
       {shouldPoll && !isTerminating ? (
-        <RefreshableCountdown
-          refreshing={countdownRefreshing}
-          seconds={Math.floor(timeRemaining / 1000)}
-          onRefresh={() => refetch()}
-        />
+        <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
       ) : null}
     </Box>
   );
