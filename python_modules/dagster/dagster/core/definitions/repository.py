@@ -624,3 +624,8 @@ class RepositoryDefinition:
 
     def has_sensor_def(self, name):
         return self._repository_data.has_sensor(name)
+
+    # If definition comes from the @repository decorator, then the __call__ method will be
+    # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
+    def __call__(self, *args, **kwargs):
+        return self
