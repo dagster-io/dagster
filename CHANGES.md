@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.4
+
+**Bugfixes**
+
+* Fixed an issue with daemon heartbeat backwards compatibility. Resolves an error on Dagit's Daemon Status page
+
 ## 0.10.3
 
 **New**
