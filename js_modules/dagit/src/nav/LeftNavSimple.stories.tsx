@@ -6,6 +6,7 @@ import {Link} from 'react-router-dom';
 import styled, {createGlobalStyle} from 'styled-components';
 
 import {LeftNavSimple} from 'src/nav/LeftNavSimple';
+import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
@@ -37,16 +38,11 @@ const REPO_ONE = `${faker.random.word()}@${faker.random.words(2)}`.toLowerCase()
 const REPO_TWO = `${faker.random.word()}@${faker.random.words(2)}`.toLowerCase().replace(' ', '-');
 
 export const Default = () => (
-  <>
+  <ApolloTestProvider>
     <BodyReset />
-    <div style={{height: '100%', display: 'flex', flexDirection: 'row', alignItems: 'stretch'}}>
-      <Box
-        border={{side: 'right', width: 1, color: Colors.LIGHT_GRAY3}}
-        style={{width: '180px', height: '100vh', position: 'absolute', top: 0, bottom: 0, left: 0}}
-      >
-        <LeftNavSimple />
-      </Box>
-      <div style={{flexGrow: 1, overflowY: 'auto', marginLeft: '180px'}}>
+    <div style={{height: '100%', display: 'flex', flexDirection: 'row'}}>
+      <LeftNavSimple />
+      <div style={{flexGrow: 1, overflowY: 'auto'}}>
         <Box padding={{vertical: 20, horizontal: 24}}>
           <Group direction="column" spacing={16}>
             <Heading>Pipelines</Heading>
@@ -90,7 +86,7 @@ export const Default = () => (
         </Box>
       </div>
     </div>
-  </>
+  </ApolloTestProvider>
 );
 
 interface DotProps {
