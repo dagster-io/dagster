@@ -739,21 +739,26 @@ def opt_generator_param(obj: Any, param_name: str) -> Optional[Generator]:
     return obj
 
 
-def list_elem(ddict: Dict, key: str) -> List:  # type: ignore[return]
+def list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:  # type: ignore[return]
     dict_param(ddict, "ddict")
     str_param(key, "key")
+    opt_type_param(of_type, "of_type")
 
     value = ddict.get(key)
 
     if isinstance(value, list):
-        return value
+        if not of_type:
+            return value
+
+        return _check_list_items(value, of_type)
 
     raise_with_traceback(_element_check_error(key, value, ddict, list))
 
 
-def opt_list_elem(ddict: Dict, key: str) -> List:
+def opt_list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
+    opt_type_param(of_type, "of_type")
 
     value = ddict.get(key)
 
@@ -762,7 +767,11 @@ def opt_list_elem(ddict: Dict, key: str) -> List:
 
     if not isinstance(value, list):
         raise_with_traceback(_element_check_error(key, value, ddict, list))
-    return value
+
+    if not of_type:
+        return value
+
+    return _check_list_items(value, of_type)
 
 
 def dict_elem(ddict: Dict, key: str) -> Dict:
