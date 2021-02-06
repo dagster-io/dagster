@@ -77,7 +77,6 @@ def test_forward_compat_serdes_new_field_with_default():
     deserialized = _deserialize_json_to_dagster_namedtuple(
         serialized, whitelist_map=_TEST_WHITELIST_MAP
     )
-
     assert deserialized != quux
     assert deserialized.foo == quux.foo
     assert deserialized.bar == quux.bar

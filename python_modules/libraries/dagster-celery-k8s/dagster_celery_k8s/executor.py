@@ -17,7 +17,7 @@ from dagster.cli.api import ExecuteStepArgs
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
-from dagster.core.events.log import DagsterEventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster.core.execution.retries import Retries
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -246,7 +246,7 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
             user_failure_data=UserFailureData(label="K8sError"),
         ),
     )
-    event_record = DagsterEventRecord(
+    event_record = EventRecord(
         message=str(err),
         user_message=str(err),
         level=logging.ERROR,

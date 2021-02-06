@@ -20,7 +20,7 @@ from dagster import (
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.events.log import DagsterEventRecord, construct_event_logger
+from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.storage.event_log.migration import migrate_asset_key_data
@@ -299,7 +299,7 @@ def test_listen_notify_single_run_event(conn_string):
 
         assert len(event_list) == len(events)
         # uncomment when https://github.com/dagster-io/dagster/issues/3368 is resolved with structured event
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list])
+        # assert all([isinstance(event, EventRecord) for event in event_list])
     finally:
         del event_log_storage
 
@@ -341,8 +341,8 @@ def test_listen_notify_filter_two_runs_event(conn_string):
         assert len(event_list_one) == len(events_one)
         assert len(event_list_two) == len(events_two)
         # uncomment when https://github.com/dagster-io/dagster/issues/3368 is resolved with structured event
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list_one])
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list_two])
+        # assert all([isinstance(event, EventRecord) for event in event_list_one])
+        # assert all([isinstance(event, EventRecord) for event in event_list_two])
 
     finally:
         del event_log_storage
@@ -380,7 +380,7 @@ def test_listen_notify_filter_run_event(conn_string):
 
         assert len(event_list) == len(events_two)
         # uncomment when https://github.com/dagster-io/dagster/issues/3368 is resolved with structured event
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list])
+        # assert all([isinstance(event, EventRecord) for event in event_list])
 
     finally:
         del event_log_storage
@@ -426,7 +426,7 @@ def test_correct_timezone(conn_string):
 
     curr_time = time.time()
 
-    event = DagsterEventRecord(
+    event = EventRecord(
         None,
         "Message2",
         "debug",
@@ -483,7 +483,7 @@ def test_asset_materialization(conn_string):
     events = event_log_storage.get_asset_events(asset_key)
     assert len(events) == 1
     event = events[0]
-    assert isinstance(event, DagsterEventRecord)
+    assert isinstance(event, EventRecord)
     assert event.dagster_event.event_type_value == DagsterEventType.STEP_MATERIALIZATION.value
 
 

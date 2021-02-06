@@ -17,7 +17,7 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import DagsterEventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.storage.event_log import (
@@ -81,7 +81,7 @@ def test_event_log_storage_store_events_and_wipe(event_storage_factory_cm_fn):
     with event_storage_factory_cm_fn() as storage:
         assert len(storage.get_logs_for_run("foo")) == 0
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "Message2",
                 "debug",
@@ -108,7 +108,7 @@ def test_event_log_storage_store_with_multiple_runs(event_storage_factory_cm_fn)
         for run_id in runs:
             assert len(storage.get_logs_for_run(run_id)) == 0
             storage.store_event(
-                DagsterEventRecord(
+                EventRecord(
                     None,
                     "Message2",
                     "debug",
@@ -139,7 +139,7 @@ def test_event_log_storage_store_with_multiple_runs(event_storage_factory_cm_fn)
 )
 def test_event_log_storage_watch(event_storage_factory_cm_fn):
     def evt(name):
-        return DagsterEventRecord(
+        return EventRecord(
             None,
             name,
             "debug",
@@ -190,7 +190,7 @@ def test_event_log_storage_watch(event_storage_factory_cm_fn):
 @event_storage_test
 def test_event_log_storage_pagination(event_storage_factory_cm_fn):
     def evt(name):
-        return DagsterEventRecord(
+        return EventRecord(
             None,
             name,
             "debug",
@@ -221,7 +221,7 @@ def test_event_log_delete(event_storage_factory_cm_fn):
     with event_storage_factory_cm_fn() as storage:
         assert len(storage.get_logs_for_run("foo")) == 0
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "Message2",
                 "debug",
@@ -260,7 +260,7 @@ def test_event_log_get_stats_for_run(event_storage_factory_cm_fn):
         launched_time = enqueued_time + 20
         start_time = launched_time + 50
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "message",
                 "debug",
@@ -274,7 +274,7 @@ def test_event_log_get_stats_for_run(event_storage_factory_cm_fn):
             )
         )
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "message",
                 "debug",
@@ -288,7 +288,7 @@ def test_event_log_get_stats_for_run(event_storage_factory_cm_fn):
             )
         )
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "message",
                 "debug",
@@ -481,7 +481,7 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     pipeline_name = "pipeline_name"
     solid_handle = SolidHandle(solid_name, None)
     step_handle = StepHandle(solid_handle)
-    return DagsterEventRecord(
+    return EventRecord(
         None,
         "",
         "debug",

@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 
 from dagster import DagsterEvent, DagsterEventType, check
-from dagster.core.events.log import DagsterEventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
@@ -226,7 +226,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
             pipeline_name=run.pipeline_name,
         )
-        event_record = DagsterEventRecord(
+        event_record = EventRecord(
             message="",
             user_message="",
             level=logging.INFO,
