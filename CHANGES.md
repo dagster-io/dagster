@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.5 (upcoming)
+
+**New**
+
+* [k8s] Changed our weekly docker image releases (the default images in the helm chart). `dagster/dagster-k8s` and `dagster/dagster-celery-k8s` can be
+  used for all processes which don't require user code (Dagit, Daemon, and Celery workers when using the CeleryK8sExecutor). `user-code-example` can
+  be used for a sample user repository. The prior images (`k8s-dagit`, `k8s-celery-worker`, `k8s-example`)
+  are deprecated.
+
 ## 0.10.4
 
 **Bugfixes**
