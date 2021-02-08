@@ -25,6 +25,7 @@ export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_las
 
 export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
+  id: string;
   daemonType: string | null;
   required: boolean;
   healthy: boolean | null;

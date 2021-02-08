@@ -124,6 +124,7 @@ const SENSOR_ROOT_QUERY = gql`
       ...InstanceHealthFragment
       daemonHealth {
         daemonStatus(daemonType: "SENSOR") {
+          id
           healthy
         }
       }

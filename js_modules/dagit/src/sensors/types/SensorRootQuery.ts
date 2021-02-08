@@ -117,6 +117,7 @@ export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHea
 
 export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
+  id: string;
   daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
@@ -126,6 +127,7 @@ export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
 
 export interface SensorRootQuery_instance_daemonHealth_daemonStatus {
   __typename: "DaemonStatus";
+  id: string;
   healthy: boolean | null;
 }
 

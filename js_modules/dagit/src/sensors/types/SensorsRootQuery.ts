@@ -223,6 +223,7 @@ export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHe
 
 export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
+  id: string;
   daemonType: string | null;
   required: boolean;
   healthy: boolean | null;

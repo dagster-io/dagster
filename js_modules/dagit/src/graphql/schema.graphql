@@ -896,6 +896,7 @@ type DaemonHealth {
 
 type DaemonStatus {
   daemonType: String
+  id: ID!
   required: Boolean!
   healthy: Boolean
   lastHeartbeatTime: Float

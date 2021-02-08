@@ -180,6 +180,7 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastH
 
 export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
+  id: string;
   daemonType: string | null;
   required: boolean;
   healthy: boolean | null;

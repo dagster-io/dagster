@@ -26,6 +26,7 @@ class GrapheneRunLauncher(graphene.ObjectType):
 
 class GrapheneDaemonStatus(graphene.ObjectType):
     daemonType = graphene.String()
+    id = graphene.NonNull(graphene.ID)
     required = graphene.NonNull(graphene.Boolean)
     healthy = graphene.Boolean()
     lastHeartbeatTime = graphene.Float()
@@ -50,6 +51,9 @@ class GrapheneDaemonStatus(graphene.ObjectType):
             if daemon_status.last_heartbeat and daemon_status.last_heartbeat.errors
             else [],
         )
+
+    def resolve_id(self, _graphene_info):
+        return self.daemonType
 
 
 class GrapheneDaemonHealth(graphene.ObjectType):

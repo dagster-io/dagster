@@ -145,6 +145,7 @@ export interface AllSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHea
 
 export interface AllSensorsQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
+  id: string;
   daemonType: string | null;
   required: boolean;
   healthy: boolean | null;

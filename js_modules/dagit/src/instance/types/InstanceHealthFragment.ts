@@ -23,6 +23,7 @@ export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses_lastHeart
 
 export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
+  id: string;
   daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
