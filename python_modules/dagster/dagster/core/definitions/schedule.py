@@ -64,16 +64,16 @@ class ScheduleDefinition(JobDefinition):
             or one or more RunRequest objects.
         run_config (Optional[Dict]): The environment config that parameterizes this execution,
             as a dict.
-        run_config_fn (Callable[[ScheduleExecutionContext], [Dict]]): A function that takes a
-            ScheduleExecutionContext object and returns the environment configuration that
-            parameterizes this execution, as a dict. You may set only one of ``run_config``
-            and ``run_config_fn``.
+        run_config_fn (Optional[Callable[[ScheduleExecutionContext], [Dict]]]): A function that
+            takes a ScheduleExecutionContext object and returns the environment configuration that
+            parameterizes this execution, as a dict. You may set only one of ``run_config``,
+            ``run_config_fn``, and ``execution_fn``.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
-            key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
+            key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')

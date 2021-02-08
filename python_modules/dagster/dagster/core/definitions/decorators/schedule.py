@@ -37,8 +37,8 @@ def schedule(
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
@@ -246,8 +246,8 @@ def weekly_schedule(
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -383,8 +383,8 @@ def daily_schedule(
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -510,8 +510,8 @@ def hourly_schedule(
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
