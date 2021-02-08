@@ -8,7 +8,7 @@ from dagster.generate import generate_new_repo
 @click.argument("path", type=click.Path())
 def new_repo_command(path: str):
     """
-    Creates a new Dagster repository skeleton.
+    Creates a new Dagster repository and generates boilerplate code.
 
     PATH: Location of the new Dagster repository in your filesystem.
     """
