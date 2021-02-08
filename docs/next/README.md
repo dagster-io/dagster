@@ -22,7 +22,7 @@ The API documentation is still authored in the Sphinx project.
 
 # New Syntax
 
-Instead of RST, the docs are not written in MDX, which is just Markdown that can have inline React components.
+Instead of RST, the docs are now written in MDX, which is just Markdown that can have inline React components.
 
 ## Links to API Docs
 
@@ -108,7 +108,7 @@ excluded_bool = True
 
 # Screenshots
 
-Use [generate_screenshots.test.js](https://github.com/dagster-io/dagster/issues/3292#issue-751044712) to add or update screenshots in the documentation. 
+Use [generate_screenshots.test.js](https://github.com/dagster-io/dagster/issues/3292#issue-751044712) to add or update screenshots in the documentation.
 
 ## Update screenshots
 
