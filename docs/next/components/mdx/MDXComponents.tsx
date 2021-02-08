@@ -8,7 +8,6 @@
 import React, { useContext } from "react";
 
 import Link from "../Link";
-import data from "../../content/api/searchindex.json";
 
 export const SearchIndexContext = React.createContext(null);
 
@@ -55,7 +54,7 @@ const PyObject: React.FunctionComponent<{
   const fileIndex = objectData[0];
   // TODO: refer to all anchors available in apidocs
   // https://github.com/dagster-io/dagster/issues/3568
-  const doc = data.docnames[fileIndex];
+  const doc = value.docnames[fileIndex];
   const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
 
   return (
