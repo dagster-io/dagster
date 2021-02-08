@@ -26,7 +26,6 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
-    RepositoryLocationHandle,
 )
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
@@ -323,12 +322,10 @@ def default_repo():
         working_directory=os.getcwd(),
     )
 
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=loadable_target_origin,
-            location_name="test_location",
-        ),
-    ) as handle:
+    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=loadable_target_origin,
+        location_name="test_location",
+    ).create_handle() as handle:
         yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
 
 

@@ -12,7 +12,6 @@ from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
-    RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -120,16 +119,14 @@ def test_repository():
 
 @contextmanager
 def get_test_external_repo():
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                python_file=__file__,
-                attribute="test_repository",
-            ),
-            location_name="test_location",
-        )
-    ) as handle:
+    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=__file__,
+            attribute="test_repository",
+        ),
+        location_name="test_location",
+    ).create_handle() as handle:
         yield RepositoryLocation.from_handle(handle).get_repository("test_repository")
 
 

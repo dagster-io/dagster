@@ -5,12 +5,7 @@ import time
 import pendulum
 from dagster import check
 from dagster.core.definitions.job import JobType
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    PipelineSelector,
-    RepositoryLocation,
-    RepositoryLocationHandle,
-)
+from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositoryLocation
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
     ExternalSensorExecutionErrorData,
@@ -131,9 +126,8 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
         )
         error_info = None
         try:
-            with RepositoryLocationHandle.create_from_repository_location_origin(
-                job_state.origin.external_repository_origin.repository_location_origin
-            ) as repo_location_handle:
+            origin = job_state.origin.external_repository_origin.repository_location_origin
+            with origin.create_handle() as repo_location_handle:
                 repo_location = RepositoryLocation.from_handle(repo_location_handle)
 
                 repo_name = job_state.origin.external_repository_origin.repository_name

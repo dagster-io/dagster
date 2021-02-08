@@ -13,7 +13,6 @@ from dagster.core.host_representation import (
     ExternalRepository,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .utils import get_bar_repo_grpc_repository_location_handle
@@ -71,16 +70,14 @@ def giant_repo():
 
 @contextmanager
 def get_giant_repo_grpc_repository_location_handle():
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                attribute="giant_repo",
-                module_name="dagster_tests.api_tests.test_api_snapshot_repository",
-            ),
-            location_name="giant_repo_location",
-        )
-    ) as handle:
+    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="giant_repo",
+            module_name="dagster_tests.api_tests.test_api_snapshot_repository",
+        ),
+        location_name="giant_repo_location",
+    ).create_handle() as handle:
         yield handle
 
 

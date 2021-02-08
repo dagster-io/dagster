@@ -17,7 +17,6 @@ from dagster.core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.origin import RepositoryPythonOrigin
@@ -52,18 +51,6 @@ class RepositoryLocationHandle(ABC):
 
     def add_state_subscriber(self, subscriber):
         pass
-
-    @staticmethod
-    def create_from_repository_location_origin(repo_location_origin):
-        check.inst_param(repo_location_origin, "repo_location_origin", RepositoryLocationOrigin)
-        if isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin):
-            return ManagedGrpcPythonEnvRepositoryLocationHandle(repo_location_origin)
-        elif isinstance(repo_location_origin, GrpcServerRepositoryLocationOrigin):
-            return GrpcServerRepositoryLocationHandle(repo_location_origin)
-        elif isinstance(repo_location_origin, InProcessRepositoryLocationOrigin):
-            return InProcessRepositoryLocationHandle(repo_location_origin)
-        else:
-            check.failed("Unexpected repository location origin")
 
     @abstractmethod
     def get_repository_python_origin(self, repository_name):

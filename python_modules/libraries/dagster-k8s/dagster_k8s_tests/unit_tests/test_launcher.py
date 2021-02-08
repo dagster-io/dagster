@@ -1,11 +1,7 @@
 import json
 
 from dagster import pipeline, reconstructable
-from dagster.core.host_representation import (
-    InProcessRepositoryLocationOrigin,
-    RepositoryHandle,
-    RepositoryLocationHandle,
-)
+from dagster.core.host_representation import InProcessRepositoryLocationOrigin, RepositoryHandle
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.seven import mock
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
@@ -43,9 +39,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
     location_origin = InProcessRepositoryLocationOrigin(recon_repo)
-    location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
-        location_origin,
-    )
+    location_handle = location_origin.create_handle()
     repo_handle = RepositoryHandle(
         repository_name=repo_def.name,
         repository_location_handle=location_handle,

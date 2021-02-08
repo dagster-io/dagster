@@ -13,7 +13,6 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
     RepositoryLocation,
-    RepositoryLocationHandle,
 )
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.grpc.utils import get_loadable_targets
@@ -571,7 +570,7 @@ def get_repository_python_origin_from_kwargs(kwargs):
 @contextmanager
 def get_repository_location_from_kwargs(kwargs):
     origin = get_repository_location_origin_from_kwargs(kwargs)
-    with RepositoryLocationHandle.create_from_repository_location_origin(origin) as handle:
+    with origin.create_handle() as handle:
         yield RepositoryLocation.from_handle(handle)
 
 

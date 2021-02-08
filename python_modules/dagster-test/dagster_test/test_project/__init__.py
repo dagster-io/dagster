@@ -14,7 +14,6 @@ from dagster.core.host_representation import (
     ExternalSchedule,
     InProcessRepositoryLocationOrigin,
     RepositoryLocation,
-    RepositoryLocationHandle,
 )
 from dagster.core.host_representation.origin import (
     ExternalJobOrigin,
@@ -218,15 +217,13 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 
 def get_test_project_external_repo(container_image=None):
     return RepositoryLocation.from_handle(
-        RepositoryLocationHandle.create_from_repository_location_origin(
-            InProcessRepositoryLocationOrigin(
-                ReconstructableRepository.for_file(
-                    file_relative_path(__file__, "test_pipelines/repo.py"),
-                    "define_demo_execution_repo",
-                    container_image=container_image,
-                )
+        InProcessRepositoryLocationOrigin(
+            ReconstructableRepository.for_file(
+                file_relative_path(__file__, "test_pipelines/repo.py"),
+                "define_demo_execution_repo",
+                container_image=container_image,
             )
-        )
+        ).create_handle()
     ).get_repository("demo_execution_repo")
 
 

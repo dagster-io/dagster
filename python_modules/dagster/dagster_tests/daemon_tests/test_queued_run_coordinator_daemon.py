@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster.core.host_representation.handle import RepositoryLocationHandle
+from dagster.core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -281,7 +281,8 @@ def test_location_handles_reused(instance, monkeypatch):
         status=PipelineRunStatus.QUEUED,
     )
 
-    original_method = RepositoryLocationHandle.create_from_repository_location_origin
+    original_method = ManagedGrpcPythonEnvRepositoryLocationOrigin.create_handle
+
     method_calls = []
 
     def mocked_create_location_handle(origin):
@@ -289,8 +290,8 @@ def test_location_handles_reused(instance, monkeypatch):
         return original_method(origin)
 
     monkeypatch.setattr(
-        RepositoryLocationHandle,
-        "create_from_repository_location_origin",
+        ManagedGrpcPythonEnvRepositoryLocationOrigin,
+        "create_handle",
         mocked_create_location_handle,
     )
 

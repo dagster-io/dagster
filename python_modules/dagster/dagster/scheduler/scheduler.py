@@ -12,7 +12,6 @@ from dagster.core.host_representation import (
     ExternalScheduleExecutionErrorData,
     PipelineSelector,
     RepositoryLocation,
-    RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
@@ -83,9 +82,8 @@ def launch_scheduled_runs(
     for schedule_state in schedules:
         error_info = None
         try:
-            with RepositoryLocationHandle.create_from_repository_location_origin(
-                schedule_state.origin.external_repository_origin.repository_location_origin
-            ) as repo_location_handle:
+            origin = schedule_state.origin.external_repository_origin.repository_location_origin
+            with origin.create_handle() as repo_location_handle:
                 repo_location = RepositoryLocation.from_handle(repo_location_handle)
 
                 launch_scheduled_runs_for_schedule(

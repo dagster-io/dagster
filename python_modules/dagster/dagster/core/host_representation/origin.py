@@ -70,6 +70,10 @@ class RepositoryLocationOrigin(ABC):
     def get_id(self):
         return create_snapshot_id(self)
 
+    @abstractmethod
+    def create_handle(self):
+        pass
+
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
@@ -100,6 +104,11 @@ class InProcessRepositoryLocationOrigin(
         return {
             "in_process_code_pointer": self.recon_repo.pointer.describe(),
         }
+
+    def create_handle(self):
+        from dagster.core.host_representation.handle import InProcessRepositoryLocationHandle
+
+        return InProcessRepositoryLocationHandle(self)
 
 
 @whitelist_for_serdes
@@ -142,6 +151,13 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
+    def create_handle(self):
+        from dagster.core.host_representation.handle import (
+            ManagedGrpcPythonEnvRepositoryLocationHandle,
+        )
+
+        return ManagedGrpcPythonEnvRepositoryLocationHandle(self)
+
 
 @whitelist_for_serdes
 class GrpcServerRepositoryLocationOrigin(
@@ -174,6 +190,11 @@ class GrpcServerRepositoryLocationOrigin(
     def get_display_metadata(self):
         metadata = {"host": self.host, "port": self.port, "socket": self.socket}
         return {key: value for key, value in metadata.items() if value is not None}
+
+    def create_handle(self):
+        from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+
+        return GrpcServerRepositoryLocationHandle(self)
 
 
 @whitelist_for_serdes

@@ -12,7 +12,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
@@ -110,36 +109,30 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
 
     try:
         with server_process.create_ephemeral_client() as api_client:
-            repository_location = GrpcServerRepositoryLocation(
-                RepositoryLocationHandle.create_from_repository_location_origin(
-                    GrpcServerRepositoryLocationOrigin(
-                        location_name="test",
-                        port=api_client.port,
-                        socket=api_client.socket,
-                        host=api_client.host,
-                    )
+            with GrpcServerRepositoryLocationOrigin(
+                location_name="test",
+                port=api_client.port,
+                socket=api_client.socket,
+                host=api_client.host,
+            ).create_handle() as handle:
+                repository_location = GrpcServerRepositoryLocation(handle)
+                yield repository_location.get_repository("nope").get_full_external_pipeline(
+                    pipeline_name
                 )
-            )
-
-            yield repository_location.get_repository("nope").get_full_external_pipeline(
-                pipeline_name
-            )
     finally:
         server_process.wait()
 
 
 @contextmanager
 def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name):
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                attribute="nope",
-                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
-            ),
-            location_name="nope",
-        )
-    ) as repository_location_handle:
+    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="nope",
+            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+        ),
+        location_name="nope",
+    ).create_handle() as repository_location_handle:
         repository_location = GrpcServerRepositoryLocation(repository_location_handle)
         yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
 

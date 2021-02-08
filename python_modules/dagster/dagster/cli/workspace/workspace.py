@@ -3,7 +3,7 @@ import warnings
 from collections import OrderedDict, namedtuple
 
 from dagster import check
-from dagster.core.host_representation import RepositoryLocationHandle, RepositoryLocationOrigin
+from dagster.core.host_representation import RepositoryLocationOrigin
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -79,7 +79,7 @@ class Workspace:
 
         origin = self._location_origin_dict[location_name]
         try:
-            handle = RepositoryLocationHandle.create_from_repository_location_origin(origin)
+            handle = origin.create_handle()
             self._location_handle_dict[location_name] = handle
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())

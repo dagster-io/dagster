@@ -29,7 +29,7 @@ from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph import _create_adjacency_lists
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
-from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
+from dagster.core.host_representation import RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test, step_output_event_filter
 from dagster.core.utility_solids import (
@@ -166,13 +166,11 @@ def test_diamond_toposort():
 
 
 def test_external_diamond_toposort():
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        location_origin_from_python_file(
-            python_file=__file__,
-            attribute="create_diamond_pipeline",
-            working_directory=None,
-        )
-    ) as handle:
+    with location_origin_from_python_file(
+        python_file=__file__,
+        attribute="create_diamond_pipeline",
+        working_directory=None,
+    ).create_handle() as handle:
         repo_location = RepositoryLocation.from_handle(handle)
         external_repo = next(iter(repo_location.get_repositories().values()))
         external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
