@@ -1,13 +1,23 @@
 import inspect
+from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from dagster import check
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 
+if TYPE_CHECKING:
+    from dagster.core.definitions.sensor import SensorExecutionContext
+
 
 def sensor(
-    pipeline_name, name=None, solid_selection=None, mode=None, minimum_interval_seconds=None
-):
+    pipeline_name: str,
+    name: Optional[str] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = None,
+    minimum_interval_seconds: Optional[int] = None,
+) -> Callable[
+    [Callable[["SensorExecutionContext"], Union[SkipReason, RunRequest]]], SensorDefinition
+]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
     decorated function may:
@@ -27,14 +37,16 @@ def sensor(
             ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing runs for this sensor.
             (default: 'default')
-        minimum_interval_seconds (Optional[str]): The minimum number of seconds that will elapse
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.  Practically, the time elapsed between sensor evaluations
             will be the shortest multiple of the sensor daemon evaluation interval (30 seconds) that
             is greater than or equal to this value.
     """
     check.opt_str_param(name, "name")
 
-    def inner(fn):
+    def inner(
+        fn: Callable[["SensorExecutionContext"], Union[SkipReason, RunRequest]]
+    ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
