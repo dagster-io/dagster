@@ -60,11 +60,6 @@
     "description": "Create a pipeline with hooks"
   },
   {
-    "name": "deploy_k8s",
-    "title": "Kubernetes Deployment",
-    "description": "Deploy Dagster on Kubernetes"
-  },
-  {
     "name": "multi_location",
     "title": "Multi-Location Workspace",
     "description": "Setup a Dagster workspace with multiple locations."
