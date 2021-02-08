@@ -216,15 +216,18 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 
 
 def get_test_project_external_repo(container_image=None):
-    return RepositoryLocation.from_handle(
+    return (
         InProcessRepositoryLocationOrigin(
             ReconstructableRepository.for_file(
                 file_relative_path(__file__, "test_pipelines/repo.py"),
                 "define_demo_execution_repo",
                 container_image=container_image,
             )
-        ).create_handle()
-    ).get_repository("demo_execution_repo")
+        )
+        .create_handle()
+        .create_location()
+        .get_repository("demo_execution_repo")
+    )
 
 
 def get_test_project_external_pipeline(pipeline_name, container_image=None):

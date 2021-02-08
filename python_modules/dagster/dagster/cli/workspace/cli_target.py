@@ -571,7 +571,7 @@ def get_repository_python_origin_from_kwargs(kwargs):
 def get_repository_location_from_kwargs(kwargs):
     origin = get_repository_location_origin_from_kwargs(kwargs)
     with origin.create_handle() as handle:
-        yield RepositoryLocation.from_handle(handle)
+        yield handle.create_location()
 
 
 def get_repository_location_origin_from_kwargs(kwargs):

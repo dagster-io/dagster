@@ -8,10 +8,7 @@ from dagster.cli.workspace.load import (
     load_workspace_from_yaml_paths,
     location_origins_from_config,
 )
-from dagster.core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-    RepositoryLocation,
-)
+from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationHandle
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils import file_relative_path
 
@@ -92,9 +89,9 @@ def test_multi_file_override_workspace():
         assert workspace.has_repository_location_handle("loaded_from_module")
         assert workspace.has_repository_location_handle("loaded_from_package")
 
-        loaded_from_file = RepositoryLocation.from_handle(
-            workspace.get_repository_location_handle("loaded_from_file")
-        )
+        loaded_from_file = workspace.get_repository_location_handle(
+            "loaded_from_file"
+        ).create_location()
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -117,9 +114,9 @@ def test_multi_file_extend_and_override_workspace():
         assert workspace.has_repository_location_handle("loaded_from_package")
         assert workspace.has_repository_location_handle("extra_location")
 
-        loaded_from_file = RepositoryLocation.from_handle(
-            workspace.get_repository_location_handle("loaded_from_file")
-        )
+        loaded_from_file = workspace.get_repository_location_handle(
+            "loaded_from_file"
+        ).create_location()
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()

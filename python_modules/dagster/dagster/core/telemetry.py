@@ -408,13 +408,12 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
 
 def log_workspace_stats(instance, workspace):
     from dagster.cli.workspace import Workspace
-    from dagster.core.host_representation import RepositoryLocation
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace, "workspace", Workspace)
 
     for repository_location_handle in workspace.repository_location_handles:
-        repo_location = RepositoryLocation.from_handle(repository_location_handle)
+        repo_location = repository_location_handle.create_location()
 
         for external_repo in repo_location.get_repositories().values():
             log_external_repo_stats(instance, source="dagit", external_repo=external_repo)

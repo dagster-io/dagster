@@ -51,7 +51,6 @@ from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
-from dagster.core.host_representation import RepositoryLocation
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
@@ -115,7 +114,7 @@ def get_main_external_repo():
         working_directory=None,
         location_name=main_repo_location_name(),
     ).create_handle() as handle:
-        yield RepositoryLocation.from_handle(handle).get_repository(main_repo_name())
+        yield handle.create_location().get_repository(main_repo_name())
 
 
 @lambda_solid(

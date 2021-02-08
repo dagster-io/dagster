@@ -8,10 +8,7 @@ import kubernetes
 import pytest
 from dagster import DagsterInstance, ScheduleDefinition
 from dagster.core.definitions import lambda_solid, pipeline, repository
-from dagster.core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocation,
-)
+from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster.core.scheduler.job import JobStatus, JobType
 from dagster.core.scheduler.scheduler import (
     DagsterScheduleDoesNotExist,
@@ -91,7 +88,7 @@ def get_test_external_repo():
         ),
         location_name="test_location",
     ).create_handle() as handle:
-        yield RepositoryLocation.from_handle(handle).get_repository("test_repository")
+        yield handle.create_location().get_repository("test_repository")
 
 
 @contextmanager

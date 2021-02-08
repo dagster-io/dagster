@@ -6,7 +6,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     PipelineHandle,
-    RepositoryLocation,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -39,7 +38,7 @@ def get_bar_repo_grpc_repository_location_handle():
 @contextmanager
 def get_bar_repo_handle():
     with get_bar_repo_repository_location_handle() as location_handle:
-        yield RepositoryLocation.from_handle(location_handle).get_repository("bar_repo").handle
+        yield location_handle.create_location().get_repository("bar_repo").handle
 
 
 @contextmanager

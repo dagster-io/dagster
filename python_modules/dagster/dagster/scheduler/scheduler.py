@@ -84,8 +84,7 @@ def launch_scheduled_runs(
         try:
             origin = schedule_state.origin.external_repository_origin.repository_location_origin
             with origin.create_handle() as repo_location_handle:
-                repo_location = RepositoryLocation.from_handle(repo_location_handle)
-
+                repo_location = repo_location_handle.create_location()
                 launch_scheduled_runs_for_schedule(
                     instance,
                     logger,

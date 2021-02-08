@@ -10,10 +10,7 @@ from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
 from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.execution.api import execute_pipeline
-from dagster.core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocation,
-)
+from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
@@ -109,7 +106,7 @@ def default_repo():
         loadable_target_origin=loadable_target_origin,
         location_name="test_location",
     ).create_handle() as handle:
-        yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
+        yield handle.create_location().get_repository("the_repo")
 
 
 def repos():

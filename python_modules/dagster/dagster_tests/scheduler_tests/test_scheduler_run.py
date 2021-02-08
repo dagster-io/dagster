@@ -25,7 +25,6 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocation,
 )
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
@@ -326,7 +325,7 @@ def default_repo():
         loadable_target_origin=loadable_target_origin,
         location_name="test_location",
     ).create_handle() as handle:
-        yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
+        yield handle.create_location().get_repository("the_repo")
 
 
 def repos():

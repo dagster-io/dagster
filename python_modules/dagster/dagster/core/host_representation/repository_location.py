@@ -23,7 +23,6 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationHandle,
     PipelineHandle,
     RepositoryHandle,
-    RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import (
@@ -133,23 +132,6 @@ class RepositoryLocation(ABC):
     @abstractproperty
     def is_reload_supported(self):
         pass
-
-    @staticmethod
-    def from_handle(repository_location_handle):
-        check.inst_param(
-            repository_location_handle, "repository_location_handle", RepositoryLocationHandle
-        )
-        if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
-            return InProcessRepositoryLocation(repository_location_handle)
-        elif isinstance(
-            repository_location_handle, GrpcServerRepositoryLocationHandle
-        ) or isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
-            return GrpcServerRepositoryLocation(repository_location_handle)
-        else:
-            check.failed("Unsupported handle: {}".format(repository_location_handle))
-
-    def create_reloaded_repository_location(self):
-        return RepositoryLocation.from_handle(self.location_handle.create_reloaded_handle())
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
