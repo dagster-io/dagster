@@ -538,7 +538,7 @@ class AssetMaterialization(
     Args:
         asset_key (str|List[str]|AssetKey): A key to identify the materialized asset across pipeline
             runs
-        description (Optional[str]): A longer human-radable description of the materialized value.
+        description (Optional[str]): A longer human-readable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
         partition (Optional[str]): The name of the partition that was materialized.
