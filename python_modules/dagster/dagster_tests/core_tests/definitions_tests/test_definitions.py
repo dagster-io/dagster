@@ -98,7 +98,7 @@ def test_solid_def():
 
 
 def test_solid_def_bad_input_name():
-    with pytest.raises(DagsterInvalidDefinitionError, match="context is not allowed"):
+    with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
         # pylint: disable=unused-variable
         @solid(input_defs=[InputDefinition("context", String)])
         def solid_one(_, _context):

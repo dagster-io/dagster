@@ -41,14 +41,16 @@ def has_valid_name_chars(name):
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name):
+def check_valid_name(name: str):
     check.str_param(name, "name")
     if name in DISALLOWED_NAMES:
-        raise DagsterInvalidDefinitionError("{name} is not allowed.".format(name=name))
+        raise DagsterInvalidDefinitionError(
+            f'"{name}" is not a valid name in Dagster. It conflicts with a Dagster or python reserved keyword.'
+        )
 
     if not has_valid_name_chars(name):
         raise DagsterInvalidDefinitionError(
-            "{name} must be in regex {regex}".format(name=name, regex=VALID_NAME_REGEX_STR)
+            f'"{name}" is not a valid name in Dagster. Names must be in regex {VALID_NAME_REGEX_STR}.'
         )
 
     check.invariant(is_valid_name(name))
