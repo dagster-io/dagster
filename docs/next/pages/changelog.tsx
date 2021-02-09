@@ -1,15 +1,12 @@
 import MDXComponents, {
   SearchIndexContext,
 } from "../components/mdx/MDXComponents";
-import { SphinxPrefix, sphinxPrefixFromPage } from "../util/useSphinx";
-import { useVersion, versionFromPage } from "../util/useVersion";
 
 import { GetStaticProps } from "next";
 import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
 import SidebarNavigation from "components/mdx/SidebarNavigation";
-import { allPaths } from "util/useNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
 import hydrate from "next-mdx-remote/hydrate";
@@ -20,6 +17,7 @@ import rehypePlugins from "components/mdx/rehypePlugins";
 import remark from "remark";
 import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
+import { useVersion } from "../util/useVersion";
 import visit from "unist-util-visit";
 
 const components: MdxRemote.Components = MDXComponents;
@@ -256,7 +254,7 @@ function getItems(node, current) {
   return {};
 }
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async () => {
   const githubLink = new URL(
     path.join("dagster-io/dagster/blob/master/CHANGES.md"),
     "https://github.com"
@@ -301,10 +299,3 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 };
-
-export function getStaticPaths({}) {
-  return {
-    paths: allPaths(),
-    fallback: true,
-  };
-}
