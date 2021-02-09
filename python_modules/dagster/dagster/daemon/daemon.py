@@ -37,7 +37,7 @@ def get_default_daemon_logger(daemon_name):
 class DagsterDaemon:
     def __init__(self, interval_seconds):
         self._logger = get_default_daemon_logger(type(self).__name__)
-        self.interval_seconds = check.int_param(interval_seconds, "interval_seconds")
+        self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
