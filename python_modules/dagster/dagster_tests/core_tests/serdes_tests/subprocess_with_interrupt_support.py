@@ -2,13 +2,13 @@
 import sys
 import time
 
-from dagster.utils.interrupts import setup_windows_interrupt_support
+from dagster.utils.interrupts import setup_interrupt_handlers
 
 if __name__ == "__main__":
-    setup_windows_interrupt_support()
+    setup_interrupt_handlers()
     started_sentinel, interrupt_sentinel = (sys.argv[1], sys.argv[2])
     with open(started_sentinel, "w") as fd:
-        fd.write("setup_windows_interrupt_support")
+        fd.write("setup_interrupt_handlers")
     try:
         while True:
             time.sleep(0.1)
