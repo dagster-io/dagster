@@ -342,8 +342,21 @@
       },
 
       {
+        "title": "Deploy on GCP",
+        "children": [
+          {
+            "title": "GCP Deployment Overview",
+            "path": "/deployment/gcp/overview"
+          }
+        ]
+      },
+      {
         "title": "Deploy on AWS",
         "children": [
+          {
+            "title": "AWS Deployment Overview",
+            "path": "/deployment/aws/overview"
+          },
           {
             "title": "EC2 Deployment Guide",
             "path": "/deployment/guides/overview"
@@ -361,6 +374,10 @@
       {
         "title": "Deploy on Kubernetes",
         "children": [
+          {
+            "title": "Overview",
+            "path": "/deployment/kubernetes/overview"
+          },
           {
             "title": "K8s Executor & Launcher",
             "path": "/deployment/guides/overview"
@@ -380,19 +397,36 @@
         ]
       },
       {
+        "title": "Deploy on Docker",
+        "children": [
+          {
+            "title": "Overview",
+            "path": "/deployment/custom-infra/docker"
+          }
+        ]
+      },
+      {
         "title": "Deploy on Custom Infra",
         "children": [
           {
-            "title": "Single-node Deployment",
-            "path": "/deployment/guides/overview"
+            "title": "Execute on Celery",
+            "path": "/deployment/custom-infra/celery"
           },
           {
-            "title": "Celery-based Deployment",
-            "path": "/deployment/guides/overview"
+            "title": "Execute on Dask",
+            "path": "/deployment/custom-infra/dask"
           },
           {
-            "title": "Writing a custom run Launcher",
-            "path": "/deployment/guides/overview"
+            "title": "Execute on Airflow",
+            "path": "/deployment/custom-infra/airflow"
+          },
+          {
+            "title": "Writing a Custom Run Launcher",
+            "path": "/deployment/custom-infra/custom-run-launcher"
+          },
+          {
+            "title": "Run Dagster Locally",
+            "path": "/deployment/custom-infra/local"
           }
         ]
       },
