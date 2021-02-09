@@ -128,8 +128,8 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
 };
 
 const ExecutionTabsContainer = styled.div`
-  padding-left: 10px;
-  padding-top: 10px;
+  padding-left: 20px;
+  padding-top: 12px;
   display; flex;
   z-index: 1;
   flex-direction: row;
