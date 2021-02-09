@@ -23,10 +23,15 @@ Dagster type-checking happens at solid execution time - each type defines a `typ
 
 Let's look back at our simple `read_csv` solid.
 
-```python literalinclude showLines startLine=8 caption=inputs_typed.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_typed.py
-startAfter:start_inputs_typed_marker_0
-endBefore:end_inputs_typed_marker_0
+```python file=/intro_tutorial/basics/e04_quality/inputs_typed.py startafter=start_inputs_typed_marker_0 endbefore=end_inputs_typed_marker_0
+@solid
+def read_csv(context, csv_path: str):
+    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    with open(csv_path, "r") as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info(f"Read {len(lines)} lines")
+    return lines
 ```
 
 The `lines` object returned by Python's built-in `csv.DictReader` is a list of
@@ -60,18 +65,37 @@ receive data in this format.
 To do this, we'll construct a <PyObject module="dagster" object="DagsterType" displayText="DagsterType"
 /> that verifies an object is a list of dictionaries.
 
-```python literalinclude  showLines startLine=7 caption=custom_types.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types.py
-startAfter:start_custom_types_marker_0
-endBefore:end_custom_types_marker_0
+```python file=/intro_tutorial/basics/e04_quality/custom_types.py startafter=start_custom_types_marker_0 endbefore=end_custom_types_marker_0
+def is_list_of_dicts(_, value):
+    return isinstance(value, list) and all(
+        isinstance(element, dict) for element in value
+    )
+
+
+SimpleDataFrame = DagsterType(
+    name="SimpleDataFrame",
+    type_check_fn=is_list_of_dicts,
+    description="A naive representation of a data frame, e.g., as returned by csv.DictReader.",
+)
 ```
 
 Now we can annotate the rest of our pipeline with our new type:
 
-```python literalinclude showLines startLine=16 emphasize-lines=1,11 caption=custom_types.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types.py
-startAfter:start_custom_types_marker_1
-endBefore:end_custom_types_marker_1
+```python file=/intro_tutorial/basics/e04_quality/custom_types.py startafter=start_custom_types_marker_1 endbefore=end_custom_types_marker_1
+@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+def read_csv(context, csv_path: str):
+    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    with open(csv_path, "r") as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info(f"Read {len(lines)} lines")
+    return lines
+
+
+@solid(input_defs=[InputDefinition("cereals", SimpleDataFrame)])
+def sort_by_calories(context, cereals):
+    sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
+    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 ```
 
 The type metadata now appears in Dagit and the system will ensure the input and output to this solid
@@ -93,10 +117,15 @@ of type `SimpleDataFrame`.
 Now, if our solid logic fails to return the right type, we'll see a type check failure, which will
 fai the pipeline. Let's replace our `read_csv` solid with the following bad logic:
 
-```python literalinclude showLines startLine=34 caption=custom_types_2.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_2.py
-startAfter:start_custom_types_2_marker_1
-endBefore:end_custom_types_2_marker_1
+```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
+@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+def bad_read_csv(context):
+    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    with open(csv_path, "r") as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info(f"Read {len(lines)} lines")
+    return ["not_a_dict"]
 ```
 
 When we run the pipeline with this solid, we'll see an error in your terminal like:
@@ -122,10 +151,60 @@ check functions can optionally return a <PyObject module="dagster" object="TypeC
 contains metadata about the success or failure of the type check. Let's see how to use this to emit
 some summary statistics about our DataFrame type:
 
-```python literalinclude showLines startLine=19 emphasize-lines=3-9,33-53 caption=custom_types_4.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_4.py
-startAfter:start_custom_types_4_marker_0
-endBefore:end_custom_types_4_marker_0
+```python file=/intro_tutorial/basics/e04_quality/custom_types_4.py startafter=start_custom_types_4_marker_0 endbefore=end_custom_types_4_marker_0
+def less_simple_data_frame_type_check(_, value):
+    if not isinstance(value, list):
+        return TypeCheck(
+            success=False,
+            description=(
+                "LessSimpleDataFrame should be a list of dicts, got "
+                "{type_}"
+            ).format(type_=type(value)),
+        )
+
+    fields = [field for field in value[0].keys()]
+
+    for i in range(len(value)):
+        row = value[i]
+        if not isinstance(row, dict):
+            return TypeCheck(
+                success=False,
+                description=(
+                    "LessSimpleDataFrame should be a list of dicts, "
+                    "got {type_} for row {idx}"
+                ).format(type_=type(row), idx=(i + 1)),
+            )
+        row_fields = [field for field in row.keys()]
+        if fields != row_fields:
+            return TypeCheck(
+                success=False,
+                description=(
+                    "Rows in LessSimpleDataFrame should have the same fields, "
+                    "got {actual} for row {idx}, expected {expected}"
+                ).format(actual=row_fields, idx=(i + 1), expected=fields),
+            )
+
+    return TypeCheck(
+        success=True,
+        description="LessSimpleDataFrame summary statistics",
+        metadata_entries=[
+            EventMetadataEntry.text(
+                str(len(value)),
+                "n_rows",
+                "Number of rows seen in the data frame",
+            ),
+            EventMetadataEntry.text(
+                str(len(value[0].keys()) if len(value) > 0 else 0),
+                "n_cols",
+                "Number of columns seen in the data frame",
+            ),
+            EventMetadataEntry.text(
+                str(list(value[0].keys()) if len(value) > 0 else []),
+                "column_names",
+                "Keys of columns seen in the data frame",
+            ),
+        ],
+    )
 ```
 
 A <PyObject module="dagster" object="TypeCheck" displayText="TypeCheck" /> must include a `success`

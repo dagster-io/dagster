@@ -44,14 +44,36 @@ First, run `pip install dagster-dask`.
 
 Then, you'll need to add the dask executor to a **`ModeDefinition`** on your pipeline:
 
-```python literalinclude caption=dask_hello_world.py
-file:/docs_snippets/docs_snippets/deploying/dask_hello_world.py
+```python file=/deploying/dask_hello_world.py
+from dagster import ModeDefinition, default_executors, fs_io_manager, pipeline, solid
+from dagster_dask import dask_executor
+
+
+@solid
+def hello_world(_):
+    return "Hello, World!"
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager},
+            executor_defs=default_executors + [dask_executor],
+        )
+    ]
+)
+def dask_pipeline():
+    return hello_world()
 ```
 
 Now you can run this pipeline with a config block such as the following:
 
-```python literalinclude caption=dask_hello_world.yaml
-file:/docs_snippets/docs_snippets/deploying/dask_hello_world.yaml
+```python file=/deploying/dask_hello_world.yaml
+execution:
+  dask:
+    config:
+      cluster:
+        local:
 ```
 
 Executing this pipeline will spin up local Dask execution, run the
@@ -71,8 +93,17 @@ use the **`s3_system_storage`**)
 For distributing task execution on a Dask cluster, you must provide a
 config block that includes the address/port of the Dask scheduler:
 
-```python literalinclude caption=dask_remote.yaml
-file:/docs_snippets/docs_snippets/deploying/dask_remote.yaml
+```python file=/deploying/dask_remote.yaml
+resources:
+  io_manager:
+    config:
+      s3_bucket: your_bucket_name
+execution:
+  dask:
+    config:
+      cluster:
+        existing:
+          address: "dask_scheduler.dns_name:8787"
 ```
 
 Since Dask will invoke your pipeline code on the cluster workers, you

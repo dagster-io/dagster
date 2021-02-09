@@ -24,10 +24,10 @@ Dagster provides the concept of a repository, a collection of pipelines (and oth
 the Dagster tools can target as a whole. Repositories are declared using the <PyObject
 module="dagster" object="RepositoryDefinition" /> API as follows:
 
-```python literalinclude showLines startLine=15 caption=repos.py
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/repos.py
-startAfter:start_repos_marker_0
-endBefore:end_repos_marker_0
+```python file=/intro_tutorial/advanced/repositories/repos.py startafter=start_repos_marker_0 endbefore=end_repos_marker_0
+@repository
+def hello_cereal_repository():
+    return [hello_cereal_pipeline, complex_pipeline]
 ```
 
 This method returns a list of items, each one of which can be a pipeline, a schedule, or a partition set.
@@ -39,10 +39,18 @@ pipeline construction time can be large. In these cases, it may behoove you to o
 on demand. For that, you can also return a dictionary of function references, which are constructed
 on demand:
 
-```python literalinclude showLines startLine=15 caption=repos.py
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/lazy_repos.py
-startAfter:start_lazy_repos_marker_0
-endBefore:end_lazy_repos_marker_0
+```python file=/intro_tutorial/advanced/repositories/lazy_repos.py startafter=start_lazy_repos_marker_0 endbefore=end_lazy_repos_marker_0
+@repository
+def hello_cereal_repository():
+    # Note that we can pass a dict of functions, rather than a list of
+    # pipeline definitions. This allows us to construct pipelines lazily,
+    # if, e.g., initializing a pipeline involves any heavy compute
+    return {
+        "pipelines": {
+            "hello_cereal_pipeline": lambda: hello_cereal_pipeline,
+            "complex_pipeline": lambda: complex_pipeline,
+        }
+    }
 ```
 
 Note that the name of the pipeline in the `RepositoryDefinition` must match the name we declared for
@@ -95,8 +103,9 @@ pip install -e docs_snippets  # Run this in the `examples/` directory.
 
 Then, you can configure your `workspace.yaml` to load pipelines from this package.
 
-```YAML literalinclude caption=workspace.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/workspace.yaml
+```yaml file=/intro_tutorial/advanced/repositories/workspace.yaml
+load_from:
+  - python_package: docs_snippets.intro_tutorial.advanced.repositories.repos
 ```
 
 ### Supporting multiple repositories
@@ -104,8 +113,10 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/workspace
 You can also use `workspace.yaml` to load multiple repositories. This can be useful for organization
 purposes, in order to group pipelines and other artifacts by team.
 
-```YAML literalinclude caption=multi_repo_workspace.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
+```yaml file=/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
+load_from:
+  - python_package: docs_snippets.intro_tutorial.advanced.repositories.repos
+  - python_file: repos.py
 ```
 
 Load it:
@@ -124,8 +135,14 @@ communicate with those repositories using a cross-process RPC protocol.
 
 Via the workspace, you can configure a different executable_path for each of your repositories. For example:
 
-```YAML literalinclude caption=multi_python_env_workspace_example.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
+```yaml file=/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
+load_from:
+  - python_file:
+      relative_path: "/path/to/team/pipelines.py"
+      executable_path: "/path/to/team/virtualenv/bin/python"
+  - python_package:
+      package_name: "other_team_package"
+      executable_path: "/path/to/other_/virtualenv/bin/python"
 ```
 
 For this example to work, you need to change the executable paths to point a virtual environment

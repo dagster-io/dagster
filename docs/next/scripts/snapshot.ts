@@ -19,7 +19,7 @@ import { parse as yaml } from "yaml";
       .use(frontmatter)
       .use(extract, { yaml: yaml })
       .use({
-        // This is for compatability with Prettier settings
+        // This is for compatibility with Prettier settings
         settings: {
           bullet: "-",
           emphasis: "_",

@@ -55,8 +55,28 @@ We support two modes of execution (each of which uses its own operator):
 
 For this quickstart, we'll use our familiar, simple demo pipeline:
 
-```python literalinclude caption=airflow.py
-file:/docs_snippets/docs_snippets/intro_tutorial/airflow.py
+```python file=/intro_tutorial/airflow.py
+import csv
+
+from dagster import pipeline, solid
+from dagster.utils import file_relative_path
+
+
+@solid
+def hello_cereal(context):
+    dataset_path = file_relative_path(__file__, "cereal.csv")
+    context.log.info(dataset_path)
+    with open(dataset_path, "r") as fd:
+        cereals = [row for row in csv.DictReader(fd)]
+
+    context.log.info(
+        "Found {n_cereals} cereals".format(n_cereals=len(cereals))
+    )
+
+
+@pipeline
+def hello_cereal_pipeline():
+    hello_cereal()
 ```
 
 To compile this existing pipeline to Airflow, we'll use the
@@ -72,8 +92,55 @@ Wrote DAG scaffold to file: $AIRFLOW_HOME/dags/hello_cereal_pipeline.py
 
 Let's take a look at the generated file:
 
-```python literalinclude caption=hello_cereal_pipeline.py
-file:/docs_snippets/docs_snippets/intro_tutorial/hello_cereal_pipeline.py
+```python file=/intro_tutorial/hello_cereal_pipeline.py
+"""
+The airflow DAG scaffold for docs_snippets.intro_tutorial.airflow.hello_cereal_pipeline
+
+Note that this docstring must contain the strings "airflow" and "DAG" for
+Airflow to properly detect it as a DAG
+See: http://bit.ly/307VMum
+"""
+import datetime
+
+import yaml
+from dagster_airflow.factory import make_airflow_dag
+
+################################################################################
+# #
+# # This environment is auto-generated from your configs and/or presets
+# #
+################################################################################
+ENVIRONMENT = """
+intermediate_storage:
+  filesystem:
+    config:
+      base_dir: /tmp/dagster-airflow/hello_cereal_pipeline
+
+"""
+
+
+################################################################################
+# #
+# # NOTE: these arguments should be edited for your environment
+# #
+################################################################################
+DEFAULT_ARGS = {
+    "owner": "airflow",
+    "depends_on_past": False,
+    "start_date": datetime.datetime(2019, 11, 7),
+    "email": ["airflow@example.com"],
+    "email_on_failure": False,
+    "email_on_retry": False,
+}
+
+dag, tasks = make_airflow_dag(
+    # NOTE: you must ensure that docs_snippets.intro_tutorial.airflow is
+    # installed or available on sys.path, otherwise, this import will fail.
+    module_name="docs_snippets.intro_tutorial.airflow",
+    pipeline_name="hello_cereal_pipeline",
+    run_config=yaml.safe_load(ENVIRONMENT),
+    dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
+)
 ```
 
 This is a fairly straightforward file with four parts.

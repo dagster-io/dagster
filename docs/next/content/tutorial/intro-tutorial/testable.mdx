@@ -26,10 +26,17 @@ object="PipelineExecutionResult" />) whose methods let us investigate, in detail
 failure of execution, the outputs produced by solids, and (as we'll see later) other events
 associated with execution.
 
-```python literalinclude showLines startLine=32 caption=hello_cereal_with_tests.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py
-startAfter:start_hello_cereal_with_tests_marker_0
-endBefore:end_hello_cereal_with_tests_marker_0
+```python file=/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py startafter=start_hello_cereal_with_tests_marker_0 endbefore=end_hello_cereal_with_tests_marker_0
+def test_hello_cereal_solid():
+    res = execute_solid(hello_cereal)
+    assert res.success
+    assert len(res.output_value()) == 77
+
+
+def test_hello_cereal_pipeline():
+    res = execute_pipeline(hello_cereal_pipeline)
+    assert res.success
+    assert len(res.result_for_solid("hello_cereal").output_value()) == 77
 ```
 
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your data

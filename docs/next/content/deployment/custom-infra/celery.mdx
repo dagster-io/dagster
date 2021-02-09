@@ -30,8 +30,27 @@ execute the steps to which the tasks correspond.
 Let's construct a very parallel toy pipeline and then execute it using
 the Celery executor.
 
-```python literalinclude caption=celery_pipeline.py
-file:/docs_snippets/docs_snippets/deploying/celery_pipeline.py
+```python file=/deploying/celery_pipeline.py
+from dagster import ModeDefinition, default_executors, fs_io_manager, pipeline, solid
+from dagster_celery import celery_executor
+
+celery_mode_defs = [
+    ModeDefinition(
+        resource_defs={"io_manager": fs_io_manager},
+        executor_defs=default_executors + [celery_executor],
+    )
+]
+
+
+@solid
+def not_much(_):
+    return
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def parallel_pipeline():
+    for i in range(50):
+        not_much.alias("not_much_" + str(i))()
 ```
 
 Save this pipeline as `celery_pipeline.py`.
@@ -62,8 +81,9 @@ dagit -f celery_pipeline.py
 Now you can execute the parallel pipeline from Dagit with the following
 config:
 
-```yaml literalinclude caption=celery.yaml
-file:/docs_snippets/docs_snippets/deploying/celery.yaml
+```yaml file=/deploying/celery.yaml
+execution:
+  celery:
 ```
 
 ## Ensuring workers are in sync
@@ -93,8 +113,39 @@ You can do this by adding a block such as the following to your
 `$DAGSTER_HOME/dagster.yaml` when the `DAGSTER_HOME` environment
 variable is set):
 
-```python literalinclude caption=dagster-pg.yaml
-file:/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+```python file=/deploying/dagster-pg.yaml
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { database }
+      port: { port }
+
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { db_name }
+      port: { port }
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { db_name }
+      port: { port }
 ```
 
 **The same instance config must be present in Dagit's environment and

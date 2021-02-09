@@ -18,8 +18,39 @@ events data. You can configure Dagit to use Cloud SQL to run and events
 data by setting blocks in your `$DAGSTER_HOME/dagster.yaml`
 appropriately:
 
-```python literalinclude caption=dagster-pg.yaml
-file:/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+```python file=/deploying/dagster-pg.yaml
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { database }
+      port: { port }
+
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { db_name }
+      port: { port }
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { db_name }
+      port: { port }
 ```
 
 In this case, you'll want to ensure you provide the right connection

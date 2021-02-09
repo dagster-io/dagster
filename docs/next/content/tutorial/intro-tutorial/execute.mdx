@@ -40,10 +40,24 @@ decorator.
 The logic in our first solid is very straightforward: it just reads in the csv from a hardcoded path
 and logs the number of rows it finds.
 
-```python literalinclude showLines caption=hello_cereal.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
-startAfter:start_solid_marker
-endBefore:end_solid_marker
+```python file=/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py startafter=start_solid_marker endbefore=end_solid_marker
+import csv
+import os
+
+from dagster import pipeline, solid
+
+
+@solid
+def hello_cereal(context):
+    # Assumes the dataset is in the same directory as this Python file
+    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    with open(dataset_path, "r") as fd:
+        # Read the rows in using the standard csv library
+        cereals = [row for row in csv.DictReader(fd)]
+
+    context.log.info(f"Found {len(cereals)} cereals")
+
+    return cereals
 ```
 
 In this simple case, our solid takes no arguments except for the <PyObject module="dagster"
@@ -60,10 +74,10 @@ arranged into a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of c
 typically define pipelines by annotating ordinary Python functions with the <PyObject
 module="dagster" object="pipeline" displayText="@pipeline" /> decorator.
 
-```python literalinclude showLines startLine=22 caption=hello_cereal.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
-startAfter:start_pipeline_marker
-endBefore:end_pipeline_marker
+```python file=/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+@pipeline
+def hello_cereal_pipeline():
+    hello_cereal()
 ```
 
 Here you'll see that we call `hello_cereal()`. This call doesn't actually execute the
@@ -145,10 +159,11 @@ If you'd rather execute your pipelines as a script, you can do that without
 using the Dagster CLI at all. Just add a few lines to
 `hello_cereal.py`
 
-```python literalinclude showLines startLine=27 caption=hello_cereal.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
-startAfter:start_execute_marker
-endBefore:end_execute_marker
+```python file=/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py startafter=start_execute_marker endbefore=end_execute_marker
+from dagster import execute_pipeline
+
+if __name__ == "__main__":
+    result = execute_pipeline(hello_cereal_pipeline)
 ```
 
 Now you can just run:

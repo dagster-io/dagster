@@ -29,10 +29,27 @@ common third party tools.
 Let's replace `sort_hot_cereals_by_calories` and `sort_cold_cereals_by_calories` by two aliases of
 the same library solid:
 
-```python literalinclude showLines startLine=56 emphasize-lines=17-18 caption=reusable_solids.py
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/reusable_solids.py
-startAfter:start_reusable_solids_marker_0
-endBefore:end_reusable_solids_marker_0
+```python file=/intro_tutorial/advanced/solids/reusable_solids.py startafter=start_reusable_solids_marker_0 endbefore=end_reusable_solids_marker_0
+@solid(config_schema=String)
+def sort_cereals_by_calories(context, cereals):
+    sorted_cereals = sorted(
+        cereals, key=lambda cereal: int(cereal["calories"])
+    )
+    context.log.info(
+        "Least caloric {cereal_type} cereal: {least_caloric}".format(
+            cereal_type=context.solid_config,
+            least_caloric=sorted_cereals[0]["name"],
+        )
+    )
+
+
+@pipeline
+def reusable_solids_pipeline():
+    hot_cereals, cold_cereals = split_cereals(read_csv())
+    sort_hot_cereals = sort_cereals_by_calories.alias("sort_hot_cereals")
+    sort_cold_cereals = sort_cereals_by_calories.alias("sort_cold_cereals")
+    sort_hot_cereals(hot_cereals)
+    sort_cold_cereals(cold_cereals)
 ```
 
 You'll see that Dagit distinguishes between the two invocations of the single library solid and the
@@ -44,8 +61,16 @@ within this pipeline.
 
 Configuring solids also uses the aliases, as in the following YAML:
 
-```YAML literalinclude emphasize-lines=6,8 caption=reusable_solids.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/reusable_solids.yaml
+```yaml file=/intro_tutorial/advanced/solids/reusable_solids.yaml
+solids:
+  read_csv:
+    inputs:
+      csv_path:
+        value: "cereal.csv"
+  sort_cold_cereals:
+    config: "cold"
+  sort_hot_cereals:
+    config: "hot"
 ```
 
 <br />
@@ -63,10 +88,12 @@ As an example, let's compose two instances of a complex, general-purpose `read_c
 some domain-specific logic for the specific purpose of joining our cereal dataset with a lookup
 table providing human-readable names for the cereal manufacturers.
 
-```python literalinclude showLines startLine=128 caption=composite_solids.py
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/composite_solids.py
-startAfter:start_composite_solids_marker_0
-endBefore:end_composite_solids_marker_0
+```python file=/intro_tutorial/advanced/solids/composite_solids.py startafter=start_composite_solids_marker_0 endbefore=end_composite_solids_marker_0
+@composite_solid
+def load_cereals() -> DataFrame:
+    read_cereals = read_csv.alias("read_cereals")
+    read_manufacturers = read_csv.alias("read_manufacturers")
+    return join_cereal(read_cereals(), read_manufacturers())
 ```
 
 Defining a composite solid is similar to defining a pipeline, except
@@ -86,8 +113,20 @@ solid as a whole.
 
 Config for the individual solids making up the composite is nested, as follows:
 
-```YAML literalinclude emphasize-lines=1-3 caption=composite_solids.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/composite_solids.yaml
+```yaml file=/intro_tutorial/advanced/solids/composite_solids.yaml
+solids:
+  load_cereals:
+    solids:
+      read_cereals:
+        inputs:
+          csv_path:
+            value: "cereal.csv"
+      read_manufacturers:
+        config:
+          delimiter: ";"
+        inputs:
+          csv_path:
+            value: "manufacturers.csv"
 ```
 
 When we execute this pipeline, Dagit includes information about the nesting of individual execution

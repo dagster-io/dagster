@@ -9,28 +9,68 @@ description: Solids can be parameterized with runtime configuration
 
 So far, we've seen a solid whose behavior is the same every time it runs:
 
-```python literalinclude showLines emphasize-lines=7 caption=hello_cereal.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
-lines:7-20
+```python file=/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py lines=10-20
+@solid
+def hello_cereal(context):
+    # Assumes the dataset is in the same directory as this Python file
+    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    with open(dataset_path, "r") as fd:
+        # Read the rows in using the standard csv library
+        cereals = [row for row in csv.DictReader(fd)]
+
+    context.log.info(f"Found {len(cereals)} cereals")
+
+    return cereals
 ```
 
 In many situations, we'd like to be able to configure solids at run time. For example, we may want
 whomever is running the pipeline to decide what dataset it operates on. Appropriately
 parameterized solids are more testable and reusable. Consider the following more generic solid:
 
-```python literalinclude showLines startLine=7 caption=inputs.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-lines:8-15
+```python file=/intro_tutorial/basics/e02_solids/inputs.py lines=8-15
+@solid
+def read_csv(context, csv_path):
+    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    with open(csv_path, "r") as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    return lines
 ```
 
 Here, rather than hard-coding the value of `dataset_path`, we use config option, `csv_name`.
 
 Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
-```python literalinclude showLines emphasize-lines=38 caption=inputs.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-startAfter:start_inputs_marker_0
-endBefore:end_inputs_marker_0
+```python file=/intro_tutorial/basics/e02_solids/inputs.py startafter=start_inputs_marker_0 endbefore=end_inputs_marker_0
+import csv
+import os
+
+from dagster import execute_pipeline, pipeline, solid
+
+
+@solid
+def read_csv(context, csv_path):
+    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    with open(csv_path, "r") as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    return lines
+
+
+@solid
+def sort_by_calories(context, cereals):
+    sorted_cereals = sorted(
+        cereals, key=lambda cereal: int(cereal["calories"])
+    )
+
+    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
+
+
+@pipeline
+def inputs_pipeline():
+    sort_by_calories(read_csv())
 ```
 
 <br />
@@ -89,11 +129,12 @@ This dict contains all of the user-provided configuration with which to execute 
 it can have [a lot of sections](/\_apidocs/execution), but we'll only use one of
 them here: per-solid configuration, which is specified under the key `solids`:
 
-```python literalinclude showLines caption=inputs.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-startAfter:start_inputs_marker_1
-endBefore:end_inputs_marker_1
-dedent:4
+```python file=/intro_tutorial/basics/e02_solids/inputs.py startafter=start_inputs_marker_1 endbefore=end_inputs_marker_1
+run_config = {
+        "solids": {
+            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
+        }
+    }
 ```
 
 The `solids` dict is keyed by solid name, and each solid is configured by a dict that may itself
@@ -102,11 +143,8 @@ have several sections. In this case, we are interested in the `config` section.
 Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" />:
 
-```python literalinclude showLines caption=inputs.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-startAfter:start_inputs_marker_2
-endBefore:end_inputs_marker_2
-dedent:4
+```python file=/intro_tutorial/basics/e02_solids/inputs.py startafter=start_inputs_marker_2 endbefore=end_inputs_marker_2
+result = execute_pipeline(inputs_pipeline, run_config=run_config)
 ```
 
 ### YAML fragments and Dagster CLI
@@ -114,8 +152,12 @@ dedent:4
 When executing pipelines with the Dagster CLI, we'll need to provide the run config in a file. We
 use YAML for the file-based representation of configuration, but the values are the same as before:
 
-```YAML literalinclude showLines caption=inputs_env.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
+```yaml file=/intro_tutorial/basics/e02_solids/inputs_env.yaml
+solids:
+  read_csv:
+    inputs:
+      csv_path:
+        value: "cereal.csv"
 ```
 
 We can pass config files in this format to the Dagster CLI tool with the `-c` flag.

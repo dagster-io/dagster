@@ -11,7 +11,7 @@ def read_csv(context, csv_path: str):
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
-    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    context.log.info(f"Read {len(lines)} lines")
     return lines
 
 
@@ -39,10 +39,12 @@ def inputs_pipeline():
 
 
 if __name__ == "__main__":
-    run_config = {
-        "solids": {
-            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
-        }
-    }
-    result = execute_pipeline(inputs_pipeline, run_config=run_config)
+    result = execute_pipeline(
+        inputs_pipeline,
+        run_config={
+            "solids": {
+                "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
+            }
+        },
+    )
     assert result.success
