@@ -25,6 +25,7 @@ from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_temp
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
+from dagster.utils.test import FilesystemTestScheduler
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 
@@ -60,6 +61,11 @@ def graphql_postgres_instance(overrides):
                             "module": "dagster_postgres.schedule_storage.schedule_storage",
                             "class": "PostgresScheduleStorage",
                             "config": {"postgres_url": pg_conn_string},
+                        },
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
                         },
                     },
                     overrides if overrides else {},
@@ -100,6 +106,7 @@ class InstanceManagers:
                     run_launcher=SyncInMemoryRunLauncher(),
                     run_coordinator=DefaultRunCoordinator(),
                     schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
+                    scheduler=FilesystemTestScheduler(temp_dir),
                 )
 
         return MarkedManager(_in_memory_instance, [Marks.in_memory_instance])
@@ -118,6 +125,7 @@ class InstanceManagers:
                     run_launcher=ExplodingRunLauncher(),
                     run_coordinator=DefaultRunCoordinator(),
                     schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
+                    scheduler=FilesystemTestScheduler(temp_dir),
                 )
 
         return MarkedManager(
@@ -200,6 +208,11 @@ class InstanceManagers:
                 with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
+                        },
                         "run_coordinator": {
                             "module": "dagster.core.run_coordinator.queued_run_coordinator",
                             "class": "QueuedRunCoordinator",
@@ -289,6 +302,7 @@ class InstanceManagers:
                     compute_log_manager=LocalComputeLogManager(temp_dir),
                     run_coordinator=DefaultRunCoordinator(),
                     run_launcher=SyncInMemoryRunLauncher(),
+                    scheduler=FilesystemTestScheduler(temp_dir),
                 )
                 yield instance
 
@@ -384,6 +398,29 @@ class EnvironmentManagers:
 
         return MarkedManager(_mgr_fn, [Marks.multi_location])
 
+    @staticmethod
+    def lazy_repository():
+        @contextmanager
+        def _mgr_fn(recon_repo):
+            """Goes out of process but same process as host process"""
+            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
+
+            with Workspace(
+                [
+                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                        loadable_target_origin=LoadableTargetOrigin(
+                            executable_path=sys.executable,
+                            python_file=file_relative_path(__file__, "setup.py"),
+                            attribute="test_dict_repo",
+                        ),
+                        location_name="test",
+                    ),
+                ]
+            ) as workspace:
+                yield workspace
+
+        return MarkedManager(_mgr_fn, [Marks.lazy_repository])
+
 
 class Marks:
     # Instance type makes
@@ -402,6 +439,7 @@ class Marks:
     multi_location = pytest.mark.multi_location
     managed_grpc_env = pytest.mark.managed_grpc_env
     deployed_grpc_env = pytest.mark.deployed_grpc_env
+    lazy_repository = pytest.mark.lazy_repository
 
     # Asset-aware sqlite variants
     asset_aware_instance = pytest.mark.asset_aware_instance
@@ -588,6 +626,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def readonly_sqlite_instance_lazy_repository():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_sqlite_instance(),
+            EnvironmentManagers.lazy_repository(),
+            test_id="readonly_sqlite_instance_lazy_repository",
+        )
+
+    @staticmethod
     def readonly_sqlite_instance_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
@@ -620,6 +666,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def readonly_postgres_instance_lazy_repository():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_postgres_instance(),
+            EnvironmentManagers.lazy_repository(),
+            test_id="readonly_postgres_instance_lazy_repository",
+        )
+
+    @staticmethod
     def readonly_postgres_instance_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
@@ -641,6 +695,14 @@ class GraphQLContextVariant:
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.multi_location(),
             test_id="readonly_in_memory_instance_multi_location",
+        )
+
+    @staticmethod
+    def readonly_in_memory_instance_lazy_repository():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_in_memory_instance(),
+            EnvironmentManagers.lazy_repository(),
+            test_id="readonly_in_memory_instance_lazy_repository",
         )
 
     @staticmethod
@@ -681,13 +743,16 @@ class GraphQLContextVariant:
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
             GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
+            GraphQLContextVariant.readonly_in_memory_instance_lazy_repository(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
             GraphQLContextVariant.readonly_sqlite_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env(),
+            GraphQLContextVariant.readonly_sqlite_instance_lazy_repository(),
             GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
             GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
+            GraphQLContextVariant.readonly_postgres_instance_lazy_repository(),
             GraphQLContextVariant.consolidated_sqlite_instance_in_process_env(),
         ]
 
@@ -713,6 +778,10 @@ class GraphQLContextVariant:
         Return all readonly variants. If you try to start or launch these will error
         """
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.readonly)
+
+    @staticmethod
+    def all_multi_location_variants():
+        return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.multi_location)
 
 
 def _variants_with_mark(variants, mark):

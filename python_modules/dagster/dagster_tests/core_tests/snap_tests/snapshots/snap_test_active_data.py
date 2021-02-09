@@ -1129,19 +1129,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
 snapshots['test_external_repository_data 1'] = '''{
   "__class__": "ExternalRepositoryData",
   "external_executable_datas": [],
-  "external_job_datas": [
-    {
-      "__class__": "ExternalScheduleData",
-      "cron_schedule": "0 0 * * *",
-      "environment_vars": {},
-      "execution_timezone": "US/Central",
-      "mode": "default",
-      "name": "a_schedule",
-      "partition_set_name": "a_schedule_partitions",
-      "pipeline_name": "a_pipeline",
-      "solid_selection": null
-    }
-  ],
+  "external_job_datas": [],
   "external_partition_set_datas": [
     {
       "__class__": "ExternalPartitionSetData",
@@ -2285,5 +2273,6 @@ snapshots['test_external_repository_data 1'] = '''{
       "solid_selection": null
     }
   ],
+  "external_sensor_datas": [],
   "name": "repo"
 }'''

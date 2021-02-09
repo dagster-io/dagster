@@ -231,17 +231,6 @@ class GrapheneSensorNotFoundError(graphene.ObjectType):
         self.message = f"Could not find `{sensor_name}` in the currently loaded repository."
 
 
-class GrapheneJobNotFoundError(graphene.ObjectType):
-    class Meta:
-        name = "JobNotFoundError"
-        interfaces = (GrapheneError,)
-
-    def __init__(self, job_name):
-        super().__init__()
-        self.name = check.str_param(job_name, "job_name")
-        self.message = f"Job {job_name} is not present in the currently loaded repository."
-
-
 class GraphenePartitionSetNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)

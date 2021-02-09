@@ -2,17 +2,18 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
-from .job import JobDefinition, JobType
+from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
+from .sensor import SensorDefinition
 from .utils import check_valid_name
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
     "partition_sets",
     "schedules",
-    "jobs",
+    "sensors",
 }
 
 
@@ -125,7 +126,7 @@ class RepositoryData:
     of repository members.
     """
 
-    def __init__(self, pipelines, partition_sets, schedules, jobs):
+    def __init__(self, pipelines, partition_sets, schedules, sensors):
         """Constructs a new RepositoryData object.
 
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
@@ -144,14 +145,14 @@ class RepositoryData:
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-            jobs (Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
-                The predefined jobs for a repository.
+            sensors (Dict[str, Union[JobDefinition, Callable[[], SensorDefinition]]]):
+                The sensors belonging to a repository.
 
         """
         check.dict_param(pipelines, "pipelines", key_type=str)
         check.dict_param(partition_sets, "partition_sets", key_type=str)
         check.dict_param(schedules, "schedules", key_type=str)
-        check.dict_param(jobs, "jobs", key_type=str)
+        check.dict_param(sensors, "sensors", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition, "PipelineDefinition", "pipeline", pipelines
@@ -173,11 +174,11 @@ class RepositoryData:
                 partition_sets,
             ),
         )
-        self._jobs = _CacheingDefinitionIndex(
-            JobDefinition,
-            "JobDefinition",
-            "job",
-            jobs,
+        self._sensors = _CacheingDefinitionIndex(
+            SensorDefinition,
+            "SensorDefinition",
+            "sensor",
+            sensors,
         )
         self._all_pipelines = None
         self._solids = None
@@ -221,6 +222,14 @@ class RepositoryData:
             if key not in repository_definitions:
                 repository_definitions[key] = {}
 
+        duplicate_keys = set(repository_definitions.get("schedules", {}).keys()).intersection(
+            set(repository_definitions.get("sensors", {}).keys())
+        )
+        if duplicate_keys:
+            raise DagsterInvalidDefinitionError(
+                f"Duplicate definitions found for keys: {duplicate_keys.join(', ')}"
+            )
+
         return RepositoryData(**repository_definitions)
 
     @classmethod
@@ -235,6 +244,7 @@ class RepositoryData:
         pipelines = {}
         partition_sets = {}
         schedules = {}
+        sensors = {}
         jobs = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
@@ -252,15 +262,19 @@ class RepositoryData:
                         "{partition_set_name}".format(partition_set_name=definition.name)
                     )
                 partition_sets[definition.name] = definition
-            elif isinstance(definition, JobDefinition):
+            if isinstance(definition, JobDefinition):
+                if definition.name in jobs:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate definition found for {definition.name}"
+                    )
+                jobs[definition.name] = definition
+
+                if isinstance(definition, SensorDefinition):
+                    sensors[definition.name] = definition
+
                 if isinstance(definition, ScheduleDefinition):
-                    if definition.name in schedules:
-                        raise DagsterInvalidDefinitionError(
-                            "Duplicate schedule definition found for schedule {schedule_name}".format(
-                                schedule_name=definition.name
-                            )
-                        )
                     schedules[definition.name] = definition
+
                     if isinstance(definition, PartitionScheduleDefinition):
                         partition_set_def = definition.get_partition_set()
                         if (
@@ -274,17 +288,12 @@ class RepositoryData:
                                 )
                             )
                         partition_sets[partition_set_def.name] = partition_set_def
-                if definition.name in jobs:
-                    raise DagsterInvalidDefinitionError(
-                        "Duplicate job definition found for job {name}".format(name=definition.name)
-                    )
-                jobs[definition.name] = definition
 
         return RepositoryData(
             pipelines=pipelines,
             partition_sets=partition_sets,
             schedules=schedules,
-            jobs=jobs,
+            sensors=sensors,
         )
 
     def get_pipeline_names(self):
@@ -427,28 +436,13 @@ class RepositoryData:
         return self._schedules.has_definition(schedule_name)
 
     def get_all_sensors(self):
-        return [
-            definition
-            for definition in self._jobs.get_all_definitions()
-            if definition.job_type == JobType.SENSOR
-        ]
+        return self._sensors.get_all_definitions()
 
     def get_sensor(self, name):
-        return self._jobs.get_definition(name)
+        return self._sensors.get_definition(name)
 
     def has_sensor(self, name):
-        return self._jobs.has_definition(name)
-
-    def get_all_jobs(self):
-        return self._jobs.get_all_definitions()
-
-    def get_job(self, name):
-        check.str_param(name, "name")
-        return self._jobs.get_definition(name)
-
-    def has_job(self, name):
-        check.str_param(name, "name")
-        return self._jobs.has_definition(name)
+        return self._sensors.has_definition(name)
 
     def get_all_solid_defs(self):
         if self._all_solids is not None:
@@ -630,13 +624,3 @@ class RepositoryDefinition:
 
     def has_sensor_def(self, name):
         return self._repository_data.has_sensor(name)
-
-    @property
-    def job_defs(self):
-        return self._repository_data.get_all_jobs()
-
-    def get_job_def(self, name):
-        return self._repository_data.get_job(name)
-
-    def has_job_def(self, name):
-        return self._repository_data.has_job(name)

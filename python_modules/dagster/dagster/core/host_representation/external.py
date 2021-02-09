@@ -46,10 +46,11 @@ class ExternalRepository:
         )
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._job_map = OrderedDict(
-            (external_job_data.name, external_job_data)
-            for external_job_data in external_repository_data.external_job_datas
+        jobs_list = (
+            external_repository_data.external_schedule_datas
+            + external_repository_data.external_sensor_datas
         )
+        self._job_map = OrderedDict((job_data.name, job_data) for job_data in jobs_list)
 
     @property
     def name(self):
@@ -79,42 +80,25 @@ class ExternalRepository:
         ]
 
     def get_external_sensor(self, sensor_name):
-        job_data = self.external_repository_data.get_external_job_data(sensor_name)
-        if job_data.job_type != JobType.SENSOR:
-            check.failed("Could not find sensor named " + sensor_name)
-
-        return ExternalSensor(job_data, self._handle)
+        return ExternalSensor(
+            self.external_repository_data.get_external_sensor_data(sensor_name), self._handle
+        )
 
     def get_external_sensors(self):
         return [
-            ExternalSensor(external_job_data, self._handle)
-            for external_job_data in self.external_repository_data.external_job_datas
-            if external_job_data.job_type == JobType.SENSOR
+            ExternalSensor(external_sensor_data, self._handle)
+            for external_sensor_data in self.external_repository_data.external_sensor_datas
         ]
-
-    def get_external_jobs(self):
-        external = []
-        for external_job_data in self.external_repository_data.external_job_datas:
-            if external_job_data.job_type == JobType.SENSOR:
-                external.append(ExternalSensor(external_job_data, self._handle))
-            elif external_job_data.job_type == JobType.SCHEDULE:
-                external.append(
-                    ExternalSchedule(
-                        self.external_repository_data.get_external_schedule_data(
-                            external_job_data.name
-                        ),
-                        self._handle,
-                    )
-                )
-        return external
 
     def has_external_job(self, job_name):
         return job_name in self._job_map
 
     def get_external_job(self, job_name):
-        external_job_data = self._job_map[job_name]
+        external_job_data = self._job_map.get(job_name)
+        if not external_job_data:
+            return None
         if external_job_data.job_type == JobType.SENSOR:
-            return ExternalSensor(external_job_data, self._handle)
+            return self.get_external_sensor(external_job_data.name)
         if external_job_data.job_type == JobType.SCHEDULE:
             return self.get_external_schedule(external_job_data.name)
         return None

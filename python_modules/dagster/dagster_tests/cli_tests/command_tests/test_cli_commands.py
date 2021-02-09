@@ -146,7 +146,7 @@ def bar():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
-        "jobs": define_bar_sensors(),
+        "sensors": define_bar_sensors(),
     }
 
 

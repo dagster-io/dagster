@@ -9,7 +9,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
-    JobDefinition,
     JobType,
     PartitionSetDefinition,
     PipelineDefinition,
@@ -28,7 +27,7 @@ from dagster.utils.error import SerializableErrorInfo
 class ExternalRepositoryData(
     namedtuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas external_job_datas",
+        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas external_job_datas external_sensor_datas",
     )
 ):
     def __new__(
@@ -39,6 +38,7 @@ class ExternalRepositoryData(
         external_partition_set_datas,
         external_executable_datas=None,
         external_job_datas=None,
+        external_sensor_datas=None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -61,6 +61,11 @@ class ExternalRepositoryData(
                 external_job_datas,
                 "external_job_datas",
                 of_type=(ExternalScheduleData, ExternalSensorData, ExternalJobData),
+            ),
+            external_sensor_datas=check.opt_list_param(
+                external_sensor_datas,
+                "external_sensor_datas",
+                of_type=ExternalSensorData,
             ),
         )
 
@@ -100,14 +105,14 @@ class ExternalRepositoryData(
 
         check.failed("Could not find external partition set data named " + name)
 
-    def get_external_job_data(self, name):
+    def get_external_sensor_data(self, name):
         check.str_param(name, "name")
 
-        for external_job_data in self.external_job_datas:
-            if external_job_data.name == name:
-                return external_job_data
+        for external_sensor_data in self.external_sensor_datas:
+            if external_sensor_data.name == name:
+                return external_sensor_data
 
-        check.failed("Could not find job data named " + name)
+        check.failed("Could not find sensor data named " + name)
 
 
 @whitelist_for_serdes
@@ -426,9 +431,9 @@ def external_repository_data_from_def(repository_def):
             list(map(external_partition_set_data_from_def, repository_def.partition_set_defs)),
             key=lambda psd: psd.name,
         ),
-        external_job_datas=sorted(
-            list(map(external_job_from_def, repository_def.job_defs)),
-            key=lambda job: job.name,
+        external_sensor_datas=sorted(
+            list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
+            key=lambda sd: sd.name,
         ),
     )
 
@@ -470,14 +475,6 @@ def external_partition_set_data_from_def(partition_set_def):
         solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
     )
-
-
-def external_job_from_def(job_def):
-    check.inst_param(job_def, "job_def", JobDefinition)
-    if isinstance(job_def, ScheduleDefinition):
-        return external_schedule_data_from_def(job_def)
-    else:
-        return external_sensor_data_from_def(job_def)
 
 
 def external_sensor_data_from_def(sensor_def):

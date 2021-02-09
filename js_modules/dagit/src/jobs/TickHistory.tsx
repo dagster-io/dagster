@@ -147,7 +147,7 @@ export const JobTickHistory = ({
     </Tabs>
   );
 
-  if (!data || data?.jobStateOrError.__typename !== 'JobState') {
+  if (!data) {
     return (
       <Group direction="column" spacing={12}>
         <Subheading>Tick History</Subheading>
@@ -155,6 +155,10 @@ export const JobTickHistory = ({
         <Spinner purpose="section" />
       </Group>
     );
+  }
+
+  if (data.jobStateOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={data.jobStateOrError} />;
   }
 
   const {ticks, nextTick, jobType} = data.jobStateOrError;
