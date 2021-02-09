@@ -10,11 +10,11 @@ import {WebsocketStatus} from 'src/app/WebsocketStatus';
 import {DarkTimezonePicker} from 'src/app/time/DarkTimezonePicker';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
-import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';
 import {JobsList} from 'src/nav/JobsList';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
+import {VersionNumber} from 'src/nav/VersionNumber';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
@@ -119,7 +119,7 @@ export const LeftNav = () => {
             </div>
             <div>
               <img src={navTitleImage} style={{height: 10}} alt="title" />
-              <InstanceDetailsLink />
+              <VersionNumber />
             </div>
           </Group>
         </LogoContainer>

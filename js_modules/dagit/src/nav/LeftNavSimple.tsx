@@ -5,6 +5,7 @@ import styled from 'styled-components';
 
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
+import {VersionNumber} from 'src/nav/VersionNumber';
 import {config, matchSome, NavItemConfig} from 'src/nav/config';
 import {SearchDialog} from 'src/search/SearchDialog';
 import {Box} from 'src/ui/Box';
@@ -48,7 +49,7 @@ export const LeftNavSimple = () => {
                 style={{display: 'block', height: 10, filter: 'brightness(0.05)'}}
                 alt="title"
               />
-              <div style={{color: Colors.DARK_GRAY2, fontSize: '10px'}}>0.10.2</div>
+              <VersionNumber />
             </Group>
           </Group>
           <Box padding={{right: 4}}>

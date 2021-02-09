@@ -5,9 +5,9 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: InstanceDetailSummaryQuery
+// GraphQL query operation: VersionNumberQuery
 // ====================================================
 
-export interface InstanceDetailSummaryQuery {
+export interface VersionNumberQuery {
   version: string;
 }
