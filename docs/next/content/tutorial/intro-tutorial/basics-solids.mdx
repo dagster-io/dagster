@@ -1,0 +1,130 @@
+---
+title: Configuring Solids | Dagster
+description: Solids can be parameterized with runtime configuration
+---
+
+# Configuring Solids
+
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/" />
+
+So far, we've seen a solid whose behavior is the same every time it runs:
+
+```python literalinclude showLines emphasize-lines=7 caption=hello_cereal.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
+lines:7-20
+```
+
+In many situations, we'd like to be able to configure solids at run time. For example, we may want
+whomever is running the pipeline to decide what dataset it operates on. Appropriately
+parameterized solids are more testable and reusable. Consider the following more generic solid:
+
+```python literalinclude showLines startLine=7 caption=inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
+lines:8-15
+```
+
+Here, rather than hard-coding the value of `dataset_path`, we use config option, `csv_name`.
+
+Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
+
+```python literalinclude showLines emphasize-lines=38 caption=inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
+startAfter:start_inputs_marker_0
+endBefore:end_inputs_marker_0
+```
+
+<br />
+
+## Specifying Config for Pipeline Execution
+
+We can specify config for a pipeline execution regardless of how we execute the
+pipeline — the the Dagit UI, Python API, or the command line:
+
+### Dagit Config Editor
+
+Dagit provides a powerful, schema-aware, typeahead-enabled config editor to enable rapid
+experimentation with and debugging of parameterized pipeline executions. As always, run:
+
+```bash
+dagit -f inputs.py
+```
+
+Notice that the launch execution button is disabled and the solids are red in the bottom right corner of the Playground.
+
+![inputs_figure_one.png](/images/tutorial/inputs_figure_one.png)
+
+Because Dagit is schema-aware, it knows that this pipeline now requires configuration in order to
+run without errors. In this case, since the pipeline is relatively trivial, it wouldn't be
+especially costly to run the pipeline and watch it fail. But when pipelines are complex and slow,
+it's invaluable to get this kind of feedback up front rather than have an unexpected failure deep
+inside a pipeline.
+
+Recall that the execution plan, which you will ordinarily see above the log viewer in the
+**Execute** tab, is the concrete pipeline that Dagster will actually execute. Without a valid
+config, Dagster can't construct a parametrization of the logical pipeline&mdash;so no execution plan
+is available for us to preview.
+
+Press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
+
+![inputs_figure_two.png](/images/tutorial/inputs_figure_two.png)
+
+Here you can see all of the sections available in the run config. Don't worry, we'll get to them all
+later.
+
+Let's enter the config we need in order to execute our pipeline.
+
+![inputs_figure_three.png](/images/tutorial/inputs_figure_three.png)
+
+Note that as you type and edit the config, the config minimap hovering on the right side of the
+editor pane changes to provide context&mdash;you always know where in the nested config schema
+you are while making changes.
+
+### Config in Python API
+
+We previously encountered the <PyObject module="dagster" object="execute_pipeline"
+displayText="execute_pipeline()" />function. Pipeline run config is specified by the second
+argument to this function, which must be a dict.
+
+This dict contains all of the user-provided configuration with which to execute a pipeline. As such,
+it can have [a lot of sections](/_apidocs/execution), but we'll only use one of
+them here: per-solid configuration, which is specified under the key `solids`:
+
+```python literalinclude showLines caption=inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
+startAfter:start_inputs_marker_1
+endBefore:end_inputs_marker_1
+dedent:4
+```
+
+The `solids` dict is keyed by solid name, and each solid is configured by a dict that may itself
+have several sections. In this case, we are interested in the `config` section.
+
+Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline"
+displayText="execute_pipeline()" />:
+
+```python literalinclude showLines caption=inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
+startAfter:start_inputs_marker_2
+endBefore:end_inputs_marker_2
+dedent:4
+```
+
+### YAML fragments and Dagster CLI
+
+When executing pipelines with the Dagster CLI, we'll need to provide the run config in a file. We
+use YAML for the file-based representation of configuration, but the values are the same as before:
+
+```YAML literalinclude showLines caption=inputs_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
+```
+
+We can pass config files in this format to the Dagster CLI tool with the `-c` flag.
+
+```bash
+dagster pipeline execute -f inputs.py -c inputs_env.yaml
+```
+
+In practice, you might have different sections of your run config in different yaml files&mdash;if,
+for instance, some sections change more often (e.g. in test and prod) while other are more static.
+In this case, you can set multiple instances of the `-c` flag on CLI invocations, and the CLI tools
+will assemble the YAML fragments into a single run config.
