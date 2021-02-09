@@ -61,7 +61,7 @@ inside a pipeline.
 
 Recall that the execution plan, which you will ordinarily see above the log viewer in the
 **Execute** tab, is the concrete pipeline that Dagster will actually execute. Without a valid
-config, Dagster can't construct a parametrization of the logical pipeline&mdash;so no execution plan
+config, Dagster can't construct a parametrization of the logical pipeline—so no execution plan
 is available for us to preview.
 
 Press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
@@ -76,7 +76,7 @@ Let's enter the config we need in order to execute our pipeline.
 ![inputs_figure_three.png](/images/tutorial/inputs_figure_three.png)
 
 Note that as you type and edit the config, the config minimap hovering on the right side of the
-editor pane changes to provide context&mdash;you always know where in the nested config schema
+editor pane changes to provide context—you always know where in the nested config schema
 you are while making changes.
 
 ### Config in Python API
@@ -86,7 +86,7 @@ displayText="execute_pipeline()" />function. Pipeline run config is specified by
 argument to this function, which must be a dict.
 
 This dict contains all of the user-provided configuration with which to execute a pipeline. As such,
-it can have [a lot of sections](/_apidocs/execution), but we'll only use one of
+it can have [a lot of sections](/\_apidocs/execution), but we'll only use one of
 them here: per-solid configuration, which is specified under the key `solids`:
 
 ```python literalinclude showLines caption=inputs.py
@@ -124,7 +124,7 @@ We can pass config files in this format to the Dagster CLI tool with the `-c` fl
 dagster pipeline execute -f inputs.py -c inputs_env.yaml
 ```
 
-In practice, you might have different sections of your run config in different yaml files&mdash;if,
+In practice, you might have different sections of your run config in different yaml files—if,
 for instance, some sections change more often (e.g. in test and prod) while other are more static.
 In this case, you can set multiple instances of the `-c` flag on CLI invocations, and the CLI tools
 will assemble the YAML fragments into a single run config.

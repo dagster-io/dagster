@@ -12,11 +12,11 @@ queues (brokers) and result persistence strategies (backends).
 The `dagster-celery` executor uses Celery to satisfy three typical
 requirements when running pipelines in production:
 
-1.  Parallel execution capacity that scales horizontally across multiple
-    compute nodes.
-2.  Separate queues to isolate execution and control external resource
-    usage at the solid level.
-3.  Priority-based execution at the solid level.
+1. Parallel execution capacity that scales horizontally across multiple
+   compute nodes.
+2. Separate queues to isolate execution and control external resource
+   usage at the solid level.
+3. Priority-based execution at the solid level.
 
 The dagster-celery executor compiles a pipeline definition and its
 associated configuration into a concrete execution plan, and then

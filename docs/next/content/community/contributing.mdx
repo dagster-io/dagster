@@ -11,58 +11,56 @@ up a local development environment.
 
 ## Environment Setup
 
-1.  Install Python. Python 3.6 or above recommended, but our CI/CD
-    pipeline currently tests against up-to-date patch versions of Python
-    3.6, 3.7 and 3.8.
-2.  Create and activate a virtualenv, using the tool of your choice.
-    On macOS you can install `pyenv` with Homebrew:
+1. Install Python. Python 3.6 or above recommended, but our CI/CD
+   pipeline currently tests against up-to-date patch versions of Python
+   3.6, 3.7 and 3.8.
+2. Create and activate a virtualenv, using the tool of your choice.
+   On macOS you can install `pyenv` with Homebrew:
 
 ```bash
 brew install pyenv pyenv-virtualenv
 ```
 
-&nbsp;&nbsp;&nbsp&nbsp&nbsp&nbsp&nbspThen add the following commands to your shell profile:
+  \&nbsp\&nbsp\&nbsp\&nbsp\&nbspThen add the following commands to your shell profile:
 
 ```bash
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 ```
 
-&nbsp;&nbsp;&nbsp&nbsp&nbsp&nbsp&nbspand finally create and activate the virtualenev:
+  \&nbsp\&nbsp\&nbsp\&nbsp\&nbspand finally create and activate the virtualenev:
 
-```
-pyenv install 3.7.4
-pyenv virtualenv 3.7.4 dagster37
-pyenv activate dagster37
-```
+    pyenv install 3.7.4
+    pyenv virtualenv 3.7.4 dagster37
+    pyenv activate dagster37
 
-3.  Ensure that you have node installed by running _node -v_, and that you have
-    [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS,
-    you can install yarn with Homebrew:
+3. Ensure that you have node installed by running _node -v_, and that you have
+   [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS,
+   you can install yarn with Homebrew:
 
 ```bash
 brew install yarn
 ```
 
-4.  Clone the Dagster repository to the destination of your choice:
+4. Clone the Dagster repository to the destination of your choice:
 
 ```bash
 git clone git@github.com:dagster-io/dagster.git
 ```
 
-5.  Run `make dev_install` at the root of the repository. This sets up a
-    full Dagster developer environment with all modules and runs tests
-    that do not require heavy external dependencies such as docker. This
-    will take a few minutes. Note that certain sections of the makefile (sanity_check,
-    which is part of rebuild_dagit) require POSIX compliant shells and will fail
-    on CMD and powershell -- if developing on windows, using something like WSL or git-bash
-    is recommended.
+5. Run `make dev_install` at the root of the repository. This sets up a
+   full Dagster developer environment with all modules and runs tests
+   that do not require heavy external dependencies such as docker. This
+   will take a few minutes. Note that certain sections of the makefile (sanity_check,
+   which is part of rebuild_dagit) require POSIX compliant shells and will fail
+   on CMD and powershell -- if developing on windows, using something like WSL or git-bash
+   is recommended.
 
 ```bash
 make dev_install
 ```
 
-6.  Run some tests manually to make sure things are working:
+6. Run some tests manually to make sure things are working:
 
 ```bash
 python -m pytest python_modules/dagster/dagster_tests

@@ -18,9 +18,9 @@ resource implementations across different environments.
 ## Parametrizing Pipelines with Resources
 
 Dagster models interactions with features of the external environment as **resources**.
-Dagster's library modules such as [`dagster_aws`](/_apidocs/libraries/dagster_aws),
-[`dagster_gcp`](/_apidocs/libraries/dagster_gcp), and
-[`dagster_slack`](/_apidocs/libraries/dagster_slack) provide out-of-the-box implementations for
+Dagster's library modules such as [`dagster_aws`](/\_apidocs/libraries/dagster_aws),
+[`dagster_gcp`](/\_apidocs/libraries/dagster_gcp), and
+[`dagster_slack`](/\_apidocs/libraries/dagster_slack) provide out-of-the-box implementations for
 many common external services.
 
 Typically, your data processing pipelines will want to store their results in a data warehouse
@@ -28,7 +28,7 @@ somewhere separate from the raw data sources. We'll adjust our toy pipeline so t
 more work on our cereal dataset, stores the finished product in a swappable data warehouse, and lets
 the team know when we're finished.
 
-You might have noticed that our cereal dataset isn't normalized&mdash;that is, the serving sizes for
+You might have noticed that our cereal dataset isn't normalized—that is, the serving sizes for
 some cereals are as small as a quarter of a cup, and for others are as large as a cup and a half.
 This grossly understates the nutritional difference between our different cereals.
 
@@ -43,7 +43,7 @@ endBefore:end_resources_marker_1
 Resources are another facility that Dagster makes available on the `context` object passed to solid
 logic. Note that we've completely encapsulated access to the database behind the call to
 `context.resources.warehouse.update_normalized_cereals`. This means that we can easily swap resource
-implementations&mdash;for instance, to test against a local SQLite database instead of a production
+implementations—for instance, to test against a local SQLite database instead of a production
 Snowflake database; to abstract software changes, such as swapping raw SQL for SQLAlchemy; or to
 accommodate changes in business logic, like moving from an overwriting scheme to append-only,
 date-partitioned tables.
@@ -85,7 +85,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.ya
 ```
 
 Here, we pass the special string `":memory:"` in config as the connection string for our
-database&mdash;this is how SQLite designates an in-memory database.
+database—this is how SQLite designates an in-memory database.
 
 <br />
 
@@ -110,7 +110,7 @@ present on its mode definitions, and will complain if that resource is not prese
 ## Pipeline Modes
 
 By attaching different sets of resources with the same APIs to different modes, we can support
-running pipelines&mdash;with unchanged business logic&mdash;in different environments. You might
+running pipelines—with unchanged business logic—in different environments. You might
 have a "unittest" mode that runs against an in-memory SQLite database, a "dev" mode that runs
 against Postgres, and a "prod" mode that runs against Snowflake.
 
@@ -180,7 +180,7 @@ endBefore:end_presets_marker_0
 The config above illustrates two ways of defining a preset.
 
 The first is to pass an `run_config` literal to the constructor. Because this dict is defined in
-Python, you can do arbitrary computation to construct it&mdash;for instance, picking up environment
+Python, you can do arbitrary computation to construct it—for instance, picking up environment
 variables, making a call to a secrets store like Hashicorp Vault, etc.
 
 The second is to use the `from_files` static constructor, and pass a list of file globs from which

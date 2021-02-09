@@ -48,7 +48,7 @@ dagit -f serial_pipeline.py
 ```
 
 Navigate to
-[http://127.0.0.1:3000/pipeline/serial_pipeline/](http://127.0.0.1:3000/pipeline/serial_pipeline/)
+<http://127.0.0.1:3000/pipeline/serial_pipeline/>
 or choose "serial_pipeline" from the left sidebar:
 
 ![serial_pipeline_figure_one.png](/images/tutorial/serial_pipeline_figure_one.png)
@@ -80,12 +80,12 @@ dagit -f complex_pipeline.py
 ![complex_pipeline_figure_one.png](/images/tutorial/complex_pipeline_figure_one.png)
 
 When you execute this example from Dagit, you'll see that `load_cereals` executes first, followed by
-`sort_by_calories` and `sort_by_protein`&mdash;in any order&mdash;and that `display_results`
+`sort_by_calories` and `sort_by_protein`—in any order—and that `display_results`
 executes last, only after `sort_by_calories` and `sort_by_protein` have both executed.
 
 In more sophisticated execution environments, `sort_by_calories` and `sort_by_protein` could execute
 not just in any order, but at the same time, since they don't depend on each other's
-outputs&mdash;but both would still have to execute after `load_cereals` (because they depend on its
+outputs—but both would still have to execute after `load_cereals` (because they depend on its
 output) and before `display_results` (because `display_results` depends on both of their outputs).
 
 We'll write a simple test for this pipeline showing how we can assert that all four of its solids

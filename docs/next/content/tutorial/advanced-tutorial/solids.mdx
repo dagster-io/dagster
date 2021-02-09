@@ -18,12 +18,12 @@ Solids are intended to abstract chunks of business logic, but abstractions aren'
 unless they can be reused.
 
 Our conditional outputs pipeline included a lot of repeated
-code&mdash;`sort_hot_cereals_by_calories` and `sort_cold_cereals_by_calories`, for instance. In
+code—`sort_hot_cereals_by_calories` and `sort_cold_cereals_by_calories`, for instance. In
 general, it's preferable to build pipelines out of a relatively restricted set of well-tested
 library solids, using config liberally to parametrize them. You'll certainly have your own version
 of `read_csv`, for instance, and Dagster includes libraries like
-[`dagster_aws`](/_apidocs/libraries/dagster_aws) and
-[`dagster_spark`](/_apidocs/libraries/dagster_pyspark) to wrap and abstract interfaces with
+[`dagster_aws`](/\_apidocs/libraries/dagster_aws) and
+[`dagster_spark`](/\_apidocs/libraries/dagster_pyspark) to wrap and abstract interfaces with
 common third party tools.
 
 Let's replace `sort_hot_cereals_by_calories` and `sort_cold_cereals_by_calories` by two aliases of
@@ -52,7 +52,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/reusable_solids
 
 ## Composite Solids
 
-The other basic facility that we expect from software in other domains is composability&mdash;the
+The other basic facility that we expect from software in other domains is composability—the
 ability to combine building blocks into larger functional units.
 
 Composite solids can be used to organize and refactor large or complicated pipelines, abstracting
