@@ -1,99 +1,142 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
+import {Colors, NonIdealState} from '@blueprintjs/core';
+import Fuse from 'fuse.js';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {
+  PipelineForTable,
+  PipelineTable,
+  PIPELINE_TABLE_FRAGMENT,
+} from 'src/pipelines/PipelineTable';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
-import {Table} from 'src/ui/Table';
-import {Heading} from 'src/ui/Text';
+import {Code, Heading} from 'src/ui/Text';
 import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {AllPipelinesQuery} from 'src/workspace/types/AllPipelinesQuery';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+
+const fuseOptions = {
+  keys: ['name', 'repo', 'description'],
+  threshold: 0.3,
+};
+
+const buildKey = (pipelineName: string, repo: string) => `${pipelineName}-${repo}`;
 
 const AllPipelinesTable: React.FC<{data: AllPipelinesQuery}> = ({data}) => {
   useDocumentTitle('Pipelines');
+
+  const [queryString, setQueryString] = React.useState('');
 
   const repositoryLocations =
     data?.repositoryLocationsOrError.__typename === 'RepositoryLocationConnection'
       ? data.repositoryLocationsOrError.nodes
       : null;
 
-  const pipelines = React.useMemo(() => {
+  const pipelineMap: {
+    [key: string]: PipelineForTable;
+  } = React.useMemo(() => {
     if (!repositoryLocations) {
-      return null;
+      return {};
     }
-    return repositoryLocations.reduce((accum, location) => {
-      if (location.__typename !== 'RepositoryLocation') {
-        return accum;
+
+    const allPipelines: {[key: string]: PipelineForTable} = {};
+    repositoryLocations.forEach((location) => {
+      if (location.__typename === 'RepositoryLocation') {
+        const {repositories} = location;
+        repositories.forEach((repo) => {
+          const repoAddress = buildRepoAddress(repo.name, location.name);
+          repo.pipelines.forEach((pipeline) => {
+            const key = buildKey(pipeline.name, repoAddressAsString(repoAddress));
+            allPipelines[key] = {pipeline, repoAddress};
+          });
+        });
       }
-      return [
-        ...accum,
-        ...location.repositories.reduce((innerAccum, repository) => {
-          if (repository.__typename !== 'Repository') {
-            return innerAccum;
-          }
-          const repoAddress = buildRepoAddress(repository.name, location.name);
-          return [
-            ...innerAccum,
-            ...repository.pipelines.map((pipeline) => ({
-              repoAddress,
-              pipeline,
-            })),
-          ];
-        }, []),
-      ];
-    }, []);
+    });
+
+    return allPipelines;
   }, [repositoryLocations]);
 
-  const sorted = React.useMemo(() => {
-    if (pipelines) {
-      return [
-        ...pipelines.sort((a, b) =>
-          a.pipeline.name.toLocaleLowerCase().localeCompare(b.pipeline.name.toLocaleLowerCase()),
-        ),
-      ];
-    }
-    return null;
-  }, [pipelines]);
-
-  if (!sorted?.length) {
-    return (
-      <Box flex={{alignItems: 'center', justifyContent: 'center'}} margin={{top: 64}} padding={64}>
-        <NonIdealState
-          icon="diagram-tree"
-          title="No pipelines"
-          description="We could not find any pipelines in your current workspace."
-        />
-      </Box>
+  const repoCount = React.useMemo(() => {
+    return (repositoryLocations || []).reduce(
+      (accum, location) =>
+        accum + (location.__typename === 'RepositoryLocation' ? location.repositories.length : 0),
+      0,
     );
-  }
+  }, [repositoryLocations]);
+
+  const fuse = React.useMemo(() => {
+    const allEntries = Object.keys(pipelineMap).map((pipelineKey) => {
+      const {pipeline, repoAddress} = pipelineMap[pipelineKey];
+      return {
+        name: pipeline.name,
+        description: pipeline.description,
+        repo: repoAddressAsString(repoAddress),
+      };
+    });
+    return new Fuse(allEntries, fuseOptions);
+  }, [pipelineMap]);
+
+  const matches = fuse.search(queryString);
+
+  const matchingResults = React.useMemo(() => {
+    if (!queryString) {
+      return Object.keys(pipelineMap)
+        .map((key) => pipelineMap[key])
+        .sort((a, b) =>
+          a.pipeline.name.toLocaleLowerCase().localeCompare(b.pipeline.name.toLocaleLowerCase()),
+        );
+    }
+    return [...matches.map((match) => pipelineMap[buildKey(match.item.name, match.item.repo)])];
+  }, [matches, pipelineMap, queryString]);
+
+  const onChange = React.useCallback((e) => setQueryString(e.target.value), []);
+
+  const content = () => {
+    if (!matchingResults?.length) {
+      const searchMiss = queryString && Object.keys(pipelineMap).length;
+      const description = searchMiss ? (
+        <div>
+          We could not find any pipelines matching{' '}
+          <Code style={{fontSize: 'inherit'}}>{queryString}</Code>.
+        </div>
+      ) : (
+        'We could not find any pipelines in your current workspace.'
+      );
+
+      return (
+        <Box
+          flex={{alignItems: 'center', justifyContent: 'center'}}
+          margin={{top: 64}}
+          padding={64}
+        >
+          <NonIdealState
+            icon="diagram-tree"
+            title={searchMiss ? 'No matches' : 'No pipelines'}
+            description={description}
+          />
+        </Box>
+      );
+    }
+
+    return <PipelineTable pipelines={matchingResults} showRepo={repoCount > 1} />;
+  };
 
   return (
-    <Table>
-      <thead>
-        <tr>
-          <th>Pipeline</th>
-          <th>Repository</th>
-        </tr>
-      </thead>
-      <tbody>
-        {sorted.map(({pipeline, repoAddress}) => (
-          <tr key={`${pipeline.name}-${repoAddressAsString(repoAddress)}`}>
-            <td>
-              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipeline.name}`)}>
-                {pipeline.name}
-              </Link>
-            </td>
-            <td>{repoAddressAsString(repoAddress)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <Group direction="column" spacing={12}>
+      <PipelineFilterInput
+        type="text"
+        placeholder="Search pipelines…"
+        value={queryString}
+        onChange={onChange}
+        spellCheck={false}
+        autoCorrect="off"
+      />
+      {content()}
+    </Group>
   );
 };
 
@@ -108,6 +151,25 @@ export const AllPipelinesRoot = () => {
     </Page>
   );
 };
+
+const PipelineFilterInput = styled.input`
+  border: 1px solid ${Colors.LIGHT_GRAY1};
+  border-radius: 3px;
+  color: ${Colors.DARK_GRAY3};
+  font-size: 14px;
+  padding: 8px;
+  width: 45%;
+  min-width: 380px;
+  max-width: 700px;
+
+  :focus {
+    outline: none;
+  }
+
+  ::placeholder {
+    color: ${Colors.GRAY3};
+  }
+`;
 
 const ALL_PIPELINES_QUERY = gql`
   query AllPipelinesQuery {
@@ -124,7 +186,7 @@ const ALL_PIPELINES_QUERY = gql`
               name
               pipelines {
                 id
-                name
+                ...PipelineTableFragment
               }
             }
           }
@@ -132,4 +194,5 @@ const ALL_PIPELINES_QUERY = gql`
       }
     }
   }
+  ${PIPELINE_TABLE_FRAGMENT}
 `;

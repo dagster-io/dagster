@@ -1,16 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
-import {RunStatusWithStats} from 'src/runs/RunStatusDots';
+import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from 'src/pipelines/PipelineTable';
 import {Page} from 'src/ui/Page';
-import {Table} from 'src/ui/Table';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {RepositoryPipelinesListQuery} from 'src/workspace/types/RepositoryPipelinesListQuery';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {
@@ -20,13 +17,7 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
         id
         pipelines {
           id
-          name
-          description
-          runs(limit: 10) {
-            id
-            runId
-            status
-          }
+          ...PipelineTableFragment
         }
       }
       ... on RepositoryNotFoundError {
@@ -34,6 +25,7 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
       }
     }
   }
+  ${PIPELINE_TABLE_FRAGMENT}
 `;
 
 interface Props {
@@ -52,12 +44,22 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     },
   );
 
+  const repo = data?.repositoryOrError;
+  const pipelinesForTable = React.useMemo(() => {
+    if (!repo || repo.__typename !== 'Repository') {
+      return null;
+    }
+    return repo.pipelines.map((pipeline) => ({
+      pipeline,
+      repoAddress,
+    }));
+  }, [repo, repoAddress]);
+
   if (loading) {
     return null;
   }
 
-  if (error || !data || data?.repositoryOrError?.__typename !== 'Repository') {
-    debugger;
+  if (error || !pipelinesForTable) {
     return (
       <NonIdealState
         title="Unable to load pipelines"
@@ -66,49 +68,9 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     );
   }
 
-  const {pipelines} = data?.repositoryOrError;
-
   return (
     <Page>
-      <Table>
-        <thead>
-          <tr>
-            <th>Pipeline name</th>
-            <th style={{width: '30%'}}>Recent runs</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pipelines.map((pipeline) => {
-            const {name, runs} = pipeline;
-            return (
-              <tr key={name}>
-                <td>
-                  <div>
-                    <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${name}`)}>
-                      {name}
-                    </Link>
-                  </div>
-                  <span style={{fontSize: '12px', color: Colors.GRAY3}}>
-                    {pipeline.description}
-                  </span>
-                </td>
-                <td>
-                  <div style={{display: 'flex', flexDirection: 'row'}}>
-                    {runs.map((run) => (
-                      <RunStatusWithStats
-                        key={run.runId}
-                        runId={run.runId}
-                        status={run.status}
-                        size={12}
-                      />
-                    ))}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+      <PipelineTable pipelines={pipelinesForTable} showRepo={false} />
     </Page>
   );
 };

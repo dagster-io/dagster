@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { PipelineRunStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: AllPipelinesQuery
 // ====================================================
@@ -16,10 +18,33 @@ export interface AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocation
   __typename: "RepositoryLocationLoadFailure";
 }
 
+export interface AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+}
+
+export interface AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+}
+
 export interface AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
+  description: string | null;
   name: string;
+  runs: AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines_runs[];
+  schedules: AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines_schedules[];
+  sensors: AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines_sensors[];
 }
 
 export interface AllPipelinesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories {
