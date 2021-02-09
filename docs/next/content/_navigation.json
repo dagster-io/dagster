@@ -643,5 +643,33 @@
         ]
       }
     ]
+  },
+  {
+    "title": "Community",
+    "icon": "Users",
+    "path": "/community",
+    "children": [
+      {
+        "title": "Community",
+        "children": [
+          {
+            "title": "Code of Conduct",
+            "path": "/community/code-of-conduct"
+          },
+          {
+            "title": "Contributing",
+            "path": "/community/contributing"
+          },
+          {
+            "title": "Releases & Deprecations",
+            "path": "/community/releases"
+          },
+          {
+            "title": "Changing Public APIs",
+            "path": "/community/public-apis"
+          }
+        ]
+      }
+    ]
   }
 ]
