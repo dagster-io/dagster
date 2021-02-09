@@ -875,3 +875,11 @@ def test_tags():
     plan = create_execution_plan(tag)
     step = list(plan.step_dict.values())[0]
     assert step.tags == {"def": "1", "invoke": "2"}
+
+
+def test_bad_alias():
+    with pytest.raises(DagsterInvalidDefinitionError, match="not a valid name"):
+        echo.alias("uh oh")
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="not a valid name"):
+        echo.alias("uh[oh]")

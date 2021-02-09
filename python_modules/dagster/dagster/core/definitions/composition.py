@@ -16,7 +16,7 @@ from .inference import (
 )
 from .output import OutputDefinition
 from .solid import NodeDefinition
-from .utils import validate_tags
+from .utils import check_valid_name, validate_tags
 
 _composition_stack = []
 
@@ -210,6 +210,9 @@ class PendingNodeInvocation:
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
         self.tags = check.opt_inst_param(tags, "tags", frozentags)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
+
+        if self.given_alias is not None:
+            check_valid_name(self.given_alias)
 
         if _is_in_composition():
             current_context().add_pending_invocation(self)
