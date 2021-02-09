@@ -7,11 +7,11 @@ import nbformat
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.cli.workspace import Workspace
+from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster_graphql.implementation.context import ProcessContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, request, send_file
@@ -35,7 +35,7 @@ MISSING_SCHEDULER_WARNING = (
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
-        self.context = check.inst_param(context, "context", ProcessContext)
+        self.context = check.inst_param(context, "context", WorkspaceProcessContext)
 
     def get_context(self):
         return self.context.create_request_context()
@@ -44,11 +44,11 @@ class DagsterGraphQLView(GraphQLView):
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(context, "context", ProcessContext)
+    context = check.inst_param(context, "context", WorkspaceProcessContext)
 
     def view(ws):
         # Even though this argument is named as the "request_context", we are passing it
-        # a `ProcessContext`. This is a naming restriction from the underlying
+        # a `WorkspaceProcessContext`. This is a naming restriction from the underlying
         # `GeventSubscriptionServer` which we reply on. If you view the implementation
         # for the DagsterSubscriptionServer, you will see that we create a request context
         # for every GraphQL request in the `on_start` method.
@@ -88,7 +88,7 @@ def notebook_view(request_args):
 
 
 def download_log_view(context):
-    context = check.inst_param(context, "context", ProcessContext)
+    context = check.inst_param(context, "context", WorkspaceProcessContext)
 
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
@@ -117,7 +117,7 @@ def download_log_view(context):
 
 
 def download_dump_view(context):
-    context = check.inst_param(context, "context", ProcessContext)
+    context = check.inst_param(context, "context", WorkspaceProcessContext)
 
     def view(run_id):
         run = context.instance.get_run_by_id(run_id)
@@ -242,6 +242,6 @@ def create_app_from_workspace(workspace, instance, path_prefix=""):
 
     print("Loading repository...")  # pylint: disable=print-call
 
-    context = ProcessContext(instance=instance, workspace=workspace, version=__version__)
+    context = WorkspaceProcessContext(instance=instance, workspace=workspace, version=__version__)
 
     return instantiate_app_with_views(context, path_prefix)

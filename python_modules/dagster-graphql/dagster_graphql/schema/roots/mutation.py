@@ -38,9 +38,7 @@ from ..sensors import GrapheneStartSensorMutation, GrapheneStopSensorMutation
 
 def create_execution_params(graphene_info, graphql_execution_params):
     preset_name = graphql_execution_params.get("preset")
-    selector = pipeline_selector_from_graphql(
-        graphene_info.context, graphql_execution_params["selector"]
-    )
+    selector = pipeline_selector_from_graphql(graphql_execution_params["selector"])
     if preset_name:
         if graphql_execution_params.get("runConfigData"):
             raise UserFacingGraphQLError(
@@ -78,12 +76,12 @@ def create_execution_params(graphene_info, graphql_execution_params):
             step_keys=graphql_execution_params.get("stepKeys"),
         )
 
-    return execution_params_from_graphql(graphene_info.context, graphql_execution_params)
+    return execution_params_from_graphql(graphql_execution_params)
 
 
-def execution_params_from_graphql(context, graphql_execution_params):
+def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
-        selector=pipeline_selector_from_graphql(context, graphql_execution_params.get("selector")),
+        selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
         run_config=graphql_execution_params.get("runConfigData") or {},
         mode=graphql_execution_params.get("mode"),
         execution_metadata=create_execution_metadata(
@@ -293,11 +291,11 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         if not graphene_info.context.is_reload_supported(location_name):
             return GrapheneReloadNotSupported(location_name)
 
-        # The current GraphQL context is a RequestContext, which contains a reference to the
-        # repository locations that were present in the root ProcessContext the start of the
-        # GraphQL request. Reloading a repository location modifies the ProcessContext, rendeirng
-        # our current RequestContext outdated. Therefore, `reload_repository_location` returns
-        # an updated request context for us to use.
+        # The current workspace context is a WorkspaceRequestContext, which contains a reference to the
+        # repository locations that were present in the root WorkspaceProcessContext the start of the
+        # request. Reloading a repository location modifies the WorkspaceWorkspaceProcessContext, rendeirng
+        # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
+        # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_repository_location(location_name)
 
         if new_context.has_repository_location(location_name):

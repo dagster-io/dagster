@@ -229,9 +229,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
         if pipeline_selector_arg:
-            pipeline_selector = pipeline_selector_from_graphql(
-                graphene_info.context, kwargs["activePipelineSelector"]
-            )
+            pipeline_selector = pipeline_selector_from_graphql(kwargs["activePipelineSelector"])
             return get_pipeline_snapshot_or_error_from_pipeline_selector(
                 graphene_info, pipeline_selector
             )
@@ -274,7 +272,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(
             graphene_info,
-            pipeline_selector_from_graphql(graphene_info.context, kwargs["params"]),
+            pipeline_selector_from_graphql(kwargs["params"]),
         )
 
     def resolve_pipelineRunsOrError(self, _graphene_info, **kwargs):
@@ -325,7 +323,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
             graphene_info,
-            pipeline_selector_from_graphql(graphene_info.context, pipeline),
+            pipeline_selector_from_graphql(pipeline),
             kwargs.get("runConfigData"),
             kwargs.get("mode"),
         )
@@ -333,7 +331,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_executionPlanOrError(self, graphene_info, pipeline, **kwargs):
         return get_execution_plan(
             graphene_info,
-            pipeline_selector_from_graphql(graphene_info.context, pipeline),
+            pipeline_selector_from_graphql(pipeline),
             kwargs.get("runConfigData"),
             kwargs.get("mode"),
         )
@@ -341,7 +339,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runConfigSchemaOrError(self, graphene_info, **kwargs):
         return resolve_run_config_schema_or_error(
             graphene_info,
-            pipeline_selector_from_graphql(graphene_info.context, kwargs["selector"]),
+            pipeline_selector_from_graphql(kwargs["selector"]),
             kwargs.get("mode"),
         )
 

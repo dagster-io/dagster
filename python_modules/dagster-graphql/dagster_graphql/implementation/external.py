@@ -46,7 +46,37 @@ def get_external_pipeline_or_raise(graphene_info, selector):
                 )
             )
 
-    return graphene_info.context.get_subset_external_pipeline(selector)
+    return get_subset_external_pipeline(graphene_info.context, selector)
+
+
+def get_subset_external_pipeline(context, selector):
+    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
+    from ..schema.pipelines.pipeline import GraphenePipeline
+
+    check.inst_param(selector, "selector", PipelineSelector)
+
+    repository_location = context.get_repository_location(selector.location_name)
+    external_repository = repository_location.get_repository(selector.repository_name)
+
+    subset_result = repository_location.get_subset_external_pipeline_result(selector)
+    if not subset_result.success:
+        error_info = subset_result.error
+        raise UserFacingGraphQLError(
+            GrapheneInvalidSubsetError(
+                message="{message}{cause_message}".format(
+                    message=error_info.message,
+                    cause_message="\n{}".format(error_info.cause.message)
+                    if error_info.cause
+                    else "",
+                ),
+                pipeline=GraphenePipeline(context.get_full_external_pipeline(selector)),
+            )
+        )
+
+    return ExternalPipeline(
+        subset_result.external_pipeline_data,
+        repository_handle=external_repository.handle,
+    )
 
 
 def ensure_valid_config(external_pipeline, mode, run_config):

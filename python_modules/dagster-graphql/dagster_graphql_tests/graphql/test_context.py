@@ -1,10 +1,10 @@
 import gc
 
 from dagster import lambda_solid, pipeline, repository
+from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.host_representation.handle import ManagedGrpcPythonEnvRepositoryLocationHandle
 from dagster.core.test_utils import instance_for_test
 from dagster.seven import mock
-from dagster_graphql.implementation.context import ProcessContext
 from dagster_graphql.test.utils import define_out_of_process_workspace
 
 
@@ -35,7 +35,7 @@ def test_reload_on_process_context():
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo") as workspace:
             # Create a process context
-            process_context = ProcessContext(workspace=workspace, instance=instance)
+            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             assert len(process_context.repository_locations) == 1
 
             # Save the repository name
@@ -57,7 +57,7 @@ def test_reload_on_request_context():
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo") as workspace:
             # Create a process context
-            process_context = ProcessContext(workspace=workspace, instance=instance)
+            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             assert len(process_context.repository_locations) == 1
 
             # Save the repository name
@@ -94,7 +94,7 @@ def test_reload_on_request_context_2():
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo") as workspace:
             # Create a process context
-            process_context = ProcessContext(workspace=workspace, instance=instance)
+            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             assert len(process_context.repository_locations) == 1
 
             # Save the repository name
@@ -149,7 +149,7 @@ def test_handle_cleaup_by_gc_without_request_context():
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo") as workspace:
             # Create a process context
-            process_context = ProcessContext(workspace=workspace, instance=instance)
+            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             assert len(process_context.repository_locations) == 1
             process_context.repository_locations[  # pylint: disable=protected-access
                 0
@@ -173,7 +173,7 @@ def test_handle_cleaup_by_gc_with_dangling_request_reference():
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo") as workspace:
             # Create a process context
-            process_context = ProcessContext(workspace=workspace, instance=instance)
+            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             process_context.repository_locations[  # pylint: disable=protected-access
                 0
             ]._handle.cleanup = call_me

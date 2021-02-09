@@ -22,7 +22,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         params["middleware"] = self.middleware
 
         # At this point, `on_start` has already executed and the request_context is
-        # actually a RequestContext that contains a snapshot of the data and repository
+        # actually a WorkspaceRequestContext that contains a snapshot of the data and repository
         # locations for this request.
         return super(DagsterSubscriptionServer, self).execute(request_context, params)
 
@@ -40,7 +40,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         try:
             execution_result = self.execute(
                 # Even though this object is referred to as the "request_context", it is
-                # actually a ProcessContext. This is a naming restriction from the underlying
+                # actually a WorkspaceProcessContext. This is a naming restriction from the underlying
                 # GeventSubscriptionServer. Here, we create a new request context for every
                 # incoming GraphQL request
                 connection_context.request_context.create_request_context(),

@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
@@ -11,15 +10,15 @@ from dagster.core.instance import DagsterInstance
 from rx.subjects import Subject
 
 
-class RequestContext(
+class WorkspaceRequestContext(
     namedtuple(
-        "RequestContext",
+        "WorkspaceRequestContext",
         "instance workspace_snapshot repository_locations_dict process_context version",
     )
 ):
     """
     This class is request-scoped object that stores (1) a reference to all repository locations
-    that exist on the `ProcessContext` at the start of the request and (2) a snapshot of the
+    that exist on the `WorkspaceProcessContext` at the start of the request and (2) a snapshot of the
     `Workspace` at the start of the request.
 
     This object is needed because a process context and the repository locations on that context can
@@ -31,7 +30,7 @@ class RequestContext(
     def __new__(
         cls, instance, workspace_snapshot, repository_locations_dict, process_context, version
     ):
-        return super(RequestContext, cls).__new__(
+        return super(WorkspaceRequestContext, cls).__new__(
             cls,
             instance,
             workspace_snapshot,
@@ -71,38 +70,6 @@ class RequestContext(
         # request context created from the updated process context
         updated_process_context = self.process_context.reload_repository_location(name)
         return updated_process_context.create_request_context()
-
-    def get_subset_external_pipeline(self, selector):
-        from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
-        from ..schema.pipelines.pipeline import GraphenePipeline
-        from .utils import UserFacingGraphQLError
-
-        check.inst_param(selector, "selector", PipelineSelector)
-        # We have to grab the pipeline from the location instead of the repository directly
-        # since we may have to request a subset we don't have in memory yet
-
-        repository_location = self.repository_locations_dict[selector.location_name]
-        external_repository = repository_location.get_repository(selector.repository_name)
-
-        subset_result = repository_location.get_subset_external_pipeline_result(selector)
-        if not subset_result.success:
-            error_info = subset_result.error
-            raise UserFacingGraphQLError(
-                GrapheneInvalidSubsetError(
-                    message="{message}{cause_message}".format(
-                        message=error_info.message,
-                        cause_message="\n{}".format(error_info.cause.message)
-                        if error_info.cause
-                        else "",
-                    ),
-                    pipeline=GraphenePipeline(self.get_full_external_pipeline(selector)),
-                )
-            )
-
-        return ExternalPipeline(
-            subset_result.external_pipeline_data,
-            repository_handle=external_repository.handle,
-        )
 
     def has_external_pipeline(self, selector):
         check.inst_param(selector, "selector", PipelineSelector)
@@ -167,16 +134,16 @@ class RequestContext(
         )
 
 
-class ProcessContext:
+class WorkspaceProcessContext:
     """
     This class is process-scoped object that is initialized using the repository handles from a
     Workspace. The responsibility of this class is to:
 
     1. Maintain an update-to-date dictionary of repository locations
-    1. Create `RequestContexts` whever a request is made
+    1. Create `WorkspaceRequestContexts` whever a request is made
     2. Run watch thread processes that monitor repository locations
 
-    In most cases, you will want to create a `RequestContext` to make use of this class.
+    In most cases, you will want to create a `WorkspaceRequestContext` to make use of this class.
     """
 
     def __init__(self, instance, workspace, version=None):
@@ -203,7 +170,7 @@ class ProcessContext:
         self.version = version
 
     def create_request_context(self):
-        return RequestContext(
+        return WorkspaceRequestContext(
             instance=self.instance,
             workspace_snapshot=self._workspace.create_snapshot(),
             repository_locations_dict=self._repository_locations.copy(),

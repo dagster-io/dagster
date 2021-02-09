@@ -2,7 +2,7 @@ import sys
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.cli.workspace import Workspace
+from dagster.cli.workspace import Workspace, WorkspaceProcessContext
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
@@ -10,7 +10,6 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster_graphql.implementation.context import ProcessContext
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
@@ -53,7 +52,7 @@ def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
 def define_in_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    return ProcessContext(
+    return WorkspaceProcessContext(
         workspace=Workspace(
             [
                 InProcessRepositoryLocationOrigin(
@@ -70,7 +69,7 @@ def define_out_of_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
 
     with define_out_of_process_workspace(python_file, fn_name) as workspace:
-        yield ProcessContext(
+        yield WorkspaceProcessContext(
             workspace=workspace,
             instance=instance,
         ).create_request_context()

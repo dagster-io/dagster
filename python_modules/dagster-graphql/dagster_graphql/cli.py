@@ -5,6 +5,7 @@ import requests
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
+from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.cli.workspace.workspace import Workspace
 from dagster.core.instance import DagsterInstance
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
@@ -14,7 +15,6 @@ from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
 
 from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from .implementation.context import ProcessContext
 from .schema import create_schema
 from .version import __version__
 
@@ -40,7 +40,7 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
 
     query = query.strip("'\" \n\t")
 
-    context = ProcessContext(
+    context = WorkspaceProcessContext(
         workspace=workspace, instance=instance, version=__version__
     ).create_request_context()
 
