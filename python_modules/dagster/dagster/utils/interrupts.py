@@ -6,16 +6,19 @@ from contextlib import contextmanager
 _received_interrupt = {"received": False}
 
 
-def setup_windows_interrupt_support():
-    """ Set SIGBREAK handler to SIGINT on Windows """
+def setup_interrupt_handlers():
+    # Map SIGTERM to SIGINT (for k8s)
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
+    # Set SIGBREAK handler to SIGINT on Windows
     if sys.platform == "win32":
         signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
 
 
 def _replace_interrupt_signal(new_signal_handler):
     signal.signal(signal.SIGINT, new_signal_handler)
-    # Update the windows interrupt signal as well if needed
-    setup_windows_interrupt_support()
+    # Update any overridden signals to also use the new handler
+    setup_interrupt_handlers()
 
 
 # Wraps code that we don't want a SIGINT to be able to interrupt. Within this context you can

@@ -1,7 +1,5 @@
 import os
-import signal
 import sys
-import threading
 import time
 import warnings
 from collections import namedtuple
@@ -49,7 +47,7 @@ from dagster.serdes.ipc import ipc_write_stream
 from dagster.seven import nullcontext
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
-from dagster.utils.interrupts import setup_windows_interrupt_support
+from dagster.utils.interrupts import capture_interrupts
 from dagster.utils.merger import merge_dicts
 
 
@@ -86,32 +84,26 @@ def execute_run_with_structured_logs_command(ctx, input_json):  # pylint: disabl
 )
 @click.argument("input_json", type=click.STRING)
 def execute_run_command(input_json):
-    try:
-        signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
-    except ValueError:
-        warnings.warn(
-            (
-                "Unexpected error attempting to manage signal handling on thread {thread_name}. "
-                "You should not invoke this API (execute_run) from threads "
-                "other than the main thread."
-            ).format(thread_name=threading.current_thread().name)
-        )
+    with capture_interrupts():
+        args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
+        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
-    args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
-    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+        with (
+            DagsterInstance.from_ref(args.instance_ref)
+            if args.instance_ref
+            else DagsterInstance.get()
+        ) as instance:
+            buffer = []
 
-    with (
-        DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
-    ) as instance:
-        buffer = []
+            def send_to_buffer(event):
+                buffer.append(serialize_dagster_namedtuple(event))
 
-        def send_to_buffer(event):
-            buffer.append(serialize_dagster_namedtuple(event))
+            _execute_run_command_body(
+                recon_pipeline, args.pipeline_run_id, instance, send_to_buffer
+            )
 
-        _execute_run_command_body(recon_pipeline, args.pipeline_run_id, instance, send_to_buffer)
-
-        for line in buffer:
-            click.echo(line)
+            for line in buffer:
+                click.echo(line)
 
 
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
@@ -128,10 +120,6 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
         pipeline_run,
         EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
-
-    # Perform setup so that termination of the execution will unwind and report to the
-    # instance correctly
-    setup_windows_interrupt_support()
 
     try:
         for event in core_execute_run(recon_pipeline, pipeline_run, instance):
@@ -224,64 +212,59 @@ def execute_step_with_structured_logs_command(ctx, input_json):  # pylint: disab
 )
 @click.argument("input_json", type=click.STRING)
 def execute_step_command(input_json):
-    try:
-        signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
-    except ValueError:
-        warnings.warn(
-            (
-                "Unexpected error attempting to manage signal handling on thread {thread_name}. "
-                "You should not invoke this API (execute_step) from threads "
-                "other than the main thread."
-            ).format(thread_name=threading.current_thread().name)
-        )
+    with capture_interrupts():
 
-    args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
+        args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
 
-    with (
-        DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
-    ) as instance:
-        pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
-        check.inst(
-            pipeline_run,
-            PipelineRun,
-            "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
-        )
+        with (
+            DagsterInstance.from_ref(args.instance_ref)
+            if args.instance_ref
+            else DagsterInstance.get()
+        ) as instance:
+            pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+            check.inst(
+                pipeline_run,
+                PipelineRun,
+                "Pipeline run with id '{}' not found for step execution".format(
+                    args.pipeline_run_id
+                ),
+            )
 
-        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
-        retries = Retries.from_config(args.retries_dict)
+            recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+            retries = Retries.from_config(args.retries_dict)
 
-        if args.should_verify_step:
-            success = verify_step(instance, pipeline_run, retries, args.step_keys_to_execute)
-            if not success:
+            if args.should_verify_step:
+                success = verify_step(instance, pipeline_run, retries, args.step_keys_to_execute)
+                if not success:
+                    return
+
+            execution_plan = create_execution_plan(
+                recon_pipeline.subset_for_execution_from_existing_pipeline(
+                    pipeline_run.solids_to_execute
+                ),
+                run_config=pipeline_run.run_config,
+                step_keys_to_execute=args.step_keys_to_execute,
+                mode=pipeline_run.mode,
+            )
+
+            buff = []
+
+            # Flag that the step execution is skipped
+            if should_skip_step(execution_plan, instance=instance, run_id=pipeline_run.run_id):
+                click.echo(serialize_dagster_namedtuple(StepExecutionSkipped()))
                 return
 
-        execution_plan = create_execution_plan(
-            recon_pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
-            ),
-            run_config=pipeline_run.run_config,
-            step_keys_to_execute=args.step_keys_to_execute,
-            mode=pipeline_run.mode,
-        )
+            for event in execute_plan_iterator(
+                execution_plan,
+                pipeline_run,
+                instance,
+                run_config=pipeline_run.run_config,
+                retries=retries,
+            ):
+                buff.append(serialize_dagster_namedtuple(event))
 
-        buff = []
-
-        # Flag that the step execution is skipped
-        if should_skip_step(execution_plan, instance=instance, run_id=pipeline_run.run_id):
-            click.echo(serialize_dagster_namedtuple(StepExecutionSkipped()))
-            return
-
-        for event in execute_plan_iterator(
-            execution_plan,
-            pipeline_run,
-            instance,
-            run_config=pipeline_run.run_config,
-            retries=retries,
-        ):
-            buff.append(serialize_dagster_namedtuple(event))
-
-        for line in buff:
-            click.echo(line)
+            for line in buff:
+                click.echo(line)
 
 
 class _ScheduleLaunchContext:
