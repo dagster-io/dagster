@@ -26,7 +26,7 @@ class MappedInputPlaceholder:
 
 
 def _not_invoked_warning(solid, context_source, context_name):
-    check.inst_param(solid, "solid", CallableNode)
+    check.inst_param(solid, "solid", PendingNodeInvocation)
 
     warning_message = (
         "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
@@ -115,7 +115,7 @@ class InProgressCompositionContext:
         return node_name
 
     def add_pending_invocation(self, solid):
-        solid = check.opt_inst_param(solid, "solid", CallableNode)
+        solid = check.opt_inst_param(solid, "solid", PendingNodeInvocation)
         solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
@@ -200,7 +200,7 @@ class CompleteCompositionContext(
         )
 
 
-class CallableNode:
+class PendingNodeInvocation:
     """An intermediate object in composition to allow for binding information such as
     an alias before invoking.
     """
@@ -352,7 +352,9 @@ class CallableNode:
                 "output must be unpacked by invoking map."
             )
 
-        elif isinstance(output_node, CallableNode) or isinstance(output_node, NodeDefinition):
+        elif isinstance(output_node, PendingNodeInvocation) or isinstance(
+            output_node, NodeDefinition
+        ):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received an un-invoked solid for input "
                 '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
@@ -380,11 +382,11 @@ class CallableNode:
             )
 
     def alias(self, name):
-        return CallableNode(self.node_def, name, self.tags)
+        return PendingNodeInvocation(self.node_def, name, self.tags)
 
     def tag(self, tags):
         tags = validate_tags(tags)
-        return CallableNode(
+        return PendingNodeInvocation(
             self.node_def,
             self.given_alias,
             frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
@@ -392,7 +394,7 @@ class CallableNode:
 
     def with_hooks(self, hook_defs):
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-        return CallableNode(
+        return PendingNodeInvocation(
             self.node_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
         )
 

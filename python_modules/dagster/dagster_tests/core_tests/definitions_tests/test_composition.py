@@ -698,7 +698,7 @@ def test_multiple_pending_invocations():
 
     assert (
         len(record) == 1
-    )  # ensure that one warning is thrown per solid_name / alias instead of per every CallableNode.
+    )  # ensure that one warning is thrown per solid_name / alias instead of per every PendingNodeInvocation.
 
 
 def test_compose_nothing():

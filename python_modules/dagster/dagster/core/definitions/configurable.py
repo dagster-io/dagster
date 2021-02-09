@@ -145,13 +145,13 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
 
 
 def _check_configurable_param(configurable: ConfigurableDefinition) -> Any:
-    from dagster.core.definitions.composition import CallableNode
+    from dagster.core.definitions.composition import PendingNodeInvocation
 
     check.param_invariant(
-        not isinstance(configurable, CallableNode),
+        not isinstance(configurable, PendingNodeInvocation),
         "configurable",
         (
-            "You have invoked `configured` on a CallableNode (an intermediate type), which is "
+            "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which is "
             "produced by aliasing or tagging a solid definition. To configure a solid, you must "
             "call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix "
             "this error, make sure to call `configured` on the definition object *before* using "

@@ -156,28 +156,28 @@ class NodeDefinition(NamedConfigurableDefinition):
             yield from output_def.dagster_type.inner_types
 
     def __call__(self, *args, **kwargs):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
-        return CallableNode(self)(*args, **kwargs)
+        return PendingNodeInvocation(self)(*args, **kwargs)
 
     def alias(self, name):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
         check.str_param(name, "name")
 
-        return CallableNode(self, given_alias=name)
+        return PendingNodeInvocation(self, given_alias=name)
 
     def tag(self, tags):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
-        return CallableNode(self, tags=validate_tags(tags))
+        return PendingNodeInvocation(self, tags=validate_tags(tags))
 
     def with_hooks(self, hook_defs):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
 
-        return CallableNode(self, hook_defs=hook_defs)
+        return PendingNodeInvocation(self, hook_defs=hook_defs)
 
     @abstractproperty
     def required_resource_keys(self):
