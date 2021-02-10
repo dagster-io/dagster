@@ -7,3 +7,9 @@
     scroll-margin-top: 90px;
   }
 }
+
+dd,
+dt,
+div.section {
+  scroll-margin-top: 90px;
+}
