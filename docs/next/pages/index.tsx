@@ -132,7 +132,7 @@ def hello_pipeline():
 
 const ActionItems = ({ openModal }) => {
   return (
-    <div className="my-12 grid gap-4 grid-cols-3">
+    <div className="my-12 grid gap-4 grid-cols-1 sm:grid-cols-3">
       <div className="bg-gradient-to-b from-purple-400 to-purple-500 px-6 py-8 rounded-xl">
         <div className="text-white font-bold">Start the tutorial</div>
         <div className="text-white text-sm my-4">
