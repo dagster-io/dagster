@@ -1,7 +1,7 @@
 export default function Custom404() {
   return (
     <div className="h-96 mt-96 w-full flex justify-center items-center">
-      <div className="flex flex-col justify-center items-center max-w-3xl prose mx-12">
+      <div className="flex flex-col justify-center items-center max-w-3xl prose dark:prose-dark mx-12">
         <img
           className="animate-wiggle hover:animate-spin"
           src="https://docs.dagster.io/assets/logos/small.png"

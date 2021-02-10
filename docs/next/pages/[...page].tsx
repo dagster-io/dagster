@@ -187,7 +187,10 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
       >
         {/* Start main area*/}
         <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
-          <div className="prose max-w-none" dangerouslySetInnerHTML={markup} />
+          <div
+            className="prose dark:prose-dark max-w-none"
+            dangerouslySetInnerHTML={markup}
+          />
         </div>
         {/* End main area */}
       </div>

@@ -178,7 +178,7 @@ const ActionItems = ({ openModal }) => {
 };
 
 const Prose = ({ children }) => {
-  return <div className="prose max-w-none">{children}</div>;
+  return <div className="prose dark:prose-dark max-w-none">{children}</div>;
 };
 
 const Index = () => {
