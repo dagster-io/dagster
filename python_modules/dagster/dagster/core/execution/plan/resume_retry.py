@@ -4,13 +4,8 @@ from dagster import check
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.plan.handle import StepHandle, UnresolvedStepHandle
 from dagster.core.execution.plan.step import ResolvedFromDynamicStepHandle
-from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
+from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.tags import RESUME_RETRY_TAG
-from graphql.execution.base import ResolveInfo
-
-from .external import get_external_execution_plan_or_raise
-from .utils import ExecutionParams
 
 
 def _update_tracking_dict(tracking, handle):
@@ -117,31 +112,3 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
                     to_retry[step_key].add(step_handle)
 
     return [step_handle.to_key() for step_set in to_retry.values() for step_handle in step_set]
-
-
-def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_params):
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.inst_param(execution_params, "execution_params", ExecutionParams)
-
-    instance = graphene_info.context.instance
-
-    if not execution_params.step_keys and is_resume_retry(execution_params):
-        # Get step keys from parent_run_id if it's a resume/retry
-        external_execution_plan = get_external_execution_plan_or_raise(
-            graphene_info=graphene_info,
-            external_pipeline=external_pipeline,
-            mode=execution_params.mode,
-            run_config=execution_params.run_config,
-            step_keys_to_execute=None,
-        )
-        return get_retry_steps_from_execution_plan(
-            instance, external_execution_plan, execution_params.execution_metadata.parent_run_id
-        )
-    else:
-        return execution_params.step_keys
-
-
-def is_resume_retry(execution_params):
-    check.inst_param(execution_params, "execution_params", ExecutionParams)
-    return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"

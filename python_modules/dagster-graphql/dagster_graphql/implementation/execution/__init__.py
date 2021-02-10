@@ -14,7 +14,6 @@ from ..external import (
 )
 from ..fetch_runs import is_config_valid
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
-from ..resume_retry import get_retry_steps_from_execution_plan
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_error
 from .backfill import create_and_launch_partition_backfill
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution

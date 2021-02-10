@@ -242,12 +242,12 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
                     ]
                 )
                 assert queue.get("replicaCount") == num_pods_for_queue
-                
-                labels = queue.get('labels')
+
+                labels = queue.get("labels")
                 if labels:
                     target_deployments = []
                     for item in deployments.items:
-                        if queue.get('name') in item.metadata.name:
+                        if queue.get("name") in item.metadata.name:
                             target_deployments.append(item)
 
                     assert len(target_deployments) > 0
@@ -355,7 +355,11 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                     "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
                     "workerQueues": [
                         {"name": "dagster", "replicaCount": 2},
-                        {"name": "extra-queue-1", "replicaCount": 1, "labels": {'celery-label-key': "celery-label-value"}},
+                        {
+                            "name": "extra-queue-1",
+                            "replicaCount": 1,
+                            "labels": {"celery-label-key": "celery-label-value"},
+                        },
                     ],
                     "livenessProbe": {
                         "initialDelaySeconds": 15,
