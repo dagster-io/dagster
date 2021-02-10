@@ -1,6 +1,6 @@
 import os
 import sys
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
 
 from dagster import check
@@ -72,6 +72,10 @@ class RepositoryLocationOrigin(ABC):
 
     @abstractmethod
     def create_handle(self):
+        pass
+
+    @abstractproperty
+    def location_name(self):
         pass
 
 

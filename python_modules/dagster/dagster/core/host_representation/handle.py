@@ -1,6 +1,6 @@
 import sys
 import threading
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
 
 from dagster import check
@@ -60,6 +60,10 @@ class RepositoryLocationHandle(ABC):
     def create_location(self):
         pass
 
+    @abstractproperty
+    def origin(self):
+        pass
+
 
 class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
     """
@@ -70,7 +74,7 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         from dagster.grpc.client import DagsterGrpcClient
         from dagster.grpc.server_watcher import create_grpc_watch_thread
 
-        self.origin = check.inst_param(origin, "origin", GrpcServerRepositoryLocationOrigin)
+        self._origin = check.inst_param(origin, "origin", GrpcServerRepositoryLocationOrigin)
 
         port = self.origin.port
         socket = self.origin.socket
@@ -120,6 +124,10 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         except:
             self.cleanup()
             raise
+
+    @property
+    def origin(self):
+        return self._origin
 
     def add_state_subscriber(self, subscriber):
         self._state_subscribers.append(subscriber)
@@ -196,7 +204,7 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
 
         self.client = None
 
-        self.origin = check.inst_param(
+        self._origin = check.inst_param(
             origin, "origin", ManagedGrpcPythonEnvRepositoryLocationOrigin
         )
         loadable_target_origin = origin.loadable_target_origin
@@ -240,6 +248,10 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
             repository_name,
             self.container_image,
         )
+
+    @property
+    def origin(self):
+        return self._origin
 
     @property
     def executable_path(self):
@@ -296,11 +308,15 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
 
 class InProcessRepositoryLocationHandle(RepositoryLocationHandle):
     def __init__(self, origin):
-        self.origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
+        self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
         pointer = self.origin.recon_repo.pointer
         repo_def = repository_def_from_pointer(pointer)
         self.repository_code_pointer_dict = {repo_def.name: pointer}
+
+    @property
+    def origin(self):
+        return self._origin
 
     @property
     def location_name(self):
