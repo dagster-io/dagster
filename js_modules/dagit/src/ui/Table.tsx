@@ -23,6 +23,7 @@ export const Table = styled(HTMLTable)<TableProps>`
   }
 
   & tr td {
+    color: ${Colors.DARK_GRAY4};
     box-shadow: none !important;
     padding: ${({$compact}) => ($compact ? '8px 8px 8px 0' : '12px 24px 12px 0')};
   }

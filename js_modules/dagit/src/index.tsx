@@ -7,6 +7,7 @@ import 'src/fonts/fonts.css';
 
 import {ApolloClient, ApolloLink, ApolloProvider} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {createGlobalStyle} from 'styled-components/macro';
@@ -31,11 +32,14 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
+    color: ${Colors.DARK_GRAY4};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
     display: flex;
     flex: 1 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
