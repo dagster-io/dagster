@@ -101,7 +101,7 @@ def my_typehints_solid(context, abc: str, xyz: int):
 
 Outputs are yielded from a solid's `compute_fn`. When you have one output, you can simply return the output value. When you have more than one output, however, you must use `yield` using the <PyObject object="Output"/> class to disambiguate between outputs.
 
-Similar to <PyObject object="InputDefinition" displayText="InputDefinitions" />, we define <PyObject object="OuputDefinition" displayText="OutputDefinitions" /> on the <PyObject object="solid" decorator /> decorator.
+Similar to <PyObject object="InputDefinition" displayText="InputDefinitions" />, we define <PyObject object="OutputDefinition" pluralize /> on the <PyObject object="solid" decorator /> decorator.
 
 ```python file=/legacy/how_tos/solids.py startafter=my_input_output_example_solid_start endbefore=my_input_output_example_solid_end
 @solid(
@@ -125,12 +125,29 @@ Solids are used within a <PyObject object="pipeline" displayText="@pipeline" />.
 
 ## Examples
 
-### With inputs
+### With multiple inputs
+
+Here we have a solid with multiple inputs. Notice how the order of the inputs match the order of the arguments on the compute function.
 
 ```python
-@solid(input_defs=[...])
+@solid(
+     InputDefinition(name="value_a", dagster_type=int),
+     InputDefinition(name="value_b", dagster_type=int),
+)
 def addder(_context, value_a, value_b):
-  return value_a + value_b
+    context.log.info(str(value_a + value_b))
+```
+
+### With single outputs
+
+When you have a single output, you don't need to yield the output using the <PyObject object="Output"/> class. This is because there is no ambiguity about which output is being emmited.
+
+```python
+@solid(
+    output_defs=[OutputDefinition("name", dagster_type=str)]
+)
+def addder(_context):
+  return "Dagster"
 ```
 
 ### With multiple outputs
@@ -138,34 +155,41 @@ def addder(_context, value_a, value_b):
 Here we have a solid that emits multiple outputs. Notice how we have to use `yield` here instead of return since we more than one output. It is also imporant to wrap the output in the `Output` class, in order to help differentiate different outputs.
 
 ```python
-@solid(input_defs=[...])
+@solid(
+    output_defs=[
+        OutputDefinition("name", dagster_type=str),
+        OutputDefinition("age", dagster_type=str)
+    ]
+)
 def addder(_context, value_a, value_b):
-  return value_a + value_b
+    yield Output("dagster", output_name="name")
+    yield Output("dagster", output_name="age")
 ```
 
-## Patterns
+### Untyped inputs and outputs
 
-The way we tell Dagster that one solid should execute after another solid is by declaring that one of the inputs of the former solid depends on one of the outputs of the latter solid. If the former solid doesn't depend on something produced by the latter solid, it theoretically shouldn't need to execute after it.
+Inputs and outputs are _optionally_ typed. It is okay to leave out the type of an input or output if needed.
 
-However, sometimes it doesn't make sense to use Dagster's inputs/outputs to model the dependency. For example, if one solid creates a particular table in a database and another solid consumes that table, then the data is flowing through the database, not through inputs and outputs defined in Dagster.
+```python
+@solid(
+    input_defs=[
+        InputDefinition(name="value_a"),
+        InputDefinition(name="value_b"),
+    ]
+)
+def addder(_context, value_a, value_b):
+    context.log.info(str(value_a + value_b)))
+```
 
-In this situation, we can use the Nothing Dagster type to model the dependency between the two solids. We are passing "nothing" via Dagster between the two solids. By hooking up a "nothing" output of the first solid to a "nothing" input of the second solid, Dagster understands that the second should execute after the first.
+In fact, if you are only using the "name" argument for inputs, you can drop the input definitions entirely.
 
 ```python
 @solid
-def create_table_1(_) -> Nothing:
-    get_database_connection().execute("create table_1 as select * from some_source_table")
-
-
-@solid(input_defs=[InputDefinition("start", Nothing)])
-def create_table_2(_):
-    get_database_connection().execute("create table_2 as select * from table_1")
-
-
-@pipeline
-def my_pipeline():
-    create_table_2(create_table_1())
+def addder(_context, value_a, value_b):
+    context.log.info(str(value_a + value_b)))
 ```
+
+## Patterns
 
 ### Solid Factory
 
@@ -194,3 +218,11 @@ def x_solid(
 
     return _x_solid
 ```
+
+## FAQ
+
+### Why "Solid"?
+
+Why is a solid called a "solid"? It is a long and meandering journey, from a novel concept, to a familiar acronym, and back to a word.
+
+In a data management system there are two broad categories of data: source data -- meaning the data directly inputted by a user, gathered from an uncontrolled external system, or generated directly by a sensor -- and computed data -- meaning data that is either created by computing on source data or on other computed data. Management of computed data is the primary concern of Dagster. Another name for computed data would be software-structured data. Or SSD. Given that SSD is already a well-known acronym for Solid State Drives we named our core concept for software-structured data a Solid.

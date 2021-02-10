@@ -1,9 +1,9 @@
 # pylint: disable=unused-argument
 
-# start_pipeline_definition_marker_0
 from dagster import DependencyDefinition, InputDefinition, PipelineDefinition, pipeline, solid
 
 
+# start_pipeline_definition_marker_0
 @solid
 def return_one(context):
     return 1

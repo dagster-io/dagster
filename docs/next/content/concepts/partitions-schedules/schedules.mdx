@@ -1,0 +1,98 @@
+---
+title: Schedules | Dagster
+description: Schedules are ...
+---
+
+# Schedules
+
+Dagster includes a built-in scheduler that can be used to launch runs on a fixed interval.
+
+<img src="/images/schedules.png" />
+
+## Relevant APIs
+
+| Name                                                     | Description                                                                                                                                     |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="daily_schedule" decorator />           | Decorator that defines a schedule that executes every day at a fixed time                                                                       |
+| <PyObject object="hourly_schedule" decorator />          | Decorator that defines a schedule that executes every hour at a fixed time                                                                      |
+| <PyObject object="weekly_schedule" decorator />          | Decorator that defines a schedule that executes every week on a fixed day and time                                                              |
+| <PyObject object="monthly_schedule" decorator />         | Decorator that defines a schedule that executes every month on a fixed day and time                                                             |
+| <PyObject object="ScheduleExecutionContext" decorator /> | The context passed to the schedule definition execution function                                                                                |
+| <PyObject object="ScheduleDefinition"  />                | Base class for schedules. You almost never want to use initialize this class directly. Instead, you should use one of the many decorators above |
+
+## Overview
+
+Schedules target pipelines and are responsible for generating run config for a pipeline run every time they run.
+
+Each schedule:
+
+- Targets a pipeline
+- Defines a function that returns run_config for the targeted pipeline
+- Optionally defines tags, mode, and solid_selection for the target pipeline
+- Optionally defines a should_execute function that can be used to skip a scheduled execution
+
+---
+
+## Defining a schedule
+
+### Partition-based schedules
+
+### Non-partition-based schedules
+
+## Running the scheduler
+
+## Examples
+
+### Cron schedule
+
+### Schedule from Partition Set
+
+## Patterns
+
+### Using a preset in a schedule definition
+
+```python
+@daily_schedule(
+    start_date=...,
+    pipeline_name="my_pipeline",
+    solid_selection=preset.solid_selection,
+    mode=preset.mode,
+    tags_fn_for_date=lambda _: preset.tags,
+)
+def my_daily_schedule(_date):
+    return preset.run_config
+```
+
+You can also write a helper function if you find yourself doing this often:
+
+```python
+from dagster import check, PipelineDefinition, DagsterInvalidDefinitionError, daily_schedule
+import datetime
+
+
+def daily_schedule_definition_from_pipeline_preset(pipeline, preset_name, start_date):
+    check.inst_param(pipeline, "pipeline", PipelineDefinition)
+    check.str_param(preset_name, "preset_name")
+    check.inst_param(start_date, "start_date", datetime.datetime)
+
+    preset = pipeline.get_preset(preset_name)
+    if not preset:
+        raise DagsterInvalidDefinitionError(
+            "Preset {preset_name} was not found "
+            "on pipeline {pipeline_name}".format(
+                preset_name=preset_name, pipeline_name=pipeline.name
+            )
+        )
+
+    @daily_schedule(
+        start_date=start_date,
+        pipeline_name=pipeline.name,
+        solid_selection=preset.solid_selection,
+        mode=preset.mode,
+        tags_fn_for_date=lambda _: preset.tags,
+    )
+    def my_daily_schedule(_date):
+        return preset.run_config
+
+    return my_daily_schedule
+```

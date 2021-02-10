@@ -212,11 +212,11 @@
         "children": [
           {
             "title": "Partitions",
-            "path": "/overview/scheduling-partitions/partitions"
+            "path": "/concepts/partitions-schedules/partitions"
           },
           {
             "title": "Schedules",
-            "path": "/overview/scheduling-partitions/schedules"
+            "path": "/concepts/partitions-schedules/schedules"
           },
           {
             "title": "Backfills",

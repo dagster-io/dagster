@@ -261,7 +261,7 @@ const Index = () => {
             </div>
           </section>
 
-          <div className="prose max-w-none">
+          <Prose>
             <p>
               Dagster lets you define pipelines in terms of the data flow
               between reusable, logical components, then test locally and run
@@ -277,7 +277,7 @@ const Index = () => {
               more robust. Developing data pipelines with Dagster makes testing
               easier and deploying faster.
             </p>
-          </div>
+          </Prose>
 
           <ActionItems openModal={openModal} />
 
@@ -348,7 +348,7 @@ const Index = () => {
             <div className="uppercase text-sm font-semibold text-gray-500">
               Quick Links
             </div>
-            <div className="mt-6 prose">
+            <div className="mt-6 prose dark:prose-dark">
               <ul>
                 <li>
                   <a href="#">Go to Tutorial</a>
