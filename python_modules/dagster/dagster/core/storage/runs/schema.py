@@ -1,5 +1,7 @@
 import sqlalchemy as db
 
+from ..sql import get_current_timestamp
+
 RunStorageSqlMetadata = db.MetaData()
 
 RunsTable = db.Table(
@@ -17,8 +19,8 @@ RunsTable = db.Table(
     db.Column("run_body", db.Text),
     db.Column("partition", db.Text),
     db.Column("partition_set", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
-    db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
 # Secondary Index migration table, used to track data migrations, both for event_logs and runs.
@@ -28,7 +30,7 @@ SecondaryIndexMigrationTable = db.Table(
     RunStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("name", db.Text, unique=True),
-    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )
 

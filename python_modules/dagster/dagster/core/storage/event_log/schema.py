@@ -1,5 +1,7 @@
 import sqlalchemy as db
 
+from ..sql import get_current_timestamp
+
 SqlEventLogStorageMetadata = db.MetaData()
 
 SqlEventLogStorageTable = db.Table(
@@ -20,7 +22,7 @@ SecondaryIndexMigrationTable = db.Table(
     SqlEventLogStorageMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("name", db.Text, unique=True),
-    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )
 
@@ -29,7 +31,7 @@ AssetKeyTable = db.Table(
     SqlEventLogStorageMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("asset_key", db.Text, unique=True),
-    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
 db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
