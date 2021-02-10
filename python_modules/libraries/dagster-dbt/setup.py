@@ -29,6 +29,6 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=["dagster", "dagster-pandas", "pandas", "requests", "attrs"],
-        extras_require={"test": ["dbt==0.17.*"]},
+        extras_require={"test": ["dbt>=0.17.0"]},
         zip_safe=False,
     )

@@ -62,7 +62,7 @@ class NodeResult(
 
     def __new__(
         cls,
-        node: Dict[str, Any],
+        node: Optional[Dict[str, Any]] = None,
         error: Optional[str] = None,
         status: Optional[Union[str, int]] = None,
         execution_time: Optional[float] = None,
@@ -76,7 +76,7 @@ class NodeResult(
         step_timings = check.list_param(step_timings, "step_timings", of_type=StepTiming)
         return super().__new__(
             cls,
-            check.dict_param(node, "node", key_type=str),
+            check.opt_dict_param(node, "node", key_type=str),
             check.opt_str_param(error, "error"),
             status,
             check.opt_float_param(execution_time, "execution_time"),
@@ -99,7 +99,7 @@ class NodeResult(
         Returns:
             NodeResult: An instance of :class:`NodeResult <dagster_dbt.NodeResult>`.
         """
-        node = check.dict_elem(d, "node")
+        node = check.opt_dict_elem(d, "node")
         error = check.opt_str_elem(d, "error")
         execution_time = check.float_elem(d, "execution_time")
         thread_id = check.opt_str_elem(d, "thread_id")
@@ -141,14 +141,14 @@ class DbtResult(namedtuple("_DbtResult", "logs results generated_at elapsed_time
         cls,
         logs: List[Dict[str, Any]],
         results: List[NodeResult],
-        generated_at: str,
+        generated_at: Optional[str] = None,
         elapsed_time: Optional[float] = None,
     ):
         return super().__new__(
             cls,
             check.list_param(logs, "logs", of_type=Dict),
             results,
-            check.str_param(generated_at, "generated_at"),
+            check.opt_str_param(generated_at, "generated_at"),
             check.opt_float_param(elapsed_time, "elapsed_time"),
         )
 
@@ -167,7 +167,7 @@ class DbtResult(namedtuple("_DbtResult", "logs results generated_at elapsed_time
         logs = check.is_list(d["logs"], of_type=Dict)
         check.list_elem(d, "results")
         results = [NodeResult.from_dict(d) for d in check.is_list(d["results"], of_type=Dict)]
-        generated_at = check.str_elem(d, "generated_at")
+        generated_at = check.opt_str_elem(d, "generated_at")
         elapsed_time = check.float_elem(d, "elapsed_time")
 
         return cls(
