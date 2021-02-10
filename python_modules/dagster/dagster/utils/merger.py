@@ -35,15 +35,12 @@ def deep_merge_dicts(onto_dict: dict, from_dict: dict) -> dict:
     return _deep_merge_dicts(onto_dict, from_dict)
 
 
-def merge_dicts(onto_dict: dict, from_dict: dict) -> dict:
-    """
-    Returns a dictionary with an entry for any key that's in either of the inputs.
-    If the inputs have different values for the same key, the returned dictionary
-    contains the value from from_dict.
-    """
-    check.dict_param(onto_dict, "onto_dict")
-    check.dict_param(from_dict, "from_dict")
+def merge_dicts(*args) -> dict:
+    check.is_tuple(args, of_type=dict)
+    if len(args) < 2:
+        check.failed(f"Expected 2 or more args to merge_dicts, found {len(args)}")
 
-    result = onto_dict.copy()
-    result.update(from_dict)
+    result = args[0].copy()
+    for arg in args[1:]:
+        result.update(arg)
     return result
