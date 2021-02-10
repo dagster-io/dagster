@@ -28,10 +28,10 @@ const TopLevelNavigation = () => {
           <Link key={item.path} href={item.path}>
             <a
               className={cx(
-                "group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-900",
+                "group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-900 dark:text-gray-200",
                 {
-                  "bg-gray-200": match,
-                  " hover:text-gray-900 hover:bg-gray-50": !match,
+                  "bg-gray-200 dark:bg-gray-600": match,
+                  "hover:text-gray-900 hover:bg-gray-50 dark:hover:text-gray-300 dark:hover:bg-gray-700": !match,
                 }
               )}
             >
@@ -68,7 +68,7 @@ const SecondaryNavigation = () => {
         return (
           <div key={section.title} className="mt-8">
             <h3
-              className="px-3 text-xs font-semibold text-blue-500 uppercase tracking-wider"
+              className="px-3 text-xs font-semibold text-blue-500 dark:text-blue-200 uppercase tracking-wider"
               id="teams-headline"
             >
               {section.title}
@@ -107,12 +107,12 @@ const VersionDropdown = () => {
           {({ open }) => (
             <>
               <div>
-                <Menu.Button className="group w-full bg-gray-50 rounded-md px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-200 border-2 ">
+                <Menu.Button className="group w-full bg-gray-50 dark:bg-gray-800 rounded-md px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-200 border-2 dark:border-gray-700">
                   <span className="flex w-full justify-between items-center">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0">
                         <span className="text-gray-900 text-sm font-medium truncate"></span>{" "}
-                        <span className="text-gray-500 text-sm truncate">
+                        <span className="text-gray-500 dark:text-gray-300 text-sm truncate">
                           {currentVersion}
                         </span>
                       </span>
@@ -213,9 +213,9 @@ const RecursiveNavigation = ({ section }) => {
     <Link href={section.path}>
       <a
         className={cx(
-          "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-gray-900 hover:bg-gray-50",
+          "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700",
           {
-            "bg-blue-100 text-gray-900 hover:bg-blue-100":
+            "bg-blue-100 text-gray-900 hover:bg-blue-100 dark:bg-gray-600":
               section.path === asPath,
           }
         )}
@@ -235,8 +235,10 @@ const SidebarContents = () => {
             className="w-5 h-5 inline-block"
             src="https://docs.dagster.io/assets/logos/small.png"
           />
-          <span className="ml-2 text-lg font-extrabold">Dagster</span>
-          <span className="ml-1 text-lg font-extrabold text-gray-700">
+          <span className="ml-2 text-lg font-extrabold dark:text-gray-200">
+            Dagster
+          </span>
+          <span className="ml-1 text-lg font-extrabold text-gray-700 dark:text-gray-200">
             Docs
           </span>
         </a>
@@ -244,7 +246,7 @@ const SidebarContents = () => {
       <VersionDropdown />
       {/* Sidebar component, swap this element with another sidebar if you like */}
       <div className="h-0 flex-1 flex flex-col overflow-y-auto">
-        <div className="hidden lg:block h-12 pointer-events-none absolute inset-x-0 z-10 bg-gradient-to-b from-gray-100 "></div>
+        <div className="hidden lg:block h-12 pointer-events-none absolute inset-x-0 right-1 z-10 bg-gradient-to-b from-gray-100 dark:from-gray-900"></div>
         {/* Sidebar Search */}
         <div className="hidden px-3 mt-5">
           <label htmlFor="search" className="sr-only">
@@ -366,7 +368,7 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
 
       {/* Static sidebar for desktop */}
       <div className="relative hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-80 border-r border-gray-200 pt-4 pb-4 bg-gray-100">
+        <div className="flex flex-col w-80 border-r border-gray-500 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900">
           <SidebarContents />
         </div>
       </div>

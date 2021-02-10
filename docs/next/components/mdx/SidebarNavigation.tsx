@@ -77,9 +77,10 @@ const renderItems = (items, activeId, depth) => {
             <a
               href={item.url}
               className={cx(MARGINS[depth], "font-semibold text-sm pl-2", {
-                "text-gray-800 underline bg-blue-50":
+                "text-gray-800 dark:text-gray-100 underline bg-blue-50 dark:bg-blue-900":
                   activeId === item.url.slice(1),
-                "text-gray-500": activeId !== item.url.slice(1),
+                "text-gray-500 dark:text-gray-300":
+                  activeId !== item.url.slice(1),
               })}
             >
               {item.title}

@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { Router, useRouter } from "next/router";
+import React, { useState } from "react";
 
 import Pagination from "components/Pagination";
 import Sidebar from "../components/Sidebar";
 import { Transition } from "@headlessui/react";
+import cx from "classnames";
+import { useLocalStorage } from "react-use";
+import { useRouter } from "next/router";
 
 export const FeedbackModal = ({
   isOpen,
@@ -257,16 +259,16 @@ export const FeedbackModal = ({
   );
 };
 
-const Header = ({ openFeedback }) => {
+const Header = ({ openFeedback, isDarkMode, setDarkMode }) => {
   return (
-    <div className="sticky top-0 z-30 flex items-center bg-white border-b">
+    <div className="sticky top-0 z-30 flex items-center bg-white dark:bg-gray-900 border-b">
       <div
         className="flex-1 relative z-0 cursor-pointer focus:outline-none"
         tabIndex={0}
       >
         {/* Search Bar*/}
         <div className="px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-          <div className=" text-gray-700 hover:bg-gray-50 flex items-center">
+          <div className=" text-gray-700 dark:text-gray-400 hover:bg-gray-50 hover:bg-gray-800 flex items-center">
             <svg
               className="h-5 w-5"
               xmlns="http://www.w3.org/2000/svg"
@@ -280,10 +282,10 @@ const Header = ({ openFeedback }) => {
                 clipRule="evenodd"
               />
             </svg>
-            <div className="ml-4 hover:text-gray-900">
+            <div className="ml-4 hover:text-gray-900 dark:hover:text-gray-200">
               Quick search{" "}
               <span className="hidden sm:inline">for anything</span>{" "}
-              <span className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 text-sm border border-gray-200 rounded-md">
+              <span className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 dark:text-gray-200 text-sm border border-gray-200 dark:border-gray-500 rounded-md">
                 ⌘K
               </span>
             </div>
@@ -291,7 +293,7 @@ const Header = ({ openFeedback }) => {
           <div>
             <button
               onClick={openFeedback}
-              className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 text-sm border border-gray-200 rounded-md hover:bg-gray-100"
+              className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 dark:text-gray-300 text-sm border border-gray-200 dark:border-gray-500 rounded-md hover:bg-gray-100"
             >
               Share Feedback
             </button>
@@ -351,6 +353,75 @@ const Header = ({ openFeedback }) => {
               <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
             </svg>
           </a>
+          <button
+            onClick={() => setDarkMode(!isDarkMode)}
+            type="button"
+            className={cx(
+              "relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500",
+              {
+                "bg-gray-800": isDarkMode,
+                "bg-gray-200": !isDarkMode,
+              }
+            )}
+            aria-pressed="false"
+          >
+            <span className="sr-only">Use setting</span>
+            {/* Enabled: "translate-x-5", Not Enabled: "translate-x-0" */}
+            <span
+              className={cx(
+                "pointer-events-none relative inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200",
+                {
+                  "translate-x-5": isDarkMode,
+                  "translate-x-0": !isDarkMode,
+                }
+              )}
+            >
+              {/* Enabled: "opacity-0 ease-out duration-100", Not Enabled: "opacity-100 ease-in duration-200" */}
+              <span
+                className={cx(
+                  "absolute inset-0 h-full w-full flex items-center justify-center transition-opacity",
+                  {
+                    "opacity-0 ease-out duration-100": isDarkMode,
+                    "opacity-100 ease-in duration-200": !isDarkMode,
+                  }
+                )}
+                aria-hidden="true"
+              >
+                <svg
+                  className="bg-white h-3 w-3 text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                    clipRule="evenodd"
+                  ></path>
+                </svg>
+              </span>
+              {/* Enabled: "opacity-100 ease-in duration-200", Not Enabled: "opacity-0 ease-out duration-100" */}
+              <span
+                className={cx(
+                  "absolute inset-0 h-full w-full flex items-center justify-center transition-opacity",
+                  {
+                    "opacity-100 ease-in duration-200": isDarkMode,
+                    "opacity-0 ease-out duration-100": !isDarkMode,
+                  }
+                )}
+                aria-hidden="true"
+              >
+                <svg
+                  className="bg-white h-3 w-3 text-indigo-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                </svg>
+              </span>
+            </span>
+          </button>
         </div>
         {/* End secondary column */}
       </div>
@@ -361,6 +432,10 @@ const Header = ({ openFeedback }) => {
 const Layout = ({ children }) => {
   const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [isDarkMode, setDarkMode] = useLocalStorage<boolean>(
+    "dagster.dark",
+    false
+  );
 
   const closeFeedback = () => {
     setOpenFeedback(false);
@@ -380,7 +455,12 @@ const Layout = ({ children }) => {
 
   return (
     <>
-      <div className="h-screen flex overflow-hidden bg-white">
+      <div
+        className={cx("h-screen flex overflow-hidden transition-colors", {
+          "dark bg-gray-900": isDarkMode,
+          "bg-white": !isDarkMode,
+        })}
+      >
         <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
         <Sidebar
           isMobileMenuOpen={isMobileMenuOpen}
@@ -430,7 +510,11 @@ const Layout = ({ children }) => {
                   </div>
                 </div>
               </div>
-              <Header openFeedback={toggleFeedback} />
+              <Header
+                openFeedback={toggleFeedback}
+                isDarkMode={isDarkMode}
+                setDarkMode={setDarkMode}
+              />
 
               <div className="w-full relative z-0 flex justify-center">
                 {children}

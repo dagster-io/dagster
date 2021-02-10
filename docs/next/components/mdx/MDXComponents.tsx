@@ -60,7 +60,7 @@ const PyObject: React.FunctionComponent<{
   return (
     <Link href={link + "#" + module + "." + object}>
       <a className="no-underline hover:underline">
-        <code className="bg-blue-100 p-1">{textValue}</code>
+        <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
       </a>
     </Link>
   );
