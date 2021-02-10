@@ -360,7 +360,7 @@ const Header = ({ openFeedback }) => {
 
 const Layout = ({ children }) => {
   const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState<boolean>(true);
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   const closeFeedback = () => {
     setOpenFeedback(false);
@@ -432,7 +432,7 @@ const Layout = ({ children }) => {
               </div>
               <Header openFeedback={toggleFeedback} />
 
-              <div className="w-full relative z-0 flex justify-center pb-96">
+              <div className="w-full relative z-0 flex justify-center">
                 {children}
               </div>
             </div>
