@@ -1,4 +1,12 @@
-from dagster import execute_pipeline, pipeline, reconstructable, solid
+from dagster import (
+    InputDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    reconstructable,
+    solid,
+)
 from dagster.core.test_utils import instance_for_test
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
@@ -18,6 +26,11 @@ def multiply_inputs(context, y, ten):
 @solid
 def emit_ten(_):
     return 10
+
+
+@solid
+def echo(_, x: int) -> int:
+    return x
 
 
 @solid(output_defs=[DynamicOutputDefinition()])
@@ -84,3 +97,40 @@ def test_map_multi():
             "1": 20,
             "2": 40,
         }
+
+
+def test_composite_wrapping():
+    # regression test from user report
+
+    @composite_solid(input_defs=[InputDefinition("z", int)], output_defs=[OutputDefinition(int)])
+    def do_multiple_steps(z):
+        output = echo(z)
+        return echo(output)
+
+    @pipeline
+    def shallow():
+        emit().map(do_multiple_steps)
+
+    result = execute_pipeline(shallow)
+    assert result.success
+    assert result.result_for_solid("do_multiple_steps").output_value() == {"0": 0, "1": 1, "2": 2}
+
+    @composite_solid(input_defs=[InputDefinition("x", int)], output_defs=[OutputDefinition(int)])
+    def inner(x):
+        return echo(x)
+
+    @composite_solid(input_defs=[InputDefinition("y", int)], output_defs=[OutputDefinition(int)])
+    def middle(y):
+        return inner(y)
+
+    @composite_solid(input_defs=[InputDefinition("z", int)], output_defs=[OutputDefinition(int)])
+    def outer(z):
+        return middle(z)
+
+    @pipeline
+    def deep():
+        emit().map(outer)
+
+    result = execute_pipeline(deep)
+    assert result.success
+    assert result.result_for_solid("outer").output_value() == {"0": 0, "1": 1, "2": 2}

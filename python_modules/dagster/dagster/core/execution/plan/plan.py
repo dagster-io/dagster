@@ -293,7 +293,9 @@ def get_step_input_source(
     check.inst_param(input_def, "input_def", InputDefinition)
     check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
     check.opt_inst_param(handle, "handle", SolidHandle)
-    check.opt_list_param(parent_step_inputs, "parent_step_inputs", of_type=StepInput)
+    check.opt_list_param(
+        parent_step_inputs, "parent_step_inputs", of_type=(StepInput, UnresolvedStepInput)
+    )
 
     input_handle = solid.input_handle(input_name)
     solid_config = plan_builder.environment_config.solids.get(str(handle))
