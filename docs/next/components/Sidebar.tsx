@@ -291,75 +291,70 @@ const SidebarContents = () => {
   );
 };
 
-const Sidebar = () => {
-  const [openMobileMenu, setOpenMobileMenu] = useState<boolean>(false);
-
-  const openSidebar = () => {
-    setOpenMobileMenu(true);
-  };
-
-  const closeSidebar = () => {
-    setOpenMobileMenu(false);
-  };
-
+const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
   return (
     <>
       {/* Off-canvas menu for mobile, show/hide based on off-canvas menu state. */}
-      <div className="hidden lg:hidden">
-        <div className="fixed inset-0 flex z-40">
-          {/*
-  Off-canvas menu overlay, show/hide based on off-canvas menu state.
+      <Transition show={isMobileMenuOpen}>
+        <div className="lg:hidden">
+          <div className="fixed inset-0 flex z-40">
+            <Transition.Child
+              enter="transition-opacity ease-in-out duration-100"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="transition-opacity ease-in-out duration-300"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0" aria-hidden="true">
+                <div className="absolute inset-0 bg-gray-600 opacity-75" />
+              </div>
+            </Transition.Child>
+            <Transition.Child
+              enter="transition ease-in-out duration-100 transform"
+              enterFrom="-translate-x-full"
+              enterTo="translate-x-0"
+              leave="transition ease-in-out duration-300 transform"
+              leaveFrom="translate-x-0"
+              leaveTo="-translate-x-full"
+            >
+              <div className="relative flex-1 flex flex-col w-96 max-w-xs  pt-5 pb-4 bg-white h-full">
+                <div className="absolute top-0 right-0 -mr-12 pt-2">
+                  <button
+                    onClick={closeMobileMenu}
+                    className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                  >
+                    <span className="sr-only">Close sidebar</span>
+                    {/* Heroicon name: x */}
+                    <svg
+                      className="h-6 w-6 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
-  Entering: "transition-opacity ease-linear duration-300"
-    From: "opacity-0"
-    To: "opacity-100"
-  Leaving: "transition-opacity ease-linear duration-300"
-    From: "opacity-100"
-    To: "opacity-0"
-*/}
-          <div className="fixed inset-0" aria-hidden="true">
-            <div className="absolute inset-0 bg-gray-600 opacity-75" />
-          </div>
-          {/*
-  Off-canvas menu, show/hide based on off-canvas menu state.
+                <SidebarContents />
+              </div>
+            </Transition.Child>
 
-  Entering: "transition ease-in-out duration-300 transform"
-    From: "-translate-x-full"
-    To: "translate-x-0"
-  Leaving: "transition ease-in-out duration-300 transform"
-    From: "translate-x-0"
-    To: "-translate-x-full"
-*/}
-          <div className="relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white">
-            <div className="absolute top-0 right-0 -mr-12 pt-2">
-              <button className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
-                <span className="sr-only">Close sidebar</span>
-                {/* Heroicon name: x */}
-                <svg
-                  className="h-6 w-6 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+            <div className="flex-shrink-0 w-14" aria-hidden="true">
+              {/* Dummy element to force sidebar to shrink to fit close icon */}
             </div>
-
-            <SidebarContents />
-          </div>
-          <div className="flex-shrink-0 w-14" aria-hidden="true">
-            {/* Dummy element to force sidebar to shrink to fit close icon */}
           </div>
         </div>
-      </div>
+      </Transition>
+
       {/* Static sidebar for desktop */}
       <div className="relative hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-80 border-r border-gray-200 pt-4 pb-4 bg-gray-100">
