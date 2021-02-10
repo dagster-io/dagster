@@ -2,12 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.serdes import (
-    Persistable,
-    unpack_value,
-    whitelist_for_persistence,
-    whitelist_for_serdes,
-)
+from dagster.serdes import DefaultNamedTupleSerializer, unpack_value, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -19,19 +14,11 @@ class DaemonType(Enum):
     QUEUED_RUN_COORDINATOR = "QUEUED_RUN_COORDINATOR"
 
 
-@whitelist_for_persistence
-class DaemonHeartbeat(
-    namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id errors"), Persistable
-):
-    """
-    Heartbeats are placed in storage by the daemon to show liveness
-    """
-
-    @classmethod
-    def from_storage_dict(cls, storage_dict):
+class DaemonBackcompat(DefaultNamedTupleSerializer):
+    @staticmethod
+    def value_from_storage_dict(storage_dict, klass):
         # Handle case where daemon_type used to be an enum (e.g. DaemonType.SCHEDULER)
-        return super(DaemonHeartbeat, cls).__new__(
-            cls,
+        return DaemonHeartbeat(
             timestamp=storage_dict.get("timestamp"),
             daemon_type=(
                 storage_dict.get("daemon_type").value
@@ -44,6 +31,11 @@ class DaemonHeartbeat(
             else unpack_value(storage_dict.get("errors")),
         )
 
+
+@whitelist_for_serdes(serializer=DaemonBackcompat)
+class DaemonHeartbeat(
+    namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id errors"),
+):
     def __new__(cls, timestamp, daemon_type, daemon_id, errors=None):
         errors = check.opt_list_param(errors, "errors", of_type=SerializableErrorInfo)
 

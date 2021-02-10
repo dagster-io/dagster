@@ -1166,19 +1166,19 @@ class LoadedInputData(
 ###################################################################################################
 # THE GRAVEYARD
 #
-#            -|-
-#             |
-#        _-'~~~~~`-_
-#      .'           '.
-#      |    R I P    |
-#      |             |
-#      |  Synthetic  |
-#      |   Process   |
-#      |   Events    |
-#      |             |
+#            -|-                  -|-
+#             |                    |
+#        _-'~~~~~`-_ .        _-'~~~~~`-_
+#      .'           '.      .'           '.
+#      |    R I P    |      |    R I P    |
+#      |             |      |             |
+#      |  Synthetic  |      |    Asset    |
+#      |   Process   |      |    Store    |
+#      |   Events    |      |  Operations |
+#      |             |      |             |
 ###################################################################################################
 
-
+# Keep these around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
 @whitelist_for_serdes
 class AssetStoreOperationData(
     namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
@@ -1188,7 +1188,6 @@ class AssetStoreOperationData(
 
 @whitelist_for_serdes
 class AssetStoreOperationType(Enum):
-    # keep this around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
     SET_ASSET = "SET_ASSET"
     GET_ASSET = "GET_ASSET"
 
@@ -1224,6 +1223,5 @@ register_serdes_tuple_fallbacks(
         "PipelineProcessStartedData": None,
         "PipelineProcessExitedData": None,
         "PipelineProcessStartData": None,
-        "AssetStoreOperationData": AssetStoreOperationData,
     }
 )

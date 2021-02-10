@@ -33,30 +33,31 @@ def build_run_stats_from_events(run_id, records):
     for event in records:
         if not event.is_dagster_event:
             continue
+        dagster_event = event.get_dagster_event()
 
         event_timestamp_float = (
             event.timestamp
             if isinstance(event.timestamp, float)
             else datetime_as_float(event.timestamp)
         )
-        if event.dagster_event.event_type == DagsterEventType.PIPELINE_START:
+        if dagster_event.event_type == DagsterEventType.PIPELINE_START:
             start_time = event_timestamp_float
-        if event.dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
+        if dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
             launch_time = event_timestamp_float
-        if event.dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
+        if dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
             enqueued_time = event_timestamp_float
-        if event.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
+        if dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             steps_failed += 1
-        if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
+        if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             steps_succeeded += 1
-        if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+        if dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
             materializations += 1
-        if event.dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
+        if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
             expectations += 1
         if (
-            event.dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS
-            or event.dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE
-            or event.dagster_event.event_type == DagsterEventType.PIPELINE_CANCELED
+            dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS
+            or dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE
+            or dagster_event.event_type == DagsterEventType.PIPELINE_CANCELED
         ):
             end_time = (
                 event.timestamp
@@ -90,34 +91,35 @@ def build_run_step_stats_from_events(
     for event in records:
         if not event.is_dagster_event:
             continue
+        dagster_event = event.get_dagster_event()
 
-        step_key = event.dagster_event.step_key
+        step_key = dagster_event.step_key
         if not step_key:
             continue
 
-        if event.dagster_event.event_type == DagsterEventType.STEP_START:
+        if dagster_event.event_type == DagsterEventType.STEP_START:
             by_step_key[step_key]["start_time"] = event.timestamp
             by_step_key[step_key]["attempts"] = 1
-        if event.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
+        if dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.FAILURE
-        if event.dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
+        if dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
             by_step_key[step_key]["attempts"] = int(by_step_key[step_key].get("attempts") or 0) + 1
-        if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
+        if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SUCCESS
-        if event.dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
+        if dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
-        if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
-            check.inst(event.dagster_event.event_specific_data, StepMaterializationData)
-            materialization = event.dagster_event.event_specific_data.materialization
+        if dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+            check.inst(dagster_event.event_specific_data, StepMaterializationData)
+            materialization = dagster_event.event_specific_data.materialization
             step_materializations = by_step_key[step_key].get("materializations", [])
             step_materializations.append(materialization)
             by_step_key[step_key]["materializations"] = step_materializations
-        if event.dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-            check.inst(event.dagster_event.event_specific_data, StepExpectationResultData)
-            expectation_result = event.dagster_event.event_specific_data.expectation_result
+        if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
+            check.inst(dagster_event.event_specific_data, StepExpectationResultData)
+            expectation_result = dagster_event.event_specific_data.expectation_result
             step_expectation_results = by_step_key[step_key].get("expectation_results", [])
             step_expectation_results.append(expectation_result)
             by_step_key[step_key]["expectation_results"] = step_expectation_results

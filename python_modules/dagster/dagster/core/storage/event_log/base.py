@@ -50,7 +50,7 @@ class EventLogStorage(ABC):
             logs = [
                 event
                 for event in logs
-                if event.is_dagster_event and event.dagster_event.step_key in step_keys
+                if event.is_dagster_event and event.get_dagster_event().step_key in step_keys
             ]
 
         return build_run_step_stats_from_events(run_id, logs)

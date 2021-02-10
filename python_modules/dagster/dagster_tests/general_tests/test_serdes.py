@@ -1,24 +1,21 @@
-import sys
 from collections import namedtuple
 from enum import Enum
 
 import pytest
 from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
-from dagster.serdes import (
-    Persistable,
-    SerdesClassUsageError,
+from dagster.serdes.errors import SerdesClassUsageError
+from dagster.serdes.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
     _deserialize_json_to_dagster_namedtuple,
     _pack_value,
     _serialize_dagster_namedtuple,
     _unpack_value,
-    _whitelist_for_persistence,
     _whitelist_for_serdes,
-    default_to_storage_value,
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
     serialize_value,
 )
-from dagster.utils import compose
 
 
 def test_deserialize_value_ok():
@@ -43,40 +40,35 @@ def test_deserialize_empty_set():
     assert frozenset() == deserialize_value(serialize_value(frozenset()))
 
 
-def _initial_whitelist_map():
-    return {
-        "types": {"tuple": {}, "enum": {}},
-        "persistence": {},
-    }
-
-
 def test_forward_compat_serdes_new_field_with_default():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar")):
         def __new__(cls, foo, bar):
             return super(Quux, cls).__new__(cls, foo, bar)  # pylint: disable=bad-super-call
 
-    assert "Quux" in _TEST_WHITELIST_MAP["types"]["tuple"]
-    assert _TEST_WHITELIST_MAP["types"]["tuple"]["Quux"] == Quux
+    assert test_map.has_tuple_entry("Quux")
+    klass, _ = test_map.get_tuple_entry("Quux")
+    assert klass is Quux
 
     quux = Quux("zip", "zow")
 
-    serialized = _serialize_dagster_namedtuple(quux, whitelist_map=_TEST_WHITELIST_MAP)
+    serialized = _serialize_dagster_namedtuple(quux, whitelist_map=test_map)
 
     # pylint: disable=function-redefined
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar baz")):  # pylint: disable=bad-super-call
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
-    assert "Quux" in _TEST_WHITELIST_MAP["types"]["tuple"]
-    assert _TEST_WHITELIST_MAP["types"]["tuple"]["Quux"] == Quux
+    assert test_map.has_tuple_entry("Quux")
 
-    deserialized = _deserialize_json_to_dagster_namedtuple(
-        serialized, whitelist_map=_TEST_WHITELIST_MAP
-    )
+    klass, _ = test_map.get_tuple_entry("Quux")
+    assert klass is Quux
+
+    deserialized = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+
     assert deserialized != quux
     assert deserialized.foo == quux.foo
     assert deserialized.bar == quux.bar
@@ -84,27 +76,27 @@ def test_forward_compat_serdes_new_field_with_default():
 
 
 def test_forward_compat_serdes_new_enum_field():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Corge(Enum):
         FOO = 1
         BAR = 2
 
-    assert "Corge" in _TEST_WHITELIST_MAP["types"]["enum"]
+    assert test_map.has_enum_entry("Corge")
 
     corge = Corge.FOO
 
-    packed = _pack_value(corge, whitelist_map=_TEST_WHITELIST_MAP)
+    packed = _pack_value(corge, whitelist_map=test_map)
 
     # pylint: disable=function-redefined
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Corge(Enum):
         FOO = 1
         BAR = 2
         BAZ = 3
 
-    unpacked = _unpack_value(packed, whitelist_map=_TEST_WHITELIST_MAP)
+    unpacked = _unpack_value(packed, whitelist_map=test_map)
 
     assert unpacked != corge
     assert unpacked.name == corge.name
@@ -112,26 +104,24 @@ def test_forward_compat_serdes_new_enum_field():
 
 
 def test_backward_compat_serdes():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar baz")):
         def __new__(cls, foo, bar, baz):
             return super(Quux, cls).__new__(cls, foo, bar, baz)  # pylint: disable=bad-super-call
 
     quux = Quux("zip", "zow", "whoopie")
 
-    serialized = _serialize_dagster_namedtuple(quux, whitelist_map=_TEST_WHITELIST_MAP)
+    serialized = _serialize_dagster_namedtuple(quux, whitelist_map=test_map)
 
     # pylint: disable=function-redefined
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar")):  # pylint: disable=bad-super-call
         def __new__(cls, foo, bar):
             return super(Quux, cls).__new__(cls, foo, bar)
 
-    deserialized = _deserialize_json_to_dagster_namedtuple(
-        serialized, whitelist_map=_TEST_WHITELIST_MAP
-    )
+    deserialized = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
 
     assert deserialized != quux
     assert deserialized.foo == quux.foo
@@ -140,9 +130,9 @@ def test_backward_compat_serdes():
 
 
 def serdes_test_class(klass):
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    return _whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)(klass)
+    return _whitelist_for_serdes(whitelist_map=test_map)(klass)
 
 
 def test_wrong_first_arg():
@@ -211,9 +201,6 @@ def test_missing_many_parameters():
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info.major < 3, reason="Serdes declaration time checks python 3 only"
-)
 def test_extra_parameters_must_have_defaults():
     with pytest.raises(SerdesClassUsageError) as exc_info:
 
@@ -245,9 +232,6 @@ def test_extra_parameters_must_have_defaults():
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info.major < 3, reason="Serdes declaration time checks python 3 only"
-)
 def test_extra_parameters_have_working_defaults():
     @serdes_test_class
     class OldFieldsWithDefaults(namedtuple("OldFieldsWithDefaults", "field_three field_four")):
@@ -266,9 +250,9 @@ def test_extra_parameters_have_working_defaults():
 
 
 def test_set():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    @_whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP)
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class HasSets(namedtuple("_HasSets", "reg_set frozen_set")):
         def __new__(cls, reg_set, frozen_set):
             set_param(reg_set, "reg_set")
@@ -277,92 +261,78 @@ def test_set():
 
     foo = HasSets({1, 2, 3, "3"}, frozenset([4, 5, 6, "6"]))
 
-    serialized = _serialize_dagster_namedtuple(foo, whitelist_map=_TEST_WHITELIST_MAP)
-    foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=_TEST_WHITELIST_MAP)
+    serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
+    foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
     assert foo == foo_2
 
 
 def test_persistent_tuple():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    def whitelist_for_persistence(klass):
-        return compose(
-            _whitelist_for_persistence(whitelist_map=_TEST_WHITELIST_MAP),
-            _whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP),
-        )(klass)
-
-    @whitelist_for_persistence
-    class Alphabet(namedtuple("_Alphabet", "a b c"), Persistable):
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Alphabet(namedtuple("_Alphabet", "a b c")):
         def __new__(cls, a, b, c):
             return super(Alphabet, cls).__new__(cls, a, b, c)
 
     foo = Alphabet(a="A", b="B", c="C")
-    serialized = _serialize_dagster_namedtuple(foo, whitelist_map=_TEST_WHITELIST_MAP)
-    foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=_TEST_WHITELIST_MAP)
+    serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
+    foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
     assert foo == foo_2
 
 
 def test_from_storage_dict():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    def whitelist_for_persistence(klass):
-        return compose(
-            _whitelist_for_persistence(whitelist_map=_TEST_WHITELIST_MAP),
-            _whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP),
-        )(klass)
+    class CompatSerializer(DefaultNamedTupleSerializer):
+        @staticmethod
+        def value_from_storage_dict(storage_dict, klass):
+            return DeprecatedAlphabet.legacy_load(storage_dict)
 
-    @whitelist_for_persistence
-    class DeprecatedAlphabet(namedtuple("_DeprecatedAlphabet", "a b c"), Persistable):
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=CompatSerializer)
+    class DeprecatedAlphabet(namedtuple("_DeprecatedAlphabet", "a b c")):
         def __new__(cls, a, b, c):
             raise Exception("DeprecatedAlphabet is deprecated")
 
         @classmethod
-        def from_storage_dict(cls, storage_dict):
+        def legacy_load(cls, storage_dict):
             # instead of the DeprecatedAlphabet, directly invoke the namedtuple constructor
-            return super(DeprecatedAlphabet, cls).__new__(
+            return super().__new__(
                 cls,
                 storage_dict.get("a"),
                 storage_dict.get("b"),
                 storage_dict.get("c"),
             )
 
-    assert "DeprecatedAlphabet" in _TEST_WHITELIST_MAP["persistence"]
     serialized = '{"__class__": "DeprecatedAlphabet", "a": "A", "b": "B", "c": "C"}'
 
-    nt = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=_TEST_WHITELIST_MAP)
+    nt = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
     assert isinstance(nt, DeprecatedAlphabet)
 
 
 def test_to_storage_value():
-    _TEST_WHITELIST_MAP = _initial_whitelist_map()
+    test_map = WhitelistMap()
 
-    def whitelist_for_persistence(klass):
-        return compose(
-            _whitelist_for_persistence(whitelist_map=_TEST_WHITELIST_MAP),
-            _whitelist_for_serdes(whitelist_map=_TEST_WHITELIST_MAP),
-        )(klass)
+    class MySerializer(DefaultNamedTupleSerializer):
+        @staticmethod
+        def value_to_storage_dict(value, whitelist_map):
+            return DefaultNamedTupleSerializer.value_to_storage_dict(
+                SubstituteAlphabet(value.a, value.b, value.c), test_map
+            )
 
-    @whitelist_for_persistence
-    class DeprecatedAlphabet(namedtuple("_DeprecatedAlphabet", "a b c"), Persistable):
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=MySerializer)
+    class DeprecatedAlphabet(namedtuple("_DeprecatedAlphabet", "a b c")):
         def __new__(cls, a, b, c):
             return super(DeprecatedAlphabet, cls).__new__(cls, a, b, c)
 
-        def to_storage_value(self):
-            return default_to_storage_value(
-                SubstituteAlphabet(self.a, self.b, self.c), _TEST_WHITELIST_MAP
-            )
-
-    @whitelist_for_persistence
-    class SubstituteAlphabet(namedtuple("_SubstituteAlphabet", "a b c"), Persistable):
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class SubstituteAlphabet(namedtuple("_SubstituteAlphabet", "a b c")):
         def __new__(cls, a, b, c):
             return super(SubstituteAlphabet, cls).__new__(cls, a, b, c)
 
     nested = DeprecatedAlphabet(None, None, "_C")
     deprecated = DeprecatedAlphabet("A", "B", nested)
-    serialized = _serialize_dagster_namedtuple(deprecated, whitelist_map=_TEST_WHITELIST_MAP)
-    alphabet = _deserialize_json_to_dagster_namedtuple(
-        serialized, whitelist_map=_TEST_WHITELIST_MAP
-    )
+    serialized = _serialize_dagster_namedtuple(deprecated, whitelist_map=test_map)
+    alphabet = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
     assert not isinstance(alphabet, DeprecatedAlphabet)
     assert isinstance(alphabet, SubstituteAlphabet)
     assert not isinstance(alphabet.c, DeprecatedAlphabet)
