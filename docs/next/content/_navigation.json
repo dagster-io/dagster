@@ -282,7 +282,7 @@
   {
     "title": "Guides",
     "icon": "CloudUpload",
-    "path": "/deployment",
+    "path": "/guides",
     "children": [
       {
         "title": "Dagster Deployments",
