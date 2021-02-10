@@ -1,12 +1,14 @@
 import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link, LinkProps, useLocation} from 'react-router-dom';
+import {Link, LinkProps, useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
 import {VersionNumber} from 'src/nav/VersionNumber';
 import {config, matchSome, NavItemConfig} from 'src/nav/config';
+import {shortcutLabel} from 'src/nav/shortcutLabel';
 import {SearchDialog} from 'src/search/SearchDialog';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
@@ -15,12 +17,50 @@ interface NavItemProps extends NavItemConfig {
   pathname: string;
 }
 
-const NavItem: React.FC<NavItemProps> = React.memo(({label, to, icon, matchingPaths, pathname}) => (
-  <Item to={to} key={to} $active={matchSome(pathname, matchingPaths)}>
-    <Icon icon={icon} iconSize={12} />
-    {label}
-  </Item>
-));
+const NavItem: React.FC<NavItemProps> = React.memo(
+  ({label, to, icon, matchingPaths, pathname, shortcut}) => {
+    const history = useHistory();
+
+    const item = (
+      <Item to={to} key={to} $active={matchSome(pathname, matchingPaths)}>
+        <Icon icon={icon} iconSize={12} />
+        {label}
+      </Item>
+    );
+
+    const filter = React.useCallback(
+      (e: KeyboardEvent) => {
+        if (e.code === shortcut?.code) {
+          const modCount =
+            Number(e.getModifierState('Alt')) +
+            Number(e.getModifierState('Ctrl')) +
+            Number(e.getModifierState('Shift')) +
+            Number(e.getModifierState('Meta'));
+
+          return !!(
+            (!shortcut.modifier && modCount === 0) ||
+            (modCount === 1 && shortcut.modifier && e.getModifierState(shortcut.modifier))
+          );
+        }
+        return false;
+      },
+      [shortcut],
+    );
+
+    if (shortcut) {
+      return (
+        <ShortcutHandler
+          onShortcut={() => history.push(to)}
+          shortcutLabel={shortcutLabel(shortcut)}
+          shortcutFilter={filter}
+        >
+          {item}
+        </ShortcutHandler>
+      );
+    }
+    return item;
+  },
+);
 
 export const LeftNavSimple = () => {
   const {pathname} = useLocation();

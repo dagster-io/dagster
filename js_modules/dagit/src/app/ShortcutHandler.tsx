@@ -171,17 +171,17 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
 
 const ShortcutAnnotation = styled.div`
   position: fixed;
-  min-width: 20px;
+  min-width: 32px;
   font-size: 12px;
   font-weight: 600;
   line-height: 14px;
-  padding: 1px 3px;
+  text-align: center;
+  padding: 2px;
   z-index: 20;
-  letter-spacing: 2px;
   transform: translate(-90%, -10px);
-  color: ${Colors.BLACK};
-  background: ${Colors.GRAY5};
-  border: 1px solid ${Colors.GRAY3};
+  color: ${Colors.LIGHT_GRAY3};
+  background: ${Colors.DARK_GRAY4};
+  border: 1px solid ${Colors.GRAY4};
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;

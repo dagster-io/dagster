@@ -1,11 +1,17 @@
 import {IconName} from '@blueprintjs/core';
 import {matchPath} from 'react-router-dom';
 
+export type KeyShortcut = {
+  code: string;
+  modifier?: string;
+};
+
 export type NavItemConfig = {
   label: React.ReactNode;
   icon: IconName;
   to: string;
   matchingPaths: string[];
+  shortcut?: KeyShortcut;
 };
 
 export const config: NavItemConfig[][] = [
@@ -15,12 +21,14 @@ export const config: NavItemConfig[][] = [
       icon: 'updated',
       to: '/instance/runs',
       matchingPaths: ['/instance/runs', '/instance/runs/*', '/instance/snapshots/*'],
+      shortcut: {code: 'KeyR'},
     },
     {
       label: 'Asset catalog',
       icon: 'th',
       to: '/instance/assets',
       matchingPaths: ['/instance/assets', '/instance/assets/*'],
+      shortcut: {code: 'KeyA'},
     },
   ],
   [
@@ -29,24 +37,28 @@ export const config: NavItemConfig[][] = [
       icon: 'diagram-tree',
       to: '/workspace/pipelines',
       matchingPaths: ['/workspace/pipelines', '/workspace/:repoPath/pipelines/*'],
+      shortcut: {code: 'KeyP'},
     },
     {
       label: 'Solids',
       icon: 'git-commit',
       to: '/workspace/solids',
       matchingPaths: ['/workspace/solids', '/workspace/:repoPath/solids/*'],
+      shortcut: {code: 'KeyS'},
     },
     {
       label: 'Schedules',
       icon: 'time',
       to: '/schedules',
       matchingPaths: ['/schedules', '/workspace/:repoPath/schedules/*'],
+      shortcut: {code: 'KeyC'},
     },
     {
       label: 'Sensors',
       icon: 'automatic-updates',
       to: '/sensors',
       matchingPaths: ['/sensors', '/workspace/:repoPath/sensors/*'],
+      shortcut: {code: 'KeyN'},
     },
   ],
   [
@@ -60,12 +72,14 @@ export const config: NavItemConfig[][] = [
         '/instance/sensors',
         '/instance/config',
       ],
+      shortcut: {code: 'KeyI'},
     },
     {
       label: 'Settings',
       icon: 'cog',
       to: '/settings',
       matchingPaths: ['/settings'],
+      shortcut: {code: 'KeyT'},
     },
   ],
 ];
