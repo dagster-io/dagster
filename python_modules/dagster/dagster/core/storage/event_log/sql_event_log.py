@@ -525,7 +525,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
         return query
 
-    def has_asset_key(self, asset_key):
+    def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
         if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
             query = (

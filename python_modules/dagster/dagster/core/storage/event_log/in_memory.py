@@ -81,7 +81,7 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
     def is_persistent(self):
         return False
 
-    def has_asset_key(self, asset_key):
+    def has_asset_key(self, asset_key: AssetKey) -> bool:
         for records in self._logs.values():
             for record in records:
                 if (

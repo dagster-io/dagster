@@ -106,7 +106,7 @@ class EventLogStorage(ABC):
 
 class AssetAwareEventLogStorage(ABC):
     @abstractmethod
-    def has_asset_key(self, asset_key: AssetKey):
+    def has_asset_key(self, asset_key: AssetKey) -> bool:
         pass
 
     @abstractmethod
