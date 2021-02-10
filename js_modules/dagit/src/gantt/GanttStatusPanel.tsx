@@ -156,10 +156,10 @@ const StepItemContainer = styled.div<{selected: boolean}>`
 `;
 
 const StepStatusDot = styled.div`
-  width: 15px;
-  height: 15px;
+  width: 11px;
+  height: 11px;
   flex-shrink: 0;
-  border-radius: 7.5px;
+  border-radius: 5.5px;
 `;
 
 const Elapsed = styled.div`

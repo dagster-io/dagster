@@ -4,44 +4,44 @@ import styled from 'styled-components';
 
 import {assertUnreachable} from 'src/app/Util';
 import {RunStats} from 'src/runs/RunStats';
-import {IRunStatus} from 'src/runs/RunStatusDots';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Group} from 'src/ui/Group';
 import {Spinner} from 'src/ui/Spinner';
 
-export const RunStatusTag = (props: {status: IRunStatus}) => {
+export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
   const {status} = props;
   switch (status) {
-    case 'QUEUED':
+    case PipelineRunStatus.QUEUED:
       return (
         <StatusTag minimal intent="none">
           Queued
         </StatusTag>
       );
-    case 'SUCCESS':
+    case PipelineRunStatus.SUCCESS:
       return (
         <StatusTag minimal intent="success">
           Succeeded
         </StatusTag>
       );
-    case 'STARTING':
+    case PipelineRunStatus.STARTING:
       return (
         <StatusTag minimal intent="none">
           Starting
         </StatusTag>
       );
-    case 'NOT_STARTED':
+    case PipelineRunStatus.NOT_STARTED:
       return (
         <StatusTag minimal intent="none">
           Not started
         </StatusTag>
       );
-    case 'FAILURE':
+    case PipelineRunStatus.FAILURE:
       return (
         <StatusTag minimal intent="danger">
           Failed
         </StatusTag>
       );
-    case 'STARTED':
+    case PipelineRunStatus.STARTED:
       return (
         <StatusTag minimal intent="primary">
           <Group direction="row" spacing={4} alignItems="center">
@@ -50,19 +50,19 @@ export const RunStatusTag = (props: {status: IRunStatus}) => {
           </Group>
         </StatusTag>
       );
-    case 'MANAGED':
+    case PipelineRunStatus.MANAGED:
       return (
         <StatusTag minimal intent="none">
           Managed
         </StatusTag>
       );
-    case 'CANCELING':
+    case PipelineRunStatus.CANCELING:
       return (
         <StatusTag minimal intent="none">
           Canceling
         </StatusTag>
       );
-    case 'CANCELED':
+    case PipelineRunStatus.CANCELED:
       return (
         <StatusTag minimal intent="danger">
           Canceled
@@ -75,7 +75,7 @@ export const RunStatusTag = (props: {status: IRunStatus}) => {
 
 interface Props {
   runId: string;
-  status: IRunStatus;
+  status: PipelineRunStatus;
 }
 
 export const RunStatusTagWithStats = (props: Props) => {

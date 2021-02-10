@@ -231,9 +231,9 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const ColorsForStates = {
-  [IStepState.RETRY_REQUESTED]: Colors.ORANGE2,
+  [IStepState.RETRY_REQUESTED]: Colors.ORANGE3,
   [IStepState.RUNNING]: Colors.GRAY3,
-  [IStepState.SUCCEEDED]: Colors.GREEN2,
+  [IStepState.SUCCEEDED]: Colors.GREEN3,
   [IStepState.FAILED]: Colors.RED3,
   [IStepState.SKIPPED]: 'rgb(173, 185, 152)',
 };

@@ -11,7 +11,7 @@ import {
   PartitionProgressQuery,
   PartitionProgressQuery_pipelineRunsOrError_PipelineRuns_results,
 } from 'src/partitions/types/PartitionProgressQuery';
-import {IRunStatus, RunStatusDot} from 'src/runs/RunStatusDots';
+import {RunStatusDot} from 'src/runs/RunStatusDots';
 import {
   doneStatuses,
   failedStatuses,
@@ -21,6 +21,7 @@ import {
 } from 'src/runs/RunStatuses';
 import {TerminationDialog} from 'src/runs/TerminationDialog';
 import {POLL_INTERVAL} from 'src/runs/useCursorPaginatedQuery';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {stringFromValue, TokenizingFieldValue} from 'src/ui/TokenizingField';
@@ -105,20 +106,30 @@ export const PartitionProgress = (props: Props) => {
   const table = (
     <TooltipTable>
       <tbody>
-        <TooltipTableRow runStatus="QUEUED" humanText="Queued" count={queued} total={total} />
         <TooltipTableRow
-          runStatus="STARTED"
+          runStatus={PipelineRunStatus.QUEUED}
+          humanText="Queued"
+          count={queued}
+          total={total}
+        />
+        <TooltipTableRow
+          runStatus={PipelineRunStatus.STARTED}
           humanText="In progress"
           count={inProgress}
           total={total}
         />
         <TooltipTableRow
-          runStatus="SUCCESS"
+          runStatus={PipelineRunStatus.SUCCESS}
           humanText="Succeeded"
           count={succeeded}
           total={total}
         />
-        <TooltipTableRow runStatus="FAILURE" humanText="Failed" count={failed} total={total} />
+        <TooltipTableRow
+          runStatus={PipelineRunStatus.FAILURE}
+          humanText="Failed"
+          count={failed}
+          total={total}
+        />
       </tbody>
     </TooltipTable>
   );
@@ -165,7 +176,7 @@ export const PartitionProgress = (props: Props) => {
 };
 
 const TooltipTableRow: React.FC<{
-  runStatus: IRunStatus;
+  runStatus: PipelineRunStatus;
   humanText: string;
   count: number;
   total: number;

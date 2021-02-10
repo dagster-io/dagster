@@ -1,89 +1,88 @@
 import {Popover, Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled, {css, keyframes} from 'styled-components';
 
 import {RunStats} from 'src/runs/RunStats';
+import {inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Spinner} from 'src/ui/Spinner';
 
-export type IRunStatus =
-  | 'SUCCESS'
-  | 'QUEUED'
-  | 'NOT_STARTED'
-  | 'FAILURE'
-  | 'STARTED'
-  | 'MANAGED'
-  | 'STARTING'
-  | 'CANCELING'
-  | 'CANCELED';
-
 const RUN_STATUS_COLORS = {
-  QUEUED: Colors.BLUE1,
+  QUEUED: Colors.BLUE5,
   NOT_STARTED: Colors.GRAY1,
   STARTING: Colors.GRAY3,
   MANAGED: Colors.GRAY3,
   STARTED: Colors.GRAY3,
-  SUCCESS: Colors.GREEN2,
+  SUCCESS: Colors.GREEN4,
   FAILURE: Colors.RED3,
-  CANCELING: Colors.RED1,
+  CANCELING: Colors.RED3,
   CANCELED: Colors.RED3,
 };
 
-const RUN_STATUS_HOVER_COLORS = {
-  QUEUED: Colors.BLUE3,
-  NOT_STARTED: Colors.GRAY3,
-  STARTING: Colors.GRAY5,
-  MANAGED: Colors.GRAY3,
-  STARTED: Colors.GRAY5,
-  SUCCESS: Colors.GREEN4,
-  FAILURE: Colors.RED5,
-  CANCELING: Colors.RED3,
-  CANCELED: Colors.RED5,
-};
-export const RunStatusWithStats: React.FunctionComponent<
-  RunStatusProps & {
-    runId: string;
-  }
-> = React.memo(({runId, ...rest}) => (
-  <Popover
-    position={'bottom'}
-    interactionKind={'hover'}
-    content={<RunStats runId={runId} />}
-    hoverOpenDelay={100}
-  >
-    <div style={{padding: 1}}>
+export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
+  ({runId, ...rest}) => (
+    <Popover
+      position={'bottom'}
+      interactionKind={'hover'}
+      content={<RunStats runId={runId} />}
+      hoverOpenDelay={100}
+    >
       <RunStatus {...rest} />
-    </div>
-  </Popover>
-));
+    </Popover>
+  ),
+);
 
 interface RunStatusProps {
-  status: IRunStatus;
+  status: PipelineRunStatus;
   size?: number;
 }
 
 export const RunStatus: React.FC<RunStatusProps> = React.memo(({status, size}) => {
   if (status === 'STARTED') {
-    return (
-      <div style={{display: 'inline-block'}}>
-        <Spinner purpose="body-text" />
-      </div>
-    );
+    return <Spinner purpose="body-text" />;
   }
-  return <RunStatusDot status={status} size={size || 11} />;
+  return (
+    <RunStatusDot
+      status={status}
+      size={size || 12}
+      pulse={inProgressStatuses.has(status) || queuedStatuses.has(status)}
+    />
+  );
 });
 
+const pulseAnimation = keyframes`
+  0% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(0.7);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+`;
+
 export const RunStatusDot = styled.div<{
-  status: IRunStatus;
+  status: PipelineRunStatus;
   size: number;
+  pulse?: boolean;
 }>`
-  display: inline-block;
   width: ${({size}) => size}px;
   height: ${({size}) => size}px;
   border-radius: ${({size}) => size / 2}px;
-  align-self: center;
-  transition: background 200ms linear;
+  transition: filter 200ms linear;
+  ${({pulse}) =>
+    pulse
+      ? css`
+          animation: ${pulseAnimation} 2s infinite;
+        `
+      : null}
+
   background: ${({status}) => RUN_STATUS_COLORS[status]};
   &:hover {
-    background: ${({status}) => RUN_STATUS_HOVER_COLORS[status]};
+    animation: none;
+    filter: brightness(0.7);
   }
 `;

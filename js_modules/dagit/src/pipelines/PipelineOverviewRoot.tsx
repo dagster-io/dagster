@@ -312,8 +312,10 @@ const OverviewRun = ({run}: {run: Run}) => {
 
   return (
     <tr>
-      <td style={{width: '20px', textAlign: 'center'}}>
-        <RunStatusWithStats status={run.status} runId={run.runId} />
+      <td style={{width: '20px'}}>
+        <div style={{paddingTop: '1px'}}>
+          <RunStatusWithStats status={run.status} runId={run.runId} />
+        </div>
       </td>
       <td style={{width: '100%'}}>
         <div style={{fontFamily: FontFamily.monospace}}>
