@@ -43,10 +43,11 @@ run_coordinator:
   config:
     max_concurrent_runs: 25
     tag_concurrency_limits:
-      [
-        { key:'database', value:'redshift', limit:4 },
-        { key:'dagster/backfill', limit:10 },
-      ]
+      - key: 'database'
+        value: 'redshift'
+        limit: 4
+      - key: 'dagster/backfill'
+        limit: 10
 ```
 
 This run queue will only allow a maximum of 25 runs at once. Additionally, only 4 runs with the "database" tag equal to "redshift" can run at once, and at most 10 runs with the "dagster/backfill" tag and any value can run at once.
@@ -66,7 +67,9 @@ In the absence of tag limits and priorities, queued runs are first-in-first-out.
 To illustrate, let’s say we submit 3 runs in order: run A (tagged ‘foo’:‘bar’), run B (tagged ‘foo’:‘bar’), and run C (no tags). With no limits configured, the runs will be launched in the order they were submitted, A → B → C. Next, say we add the following instance configuration:
 
 ```yaml
-tag_concurrency_limits: [{ key: 'foo', limit: 1 }]
+tag_concurrency_limits:
+  - key: 'foo'
+    limit: 1
 ```
 
 Now A and B are not able to execute concurrently, while there is no limit on C. Assume each will execute for at least a few minutes. If we submit in order A → B → C, then
