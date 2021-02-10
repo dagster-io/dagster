@@ -69,7 +69,7 @@ interface ItemProps extends LinkProps {
 const Item = styled(Link)<ItemProps>`
   align-items: center;
   background-color: ${({$active}) => ($active ? Colors.LIGHT_GRAY4 : 'transparent')};
-  color: ${({$active}) => ($active ? Colors.COBALT2 : Colors.DARK_GRAY2)};
+  color: ${({$active}) => ($active ? Colors.BLUE2 : Colors.DARK_GRAY2)};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -84,15 +84,15 @@ const Item = styled(Link)<ItemProps>`
   }
 
   .bp3-icon svg {
-    fill: ${({$active}) => ($active ? Colors.COBALT2 : Colors.DARK_GRAY3)};
+    fill: ${({$active}) => ($active ? Colors.BLUE2 : Colors.DARK_GRAY3)};
   }
 
   &:hover {
-    color: ${Colors.COBALT2};
+    color: ${Colors.BLUE2};
     text-decoration: none;
   }
 
   &:hover .bp3-icon svg {
-    fill: ${Colors.COBALT2};
+    fill: ${Colors.BLUE2};
   }
 `;

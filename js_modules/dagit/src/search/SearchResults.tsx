@@ -105,7 +105,7 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.COBALT4 : Colors.WHITE)};
+  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.WHITE)};
   color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : 'default')}
   display: flex;
   flex-direction: row;
@@ -113,7 +113,7 @@ const Item = styled.li<HighlightableTextProps>`
   margin: 0;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.COBALT4 : Colors.LIGHT_GRAY3)};
+    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
   }
 `;
 

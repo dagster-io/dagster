@@ -41,9 +41,9 @@ export const Alert: React.FC<Props> = (props) => {
       default:
         return {
           backgroundColor: Colors.LIGHT_GRAY5,
-          borderColor: Colors.COBALT3,
+          borderColor: Colors.BLUE3,
           icon: 'info-sign',
-          iconColor: Colors.COBALT3,
+          iconColor: Colors.BLUE3,
         };
     }
   }, [intent]);
