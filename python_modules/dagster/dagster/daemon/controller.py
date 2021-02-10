@@ -4,8 +4,6 @@ import uuid
 import pendulum
 from dagster import check
 from dagster.core.instance import DagsterInstance
-from dagster.core.run_coordinator import QueuedRunCoordinator
-from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.daemon.daemon import (
     DAEMON_HEARTBEAT_INTERVAL_SECONDS,
     DagsterDaemon,
@@ -111,7 +109,7 @@ class DagsterDaemonController:
 
 
 def create_daemons_from_instance(instance):
-    daemon_types = required_daemons(instance)
+    daemon_types = instance.get_required_daemon_types()
 
     daemons = []
 
@@ -129,18 +127,6 @@ def create_daemons_from_instance(instance):
     return daemons
 
 
-def required_daemons(instance):
-    """
-    Return which daemon types are required by the instance
-    """
-    daemons = [SensorDaemon.daemon_type()]
-    if isinstance(instance.scheduler, DagsterDaemonScheduler):
-        daemons.append(SchedulerDaemon.daemon_type())
-    if isinstance(instance.run_coordinator, QueuedRunCoordinator):
-        daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
-    return daemons
-
-
 def all_daemons_healthy(instance, curr_time_seconds=None):
     """
     True if all required daemons have had a recent heartbeat with no errors
@@ -149,7 +135,7 @@ def all_daemons_healthy(instance, curr_time_seconds=None):
 
     statuses = [
         get_daemon_status(instance, daemon_type, curr_time_seconds=curr_time_seconds)
-        for daemon_type in required_daemons(instance)
+        for daemon_type in instance.get_required_daemon_types()
     ]
     return all([status.healthy for status in statuses])
 
@@ -163,7 +149,7 @@ def all_daemons_live(instance, curr_time_seconds=None):
         get_daemon_status(
             instance, daemon_type, curr_time_seconds=curr_time_seconds, ignore_errors=True
         )
-        for daemon_type in required_daemons(instance)
+        for daemon_type in instance.get_required_daemon_types()
     ]
     return all([status.healthy for status in statuses])
 
@@ -174,7 +160,7 @@ def get_daemon_status(instance, daemon_type, curr_time_seconds=None, ignore_erro
     )
 
     # check if daemon required
-    if daemon_type not in required_daemons(instance):
+    if daemon_type not in instance.get_required_daemon_types():
         return DaemonStatus(
             daemon_type=daemon_type, required=False, healthy=None, last_heartbeat=None
         )

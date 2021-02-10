@@ -3,7 +3,7 @@ import sys
 import graphene
 from dagster import DagsterInstance, check
 from dagster.core.launcher.base import RunLauncher
-from dagster.daemon.controller import get_daemon_status, required_daemons
+from dagster.daemon.controller import get_daemon_status
 from dagster.daemon.types import DaemonStatus
 
 from .errors import GraphenePythonError
@@ -76,7 +76,7 @@ class GrapheneDaemonHealth(graphene.ObjectType):
     def resolve_allDaemonStatuses(self, _graphene_info):
         return [
             GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type))
-            for daemon_type in required_daemons(self._instance)
+            for daemon_type in self._instance.get_required_daemon_types()
         ]
 
 
