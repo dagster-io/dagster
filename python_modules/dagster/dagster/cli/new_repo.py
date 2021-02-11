@@ -2,13 +2,17 @@ import os
 
 import click
 from dagster.generate import generate_new_repo
+from dagster.utils.backcompat import experimental
 
 
 @click.command(name="new-repo")
 @click.argument("path", type=click.Path())
+@experimental
 def new_repo_command(path: str):
     """
-    Creates a new Dagster repository and generates boilerplate code.
+    Creates a new Dagster repository and generates boilerplate code. ``dagster new-repo`` is an
+    experimental command and it may generate different files in future versions, even between dot
+    releases.
 
     PATH: Location of the new Dagster repository in your filesystem.
     """
