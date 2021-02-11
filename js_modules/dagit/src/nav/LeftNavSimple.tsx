@@ -83,7 +83,7 @@ export const LeftNavSimple = () => {
         <Group direction="column" spacing={12} padding={{top: 20, horizontal: 12}}>
           <Group direction="row" alignItems="center" spacing={8} padding={{horizontal: 4}}>
             <img alt="logo" src={navBarImage} style={{display: 'block', height: 28}} />
-            <Group direction="column" spacing={2}>
+            <Group direction="column" spacing={2} padding={{top: 2}}>
               <img
                 src={navTitleImage}
                 style={{display: 'block', height: 10, filter: 'brightness(0.05)'}}

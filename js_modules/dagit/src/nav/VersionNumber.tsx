@@ -10,7 +10,7 @@ export const VersionNumber = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  return <Version>{data?.version}</Version>;
+  return <Version>{data?.version || <span>&nbsp;</span>}</Version>;
 };
 
 const Version = styled.div`

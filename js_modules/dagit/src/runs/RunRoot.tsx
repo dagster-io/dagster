@@ -15,7 +15,6 @@ import {RunRootQuery} from 'src/runs/types/RunRootQuery';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {PageHeader} from 'src/ui/PageHeader';
-import {Spinner} from 'src/ui/Spinner';
 import {Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
@@ -52,10 +51,10 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
           title={
             <Group direction="row" spacing={12} alignItems="flex-end">
               <Heading style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</Heading>
-              {loading || !run ? (
-                <Spinner purpose="body-text" />
-              ) : (
-                <RunStatusTag status={run.status} />
+              {loading || !run ? null : (
+                <div style={{position: 'relative', top: '-2px'}}>
+                  <RunStatusTag status={run.status} />
+                </div>
               )}
             </Group>
           }
