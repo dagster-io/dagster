@@ -931,6 +931,18 @@ def test_schedule_decorators_bad():
         def hourly_foo_schedule_start_later_in_hour():
             return {}
 
+    with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
+
+        @schedule(cron_schedule="", pipeline_name="foo_pipeline")
+        def bad_cron_string(context):
+            return {}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
+
+        @schedule(cron_schedule="bad_schedule_two", pipeline_name="foo_pipeline")
+        def bad_cron_string_two(context):
+            return {}
+
 
 def test_solid_docstring():
     @solid

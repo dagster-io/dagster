@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pendulum
+from croniter import croniter
 from dagster import check
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
@@ -120,6 +121,11 @@ class ScheduleDefinition(JobDefinition):
                 solid_selection, "solid_selection", of_type=str
             ),
         )
+
+        if not croniter.is_valid(cron_schedule):
+            raise DagsterInvalidDefinitionError(
+                f"Found invalid cron schedule '{cron_schedule}' for schedule '{name}''."
+            )
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
         self._environment_vars = check.opt_dict_param(
