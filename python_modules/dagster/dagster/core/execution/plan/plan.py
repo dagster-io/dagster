@@ -285,7 +285,13 @@ class _PlanBuilder:
 
 
 def get_step_input_source(
-    plan_builder, solid, input_name, input_def, dependency_structure, handle, parent_step_inputs
+    plan_builder: _PlanBuilder,
+    solid: Solid,
+    input_name: str,
+    input_def: InputDefinition,
+    dependency_structure: DependencyStructure,
+    handle: SolidHandle,
+    parent_step_inputs: Optional[List[Union[StepInput, UnresolvedStepInput]]],
 ):
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
     check.inst_param(solid, "solid", Solid)
@@ -334,6 +340,9 @@ def get_step_input_source(
             dependency_structure.get_multi_deps(input_handle)
         ):
             if handle_or_placeholder is MappedInputPlaceholder:
+                if parent_step_inputs is None:
+                    check.failed("unexpected error in composition descent during plan building")
+
                 parent_name = solid.container_mapped_fan_in_input(input_name, idx).definition.name
                 parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
                 parent_input = parent_inputs[parent_name]
@@ -353,6 +362,9 @@ def get_step_input_source(
         return FromConfig(solid_handle=handle, input_name=input_name)
 
     if solid.container_maps_input(input_name):
+        if parent_step_inputs is None:
+            check.failed("unexpected error in composition descent during plan building")
+
         parent_name = solid.container_mapped_input(input_name).definition.name
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
