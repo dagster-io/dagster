@@ -292,6 +292,29 @@ def default_from_storage_dict(cls, storage_dict):
     return cls.__new__(cls, **storage_dict)
 
 
+def class_from_code_pointer(module_name, class_name):
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        check.failed(
+            "Couldn't import module {module_name} when attempting to load the "
+            "class {klass}".format(
+                module_name=module_name,
+                klass=module_name + "." + class_name,
+            )
+        )
+    try:
+        return getattr(module, class_name)
+    except AttributeError:
+        check.failed(
+            "Couldn't find class {class_name} in module when attempting to load the "
+            "class {klass}".format(
+                class_name=class_name,
+                klass=module_name + "." + class_name,
+            )
+        )
+
+
 @whitelist_for_serdes
 class ConfigurableClassData(
     namedtuple("_ConfigurableClassData", "module_name class_name config_yaml")

@@ -180,3 +180,26 @@ def test_dagster_home_not_dir():
             ),
         ):
             _dagster_home()
+
+
+class TestInstanceSubclass(DagsterInstance):
+    def foo(self):
+        return "bar"
+
+
+def test_instance_subclass():
+    with instance_for_test(
+        overrides={
+            "custom_instance_class": {
+                "module": "dagster_tests.core_tests.instance_tests.test_instance",
+                "class": "TestInstanceSubclass",
+            }
+        }
+    ) as subclass_instance:
+        assert isinstance(subclass_instance, DagsterInstance)
+
+        # isinstance(subclass_instance, TestInstanceSubclass) does not pass
+        # Likely because the imported/dynamically loaded class is different from the local one
+
+        assert subclass_instance.__class__.__name__ == "TestInstanceSubclass"
+        assert subclass_instance.foo() == "bar"

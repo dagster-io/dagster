@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import yaml
 from dagster import check
-from dagster.serdes import ConfigurableClassData, whitelist_for_serdes
+from dagster.serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
@@ -39,7 +39,8 @@ class InstanceRef(
     namedtuple(
         "_InstanceRef",
         "local_artifact_storage_data run_storage_data event_storage_data compute_logs_data "
-        "schedule_storage_data scheduler_data run_coordinator_data run_launcher_data settings",
+        "schedule_storage_data scheduler_data run_coordinator_data run_launcher_data settings "
+        "custom_instance_class_data",
     )
 ):
     """Serializable representation of a :py:class:`DagsterInstance`.
@@ -58,6 +59,7 @@ class InstanceRef(
         run_coordinator_data,
         run_launcher_data,
         settings,
+        custom_instance_class_data=None,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -86,6 +88,11 @@ class InstanceRef(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
             settings=check.opt_dict_param(settings, "settings"),
+            custom_instance_class_data=check.opt_inst_param(
+                custom_instance_class_data,
+                "custom_instance_class",
+                ConfigurableClassData,
+            ),
         )
 
     @staticmethod
@@ -176,6 +183,10 @@ class InstanceRef(
         settings_keys = {"telemetry", "sensor_settings"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
+        custom_instance_class_data = configurable_class_data_or_default(
+            config_value, "custom_instance_class", None
+        )
+
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
             run_storage_data=run_storage_data,
@@ -186,6 +197,7 @@ class InstanceRef(
             run_coordinator_data=run_coordinator_data,
             run_launcher_data=run_launcher_data,
             settings=settings,
+            custom_instance_class_data=custom_instance_class_data,
         )
 
     @staticmethod
@@ -230,6 +242,17 @@ class InstanceRef(
     @property
     def run_launcher(self):
         return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
+
+    @property
+    def custom_instance_class(self):
+        return (
+            class_from_code_pointer(
+                self.custom_instance_class_data.module_name,
+                self.custom_instance_class_data.class_name,
+            )
+            if self.custom_instance_class_data
+            else None
+        )
 
     def to_dict(self):
         return self._asdict()

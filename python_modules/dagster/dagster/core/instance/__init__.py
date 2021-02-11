@@ -328,7 +328,14 @@ class DagsterInstance:
     @staticmethod
     def from_ref(instance_ref, skip_validation_checks=False):
         check.inst_param(instance_ref, "instance_ref", InstanceRef)
-        return DagsterInstance(
+
+        klass = (
+            instance_ref.custom_instance_class
+            if instance_ref.custom_instance_class
+            else DagsterInstance
+        )
+
+        return klass(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
             run_storage=instance_ref.run_storage,
