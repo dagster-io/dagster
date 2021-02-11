@@ -66,6 +66,11 @@ class Workspace:
             self._location_origin_dict[origin.location_name] = origin
             self._load_handle(origin.location_name)
 
+    # Can be overidden in subclasses that need different logic for loading repository
+    # locations from origins
+    def create_handle_from_origin(self, origin):
+        return origin.create_handle()
+
     def _load_handle(self, location_name):
         existing_handle = self._location_handle_dict.get(location_name)
         if existing_handle:
@@ -79,7 +84,7 @@ class Workspace:
 
         origin = self._location_origin_dict[location_name]
         try:
-            handle = origin.create_handle()
+            handle = self.create_handle_from_origin(origin)
             self._location_handle_dict[location_name] = handle
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
