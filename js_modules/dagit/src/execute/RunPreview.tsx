@@ -280,9 +280,10 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
       errorsAndPaths.push({
         pathKey: '',
         error: (
-          <>
-            PythonError <span onClick={() => showCustomAlert({body: info})}>click for details</span>
-          </>
+          <span>
+            PythonError:{' '}
+            <ButtonLink onClick={() => showCustomAlert({body: info})}>Click for details</ButtonLink>
+          </span>
         ),
       });
     }
