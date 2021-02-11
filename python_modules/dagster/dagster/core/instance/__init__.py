@@ -7,6 +7,7 @@ import warnings
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING, Dict, Iterable, Union
 
 import yaml
 from dagster import check
@@ -18,7 +19,7 @@ from dagster.core.errors import (
     DagsterRunConflict,
 )
 from dagster.core.storage.migration.utils import upgrading_instance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import str_format_list
@@ -36,6 +37,13 @@ from .ref import InstanceRef
 # https://github.com/dagster-io/dagster/issues/2403
 AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
+
+
+if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
+    from dagster.core.host_representation import HistoricalPipeline
+    from dagster.core.snap import PipelineSnapshot
+    from dagster.daemon.types import DaemonHeartbeat
 
 
 def _is_dagster_home_set():
@@ -411,13 +419,19 @@ class DagsterInstance:
     def info_str(self):
         return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
+    @property
+    def run_storage(self):
+        return self._run_storage
+
+    @property
+    def event_log_storage(self):
+        return self._event_storage
+
     # schedule storage
 
     @property
     def schedule_storage(self):
         return self._schedule_storage
-
-    # schedule storage
 
     @property
     def scheduler(self):
@@ -506,16 +520,16 @@ class DagsterInstance:
 
     # run storage
 
-    def get_run_by_id(self, run_id):
+    def get_run_by_id(self, run_id: str) -> PipelineRun:
         return self._run_storage.get_run_by_id(run_id)
 
-    def get_pipeline_snapshot(self, snapshot_id):
+    def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
         return self._run_storage.get_pipeline_snapshot(snapshot_id)
 
-    def has_pipeline_snapshot(self, snapshot_id):
+    def has_pipeline_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
-    def get_historical_pipeline(self, snapshot_id):
+    def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalPipeline":
         from dagster.core.host_representation import HistoricalPipeline
 
         snapshot = self._run_storage.get_pipeline_snapshot(snapshot_id)
@@ -887,32 +901,36 @@ class DagsterInstance:
         except DagsterRunAlreadyExists:
             return get_run()
 
-    def add_run(self, pipeline_run):
+    def add_run(self, pipeline_run: PipelineRun):
         return self._run_storage.add_run(pipeline_run)
 
-    def handle_run_event(self, run_id, event):
+    def handle_run_event(self, run_id: str, event: "DagsterEvent"):
         return self._run_storage.handle_run_event(run_id, event)
 
-    def add_run_tags(self, run_id, new_tags):
+    def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
         return self._run_storage.add_run_tags(run_id, new_tags)
 
-    def has_run(self, run_id):
+    def has_run(self, run_id: str) -> bool:
         return self._run_storage.has_run(run_id)
 
-    def get_runs(self, filters=None, cursor=None, limit=None):
+    def get_runs(
+        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Iterable[PipelineRun]:
         return self._run_storage.get_runs(filters, cursor, limit)
 
-    def get_runs_count(self, filters=None):
+    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
-    def get_run_groups(self, filters=None, cursor=None, limit=None):
+    def get_run_groups(
+        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     def wipe(self):
         self._run_storage.wipe()
         self._event_storage.wipe()
 
-    def delete_run(self, run_id):
+    def delete_run(self, run_id: str):
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)
 
@@ -1437,11 +1455,11 @@ class DagsterInstance:
         return self._event_storage.get_addresses_for_step_output_versions(step_output_versions)
 
     # dagster daemon
-    def add_daemon_heartbeat(self, daemon_heartbeat):
+    def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):
         """Called on a regular interval by the daemon"""
         self._run_storage.add_daemon_heartbeat(daemon_heartbeat)
 
-    def get_daemon_heartbeats(self):
+    def get_daemon_heartbeats(self) -> Dict[str, "DaemonHeartbeat"]:
         """Latest heartbeats of all daemon types"""
         return self._run_storage.get_daemon_heartbeats()
 
