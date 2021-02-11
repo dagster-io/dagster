@@ -14,6 +14,8 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+Note: if it's your first time building the site locally or you want to re-build it, you will need to run `yarn` beforehand. 
+
 ----
 
 ## Writing Documentation
@@ -22,6 +24,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - [Writing MDX](#writing-mdx): we use [MDX](https://mdxjs.com/table-of-components) to write our main
   content. This section will explain how to include [code snippets](#code-snippets-literal-includes)
   and use various [custom components](#using-components).
+- [Navigation](#navigation): this explains how to update the sidebar.
+
+<br />
 
 ### Editing API Docs
 
@@ -36,6 +41,8 @@ make build
 ```
 
 If you don't build the API documentation and include the changes in your diff, you will see a build error reminding you to do so.
+
+<br />
 
 ### Writing MDX
 
@@ -73,6 +80,7 @@ Run `yarn snapshot` to actually get the snipets to render. . This will replace t
 
 - **`trim=true`**: Sometimes, our Python formatter `black` gets in the way and adds some spacing before the end of your snippet and the `endbefore` marker comment. Use trim to get rid of any extra newlines.
 
+<br />
 
 #### Using Components
 
@@ -100,6 +108,8 @@ Here is an example of using PyObject: <PyObject module="dagster" object="SolidDe
 By default, we just display the object name. To override, use the `displayText` prop: <PyObject module="dagster" object="solid" displayText="@solid"/ >
 ```
 
-#### Navigation
+<br />
+
+### Navigation
 
 If you are adding a new page or want to update the navigation in the sidebar, update the `docs/next/content/_navigation.json` file.
