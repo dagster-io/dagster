@@ -4,7 +4,7 @@ This folder contains the code for the Dagster documentation site at https://docs
 
 ## Getting Started
 
-First, run the development server:
+First, run the development server in the `next/` directory:
 
 ```bash
 npm run dev
@@ -14,7 +14,16 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Editing API documentation
+----
+
+## Writing Documentation
+
+- [Editing API Docs](#editing-api-docs): we use [Sphinx](https://www.sphinx-doc.org/en/master/) to generate API Docs.
+- [Writing MDX](#writing-mdx): we use [MDX](https://mdxjs.com/table-of-components) to write our main
+  content. This section will explain how to include [code snippets](#code-snippets-literal-includes)
+  and use various [custom components](#using-components).
+
+### Editing API Docs
 
 The API documentation is authored separately in the `dagster/docs/sphinx` folder using [Sphinx](https://www.sphinx-doc.org/en/master/), a Python document generator. We use Sphinx because it has built-in functionality to document Python methods and classes by parsing the docstrings.
 
@@ -28,16 +37,15 @@ make build
 
 If you don't build the API documentation and include the changes in your diff, you will see a build error reminding you to do so.
 
-## Writing MDX
+### Writing MDX
 
 We use MDX, which is a content format that lets us use JSX in our markdown documents. This lets us import components and embed them in our documentation.
 
-
-### Code Snippets (Literal Includes)
+#### Code Snippets (Literal Includes)
 
 We want the code snippets in our documentation to be high quality. We maintain quality by authoring snippets in the `/examples/docs_snippets` folder and testing them to make sure they work and we don't break them in the future.
 
-#### Example:
+**Example:**
 To include snippets from the code base, you can provide additional properties to the markdown code fence block:
 
 Using markers:
@@ -45,7 +53,14 @@ Using markers:
     ```python file=/overview/solids_pipelines/solid_definition.py startafter=start_solid_definition_marker_0 endbefore=end_solid_definition_marker_0
     ```
 
-#### Properties:
+**Render:**
+
+Run `yarn snapshot` to actually get the snipets to render. . This will replace the body of the code block with the code you referenced.
+
+**Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `yarn snapshot` once you update the underlying code to see the changes in the doc site. *This behavior is different from previous versions of the site.*
+
+
+**Properties:**
 
 - **`file`**: The path to file relative to the `/examples/docs_snippets/docs_snippets` folder. You can use a relative path from this folder to access snippets from other parts of the codebase, but this is _highly discouraged_. Instead, you should copy the bit of code you need into `doc_snippets` and test it appropriately.
 - **`startafter`** and **`endbefore`**: Use this property to specify a code snippet in between to makers. You will need to include the markers in the source file as comments.
@@ -58,15 +73,10 @@ Using markers:
 
 - **`trim=true`**: Sometimes, our Python formatter `black` gets in the way and adds some spacing before the end of your snippet and the `endbefore` marker comment. Use trim to get rid of any extra newlines.
 
-#### Render Snippets:
 
-Run `yarn snapshot` to actually get the snipets to render. . This will replace the body of the code block with the code you referenced.
+#### Using Components
 
-**Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `yarn snapshot` once you update the underlying code to see the changes in the doc site. *This behavior is different from previous versions of the site.*
-
-### Using Components
-
-Here are the available components to use in MDX:
+Here are the available components we built to use in MDX:
 
 - PyObject
 - Link
@@ -79,7 +89,7 @@ Here are the available components to use in MDX:
 
 See more details in in the `/components/MDXComponents` file.
 
-#### PyObject Component
+**PyObject Component**
 
 The most important component is the `<PyObject />` component. It is used to link to references in the API documentation from MDX files.
 
@@ -90,6 +100,6 @@ Here is an example of using PyObject: <PyObject module="dagster" object="SolidDe
 By default, we just display the object name. To override, use the `displayText` prop: <PyObject module="dagster" object="solid" displayText="@solid"/ >
 ```
 
-### Navigation
+#### Navigation
 
 If you are adding a new page or want to update the navigation in the sidebar, update the `docs/next/content/_navigation.json` file.
