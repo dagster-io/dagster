@@ -13,6 +13,7 @@ from dagster import (
     PartitionSetDefinition,
     PresetDefinition,
     ScheduleDefinition,
+    execute_pipeline,
     lambda_solid,
     pipeline,
     repository,
@@ -20,7 +21,7 @@ from dagster import (
 )
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.run import run_list_command, run_wipe_command
+from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.sensor import RunRequest
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
@@ -552,6 +553,32 @@ def test_run_wipe_incorrect_delete_message():
         runner = CliRunner()
         result = runner.invoke(run_wipe_command, input="WRONG\n")
         assert "Exiting without deleting all run history and event logs" in result.output
+        assert result.exit_code == 0
+
+
+def test_run_delete_bad_id():
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=["1234"], input="DELETE\n")
+        assert "No run found with id 1234" in result.output
+        assert result.exit_code == 0
+
+
+def test_run_delete_correct_delete_message():
+    with instance_for_test() as instance:
+        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="DELETE\n")
+        assert "Deleted run" in result.output
+        assert result.exit_code == 0
+
+
+def test_run_delete_incorrect_delete_message():
+    with instance_for_test() as instance:
+        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
+        assert "Exiting without deleting" in result.output
         assert result.exit_code == 0
 
 
