@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.10.5 (upcoming)
+## 0.10.5
+
+**Community Contributions**
+
+* Add `/License` for packages that claim distribution under Apache-2.0 (thanks [@bollwyvl](https://github.com/dagster-io/dagster/commits?author=bollwyvl)!)
 
 **New**
 
@@ -8,6 +12,37 @@
   used for all processes which don't require user code (Dagit, Daemon, and Celery workers when using the CeleryK8sExecutor). `user-code-example` can
   be used for a sample user repository. The prior images (`k8s-dagit`, `k8s-celery-worker`, `k8s-example`)
   are deprecated.
+* `configured` api on solids now enforces name argument as positional. The `name` argument remains a keyword argument on executors. `name` argument has been removed from resources, and loggers to reflect that they are anonymous. Previously, you would receive an error message if the `name` argument was provided to `configured` on resources or loggers.
+* [sensors] In addition to the per-sensor `minimum_interval_seconds`  field, the overall sensor daemon interval can now be configured in the `dagster.yaml` instance settings with:
+```yaml
+sensor_settings:
+    interval_seconds: 30 # (default)
+```
+This changes the interval at which the daemon checks for sensors which haven't run within their `minimum_interval_seconds`.
+* The message logged for type check failures now includes the description included in the `TypeCheck`
+* The `dagster-daemon` process now runs each of its daemons in its own thread. This allows the scheduler, sensor loop, and daemon for launching queued runs to run in parallel, without slowing each other down. The `dagster-daemon` process will shut down if any of the daemon threads crash or hang, so that the execution environment knows that it needs to be restarted.
+* `dagster new-repo` is a new CLI command that generates a Dagster repository with skeleton code in your filesystem. This CLI command is experimental and it may generate different files in future versions, even between dot releases. As of 0.10.5, `dagster new-repo` does not support Windows. [See here for official API docs.](http://localhost:3001/_apidocs/cli#dagster-new-repo)
+* When using a `grpc_server` repository location, Dagit will automatically detect changes and prompt you to reload when the remote server updates. 
+* Improved consistency of headers across pages in Dagit.
+* Added support for assets to the default SQLite event log storage.
+
+**Integrations**
+
+* [dagster-pandas] - Improved the error messages on failed pandas type checks.
+* [dagster-postgres] - postgres_url is now a StringSource and can be loaded by environment variable
+* [helm] - Users can set Kubernetes labels on Celery worker deployments 
+* [helm] - Users can set environment variables for Flower deployment
+* [helm] - The redis helm chart is now included as an optional dagster helm chart dependency
+
+**Bugfixes**
+
+* Resolved an error preventing dynamic outputs from being passed to composite_solid inputs
+* Fixed the tick history graph for schedules defined in a lazy-loaded repository ([#3626](https://github.com/dagster-io/dagster/issues/3626))
+* Fixed performance regression of the Runs page on dagit.
+* Fixed Gantt chart on Dagit run view to use the correct start time, repairing how steps are rendered within the chart.
+* On Instance status page in Dagit, correctly handle states where daemons have multiple errors.
+* Various Dagit bugfixes and improvements.
+
 
 ## 0.10.4
 
