@@ -107,15 +107,20 @@ class SystemExecutionContextData(
 
 
 class SystemExecutionContext:
-    __slots__ = ["_execution_context_data", "_log_manager"]
+    __slots__ = ["_execution_context_data", "_log_manager", "_output_capture"]
 
     def __init__(
-        self, execution_context_data: SystemExecutionContextData, log_manager: DagsterLogManager
+        self,
+        execution_context_data: SystemExecutionContextData,
+        log_manager: DagsterLogManager,
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
         self._execution_context_data = check.inst_param(
             execution_context_data, "execution_context_data", SystemExecutionContextData
         )
         self._log_manager = check.inst_param(log_manager, "log_manager", DagsterLogManager)
+
+        self._output_capture = output_capture
 
     @property
     def pipeline_run(self) -> PipelineRun:
@@ -188,6 +193,10 @@ class SystemExecutionContext:
     def execution_plan(self):
         return self._execution_context_data.execution_plan
 
+    @property
+    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+        return self._output_capture
+
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
         return key in self.logging_tags
@@ -204,6 +213,7 @@ class SystemExecutionContext:
             self._execution_context_data,
             self._log_manager.with_tags(**step.logging_tags),
             step,
+            self.output_capture,
         )
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
@@ -218,8 +228,11 @@ class SystemPipelineExecutionContext(SystemExecutionContext):
         execution_context_data: SystemExecutionContextData,
         log_manager: DagsterLogManager,
         executor: Executor,
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
-        super(SystemPipelineExecutionContext, self).__init__(execution_context_data, log_manager)
+        super(SystemPipelineExecutionContext, self).__init__(
+            execution_context_data, log_manager, output_capture=output_capture
+        )
         self._executor = check.inst_param(executor, "executor", Executor)
 
     @property
@@ -235,6 +248,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
         execution_context_data: SystemExecutionContextData,
         log_manager: DagsterLogManager,
         step: ExecutionStep,
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -264,6 +278,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             self._step_launcher = step_launcher_resources[0]
 
         self._log_manager = log_manager
+        self._output_capture = output_capture
 
     def for_compute(self) -> "SystemComputeExecutionContext":
         return SystemComputeExecutionContext(self._execution_context_data, self.log, self.step)

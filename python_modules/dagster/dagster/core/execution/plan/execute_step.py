@@ -340,6 +340,11 @@ def _type_check_and_store_output(
         step_key=step_context.step.key, output_name=output.output_name, mapping_key=mapping_key
     )
 
+    # If we are executing using the execute_in_process API, then we allow for the outputs of solids
+    # to be directly captured to a dictionary after they are computed.
+    if step_context.output_capture is not None:
+        step_context.output_capture[step_output_handle] = output.value
+
     version = (
         step_context.execution_plan.resolve_step_output_versions().get(step_output_handle)
         if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags

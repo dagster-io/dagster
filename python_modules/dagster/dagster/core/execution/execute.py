@@ -10,10 +10,12 @@ from dagster.core.definitions import (
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    SolidDefinition,
 )
 from dagster.core.definitions.decorators.solid import solid
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.utils import merge_dicts
@@ -25,7 +27,7 @@ from .api import (
     pipeline_execution_iterator,
 )
 from .context_creation_pipeline import PipelineExecutionContextManager
-from .results import ExecutionResult
+from .execution_results import InProcessGraphResult, InProcessSolidResult, NodeExecutionResult
 
 EPHEMERAL_IO_MANAGER_KEY = "system__execute_solid_ephemeral_node_io_manager"
 
@@ -45,7 +47,8 @@ def execute_in_process(
     loggers: Optional[Dict[str, LoggerDefinition]] = None,
     input_values: Optional[Dict[str, Any]] = None,
     instance: DagsterInstance = None,
-) -> ExecutionResult:
+    output_capturing_enabled: Optional[bool] = True,
+) -> NodeExecutionResult:
     node = check.inst_param(node, "node", NodeDefinition)
     resources = check.opt_dict_param(
         resources, "resources", key_type=str, value_type=ResourceDefinition
@@ -79,6 +82,8 @@ def execute_in_process(
 
     execution_plan = create_execution_plan(pipeline, run_config=run_config, mode=mode_def.name)
 
+    recorder: Dict[StepOutputHandle, Any] = {}
+
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -94,6 +99,7 @@ def execute_in_process(
                 pipeline_run=pipeline_run,
                 instance=execute_instance,
                 run_config=run_config,
+                output_capture=recorder if output_capturing_enabled else None,
             ),
         )
         event_list = list(_execute_run_iterable)
@@ -106,4 +112,11 @@ def execute_in_process(
         if event.solid_handle and event.solid_handle.is_or_descends_from(top_level_node_handle)
     ]
 
-    return ExecutionResult(node, event_list_for_top_lvl_node)
+    if isinstance(node, SolidDefinition):
+        return InProcessSolidResult(
+            node, SolidHandle(node.name, None), event_list_for_top_lvl_node, recorder
+        )
+    else:
+        return InProcessGraphResult(
+            node, SolidHandle(node.name, None), event_list_for_top_lvl_node, recorder
+        )
