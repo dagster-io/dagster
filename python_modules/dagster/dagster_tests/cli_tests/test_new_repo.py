@@ -24,10 +24,6 @@ def test_new_repo_command_fails_when_file_path_exists():
         assert result.exit_code != 0
 
 
-@pytest.mark.skipif(
-    seven.IS_WINDOWS,
-    reason="Unresolved Windows test failures. https://github.com/dagster-io/dagster/issues/3667",
-)
 def test_new_repo_command_succeeds():
     runner = CliRunner()
     with runner.isolated_filesystem():

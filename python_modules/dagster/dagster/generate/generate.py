@@ -1,4 +1,5 @@
 import os
+import posixpath
 
 import jinja2
 
@@ -55,7 +56,9 @@ def generate_new_repo(path: str):
                 dst_file_path = dst_file_path[: -len(".tmpl")]
 
             with open(dst_file_path, "w") as f:
-                template = env.get_template(name=src_relative_file_path)
+                # Jinja template names must use the POSIX path separator "/".
+                template_name = src_relative_file_path.replace(os.sep, posixpath.sep)
+                template = env.get_template(name=template_name)
                 f.write(template.render(repo_name=repo_name))
                 f.write("\n")
 
