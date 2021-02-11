@@ -348,6 +348,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     repositorySelector: RepositorySelector,
     partitionSetName: string,
     partitionName: string,
+    sessionSolidSelection?: string[] | null,
   ) => {
     onConfigLoading();
     try {
@@ -388,15 +389,16 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
         runConfigYaml = partition.runConfigOrError.yaml;
       }
 
+      const solidSelection = sessionSolidSelection || partition.solidSelection;
+
       onSaveSession({
         name: partition.name,
         base: Object.assign({}, base, {
           partitionName: partition.name,
         }),
         runConfigYaml,
-        solidSelection: partition.solidSelection,
-        solidSelectionQuery:
-          partition.solidSelection === null ? '*' : partition.solidSelection.join(','),
+        solidSelection,
+        solidSelectionQuery: solidSelection === null ? '*' : solidSelection.join(','),
         mode: partition.mode,
         tags,
         needsRefresh: false,
@@ -416,7 +418,10 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
       const {presetName} = base;
       const matchingPreset = pipeline.presets.find((preset) => preset.name === presetName);
       if (matchingPreset) {
-        onSelectPreset(matchingPreset);
+        onSelectPreset({
+          ...matchingPreset,
+          solidSelection: currentSession.solidSelection || matchingPreset.solidSelection,
+        });
       }
       return;
     }
@@ -427,7 +432,12 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
 
     if (partitionName) {
       onConfigLoading();
-      await onSelectPartition(repositorySelector, partitionsSetName, partitionName);
+      await onSelectPartition(
+        repositorySelector,
+        partitionsSetName,
+        partitionName,
+        currentSession.solidSelection,
+      );
       onConfigLoaded();
     }
   };
