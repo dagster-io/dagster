@@ -198,10 +198,6 @@ class WorkspaceProcessContext:
         return self._instance
 
     @property
-    def workspace(self):
-        return self._instance
-
-    @property
     def repository_locations(self):
         return list(self._repository_locations.values())
 
