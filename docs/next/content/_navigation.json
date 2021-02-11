@@ -1,5 +1,37 @@
 [
   {
+    "title": "Getting Started",
+    "icon": "Sparkles",
+    "path": "/getting-started",
+    "children": [
+      {
+        "title": "Getting Started",
+        "children": [
+          {
+            "title": "Installation",
+            "path": "/getting-started/install"
+          },
+          {
+            "title": "\"Hello World\"",
+            "path": "/getting-started/hello-world"
+          },
+          {
+            "title": "Create a New Project",
+            "path": "/getting-started/init"
+          },
+          {
+            "title": "Telemetry",
+            "path": "/getting-started/telemetry"
+          },
+          {
+            "title": "Releases and Changes",
+            "path": "/getting-started/releases"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "title": "Tutorial",
     "icon": "AcademicCap",
     "path": "/tutorial",
@@ -10,10 +42,6 @@
           {
             "title": "Setup for the Tutorial",
             "path": "/tutorial/intro-tutorial/setup"
-          },
-          {
-            "title": "Overview",
-            "path": "/tutorial/intro-tutorial/overview"
           },
           {
             "title": "A Single-Solid Pipeline",
@@ -281,7 +309,7 @@
 
   {
     "title": "Guides",
-    "icon": "CloudUpload",
+    "icon": "Search",
     "path": "/guides",
     "children": [
       {
@@ -417,12 +445,6 @@
         ]
       }
     ]
-  },
-  {
-    "title": "Examples",
-    "icon": "Code",
-    "path": "/examples",
-    "children": []
   },
   {
     "title": "API Reference",
@@ -632,10 +654,6 @@
           {
             "title": "Contributing",
             "path": "/community/contributing"
-          },
-          {
-            "title": "Releases & Deprecations",
-            "path": "/community/releases"
           },
           {
             "title": "Changing Public APIs",

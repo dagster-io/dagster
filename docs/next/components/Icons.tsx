@@ -38,13 +38,22 @@ const CodeIcon = (
   ></path>
 );
 
-const CloudUploadIcon = (
+const SearchIcon = (
   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-  ></path>
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"
+  />
+);
+
+const DocumentIcon = (
+  <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+  />
 );
 
 const UsersIcon = (
@@ -56,13 +65,24 @@ const UsersIcon = (
   />
 );
 
+const SparklesIcon = (
+  <path
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+  />
+);
+
 const Icons = {
   BookOpen: BookOpenIcon,
   Menu: MenuIcon,
   AcademicCap: AcademicCapIcon,
   Code: CodeIcon,
-  CloudUpload: CloudUploadIcon,
+  Search: SearchIcon,
+  Document: DocumentIcon,
   Users: UsersIcon,
+  Sparkles: SparklesIcon,
 };
 
 export default Icons;

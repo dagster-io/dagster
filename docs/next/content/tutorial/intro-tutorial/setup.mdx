@@ -16,6 +16,8 @@ manager are already installed in your environment or install them, you can follo
 
 ## Dagster and Dagit
 
+If you haven't already, please read about our [Installation](/getting-started/install) page.
+
 ```bash
 pip install dagster dagit
 ```
@@ -27,69 +29,5 @@ This installs two modules:
 - **Dagit**: the UI for developing and operating Dagster pipelines, including a DAG browser, a
   type-aware config editor, and a live execution interface.
 
-## Quick Start
-
-Let's get your first Dagster code running.
-
-```python
-from dagster import execute_pipeline, pipeline, solid
-
-
-@solid
-def get_name(_):
-    return 'dagster'
-
-
-@solid
-def hello(context, name: str):
-    context.log.info('Hello, {name}!'.format(name=name))
-
-
-@pipeline
-def hello_pipeline():
-    hello(get_name())
-```
-
-Save the code above in a file named `hello_dagster.py`. You can execute the pipeline using any one
-of the following methods:
-
-**(1) Dagit web UI**
-
-Run the following command
-
-```bash
-dagit -f hello_dagster.py
-```
-
-Then navigate to <http://localhost:3000> to start using Dagit:
-![setup-dagit](/images/tutorial/setup-dagit.png)
-
-Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline.
-
-**(2) Dagster Python API**
-
-```python
-if __name__ == "__main__":
-    execute_pipeline(hello_pipeline)   # Hello, dagster!
-```
-
-**(3) Dagster CLI**
-
-```bash
-dagster pipeline execute -f hello_dagster.py
-```
-
-## If You Get Stuck
-
-If you have questions on getting started, we'd love to hear from you:
-
-<p align="center">
-  <a href="https://dagster-slackin.herokuapp.com/" target="_blank">
-    <img
-      src="https://user-images.githubusercontent.com/609349/63558739-f60a7e00-c502-11e9-8434-c8a95b03ce62.png"
-      width="160px"
-    />
-  </a>
-</p>
-
-<br />
+You can also follow our ["Hello Word"](/getting-started/hello-world) example to make sure you have
+installed the packages and set up the environment properly.
