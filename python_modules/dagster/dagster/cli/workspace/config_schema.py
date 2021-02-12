@@ -2,7 +2,7 @@ import os
 
 from dagster import check
 from dagster.config import Field, ScalarUnion, Selector
-from dagster.config.source import StringSource
+from dagster.config.source import IntSource, StringSource
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import merge_dicts
@@ -27,7 +27,7 @@ def ensure_workspace_config(workspace_config, yaml_path):
             validation_result.errors,
             workspace_config,
         )
-    return validation_result
+    return validation_result.value
 
 
 def _maybe_include_executable_path(config_dict, include_executable_path):
@@ -50,10 +50,10 @@ def _get_target_config(include_executable_path):
             scalar_type=str,
             non_scalar_schema=_maybe_include_executable_path(
                 {
-                    "relative_path": str,
-                    "attribute": Field(str, is_required=False),
-                    "location_name": Field(str, is_required=False),
-                    "working_directory": Field(str, is_required=False),
+                    "relative_path": StringSource,
+                    "attribute": Field(StringSource, is_required=False),
+                    "location_name": Field(StringSource, is_required=False),
+                    "working_directory": Field(StringSource, is_required=False),
                 },
                 include_executable_path=include_executable_path,
             ),
@@ -62,9 +62,9 @@ def _get_target_config(include_executable_path):
             scalar_type=str,
             non_scalar_schema=_maybe_include_executable_path(
                 {
-                    "module_name": str,
-                    "attribute": Field(str, is_required=False),
-                    "location_name": Field(str, is_required=False),
+                    "module_name": StringSource,
+                    "attribute": Field(StringSource, is_required=False),
+                    "location_name": Field(StringSource, is_required=False),
                 },
                 include_executable_path=include_executable_path,
             ),
@@ -73,9 +73,9 @@ def _get_target_config(include_executable_path):
             scalar_type=str,
             non_scalar_schema=_maybe_include_executable_path(
                 {
-                    "package_name": str,
-                    "attribute": Field(str, is_required=False),
-                    "location_name": Field(str, is_required=False),
+                    "package_name": StringSource,
+                    "attribute": Field(StringSource, is_required=False),
+                    "location_name": Field(StringSource, is_required=False),
                     "executable_path": Field(StringSource, is_required=False),
                 },
                 include_executable_path=include_executable_path,
@@ -96,10 +96,10 @@ WORKSPACE_CONFIG_SCHEMA = {
                             "target": Selector(_get_target_config(include_executable_path=False)),
                         },
                         "grpc_server": {
-                            "host": Field(str, is_required=False),
-                            "socket": Field(str, is_required=False),
-                            "port": Field(int, is_required=False),
-                            "location_name": Field(str, is_required=False),
+                            "host": Field(StringSource, is_required=False),
+                            "socket": Field(StringSource, is_required=False),
+                            "port": Field(IntSource, is_required=False),
+                            "location_name": Field(StringSource, is_required=False),
                         },
                     },
                 )

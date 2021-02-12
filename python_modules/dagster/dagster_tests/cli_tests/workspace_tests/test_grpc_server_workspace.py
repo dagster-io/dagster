@@ -3,7 +3,9 @@ import yaml
 from dagster import seven
 from dagster.check import CheckError
 from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.load import load_workspace_from_config
+from dagster.cli.workspace.load import load_workspace_from_config, location_origins_from_config
+from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
+from dagster.core.test_utils import environ
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 
@@ -56,6 +58,50 @@ load_from:
             assert all(map(lambda x: x.location_name, workspace.repository_location_handles))
         second_server_process.wait()
     first_server_process.wait()
+
+
+def test_grpc_server_env_vars():
+    with environ(
+        {
+            "FOO_PORT": "1234",
+            "FOO_SOCKET": "barsocket",
+            "FOO_HOST": "barhost",
+        }
+    ):
+        valid_yaml = """
+    load_from:
+        - grpc_server:
+            host:
+              env: FOO_HOST
+            port:
+              env: FOO_PORT
+            location_name: 'my_grpc_server_port'
+        - grpc_server:
+            host:
+              env: FOO_HOST
+            socket:
+              env: FOO_SOCKET
+            location_name: 'my_grpc_server_socket'
+    """
+
+        origins = location_origins_from_config(
+            yaml.safe_load(valid_yaml),
+            file_relative_path(__file__, "not_a_real.yaml"),
+        )
+
+        assert len(origins) == 2
+
+        port_origin = origins["my_grpc_server_port"]
+        assert isinstance(origins["my_grpc_server_port"], GrpcServerRepositoryLocationOrigin)
+
+        assert port_origin.port == 1234
+        assert port_origin.host == "barhost"
+
+        socket_origin = origins["my_grpc_server_socket"]
+        assert isinstance(origins["my_grpc_server_socket"], GrpcServerRepositoryLocationOrigin)
+
+        assert socket_origin.socket == "barsocket"
+        assert socket_origin.host == "barhost"
 
 
 def test_grpc_server_workspace():

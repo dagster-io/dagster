@@ -54,7 +54,7 @@ def load_workspace_from_config(workspace_config, yaml_path):
 
 
 def location_origins_from_config(workspace_config, yaml_path):
-    ensure_workspace_config(workspace_config, yaml_path)
+    workspace_config = ensure_workspace_config(workspace_config, yaml_path)
 
     location_origins = OrderedDict()
     for location_config in workspace_config["load_from"]:
