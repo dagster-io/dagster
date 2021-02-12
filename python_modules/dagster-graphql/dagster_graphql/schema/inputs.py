@@ -103,6 +103,7 @@ class GraphenePartitionBackfillParams(graphene.InputObjectType):
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     fromFailure = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
+    forceSynchronousSubmission = graphene.Boolean()
 
     class Meta:
         name = "PartitionBackfillParams"

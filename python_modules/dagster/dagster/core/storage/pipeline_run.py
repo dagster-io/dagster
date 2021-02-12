@@ -373,6 +373,10 @@ class PipelineRunsFilter(
     def for_sensor(sensor):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
 
+    @staticmethod
+    def for_backfill(backfill_id):
+        return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
 
 ###################################################################################################
 # GRAVEYARD
