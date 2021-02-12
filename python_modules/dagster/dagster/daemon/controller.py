@@ -109,22 +109,20 @@ class DagsterDaemonController:
 
 
 def create_daemons_from_instance(instance):
-    daemon_types = instance.get_required_daemon_types()
+    return [
+        create_daemon_of_type(daemon_type) for daemon_type in instance.get_required_daemon_types()
+    ]
 
-    daemons = []
 
-    # Separate instance for each daemon since each is in its own thread
-    for daemon_type in daemon_types:
-        if daemon_type == SchedulerDaemon.daemon_type():
-            daemons.append(SchedulerDaemon.create_from_instance(DagsterInstance.get()))
-        elif daemon_type == SensorDaemon.daemon_type():
-            daemons.append(SensorDaemon.create_from_instance(DagsterInstance.get()))
-        elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
-            daemons.append(QueuedRunCoordinatorDaemon.create_from_instance(DagsterInstance.get()))
-        else:
-            raise Exception("Unexpected daemon type {daemon_type}".format(daemon_type=daemon_type))
-
-    return daemons
+def create_daemon_of_type(daemon_type):
+    if daemon_type == SchedulerDaemon.daemon_type():
+        return SchedulerDaemon.create_from_instance(DagsterInstance.get())
+    elif daemon_type == SensorDaemon.daemon_type():
+        return SensorDaemon.create_from_instance(DagsterInstance.get())
+    elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
+        return QueuedRunCoordinatorDaemon.create_from_instance(DagsterInstance.get())
+    else:
+        raise Exception("Unexpected daemon type {daemon_type}".format(daemon_type=daemon_type))
 
 
 def all_daemons_healthy(instance, curr_time_seconds=None):
