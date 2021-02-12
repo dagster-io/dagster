@@ -1477,7 +1477,7 @@ class DagsterInstance:
     def get_required_daemon_types(self):
         from dagster.core.run_coordinator import QueuedRunCoordinator
         from dagster.core.scheduler import DagsterDaemonScheduler
-        from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon
+        from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon, BackfillDaemon
         from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )
@@ -1487,6 +1487,8 @@ class DagsterInstance:
             daemons.append(SchedulerDaemon.daemon_type())
         if isinstance(self.run_coordinator, QueuedRunCoordinator):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
+        if self.has_bulk_actions_table():
+            daemons.append(BackfillDaemon.daemon_type())
         return daemons
 
     # backfill

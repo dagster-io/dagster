@@ -25,6 +25,8 @@ const DaemonLabel = (props: DaemonLabelProps) => {
       return <div>Sensors</div>;
     case 'QUEUED_RUN_COORDINATOR':
       return <div>Run queue</div>;
+    case 'BACKFILL':
+      return <div>Backfill</div>;
     default:
       throw new Error('Unknown daemon type');
   }
