@@ -59,7 +59,8 @@ def test_io_manager_with_required_resource_keys():
         def __init__(self, prefix):
             self._prefix = prefix
 
-        def load_input(self, _context):
+        def load_input(self, context):
+            assert context.resources.foo_resource == "foo"
             return self._prefix + "bar"
 
         def handle_output(self, _context, obj):
@@ -91,23 +92,11 @@ def test_io_manager_with_required_resource_keys():
 
 
 def define_pipeline(manager, metadata_dict):
-    @solid(
-        output_defs=[
-            OutputDefinition(
-                metadata=metadata_dict.get("solid_a"),
-            )
-        ],
-    )
+    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_a"))])
     def solid_a(_context):
         return [1, 2, 3]
 
-    @solid(
-        output_defs=[
-            OutputDefinition(
-                metadata=metadata_dict.get("solid_b"),
-            )
-        ],
-    )
+    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_b"))])
     def solid_b(_context, _df):
         return 1
 

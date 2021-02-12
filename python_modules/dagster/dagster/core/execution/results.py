@@ -6,6 +6,7 @@ from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.plan.step import StepKind
+from dagster.core.execution.plan.utils import build_resources_for_manager
 
 
 def _construct_events_by_step_key(event_list):
@@ -554,7 +555,7 @@ class SolidExecutionResult:
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
         manager = context.get_io_manager(step_output_handle)
-
+        manager_key = context.execution_plan.get_manager_key(step_output_handle)
         res = manager.load_input(
             context.for_input_manager(
                 name=None,
@@ -562,6 +563,8 @@ class SolidExecutionResult:
                 metadata=None,
                 dagster_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
                 source_handle=step_output_handle,
+                resource_config=context.environment_config.resources[manager_key].get("config", {}),
+                resources=build_resources_for_manager(manager_key, context),
             )
         )
         return res
