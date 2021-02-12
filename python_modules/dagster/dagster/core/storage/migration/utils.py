@@ -140,3 +140,21 @@ def create_0_10_0_schedule_tables():
 
     if has_table("schedule_ticks"):
         op.drop_table("schedule_ticks")
+
+
+def create_bulk_actions_table():
+    if not has_table("runs"):
+        return
+
+    if not has_table("bulk_actions"):
+        op.create_table(
+            "bulk_actions",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("key", db.String(32), unique=True, nullable=False),
+            db.Column("status", db.String(255), nullable=False),
+            db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
+            db.Column("body", db.Text),
+        )
+
+        op.create_index("idx_bulk_actions_key", "bulk_actions", ["key"], unique=True)
+        op.create_index("idx_bulk_actions_status", "bulk_actions", ["status"], unique=False)

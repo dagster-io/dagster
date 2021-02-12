@@ -360,3 +360,15 @@ def test_0_10_0_schedule_wipe():
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
             assert len(upgraded_instance.all_stored_job_state()) == 0
+
+
+def test_0_10_6_add_bulk_actions_table():
+    src_dir = file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "0da417ae1b81"
+        assert "bulk_actions" not in get_sqlite3_tables(db_path)
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert not instance.has_bulk_actions_table()
+            instance.upgrade()
+            assert instance.has_bulk_actions_table()

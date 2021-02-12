@@ -1,10 +1,18 @@
+import sys
+
 import pendulum
 import pytest
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
 from dagster.daemon.types import DaemonHeartbeat
@@ -35,6 +43,21 @@ class TestRunStorage:
     def run_storage(self, request):
         with request.param() as s:
             yield s
+
+    @staticmethod
+    def fake_repo_target():
+        return ExternalRepositoryOrigin(
+            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                LoadableTargetOrigin(
+                    executable_path=sys.executable, module_name="fake", attribute="fake"
+                ),
+            ),
+            "fake_repo_name",
+        )
+
+    @classmethod
+    def fake_partition_set_origin(cls, partition_set_name):
+        return cls.fake_repo_target().get_partition_set_origin(partition_set_name)
 
     @staticmethod
     def build_run(
@@ -938,3 +961,29 @@ class TestRunStorage:
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()
+
+    def test_backfill(self, storage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        assert storage.has_bulk_actions_table()
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        one = PartitionBackfill(
+            "one",
+            origin,
+            BulkActionStatus.REQUESTED,
+            ["a", "b", "c"],
+            False,
+            None,
+            None,
+            pendulum.now().timestamp(),
+        )
+        storage.add_backfill(one)
+        assert len(storage.get_backfills()) == 1
+        assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 1
+        backfill = storage.get_backfill(one.backfill_id)
+        assert backfill == one
+
+        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        assert len(storage.get_backfills()) == 1
+        assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
