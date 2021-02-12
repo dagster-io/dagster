@@ -9,6 +9,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.scheduler.job import JobType
 
+from ...implementation.execution.backfill import get_backfill
 from ...implementation.external import (
     fetch_repositories,
     fetch_repository,
@@ -38,6 +39,7 @@ from ...implementation.fetch_schedules import (
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import pipeline_selector_from_graphql
+from ..backfill import GraphenePartitionBackfillOrError
 from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryLocationsOrError,
@@ -201,6 +203,11 @@ class GrapheneQuery(graphene.ObjectType):
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
     )
 
+    partitionBackfillOrError = graphene.Field(
+        graphene.NonNull(GraphenePartitionBackfillOrError),
+        backfillId=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
+
     class Meta:
         name = "Query"
 
@@ -351,3 +358,6 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_assetOrError(self, graphene_info, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+
+    def resolve_partitionBackfillOrError(self, graphene_info, backfillId):
+        return get_backfill(graphene_info, backfillId)
