@@ -11,4 +11,4 @@ dependencies:
   - name: redis
     version: 6.0.10
     repository: https://charts.bitnami.com/bitnami
-    condition: redis.enabled
+    condition: redis.enabled, not redis.external

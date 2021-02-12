@@ -524,8 +524,11 @@ rabbitmq:
 # Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
 ####################################################################################################
 redis:
-  # if enabled, external redis will be used instead of rabbitmq
+  # To use redis instead of rabbitmq, set `enabled` to true.
   enabled: false
+
+  # To use an external redis, set `external` to `true`. To manage redis via helm, set `external` to `false`.
+  external: true
 
   # Redis host URL
   host: ""
