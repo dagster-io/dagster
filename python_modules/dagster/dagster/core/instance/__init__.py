@@ -1488,3 +1488,19 @@ class DagsterInstance:
         if isinstance(self.run_coordinator, QueuedRunCoordinator):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
         return daemons
+
+    # backfill
+    def has_bulk_actions_table(self):
+        return self._run_storage.has_bulk_actions_table()
+
+    def get_backfills(self, status=None):
+        return self._run_storage.get_backfills(status=status)
+
+    def get_backfill(self, backfill_id):
+        return self._run_storage.get_backfill(backfill_id)
+
+    def add_backfill(self, partition_backfill):
+        self._run_storage.add_backfill(partition_backfill)
+
+    def update_backfill(self, partition_backfill):
+        return self._run_storage.update_backfill(partition_backfill)
