@@ -3,7 +3,7 @@ import PyObject from 'components/PyObject';
 # Executors
 
 Executors are responsible for executing steps within a pipeline run. Once a run has launched
-and the run coordinator has been allocated and started, the executor assumes responsibility
+and the the process for the run, or run worker, has been allocated and started, the executor assumes responsibility
 for execution. Executors can range from single-process serial executors all the way to managing
 per-step computational resources with a sophisticated control plane.
 
@@ -15,7 +15,7 @@ run config determines the actual executor.
 Example executors include:
 
 - <PyObject module="dagster" object="in_process_executor" />: Execution plan
-  executes serially within the run coordinator itself.
+  executes serially within the run worker itself.
 - <PyObject module="dagster" object="multiprocess_executor" />: Each step
   executes within its own spawned process. Has configurable level of
   parallelism.

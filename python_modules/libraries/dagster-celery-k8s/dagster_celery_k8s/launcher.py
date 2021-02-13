@@ -37,7 +37,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     With this run launcher, execution is delegated to:
 
-        1. A run coordinator Kubernetes Job, which traverses the pipeline run execution plan and
+        1. A run worker Kubernetes Job, which traverses the pipeline run execution plan and
            submits steps to Celery queues for execution;
         2. The step executions which are submitted to Celery queues are picked up by Celery workers,
            and each step execution spawns a step execution Kubernetes Job. See the implementation
@@ -271,7 +271,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._batch_api.create_namespaced_job(body=job, namespace=job_namespace)
         self._instance.report_engine_event(
-            "Kubernetes run_coordinator job launched",
+            "Kubernetes run worker job launched",
             run,
             EngineEventData(
                 [

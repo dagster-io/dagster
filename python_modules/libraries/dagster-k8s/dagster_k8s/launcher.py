@@ -302,7 +302,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         self._instance.report_engine_event(
-            "Kubernetes run_coordinator job launched",
+            "Kubernetes run worker job launched",
             run,
             EngineEventData(
                 [
