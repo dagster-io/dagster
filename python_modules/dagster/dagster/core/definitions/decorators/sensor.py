@@ -31,7 +31,9 @@ def sensor(
     Takes a :py:class:`~dagster.SensorExecutionContext`.
 
     Args:
-        name (str): The name of this sensor
+        pipeline_name (str): Name of the target pipeline
+        name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
+            function.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute for runs for this sensor e.g.
             ``['*some_solid+', 'other_solid']``
