@@ -1,0 +1,9 @@
+load_from:
+  - python_file:
+      relative_path: setup.py
+      attribute: empty_repo
+      location_name: empty_repo
+  - python_file:
+      relative_path: setup.py
+      attribute: test_repo
+      location_name: test

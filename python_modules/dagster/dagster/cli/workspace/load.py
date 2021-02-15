@@ -17,7 +17,9 @@ from .workspace import Workspace
 
 
 def load_workspace_from_yaml_paths(yaml_paths):
-    return Workspace(location_origins_from_yaml_paths(yaml_paths))
+    from .cli_target import WorkspaceFileTarget
+
+    return Workspace(WorkspaceFileTarget(paths=yaml_paths))
 
 
 def location_origins_from_yaml_paths(yaml_paths):
@@ -40,17 +42,6 @@ def location_origins_from_yaml_paths(yaml_paths):
         )
 
     return list(origins_by_name.values())
-
-
-def load_workspace_from_config(workspace_config, yaml_path):
-    return Workspace(
-        list(
-            location_origins_from_config(
-                workspace_config,
-                yaml_path,
-            ).values()
-        ),
-    )
 
 
 def location_origins_from_config(workspace_config, yaml_path):

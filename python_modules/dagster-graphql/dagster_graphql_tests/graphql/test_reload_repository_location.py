@@ -160,28 +160,6 @@ class TestReloadRepositoriesOutOfProcess(
         assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
 
 
-class TestReloadRepositoriesInProcess(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_in_process_env()]
-    )
-):
-    def test_reload_not_supported(self, graphql_context):
-        result = execute_dagster_graphql(
-            graphql_context,
-            RELOAD_REPOSITORY_LOCATION_QUERY,
-            {"repositoryLocationName": "<<in_process>>"},
-        )
-        assert result.data["reloadRepositoryLocation"]["__typename"] == "ReloadNotSupported"
-
-    def test_location_not_found(self, graphql_context):
-        result = execute_dagster_graphql(
-            graphql_context,
-            RELOAD_REPOSITORY_LOCATION_QUERY,
-            {"repositoryLocationName": "nope"},
-        )
-        assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocationNotFound"
-
-
 RELOAD_REPOSITORY_LOCATION_QUERY = """
 mutation ($repositoryLocationName: String!) {
    reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {

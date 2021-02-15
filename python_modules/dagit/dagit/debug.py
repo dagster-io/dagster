@@ -40,7 +40,7 @@ def dagit_debug_command(input_files, port):
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
     host_dagit_ui_with_workspace(
-        workspace=Workspace([]),
+        workspace=Workspace(None),
         instance=instance,
         port=port,
         port_lookup=True,

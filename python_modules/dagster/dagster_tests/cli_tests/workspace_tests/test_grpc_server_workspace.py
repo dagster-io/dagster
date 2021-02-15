@@ -1,9 +1,10 @@
+from contextlib import ExitStack
+
 import pytest
 import yaml
 from dagster import seven
 from dagster.check import CheckError
-from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.load import load_workspace_from_config, location_origins_from_config
+from dagster.cli.workspace.load import location_origins_from_config
 from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster.core.test_utils import environ
 from dagster.grpc.server import GrpcServerProcess
@@ -30,32 +31,35 @@ load_from:
                 socket_one=first_socket, socket_two=second_socket
             )
 
-            workspace = load_workspace_from_config(
+            origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 file_relative_path(__file__, "not_a_real.yaml"),
             )
-            assert isinstance(workspace, Workspace)
-            assert len(workspace.repository_location_handles) == 2
 
-            default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
-            assert workspace.has_repository_location_handle(default_location_name)
-            local_port = workspace.get_repository_location_handle(default_location_name)
+            with ExitStack() as stack:
+                repository_location_handles = {
+                    name: stack.enter_context(origin.create_handle())
+                    for name, origin in origins.items()
+                }
+                assert len(repository_location_handles) == 2
 
-            assert local_port.socket == first_socket
-            assert local_port.host == "localhost"
-            assert local_port.port is None
+                default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
+                assert repository_location_handles.get(default_location_name)
+                local_port = repository_location_handles.get(default_location_name)
 
-            assert workspace.has_repository_location_handle("local_port_default_host")
-            local_port_default_host = workspace.get_repository_location_handle(
-                "local_port_default_host"
-            )
+                assert local_port.socket == first_socket
+                assert local_port.host == "localhost"
+                assert local_port.port is None
 
-            assert local_port_default_host.socket == second_socket
-            assert local_port_default_host.host == "localhost"
-            assert local_port_default_host.port is None
+                assert repository_location_handles.get("local_port_default_host")
+                local_port_default_host = repository_location_handles.get("local_port_default_host")
 
-            assert all(map(lambda x: x.location_name, workspace.repository_location_handles))
+                assert local_port_default_host.socket == second_socket
+                assert local_port_default_host.host == "localhost"
+                assert local_port_default_host.port is None
+
+                assert all(map(lambda x: x.location_name, repository_location_handles.values()))
         second_server_process.wait()
     first_server_process.wait()
 
@@ -123,32 +127,35 @@ load_from:
                 port_one=first_port, port_two=second_port
             )
 
-            workspace = load_workspace_from_config(
+            origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 file_relative_path(__file__, "not_a_real.yaml"),
             )
-            assert isinstance(workspace, Workspace)
-            assert len(workspace.repository_location_handles) == 2
 
-            default_location_name = "grpc:localhost:{port}".format(port=first_port)
-            assert workspace.has_repository_location_handle(default_location_name)
-            local_port = workspace.get_repository_location_handle(default_location_name)
+            with ExitStack() as stack:
+                repository_location_handles = {
+                    name: stack.enter_context(origin.create_handle())
+                    for name, origin in origins.items()
+                }
+                assert len(repository_location_handles) == 2
 
-            assert local_port.port == first_port
-            assert local_port.host == "localhost"
-            assert local_port.socket is None
+                default_location_name = "grpc:localhost:{port}".format(port=first_port)
+                assert repository_location_handles.get(default_location_name)
+                local_port = repository_location_handles.get(default_location_name)
 
-            assert workspace.has_repository_location_handle("local_port_default_host")
-            local_port_default_host = workspace.get_repository_location_handle(
-                "local_port_default_host"
-            )
+                assert local_port.port == first_port
+                assert local_port.host == "localhost"
+                assert local_port.socket is None
 
-            assert local_port_default_host.port == second_port
-            assert local_port_default_host.host == "localhost"
-            assert local_port_default_host.socket is None
+                assert repository_location_handles.get("local_port_default_host")
+                local_port_default_host = repository_location_handles.get("local_port_default_host")
 
-            assert all(map(lambda x: x.location_name, workspace.repository_location_handles))
+                assert local_port_default_host.port == second_port
+                assert local_port_default_host.host == "localhost"
+                assert local_port_default_host.socket is None
+
+                assert all(map(lambda x: x.location_name, repository_location_handles.values()))
         second_server_process.wait()
     first_server_process.wait()
 
@@ -163,7 +170,7 @@ load_from:
     """
 
     with pytest.raises(CheckError, match="must supply either a socket or a port"):
-        load_workspace_from_config(
+        location_origins_from_config(
             yaml.safe_load(workspace_yaml),
             # fake out as if it were loaded by a yaml file in this directory
             file_relative_path(__file__, "not_a_real.yaml"),

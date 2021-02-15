@@ -1,4 +1,3 @@
-import sys
 import tempfile
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -6,12 +5,13 @@ from contextlib import contextmanager
 import pytest
 from dagster import check, file_relative_path
 from dagster.cli.workspace import Workspace, WorkspaceProcessContext
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import (
-    GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+from dagster.cli.workspace.cli_target import (
+    GrpcServerTarget,
+    ModuleTarget,
+    PythonFileTarget,
+    WorkspaceFileTarget,
 )
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -22,7 +22,6 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_tempdir
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler
@@ -311,16 +310,6 @@ class InstanceManagers:
 
 class EnvironmentManagers:
     @staticmethod
-    def user_code_in_host_process():
-        @contextmanager
-        def _mgr_fn(recon_repo):
-            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-            with Workspace([InProcessRepositoryLocationOrigin(recon_repo)]) as workspace:
-                yield workspace
-
-        return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])
-
-    @staticmethod
     def managed_grpc():
         @contextmanager
         def _mgr_fn(recon_repo):
@@ -329,12 +318,20 @@ class EnvironmentManagers:
 
             loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
             with Workspace(
-                [
-                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                        loadable_target_origin=loadable_target_origin,
+                (
+                    PythonFileTarget(
+                        python_file=loadable_target_origin.python_file,
+                        attribute=loadable_target_origin.attribute,
+                        working_directory=loadable_target_origin.working_directory,
                         location_name="test",
                     )
-                ]
+                    if loadable_target_origin.python_file
+                    else ModuleTarget(
+                        module_name=loadable_target_origin.module_name,
+                        attribute=loadable_target_origin.attribute,
+                        location_name="test",
+                    )
+                )
             ) as workspace:
                 yield workspace
 
@@ -352,14 +349,12 @@ class EnvironmentManagers:
             try:
                 with server_process.create_ephemeral_client() as api_client:
                     with Workspace(
-                        [
-                            GrpcServerRepositoryLocationOrigin(
-                                port=api_client.port,
-                                socket=api_client.socket,
-                                host=api_client.host,
-                                location_name="test",
-                            )
-                        ]
+                        GrpcServerTarget(
+                            port=api_client.port,
+                            socket=api_client.socket,
+                            host=api_client.host,
+                            location_name="test",
+                        )
                     ) as workspace:
                         yield workspace
             finally:
@@ -375,24 +370,7 @@ class EnvironmentManagers:
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             with Workspace(
-                [
-                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                        loadable_target_origin=LoadableTargetOrigin(
-                            executable_path=sys.executable,
-                            python_file=file_relative_path(__file__, "setup.py"),
-                            attribute="test_repo",
-                        ),
-                        location_name="test",
-                    ),
-                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                        loadable_target_origin=LoadableTargetOrigin(
-                            executable_path=sys.executable,
-                            python_file=file_relative_path(__file__, "setup.py"),
-                            attribute="empty_repo",
-                        ),
-                        location_name="empty_repo",
-                    ),
-                ]
+                WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")])
             ) as workspace:
                 yield workspace
 
@@ -406,16 +384,12 @@ class EnvironmentManagers:
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             with Workspace(
-                [
-                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                        loadable_target_origin=LoadableTargetOrigin(
-                            executable_path=sys.executable,
-                            python_file=file_relative_path(__file__, "setup.py"),
-                            attribute="test_dict_repo",
-                        ),
-                        location_name="test",
-                    ),
-                ]
+                PythonFileTarget(
+                    python_file=file_relative_path(__file__, "setup.py"),
+                    attribute="test_dict_repo",
+                    working_directory=None,
+                    location_name="test",
+                )
             ) as workspace:
                 yield workspace
 
@@ -435,7 +409,6 @@ class Marks:
     readonly = pytest.mark.readonly
 
     # Repository Location marks
-    hosted_user_process_env = pytest.mark.hosted_user_process_env
     multi_location = pytest.mark.multi_location
     managed_grpc_env = pytest.mark.managed_grpc_env
     deployed_grpc_env = pytest.mark.deployed_grpc_env
@@ -514,18 +487,6 @@ class GraphQLContextVariant:
         return self.marked_environment_mgr.manager_fn
 
     @staticmethod
-    def in_memory_instance_in_process_env():
-        """
-        Good for tests with read-only metadata queries. Does not work
-        if you have to go through the run launcher.
-        """
-        return GraphQLContextVariant(
-            InstanceManagers.in_memory_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="in_memory_instance_in_process_env",
-        )
-
-    @staticmethod
     def in_memory_instance_managed_grpc_env():
         """
         Good for tests with read-only metadata queries. Does not work
@@ -535,22 +496,6 @@ class GraphQLContextVariant:
             InstanceManagers.in_memory_instance(),
             EnvironmentManagers.managed_grpc(),
             test_id="in_memory_instance_managed_grpc_env",
-        )
-
-    @staticmethod
-    def sqlite_with_sync_run_launcher_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_sync_run_launcher(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="sqlite_with_sync_run_launcher_in_process_env",
-        )
-
-    @staticmethod
-    def sqlite_with_default_run_launcher_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_default_run_launcher(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="sqlite_with_default_run_launcher_in_process_env",
         )
 
     @staticmethod
@@ -578,22 +523,6 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def postgres_with_sync_run_launcher_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.postgres_instance_with_sync_run_launcher(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="postgres_with_sync_run_launcher_in_process_env",
-        )
-
-    @staticmethod
-    def postgres_with_default_run_launcher_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.postgres_instance_with_default_run_launcher(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="postgres_with_default_run_launcher_in_process_env",
-        )
-
-    @staticmethod
     def postgres_with_default_run_launcher_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_default_run_launcher(),
@@ -607,14 +536,6 @@ class GraphQLContextVariant:
             InstanceManagers.postgres_instance_with_default_run_launcher(),
             EnvironmentManagers.deployed_grpc(),
             test_id="postgres_with_default_run_launcher_deployed_grpc_env",
-        )
-
-    @staticmethod
-    def readonly_sqlite_instance_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.readonly_sqlite_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="readonly_sqlite_instance_in_process_env",
         )
 
     @staticmethod
@@ -650,14 +571,6 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def readonly_postgres_instance_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.readonly_postgres_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="readonly_postgres_instance_in_process_env",
-        )
-
-    @staticmethod
     def readonly_postgres_instance_multi_location():
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
@@ -679,14 +592,6 @@ class GraphQLContextVariant:
             InstanceManagers.readonly_postgres_instance(),
             EnvironmentManagers.managed_grpc(),
             test_id="readonly_postgres_instance_managed_grpc_env",
-        )
-
-    @staticmethod
-    def readonly_in_memory_instance_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.readonly_in_memory_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id="readonly_in_memory_instance_in_process_env",
         )
 
     @staticmethod
@@ -714,10 +619,10 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def consolidated_sqlite_instance_in_process_env():
+    def consolidated_sqlite_instance_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.consolidated_sqlite_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
+            EnvironmentManagers.managed_grpc(),
             test_id="asset_aware_instance_in_process_env",
         )
 
@@ -729,42 +634,27 @@ class GraphQLContextVariant:
         list in order for tests to pass.
         """
         return [
-            GraphQLContextVariant.in_memory_instance_in_process_env(),
             GraphQLContextVariant.in_memory_instance_managed_grpc_env(),
-            GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
-            GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
-            GraphQLContextVariant.postgres_with_default_run_launcher_in_process_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
-            GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
             GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_in_memory_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
             GraphQLContextVariant.readonly_sqlite_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env(),
             GraphQLContextVariant.readonly_sqlite_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
             GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_postgres_instance_lazy_repository(),
-            GraphQLContextVariant.consolidated_sqlite_instance_in_process_env(),
+            GraphQLContextVariant.consolidated_sqlite_instance_managed_grpc_env(),
         ]
 
     @staticmethod
     def all_executing_variants():
-        return [
-            GraphQLContextVariant.in_memory_instance_in_process_env(),
-            GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
-        ] + GraphQLContextVariant.all_out_of_process_executing_variants()
-
-    @staticmethod
-    def all_out_of_process_executing_variants():
         return [
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
@@ -905,8 +795,4 @@ ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
 
 ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
     context_variants=GraphQLContextVariant.all_executing_variants()
-)
-
-OutOfProcessExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
-    context_variants=GraphQLContextVariant.all_out_of_process_executing_variants()
 )

@@ -21,9 +21,7 @@ query RunQuery($runId: ID!) {
 
 
 class TestBasicLaunch(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_out_of_process_executing_variants()
-    )
+    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_executing_variants())
 ):
     def test_run_launcher(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")

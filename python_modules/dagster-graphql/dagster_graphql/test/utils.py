@@ -1,15 +1,9 @@
-import sys
 from contextlib import contextmanager
 
 from dagster import check
 from dagster.cli.workspace import Workspace, WorkspaceProcessContext
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import (
-    InProcessRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-)
+from dagster.cli.workspace.cli_target import PythonFileTarget
 from dagster.core.instance import DagsterInstance
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
@@ -49,21 +43,6 @@ def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
     return result
 
 
-def define_in_process_context(python_file, fn_name, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-
-    return WorkspaceProcessContext(
-        workspace=Workspace(
-            [
-                InProcessRepositoryLocationOrigin(
-                    ReconstructableRepository.for_file(python_file, fn_name)
-                )
-            ]
-        ),
-        instance=instance,
-    ).create_request_context()
-
-
 @contextmanager
 def define_out_of_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
@@ -77,16 +56,12 @@ def define_out_of_process_context(python_file, fn_name, instance):
 
 def define_out_of_process_workspace(python_file, fn_name):
     return Workspace(
-        [
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                loadable_target_origin=LoadableTargetOrigin(
-                    executable_path=sys.executable,
-                    python_file=python_file,
-                    attribute=fn_name,
-                ),
-                location_name=main_repo_location_name(),
-            )
-        ]
+        PythonFileTarget(
+            python_file=python_file,
+            attribute=fn_name,
+            working_directory=None,
+            location_name=main_repo_location_name(),
+        )
     )
 
 

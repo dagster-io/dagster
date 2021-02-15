@@ -58,7 +58,6 @@ from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
-    define_in_process_context,
     define_out_of_process_context,
     infer_pipeline_selector,
     main_repo_location_name,
@@ -95,11 +94,6 @@ def define_test_out_of_process_context(instance):
     check.inst_param(instance, "instance", DagsterInstance)
     with define_out_of_process_context(__file__, main_repo_name(), instance) as context:
         yield context
-
-
-def define_test_in_process_context(instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    return define_in_process_context(__file__, main_repo_name(), instance)
 
 
 def create_main_recon_repo():

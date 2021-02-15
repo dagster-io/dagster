@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from .graphql_context_test_suite import OutOfProcessExecutingGraphQLContextTestMatrix
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_run_log_data
 
 COMPUTE_LOGS_QUERY = """
@@ -26,7 +26,7 @@ COMPUTE_LOGS_SUBSCRIPTION = """
 """
 
 
-class TestComputeLogs(OutOfProcessExecutingGraphQLContextTestMatrix):
+class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
     def test_get_compute_logs_over_graphql(self, graphql_context, snapshot):
         selector = infer_pipeline_selector(graphql_context, "spew_pipeline")
         payload = sync_execute_get_run_log_data(

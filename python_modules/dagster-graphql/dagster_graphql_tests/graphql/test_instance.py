@@ -11,18 +11,6 @@ query InstanceDetailSummaryQuery {
 """
 
 
-class TestNonQueued(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.in_memory_instance_in_process_env(),
-        ]
-    )
-):
-    def test_get_individual_daemons(self, graphql_context):
-        results = execute_dagster_graphql(graphql_context, RUN_QUEUING_QUERY)
-        assert results.data == {"instance": {"runQueuingSupported": False}}
-
-
 class TestQueued(
     make_graphql_context_test_suite(
         context_variants=[

@@ -24,7 +24,6 @@ from .load import (
     location_origin_from_python_file,
     location_origins_from_yaml_paths,
 )
-from .workspace import Workspace
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
 
@@ -66,10 +65,12 @@ WORKSPACE_CLI_ARGS = (
 )
 
 WorkspaceFileTarget = namedtuple("WorkspaceFileTarget", "paths")
-PythonFileTarget = namedtuple("PythonFileTarget", "python_file attribute working_directory")
-ModuleTarget = namedtuple("ModuleTarget", "module_name attribute")
-PackageTarget = namedtuple("PackageTarget", "package_name attribute")
-GrpcServerTarget = namedtuple("GrpcServerTarget", "host port socket")
+PythonFileTarget = namedtuple(
+    "PythonFileTarget", "python_file attribute working_directory location_name"
+)
+ModuleTarget = namedtuple("ModuleTarget", "module_name attribute location_name")
+PackageTarget = namedtuple("PackageTarget", "package_name attribute location_name")
+GrpcServerTarget = namedtuple("GrpcServerTarget", "host port socket location_name")
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 EmptyWorkspaceTarget = namedtuple("EmptyWorkspaceTarget", "")
@@ -121,6 +122,7 @@ def created_workspace_load_target(kwargs):
             python_file=kwargs.get("python_file"),
             attribute=kwargs.get("attribute"),
             working_directory=working_directory,
+            location_name=None,
         )
     if kwargs.get("module_name"):
         _check_cli_arguments_none(
@@ -135,6 +137,7 @@ def created_workspace_load_target(kwargs):
         return ModuleTarget(
             module_name=kwargs.get("module_name"),
             attribute=kwargs.get("attribute"),
+            location_name=None,
         )
     if kwargs.get("package_name"):
         _check_cli_arguments_none(
@@ -148,6 +151,7 @@ def created_workspace_load_target(kwargs):
         return PackageTarget(
             package_name=kwargs.get("package_name"),
             attribute=kwargs.get("attribute"),
+            location_name=None,
         )
     if kwargs.get("grpc_port"):
         _check_cli_arguments_none(
@@ -161,6 +165,7 @@ def created_workspace_load_target(kwargs):
             port=kwargs.get("grpc_port"),
             socket=None,
             host=(kwargs.get("grpc_host") if kwargs.get("grpc_host") else "localhost"),
+            location_name=None,
         )
     elif kwargs.get("grpc_socket"):
         _check_cli_arguments_none(
@@ -173,6 +178,7 @@ def created_workspace_load_target(kwargs):
             port=None,
             socket=kwargs.get("grpc_socket"),
             host=(kwargs.get("grpc_host") if kwargs.get("grpc_host") else "localhost"),
+            location_name=None,
         )
     else:
         _cli_load_invariant(False)
@@ -189,6 +195,7 @@ def location_origins_from_load_target(load_target):
                 python_file=load_target.python_file,
                 attribute=load_target.attribute,
                 working_directory=load_target.working_directory,
+                location_name=load_target.location_name,
             )
         ]
     elif isinstance(load_target, ModuleTarget):
@@ -196,6 +203,7 @@ def location_origins_from_load_target(load_target):
             location_origin_from_module_name(
                 load_target.module_name,
                 load_target.attribute,
+                location_name=load_target.location_name,
             )
         ]
     elif isinstance(load_target, PackageTarget):
@@ -203,6 +211,7 @@ def location_origins_from_load_target(load_target):
             location_origin_from_package_name(
                 load_target.package_name,
                 load_target.attribute,
+                location_name=load_target.location_name,
             )
         ]
     elif isinstance(load_target, GrpcServerTarget):
@@ -211,6 +220,7 @@ def location_origins_from_load_target(load_target):
                 port=load_target.port,
                 socket=load_target.socket,
                 host=load_target.host,
+                location_name=load_target.location_name,
             )
         ]
     elif isinstance(load_target, EmptyWorkspaceTarget):
@@ -222,7 +232,9 @@ def location_origins_from_load_target(load_target):
 def workspace_from_load_target(load_target):
     check.inst_param(load_target, "load_target", WorkspaceLoadTarget)
 
-    return Workspace(location_origins_from_load_target(load_target))
+    from .workspace import Workspace
+
+    return Workspace(load_target)
 
 
 def get_workspace_from_kwargs(kwargs):

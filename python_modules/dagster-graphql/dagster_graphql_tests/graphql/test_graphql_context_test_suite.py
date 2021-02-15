@@ -77,16 +77,13 @@ def test_readonly_marks_filter():
     readonly_test_ids = {
         var.test_id
         for var in [
-            GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_lazy_repository(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
             GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
-            GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_lazy_repository(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
             GraphQLContextVariant.readonly_sqlite_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env(),
-            GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_lazy_repository(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
             GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
