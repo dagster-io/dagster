@@ -14,7 +14,7 @@ class K8sScheduler(Scheduler, ConfigurableClass):
 
     Enable this scheduler by adding it to your dagster.yaml, or by configuring the scheduler
     section of the Helm chart
-    https://github.com/dagster-io/dagster/tree/master/helm"""
+    https://github.com/dagster-io/dagster/tree/master/helm/dagster"""
 
     def __init__(
         self,
