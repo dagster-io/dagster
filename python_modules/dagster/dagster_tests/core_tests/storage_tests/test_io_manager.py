@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetMaterialization,
     DagsterInstance,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     IOManagerDefinition,
     InputDefinition,
@@ -480,3 +481,15 @@ def test_mem_io_managers_result_for_solid():
     assert result.success
     assert result.result_for_solid("one").output_value() == 1
     assert result.result_for_solid("add_one").output_value() == 2
+
+
+def test_mode_missing_io_manager():
+    @solid(output_defs=[OutputDefinition(io_manager_key="missing_io_manager")])
+    def my_solid(_):
+        return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @pipeline
+        def _my_pipeline():
+            my_solid()

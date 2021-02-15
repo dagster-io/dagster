@@ -597,6 +597,22 @@ def _validate_resource_dependencies(
                         )
                     )
 
+            for output_def in node_def.output_defs:
+                if output_def.io_manager_key not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        f'IO manager "{output_def.io_manager_key}" is required by output '
+                        f'"{output_def.name}" of solid def {node_def.name}, but is not '
+                        f'provided by mode "{mode_def.name}".'
+                    )
+
+            for input_def in node_def.input_defs:
+                if input_def.root_manager_key and input_def.root_manager_key not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        f'Root input manager "{input_def.root_manager_key}" is required by input '
+                        f'"{input_def.name}" of solid def {node_def.name}, but is not '
+                        f'provided by mode "{mode_def.name}".'
+                    )
+
         _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict)
 
         for intermediate_storage in mode_def.intermediate_storage_defs or []:
