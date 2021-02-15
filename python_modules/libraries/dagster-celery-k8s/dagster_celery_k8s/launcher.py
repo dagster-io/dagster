@@ -7,14 +7,9 @@ from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    GrpcServerRepositoryLocationHandle,
-    GrpcServerRepositoryLocationOrigin,
-)
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -171,42 +166,17 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
         exc_config = _get_validated_celery_k8s_executor_config(run.run_config)
-
-        job_image = None
-        pipeline_origin = None
         env_vars = None
 
         job_image_from_executor_config = exc_config.get("job_image")
 
-        # If the user is using user-code deployments, we grab the image from the gRPC server.
-        if isinstance(
-            external_pipeline.get_external_origin().external_repository_origin.repository_location_origin,
-            GrpcServerRepositoryLocationOrigin,
-        ):
+        pipeline_origin = external_pipeline.get_python_origin()
+        repository_origin = pipeline_origin.repository_origin
 
-            repository_location_handle = (
-                external_pipeline.repository_handle.repository_location_handle
-            )
+        job_image = repository_origin.container_image
 
-            if not isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
-                raise DagsterInvariantViolationError(
-                    "Expected RepositoryLocationHandle to be of type "
-                    "GrpcServerRepositoryLocationHandle but found type {}".format(
-                        type(repository_location_handle)
-                    )
-                )
-
-            repository_name = external_pipeline.repository_handle.repository_name
-            repository_origin = repository_location_handle.reload_repository_python_origin(
-                repository_name
-            )
-            pipeline_origin = PipelinePythonOrigin(
-                pipeline_name=external_pipeline.name, repository_origin=repository_origin
-            )
-
-            job_image = repository_origin.container_image
+        if job_image:
             env_vars = {"DAGSTER_CURRENT_IMAGE": job_image}
-
             if job_image_from_executor_config:
                 raise DagsterInvariantViolationError(
                     "You have specified a job_image {job_image_from_executor_config} in your executor configuration, "
@@ -215,7 +185,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                     "pulled from the deployment. To resolve this error, remove the job_image "
                     "configuration from your executor configuration (which is a part of your run configuration)"
                 )
-
         else:
             if not job_image_from_executor_config:
                 raise DagsterInvariantViolationError(
@@ -229,7 +198,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 )
 
             job_image = job_image_from_executor_config
-            pipeline_origin = external_pipeline.get_python_origin()
 
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,

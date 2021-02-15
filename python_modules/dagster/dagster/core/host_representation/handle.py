@@ -173,18 +173,6 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             self.container_image,
         )
 
-    def reload_repository_python_origin(self, repository_name):
-        check.str_param(repository_name, "repository_name")
-
-        list_repositories_response = sync_list_repositories_grpc(self.client)
-
-        return _get_repository_python_origin(
-            list_repositories_response.executable_path,
-            list_repositories_response.repository_code_pointer_dict,
-            repository_name,
-            self._reload_current_image(),
-        )
-
     def create_location(self):
         from dagster.core.host_representation.repository_location import (
             GrpcServerRepositoryLocation,

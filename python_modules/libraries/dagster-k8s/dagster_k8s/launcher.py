@@ -2,24 +2,12 @@ import sys
 import weakref
 
 import kubernetes
-from dagster import (
-    DagsterInvariantViolationError,
-    EventMetadataEntry,
-    Field,
-    Noneable,
-    StringSource,
-    check,
-)
+from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    GrpcServerRepositoryLocationHandle,
-    GrpcServerRepositoryLocationOrigin,
-)
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -242,46 +230,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        pipeline_origin = None
-        job_config = None
-        if isinstance(
-            external_pipeline.get_external_origin().external_repository_origin.repository_location_origin,
-            GrpcServerRepositoryLocationOrigin,
-        ):
-            if self._job_image:
-                raise DagsterInvariantViolationError(
-                    "Cannot specify job_image in run launcher config when loading pipeline "
-                    "from GRPC server."
-                )
+        pipeline_origin = external_pipeline.get_python_origin()
+        repository_origin = pipeline_origin.repository_origin
 
-            repository_location_handle = (
-                external_pipeline.repository_handle.repository_location_handle
-            )
-
-            if not isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
-                raise DagsterInvariantViolationError(
-                    "Expected RepositoryLocationHandle to be of type "
-                    "GrpcServerRepositoryLocationHandle but found type {}".format(
-                        type(repository_location_handle)
-                    )
-                )
-
-            repository_name = external_pipeline.repository_handle.repository_name
-
-            repository_origin = repository_location_handle.reload_repository_python_origin(
-                repository_name
-            )
-
-            job_image = repository_origin.container_image
-
-            pipeline_origin = PipelinePythonOrigin(
-                pipeline_name=external_pipeline.name, repository_origin=repository_origin
-            )
-
-            job_config = self._get_grpc_job_config(job_image)
-        else:
-            pipeline_origin = external_pipeline.get_python_origin()
-            job_config = self._get_static_job_config()
+        job_config = (
+            self._get_grpc_job_config(repository_origin.container_image)
+            if repository_origin.container_image
+            else self._get_static_job_config()
+        )
 
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
