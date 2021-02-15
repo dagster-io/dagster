@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, Iterable, List, Optional
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import pyrsistent
 from dagster.core.definitions.events import AssetKey
@@ -124,7 +124,7 @@ class AssetAwareEventLogStorage(ABC):
         ascending: bool = False,
         include_cursor: bool = False,
         cursor: int = None,  # deprecated
-    ) -> Iterable[EventRecord]:
+    ) -> Union[Iterable[EventRecord], Iterable[Tuple[int, EventRecord]]]:
         pass
 
     @abstractmethod
