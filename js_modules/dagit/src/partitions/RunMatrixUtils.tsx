@@ -228,4 +228,24 @@ export const GridScrollContainer = styled.div`
   z-index: 0;
   background: ${Colors.LIGHT_GRAY5};
   flex: 1;
+  scrollbar-color: ${Colors.GRAY2} ${Colors.LIGHT_GRAY3};
+  scrollbar-width: thin;
+
+  ::-webkit-scrollbar {
+    -webkit-appearance: none;
+  }
+  &::-webkit-scrollbar:vertical {
+    width: 11px;
+  }
+  &::-webkit-scrollbar:horizontal {
+    height: 11px;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 2px solid ${Colors.LIGHT_GRAY3};
+    background-color: ${Colors.GRAY2};
+  }
+  &::-webkit-scrollbar-track {
+    background-color: ${Colors.LIGHT_GRAY3};
+  }
 `;
