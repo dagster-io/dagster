@@ -157,6 +157,7 @@ def test_grpc_watch_thread_server_error():
     assert called["on_error"]
 
 
+@pytest.mark.skip
 def test_grpc_watch_thread_server_complex_cycle():
     # Server goes down, comes back up as the same server three times, then goes away and comes
     # back as a new server
