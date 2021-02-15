@@ -1,5 +1,14 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Intent, NonIdealState, Classes, Colors, InputGroup} from '@blueprintjs/core';
+import {
+  Checkbox,
+  Intent,
+  NonIdealState,
+  Classes,
+  Colors,
+  InputGroup,
+  Icon,
+  Tooltip,
+} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import qs from 'qs';
 import * as React from 'react';
@@ -378,25 +387,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             />
           </div>
           <div style={{marginLeft: 20}}>
-            <strong style={{display: 'block', marginBottom: 4}}>Options</strong>
+            <strong style={{display: 'block', marginBottom: 6}}>Options</strong>
             <div style={{display: 'flex'}}>
               <Checkbox
-                label="Re-execute From Last Run"
-                disabled={partitionsWithLastRunSuccess.length === 0}
-                checked={options.reexecute}
-                onChange={() => {
-                  setSelected([]);
-                  setQuery('');
-                  setOptions(
-                    options.reexecute
-                      ? {...options, reexecute: false, fromFailure: false}
-                      : {...options, reexecute: true},
-                  );
-                }}
-              />
-              <div style={{width: 20}} />
-              <Checkbox
-                label="Re-execute From Failure"
                 checked={options.fromFailure}
                 disabled={partitionsWithLastRunFailure.length === 0 || !options.reexecute}
                 onChange={() => {
@@ -404,7 +397,17 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   setQuery('');
                   setOptions({...options, reexecute: true, fromFailure: !options.fromFailure});
                 }}
-              />
+              >
+                {'Re-execute From Failures '}
+                <Tooltip
+                  content={
+                    'For each partition, if the most recent run failed, launch a re-execution starting' +
+                    ' from the steps that failed.'
+                  }
+                >
+                  <Icon icon="info-sign" />
+                </Tooltip>
+              </Checkbox>
             </div>
           </div>
         </div>
