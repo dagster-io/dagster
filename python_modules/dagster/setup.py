@@ -87,7 +87,7 @@ if __name__ == "__main__":
         extras_require={
             "docker": ["docker"],
             "test": [
-                "astroid>=2.3.3",
+                "astroid>=2.3.3,<2.5",
                 "black==20.8b1",
                 "coverage==5.3",
                 "docker",
