@@ -27,7 +27,7 @@
   {
     "name": "dbt_example",
     "title": "dbt Integration",
-    "description": "Use dagster-dbt to integrate dbt projects with Dagster."
+    "description": "Use dagster-dbt to integrate dbt projects with Dagster"
   },
   {
     "name": "dep_dsl",
@@ -47,7 +47,7 @@
   {
     "name": "trigger_pipeline",
     "title": "Execute Pipeline GraphQL",
-    "description": "Trigger a Dagster pipeline externally by a GraphQL client."
+    "description": "Trigger a Dagster pipeline externally by a GraphQL client"
   },
   {
     "name": "fan_in_pipeline",
@@ -67,7 +67,7 @@
   {
     "name": "multi_location",
     "title": "Multi-Location Workspace",
-    "description": "Setup a Dagster workspace with multiple locations."
+    "description": "Setup a Dagster workspace with multiple locations"
   },
   {
     "name": "nothing",
@@ -90,6 +90,11 @@
     "description": "Run PySpark code in solids"
   },
   {
+    "name": "user_in_loop",
+    "title": "User in the Loop",
+    "description": "Set conditions for whether a pipeline should continue running"
+  },
+  {
     "name": "dynamic_graph",
     "title": "Dynamic Graph (Experimental)",
     "description": "Determine graph structure at runtime"
@@ -97,16 +102,16 @@
   {
     "name": "simple_lakehouse",
     "title": "Lakehouse (Experimental)",
-    "description": "Define a computation graph in terms of the tables it produces."
+    "description": "Define a computation graph in terms of the tables it produces"
   },
   {
     "name": "multi_type_lakehouse",
     "title": "Lakehouse w/ Two Types (Experimental)",
-    "description": "Use the Lakehouse API with multiple compute types."
+    "description": "Use the Lakehouse API with multiple compute types"
   },
   {
     "name": "memoized_development",
     "title": "Memoization (Experimental)",
-    "description": "Memoizing results from previous pipeline runs."
+    "description": "Memoizing results from previous pipeline runs"
   }
 ]

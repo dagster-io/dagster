@@ -1,0 +1,52 @@
+import { ExampleReferenceLink } from 'components/ExampleReference';
+
+# User in the Loop
+
+<ExampleReferenceLink filePath="examples/user_in_loop" />
+
+This example demonstrates how to set conditions for whether a pipeline should pause or continue running.
+
+## Set conditions
+
+Imagine you have a pipeline that you don’t want it to continue the computation until
+certain condition is met.
+
+For example, you have to wait for a file from someone else on your team.
+Without the file, the pipeline should be paused rather than terminated.
+Once you receive the file, you will continue running the pipeline to finish the computation.
+
+You can use a while loop to check whether the condition is met.
+Below is how you can set the conditions to check if the file path exists.
+
+```python literalinclude caption=repo.py
+file:/user_in_loop/user_in_loop/repo.py
+startAfter:start_loop_marker_0
+endBefore:end_loop_marker_0
+```
+
+In the example, `context.solid_config` is used to get the file path. The `config_schema` of the file path is a string.
+When executing the pipeline, you can supply the `run_config` for the `file_path` like below:
+
+```python literalinclude caption=test_user_in_loop_pipeline.py
+file:/user_in_loop/tests/test_user_in_loop_pipeline.py
+startAfter:start_loop_marker_1
+endBefore:end_loop_marker_1
+```
+
+If the file doesn't exist according to the `file_path`, which means the condition is not met,
+the while loop will check the condition again and again until the condition is met.
+
+If the file exists, the condition is met and the loop breaks.
+The pipeline will continue running to complete the computation.
+
+## Open in a playground
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#EXAMPLE=user_in_loop/https://github.com/dagster-io/dagster)
+
+## Download
+
+```
+curl https://codeload.github.com/dagster-io/dagster/tar.gz/master | tar -xz --strip=2 dagster-master/examples/user_in_loop
+cd user_in_loop
+pip install -e .
+```
