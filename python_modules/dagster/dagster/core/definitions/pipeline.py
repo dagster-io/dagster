@@ -1,5 +1,6 @@
 import uuid
 import warnings
+from functools import update_wrapper
 
 from dagster import check
 from dagster.core.definitions.solid import NodeDefinition
@@ -463,7 +464,7 @@ class PipelineDefinition(GraphDefinition):
 
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
-        return PipelineDefinition(
+        pipeline_def = PipelineDefinition(
             solid_defs=self.top_level_solid_defs,
             name=self.name,
             description=self.description,
@@ -474,6 +475,10 @@ class PipelineDefinition(GraphDefinition):
             hook_defs=hook_defs.union(self.hook_defs),
             _parent_pipeline_def=self._parent_pipeline_def,
         )
+
+        update_wrapper(pipeline_def, self, updated=())
+
+        return pipeline_def
 
 
 class PipelineSubsetDefinition(PipelineDefinition):
