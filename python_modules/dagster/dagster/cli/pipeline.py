@@ -4,6 +4,7 @@ import sys
 import textwrap
 
 import click
+import pendulum
 import yaml
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.workspace.cli_target import (
@@ -26,6 +27,7 @@ from dagster.core.errors import (
     DagsterLaunchFailedError,
 )
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.host_representation import (
     ExternalPipeline,
@@ -41,7 +43,6 @@ from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
@@ -877,8 +878,6 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
     if not partition_set:
         raise click.UsageError("No partition set found named `{}`".format(partition_set_name))
 
-    mode = partition_set.mode
-    solid_selection = partition_set.solid_selection
     run_tags = get_tags_from_args(cli_args)
 
     repo_handle = RepositoryHandle(
@@ -918,7 +917,16 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
         print_fn("Launching runs... ")
 
         backfill_id = make_new_backfill_id()
-        backfill_tags = PipelineRun.tags_for_backfill_id(backfill_id)
+        backfill_job = PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_names,
+            from_failure=False,
+            reexecution_steps=None,
+            tags=run_tags,
+            backfill_timestamp=pendulum.now("UTC").timestamp(),
+        )
         partition_execution_data = repo_location.get_external_partition_set_execution_param_data(
             repository_handle=repo_handle,
             partition_set_name=partition_set_name,
@@ -926,25 +934,30 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
         )
 
         if isinstance(partition_execution_data, ExternalPartitionExecutionErrorData):
+            if instance.has_bulk_actions_table():
+                instance.add_backfill(
+                    backfill_job.with_status(BulkActionStatus.FAILED).with_error(
+                        partition_execution_data.error
+                    )
+                )
             return print_fn("Backfill failed: {}".format(partition_execution_data.error))
 
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
         for partition_data in partition_execution_data.partition_data:
-            run = _create_external_pipeline_run(
-                instance=instance,
-                repo_location=repo_location,
-                external_repo=external_repo,
-                external_pipeline=external_pipeline,
-                run_config=partition_data.run_config,
-                mode=mode,
-                preset=None,
-                tags=merge_dicts(merge_dicts(partition_data.tags, backfill_tags), run_tags),
-                solid_selection=frozenset(solid_selection) if solid_selection else None,
-                run_id=None,
+            pipeline_run = create_backfill_run(
+                instance,
+                repo_location,
+                external_pipeline,
+                partition_set,
+                backfill_job,
+                partition_data,
             )
+            if pipeline_run:
+                instance.submit_run(pipeline_run.run_id, external_pipeline)
 
-            instance.submit_run(run.run_id, external_pipeline)
+        if instance.has_bulk_actions_table():
+            instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 
         print_fn("Launched backfill job `{}`".format(backfill_id))
 
