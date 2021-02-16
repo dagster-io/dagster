@@ -1,4 +1,5 @@
 import tempfile
+from unittest import mock
 
 from airline_demo.pipelines import local_parquet_io_manager
 from airline_demo.resources import DbInfo
@@ -13,7 +14,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
-from dagster.seven import mock
 from dagster.utils import file_relative_path
 from dagster_pyspark import pyspark_resource
 

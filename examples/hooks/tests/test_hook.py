@@ -1,5 +1,6 @@
+from unittest import mock
+
 from dagster import DagsterEventType, ModeDefinition, ResourceDefinition, execute_pipeline, pipeline
-from dagster.seven import mock
 
 from ..repo import a, notif_all, selective_notif, slack_message_on_failure, slack_message_on_success
 

@@ -1,7 +1,7 @@
 from collections import namedtuple
 from functools import update_wrapper
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
@@ -127,8 +127,10 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             [ResourceDefinition]: A resource that creates the magic methods automatically and helps
                 you mock existing resources.
         """
+        from unittest import mock
+
         return ResourceDefinition.hardcoded_resource(
-            value=seven.mock.MagicMock(), description=description
+            value=mock.MagicMock(), description=description
         )
 
     @staticmethod

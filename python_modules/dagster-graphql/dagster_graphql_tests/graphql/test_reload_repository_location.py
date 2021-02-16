@@ -1,4 +1,5 @@
 import sys
+from unittest import mock
 
 from dagster import repository
 from dagster.core.code_pointer import CodePointer
@@ -8,7 +9,6 @@ from dagster.core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster.grpc.types import ListRepositoriesResponse
-from dagster.seven import mock
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite

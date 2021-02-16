@@ -1,11 +1,11 @@
 import json
+from unittest import mock
 
 import pytest
 from dagster import pipeline, reconstructable
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import InProcessRepositoryLocationOrigin, RepositoryHandle
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.seven import mock
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_celery_k8s.config import get_celery_engine_config
 from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY

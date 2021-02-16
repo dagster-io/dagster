@@ -4,6 +4,7 @@
 import os
 import tempfile
 from threading import Thread
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -12,7 +13,6 @@ from dagster import (
     SolidExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
-    seven,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
@@ -296,7 +296,7 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 
 
 def test_engine_error():
-    with seven.mock.patch(
+    with mock.patch(
         "dagster.core.execution.context.system.SystemExecutionContextData.raise_on_error",
         return_value=True,
     ):

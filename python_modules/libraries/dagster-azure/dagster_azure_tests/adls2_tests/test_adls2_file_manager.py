@@ -1,4 +1,5 @@
 import uuid
+from unittest import mock
 
 from dagster import (
     InputDefinition,
@@ -11,7 +12,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.seven import mock
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,

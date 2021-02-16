@@ -2,8 +2,7 @@ import io
 import random
 from collections import defaultdict
 from contextlib import contextmanager
-
-from dagster.seven import mock
+from unittest import mock
 
 from .utils import ResourceNotFoundError
 

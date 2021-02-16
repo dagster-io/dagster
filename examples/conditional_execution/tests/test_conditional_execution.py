@@ -1,5 +1,6 @@
+from unittest import mock
+
 from dagster import execute_pipeline
-from dagster.seven import mock
 
 from ..repo import my_pipeline
 

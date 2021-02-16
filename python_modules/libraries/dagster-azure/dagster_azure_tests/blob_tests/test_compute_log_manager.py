@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from unittest import mock
 
 from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -10,7 +11,6 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
-from dagster.seven import mock
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 HELLO_WORLD = "Hello World"

@@ -1,4 +1,5 @@
 import uuid
+from unittest import mock
 
 from dagster import (
     InputDefinition,
@@ -10,7 +11,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.seven import mock
 from dagster_aws.s3 import (
     S3FileHandle,
     S3FileManager,

@@ -1,6 +1,7 @@
 import datetime
 import sys
 import uuid
+from unittest import mock
 
 import google.api_core.exceptions
 import pandas as pd
@@ -18,7 +19,6 @@ from dagster import (
 )
 from dagster.config.validate import process_config, validate_config
 from dagster.core.definitions import create_environment_type
-from dagster.seven import mock
 from dagster_gcp import (
     bigquery_resource,
     bq_create_dataset,

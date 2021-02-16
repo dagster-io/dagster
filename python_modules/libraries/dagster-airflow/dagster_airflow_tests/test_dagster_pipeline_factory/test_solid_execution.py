@@ -1,6 +1,7 @@
 import datetime
 import os
 import subprocess
+from unittest import mock
 
 from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
 from airflow.models.dag import DAG
@@ -11,7 +12,7 @@ from dagster import DagsterEventType, execute_pipeline
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import instance_for_test
-from dagster.seven import get_current_datetime_in_utc, mock
+from dagster.seven import get_current_datetime_in_utc
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
 default_args = {

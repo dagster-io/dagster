@@ -12,7 +12,6 @@ import threading
 import time
 from contextlib import contextmanager
 from types import MethodType
-from unittest import mock
 
 import pendulum
 
@@ -122,12 +121,6 @@ def is_module_available(module_name):
 
 def builtin_print():
     return "builtins.print"
-
-
-def print_single_line_str(single_line_str):
-    return [
-        mock.call(single_line_str),
-    ]
 
 
 def get_utc_timezone():

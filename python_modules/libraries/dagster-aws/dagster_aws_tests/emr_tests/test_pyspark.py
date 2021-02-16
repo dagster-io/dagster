@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -14,7 +15,6 @@ from dagster import (
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.errors import DagsterSubprocessError
-from dagster.seven import mock
 from dagster.utils.merger import deep_merge_dicts
 from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrError, EmrJobRunner

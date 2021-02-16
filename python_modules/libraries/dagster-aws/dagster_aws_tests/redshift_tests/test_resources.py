@@ -1,11 +1,11 @@
 import os
 import uuid
+from unittest import mock
 
 import boto3
 import psycopg2
 import pytest
 from dagster import ModeDefinition, execute_solid, solid
-from dagster.seven import mock
 from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
 
 REDSHIFT_ENV = {

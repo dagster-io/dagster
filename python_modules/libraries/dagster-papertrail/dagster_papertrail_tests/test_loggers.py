@@ -1,8 +1,8 @@
 import logging
+from unittest import mock
 
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster.loggers import colored_console_logger
-from dagster.seven import mock
 from dagster_papertrail import papertrail_logger
 
 

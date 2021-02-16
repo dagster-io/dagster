@@ -1,5 +1,6 @@
+from unittest import mock
+
 from dagster import ModeDefinition, execute_solid
-from dagster.seven import mock
 from dagster_snowflake import snowflake_resource, snowflake_solid_for_query
 
 from .utils import create_mock_connector

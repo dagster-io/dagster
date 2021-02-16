@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from dagster import (
     DagsterEventType,
@@ -363,7 +365,7 @@ def test_string_resource():
 def test_hardcoded_resource():
     called = {}
 
-    mock_obj = seven.mock.MagicMock()
+    mock_obj = mock.MagicMock()
 
     @solid(required_resource_keys={"hardcoded"})
     def solid_hardcoded(context):

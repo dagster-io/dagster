@@ -1,6 +1,7 @@
+from unittest import mock
+
 import pytest
 from dagster import ModeDefinition, execute_pipeline, pipeline
-from dagster.seven import mock
 from dagster_databricks import create_databricks_job_solid, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
 from dagster_databricks.solids import create_ui_url

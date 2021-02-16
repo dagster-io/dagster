@@ -1,10 +1,10 @@
 import gc
+from unittest import mock
 
 from dagster import lambda_solid, pipeline, repository
 from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.host_representation.handle import ManagedGrpcPythonEnvRepositoryLocationHandle
 from dagster.core.test_utils import instance_for_test
-from dagster.seven import mock
 from dagster_graphql.test.utils import define_out_of_process_workspace
 
 

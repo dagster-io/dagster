@@ -1,5 +1,6 @@
 import json
 import tempfile
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -9,7 +10,6 @@ from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import instance_for_test_tempdir
-from dagster.seven import mock
 from dagster.utils import file_relative_path
 
 

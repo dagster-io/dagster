@@ -1,9 +1,9 @@
 import json
+from unittest import mock
 
 from dagster import pipeline, reconstructable
 from dagster.core.host_representation import InProcessRepositoryLocationOrigin, RepositoryHandle
 from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.seven import mock
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import UserDefinedDagsterK8sConfig

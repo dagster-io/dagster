@@ -1,6 +1,6 @@
 """isort:skip_file"""
 import yaml
-from dagster.seven import mock
+from unittest import mock
 from dagster_slack import slack_resource
 from dagster import (
     ModeDefinition,

@@ -3,9 +3,9 @@ import gzip
 import io
 import threading
 import time
+from unittest import mock
 
 import pytest
-from dagster.seven import mock
 from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now

@@ -1,7 +1,8 @@
+from unittest import mock
+
 import pandas as pd
 import pytest
 from dagster import execute_pipeline
-from dagster.seven import mock
 from dagster.utils import load_yaml_from_globs, script_relative_path
 from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
