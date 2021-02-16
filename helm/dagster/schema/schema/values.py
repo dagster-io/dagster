@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
 
 from . import subschema
 
@@ -11,7 +11,7 @@ class HelmValues(BaseModel):
     """
 
     dagit: subschema.Dagit
-    userDeployments: subschema.UserDeployments
+    userDeployments: subschema.UserDeployments = Field(..., alias="dagster-user-deployments")
     postgresql: subschema.PostgreSQL
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis

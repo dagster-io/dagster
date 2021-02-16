@@ -54,7 +54,7 @@ spec:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "dagster.fullname" $ }}-postgresql-secret"
+                  name: {{ include "dagster.postgresql.secretName" $ | quote }}
                   key: postgresql-password
           envFrom:
             - configMapRef:
@@ -67,7 +67,7 @@ spec:
             {{- end }}
           volumeMounts:
             - name: dagster-instance
-              mountPath: "{{ $.Values.dagsterHome }}/dagster.yaml"
+              mountPath: "{{ $.Values.global.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
           resources:
             {{- toYaml .Values.dagsterDaemon.resources | nindent 12 }}

@@ -6,7 +6,7 @@
         "dagit": {
             "$ref": "#/definitions/Dagit"
         },
-        "userDeployments": {
+        "dagster-user-deployments": {
             "$ref": "#/definitions/UserDeployments"
         },
         "postgresql": {
@@ -49,7 +49,7 @@
     },
     "required": [
         "dagit",
-        "userDeployments",
+        "dagster-user-deployments",
         "postgresql",
         "rabbitmq",
         "redis",
@@ -357,6 +357,10 @@
                     "title": "Enabled",
                     "type": "boolean"
                 },
+                "enableSubchart": {
+                    "title": "Enablesubchart",
+                    "type": "boolean"
+                },
                 "deployments": {
                     "title": "Deployments",
                     "type": "array",
@@ -367,6 +371,7 @@
             },
             "required": [
                 "enabled",
+                "enableSubchart",
                 "deployments"
             ]
         },

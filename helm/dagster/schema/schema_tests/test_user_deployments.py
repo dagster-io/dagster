@@ -13,7 +13,15 @@ from .helm_template import HelmTemplate
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
-    return HelmTemplate(output="templates/deployment-user.yaml", model=models.V1Deployment)
+    return HelmTemplate(
+        output="charts/dagster-user-deployments/templates/deployment-user.yaml",
+        model=models.V1Deployment,
+    )
+
+
+@pytest.fixture(name="full_template")
+def full_helm_template() -> HelmTemplate:
+    return HelmTemplate()
 
 
 def create_simple_user_deployment(name: str) -> UserDeployment:
@@ -79,6 +87,7 @@ def helm_values_single_user_deployment() -> HelmValues:
     return HelmValues.construct(
         userDeployments=UserDeployments(
             enabled=True,
+            enableSubchart=True,
             deployments=[create_simple_user_deployment("simple-deployment-one")],
         )
     )
@@ -89,6 +98,7 @@ def helm_values_single_complex_user_deployment() -> HelmValues:
     return HelmValues.construct(
         userDeployments=UserDeployments(
             enabled=True,
+            enableSubchart=True,
             deployments=[create_complex_user_deployment("complex-deployment-one")],
         )
     )
@@ -99,6 +109,7 @@ def helm_values_multi_user_deployment() -> HelmValues:
     return HelmValues.construct(
         userDeployments=UserDeployments(
             enabled=True,
+            enableSubchart=True,
             deployments=[
                 create_simple_user_deployment("simple-deployment-one"),
                 create_simple_user_deployment("simple-deployment-two"),
@@ -112,6 +123,7 @@ def helm_values_multi_complex_user_deployment() -> HelmValues:
     return HelmValues.construct(
         userDeployments=UserDeployments(
             enabled=True,
+            enableSubchart=True,
             deployments=[
                 create_complex_user_deployment("complex-deployment-one"),
                 create_complex_user_deployment("complex-deployment-two"),
@@ -208,11 +220,36 @@ def assert_user_deployment_template(
             assert template_resources == resource_values
 
 
-def test_deployments_do_not_render(template: HelmTemplate, capsys):
+@pytest.mark.parametrize(
+    "user_deployments",
+    [
+        UserDeployments(
+            enabled=False,
+            enableSubchart=False,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        ),
+        UserDeployments(
+            enabled=False,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        ),
+        UserDeployments(
+            enabled=True,
+            enableSubchart=False,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        ),
+    ],
+    ids=[
+        "user deployments disabled, subchart disabled",
+        "user deployments disabled, subchart enabled",
+        "user deployments enabled, subchart disabled",
+    ],
+)
+def test_deployments_do_not_render(
+    user_deployments: UserDeployments, template: HelmTemplate, capsys
+):
     with pytest.raises(subprocess.CalledProcessError):
-        values = HelmValues.construct(
-            userDeployments=UserDeployments(enabled=False, deployments=[])
-        )
+        values = HelmValues.construct(userDeployments=user_deployments)
         template.render(values)
 
         _, err = capsys.readouterr()
@@ -259,3 +296,62 @@ def test_multi_complex_deployment_render(
     assert_user_deployment_template(
         template, user_deployments, multi_complex_user_deployment_values
     )
+
+
+@pytest.mark.parametrize(
+    "user_deployments",
+    [
+        UserDeployments(
+            enabled=False,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        ),
+    ],
+    ids=[
+        "user deployments disabled, subchart enabled",
+    ],
+)
+def test_chart_does_not_render(
+    user_deployments: UserDeployments, full_template: HelmTemplate, capsys
+):
+    with pytest.raises(subprocess.CalledProcessError):
+        values = HelmValues.construct(userDeployments=user_deployments)
+        full_template.render(values)
+
+        _, err = capsys.readouterr()
+        assert (
+            "dagster-user-deployments subchart cannot be enabled if workspace.yaml is not created."
+            in err
+        )
+
+
+@pytest.mark.parametrize(
+    "user_deployments",
+    [
+        UserDeployments(
+            enabled=True,
+            enableSubchart=False,
+            deployments=[
+                create_simple_user_deployment("simple-deployment-one"),
+            ],
+        ),
+        UserDeployments(
+            enabled=True,
+            enableSubchart=False,
+            deployments=[
+                create_complex_user_deployment("complex-deployment-one"),
+                create_complex_user_deployment("complex-deployment-two"),
+                create_simple_user_deployment("simple-deployment-three"),
+            ],
+        ),
+    ],
+    ids=[
+        "single user deployment enabled, subchart disabled",
+        "multiple user deployments enabled, subchart disabled",
+    ],
+)
+def test_chart_does_render(user_deployments: UserDeployments, full_template: HelmTemplate):
+    values = HelmValues.construct(userDeployments=user_deployments)
+    templates = full_template.render(values)
+
+    assert templates

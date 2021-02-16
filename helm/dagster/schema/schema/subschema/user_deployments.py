@@ -27,4 +27,5 @@ class UserDeployment(BaseModel):
 
 class UserDeployments(BaseModel):
     enabled: bool
+    enableSubchart: bool
     deployments: List[UserDeployment]

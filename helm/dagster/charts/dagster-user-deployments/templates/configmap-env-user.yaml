@@ -1,5 +1,4 @@
-{{- if .Values.userDeployments.enabled }}
-{{ range $deployment := .Values.userDeployments.deployments }}
+{{ range $deployment := .Values.deployments }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,11 +9,10 @@ metadata:
     release: {{ $.Release.Name }}
     heritage: {{ $.Release.Service }}
 data:
-  {{ include "dagster.shared_env" $ | nindent 2 }}
+  {{ include "dagsterUserDeployments.sharedEnv" $ | nindent 2 }}
 
   {{- range $name, $value := $deployment.env }}
   {{ $name }}: {{ $value | quote }}
   {{- end }}
 ---
-{{ end }}
 {{ end }}

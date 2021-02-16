@@ -1,0 +1,102 @@
+---
+dagsterHome: "/opt/dagster/dagster_home"
+postgresqlSecretName: "dagster-postgresql-secret"
+
+####################################################################################################
+# User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
+# each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
+# GRPC server that Dagit/Dagster communicates with to get repository information and the current
+# image information. These deployments can be updated independently of Dagit, and Dagit/Dagster
+# will pull the current image for all execution. When using a distributed executor (such as
+# Celery-K8s) for pipeline run, the current image will be queried once and used for all
+# solid executions for that pipeline run. In order to guarantee that all solid executions within a
+# pipeline execution use the same image, we recommend using a unique tag (ie not "latest").
+#
+# All user code will be invoked within the images.
+####################################################################################################
+deployments:
+  - name: "k8s-example-user-code-1"
+    image:
+      repository: "dagster/user-code-example"
+      tag: latest
+      # Change with caution! If you're using a fixed tag for pipeline run images, changing the
+      # image pull policy to anything other than "Always" will use a cached/stale image, which is
+      # almost certainly not what you want.
+      pullPolicy: Always
+    # Arguments to `dagster api grpc`.
+    # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+    # would translate to:
+    # dagsterApiGrpcArgs:
+    #   - "-m"
+    #   - "dagster_test.test_project.test_pipelines.repo"
+    #   - "-a"
+    #   - "define_demo_execution_repo"
+    dagsterApiGrpcArgs:
+      - "-f"
+      - "/example_project/example_repo/repo.py"
+    port: 3030
+
+    # Additional environment variables to set.
+    # A Kubernetes ConfigMap will be created with these environment variables. See:
+    # https://kubernetes.io/docs/concepts/configuration/configmap/
+    #
+    # Example:
+    #
+    # env:
+    #   ENV_ONE: one
+    #   ENV_TWO: two
+    env: {}
+
+    # Additional environment variables can be retrieved and set from ConfigMaps. See:
+    # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+    #
+    # Example:
+    #
+    # envConfigMaps:
+    #   - name: config-map
+    envConfigMaps: []
+
+    # Additional environment variables can be retrieved and set from Secrets. See:
+    # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
+    #
+    # Example:
+    #
+    # envSecrets:
+    #   - name: secret
+    envSecrets: []
+
+    annotations: {}
+    nodeSelector: {}
+    affinity: {}
+    tolerations: []
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
+    replicaCount: 1
+    # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
+    # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
+    # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
+    livenessProbe:
+      # If `livenessProbe` has no `exec` field, then the following default will be used:
+      # exec:
+      #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
+      initialDelaySeconds: 0
+      periodSeconds: 20
+      timeoutSeconds: 3
+      successThreshold: 1
+      failureThreshold: 3
+    startupProbe:
+      # If `livenessProbe` has no `exec` field, then the following default will be used:
+      # exec:
+      #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 3
+      successThreshold: 1
+      failureThreshold: 3
+
+    service:
+      annotations: {}
+
+serviceAccount:
+  create: true

@@ -62,6 +62,30 @@ def helm_namespace_for_user_deployments(
 
 
 @pytest.fixture(scope="session")
+def helm_namespace_for_user_deployments_subchart_disabled(
+    helm_namespace_for_user_deployments_subchart, dagster_docker_image, cluster_provider
+):  # pylint: disable=unused-argument, redefined-outer-name
+    namespace = helm_namespace_for_user_deployments_subchart
+    should_cleanup = not IS_BUILDKITE
+
+    with helm_chart_for_user_deployments_subchart_disabled(
+        namespace, dagster_docker_image, should_cleanup
+    ):
+        print("Helm chart successfully installed in namespace %s" % namespace)
+        yield namespace
+
+
+@pytest.fixture(scope="session")
+def helm_namespace_for_user_deployments_subchart(
+    dagster_docker_image, cluster_provider, request
+):  # pylint: disable=unused-argument, redefined-outer-name
+    with _helm_namespace_helper(
+        dagster_docker_image, helm_chart_for_user_deployments_subchart, request
+    ) as namespace:
+        yield namespace
+
+
+@pytest.fixture(scope="session")
 def helm_namespace_for_daemon(
     dagster_docker_image, cluster_provider, request
 ):  # pylint: disable=unused-argument, redefined-outer-name
@@ -175,7 +199,9 @@ def helm_test_resources(namespace, should_cleanup=True):
 
 
 @contextmanager
-def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name):
+def _helm_chart_helper(
+    namespace, should_cleanup, helm_config, helm_install_name, chart_name="helm/dagster"
+):
     """Install helm chart."""
     check.str_param(namespace, "namespace")
     check.bool_param(should_cleanup, "should_cleanup")
@@ -185,7 +211,7 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
 
     try:
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
-
+        release_name = chart_name.split("/")[-1]
         helm_cmd = [
             "helm",
             "install",
@@ -194,8 +220,8 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
             "--debug",
             "-f",
             "-",
-            "dagster",
-            os.path.join(git_repository_root(), "helm", "dagster"),
+            release_name,
+            os.path.join(git_repository_root(), chart_name),
         ]
 
         print("Running Helm Install: \n", " ".join(helm_cmd), "\nWith config:\n", helm_config_yaml)
@@ -211,81 +237,89 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
         # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
         kube_api = kubernetes.client.CoreV1Api()
 
-        print("Waiting for Dagit pod to be ready...")
-        dagit_pod = None
-        while dagit_pod is None:
-            pods = kube_api.list_namespaced_pod(namespace=namespace)
-            pod_names = [p.metadata.name for p in pods.items if "dagit" in p.metadata.name]
-            if pod_names:
-                dagit_pod = pod_names[0]
-            time.sleep(1)
+        if chart_name == "helm/dagster":
+            print("Waiting for Dagit pod to be ready...")
+            dagit_pod = None
+            while dagit_pod is None:
+                pods = kube_api.list_namespaced_pod(namespace=namespace)
+                pod_names = [p.metadata.name for p in pods.items if "dagit" in p.metadata.name]
+                if pod_names:
+                    dagit_pod = pod_names[0]
+                time.sleep(1)
 
-        # Wait for Celery worker queues to become ready
-        pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
-        deployments = kubernetes.client.AppsV1Api().list_namespaced_deployment(namespace=namespace)
-
-        pod_names = [
-            p.metadata.name for p in pods.items if CELERY_WORKER_NAME_PREFIX in p.metadata.name
-        ]
-        if helm_config.get("runLauncher").get("type") == "CeleryK8sRunLauncher":
-            worker_queues = (
-                helm_config.get("runLauncher")
-                .get("config")
-                .get("celeryK8sRunLauncher")
-                .get("workerQueues", [])
+            # Wait for Celery worker queues to become ready
+            pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
+            deployments = kubernetes.client.AppsV1Api().list_namespaced_deployment(
+                namespace=namespace
             )
-            for queue in worker_queues:
-                num_pods_for_queue = len(
-                    [
-                        pod_name
-                        for pod_name in pod_names
-                        if f"{CELERY_WORKER_NAME_PREFIX}-{queue.get('name')}" in pod_name
-                    ]
+
+            pod_names = [
+                p.metadata.name for p in pods.items if CELERY_WORKER_NAME_PREFIX in p.metadata.name
+            ]
+            if helm_config.get("runLauncher").get("type") == "CeleryK8sRunLauncher":
+                worker_queues = (
+                    helm_config.get("runLauncher")
+                    .get("config")
+                    .get("celeryK8sRunLauncher")
+                    .get("workerQueues", [])
                 )
-                assert queue.get("replicaCount") == num_pods_for_queue
+                for queue in worker_queues:
+                    num_pods_for_queue = len(
+                        [
+                            pod_name
+                            for pod_name in pod_names
+                            if f"{CELERY_WORKER_NAME_PREFIX}-{queue.get('name')}" in pod_name
+                        ]
+                    )
+                    assert queue.get("replicaCount") == num_pods_for_queue
 
-                labels = queue.get("labels")
-                if labels:
-                    target_deployments = []
-                    for item in deployments.items:
-                        if queue.get("name") in item.metadata.name:
-                            target_deployments.append(item)
+                    labels = queue.get("labels")
+                    if labels:
+                        target_deployments = []
+                        for item in deployments.items:
+                            if queue.get("name") in item.metadata.name:
+                                target_deployments.append(item)
 
-                    assert len(target_deployments) > 0
-                    for target in target_deployments:
-                        for key in labels:
-                            assert target.spec.template.metadata.labels.get(key) == labels.get(key)
+                        assert len(target_deployments) > 0
+                        for target in target_deployments:
+                            for key in labels:
+                                assert target.spec.template.metadata.labels.get(key) == labels.get(
+                                    key
+                                )
 
-            print("Waiting for celery workers")
-            for pod_name in pod_names:
-                print("Waiting for Celery worker pod %s" % pod_name)
-                wait_for_pod(pod_name, namespace=namespace)
+                print("Waiting for celery workers")
+                for pod_name in pod_names:
+                    print("Waiting for Celery worker pod %s" % pod_name)
+                    wait_for_pod(pod_name, namespace=namespace)
 
-            rabbitmq_enabled = ("rabbitmq" not in helm_config) or helm_config.get("rabbitmq")
-            if rabbitmq_enabled:
-                print("Waiting for rabbitmq pod to exist...")
-                while True:
-                    pods = kube_api.list_namespaced_pod(namespace=namespace)
-                    pod_names = [
-                        p.metadata.name for p in pods.items if "rabbitmq" in p.metadata.name
-                    ]
-                    if pod_names:
-                        assert len(pod_names) == 1
-                        print("Waiting for rabbitmq pod to be ready: " + str(pod_names[0]))
+                rabbitmq_enabled = ("rabbitmq" not in helm_config) or helm_config.get("rabbitmq")
+                if rabbitmq_enabled:
+                    print("Waiting for rabbitmq pod to exist...")
+                    while True:
+                        pods = kube_api.list_namespaced_pod(namespace=namespace)
+                        pod_names = [
+                            p.metadata.name for p in pods.items if "rabbitmq" in p.metadata.name
+                        ]
+                        if pod_names:
+                            assert len(pod_names) == 1
+                            print("Waiting for rabbitmq pod to be ready: " + str(pod_names[0]))
 
-                        wait_for_pod(pod_names[0], namespace=namespace)
-                        break
-                    time.sleep(1)
+                            wait_for_pod(pod_names[0], namespace=namespace)
+                            break
+                        time.sleep(1)
 
-        else:
-            assert (
-                len(pod_names) == 0
-            ), "celery-worker pods {pod_names} exists when celery is not enabled.".format(
-                pod_names=pod_names
-            )
+            else:
+                assert (
+                    len(pod_names) == 0
+                ), "celery-worker pods {pod_names} exists when celery is not enabled.".format(
+                    pod_names=pod_names
+                )
 
-        if helm_config.get("userDeployments") and helm_config.get("userDeployments", {}).get(
-            "enabled"
+        dagster_user_deployments_values = helm_config.get("dagster-user-deployments", {})
+        if (
+            dagster_user_deployments_values.get("enabled")
+            and dagster_user_deployments_values.get("enableSubchart")
+            or release_name == "dagster"
         ):
             # Wait for user code deployments to be ready
             print("Waiting for user code deployments")
@@ -305,7 +339,7 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
         if should_cleanup:
             print("Uninstalling helm chart")
             check_output(
-                ["helm", "uninstall", "dagster", "--namespace", namespace],
+                ["helm", "uninstall", release_name, "--namespace", namespace],
                 cwd=git_repository_root(),
             )
 
@@ -319,7 +353,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
     helm_config = {
-        "userDeployments": {"enabled": False},
+        "dagster-user-deployments": {"enabled": False, "enableSubchart": False},
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
@@ -407,7 +441,7 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
     helm_config = {
-        "userDeployments": {"enabled": False},
+        "dagster-user-deployments": {"enabled": False, "enableSubchart": False},
         "dagit": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
@@ -466,8 +500,9 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
     helm_config = {
-        "userDeployments": {
+        "dagster-user-deployments": {
             "enabled": True,
+            "enableSubchart": True,
             "deployments": [
                 {
                     "name": "user-code-deployment-1",
@@ -561,6 +596,148 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
 
 
 @contextmanager
+def helm_chart_for_user_deployments_subchart_disabled(namespace, docker_image, should_cleanup=True):
+    check.str_param(namespace, "namespace")
+    check.str_param(docker_image, "docker_image")
+    check.bool_param(should_cleanup, "should_cleanup")
+
+    repository, tag = docker_image.split(":")
+    pull_policy = image_pull_policy()
+    helm_config = {
+        "dagster-user-deployments": {
+            "enabled": True,
+            "enableSubchart": False,
+            "deployments": [
+                {
+                    "name": "user-code-deployment-1",
+                    "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                    "dagsterApiGrpcArgs": [
+                        "-m",
+                        "dagster_test.test_project.test_pipelines.repo",
+                        "-a",
+                        "define_demo_execution_repo",
+                    ],
+                    "port": 3030,
+                    "replicaCount": 1,
+                }
+            ],
+        },
+        "dagit": {
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
+            "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+            "envSecrets": [{"name": TEST_SECRET_NAME}],
+            "livenessProbe": {
+                "httpGet": {"path": "/dagit_info", "port": 80},
+                "periodSeconds": 20,
+                "failureThreshold": 3,
+            },
+            "startupProbe": {
+                "httpGet": {"path": "/dagit_info", "port": 80},
+                "failureThreshold": 6,
+                "periodSeconds": 10,
+            },
+        },
+        "flower": {
+            "livenessProbe": {
+                "tcpSocket": {"port": "flower"},
+                "periodSeconds": 20,
+                "failureThreshold": 3,
+            },
+            "startupProbe": {
+                "tcpSocket": {"port": "flower"},
+                "failureThreshold": 6,
+                "periodSeconds": 10,
+            },
+        },
+        "runLauncher": {
+            "type": "CeleryK8sRunLauncher",
+            "config": {
+                "celeryK8sRunLauncher": {
+                    "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                    "workerQueues": [
+                        {"name": "dagster", "replicaCount": 2},
+                        {"name": "extra-queue-1", "replicaCount": 1},
+                    ],
+                    "env": {"TEST_SET_ENV_VAR": "test_celery_env_var"},
+                    "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
+                    "livenessProbe": {
+                        "initialDelaySeconds": 15,
+                        "periodSeconds": 10,
+                        "timeoutSeconds": 10,
+                        "successThreshold": 1,
+                        "failureThreshold": 3,
+                    },
+                    "configSource": {
+                        "broker_transport_options": {"priority_steps": [9]},
+                        "worker_concurrency": 1,
+                    },
+                }
+            },
+        },
+        "rabbitmq": {"enabled": True},
+        "scheduler": {
+            "type": "K8sScheduler",
+            "config": {
+                "k8sScheduler": {
+                    "schedulerNamespace": namespace,
+                    "envSecrets": [{"name": TEST_SECRET_NAME}],
+                }
+            },
+        },
+        "serviceAccount": {"name": "dagit-admin"},
+        "postgresqlPassword": "test",
+        "postgresqlDatabase": "test",
+        "postgresqlUser": "test",
+        "dagsterDaemon": {"enabled": False},
+    }
+
+    with _helm_chart_helper(
+        namespace,
+        should_cleanup,
+        helm_config,
+        helm_install_name="helm_chart_for_user_deployments_subchart_disabled",
+    ):
+        yield
+
+
+@contextmanager
+def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cleanup=True):
+    check.str_param(namespace, "namespace")
+    check.str_param(docker_image, "docker_image")
+    check.bool_param(should_cleanup, "should_cleanup")
+
+    repository, tag = docker_image.split(":")
+    pull_policy = image_pull_policy()
+    helm_config = {
+        "deployments": [
+            {
+                "name": "user-code-deployment-1",
+                "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                "dagsterApiGrpcArgs": [
+                    "-m",
+                    "dagster_test.test_project.test_pipelines.repo",
+                    "-a",
+                    "define_demo_execution_repo",
+                ],
+                "port": 3030,
+                "replicaCount": 1,
+            }
+        ],
+    }
+
+    with _helm_chart_helper(
+        namespace,
+        should_cleanup,
+        helm_config,
+        helm_install_name="helm_chart_for_user_deployments_subchart",
+        chart_name="helm/dagster/charts/dagster-user-deployments",
+    ):
+        yield
+
+
+@contextmanager
 def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
     check.str_param(namespace, "namespace")
     check.str_param(docker_image, "docker_image")
@@ -569,8 +746,9 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
     repository, tag = docker_image.split(":")
     pull_policy = image_pull_policy()
     helm_config = {
-        "userDeployments": {
+        "dagster-user-deployments": {
             "enabled": True,
+            "enableSubchart": True,
             "deployments": [
                 {
                     "name": "user-code-deployment-1",

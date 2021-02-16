@@ -57,7 +57,12 @@ def integration_steps():
         elif integration_suite == os.path.join(
             "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
         ):
-            tox_env_suffixes = ["-default", "-markusercodedeployment", "-markdaemon"]
+            tox_env_suffixes = [
+                "-default",
+                "-markusercodedeployment",
+                "-markusercodedeploymentsubchart",
+                "-markdaemon",
+            ]
             upload_coverage = True
 
         tests += ModuleBuildSpec(

@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+name: dagster-user-deployments
+description: A Helm subchart to deploy Dagster User Code deployments
+type: application
+version: 0.1.0
+appVersion: 1.16.0

@@ -1,5 +1,4 @@
-{{- if .Values.userDeployments.enabled }}
-{{ range $deployment := .Values.userDeployments.deployments }}
+{{ range $deployment := .Values.deployments }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +24,7 @@ spec:
       annotations: {{ $deployment.annotations | toYaml | nindent 8 }}
     spec:
       imagePullSecrets: {{ $.Values.imagePullSecrets | toYaml | nindent 8 }}
-      serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
+      serviceAccountName: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
       containers:
         - name: {{ $.Chart.Name }}
@@ -40,11 +39,11 @@ spec:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "dagster.fullname" $ }}-postgresql-secret"
+                  name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
                   key: postgresql-password
           envFrom:
             - configMapRef:
-                name: {{ template "dagster.fullname" $ }}-{{ $deployment.name }}-user-env
+                name: {{ include "dagster.fullname" $ }}-{{ $deployment.name }}-user-env
             {{- range $envConfigMap := $deployment.envConfigMaps }}
             - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
@@ -115,5 +114,4 @@ spec:
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
       tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
 ---
-{{ end }}
 {{ end }}

@@ -1,4 +1,10 @@
-{{- if .Values.userDeployments.enabled }}
+{{- $userDeployments := index .Values "dagster-user-deployments" }}
+
+{{- if and (not $userDeployments.enabled) $userDeployments.enableSubchart }}
+{{ fail "dagster-user-deployments subchart cannot be enabled if workspace.yaml is not created." }}
+{{- end }}
+
+{{- if $userDeployments.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,7 +17,7 @@ metadata:
 data:
   workspace.yaml: |
     load_from:
-      {{- range $deployment := .Values.userDeployments.deployments }}
+      {{- range $deployment := $userDeployments.deployments }}
       - grpc_server:
           host: {{ $deployment.name }}
           port: {{ $deployment.port }}

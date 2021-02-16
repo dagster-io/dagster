@@ -2,6 +2,9 @@
 apiVersion: v2
 description: Dagster is a system for building modern data applications.
 dependencies:
+  - name: dagster-user-deployments
+    version: 0.1.0
+    condition: dagster-user-deployments.enableSubchart
   - name: postgresql
     version: 8.1.0
     repository: https://charts.bitnami.com/bitnami

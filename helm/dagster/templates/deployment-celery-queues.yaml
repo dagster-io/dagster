@@ -52,12 +52,12 @@ spec:
           imagePullPolicy: {{ $celeryK8sRunLauncherConfig.image.pullPolicy }}
           image: {{ include "image.name" $celeryK8sRunLauncherConfig.image | quote }}
           command: ["dagster-celery"]
-          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
+          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "dagster.fullname" $ }}-postgresql-secret"
+                  name: {{ include "dagster.postgresql.secretName" $ | quote }}
                   key: postgresql-password
           envFrom:
             - configMapRef:
@@ -70,10 +70,10 @@ spec:
             {{- end }}
           volumeMounts:
             - name: dagster-instance
-              mountPath: "{{ $.Values.dagsterHome }}/dagster.yaml"
+              mountPath: "{{ $.Values.global.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
             - name: dagster-celery
-              mountPath: "{{ $.Values.dagsterHome }}/celery-config.yaml"
+              mountPath: "{{ $.Values.global.dagsterHome }}/celery-config.yaml"
               subPath: celery.yaml
           resources:
             {{- toYaml $celeryK8sRunLauncherConfig.resources | nindent 12 }}

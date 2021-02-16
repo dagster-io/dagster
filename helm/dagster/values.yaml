@@ -4,12 +4,15 @@
 # - We recommend using unique tags for user code images, as this will guarantee that the docker
 #   image will be consistent for the pipeline's entire execution.
 ---
+
+global:
+  postgresqlSecretName: "dagster-postgresql-secret"
+  # The DAGSTER_HOME env var is set by default on all nodes from this value
+  dagsterHome: "/opt/dagster/dagster_home"
+
 nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true
-# The DAGSTER_HOME env var is set by default on all nodes from this value
-dagsterHome: "/opt/dagster/dagster_home"
-
 # Specify secrets to run containers based on images in private registries. See:
 # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
 imagePullSecrets: []
@@ -161,9 +164,13 @@ computeLogManager:
 #
 # All user code will be invoked within the images.
 ####################################################################################################
-userDeployments:
-  # Whether launching user deployments is enabled.
+dagster-user-deployments:
+  # Creates a workspace file with the gRPC servers hosting your user code.
   enabled: true
+
+  # If you plan on deploying user code in a separate Helm release, set this to false.
+  enableSubchart: true
+
   # List of unique deployments
   deployments:
     - name: "k8s-example-user-code-1"

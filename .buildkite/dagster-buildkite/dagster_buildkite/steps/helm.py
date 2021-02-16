@@ -7,22 +7,26 @@ from ..step_builder import StepBuilder
 
 
 def helm_lint_steps() -> List[dict]:
-    base_paths = "'helm/dagster/*.yml' 'helm/dagster/*.yaml'"
-    base_paths_ignored = "':!:helm/dagster/templates/*.yml' ':!:helm/dagster/templates/*.yaml'"
     return [
         StepBuilder(":helm: :yaml: :lint-roller:")
         .run(
             "pip install yamllint",
-            f"yamllint -c .yamllint.yaml --strict `git ls-files {base_paths} {base_paths_ignored}`",
+            "make yamllint",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        StepBuilder(":helm: :lint-roller:")
+        StepBuilder(":helm: dagster-umbrella-chart :lint-roller:")
         .run(
             "pip install -e helm/dagster/schema",
             "dagster-helm schema apply",
             "git diff --exit-code",
-            "helm lint helm/dagster -f helm/dagster/values.yaml",
+            "helm lint helm/dagster",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+        StepBuilder(":helm: dagster-user-code-deployments-chart :lint-roller:")
+        .run(
+            "helm lint helm/dagster/charts/dagster-user-deployments",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
