@@ -23,7 +23,6 @@ from functools import wraps
 from logging.handlers import RotatingFileHandler
 
 import click
-import requests
 import yaml
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
@@ -533,6 +532,9 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors)
     """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory """
 
     try:
+        # lazy import for perf
+        import requests
+
         if log_size > 0:
             # Delete contents of dagster_log_queue_dir so that new logs can be copied over
             for f in os.listdir(dagster_log_queue_dir):
