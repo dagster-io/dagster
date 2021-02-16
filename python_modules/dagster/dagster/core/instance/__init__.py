@@ -18,7 +18,6 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import EnvironmentConfig
@@ -494,6 +493,8 @@ class DagsterInstance:
         return self.get_settings("sensor_settings") or {}
 
     def upgrade(self, print_fn=lambda _: None):
+        from dagster.core.storage.migration.utils import upgrading_instance
+
         with upgrading_instance(self):
 
             print_fn("Updating run storage...")
