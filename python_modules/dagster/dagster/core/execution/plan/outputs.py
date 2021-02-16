@@ -46,7 +46,6 @@ class StepOutputData(
         "_StepOutputData",
         [
             ("step_output_handle", "StepOutputHandle"),
-            ("intermediate_materialization", Union[AssetMaterialization, Materialization]),
             ("type_check_data", Optional[TypeCheckData]),
             ("version", Optional[str]),
         ],
@@ -57,19 +56,16 @@ class StepOutputData(
     def __new__(
         cls,
         step_output_handle: "StepOutputHandle",
-        intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
         type_check_data: Optional[TypeCheckData] = None,
         version: Optional[str] = None,
+        # graveyard
+        # pylint: disable=unused-argument
+        intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
     ):
         return super(StepOutputData, cls).__new__(
             cls,
             step_output_handle=check.inst_param(
                 step_output_handle, "step_output_handle", StepOutputHandle
-            ),
-            intermediate_materialization=check.opt_inst_param(
-                intermediate_materialization,
-                "intermediate_materialization",
-                (AssetMaterialization, Materialization),
             ),
             type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
             version=check.opt_str_param(version, "version"),
