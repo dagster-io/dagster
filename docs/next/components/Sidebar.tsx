@@ -4,7 +4,6 @@ import Icons from "../components/Icons";
 import Link from "./Link";
 import cx from "classnames";
 import { useNavigation } from "../util/useNavigation";
-import { useState } from "react";
 import { useVersion } from "../util/useVersion";
 
 const getCurrentSection = (navigation) => {
@@ -161,7 +160,7 @@ const VersionDropdown = () => {
                   <div className="py-1">
                     {versions.map((version) => {
                       return (
-                        <Link href={asPath} version={version}>
+                        <Link key={asPath} href={asPath} version={version}>
                           <Menu.Item>
                             {({ active }) => (
                               <a

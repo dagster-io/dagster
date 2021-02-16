@@ -180,7 +180,7 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
       </span>
       <div className="space-x-2">
         {tags.map((tag) => (
-          <Badge text={tag} />
+          <Badge key={tag} text={tag} />
         ))}
       </div>
     </div>
