@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "dagster",
             "dagster-pandas",
             "pandas",
-            "great_expectations >=0.11.9, !=0.12.8, <0.13.0",
+            "great_expectations >=0.11.9, !=0.12.8, <=0.13.10",
         ],
         zip_safe=False,
     )

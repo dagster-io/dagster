@@ -14,7 +14,14 @@ from dagster import (
     solid,
 )
 from dagster_pandas import DataFrame
-from great_expectations.core import convert_to_json_serializable
+
+try:
+    # ge < v0.13.0
+    from great_expectations.core import convert_to_json_serializable
+except ImportError:
+    # ge >= v0.13.0
+    from great_expectations.core.util import convert_to_json_serializable
+
 from great_expectations.render.page_renderer_util import (
     render_multiple_validation_result_pages_markdown,
 )
