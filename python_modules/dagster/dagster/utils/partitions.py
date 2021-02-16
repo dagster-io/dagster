@@ -20,6 +20,7 @@ def schedule_partition_range(
     fmt,
     timezone,
     execution_time_to_partition_fn,
+    inclusive=False,
 ):
     check.inst_param(start, "start", datetime.datetime)
     check.opt_inst_param(end, "end", datetime.datetime)
@@ -27,6 +28,7 @@ def schedule_partition_range(
     check.str_param(fmt, "fmt")
     check.opt_str_param(timezone, "timezone")
     check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
+    check.opt_bool_param(inclusive, "inclusive")
 
     if end and start > end:
         raise DagsterInvariantViolationError(
@@ -73,7 +75,7 @@ def schedule_partition_range(
 
             partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
 
-        return partitions[:-1]
+        return partitions if inclusive else partitions[:-1]
 
     return get_schedule_range_partitions
 
