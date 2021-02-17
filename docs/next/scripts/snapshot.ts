@@ -1,6 +1,6 @@
+import codeTransformer, { Stats } from "../util/codeTransformer";
 import { read, write } from "to-vfile";
 
-import codeTransformer from "../util/codeTransformer";
 import extract from "remark-extract-frontmatter";
 import fg from "fast-glob";
 import frontmatter from "remark-frontmatter";
@@ -11,9 +11,15 @@ import { parse as yaml } from "yaml";
 // Main
 (async () => {
   const stream = fg.stream(["./content/**/*.mdx"]);
-  for await (const path of stream) {
-    console.log("Updating file", path);
 
+  let stats: Stats = { totalSnapshots: 0, updatedSnapshots: [] };
+  const setStats = (newStats: Stats) => {
+    const { totalSnapshots, updatedSnapshots } = newStats;
+    stats.totalSnapshots += totalSnapshots;
+    stats.updatedSnapshots = stats.updatedSnapshots.concat(updatedSnapshots);
+  };
+
+  for await (const path of stream) {
     const file = await read(path);
     const contents = await remark()
       .use(frontmatter)
@@ -29,12 +35,20 @@ import { parse as yaml } from "yaml";
         },
       })
       .use(mdx)
-      .use(codeTransformer)
+      .use(codeTransformer, { setStats })
       .process(file);
 
     await write({
       path,
       contents: Buffer.from(contents.toString()),
     });
+  }
+
+  console.log(`✅ ${stats.totalSnapshots} snapshots parsed`);
+  if (stats.updatedSnapshots.length) {
+    console.log(`⚡️ ${stats.updatedSnapshots.length} updated:`);
+    console.log(`\t${stats.updatedSnapshots.join("\n\t")}`);
+  } else {
+    console.log(`✨ No snapshots were updated`);
   }
 })();

@@ -1,3 +1,4 @@
+import { Node } from "hast";
 import { promises as fs } from "fs";
 import { limitSnippetLines } from "./limit";
 import path from "path";
@@ -11,19 +12,30 @@ const DOCS_SNIPPET = path.join(
   "/examples/docs_snippets/docs_snippets"
 );
 
-export default () => async (tree) => {
-  const codes = [];
-  visit(tree, "code", (node, index, parent) => {
-    codes.push([node, index, parent]);
+export interface Stats {
+  totalSnapshots: number;
+  updatedSnapshots: string[];
+}
+
+interface CodeTransformerOptions {
+  setStats?: (newStats: Stats) => void;
+}
+
+export default ({ setStats }: CodeTransformerOptions) => async (tree: Node) => {
+  const codes: [Node, number][] = [];
+  visit(tree, "code", (node, index) => {
+    codes.push([node, index]);
   });
 
   const optionKeys = ["lines", "startafter", "endbefore", "dedent", "trim"];
 
-  let totalSnapshots = 0;
-  let updatedSnapshots = [];
+  const stats: Stats = {
+    totalSnapshots: 0,
+    updatedSnapshots: [],
+  };
 
   for (const [node] of codes) {
-    const meta = (node.meta || "").split(" ");
+    const meta = ((node.meta as string) || "").split(" ");
     const fileMeta = meta.find((m) => m.startsWith("file="));
     if (!fileMeta) {
       continue;
@@ -63,9 +75,9 @@ export default () => async (tree) => {
         contentWithLimit = contentWithLimit.trim();
       }
 
-      totalSnapshots++;
+      stats.totalSnapshots++;
       if (node.value !== contentWithLimit) {
-        updatedSnapshots.push(node.meta);
+        stats.updatedSnapshots.push(node.meta as string);
         node.value = `${contentWithLimit}`;
       }
     } catch (err) {
@@ -73,11 +85,7 @@ export default () => async (tree) => {
     }
   }
 
-  console.log(`✅ ${totalSnapshots} snapshots parsed`);
-  if (updatedSnapshots.length) {
-    console.log(`⚡️ ${updatedSnapshots.length} updated:`);
-    console.log(`\t${updatedSnapshots.join("\n\t")}`);
-  } else {
-    console.log(`✨ No snapshots were updated`);
+  if (setStats) {
+    setStats(stats);
   }
 };
