@@ -204,7 +204,7 @@ class ScheduleDefinition(JobDefinition):
             try:
                 # Verify that the timezone can be loaded
                 pendulum.timezone(self._execution_timezone)
-            except ValueError:
+            except Exception:
                 raise DagsterInvalidDefinitionError(
                     "Invalid execution timezone {timezone} for {schedule_name}".format(
                         schedule_name=name, timezone=self._execution_timezone

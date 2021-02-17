@@ -280,6 +280,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-daemon_tests",
             "-general_tests",
             "-scheduler_tests",
+            "-scheduler_tests_old_pendulum",
         ],
     ),
     ModuleBuildSpec(

@@ -18,6 +18,7 @@ from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTick
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
+from dagster.seven import to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -148,11 +149,9 @@ def launch_scheduled_runs_for_schedule(
             "on all schedules will be required in the dagster 0.11.0 release."
         )
 
-    end_datetime = end_datetime_utc.in_tz(timezone_str)
-
     tick_times = []
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
-        if next_time.timestamp() > end_datetime.timestamp():
+        if next_time.timestamp() > end_datetime_utc.timestamp():
             break
 
         tick_times.append(next_time)
@@ -175,10 +174,8 @@ def launch_scheduled_runs_for_schedule(
         times = ", ".join([time.strftime(_SCHEDULER_DATETIME_FORMAT) for time in tick_times])
         logger.info(f"Evaluating schedule `{schedule_name}` at the following times: {times}")
 
-    for tick_time in tick_times:
-        schedule_time = pendulum.instance(tick_time).in_tz(timezone_str)
+    for schedule_time in tick_times:
         schedule_timestamp = schedule_time.timestamp()
-
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
             logger.info("Resuming previously interrupted schedule execution")
@@ -197,7 +194,6 @@ def launch_scheduled_runs_for_schedule(
             _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(tick, instance, logger) as tick_context:
-
             _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
             _schedule_runs_at_time(
@@ -321,7 +317,7 @@ def _get_existing_run_for_request(instance, external_schedule, schedule_time, ru
     tags = merge_dicts(
         PipelineRun.tags_for_schedule(external_schedule),
         {
-            SCHEDULED_EXECUTION_TIME_TAG: schedule_time.in_tz("UTC").isoformat(),
+            SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
         },
     )
     if run_request.run_key:
@@ -365,7 +361,7 @@ def _create_scheduler_run(
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
-    tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.in_tz("UTC").isoformat()
+    tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 

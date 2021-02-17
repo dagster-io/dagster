@@ -136,72 +136,74 @@ def test_list_command_deployed_grpc():
 
 
 def test_list_command_cli():
-    runner = CliRunner()
+    with instance_for_test():
 
-    result = runner.invoke(
-        pipeline_list_command,
-        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar"],
-    )
-    assert_correct_bar_repository_output(result)
+        runner = CliRunner()
 
-    result = runner.invoke(
-        pipeline_list_command,
-        [
-            "-f",
-            file_relative_path(__file__, "test_cli_commands.py"),
-            "-a",
-            "bar",
-            "-d",
-            os.path.dirname(__file__),
-        ],
-    )
-    assert_correct_bar_repository_output(result)
+        result = runner.invoke(
+            pipeline_list_command,
+            ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar"],
+        )
+        assert_correct_bar_repository_output(result)
 
-    result = runner.invoke(
-        pipeline_list_command,
-        ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
-    )
-    assert_correct_bar_repository_output(result)
+        result = runner.invoke(
+            pipeline_list_command,
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-a",
+                "bar",
+                "-d",
+                os.path.dirname(__file__),
+            ],
+        )
+        assert_correct_bar_repository_output(result)
 
-    result = runner.invoke(
-        pipeline_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
-    )
-    assert_correct_bar_repository_output(result)
+        result = runner.invoke(
+            pipeline_list_command,
+            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
+        )
+        assert_correct_bar_repository_output(result)
 
-    result = runner.invoke(
-        pipeline_list_command,
-        [
-            "-w",
-            file_relative_path(__file__, "workspace.yaml"),
-            "-w",
-            file_relative_path(__file__, "override.yaml"),
-        ],
-    )
-    assert_correct_extra_repository_output(result)
+        result = runner.invoke(
+            pipeline_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
+        )
+        assert_correct_bar_repository_output(result)
 
-    result = runner.invoke(
-        pipeline_list_command,
-        [
-            "-f",
-            "foo.py",
-            "-m",
-            "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "-a",
-            "bar",
-        ],
-    )
-    assert result.exit_code == 2
+        result = runner.invoke(
+            pipeline_list_command,
+            [
+                "-w",
+                file_relative_path(__file__, "workspace.yaml"),
+                "-w",
+                file_relative_path(__file__, "override.yaml"),
+            ],
+        )
+        assert_correct_extra_repository_output(result)
 
-    result = runner.invoke(
-        pipeline_list_command,
-        ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
-    )
-    assert_correct_bar_repository_output(result)
+        result = runner.invoke(
+            pipeline_list_command,
+            [
+                "-f",
+                "foo.py",
+                "-m",
+                "dagster_tests.cli_tests.command_tests.test_cli_commands",
+                "-a",
+                "bar",
+            ],
+        )
+        assert result.exit_code == 2
 
-    result = runner.invoke(
-        pipeline_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
-    )
-    assert_correct_bar_repository_output(result)
+        result = runner.invoke(
+            pipeline_list_command,
+            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
+        )
+        assert_correct_bar_repository_output(result)
+
+        result = runner.invoke(
+            pipeline_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
+        )
+        assert_correct_bar_repository_output(result)
 
 
 def test_list_command():

@@ -297,7 +297,7 @@ def test_sensor_tick_range(graphql_context):
         JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
     )
 
-    now = pendulum.now().in_tz("US/Central")
+    now = pendulum.now("US/Central")
     one = now.subtract(days=2).subtract(hours=1)
     with pendulum.test(one):
         _create_tick(graphql_context.instance)
