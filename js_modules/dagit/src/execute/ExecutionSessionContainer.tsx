@@ -126,7 +126,7 @@ const initialState: IExecutionSessionContainerState = {
   tagEditorOpen: false,
 };
 
-const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
+export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
   const {
     currentSession,
     onCreateSession,
@@ -626,10 +626,6 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     />
   );
 };
-
-// Default export for use in React.lazy.
-// eslint-disable-next-line import/no-default-export
-export default ExecutionSessionContainer;
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
