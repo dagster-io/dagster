@@ -12,7 +12,7 @@ from dagster import (
     PythonObjectDagsterType,
     RootInputManagerDefinition,
     execute_pipeline,
-    fs_io_manager,
+    execute_solid,
     io_manager,
     pipeline,
     resource,
@@ -346,3 +346,12 @@ def test_mode_missing_input_manager():
         @pipeline
         def _my_pipeline():
             my_solid()
+
+
+def test_mode_missing_input_manager_execute_solid():
+    @solid(input_defs=[InputDefinition("a", root_manager_key="missing_root_manager")])
+    def my_solid(_, a):
+        return a + 1
+
+    result = execute_solid(my_solid, input_values={"a": 5})
+    assert result.success

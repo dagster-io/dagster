@@ -605,14 +605,6 @@ def _validate_resource_dependencies(
                         f'provided by mode "{mode_def.name}".'
                     )
 
-            for input_def in node_def.input_defs:
-                if input_def.root_manager_key and input_def.root_manager_key not in mode_resources:
-                    raise DagsterInvalidDefinitionError(
-                        f'Root input manager "{input_def.root_manager_key}" is required by input '
-                        f'"{input_def.name}" of solid def {node_def.name}, but is not '
-                        f'provided by mode "{mode_def.name}".'
-                    )
-
         _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict)
 
         for intermediate_storage in mode_def.intermediate_storage_defs or []:
@@ -749,10 +741,11 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                                 f"the upstream output."
                             )
             else:
+                input_def = handle.input_def
                 if (
-                    not handle.input_def.dagster_type.loader
-                    and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                    and not handle.input_def.root_manager_key
+                    not input_def.dagster_type.loader
+                    and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+                    and not input_def.root_manager_key
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '
@@ -762,10 +755,24 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                         '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,
-                            input_name=handle.input_def.name,
-                            dagster_type=handle.input_def.dagster_type.display_name,
+                            input_name=input_def.name,
+                            dagster_type=input_def.dagster_type.display_name,
                         )
                     )
+
+                for mode_def in mode_definitions:
+                    # If a root manager is provided, it's always used. I.e. it has priority over
+                    # the other ways of loading unsatisified inputs - dagster type loaders and
+                    # default values.
+                    if (
+                        input_def.root_manager_key
+                        and input_def.root_manager_key not in mode_def.resource_defs
+                    ):
+                        raise DagsterInvalidDefinitionError(
+                            f'Root input manager "{input_def.root_manager_key}" is required by '
+                            f'unsatisfied input "{input_def.name}" of solid {solid.name}, but is not '
+                            f'provided by mode "{mode_def.name}".'
+                        )
 
 
 def _build_all_node_defs(node_defs):
