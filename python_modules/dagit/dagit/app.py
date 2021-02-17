@@ -12,6 +12,7 @@ from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.telemetry import log_workspace_stats
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, request, send_file
@@ -243,5 +244,7 @@ def create_app_from_workspace(workspace, instance, path_prefix=""):
     print("Loading repository...")  # pylint: disable=print-call
 
     context = WorkspaceProcessContext(instance=instance, workspace=workspace, version=__version__)
+
+    log_workspace_stats(instance, context)
 
     return instantiate_app_with_views(context, path_prefix)

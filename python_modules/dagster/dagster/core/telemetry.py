@@ -405,15 +405,15 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
         )
 
 
-def log_workspace_stats(instance, workspace):
-    from dagster.cli.workspace import Workspace
+def log_workspace_stats(instance, workspace_process_context):
+    from dagster.cli.workspace import WorkspaceProcessContext
 
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", Workspace)
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
 
-    for repository_location_handle in workspace.repository_location_handles:
-        repo_location = repository_location_handle.create_location()
-
+    for repo_location in workspace_process_context.repository_locations:
         for external_repo in repo_location.get_repositories().values():
             log_external_repo_stats(instance, source="dagit", external_repo=external_repo)
 
