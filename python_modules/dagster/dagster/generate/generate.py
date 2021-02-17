@@ -14,7 +14,7 @@ def generate_new_repo(path: str):
     The name of the repository is the base of `path`.
     """
     normalized_path = os.path.normpath(path)
-    repo_name = os.path.basename(normalized_path)
+    repo_name = os.path.basename(normalized_path).replace("-", "_")
 
     os.mkdir(normalized_path)
 
