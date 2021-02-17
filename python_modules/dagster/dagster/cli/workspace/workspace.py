@@ -47,16 +47,14 @@ class WorkspaceSnapshot(
 class Workspace:
     def __init__(self, workspace_load_target):
 
-        from .cli_target import WorkspaceLoadTarget, location_origins_from_load_target
+        from .cli_target import WorkspaceLoadTarget
 
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
         )
 
         repository_location_origins = (
-            location_origins_from_load_target(self._workspace_load_target)
-            if self._workspace_load_target
-            else []
+            self._workspace_load_target.create_origins() if self._workspace_load_target else []
         )
 
         self._location_origin_dict = OrderedDict()

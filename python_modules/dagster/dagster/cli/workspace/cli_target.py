@@ -1,5 +1,6 @@
 import os
 import sys
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -64,25 +65,77 @@ WORKSPACE_CLI_ARGS = (
     "grpc_socket",
 )
 
-WorkspaceFileTarget = namedtuple("WorkspaceFileTarget", "paths")
-PythonFileTarget = namedtuple(
-    "PythonFileTarget", "python_file attribute working_directory location_name"
-)
-ModuleTarget = namedtuple("ModuleTarget", "module_name attribute location_name")
-PackageTarget = namedtuple("PackageTarget", "package_name attribute location_name")
-GrpcServerTarget = namedtuple("GrpcServerTarget", "host port socket location_name")
+
+class WorkspaceLoadTarget(ABC):
+    @abstractmethod
+    def create_origins(self):
+        """ Reloads the RepositoryLocationOrigins for this workspace."""
+
+
+class WorkspaceFileTarget(namedtuple("WorkspaceFileTarget", "paths"), WorkspaceLoadTarget):
+    def create_origins(self):
+        return location_origins_from_yaml_paths(self.paths)
+
+
+class PythonFileTarget(
+    namedtuple("PythonFileTarget", "python_file attribute working_directory location_name"),
+    WorkspaceLoadTarget,
+):
+    def create_origins(self):
+        return [
+            location_origin_from_python_file(
+                python_file=self.python_file,
+                attribute=self.attribute,
+                working_directory=self.working_directory,
+                location_name=self.location_name,
+            )
+        ]
+
+
+class ModuleTarget(
+    namedtuple("ModuleTarget", "module_name attribute location_name"), WorkspaceLoadTarget
+):
+    def create_origins(self):
+        return [
+            location_origin_from_module_name(
+                self.module_name,
+                self.attribute,
+                location_name=self.location_name,
+            )
+        ]
+
+
+class PackageTarget(
+    namedtuple("PackageTarget", "package_name attribute location_name"), WorkspaceLoadTarget
+):
+    def create_origins(self):
+        return [
+            location_origin_from_package_name(
+                self.package_name,
+                self.attribute,
+                location_name=self.location_name,
+            )
+        ]
+
+
+class GrpcServerTarget(
+    namedtuple("GrpcServerTarget", "host port socket location_name"), WorkspaceLoadTarget
+):
+    def create_origins(self):
+        return [
+            GrpcServerRepositoryLocationOrigin(
+                port=self.port,
+                socket=self.socket,
+                host=self.host,
+                location_name=self.location_name,
+            )
+        ]
+
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
-EmptyWorkspaceTarget = namedtuple("EmptyWorkspaceTarget", "")
-
-WorkspaceLoadTarget = (
-    WorkspaceFileTarget,
-    PythonFileTarget,
-    ModuleTarget,
-    PackageTarget,
-    EmptyWorkspaceTarget,
-    GrpcServerTarget,
-)
+class EmptyWorkspaceTarget(namedtuple("EmptyWorkspaceTarget", ""), WorkspaceLoadTarget):
+    def create_origins(self):
+        return []
 
 
 def created_workspace_load_target(kwargs):
@@ -184,61 +237,10 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def location_origins_from_load_target(load_target):
-    if isinstance(load_target, WorkspaceFileTarget):
-        return location_origins_from_yaml_paths(
-            load_target.paths,
-        )
-    elif isinstance(load_target, PythonFileTarget):
-        return [
-            location_origin_from_python_file(
-                python_file=load_target.python_file,
-                attribute=load_target.attribute,
-                working_directory=load_target.working_directory,
-                location_name=load_target.location_name,
-            )
-        ]
-    elif isinstance(load_target, ModuleTarget):
-        return [
-            location_origin_from_module_name(
-                load_target.module_name,
-                load_target.attribute,
-                location_name=load_target.location_name,
-            )
-        ]
-    elif isinstance(load_target, PackageTarget):
-        return [
-            location_origin_from_package_name(
-                load_target.package_name,
-                load_target.attribute,
-                location_name=load_target.location_name,
-            )
-        ]
-    elif isinstance(load_target, GrpcServerTarget):
-        return [
-            GrpcServerRepositoryLocationOrigin(
-                port=load_target.port,
-                socket=load_target.socket,
-                host=load_target.host,
-                location_name=load_target.location_name,
-            )
-        ]
-    elif isinstance(load_target, EmptyWorkspaceTarget):
-        return []
-    else:
-        check.not_implemented("Unsupported: {}".format(load_target))
-
-
-def workspace_from_load_target(load_target):
-    check.inst_param(load_target, "load_target", WorkspaceLoadTarget)
-
+def get_workspace_from_kwargs(kwargs):
     from .workspace import Workspace
 
-    return Workspace(load_target)
-
-
-def get_workspace_from_kwargs(kwargs):
-    return workspace_from_load_target(created_workspace_load_target(kwargs))
+    return Workspace(created_workspace_load_target(kwargs))
 
 
 def python_target_click_options():
@@ -587,7 +589,7 @@ def get_repository_location_from_kwargs(kwargs):
 
 
 def get_repository_location_origin_from_kwargs(kwargs):
-    all_origins = location_origins_from_load_target(created_workspace_load_target(kwargs))
+    all_origins = created_workspace_load_target(kwargs).create_origins()
 
     origins_by_name = {origin.location_name: origin for origin in all_origins}
 
