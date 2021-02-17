@@ -57,4 +57,5 @@ def dagster_instance_config_schema():
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "sensor_settings": Field({"interval_seconds": Field(int, is_required=False)}),
         "custom_instance_class": Field({"module": str, "class": str}, is_required=False),
+        "backfill": Field({"daemon_enabled": Field(Bool, is_required=False)}),
     }

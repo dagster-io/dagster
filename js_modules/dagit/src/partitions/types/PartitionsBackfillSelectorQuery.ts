@@ -115,9 +115,23 @@ export interface PartitionsBackfillSelectorQuery_instance_runLauncher {
   name: string;
 }
 
+export interface PartitionsBackfillSelectorQuery_instance_daemonHealth_daemonStatus {
+  __typename: "DaemonStatus";
+  id: string;
+  healthy: boolean | null;
+}
+
+export interface PartitionsBackfillSelectorQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  daemonStatus: PartitionsBackfillSelectorQuery_instance_daemonHealth_daemonStatus;
+}
+
 export interface PartitionsBackfillSelectorQuery_instance {
   __typename: "Instance";
   runLauncher: PartitionsBackfillSelectorQuery_instance_runLauncher | null;
+  daemonHealth: PartitionsBackfillSelectorQuery_instance_daemonHealth;
+  daemonBackfillEnabled: boolean;
+  runQueuingSupported: boolean;
 }
 
 export interface PartitionsBackfillSelectorQuery {

@@ -180,7 +180,7 @@ class InstanceRef(
             ),
         )
 
-        settings_keys = {"telemetry", "sensor_settings"}
+        settings_keys = {"telemetry", "sensor_settings", "backfill"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
         custom_instance_class_data = configurable_class_data_or_default(

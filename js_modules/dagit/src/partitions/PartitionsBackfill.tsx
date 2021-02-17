@@ -459,25 +459,55 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           </GridScrollContainer>
         </div>
 
-        {usingDefaultRunLauncher && (
+        {instance.daemonBackfillEnabled && !instance.daemonHealth.daemonStatus.healthy ? (
+          <div style={{marginTop: 10}}>
+            <Alert
+              intent="warning"
+              title="The backfill daemon is not running."
+              description={
+                <div>
+                  See the{' '}
+                  <a
+                    href="https://docs.dagster.io/overview/daemon"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    dagster-daemon documentation
+                  </a>{' '}
+                  for more information on how to deploy the dagster-daemon process.
+                </div>
+              }
+            />
+          </div>
+        ) : null}
+        {usingDefaultRunLauncher && !instance.runQueuingSupported ? (
           <div style={{marginTop: 10}}>
             <Alert
               intent="warning"
               title={
                 <div>
                   Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for
-                  launching backfills is not advised, as queueing runs is not currently supported.
+                  launching backfills without a queued run coordinator is not advised.
                 </div>
               }
               description={
                 <div>
-                  Check your instance configuration in <code>dagster.yaml</code> to configure a run
-                  launcher more appropriate for launching a large number of jobs.
+                  Check your instance configuration in <code>dagster.yaml</code> to either configure{' '}
+                  the{' '}
+                  <a
+                    href="https://docs.dagster.io/overview/pipeline-runs/run-coordinator"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    queued run coordinator
+                  </a>{' '}
+                  or to configure a run launcher more appropriate for launching a large number of
+                  jobs.
                 </div>
               }
             />
           </div>
-        )}
+        ) : null}
       </div>
       <div className={Classes.DIALOG_FOOTER}>
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
@@ -685,6 +715,14 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
       runLauncher {
         name
       }
+      daemonHealth {
+        daemonStatus(daemonType: "BACKFILL") {
+          id
+          healthy
+        }
+      }
+      daemonBackfillEnabled
+      runQueuingSupported
     }
   }
 `;

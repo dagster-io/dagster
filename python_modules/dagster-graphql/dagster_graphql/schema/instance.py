@@ -89,6 +89,7 @@ class GrapheneInstance(graphene.ObjectType):
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
     sensorDaemonInterval = graphene.NonNull(graphene.Int)
+    daemonBackfillEnabled = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Instance"
@@ -122,6 +123,9 @@ class GrapheneInstance(graphene.ObjectType):
         return GrapheneDaemonHealth(instance=self._instance)
 
     def resolve_sensorDaemonInterval(self, _graphene_info):
-        return self._instance.sensor_settings.get(
-            "interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
-        )
+        sensor_settings = self._instance.get_settings("sensor_settings") or {}
+        return sensor_settings.get("interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL)
+
+    def resolve_daemonBackfillEnabled(self, _graphene_info):
+        backfill_settings = self._instance.get_settings("backfill") or {}
+        return backfill_settings.get("daemon_enabled")

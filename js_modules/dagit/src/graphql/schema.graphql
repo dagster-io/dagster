@@ -885,6 +885,7 @@ type Instance {
   executablePath: String!
   daemonHealth: DaemonHealth!
   sensorDaemonInterval: Int!
+  daemonBackfillEnabled: Boolean!
 }
 
 type RunLauncher {

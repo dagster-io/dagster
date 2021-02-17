@@ -488,10 +488,6 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
-    @property
-    def sensor_settings(self):
-        return self.get_settings("sensor_settings") or {}
-
     def upgrade(self, print_fn=lambda _: None):
         from dagster.core.storage.migration.utils import upgrading_instance
 
@@ -1483,11 +1479,12 @@ class DagsterInstance:
         )
 
         daemons = [SensorDaemon.daemon_type()]
+        backfill_settings = self.get_settings("backfill") or {}
         if isinstance(self.scheduler, DagsterDaemonScheduler):
             daemons.append(SchedulerDaemon.daemon_type())
         if isinstance(self.run_coordinator, QueuedRunCoordinator):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
-        if self.has_bulk_actions_table():
+        if backfill_settings.get("daemon_enabled"):
             daemons.append(BackfillDaemon.daemon_type())
         return daemons
 
