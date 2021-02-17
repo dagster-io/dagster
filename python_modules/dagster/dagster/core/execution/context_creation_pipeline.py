@@ -43,15 +43,23 @@ def construct_intermediate_storage_data(storage_init_context):
 
 
 def executor_def_from_config(mode_definition, environment_config):
-    for executor_def in mode_definition.executor_defs:
-        if executor_def.name == environment_config.execution.execution_engine_name:
-            return executor_def
+    selected_executor = environment_config.execution.execution_engine_name
+    if selected_executor is None:
+        if len(mode_definition.executor_defs) == 1:
+            return mode_definition.executor_defs[0]
 
-    check.failed(
-        "Could not find executor {}. Should have be caught by config system".format(
-            environment_config.execution.execution_engine_name
+        check.failed(
+            f"No executor selected but there are {len(mode_definition.executor_defs)} options."
         )
-    )
+
+    else:
+        for executor_def in mode_definition.executor_defs:
+            if executor_def.name == selected_executor:
+                return executor_def
+
+        check.failed(
+            f'Could not find executor "{selected_executor}". This should have been caught at config validation time.'
+        )
 
 
 # This represents all the data that is passed *into* context creation process.

@@ -4,6 +4,7 @@ from dagster.config import Field, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_optional_type
 from dagster.config.iterate_types import iterate_config_types
+from dagster.core.definitions.executor import in_process_executor
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
@@ -96,6 +97,20 @@ def define_logger_dictionary_cls(creation_data):
     )
 
 
+def define_execution_field(executor_defs):
+    default_in_process = False
+    for executor_def in executor_defs:
+        if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
+            default_in_process = True
+
+    selector = selector_for_named_defs(executor_defs)
+
+    if default_in_process:
+        return Field(selector, default_value={in_process_executor.name: {}})
+
+    return Field(selector)
+
+
 def define_storage_field(storage_selector, storage_names, defaults):
     """Define storage field using default options, if additional storage options have been provided."""
     # If no custom storage options have been provided,
@@ -141,10 +156,7 @@ def define_environment_cls(creation_data):
                 ),
                 "storage": storage_field,
                 "intermediate_storage": intermediate_storage_field,
-                "execution": Field(
-                    selector_for_named_defs(creation_data.mode_definition.executor_defs),
-                    is_required=False,
-                ),
+                "execution": define_execution_field(creation_data.mode_definition.executor_defs),
                 "loggers": Field(define_logger_dictionary_cls(creation_data)),
                 "resources": Field(
                     define_resource_dictionary_cls(creation_data.mode_definition.resource_defs)

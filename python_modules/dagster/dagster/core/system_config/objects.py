@@ -308,7 +308,8 @@ class ExecutionConfig(
         return super(ExecutionConfig, cls).__new__(
             cls,
             execution_engine_name=check.opt_str_param(
-                execution_engine_name, "execution_engine_name", "in_process"
+                execution_engine_name,
+                "execution_engine_name",  # "in_process"
             ),
             execution_engine_config=check.opt_dict_param(
                 execution_engine_config, "execution_engine_config", key_type=str
