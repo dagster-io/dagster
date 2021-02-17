@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from types import MethodType
 
 import pendulum
+import pkg_resources
 
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
@@ -134,7 +135,8 @@ def get_current_datetime_in_utc():
 
 
 def get_timestamp_from_utc_datetime(utc_datetime):
-    if isinstance(utc_datetime, pendulum.Pendulum):
+
+    if isinstance(utc_datetime, PendulumDateTime):
         return utc_datetime.timestamp()
 
     if utc_datetime.tzinfo != get_utc_timezone():
@@ -170,3 +172,47 @@ def get_import_error_message(import_error):
 @contextmanager
 def nullcontext():
     yield
+
+
+_IS_PENDULUM_2 = pkg_resources.get_distribution("pendulum").version.split(".")[0] == "2"
+
+
+@contextmanager
+def mock_pendulum_timezone(override_timezone):
+    if _IS_PENDULUM_2:
+        with pendulum.tz.test_local_timezone(  # pylint: disable=no-member
+            pendulum.tz.timezone(override_timezone)  # pylint: disable=no-member
+        ):
+
+            yield
+    else:
+        with pendulum.tz.LocalTimezone.test(  # pylint: disable=no-member
+            pendulum.Timezone.load(override_timezone)  # pylint: disable=no-member
+        ):
+
+            yield
+
+
+def create_pendulum_time(year, month, day, *args, **kwargs):
+    return (
+        pendulum.datetime(  # pylint: disable=no-member, pendulum-create
+            year, month, day, *args, **kwargs
+        )
+        if _IS_PENDULUM_2
+        else pendulum.create(  # pylint: disable=no-member, pendulum-create
+            year, month, day, *args, **kwargs
+        )
+    )
+
+
+PendulumDateTime = (
+    pendulum.DateTime if _IS_PENDULUM_2 else pendulum.Pendulum  # pylint: disable=no-member
+)
+
+# Workaround for issues with .in_tz() in pendulum:
+# https://github.com/sdispater/pendulum/issues/535
+def to_timezone(dt, tz):
+    from dagster import check
+
+    check.inst_param(dt, "dt", PendulumDateTime)
+    return pendulum.from_timestamp(dt.timestamp(), tz=tz)

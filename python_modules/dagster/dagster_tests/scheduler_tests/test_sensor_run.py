@@ -17,6 +17,7 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.sensor import execute_sensor_iteration
+from dagster.seven import create_pendulum_time, to_timezone
 
 
 @solid
@@ -160,14 +161,10 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_simple_sensor(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
@@ -209,7 +206,7 @@ def test_simple_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
 
-            expected_datetime = pendulum.datetime(
+            expected_datetime = create_pendulum_time(
                 year=2019, month=2, day=28, hour=0, minute=0, second=29
             )
             validate_tick(
@@ -234,14 +231,10 @@ def test_simple_sensor(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_error_sensor(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("error_sensor")
@@ -276,14 +269,17 @@ def test_error_sensor(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_wrong_config_sensor(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+        ),
+        "US/Central",
+    )
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("wrong_config_sensor")
@@ -333,14 +329,10 @@ def test_wrong_config_sensor(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_launch_failure(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
     with instance_with_sensors(
         external_repo_context,
         overrides={
@@ -378,14 +370,18 @@ def test_launch_failure(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_launch_once(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
 
@@ -458,7 +454,9 @@ def test_launch_once(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_custom_interval_sensor(external_repo_context):
-    freeze_datetime = pendulum.datetime(year=2019, month=2, day=28).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
+    )
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
@@ -488,5 +486,5 @@ def test_custom_interval_sensor(external_repo_context):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
 
-            expected_datetime = pendulum.datetime(year=2019, month=2, day=28, hour=0, minute=1)
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=1)
             validate_tick(ticks[0], external_sensor, expected_datetime, JobTickStatus.SKIPPED)

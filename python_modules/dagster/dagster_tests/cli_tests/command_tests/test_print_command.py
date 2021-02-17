@@ -1,6 +1,7 @@
 import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_print_command, pipeline_print_command
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 
 from .test_cli_commands import (
@@ -27,27 +28,30 @@ def test_print_command(gen_pipeline_args):
 
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_no_preset())
 def test_print_command_cli(pipeline_cli_args):
-    runner = CliRunner()
+    with instance_for_test():
 
-    result = runner.invoke(pipeline_print_command, pipeline_cli_args)
-    assert result.exit_code == 0, result.stdout
+        runner = CliRunner()
 
-    result = runner.invoke(pipeline_print_command, ["--verbose"] + pipeline_cli_args)
-    assert result.exit_code == 0, result.stdout
+        result = runner.invoke(pipeline_print_command, pipeline_cli_args)
+        assert result.exit_code == 0, result.stdout
+
+        result = runner.invoke(pipeline_print_command, ["--verbose"] + pipeline_cli_args)
+        assert result.exit_code == 0, result.stdout
 
 
 def test_print_command_baz():
-    runner = CliRunner()
-    res = runner.invoke(
-        pipeline_print_command,
-        [
-            "--verbose",
-            "-f",
-            file_relative_path(__file__, "test_cli_commands.py"),
-            "-a",
-            "bar",
-            "-p",
-            "baz",
-        ],
-    )
-    assert res.exit_code == 0, res.stdout
+    with instance_for_test():
+        runner = CliRunner()
+        res = runner.invoke(
+            pipeline_print_command,
+            [
+                "--verbose",
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-a",
+                "bar",
+                "-p",
+                "baz",
+            ],
+        )
+        assert res.exit_code == 0, res.stdout

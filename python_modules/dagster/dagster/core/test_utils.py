@@ -17,6 +17,7 @@ from dagster.core.run_coordinator import RunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
+from dagster.seven import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -244,7 +245,7 @@ def new_cwd(path):
 
 def today_at_midnight(timezone_name=None):
     now = pendulum.now(timezone_name)
-    return pendulum.create(now.year, now.month, now.day, tz=now.timezone.name)
+    return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
 
 
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
@@ -369,7 +370,7 @@ _mocked_system_timezone = {"timezone": None}
 
 @contextmanager
 def mock_system_timezone(override_timezone):
-    with pendulum.tz.LocalTimezone.test(pendulum.Timezone.load(override_timezone)):
+    with mock_pendulum_timezone(override_timezone):
         try:
             _mocked_system_timezone["timezone"] = override_timezone
             yield

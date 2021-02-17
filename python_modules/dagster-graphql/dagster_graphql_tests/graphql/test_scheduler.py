@@ -8,6 +8,7 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster.core.scheduler.job import JobState, JobStatus, JobType, ScheduleJobData
+from dagster.seven import create_pendulum_time
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -276,7 +277,7 @@ def test_get_single_schedule_definition(graphql_context):
 
     schedule_selector = infer_schedule_selector(context, "timezone_schedule")
 
-    future_ticks_start_time = pendulum.create(2019, 2, 27, tz="US/Central").timestamp()
+    future_ticks_start_time = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
 
     result = execute_dagster_graphql(
         context,
@@ -294,14 +295,16 @@ def test_get_single_schedule_definition(graphql_context):
     timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
 
     assert timestamps == [
-        pendulum.create(2019, 2, 27, tz="US/Central").timestamp(),
-        pendulum.create(2019, 2, 28, tz="US/Central").timestamp(),
-        pendulum.create(2019, 3, 1, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 2, 28, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp(),
     ]
 
     cursor = future_ticks["cursor"]
 
-    assert future_ticks["cursor"] == (pendulum.create(2019, 3, 1, tz="US/Central").timestamp() + 1)
+    assert future_ticks["cursor"] == (
+        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp() + 1
+    )
 
     result = execute_dagster_graphql(
         context,
@@ -316,9 +319,9 @@ def test_get_single_schedule_definition(graphql_context):
     timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
 
     assert timestamps == [
-        pendulum.create(2019, 3, 2, tz="US/Central").timestamp(),
-        pendulum.create(2019, 3, 3, tz="US/Central").timestamp(),
-        pendulum.create(2019, 3, 4, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 3, 2, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 3, 3, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 3, 4, tz="US/Central").timestamp(),
     ]
 
 
@@ -394,7 +397,7 @@ def test_next_tick_bad_schedule(graphql_context):
 
 def test_get_unloadable_job(graphql_context):
     instance = graphql_context.instance
-    initial_datetime = pendulum.datetime(
+    initial_datetime = create_pendulum_time(
         year=2019,
         month=2,
         day=27,

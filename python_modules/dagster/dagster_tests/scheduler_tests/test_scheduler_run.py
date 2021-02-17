@@ -37,6 +37,7 @@ from dagster.core.test_utils import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.scheduler import launch_scheduled_runs
+from dagster.seven import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
@@ -357,7 +358,7 @@ def validate_run_started(
     partition_fmt=DEFAULT_DATE_FORMAT,
     expected_success=True,
 ):
-    assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == execution_time.in_tz("UTC").isoformat()
+    assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == to_timezone(execution_time, "UTC").isoformat()
 
     if partition_time:
         assert run.tags[PARTITION_NAME_TAG] == partition_time.strftime(partition_fmt)
@@ -392,14 +393,10 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_simple_schedule(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -447,7 +444,7 @@ def test_simple_schedule(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
 
-            expected_datetime = pendulum.datetime(year=2019, month=2, day=28)
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
@@ -460,8 +457,8 @@ def test_simple_schedule(external_repo_context, capfd):
             wait_for_all_runs_to_start(instance)
             validate_run_started(
                 instance.get_runs()[0],
-                execution_time=pendulum.datetime(2019, 2, 28),
-                partition_time=pendulum.datetime(2019, 2, 27),
+                execution_time=create_pendulum_time(2019, 2, 28),
+                partition_time=create_pendulum_time(2019, 2, 27),
             )
 
             captured = capfd.readouterr()
@@ -572,7 +569,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                 "daily_schedule_without_timezone"
             )
             schedule_origin = external_schedule.get_external_origin()
-            initial_datetime = pendulum.create(
+            initial_datetime = create_pendulum_time(
                 year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="US/Eastern"
             )
 
@@ -596,9 +593,9 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                     in captured.out
                 )
 
-                expected_datetime = pendulum.create(
-                    year=2019, month=2, day=27, tz="US/Eastern"
-                ).in_tz("UTC")
+                expected_datetime = to_timezone(
+                    create_pendulum_time(year=2019, month=2, day=27, tz="US/Eastern"), "UTC"
+                )
 
                 validate_tick(
                     ticks[0],
@@ -612,7 +609,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                 validate_run_started(
                     instance.get_runs()[0],
                     execution_time=expected_datetime,
-                    partition_time=pendulum.create(2019, 2, 26, tz="US/Eastern"),
+                    partition_time=create_pendulum_time(2019, 2, 26, tz="US/Eastern"),
                 )
 
                 # Verify idempotence
@@ -627,7 +624,9 @@ def test_bad_env_fn(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("bad_env_fn_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
@@ -661,7 +660,7 @@ def test_bad_should_execute(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(
+        initial_datetime = create_pendulum_time(
             year=2019,
             month=2,
             day=27,
@@ -705,14 +704,10 @@ def test_skip(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("skip_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(
-            year=2019,
-            month=2,
-            day=27,
-            hour=0,
-            minute=0,
-            second=0,
-        ).in_tz("US/Central")
+        initial_datetime = to_timezone(
+            create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"),
+            "US/Central",
+        )
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
@@ -744,7 +739,9 @@ def test_wrong_config(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
@@ -759,7 +756,7 @@ def test_wrong_config(external_repo_context, capfd):
             validate_run_started(
                 run,
                 execution_time=initial_datetime,
-                partition_time=pendulum.datetime(2019, 2, 26),
+                partition_time=create_pendulum_time(2019, 2, 26),
                 expected_success=False,
             )
 
@@ -815,7 +812,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
         good_origin = good_schedule.get_external_origin()
         bad_origin = bad_schedule.get_external_origin()
         unloadable_origin = _get_unloadable_schedule_origin()
-        initial_datetime = pendulum.datetime(
+        initial_datetime = create_pendulum_time(
             year=2019,
             month=2,
             day=27,
@@ -844,7 +841,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             validate_run_started(
                 instance.get_runs()[0],
                 execution_time=initial_datetime,
-                partition_time=pendulum.datetime(2019, 2, 26),
+                partition_time=create_pendulum_time(2019, 2, 26),
             )
 
             good_ticks = instance.get_job_ticks(good_origin.get_id())
@@ -889,7 +886,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             validate_run_started(
                 good_schedule_runs[0],
                 execution_time=new_now,
-                partition_time=pendulum.datetime(2019, 2, 27),
+                partition_time=create_pendulum_time(2019, 2, 27),
             )
 
             good_ticks = instance.get_job_ticks(good_origin.get_id())
@@ -909,7 +906,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             validate_run_started(
                 bad_schedule_runs[0],
                 execution_time=new_now,
-                partition_time=pendulum.datetime(2019, 2, 27),
+                partition_time=create_pendulum_time(2019, 2, 27),
             )
 
             bad_ticks = instance.get_job_ticks(bad_origin.get_id())
@@ -936,7 +933,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
 
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(
+        initial_datetime = create_pendulum_time(
             year=2019,
             month=2,
             day=27,
@@ -959,7 +956,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
 def test_bad_load(capfd):
     with schedule_instance() as instance:
         fake_origin = _get_unloadable_schedule_origin()
-        initial_datetime = pendulum.datetime(
+        initial_datetime = create_pendulum_time(
             year=2019,
             month=2,
             day=27,
@@ -1005,14 +1002,12 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         external_hourly_schedule = external_repo.get_external_schedule("simple_hourly_schedule")
-        initial_datetime = pendulum.datetime(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-        ).in_tz("US/Central")
+        initial_datetime = to_timezone(
+            create_pendulum_time(
+                year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"
+            ),
+            "US/Central",
+        )
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
             instance.start_schedule_and_update_storage_state(external_hourly_schedule)
@@ -1089,14 +1084,10 @@ def test_launch_failure(external_repo_context, capfd):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
 
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(
-            year=2019,
-            month=2,
-            day=27,
-            hour=0,
-            minute=0,
-            second=0,
-        ).in_tz("US/Central")
+        initial_datetime = to_timezone(
+            create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"),
+            "US/Central",
+        )
 
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
@@ -1110,7 +1101,7 @@ def test_launch_failure(external_repo_context, capfd):
             validate_run_started(
                 run,
                 execution_time=initial_datetime,
-                partition_time=pendulum.datetime(2019, 2, 26),
+                partition_time=create_pendulum_time(2019, 2, 26),
                 expected_success=False,
             )
 
@@ -1137,7 +1128,7 @@ def test_launch_failure(external_repo_context, capfd):
 
 
 def test_partitionless_schedule(capfd):
-    initial_datetime = pendulum.create(year=2019, month=2, day=27, tz="US/Central")
+    initial_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="US/Central")
     with instance_with_schedules(default_repo) as (instance, external_repo):
         with pendulum.test(initial_datetime):
             external_schedule = external_repo.get_external_schedule("partitionless_schedule")
@@ -1158,14 +1149,14 @@ def test_partitionless_schedule(capfd):
             validate_tick(
                 ticks[0],
                 external_schedule,
-                pendulum.create(year=2019, month=3, day=4, tz="US/Central"),
+                create_pendulum_time(year=2019, month=3, day=4, tz="US/Central"),
                 JobTickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
             )
 
             validate_run_started(
                 instance.get_runs()[0],
-                execution_time=pendulum.create(year=2019, month=3, day=4, tz="US/Central"),
+                execution_time=create_pendulum_time(year=2019, month=3, day=4, tz="US/Central"),
                 partition_time=None,
             )
 
@@ -1184,9 +1175,10 @@ def test_partitionless_schedule(capfd):
 
 
 def test_max_catchup_runs(capfd):
-    initial_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59
-    ).in_tz("US/Central")
+    initial_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
     with instance_with_schedules(default_repo) as (instance, external_repo):
         with pendulum.test(initial_datetime):
             external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -1209,7 +1201,7 @@ def test_max_catchup_runs(capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 2
 
-            first_datetime = pendulum.datetime(year=2019, month=3, day=4)
+            first_datetime = create_pendulum_time(year=2019, month=3, day=4)
 
             wait_for_all_runs_to_start(instance)
 
@@ -1223,10 +1215,10 @@ def test_max_catchup_runs(capfd):
             validate_run_started(
                 instance.get_runs()[0],
                 execution_time=first_datetime,
-                partition_time=pendulum.datetime(2019, 3, 3),
+                partition_time=create_pendulum_time(2019, 3, 3),
             )
 
-            second_datetime = pendulum.datetime(year=2019, month=3, day=3)
+            second_datetime = create_pendulum_time(year=2019, month=3, day=3)
 
             validate_tick(
                 ticks[1],
@@ -1239,7 +1231,7 @@ def test_max_catchup_runs(capfd):
             validate_run_started(
                 instance.get_runs()[1],
                 execution_time=second_datetime,
-                partition_time=pendulum.datetime(2019, 3, 2),
+                partition_time=create_pendulum_time(2019, 3, 2),
             )
 
             captured = capfd.readouterr()
@@ -1256,14 +1248,18 @@ def test_max_catchup_runs(capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_multi_runs(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019,
-        month=2,
-        day=27,
-        hour=23,
-        minute=59,
-        second=59,
-    ).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("multi_run_schedule")
@@ -1296,7 +1292,7 @@ def test_multi_runs(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
 
-            expected_datetime = pendulum.datetime(year=2019, month=2, day=28)
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
 
             runs = instance.get_runs()
             validate_tick(
@@ -1309,8 +1305,8 @@ def test_multi_runs(external_repo_context, capfd):
 
             wait_for_all_runs_to_start(instance)
             runs = instance.get_runs()
-            validate_run_started(runs[0], execution_time=pendulum.datetime(2019, 2, 28))
-            validate_run_started(runs[1], execution_time=pendulum.datetime(2019, 2, 28))
+            validate_run_started(runs[0], execution_time=create_pendulum_time(2019, 2, 28))
+            validate_run_started(runs[1], execution_time=create_pendulum_time(2019, 2, 28))
 
             captured = capfd.readouterr()
 
@@ -1356,7 +1352,9 @@ def test_multi_runs(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_multi_runs_missing_run_key(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(year=2019, month=2, day=27).in_tz("US/Central")
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"), "US/Central"
+    )
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule(

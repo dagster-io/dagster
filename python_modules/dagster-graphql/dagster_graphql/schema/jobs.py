@@ -17,6 +17,7 @@ from dagster.core.scheduler.job import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
+from dagster.seven import to_timezone
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
@@ -165,7 +166,7 @@ class GrapheneFutureJobTick(graphene.ObjectType):
             timezone_str = pendulum.now().timezone.name
 
         next_tick_datetime = next(external_schedule.execution_time_iterator(self._timestamp))
-        schedule_time = pendulum.instance(next_tick_datetime).in_tz(timezone_str)
+        schedule_time = to_timezone(pendulum.instance(next_tick_datetime), timezone_str)
         schedule_data = repository_location.get_external_schedule_execution_data(
             instance=graphene_info.context.instance,
             repository_handle=repository.handle,
