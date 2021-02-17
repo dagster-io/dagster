@@ -76,3 +76,38 @@ Here, we can turn sensors on and off, and also see past executions of each senso
 The `dagster` command-line tool contains a number of options to manage sensors. You can view the set of known sensors, turn them on and off, and preview the set of runs that will be requested in the next evaluation of the sensor.
 
 You can view the full set of sensor command-line options by running `dagster sensor --help`.
+
+### Custom evaluation intervals
+
+By default, sensors are configured to run roughly every 30 seconds. This is determined by two
+factors: the minimum interval specified on the sensor definition, and the sensor daemon
+configuration. The minimum interval specified on the sensor definition guarantees that the sensor
+will not be evaluated at more frequently than that interval. The daemon interval determines how
+often the daemon checks to see if any of the running sensors in the workspace have satisfied the
+minimum interval.
+
+In practice, the frequency at which any particular sensor will be evaluated equals the minimum
+multiple of the daemon interval that is larger than or equal to the individual sensor's minimum
+interval.
+
+For example, here are two sensors that are defined with two different intervals:
+
+```python literalinclude caption=sensor.py
+file:/docs_snippets/docs_snippets/overview/schedules_partitions/sensor_definition.py
+startAfter:start_sensor_marker_1
+endBefore:end_sensor_marker_1
+```
+
+If we keep the same default of 30 seconds for the sensor daemon interval, the sensor daemon will
+check to see if `sensor_A` and `sensor_B` have satisfied their minimum interval requirements. It
+will see that `sensor_A` has satisfied it and evaluate its function. It will see that `sensor_B`
+has not and will wait until the next loop to evaluate it. This means that the effective interval
+for sensor evaluations is 30 seconds for `sensor_A` and 60 seconds for `sensor_B`.
+
+We can adjust the sensor daemon configuration in our `dagster.yaml` file:
+
+```yaml literalinclude caption=dagster.yaml
+file:/docs_snippets/docs_snippets/overview/schedules_partitions/dagster.yaml
+```
+
+Now, the effective interval for each sensor should be 30 seconds and 45 seconds, respectively.

@@ -2,6 +2,7 @@ import sys
 
 import graphene
 from dagster import DagsterInstance, check
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.launcher.base import RunLauncher
 from dagster.daemon.controller import get_daemon_status
 from dagster.daemon.types import DaemonStatus
@@ -87,6 +88,7 @@ class GrapheneInstance(graphene.ObjectType):
     runQueuingSupported = graphene.NonNull(graphene.Boolean)
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
+    sensorDaemonInterval = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "Instance"
@@ -118,3 +120,8 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_daemonHealth(self, _graphene_info):
         return GrapheneDaemonHealth(instance=self._instance)
+
+    def resolve_sensorDaemonInterval(self, _graphene_info):
+        return self._instance.sensor_settings.get(
+            "interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
+        )

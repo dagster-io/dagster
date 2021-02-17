@@ -14,6 +14,7 @@ import {SensorFragment} from 'src/sensors/types/SensorFragment';
 import {StartSensor} from 'src/sensors/types/StartSensor';
 import {StopSensor} from 'src/sensors/types/StopSensor';
 import {JobStatus, JobType} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {CountdownStatus, useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
@@ -53,10 +54,19 @@ export const SensorDetails: React.FC<{
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
+  daemonInterval: number;
   countdownDuration: number;
   countdownStatus: CountdownStatus;
   onRefresh: () => void;
-}> = ({sensor, repoAddress, daemonHealth, countdownDuration, countdownStatus, onRefresh}) => {
+}> = ({
+  sensor,
+  repoAddress,
+  daemonHealth,
+  daemonInterval,
+  countdownDuration,
+  countdownStatus,
+  onRefresh,
+}) => {
   const {
     name,
     pipelineName,
@@ -83,6 +93,8 @@ export const SensorDetails: React.FC<{
   const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
   const seconds = Math.floor(timeRemaining / 1000);
 
+  const intervalMismatch = sensor.minIntervalSeconds % daemonInterval;
+
   const onChangeSwitch = () => {
     if (status === JobStatus.RUNNING) {
       stopSensor({variables: {jobOriginId}});
@@ -92,9 +104,24 @@ export const SensorDetails: React.FC<{
   };
 
   const latestTick = ticks.length ? ticks[0] : null;
+  const actualInterval =
+    Math.floor(sensor.minIntervalSeconds / daemonInterval + 1) * daemonInterval;
 
   return (
     <Group direction="column" spacing={16}>
+      {intervalMismatch ? (
+        <Alert
+          intent="warning"
+          title="The configured sensor interval is offset from the instance settings"
+          description={
+            <div>
+              This sensor is configured to be evaluated every {sensor.minIntervalSeconds} while the
+              instance sensor daemon is configured to run every {daemonInterval} seconds. In
+              practice, the sensor will evaluate every ~{actualInterval} seconds.
+            </div>
+          }
+        />
+      ) : null}
       <PageHeader
         title={
           <Group alignItems="center" direction="row" spacing={8}>
