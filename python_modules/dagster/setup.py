@@ -71,7 +71,7 @@ if __name__ == "__main__":
             "pyrsistent>=0.14.8",
             "python-dateutil",
             "requests",
-            "rx<=1.6.1",  # 3.0 was a breaking change.
+            "rx",
             "tabulate",
             "tqdm",
             "sqlalchemy>=1.0",
