@@ -27,5 +27,8 @@ def test_new_repo_command_fails_when_file_path_exists():
 def test_new_repo_command_succeeds():
     runner = CliRunner()
     with runner.isolated_filesystem():
-        result = runner.invoke(new_repo_cli, ["my-repo"])
+        result = runner.invoke(new_repo_cli, ["my_repo"])
         assert result.exit_code == 0
+        assert os.path.exists("my_repo")
+        assert os.path.exists("my_repo/my_repo")
+        assert os.path.exists("my_repo/my_repo_tests")
