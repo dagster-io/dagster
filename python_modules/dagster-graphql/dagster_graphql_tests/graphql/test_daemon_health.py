@@ -30,12 +30,6 @@ query InstanceDetailSummaryQuery {
                 healthy
                 lastHeartbeatTime
             }
-            backfill: daemonStatus(daemonType: "BACKFILL") {
-                daemonType
-                required
-                healthy
-                lastHeartbeatTime
-            }
         }
     }
 }
@@ -104,12 +98,6 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                         "healthy": False if scheduler_required else None,
                         "lastHeartbeatTime": None,
                     },
-                    "backfill": {
-                        "daemonType": "BACKFILL",
-                        "required": True,
-                        "healthy": False,
-                        "lastHeartbeatTime": None,
-                    },
                 }
             }
         }
@@ -142,16 +130,6 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                         ]
                         if scheduler_required
                         else []
-                    )
-                    + (
-                        [
-                            {
-                                "daemonType": "BACKFILL",
-                                "required": True,
-                                "healthy": False,
-                                "lastHeartbeatTime": None,
-                            }
-                        ]
                     ),
                 }
             }

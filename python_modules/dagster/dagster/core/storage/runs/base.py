@@ -274,24 +274,3 @@ class RunStorage(ABC):
     @abstractmethod
     def wipe_daemon_heartbeats(self):
         """Wipe all daemon heartbeats"""
-
-    # Backfill storage
-    @abstractmethod
-    def has_bulk_actions_table(self):
-        """ Bulk actions table table """
-
-    @abstractmethod
-    def get_backfills(self, status=None):
-        """ Get a list of partition backfills """
-
-    @abstractmethod
-    def get_backfill(self, backfill_id):
-        """ Get a list of partition backfills """
-
-    @abstractmethod
-    def add_backfill(self, partition_backfill):
-        """ Add partition backfill to run storage """
-
-    @abstractmethod
-    def update_backfill(self, partition_backfill):
-        """ Update a partition backfill in run storage """

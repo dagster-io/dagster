@@ -7,13 +7,8 @@ from enum import Enum
 
 import sqlalchemy as db
 from dagster import check
-from dagster.core.errors import (
-    DagsterInvariantViolationError,
-    DagsterRunAlreadyExists,
-    DagsterSnapshotDoesNotExist,
-)
+from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -29,7 +24,6 @@ from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
 from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
-    BulkActionsTable,
     DaemonHeartbeatsTable,
     RunTagsTable,
     RunsTable,
@@ -672,54 +666,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
-
-    def has_bulk_actions_table(self):
-        with self.connect() as conn:
-            inspector = db.engine.reflection.Inspector.from_engine(conn.engine)
-            return "bulk_actions" in inspector.get_table_names()
-
-    def get_backfills(self, status=None):
-        check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db.select([BulkActionsTable.c.body])
-        if status:
-            query = query.where(BulkActionsTable.c.status == status.value)
-        rows = self.fetchall(query)
-        return [deserialize_json_to_dagster_namedtuple(row[0]) for row in rows]
-
-    def get_backfill(self, backfill_id):
-        check.str_param(backfill_id, "backfill_id")
-        query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
-        row = self.fetchone(query)
-        return deserialize_json_to_dagster_namedtuple(row[0]) if row else None
-
-    def add_backfill(self, partition_backfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        with self.connect() as conn:
-            conn.execute(
-                BulkActionsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    key=partition_backfill.backfill_id,
-                    status=partition_backfill.status.value,
-                    timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-                    body=serialize_dagster_namedtuple(partition_backfill),
-                )
-            )
-
-    def update_backfill(self, partition_backfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        backfill_id = partition_backfill.backfill_id
-        if not self.get_backfill(backfill_id):
-            raise DagsterInvariantViolationError(
-                f"Backfill {backfill_id} is not present in storage"
-            )
-        with self.connect() as conn:
-            conn.execute(
-                BulkActionsTable.update()  # pylint: disable=no-value-for-parameter
-                .where(BulkActionsTable.c.key == backfill_id)
-                .values(
-                    status=partition_backfill.status.value,
-                    body=serialize_dagster_namedtuple(partition_backfill),
-                )
-            )
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

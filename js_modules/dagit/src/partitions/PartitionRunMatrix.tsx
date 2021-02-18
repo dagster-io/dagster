@@ -63,13 +63,6 @@ interface PartitionRunMatrixProps {
   setStepQuery: (val: string) => void;
 }
 
-const _backfillIdFromTags = (runTags: TokenizingFieldValue[]) => {
-  const [backfillId] = runTags
-    .filter((_) => _.token === 'tag' && _.value.startsWith('dagster/backfill='))
-    .map((_) => _.value.split('=')[1]);
-  return backfillId;
-};
-
 export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
   const {viewport, containerProps} = useViewport();
   const [colorizeSliceUnix, setColorizeSliceUnix] = React.useState(0);
@@ -201,12 +194,12 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             tokens={props.runTags}
           />
         </Group>
-        {props.runTags.length && _backfillIdFromTags(props.runTags) ? (
+        {props.runTags.length ? (
           <Box flex={{grow: 1}} margin={{left: 12, right: 8}}>
             <PartitionProgress
               pipelineName={props.pipelineName}
               repoAddress={props.repoAddress}
-              backfillId={_backfillIdFromTags(props.runTags)}
+              runTags={props.runTags}
             />
           </Box>
         ) : null}
@@ -380,7 +373,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                   <div
                     key={name}
                     className={`
-                      square
+                      square 
                       ${p.runs.length === 0 && 'empty'}
                       ${(options.showPrevious
                         ? color

@@ -3,7 +3,6 @@ from collections import OrderedDict, defaultdict
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -35,7 +34,6 @@ class InMemoryRunStorage(RunStorage):
         self._run_tags = defaultdict(dict)
         self._pipeline_snapshots = OrderedDict()
         self._ep_snapshots = OrderedDict()
-        self._bulk_actions = OrderedDict()
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
@@ -252,26 +250,3 @@ class InMemoryRunStorage(RunStorage):
         raise NotImplementedError(
             "The dagster daemon lives in a separate process. It cannot use in memory storage."
         )
-
-    def has_bulk_actions_table(self):
-        return True
-
-    def get_backfills(self, status=None):
-        check.opt_inst_param(status, "status", BulkActionStatus)
-        return [
-            backfill
-            for backfill in self._bulk_actions.values()
-            if not status or status == backfill.status
-        ]
-
-    def get_backfill(self, backfill_id):
-        check.str_param(backfill_id, "backfill_id")
-        return self._bulk_actions.get(backfill_id)
-
-    def add_backfill(self, partition_backfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        self._bulk_actions[partition_backfill.backfill_id] = partition_backfill
-
-    def update_backfill(self, partition_backfill):
-        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        self._bulk_actions[partition_backfill.backfill_id] = partition_backfill

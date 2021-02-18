@@ -25,7 +25,6 @@ type Query {
   instance: Instance!
   assetsOrError(prefixPath: [String!]): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
-  partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -925,25 +924,6 @@ input AssetKeyInput {
   path: [String!]!
 }
 
-union PartitionBackfillOrError = PartitionBackfill | PythonError
-
-type PartitionBackfill {
-  backfillId: String!
-  status: BulkActionStatus!
-  isPersisted: Boolean!
-  numRequested: Int
-  numTotal: Int
-  fromFailure: Boolean
-  reexecutionSteps: [String!]
-  runs(limit: Int): [PipelineRun!]!
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-}
-
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
@@ -1058,7 +1038,7 @@ union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundE
 
 type PartitionBackfillSuccess {
   backfillId: String!
-  launchedRunIds: [String]
+  launchedRunIds: [String!]!
 }
 
 input PartitionBackfillParams {
@@ -1067,7 +1047,6 @@ input PartitionBackfillParams {
   reexecutionSteps: [String!]
   fromFailure: Boolean
   tags: [ExecutionTag!]
-  forceSynchronousSubmission: Boolean
 }
 
 input PartitionSetSelector {

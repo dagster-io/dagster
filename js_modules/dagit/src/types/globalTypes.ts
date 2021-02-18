@@ -8,12 +8,6 @@
 // START Enums and Input Objects
 //==============================================================
 
-export enum BulkActionStatus {
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-  REQUESTED = "REQUESTED",
-}
-
 export enum ComputeIOType {
   STDERR = "STDERR",
   STDOUT = "STDOUT",
@@ -132,7 +126,6 @@ export interface PartitionBackfillParams {
   reexecutionSteps?: string[] | null;
   fromFailure?: boolean | null;
   tags?: ExecutionTag[] | null;
-  forceSynchronousSubmission?: boolean | null;
 }
 
 export interface PartitionSetSelector {

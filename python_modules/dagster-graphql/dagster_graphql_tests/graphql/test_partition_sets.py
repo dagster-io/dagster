@@ -210,7 +210,6 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                         "partitionSetName": "integer_partition",
                     },
                     "partitionNames": ["2", "3"],
-                    "forceSynchronousSubmission": True,
                 }
             },
         )
@@ -250,7 +249,6 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                         "partitionSetName": "integer_partition",
                     },
                     "partitionNames": ["2", "3"],
-                    "forceSynchronousSubmission": True,
                 }
             },
         )
@@ -288,7 +286,6 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                         "partitionSetName": "integer_partition",
                     },
                     "partitionNames": [str(num) for num in range(10)],
-                    "forceSynchronousSubmission": True,
                 }
             },
         )

@@ -5,7 +5,6 @@ from abc import abstractclassmethod, abstractmethod
 import pendulum
 from dagster import DagsterInstance, check
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
-from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler import execute_scheduler_iteration
 from dagster.scheduler.sensor import execute_sensor_iteration
@@ -193,18 +192,3 @@ class SensorDaemon(DagsterDaemon):
 
     def run_iteration(self, instance):
         return execute_sensor_iteration(instance, self._logger)
-
-
-class BackfillDaemon(DagsterDaemon):
-    @staticmethod
-    def create_from_instance(_instance):
-        from dagster.daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
-
-        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
-
-    @classmethod
-    def daemon_type(cls):
-        return "BACKFILL"
-
-    def run_iteration(self, instance):
-        return execute_backfill_iteration(instance, self._logger)

@@ -6,7 +6,6 @@ from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.daemon import (
     DAEMON_HEARTBEAT_INTERVAL_SECONDS,
-    BackfillDaemon,
     DagsterDaemon,
     SchedulerDaemon,
     SensorDaemon,
@@ -122,8 +121,6 @@ def create_daemon_of_type(daemon_type):
         return SensorDaemon.create_from_instance(DagsterInstance.get())
     elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
         return QueuedRunCoordinatorDaemon.create_from_instance(DagsterInstance.get())
-    elif daemon_type == BackfillDaemon.daemon_type():
-        return BackfillDaemon.create_from_instance(DagsterInstance.get())
     else:
         raise Exception("Unexpected daemon type {daemon_type}".format(daemon_type=daemon_type))
 
