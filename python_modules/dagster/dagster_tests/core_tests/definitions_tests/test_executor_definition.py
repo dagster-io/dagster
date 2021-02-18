@@ -200,3 +200,19 @@ def test_defaulting_behavior():
 
     result = execute_pipeline(executor_options, run_config={"execution": {"my_other_executor": {}}})
     assert result.success
+
+    @executor(config_schema=str)
+    def needs_config(_):
+        from dagster.core.executor.in_process import InProcessExecutor
+
+        return InProcessExecutor(
+            retries=Retries.from_config({"enabled": {}}),
+            marker_to_close=None,
+        )
+
+    @pipeline(mode_defs=[ModeDefinition(executor_defs=[needs_config])])
+    def one_but_needs_config():
+        pass
+
+    with pytest.raises(DagsterInvalidConfigError):
+        execute_pipeline(one_but_needs_config)
