@@ -736,37 +736,62 @@ _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: typing.Dict[type, DagsterType] = 
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
 
 
-def make_python_type_usable_as_dagster_type(python_type, dagster_type):
+def make_python_type_usable_as_dagster_type(
+    python_type: typing.Type, dagster_type: DagsterType
+) -> None:
     """
     Take any existing python type and map it to a dagster type (generally created with
     :py:class:`DagsterType <dagster.DagsterType>`) This can only be called once
     on a given python type.
     """
+    check.inst_param(python_type, "python_type", type)
     check.inst_param(dagster_type, "dagster_type", DagsterType)
-    if (
-        _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(python_type, dagster_type)
-        is not dagster_type
-    ):
+    registered_dagster_type = _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(python_type)
+
+    if registered_dagster_type is None:
+        _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[python_type] = dagster_type
+    elif registered_dagster_type is not dagster_type:
         # This would be just a great place to insert a short URL pointing to the type system
         # documentation into the error message
         # https://github.com/dagster-io/dagster/issues/1831
-        raise DagsterInvalidDefinitionError(
-            (
-                "A Dagster type has already been registered for the Python type "
-                "{python_type}. make_python_type_usable_as_dagster_type can only "
-                "be called once on a python type as it is registering a 1:1 mapping "
-                "between that python type and a dagster type."
-            ).format(python_type=python_type)
-        )
-
-    _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[python_type] = dagster_type
+        if isinstance(registered_dagster_type, TypeHintInferredDagsterType):
+            raise DagsterInvalidDefinitionError(
+                f"A Dagster type has already been registered for the Python type "
+                f'{python_type}. The Dagster type was "auto-registered" - i.e. a solid definition '
+                f"used the Python type as an annotation for one of its arguments or for its return "
+                f"value before make_python_type_usable_as_dagster_type was called, and we "
+                f"generated a Dagster type to correspond to it. To override the auto-generated "
+                f"Dagster type, call make_python_type_usable_as_dagster_type before any solid "
+                f"definitions refer to the Python type."
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"A Dagster type has already been registered for the Python type "
+                f"{python_type}. make_python_type_usable_as_dagster_type can only "
+                f"be called once on a python type as it is registering a 1:1 mapping "
+                f"between that python type and a dagster type."
+            )
 
 
 DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
-    "Invalid type: dagster_type must be DagsterType, a python scalar, or a python type "
-    "that has been marked usable as a dagster type via @usable_dagster_type or "
-    "make_python_type_usable_as_dagster_type: got {dagster_type}{additional_msg}"
+    "Invalid type: dagster_type must be an instance of DagsterType or a Python type: "
+    "got {dagster_type}{additional_msg}"
 )
+
+
+class TypeHintInferredDagsterType(PythonObjectDagsterType):
+    def __init__(self, python_type: typing.Type):
+        qualified_name = f"{python_type.__module__}.{python_type.__name__}"
+        super(TypeHintInferredDagsterType, self).__init__(
+            python_type,
+            name=qualified_name,
+            key=f"_TypeHintInferred[{qualified_name}]",
+            description=f"DagsterType created from a type hint for the Python type {qualified_name}",
+        )
+
+    @property
+    def display_name(self) -> str:
+        return self.python_type.__name__
 
 
 def resolve_dagster_type(dagster_type):
@@ -820,9 +845,6 @@ def resolve_dagster_type(dagster_type):
     if dagster_type is None:
         return Any
 
-    if dagster_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:
-        return _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[dagster_type]
-
     if dagster_type is Dict:
         return PythonDict
     if isinstance(dagster_type, DagsterTupleApi):
@@ -833,16 +855,29 @@ def resolve_dagster_type(dagster_type):
         return List(Any)
     if BuiltinEnum.contains(dagster_type):
         return DagsterType.from_builtin_enum(dagster_type)
-    if not isinstance(dagster_type, type):
-        raise DagsterInvalidDefinitionError(
-            DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
-                dagster_type=str(dagster_type), additional_msg="."
-            )
-        )
+
+    if isinstance(dagster_type, type):
+        return resolve_python_type_to_dagster_type(dagster_type)
 
     raise DagsterInvalidDefinitionError(
-        "{dagster_type} is not a valid dagster type.".format(dagster_type=dagster_type)
+        DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
+            dagster_type=str(dagster_type), additional_msg="."
+        )
     )
+
+
+def resolve_python_type_to_dagster_type(python_type: typing.Type) -> DagsterType:
+    """
+    Resolves a Python type to a Dagster type.
+    """
+    check.inst_param(python_type, "python_type", type)
+
+    if python_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:
+        return _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[python_type]
+    else:
+        dagster_type = TypeHintInferredDagsterType(python_type)
+        _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[python_type] = dagster_type
+        return dagster_type
 
 
 ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
