@@ -159,7 +159,7 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         if include_cursor:
             return events_with_ids
 
-        return [event for id, event in events_with_ids]
+        return [event for _id, event in events_with_ids]
 
     def get_asset_run_ids(self, asset_key):
         asset_run_ids = set()
