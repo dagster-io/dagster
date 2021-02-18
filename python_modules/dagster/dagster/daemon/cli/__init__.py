@@ -12,6 +12,7 @@ from dagster.daemon.controller import (
     DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
+    all_daemons_live,
     create_daemons_from_instance,
     debug_daemon_heartbeats,
     get_daemon_status,
@@ -73,8 +74,8 @@ def health_check_command():
 )
 def liveness_check_command():
     with DagsterInstance.get() as instance:
-        if all_daemons_healthy(instance):
-            click.echo("Daemon healthy")
+        if all_daemons_live(instance):
+            click.echo("Daemon live")
         else:
             click.echo("Daemon(s) not running")
             sys.exit(1)
