@@ -410,7 +410,7 @@ def _check_set_items(obj_set: Any, of_type: Type) -> Set:
     return obj_set
 
 
-def _check_tuple_items(obj_tuple: Any, of_type: Type) -> Tuple:
+def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
     if isinstance(of_type, tuple):
         len_tuple = len(obj_tuple)
         len_type = len(of_type)
