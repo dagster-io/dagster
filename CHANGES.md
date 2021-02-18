@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.10.6
+
+**New**
+
+* Added a `dagster run delete` CLI command to delete a run and its associated event log entries.
+* Added a `partition_days_offset`  argument to the `@daily_schedule` decorator that allows you to customize which partition is used for each execution of your schedule. The default value of this parameter is `1`, which means that a schedule that runs on day N will fill in the partition for day N-1. To create a schedule that uses the partition for the current day, set this parameter to `0`, or increase it to make the schedule use an earlier day’s partition. Similar arguments have also been added for the other partitioned schedule decorators (`@monthly_schedule`, `@weekly_schedule`, and `@hourly_schedule`).
+* The experimental `dagster new-repo` command now includes a workspace.yaml file for your new repository.
+* When specifying the location of a gRPC server in your `workspace.yaml` file to load your pipelines, you can now specify an environment variable for the server’s hostname and port. For example, this is now a valid workspace:
+
+```
+load_from:
+  - grpc_server:
+      host:
+        env: FOO_HOST
+      port:
+        env: FOO_PORT
+```
+
+**Integrations**
+
+* [Kubernetes] `K8sRunLauncher` and `CeleryK8sRunLauncher` no longer reload the pipeline being executed just before launching it. The previous behavior ensured that the latest version of the pipeline was always being used, but was inconsistent with other run launchers. Instead, to ensure that you’re running the latest version of your pipeline, you can refresh your repository in Dagit by pressing the button next to the repository name.
+* [Kubernetes] Added a flag to the Dagster helm chart that lets you specify that the cluster already has a redis server available, so the Helm chart does not need to create one in order to use redis as a messaging queue. For more information, see the Helm chart’s values.yaml file.
+
+**Bug Fixes**
+
+* Schedules with invalid cron strings will now throw an error when the schedule definition is loaded, instead of when the cron string is evaluated.
+* Starting in the 0.10.1 release, the Dagit playground did not load when launched with the `--path-prefix` option. This has been fixed.
+* In the Dagit playground, when loading the run preview results in a Python error, the link to view the error is now clickable.
+* When using the “Refresh config” button in the Dagit playground after reloading a pipeline’s repository, the user’s solid selection is now preserved.
+* When executing a pipeline with a `ModeDefinition` that contains a single executor, that executor is now selected by default.
+* Calling `reconstructable` on pipelines with that were also decorated with hooks no longer raises an error.
+* The `dagster-daemon liveness-check` command previously returned false when daemons surfaced non-fatal errors to be displayed in Dagit, leading to crash loops in Kubernetes. The command has been fixed to return false only when the daemon has stopped running.
+* When a pipeline definition includes `OutputDefinition`s with `io_manager_key`s, or `InputDefinition`s with `root_manager_key`s, but any of the modes provided for the pipeline definition do not include a resource definition for the required key, Dagster now raises an error immediately instead of when the pipeline is executed.
+* dbt 0.19.0 introduced breaking changes to the JSON schema of [dbt Artifacts](https://docs.getdbt.com/reference/artifacts/dbt-artifacts/). `dagster-dbt` has been updated to handle the new `run_results.json` schema for dbt 0.19.0.
+
+**Dependencies**
+
+* The astroid library has been pinned to version 2.4 in dagster, due to version 2.5 causing problems with our pylint test suite.
+
+**Documentation**
+
+* Added an example of how to trigger a Dagster pipeline in GraphQL at https://docs.dagster.io/examples/trigger_pipeline.
+* Added better documentation for customizing sensor intervals at https://docs.dagster.io/overview/schedules-sensors/sensors.
+
 ## 0.10.5
 
 **Community Contributions**
