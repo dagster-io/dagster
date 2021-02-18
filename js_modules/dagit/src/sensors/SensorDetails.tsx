@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
+import {RepositoryLink} from 'src/nav/RepositoryLink';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {
   displaySensorMutationErrors,
@@ -22,7 +23,6 @@ import {MetadataTable} from 'src/ui/MetadataTable';
 import {PageHeader} from 'src/ui/PageHeader';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
@@ -124,9 +124,9 @@ export const SensorDetails: React.FC<{
       ) : null}
       <PageHeader
         title={
-          <Group alignItems="center" direction="row" spacing={8}>
+          <Group alignItems="center" direction="row" spacing={2}>
             <Heading>{name}</Heading>
-            <Box margin={{left: 4}}>
+            <Box margin={{left: 12}}>
               <Switch
                 checked={status === JobStatus.RUNNING}
                 inline
@@ -150,9 +150,7 @@ export const SensorDetails: React.FC<{
         description={
           <>
             <Link to={workspacePathFromAddress(repoAddress, '/sensors')}>Sensor</Link> in{' '}
-            <Link to={workspacePathFromAddress(repoAddress)}>
-              {repoAddressAsString(repoAddress)}
-            </Link>
+            <RepositoryLink repoAddress={repoAddress} />
           </>
         }
         right={

@@ -47,6 +47,7 @@ export const PageHeader = (props: Props) => {
 
 const Description = styled.div`
   color: ${Colors.GRAY3};
+  white-space: nowrap;
 
   a,
   a:link,

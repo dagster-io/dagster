@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
+import {RepositoryLink} from 'src/nav/RepositoryLink';
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
@@ -26,7 +27,6 @@ import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Code, Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 import {useScheduleSelector} from 'src/workspace/WorkspaceContext';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
@@ -104,7 +104,7 @@ export const ScheduleDetails: React.FC<{
     <Group direction="column" spacing={16}>
       <PageHeader
         title={
-          <Group alignItems="center" direction="row" spacing={4}>
+          <Group alignItems="center" direction="row" spacing={2}>
             <Heading>{name}</Heading>
             <Box margin={{left: 12}}>
               <Switch
@@ -115,7 +115,7 @@ export const ScheduleDetails: React.FC<{
                 innerLabelChecked="on"
                 innerLabel="off"
                 onChange={onChangeSwitch}
-                style={{margin: '2px 0 0 0'}}
+                style={{margin: '4px 0 0 0'}}
               />
             </Box>
             {futureTicks.results.length && running ? (
@@ -133,9 +133,7 @@ export const ScheduleDetails: React.FC<{
         description={
           <>
             <Link to={workspacePathFromAddress(repoAddress, '/schedules')}>Schedule</Link> in{' '}
-            <Link to={workspacePathFromAddress(repoAddress)}>
-              {repoAddressAsString(repoAddress)}
-            </Link>
+            <RepositoryLink repoAddress={repoAddress} />
           </>
         }
         right={

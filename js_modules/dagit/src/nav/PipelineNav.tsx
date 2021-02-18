@@ -2,6 +2,7 @@ import {IconName, Tab, Tabs, Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
+import {RepositoryLink} from 'src/nav/RepositoryLink';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -12,7 +13,6 @@ import {Group} from 'src/ui/Group';
 import {PageHeader} from 'src/ui/PageHeader';
 import {Heading} from 'src/ui/Text';
 import {useRepository} from 'src/workspace/WorkspaceContext';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
@@ -102,9 +102,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
         description={
           <>
             <Link to={workspacePathFromAddress(repoAddress, '/pipelines')}>Pipeline</Link> in{' '}
-            <Link to={workspacePathFromAddress(repoAddress)}>
-              {repoAddressAsString(repoAddress)}
-            </Link>
+            <RepositoryLink repoAddress={repoAddress} />
           </>
         }
       />
