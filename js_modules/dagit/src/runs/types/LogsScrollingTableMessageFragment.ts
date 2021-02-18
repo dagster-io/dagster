@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { DagsterEventType, LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsScrollingTableMessageFragment
@@ -13,6 +13,7 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 export interface LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent {
   __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineStartEvent" | "PipelineEnqueuedEvent" | "PipelineDequeuedEvent" | "PipelineStartingEvent" | "PipelineCancelingEvent" | "PipelineCanceledEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -93,6 +94,7 @@ export interface LogsScrollingTableMessageFragment_StepMaterializationEvent_mate
 export interface LogsScrollingTableMessageFragment_StepMaterializationEvent {
   __typename: "StepMaterializationEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -115,6 +117,7 @@ export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_erro
 export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
   __typename: "PipelineInitFailureEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -137,6 +140,7 @@ export interface LogsScrollingTableMessageFragment_PipelineFailureEvent_pipeline
 export interface LogsScrollingTableMessageFragment_PipelineFailureEvent {
   __typename: "PipelineFailureEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -223,6 +227,7 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_fai
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   __typename: "ExecutionStepFailureEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -300,6 +305,7 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeC
 export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent {
   __typename: "ExecutionStepInputEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -377,6 +383,7 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_type
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent {
   __typename: "ExecutionStepOutputEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -454,6 +461,7 @@ export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_ex
 export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent {
   __typename: "StepExpectationResultEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -528,6 +536,7 @@ export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_ope
 export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent {
   __typename: "ObjectStoreOperationEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -537,6 +546,7 @@ export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent {
 export interface LogsScrollingTableMessageFragment_HandledOutputEvent {
   __typename: "HandledOutputEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -547,6 +557,7 @@ export interface LogsScrollingTableMessageFragment_HandledOutputEvent {
 export interface LogsScrollingTableMessageFragment_LoadedInputEvent {
   __typename: "LoadedInputEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -631,6 +642,7 @@ export interface LogsScrollingTableMessageFragment_EngineEvent_engineError {
 export interface LogsScrollingTableMessageFragment_EngineEvent {
   __typename: "EngineEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
@@ -654,6 +666,7 @@ export interface LogsScrollingTableMessageFragment_HookErroredEvent_error {
 export interface LogsScrollingTableMessageFragment_HookErroredEvent {
   __typename: "HookErroredEvent";
   message: string;
+  eventType: DagsterEventType | null;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;

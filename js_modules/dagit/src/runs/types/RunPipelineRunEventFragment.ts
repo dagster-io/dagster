@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, DagsterEventType, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunPipelineRunEventFragment
@@ -16,6 +16,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
 }
 
 export interface RunPipelineRunEventFragment_StepMaterializationEvent_materialization_assetKey {
@@ -96,6 +97,7 @@ export interface RunPipelineRunEventFragment_StepMaterializationEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   materialization: RunPipelineRunEventFragment_StepMaterializationEvent_materialization;
 }
 
@@ -118,6 +120,7 @@ export interface RunPipelineRunEventFragment_PipelineInitFailureEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   error: RunPipelineRunEventFragment_PipelineInitFailureEvent_error;
 }
 
@@ -140,6 +143,7 @@ export interface RunPipelineRunEventFragment_PipelineFailureEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   pipelineFailureError: RunPipelineRunEventFragment_PipelineFailureEvent_pipelineFailureError | null;
 }
 
@@ -226,6 +230,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
   failureMetadata: RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
@@ -303,6 +308,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepInputEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   inputName: string;
   typeCheck: RunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck;
 }
@@ -380,6 +386,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   outputName: string;
   typeCheck: RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck;
 }
@@ -457,6 +464,7 @@ export interface RunPipelineRunEventFragment_StepExpectationResultEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   expectationResult: RunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult;
 }
 
@@ -531,6 +539,7 @@ export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   operationResult: RunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult;
 }
 
@@ -540,6 +549,7 @@ export interface RunPipelineRunEventFragment_HandledOutputEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   outputName: string;
   managerKey: string;
 }
@@ -550,6 +560,7 @@ export interface RunPipelineRunEventFragment_LoadedInputEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   inputName: string;
   managerKey: string;
   upstreamOutputName: string | null;
@@ -634,6 +645,7 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   metadataEntries: RunPipelineRunEventFragment_EngineEvent_metadataEntries[];
   engineError: RunPipelineRunEventFragment_EngineEvent_engineError | null;
   markerStart: string | null;
@@ -659,6 +671,7 @@ export interface RunPipelineRunEventFragment_HookErroredEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   error: RunPipelineRunEventFragment_HookErroredEvent_error;
 }
 

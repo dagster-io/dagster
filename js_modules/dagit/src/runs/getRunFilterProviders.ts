@@ -1,5 +1,9 @@
 import memoize from 'lodash/memoize';
 
+import {DagsterEventType} from 'src/types/globalTypes';
+
+const typeValues = memoize(() => Object.values(DagsterEventType).sort());
+
 export const getRunFilterProviders = memoize(
   (stepNames: string[] = []) => {
     return [
@@ -9,19 +13,7 @@ export const getRunFilterProviders = memoize(
       },
       {
         token: 'type',
-        values: () => [
-          'engine',
-          'expectation',
-          'input',
-          'materialization',
-          'output',
-          'pipeline',
-          'queue',
-          'retry',
-          'skipped',
-          'start',
-          'success',
-        ],
+        values: typeValues,
       },
       {
         token: 'query',

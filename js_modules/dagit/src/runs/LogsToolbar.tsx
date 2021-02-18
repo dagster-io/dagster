@@ -51,7 +51,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   }, [copyIcon]);
 
   const onChange = (value: string) => {
-    const tokens = value.split(/\s+/g);
+    const tokens = value.split(/\s+/);
     const logQuery = tokens.map((item) => {
       const [token, value] = item.split(':');
       return value ? {token, value} : {value: token};

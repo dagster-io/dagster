@@ -89,6 +89,7 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
     __typename
     ... on MessageEvent {
       message
+      eventType
       timestamp
       level
       stepKey

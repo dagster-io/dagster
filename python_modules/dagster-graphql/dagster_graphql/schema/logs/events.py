@@ -1,5 +1,6 @@
 import graphene
 from dagster import check
+from dagster.core.events import DagsterEventType
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 
 from ...implementation.fetch_runs import get_step_stats
@@ -17,6 +18,7 @@ class GrapheneMessageEvent(graphene.Interface):
     level = graphene.NonNull(GrapheneLogLevel)
     stepKey = graphene.Field(graphene.String)
     solidHandleID = graphene.Field(graphene.String)
+    eventType = graphene.Field(graphene.Enum.from_enum(DagsterEventType))
 
     class Meta:
         name = "MessageEvent"

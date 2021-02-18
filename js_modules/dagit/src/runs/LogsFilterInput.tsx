@@ -134,16 +134,12 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
       content={
         <Results>
           {suggestions.map((suggestion, ii) => (
-            <Item
+            <ResultItem
               key={suggestion}
+              suggestion={suggestion}
               isHighlight={highlight === ii}
-              onMouseDown={(e: React.MouseEvent<any>) => {
-                e.preventDefault();
-                onSelect(suggestion);
-              }}
-            >
-              {suggestion}
-            </Item>
+              onSelect={onSelect}
+            />
           ))}
         </Results>
       }
@@ -164,6 +160,34 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
   );
 };
 
+const ResultItem: React.FC<{
+  suggestion: string;
+  isHighlight: boolean;
+  onSelect: (suggestion: string) => void;
+}> = (props) => {
+  const {suggestion, isHighlight, onSelect} = props;
+  const element = React.useRef<HTMLLIElement>(null);
+
+  React.useEffect(() => {
+    if (element.current && isHighlight) {
+      element.current.scrollIntoView({block: 'nearest'});
+    }
+  }, [isHighlight]);
+
+  return (
+    <Item
+      ref={element}
+      isHighlight={isHighlight}
+      onMouseDown={(e: React.MouseEvent<any>) => {
+        e.preventDefault();
+        onSelect(suggestion);
+      }}
+    >
+      {suggestion}
+    </Item>
+  );
+};
+
 const FilterInput = styled.input`
   border: 1px solid ${Colors.GRAY5};
   border-radius: 3px;
@@ -175,8 +199,10 @@ const FilterInput = styled.input`
 const Results = styled.ul`
   list-style: none;
   margin: 0;
+  max-height: 200px;
   max-width: 800px;
   min-width: 300px;
+  overflow-y: auto;
   padding: 0;
 `;
 

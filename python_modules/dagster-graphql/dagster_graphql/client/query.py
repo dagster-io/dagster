@@ -142,6 +142,7 @@ fragment stepEventFragment on StepEvent {
     message
     timestamp
     level
+    eventType
   }
 
 
@@ -157,6 +158,7 @@ fragment messageEventFragment on MessageEvent {
   message
   timestamp
   level
+  eventType
   ...stepEventFragment
   ... on PipelineInitFailureEvent {
     initError: error {

@@ -4,9 +4,8 @@ export const useSuggestionsForString = (
   buildSuggestions: (value: string) => string[],
   value: string,
 ) => {
-  const tokens = value.trim().split(/\s+/);
-  const lastToken = tokens.length ? tokens[tokens.length - 1] : '';
-  const queryString = lastToken.toLocaleLowerCase();
+  const tokens = value.toLocaleLowerCase().trim().split(/\s+/);
+  const queryString = tokens.length ? tokens[tokens.length - 1] : '';
 
   const suggestions = React.useMemo(() => buildSuggestions(queryString), [
     buildSuggestions,
@@ -15,7 +14,7 @@ export const useSuggestionsForString = (
 
   const onSelectSuggestion = React.useCallback(
     (suggestion: string) => {
-      const lastIndex = value.lastIndexOf(queryString);
+      const lastIndex = value.toLocaleLowerCase().lastIndexOf(queryString);
       if (lastIndex !== -1) {
         const keep = value.slice(0, lastIndex);
         return `${keep}${suggestion}`;

@@ -264,6 +264,9 @@ def construct_basic_params(event_record):
         else event_record.user_message,
         "timestamp": int(event_record.timestamp * 1000),
         "level": GrapheneLogLevel.from_level(event_record.level),
+        "eventType": event_record.dagster_event.event_type
+        if (event_record.dagster_event and event_record.dagster_event.event_type)
+        else None,
         "stepKey": event_record.step_key,
         "solidHandleID": event_record.dagster_event.solid_handle.to_string()
         if event_record.is_dagster_event and event_record.dagster_event.solid_handle

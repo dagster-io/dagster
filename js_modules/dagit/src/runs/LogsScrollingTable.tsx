@@ -70,7 +70,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
               return node.stepKey && node.stepKey === f.value;
             }
             if (f.token === 'type') {
-              return node.__typename.toLowerCase().includes(f.value);
+              return node.eventType === f.value;
             }
             return node.message.toLowerCase().includes(f.value.toLowerCase());
           })

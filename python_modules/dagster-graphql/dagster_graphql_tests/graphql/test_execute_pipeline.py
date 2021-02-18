@@ -353,7 +353,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert has_event_of_type(logs, "PipelineSuccessEvent")
         assert not has_event_of_type(logs, "PipelineFailureEvent")
 
-        assert first_event_of_type(logs, "PipelineStartEvent")["level"] == "DEBUG"
+        start_event = first_event_of_type(logs, "PipelineStartEvent")
+        assert start_event["level"] == "DEBUG"
+        assert start_event["eventType"] == "PIPELINE_START"
 
         sum_solid_output = get_step_output_event(logs, "sum_solid")
         assert sum_solid_output["stepKey"] == "sum_solid"
