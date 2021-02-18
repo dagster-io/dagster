@@ -17,7 +17,7 @@ export const DefaultQuerystring: {[key: string]: string} = {
   steps: '*',
   logs: '',
   levels: levelsToQuery(DefaultLogLevels),
-  hideNonMatches: 'false',
+  hideNonMatches: 'true',
   focusedTime: '',
 };
 
