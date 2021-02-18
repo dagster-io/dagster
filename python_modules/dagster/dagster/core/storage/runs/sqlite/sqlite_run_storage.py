@@ -69,14 +69,23 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         conn_string = create_db_conn_string(base_dir, "runs")
         engine = create_engine(conn_string, poolclass=NullPool)
         alembic_config = get_alembic_config(__file__)
+
+        should_mark_indexes = False
         with engine.connect() as connection:
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 RunStorageSqlMetadata.create_all(engine)
                 engine.execute("PRAGMA journal_mode=WAL;")
                 stamp_alembic_rev(alembic_config, connection)
+                should_mark_indexes = True
 
-        return SqliteRunStorage(conn_string, inst_data)
+        run_storage = SqliteRunStorage(conn_string, inst_data)
+
+        if should_mark_indexes:
+            # mark all secondary indexes
+            run_storage.build_missing_indexes()
+
+        return run_storage
 
     @contextmanager
     def connect(self):

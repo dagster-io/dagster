@@ -63,6 +63,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(alembic_config, conn)
 
+            # mark all secondary indexes as built
+            self.build_missing_indexes()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection and set statement_timeout
         self._engine = create_engine(

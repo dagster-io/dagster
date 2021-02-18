@@ -27,6 +27,8 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
 )
+from dagster.core.storage.event_log.migration import REINDEX_DATA_MIGRATIONS
+from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.sql import create_engine
 from dagster.seven import multiprocessing
 from watchdog.utils import platform
@@ -500,24 +502,23 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     )
 
 
-def test_secondary_index():
-    with create_consolidated_sqlite_run_event_log_storage() as storage:
-        # Only consolidated_sqlite, postgres storage support secondary indexes
-        assert not storage.has_secondary_index("A")
-        assert not storage.has_secondary_index("B")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
-        storage.enable_secondary_index("A")
-        assert "A" not in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert storage.has_secondary_index("A")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert not storage.has_secondary_index("B")
-        storage.enable_secondary_index("B")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" not in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert storage.has_secondary_index("A")
-        assert storage.has_secondary_index("B")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
+@event_storage_test
+def test_secondary_index(event_storage_factory_cm_fn):
+
+    with event_storage_factory_cm_fn() as storage:
+        if not isinstance(storage, SqlEventLogStorage):
+            return
+
+        # test that newly initialized DBs will have the secondary indexes built
+        for name in REINDEX_DATA_MIGRATIONS.keys():
+            assert storage.has_secondary_index(name)
+
+        # test the generic API with garbage migration names
+        assert not storage.has_secondary_index("_A")
+        assert not storage.has_secondary_index("_B")
+        storage.enable_secondary_index("_A")
+        assert storage.has_secondary_index("_A")
+        assert not storage.has_secondary_index("_B")
+        storage.enable_secondary_index("_B")
+        assert storage.has_secondary_index("_A")
+        assert storage.has_secondary_index("_B")

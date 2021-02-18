@@ -76,6 +76,12 @@ class SqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         # Ensure that multiple threads (like the event log watcher) interact safely with each other
         self._db_lock = threading.Lock()
 
+        if not os.path.exists(self.path_for_shard(INDEX_SHARD_NAME)):
+            conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
+            engine = create_engine(conn_string, poolclass=NullPool)
+            self._initdb(engine)
+            self.reindex()
+
     def upgrade(self):
         all_run_ids = self.get_all_run_ids()
         print(  # pylint: disable=print-call
@@ -112,7 +118,7 @@ class SqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
             if os.path.splitext(os.path.basename(filename))[0] != INDEX_SHARD_NAME
         ]
 
-    def path_for_run_id(self, run_id):
+    def path_for_shard(self, run_id):
         return os.path.join(self._base_dir, "{run_id}.db".format(run_id=run_id))
 
     def conn_string_for_shard(self, shard_name):
@@ -276,7 +282,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._cb = check.callable_param(callback, "callback")
-        self._log_path = event_log_storage.path_for_run_id(run_id)
+        self._log_path = event_log_storage.path_for_shard(run_id)
         self._cursor = start_cursor if start_cursor is not None else -1
         super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
 

@@ -76,12 +76,18 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         engine = create_engine(self._conn_string, poolclass=NullPool)
         alembic_config = get_alembic_config(__file__)
 
+        should_mark_indexes = False
         with engine.connect() as connection:
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 SqlEventLogStorageMetadata.create_all(engine)
                 engine.execute("PRAGMA journal_mode=WAL;")
                 stamp_alembic_rev(alembic_config, connection)
+                should_mark_indexes = True
+
+        if should_mark_indexes:
+            # mark all secondary indexes
+            self.reindex()
 
     @contextmanager
     def _connect(self):
