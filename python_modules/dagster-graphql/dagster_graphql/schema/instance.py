@@ -128,4 +128,4 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_daemonBackfillEnabled(self, _graphene_info):
         backfill_settings = self._instance.get_settings("backfill") or {}
-        return backfill_settings.get("daemon_enabled")
+        return backfill_settings.get("daemon_enabled", False)
