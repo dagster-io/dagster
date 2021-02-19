@@ -1,0 +1,3 @@
+Our alembic migration scripts are not intended to be invoked from the command line using the
+`alembic` CLI tool. They are intended to be invoked programmatically with
+`dagster instance migrate`.

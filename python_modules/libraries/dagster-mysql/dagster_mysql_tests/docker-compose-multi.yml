@@ -1,0 +1,33 @@
+version: "3.7"
+
+services:
+  test-event-log-storage-db:
+    image: mysql:8
+    container_name: test-event-log-storage-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "test"
+      MYSQL_PASSWORD: "test"
+      MYSQL_USER: "test"
+      MYSQL_DATABASE: "test"
+    networks:
+      - mysql_multi
+
+  test-run-storage-db:
+    image: mysql:8
+    container_name: test-run-storage-db
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "test"
+      MYSQL_PASSWORD: "test"
+      MYSQL_USER: "test"
+      MYSQL_DATABASE: "test"
+    networks:
+      - mysql_multi
+
+networks:
+  mysql_multi:
+    driver: bridge
+    name: mysql_multi

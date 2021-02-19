@@ -1,0 +1,32 @@
+run_storage:
+  module: dagster_mysql.run_storage
+  class: MySQLRunStorage
+  config:
+    mysql_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { database }
+      port: { port }
+
+event_log_storage:
+  module: dagster_mysql.event_log
+  class: MySQLEventLogStorage
+  config:
+    mysql_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { db_name }
+      port: { port }
+
+schedule_storage:
+  module: dagster_mysql.schedule_storage
+  class: MySQLScheduleStorage
+  config:
+    mysql_db:
+      username: { username }
+      password: { password }
+      hostname: { hostname }
+      db_name: { db_name }
+      port: { port }

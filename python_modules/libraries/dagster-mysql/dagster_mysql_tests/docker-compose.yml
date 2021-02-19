@@ -1,0 +1,20 @@
+version: "3.7"
+
+services:
+  test-mysql-db:
+    image: mysql:8
+    container_name: test-mysql-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "test"
+      MYSQL_PASSWORD: "test"
+      MYSQL_USER: "test"
+      MYSQL_DATABASE: "test"
+    networks:
+      - mysql
+
+networks:
+  mysql:
+    driver: bridge
+    name: mysql
