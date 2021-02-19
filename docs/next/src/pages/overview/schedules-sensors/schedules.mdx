@@ -37,9 +37,19 @@ For example, if each run fills in a daily partition of a data warehouse table, b
 on a partition set allows you to track which days have corresponding runs and fill in gaps
 when runs fail.
 
-The <PyObject module="dagster" object="daily_schedule" displayText="@daily_schedule"/> or <PyObject module="dagster" object="hourly_schedule" displayText="@hourly_schedule"/> API defines
-a schedule that wraps an underlying <PyObject module="dagster" object="PartitionSetDefinition"/>.
-Each partition in the set is a `datetime`.
+The <PyObject module="dagster" object="daily_schedule" displayText="@daily_schedule"/>, <PyObject module="dagster" object="hourly_schedule" displayText="@hourly_schedule"/>, <PyObject
+  module="dagster"
+  object="weekly_schedule"
+  displayText="@weekly_schedule"
+/>
+, and <PyObject
+  module="dagster"
+  object="monthly_schedule"
+  displayText="@monthly_schedule"
+/> decorators each define a schedule that wraps an underlying <PyObject
+  module="dagster"
+  object="PartitionSetDefinition"
+/>. Each partition in the set is a `datetime`.
 
 The decorated schedule function should accept a `datetime` and return the run config for the
 pipeline run associated with that partition. The scheduler will ensure that the schedule function
@@ -52,6 +62,16 @@ after the time when the schedule was turned on (usually in Dagit). If the
 `start_date` is earlier than when the schedule is turned on, you can kick off runs for times
 between the `start_date` and when the schedule is turned on by launching a
 [backfill](/overview/partitions-backfill/backfill).
+
+By default, the partition that is used for the run will be one partition earlier than the partition
+that includes the current time, to capture a common ETL use case - for example, a daily schedule
+will fill in the previous day's partition, and a monthly schedule will fill in last month's
+partition. You can customize this behavior by changing the `partition_days_offset` parameter for a
+daily schedule. The default value of this parameter is 1, which means that the scheduler goes back one day to determine
+the partition. Setting the value to 0 will cause the
+schedule to fill in the partition that corresponds to the current day, and increasing it above 1
+will cause it to fill in an even earlier partition. A similarly-named parameter also exists for the other execution
+intervals.
 
 The following examples demonstrate schedules with an underlying partition set, each with a
 different execution interval:

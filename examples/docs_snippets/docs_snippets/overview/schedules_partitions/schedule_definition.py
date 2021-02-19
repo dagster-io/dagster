@@ -41,6 +41,7 @@ def my_daily_schedule(date):
     pipeline_name="my_data_pipeline",
     start_date=datetime(2020, 1, 1),
     execution_timezone="US/Central",
+    partition_weeks_offset=2,  # Use the partition for two weeks ago, not last week
 )
 def my_weekly_schedule(date):
     return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
@@ -50,6 +51,7 @@ def my_weekly_schedule(date):
     pipeline_name="my_data_pipeline",
     start_date=datetime(2020, 1, 1),
     execution_timezone="US/Central",
+    partition_months_offset=0,  # Use the partition for the current month, not the previous month
 )
 def my_monthly_schedule(date):
     return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
