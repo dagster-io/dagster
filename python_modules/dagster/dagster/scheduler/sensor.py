@@ -5,6 +5,7 @@ import time
 import pendulum
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
@@ -19,6 +20,10 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 RECORDED_TICK_STATES = [JobTickStatus.SUCCESS, JobTickStatus.FAILURE]
 FULFILLED_TICK_STATES = [JobTickStatus.SKIPPED, JobTickStatus.SUCCESS]
+
+
+class DagsterSensorDaemonError(DagsterError):
+    """Error when running the SensorDaemon"""
 
 
 class SensorLaunchContext:
@@ -132,16 +137,19 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
 
                 repo_name = job_state.origin.external_repository_origin.repository_name
 
-                check.invariant(
-                    repo_location.has_repository(repo_name),
-                    "Could not find repository {repo_name} in location {repo_location_name}".format(
-                        repo_name=repo_name, repo_location_name=repo_location.name
-                    ),
-                )
+                if not repo_location.has_repository(repo_name):
+                    raise DagsterSensorDaemonError(
+                        f"Could not find repository {repo_name} in location {repo_location.name} to "
+                        + f"run sensor {job_state.job_name}. If this repository no longer exists, you can "
+                        + "turn off the sensor in the Dagit UI.",
+                    )
 
                 external_repo = repo_location.get_repository(repo_name)
                 if not external_repo.has_external_job(job_state.job_name):
-                    continue
+                    raise DagsterSensorDaemonError(
+                        f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
+                        "sensor no longer exists, you can turn it off in the Dagit UI.",
+                    )
 
                 now = pendulum.now("UTC")
                 if _is_under_min_interval(job_state, now):
@@ -182,7 +190,7 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
-                "Sensor failed for {sensor_name} : {error_info}".format(
+                "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
                     sensor_name=job_state.job_name,
                     error_info=error_info.to_string(),
                 )
