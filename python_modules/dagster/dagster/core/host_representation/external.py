@@ -90,8 +90,17 @@ class ExternalRepository:
             for external_sensor_data in self.external_repository_data.external_sensor_datas
         ]
 
-    def has_external_job(self, job_name):
-        return job_name in self._job_map
+    def has_external_schedule(self, schedule_name):
+        return self.has_external_job(schedule_name, JobType.SCHEDULE)
+
+    def has_external_sensor(self, sensor_name):
+        return self.has_external_job(sensor_name, JobType.SENSOR)
+
+    def has_external_job(self, job_name, job_type=None):
+        if job_name not in self._job_map:
+            return False
+
+        return job_type == None or self._job_map.get(job_name).job_type == job_type
 
     def get_external_job(self, job_name):
         external_job_data = self._job_map.get(job_name)

@@ -15,7 +15,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
-from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
+from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.seven import to_timezone
@@ -98,7 +98,7 @@ def launch_scheduled_runs(
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
-                f"Scheduler failed for {schedule_state.job_name} : {error_info.to_string()}"
+                f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
             )
         yield error_info
 
@@ -130,14 +130,21 @@ def launch_scheduled_runs_for_schedule(
     schedule_name = schedule_state.job_name
     repo_name = schedule_state.origin.external_repository_origin.repository_name
 
-    check.invariant(
-        repo_location.has_repository(repo_name),
-        "Could not find repository {repo_name} in location {repo_location_name}".format(
-            repo_name=repo_name, repo_location_name=repo_location.name
-        ),
-    )
+    if not repo_location.has_repository(repo_name):
+        raise DagsterSchedulerError(
+            f"Could not find repository {repo_name} in location {repo_location.name} to "
+            + f"run schedule {schedule_name}. If this repository no longer exists, you can "
+            + "turn off the schedule in the Dagit UI.",
+        )
 
     external_repo = repo_location.get_repository(repo_name)
+
+    if not external_repo.has_external_schedule(schedule_name):
+        raise DagsterSchedulerError(
+            f"Could not find schedule {schedule_name} in repository {repo_name}. If this "
+            "schedule no longer exists, you can turn it off in the Dagit UI.",
+        )
+
     external_schedule = external_repo.get_external_schedule(schedule_name)
 
     timezone_str = external_schedule.execution_timezone

@@ -22,6 +22,7 @@ from dagster.core.definitions.job import RunRequest
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.host_representation import (
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -868,7 +869,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             assert len(unloadable_ticks) == 0
 
             captured = capfd.readouterr()
-            assert "Scheduler failed for doesnt_exist" in captured.out
+            assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
             assert "doesnt_exist not found at module scope" in captured.out
 
         initial_datetime = initial_datetime.add(days=1)
@@ -923,7 +924,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             assert len(unloadable_ticks) == 0
 
             captured = capfd.readouterr()
-            assert "Scheduler failed for doesnt_exist" in captured.out
+            assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
             assert "doesnt_exist not found at module scope" in captured.out
 
 
@@ -953,7 +954,99 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
             assert ticks[0].status == JobTickStatus.SUCCESS
 
 
-def test_bad_load(capfd):
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_bad_load_repository(external_repo_context, capfd):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            valid_schedule_origin = external_schedule.get_external_origin()
+
+            # Swap out a new repository name
+            invalid_repo_origin = ExternalJobOrigin(
+                ExternalRepositoryOrigin(
+                    valid_schedule_origin.external_repository_origin.repository_location_origin,
+                    "invalid_repo_name",
+                ),
+                valid_schedule_origin.job_name,
+            )
+
+            schedule_state = JobState(
+                invalid_repo_origin,
+                JobType.SCHEDULE,
+                JobStatus.RUNNING,
+                ScheduleJobData(
+                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                ),
+            )
+            instance.add_job_state(schedule_state)
+
+        initial_datetime = freeze_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
+
+            assert instance.get_runs_count() == 0
+
+            ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
+
+            assert len(ticks) == 0
+
+            captured = capfd.readouterr()
+            assert "Scheduler caught an error for schedule simple_schedule" in captured.out
+            assert (
+                "Could not find repository invalid_repo_name in location test_location to run schedule simple_schedule."
+                in captured.out
+            )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_bad_load_schedule(external_repo_context, capfd):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            valid_schedule_origin = external_schedule.get_external_origin()
+
+            # Swap out a new schedule name
+            invalid_repo_origin = ExternalJobOrigin(
+                valid_schedule_origin.external_repository_origin,
+                "invalid_schedule",
+            )
+
+            schedule_state = JobState(
+                invalid_repo_origin,
+                JobType.SCHEDULE,
+                JobStatus.RUNNING,
+                ScheduleJobData(
+                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                ),
+            )
+            instance.add_job_state(schedule_state)
+
+        initial_datetime = freeze_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, logger(), pendulum.now("UTC")))
+
+            assert instance.get_runs_count() == 0
+
+            ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
+
+            assert len(ticks) == 0
+
+            captured = capfd.readouterr()
+            assert "Scheduler caught an error for schedule invalid_schedule" in captured.out
+            assert (
+                "Could not find schedule invalid_schedule in repository the_repo." in captured.out
+            )
+
+
+def test_bad_load_repository_location(capfd):
     with schedule_instance() as instance:
         fake_origin = _get_unloadable_schedule_origin()
         initial_datetime = create_pendulum_time(
@@ -986,7 +1079,7 @@ def test_bad_load(capfd):
             assert len(ticks) == 0
 
             captured = capfd.readouterr()
-            assert "Scheduler failed for doesnt_exist" in captured.out
+            assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
             assert "doesnt_exist not found at module scope" in captured.out
 
         initial_datetime = initial_datetime.add(days=1)
