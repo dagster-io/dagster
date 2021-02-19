@@ -132,6 +132,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet | null;
   scheduleState: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState;
   futureTicks: SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks;

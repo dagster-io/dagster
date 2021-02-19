@@ -99,6 +99,7 @@ class JobDefinition:
         "_run_config_fn",
         "_mode",
         "_solid_selection",
+        "_description",
     ]
 
     def __init__(
@@ -108,6 +109,7 @@ class JobDefinition:
         pipeline_name,
         mode="default",
         solid_selection=None,
+        description=None,
     ):
         self._name = check_valid_name(name)
         self._job_type = check.inst_param(job_type, "job_type", JobType)
@@ -116,6 +118,7 @@ class JobDefinition:
         self._solid_selection = check.opt_nullable_list_param(
             solid_selection, "solid_selection", of_type=str
         )
+        self._description = check.opt_str_param(description, "description")
 
     @property
     def name(self):
@@ -136,3 +139,7 @@ class JobDefinition:
     @property
     def mode(self):
         return self._mode
+
+    @property
+    def description(self):
+        return self._description

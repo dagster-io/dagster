@@ -469,6 +469,7 @@ type Schedule {
   solidSelection: [String]
   mode: String!
   executionTimezone: String
+  description: String
   scheduleState: JobState!
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int): FutureJobTicks!
@@ -624,6 +625,7 @@ type Sensor {
   mode: String!
   sensorState: JobState!
   minIntervalSeconds: Int!
+  description: String
   nextTick: FutureJobTick
 }
 

@@ -425,6 +425,10 @@ class ExternalSchedule:
         return self._external_schedule_data.mode
 
     @property
+    def description(self):
+        return self._external_schedule_data.description
+
+    @property
     def partition_set_name(self):
         return self._external_schedule_data.partition_set_name
 
@@ -490,6 +494,10 @@ class ExternalSensor:
     @property
     def mode(self):
         return self._external_sensor_data.mode
+
+    @property
+    def description(self):
+        return self._external_sensor_data.description
 
     @property
     def min_interval_seconds(self):

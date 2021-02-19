@@ -91,6 +91,7 @@ export interface SensorFragment {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   minIntervalSeconds: number;
   nextTick: SensorFragment_nextTick | null;
   sensorState: SensorFragment_sensorState;

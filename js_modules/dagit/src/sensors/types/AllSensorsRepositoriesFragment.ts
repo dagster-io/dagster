@@ -97,6 +97,7 @@ export interface AllSensorsRepositoriesFragment_RepositoryConnection_nodes_senso
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   minIntervalSeconds: number;
   nextTick: AllSensorsRepositoriesFragment_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: AllSensorsRepositoriesFragment_RepositoryConnection_nodes_sensors_sensorState;

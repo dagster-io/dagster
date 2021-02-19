@@ -32,6 +32,7 @@ query SchedulesQuery($repositorySelector: RepositorySelector!) {
         pipelineName
         solidSelection
         mode
+        description
         executionTimezone
       }
     }

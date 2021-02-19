@@ -23,6 +23,7 @@ class GrapheneSensor(graphene.ObjectType):
     mode = graphene.NonNull(graphene.String)
     sensorState = graphene.NonNull(GrapheneJobState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
+    description = graphene.String()
     nextTick = graphene.Field(GrapheneFutureJobTick)
 
     class Meta:
@@ -48,6 +49,7 @@ class GrapheneSensor(graphene.ObjectType):
             solidSelection=external_sensor.solid_selection,
             mode=external_sensor.mode,
             minIntervalSeconds=external_sensor.min_interval_seconds,
+            description=external_sensor.description,
         )
 
     def resolve_id(self, _):

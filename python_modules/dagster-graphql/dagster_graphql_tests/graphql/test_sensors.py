@@ -30,6 +30,7 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
         name
         pipelineName
         solidSelection
+        description
         mode
         minIntervalSeconds
         sensorState {

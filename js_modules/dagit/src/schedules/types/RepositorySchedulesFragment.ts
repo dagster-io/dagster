@@ -128,6 +128,7 @@ export interface RepositorySchedulesFragment_schedules {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: RepositorySchedulesFragment_schedules_partitionSet | null;
   scheduleState: RepositorySchedulesFragment_schedules_scheduleState;
   futureTicks: RepositorySchedulesFragment_schedules_futureTicks;

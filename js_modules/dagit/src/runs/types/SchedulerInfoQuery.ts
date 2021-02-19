@@ -186,6 +186,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet | null;
   scheduleState: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState;
   futureTicks: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;

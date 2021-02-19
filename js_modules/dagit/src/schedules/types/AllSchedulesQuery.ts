@@ -128,6 +128,7 @@ export interface AllSchedulesQuery_repositoriesOrError_RepositoryConnection_node
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: AllSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet | null;
   scheduleState: AllSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState;
   futureTicks: AllSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;

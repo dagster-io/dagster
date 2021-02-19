@@ -18,6 +18,7 @@ export const SCHEDULE_FRAGMENT = gql`
     pipelineName
     solidSelection
     mode
+    description
     partitionSet {
       id
       name

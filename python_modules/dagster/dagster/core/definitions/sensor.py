@@ -62,6 +62,7 @@ class SensorDefinition(JobDefinition):
             will be the shortest multiple of the sensor daemon evaluation interval (set on the
             instance in the "sensors_setting" configuration map, 30 seconds by default) that is
             greater than or equal to this value.
+        description (Optional[str]): A human-readable description of the sensor.
     """
 
     __slots__ = [
@@ -77,6 +78,7 @@ class SensorDefinition(JobDefinition):
         solid_selection=None,
         mode=None,
         minimum_interval_seconds=None,
+        description=None,
     ):
         super(SensorDefinition, self).__init__(
             name,
@@ -84,6 +86,7 @@ class SensorDefinition(JobDefinition):
             pipeline_name=pipeline_name,
             mode=mode,
             solid_selection=solid_selection,
+            description=description,
         )
 
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")

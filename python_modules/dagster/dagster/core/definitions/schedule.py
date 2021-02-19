@@ -86,6 +86,7 @@ class ScheduleDefinition(JobDefinition):
             schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        description (Optional[str]): A human-readable description of the schedule.
     """
 
     __slots__ = [
@@ -110,6 +111,7 @@ class ScheduleDefinition(JobDefinition):
         environment_vars=None,
         execution_timezone=None,
         execution_fn=None,
+        description=None,
     ):
 
         super(ScheduleDefinition, self).__init__(
@@ -120,6 +122,7 @@ class ScheduleDefinition(JobDefinition):
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
+            description=check.opt_str_param(description, "description"),
         )
 
         if not croniter.is_valid(cron_schedule):

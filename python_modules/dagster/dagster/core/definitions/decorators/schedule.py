@@ -36,6 +36,7 @@ def schedule(
     should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
+    description: Optional[str] = None,
 ) -> Callable[[Callable[["ScheduleExecutionContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
@@ -67,6 +68,7 @@ def schedule(
             the schedule.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        description (Optional[str]): A human-readable description of the schedule.
     """
 
     def inner(fn: Callable[["ScheduleExecutionContext"], Dict[str, Any]]) -> ScheduleDefinition:
@@ -86,6 +88,7 @@ def schedule(
             should_execute=should_execute,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
@@ -105,6 +108,7 @@ def monthly_schedule(
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
+    description: Optional[str] = None,
 ) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs monthly.
 
@@ -141,6 +145,7 @@ def monthly_schedule(
             for a given schedule execution. For example, when partition_months_offset=1, the schedule
             that executes during month N will fill in the partition for month N-1.
             (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -155,6 +160,7 @@ def monthly_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_months_offset, "partition_months_offset")
+    check.opt_str_param(description, "description")
 
     if (
         start_date.day != 1
@@ -239,6 +245,7 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
@@ -258,6 +265,7 @@ def weekly_schedule(
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
+    description: Optional[str] = None,
 ) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs weekly.
 
@@ -294,6 +302,7 @@ def weekly_schedule(
             for a given schedule execution. For example, when partition_weeks_offset=1, the schedule
             that executes during week N will fill in the partition for week N-1.
             (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -308,6 +317,7 @@ def weekly_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_weeks_offset, "partition_weeks_offset")
+    check.opt_str_param(description, "description")
 
     if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -389,6 +399,7 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
@@ -407,6 +418,7 @@ def daily_schedule(
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
+    description: Optional[str] = None,
 ) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs daily.
 
@@ -441,6 +453,7 @@ def daily_schedule(
             for a given schedule execution. For example, when partition_days_offset=1, the schedule
             that executes during day N will fill in the partition for day N-1.
             (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -454,6 +467,7 @@ def daily_schedule(
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_days_offset, "partition_days_offset")
+    check.opt_str_param(description, "description")
 
     if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -528,6 +542,7 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
@@ -546,6 +561,7 @@ def hourly_schedule(
     end_date: Optional[str] = None,
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
+    description: Optional[str] = None,
 ) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs hourly.
 
@@ -582,6 +598,7 @@ def hourly_schedule(
             for a given schedule execution. For example, when partition_hours_offset=1, the schedule
             that executes during hour N will fill in the partition for hour N-1.
             (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -595,6 +612,7 @@ def hourly_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_hours_offset, "partition_hours_offset")
+    check.opt_str_param(description, "description")
 
     if start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -677,6 +695,7 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner

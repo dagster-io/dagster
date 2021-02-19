@@ -173,7 +173,7 @@ class ExternalPresetData(
 class ExternalScheduleData(
     namedtuple(
         "_ExternalScheduleData",
-        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone",
+        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description",
     )
 ):
     def __new__(
@@ -186,6 +186,7 @@ class ExternalScheduleData(
         environment_vars,
         partition_set_name,
         execution_timezone,
+        description=None,
     ):
         return super(ExternalScheduleData, cls).__new__(
             cls,
@@ -197,6 +198,7 @@ class ExternalScheduleData(
             environment_vars=check.opt_dict_param(environment_vars, "environment_vars"),
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
+            description=check.opt_str_param(description, "description"),
         )
 
     @property
@@ -239,9 +241,13 @@ class ExternalScheduleExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalSensorData(
-    namedtuple("_ExternalSensorData", "name pipeline_name solid_selection mode min_interval")
+    namedtuple(
+        "_ExternalSensorData", "name pipeline_name solid_selection mode min_interval description"
+    )
 ):
-    def __new__(cls, name, pipeline_name, solid_selection, mode, min_interval=None):
+    def __new__(
+        cls, name, pipeline_name, solid_selection, mode, min_interval=None, description=None
+    ):
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -249,6 +255,7 @@ class ExternalSensorData(
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             min_interval=check.opt_int_param(min_interval, "min_interval"),
+            description=check.opt_str_param(description, "description"),
         )
 
     @property
@@ -464,6 +471,7 @@ def external_schedule_data_from_def(schedule_def):
         if isinstance(schedule_def, PartitionScheduleDefinition)
         else None,
         execution_timezone=schedule_def.execution_timezone,
+        description=schedule_def.description,
     )
 
 
@@ -484,6 +492,7 @@ def external_sensor_data_from_def(sensor_def):
         solid_selection=sensor_def.solid_selection,
         mode=sensor_def.mode,
         min_interval=sensor_def.minimum_interval_seconds,
+        description=sensor_def.description,
     )
 
 

@@ -97,6 +97,7 @@ export interface AllSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   minIntervalSeconds: number;
   nextTick: AllSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: AllSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;

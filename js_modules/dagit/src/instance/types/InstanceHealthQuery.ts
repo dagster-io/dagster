@@ -216,6 +216,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet | null;
   scheduleState: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState;
   futureTicks: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;
@@ -302,6 +303,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   minIntervalSeconds: number;
   nextTick: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;

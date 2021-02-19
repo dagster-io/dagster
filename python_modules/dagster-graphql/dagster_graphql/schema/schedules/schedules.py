@@ -21,6 +21,7 @@ class GrapheneSchedule(graphene.ObjectType):
     solid_selection = graphene.List(graphene.String)
     mode = graphene.NonNull(graphene.String)
     execution_timezone = graphene.Field(graphene.String)
+    description = graphene.String()
     scheduleState = graphene.NonNull(GrapheneJobState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
@@ -60,6 +61,7 @@ class GrapheneSchedule(graphene.ObjectType):
                 if self._external_schedule.execution_timezone
                 else pendulum.now().timezone.name
             ),
+            description=external_schedule.description,
         )
 
     def resolve_id(self, _):

@@ -179,6 +179,7 @@ class PartitionSetDefinition(
         should_execute=None,
         environment_vars=None,
         execution_timezone=None,
+        description=None,
     ):
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
@@ -195,6 +196,7 @@ class PartitionSetDefinition(
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
             execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
                 with DagsterDaemonScheduler, and must be set when using that scheduler.
+            description (Optional[str]): A human-readable description of the schedule.
 
         Returns:
             ScheduleDefinition: The generated ScheduleDefinition for the partition selector
@@ -206,6 +208,7 @@ class PartitionSetDefinition(
         check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
         check.callable_param(partition_selector, "partition_selector")
         check.opt_str_param(execution_timezone, "execution_timezone")
+        check.opt_str_param(description, "description")
 
         def _execution_fn(context):
             check.inst_param(context, "context", ScheduleExecutionContext)
@@ -271,6 +274,7 @@ class PartitionSetDefinition(
             partition_set=self,
             execution_timezone=execution_timezone,
             execution_fn=_execution_fn,
+            description=description,
         )
 
 
@@ -291,6 +295,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         run_config_fn=None,
         execution_timezone=None,
         execution_fn=None,
+        description=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -304,6 +309,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
             execution_fn=execution_fn,
+            description=description,
         )
         self._partition_set = check.inst_param(
             partition_set, "partition_set", PartitionSetDefinition

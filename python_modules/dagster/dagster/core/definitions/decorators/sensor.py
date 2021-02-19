@@ -15,6 +15,7 @@ def sensor(
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
 ) -> Callable[
     [Callable[["SensorExecutionContext"], Union[SkipReason, RunRequest]]], SensorDefinition
 ]:
@@ -43,6 +44,7 @@ def sensor(
             between sensor evaluations.  Practically, the time elapsed between sensor evaluations
             will be the shortest multiple of the sensor daemon evaluation interval (30 seconds) that
             is greater than or equal to this value.
+        description (Optional[str]): A human-readable description of the sensor.
     """
     check.opt_str_param(name, "name")
 
@@ -77,6 +79,7 @@ def sensor(
             solid_selection=solid_selection,
             mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
         )
 
     return inner
