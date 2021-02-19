@@ -3,7 +3,7 @@ import pickle
 from dagster import Field, IOManager, StringSource, check, io_manager
 from dagster.utils import PICKLE_PROTOCOL
 from dagster.utils.backoff import backoff
-from google.api_core.exceptions import TooManyRequests
+from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage
 
 DEFAULT_LEASE_DURATION = 60  # One minute
@@ -69,7 +69,7 @@ class PickledObjectGCSIOManager(IOManager):
         backoff(
             self.bucket_obj.blob(key).upload_from_string,
             args=[pickled_obj],
-            retry_on=(TooManyRequests,),
+            retry_on=(TooManyRequests, Forbidden),
         )
 
 
