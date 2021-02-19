@@ -1573,6 +1573,19 @@
                 "config"
             ]
         },
+        "Backfill": {
+            "title": "Backfill",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ]
+        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -1586,6 +1599,9 @@
                 },
                 "queuedRunCoordinator": {
                     "$ref": "#/definitions/QueuedRunCoordinator"
+                },
+                "backfill": {
+                    "$ref": "#/definitions/Backfill"
                 },
                 "env": {
                     "title": "Env",
@@ -1640,6 +1656,7 @@
                 "enabled",
                 "image",
                 "queuedRunCoordinator",
+                "backfill",
                 "env",
                 "envConfigMaps",
                 "envSecrets",
