@@ -1,7 +1,9 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {Checkbox, Intent, NonIdealState, Classes, Colors, InputGroup} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import qs from 'qs';
 import * as React from 'react';
+import styled from 'styled-components';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {SharedToaster} from 'src/app/DomUtils';
@@ -29,8 +31,10 @@ import {ButtonLink} from 'src/ui/ButtonLink';
 import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
 import {Spinner} from 'src/ui/Spinner';
+import {stringFromValue} from 'src/ui/TokenizingField';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -182,8 +186,22 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   }
 
   const onSuccess = (backfillId: string) => {
+    const filteredRunsPath = workspacePathFromAddress(
+      repoAddress,
+      `/pipelines/${pipelineName}/runs?${qs.stringify({
+        q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfillId}`}]),
+      })}`,
+    );
+
     SharedToaster.show({
-      message: `Created backfill job "${backfillId}"`,
+      message: (
+        <div>
+          Created backfill job:{' '}
+          <FilteredRunsLink target="_blank" rel="noopener noreferrer" href={filteredRunsPath}>
+            {backfillId}
+          </FilteredRunsLink>
+        </div>
+      ),
       intent: Intent.SUCCESS,
     });
     onLaunch?.(backfillId, query);
@@ -650,6 +668,10 @@ const LaunchBackfillButton: React.FC<{
     </Box>
   );
 };
+
+const FilteredRunsLink = styled.a`
+  text-decoration: underline;
+`;
 
 const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
   query PartitionsBackfillSelectorQuery(
