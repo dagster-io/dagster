@@ -261,12 +261,6 @@ class GrapheneRepositoryNotFoundError(graphene.ObjectType):
         self.message = f"Could not find Repository {repository_location_name}.{repository_name}"
 
 
-class GrapheneAssetsNotSupportedError(graphene.ObjectType):
-    class Meta:
-        interfaces = (GrapheneError,)
-        name = "AssetsNotSupportedError"
-
-
 class GrapheneAssetNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
@@ -280,7 +274,6 @@ class GrapheneAssetNotFoundError(graphene.ObjectType):
 
 types = [
     GrapheneAssetNotFoundError,
-    GrapheneAssetsNotSupportedError,
     GrapheneConflictingExecutionParamsError,
     GrapheneDagsterTypeNotFoundError,
     GrapheneError,

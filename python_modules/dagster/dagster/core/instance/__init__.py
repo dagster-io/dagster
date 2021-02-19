@@ -951,26 +951,10 @@ class DagsterInstance:
 
     # asset storage
 
-    @property
-    def is_asset_aware(self):
-        return self._event_storage.is_asset_aware
-
-    def check_asset_aware(self):
-        check.invariant(
-            self.is_asset_aware,
-            (
-                "Asset queries can only be performed on instances with asset-aware event log "
-                "storage. Use `instance.is_asset_aware` to verify that the instance is configured "
-                "with an EventLogStorage that implements `AssetAwareEventLogStorage`"
-            ),
-        )
-
     def all_asset_keys(self, prefix_path=None):
-        self.check_asset_aware()
         return self._event_storage.get_all_asset_keys(prefix_path)
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
-        self.check_asset_aware()
         return self._event_storage.has_asset_key(asset_key)
 
     def events_for_asset_key(
@@ -984,7 +968,6 @@ class DagsterInstance:
         ascending=False,
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        self.check_asset_aware()
 
         return self._event_storage.get_asset_events(
             asset_key,
@@ -999,12 +982,10 @@ class DagsterInstance:
 
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        self.check_asset_aware()
         return self._event_storage.get_asset_run_ids(asset_key)
 
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
-        self.check_asset_aware()
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
 

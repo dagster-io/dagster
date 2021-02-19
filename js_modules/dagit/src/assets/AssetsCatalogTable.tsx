@@ -34,27 +34,6 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}>
               </Wrapper>
             );
           }
-          if (assetsOrError.__typename === 'AssetsNotSupportedError') {
-            return (
-              <Wrapper>
-                <NonIdealState
-                  icon="panel-table"
-                  title="Assets"
-                  description={
-                    <p>
-                      An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>) must
-                      be configured in order to use any Asset-based features. You can configure this
-                      on your instance through <code>dagster.yaml</code>. See the{' '}
-                      <a href="https://docs.dagster.io/overview/instances/dagster-instance">
-                        instance documentation
-                      </a>{' '}
-                      for more information.
-                    </p>
-                  }
-                />
-              </Wrapper>
-            );
-          }
 
           const prefixMatchingAssets = assetsOrError.nodes.filter(
             (asset: Asset) =>
@@ -261,9 +240,6 @@ const ASSETS_TABLE_QUERY = gql`
   query AssetsTableQuery($prefixPath: [String!]) {
     assetsOrError(prefixPath: $prefixPath) {
       __typename
-      ... on AssetsNotSupportedError {
-        message
-      }
       ... on AssetConnection {
         nodes {
           key {

@@ -6,8 +6,8 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.event_log import (
-    AssetAwareSqlEventLogStorage,
     AssetKeyTable,
+    SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
@@ -36,7 +36,7 @@ from ..utils import (
 CHANNEL_NAME = "run_events"
 
 
-class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
+class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """Postgres-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when

@@ -880,7 +880,6 @@ type ModeNotFoundError implements Error {
 type Instance {
   info: String!
   runLauncher: RunLauncher
-  assetsSupported: Boolean!
   runQueuingSupported: Boolean!
   executablePath: String!
   daemonHealth: DaemonHealth!
@@ -906,17 +905,13 @@ type DaemonStatus {
   lastHeartbeatErrors: [PythonError!]!
 }
 
-union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError
+union AssetsOrError = AssetConnection | PythonError
 
 type AssetConnection {
   nodes: [Asset!]!
 }
 
-type AssetsNotSupportedError implements Error {
-  message: String!
-}
-
-union AssetOrError = Asset | AssetsNotSupportedError | AssetNotFoundError
+union AssetOrError = Asset | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!

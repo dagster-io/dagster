@@ -102,14 +102,8 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
 
 export type RunRootQuery_pipelineRunOrError = RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError | RunRootQuery_pipelineRunOrError_PipelineRun;
 
-export interface RunRootQuery_instance {
-  __typename: "Instance";
-  assetsSupported: boolean;
-}
-
 export interface RunRootQuery {
   pipelineRunOrError: RunRootQuery_pipelineRunOrError;
-  instance: RunRootQuery_instance;
 }
 
 export interface RunRootQueryVariables {

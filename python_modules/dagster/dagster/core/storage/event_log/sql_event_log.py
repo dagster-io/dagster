@@ -14,7 +14,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import AssetAwareEventLogStorage, EventLogStorage, extract_asset_events_cursor
+from .base import EventLogStorage, extract_asset_events_cursor
 from .migration import REINDEX_DATA_MIGRATIONS, SECONDARY_INDEX_ASSET_KEY
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
@@ -497,8 +497,6 @@ class SqlEventLogStorage(EventLogStorage):
                     .values(migration_completed=datetime.now())
                 )
 
-
-class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage):
     def _add_cursor_limit_to_query(
         self, query, before_cursor, after_cursor, limit, ascending=False
     ):

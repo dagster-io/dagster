@@ -73,7 +73,6 @@ def test_asset_single_wipe(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 
@@ -97,7 +96,6 @@ def test_asset_multi_wipe(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 
@@ -116,7 +114,6 @@ def test_asset_wipe_all(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 

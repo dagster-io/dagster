@@ -28,12 +28,12 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
-from ..sql_event_log import AssetAwareSqlEventLogStorage
+from ..sql_event_log import SqlEventLogStorage
 
 INDEX_SHARD_NAME = "index"
 
 
-class SqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
+class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when

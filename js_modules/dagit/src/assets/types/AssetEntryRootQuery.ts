@@ -14,11 +14,6 @@ export interface AssetEntryRootQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface AssetEntryRootQuery_assetOrError_AssetsNotSupportedError {
-  __typename: "AssetsNotSupportedError";
-  message: string;
-}
-
 export interface AssetEntryRootQuery_assetOrError_Asset_key {
   __typename: "AssetKey";
   path: string[];
@@ -29,7 +24,7 @@ export interface AssetEntryRootQuery_assetOrError_Asset {
   key: AssetEntryRootQuery_assetOrError_Asset_key;
 }
 
-export type AssetEntryRootQuery_assetOrError = AssetEntryRootQuery_assetOrError_AssetNotFoundError | AssetEntryRootQuery_assetOrError_AssetsNotSupportedError | AssetEntryRootQuery_assetOrError_Asset;
+export type AssetEntryRootQuery_assetOrError = AssetEntryRootQuery_assetOrError_AssetNotFoundError | AssetEntryRootQuery_assetOrError_Asset;
 
 export interface AssetEntryRootQuery {
   assetOrError: AssetEntryRootQuery_assetOrError;

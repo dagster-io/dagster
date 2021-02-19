@@ -20,12 +20,12 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata
-from ..sql_event_log import AssetAwareSqlEventLogStorage
+from ..sql_event_log import SqlEventLogStorage
 
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 
 
-class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
+class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed consolidated event log storage intended for test cases only.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when

@@ -84,7 +84,6 @@ class GrapheneDaemonHealth(graphene.ObjectType):
 class GrapheneInstance(graphene.ObjectType):
     info = graphene.NonNull(graphene.String)
     runLauncher = graphene.Field(GrapheneRunLauncher)
-    assetsSupported = graphene.NonNull(graphene.Boolean)
     runQueuingSupported = graphene.NonNull(graphene.Boolean)
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
@@ -107,9 +106,6 @@ class GrapheneInstance(graphene.ObjectType):
             if self._instance.run_launcher
             else None
         )
-
-    def resolve_assetsSupported(self, _graphene_info):
-        return self._instance.is_asset_aware
 
     def resolve_runQueuingSupported(self, _graphene_info):
         from dagster.core.run_coordinator import QueuedRunCoordinator

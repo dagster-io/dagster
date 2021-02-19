@@ -3,7 +3,6 @@ import * as React from 'react';
 
 import {assertUnreachable} from 'src/app/Util';
 import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
-import {AssetsSupported} from 'src/runs/AssetsSupported';
 import {ComputeLogLink} from 'src/runs/ComputeLogModal';
 import {EventTypeColumn} from 'src/runs/LogsRowComponents';
 import {
@@ -296,8 +295,6 @@ const MaterializationContent: React.FunctionComponent<{
   message: string;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
 }> = ({message, materialization}) => {
-  const assetsSupported = React.useContext(AssetsSupported);
-
   if (!materialization.assetKey) {
     return (
       <DefaultContent message={message} eventType="Materialization">
@@ -306,7 +303,7 @@ const MaterializationContent: React.FunctionComponent<{
     );
   }
 
-  const assetDashboardLink = assetsSupported ? (
+  const assetDashboardLink = (
     <span style={{marginLeft: 10}}>
       [
       <MetadataEntryLink
@@ -316,7 +313,7 @@ const MaterializationContent: React.FunctionComponent<{
       </MetadataEntryLink>
       ]
     </span>
-  ) : null;
+  );
 
   return (
     <DefaultContent message={message} eventType="AssetMaterialization">

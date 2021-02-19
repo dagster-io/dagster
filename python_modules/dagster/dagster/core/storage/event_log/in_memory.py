@@ -5,15 +5,10 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
-from .base import (
-    AssetAwareEventLogStorage,
-    EventLogSequence,
-    EventLogStorage,
-    extract_asset_events_cursor,
-)
+from .base import EventLogSequence, EventLogStorage, extract_asset_events_cursor
 
 
-class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
+class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     """
     In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
 

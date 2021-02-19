@@ -6,7 +6,6 @@ import {RouteComponentProps} from 'react-router';
 import {Link} from 'react-router-dom';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {AssetsSupported} from 'src/runs/AssetsSupported';
 import {Run} from 'src/runs/Run';
 import {RunConfigDialog, RunDetails} from 'src/runs/RunDetails';
 import {RunFragments} from 'src/runs/RunFragments';
@@ -103,11 +102,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
     );
   }
 
-  return (
-    <AssetsSupported.Provider value={!!data.instance?.assetsSupported}>
-      <Run client={client} run={data.pipelineRunOrError} runId={runId} />
-    </AssetsSupported.Provider>
-  );
+  return <Run client={client} run={data.pipelineRunOrError} runId={runId} />;
 };
 
 const RUN_ROOT_QUERY = gql`
@@ -125,9 +120,6 @@ const RUN_ROOT_QUERY = gql`
         }
         ...RunFragment
       }
-    }
-    instance {
-      assetsSupported
     }
   }
 

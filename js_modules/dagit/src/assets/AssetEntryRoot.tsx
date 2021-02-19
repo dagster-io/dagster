@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState, Breadcrumbs, IBreadcrumbProps} from '@blueprintjs/core';
+import {Colors, Breadcrumbs, IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
@@ -63,28 +63,6 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
         />
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
-            if (assetOrError.__typename === 'AssetsNotSupportedError') {
-              return (
-                <Wrapper>
-                  <NonIdealState
-                    icon="panel-table"
-                    title="Assets"
-                    description={
-                      <p>
-                        An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>)
-                        must be configured in order to use any Asset-based features. You can
-                        configure this on your instance through <code>dagster.yaml</code>. See the{' '}
-                        <a href="https://docs.dagster.io/overview/instances/dagster-instance">
-                          instance documentation
-                        </a>{' '}
-                        for more information.
-                      </p>
-                    }
-                  />
-                </Wrapper>
-              );
-            }
-
             if (assetOrError.__typename === 'AssetNotFoundError') {
               return <AssetsCatalogTable prefixPath={currentPath} />;
             }
@@ -129,9 +107,6 @@ const ASSET_ENTRY_ROOT_QUERY = gql`
   query AssetEntryRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       __typename
-      ... on AssetsNotSupportedError {
-        message
-      }
       ... on Asset {
         key {
           path
