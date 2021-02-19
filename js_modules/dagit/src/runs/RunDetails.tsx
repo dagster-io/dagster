@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {RunTags} from 'src/runs/RunTags';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
+import {RunDetailsFragment} from 'src/runs/types/RunDetailsFragment';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {PipelineRunStatus} from 'src/types/globalTypes';
@@ -19,8 +20,18 @@ const timingStringForStatus = (status?: PipelineRunStatus) => {
       return 'Canceled';
     case PipelineRunStatus.CANCELING:
       return 'Canceling…';
-    default:
+    case PipelineRunStatus.FAILURE:
+      return 'Failed';
+    case PipelineRunStatus.NOT_STARTED:
+      return 'Waiting to start…';
+    case PipelineRunStatus.STARTED:
       return 'Running…';
+    case PipelineRunStatus.STARTING:
+      return 'Starting…';
+    case PipelineRunStatus.SUCCESS:
+      return 'Succeeded';
+    default:
+      return 'None';
   }
 };
 
@@ -32,7 +43,7 @@ const LoadingOrValue: React.FC<{
 
 export const RunDetails: React.FC<{
   loading: boolean;
-  run: RunFragment | undefined;
+  run: RunDetailsFragment | undefined;
 }> = ({loading, run}) => {
   return (
     <MetadataTable
