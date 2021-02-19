@@ -18,7 +18,7 @@ const Pagination = () => {
   const next = flattenedNavigation[currentIndex + 1];
 
   return (
-    <nav className="mt-12 border-t border-gray-200 px-4 flex items-center justify-between sm:px-0">
+    <nav className="mt-12 border-t border-gray-200 mx-4 sm:mx-6 lg:mx-8 flex items-center justify-between">
       <div className="-mt-px w-0 flex-1 flex">
         {prev && (
           <Link href={prev.path}>
