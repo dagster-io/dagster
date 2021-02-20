@@ -299,6 +299,8 @@ def test_resources_notebook():
             assert msgs[3] == "Hello, notebook!"
 
 
+# https://github.com/dagster-io/dagster/issues/3722
+@pytest.mark.skip
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
     result = None
