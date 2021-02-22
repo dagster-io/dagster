@@ -15,6 +15,7 @@ if __name__ == "__main__":
     setup(
         name="dagstermill",
         version=get_version(),
+        description="run notebooks using the Dagster tools",
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
