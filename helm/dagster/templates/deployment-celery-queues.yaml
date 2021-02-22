@@ -112,10 +112,7 @@ spec:
           {{- toYaml $celeryK8sRunLauncherConfig.livenessProbe | nindent 12 }}
         {{- end }}
       {{- end }}
-      {{- with $celeryK8sRunLauncherConfig.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+      nodeSelector: {{- $queue.nodeSelector | default $celeryK8sRunLauncherConfig.nodeSelector | toYaml | nindent 8 }}
       volumes:
         - name: dagster-instance
           configMap:

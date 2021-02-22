@@ -17,6 +17,7 @@ class CeleryWorkerQueue(BaseModel):
     replicaCount: int = Field(gt=0)
     name: str
     labels: Optional[kubernetes.Labels]
+    nodeSelector: Optional[kubernetes.NodeSelector]
 
     class Config:
         extra = Extra.forbid

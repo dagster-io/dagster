@@ -1284,6 +1284,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "nodeSelector": {
+                    "title": "NodeSelector",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/NodeSelector"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

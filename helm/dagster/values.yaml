@@ -388,12 +388,15 @@ runLauncher:
       configSource: {}
 
       # Additional Celery worker queues can be configured here. When overriding, be sure to
-      # provision a "dagster" worker queue, as this is the default queue used by Dagster. Labels field is optional. If specified,
-      # the labels are added to each Celery worker in that Celery queue
+      # provision a "dagster" worker queue, as this is the default queue used by Dagster.
+      #
+      # Optionally, labels and node selectors can be set on the Celery queue's workers.
+      # Specifying a queue's node selector will override any existing node selector defaults.
       workerQueues:
         - name: "dagster"
           replicaCount: 2
           labels: {}
+          nodeSelector: {}
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -424,12 +427,17 @@ runLauncher:
       #   - name: secret
       envSecrets: []
 
-      # Support Node, affinity and tolerations for Celery pod assignment. See:
+      annotations: {}
+
+      # Sets a node selector as a default for all Celery queues.
+      #
+      # See:
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+      nodeSelector: {}
+
+      # Support affinity and tolerations for Celery pod assignment. See:
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
       # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-      annotations: {}
-      nodeSelector: {}
       affinity: {}
       tolerations: []
       podSecurityContext: {}
