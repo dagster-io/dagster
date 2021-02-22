@@ -1,5 +1,6 @@
 import inspect
 from functools import update_wrapper, wraps
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Set, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -18,18 +19,21 @@ from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.system import SystemComputeExecutionContext
+
 
 class _Solid:
     def __init__(
         self,
-        name=None,
-        input_defs=None,
-        output_defs=None,
-        description=None,
-        required_resource_keys=None,
-        config_schema=None,
-        tags=None,
-        version=None,
+        name: Optional[str] = None,
+        input_defs: Optional[List[InputDefinition]] = None,
+        output_defs: Optional[List[OutputDefinition]] = None,
+        description: Optional[str] = None,
+        required_resource_keys: Optional[Set[str]] = None,
+        config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        version: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
@@ -47,7 +51,7 @@ class _Solid:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-    def __call__(self, fn):
+    def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -84,15 +88,15 @@ class _Solid:
 
 
 def solid(
-    name=None,
-    description=None,
-    input_defs=None,
-    output_defs=None,
-    config_schema=None,
-    required_resource_keys=None,
-    tags=None,
-    version=None,
-):
+    name: Union[Callable[..., Any], Optional[str]] = None,
+    description: Optional[str] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_defs: Optional[List[OutputDefinition]] = None,
+    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    version: Optional[str] = None,
+) -> Union[_Solid, SolidDefinition]:
     """Create a solid with the specified parameters from the decorated function.
 
     This shortcut simplifies the core :class:`SolidDefinition` API by exploding arguments into
@@ -207,7 +211,9 @@ def solid(
     )
 
 
-def _create_solid_compute_wrapper(fn, input_defs, output_defs):
+def _create_solid_compute_wrapper(
+    fn: Callable[..., Any], input_defs: List[InputDefinition], output_defs: List[OutputDefinition]
+) -> Callable[..., Any]:
     check.callable_param(fn, "fn")
     check.list_param(input_defs, "input_defs", of_type=InputDefinition)
     check.list_param(output_defs, "output_defs", of_type=OutputDefinition)
@@ -219,7 +225,7 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
     ]
 
     @wraps(fn)
-    def compute(context, input_defs):
+    def compute(context, input_defs) -> Generator[Output, None, None]:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -291,8 +297,13 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
 
 
 def validate_solid_fn(
-    decorator_name, fn_name, compute_fn, input_defs, expected_positionals=None, exclude_nothing=True
-):
+    decorator_name: str,
+    fn_name: str,
+    compute_fn: Callable[..., Any],
+    input_defs: List[InputDefinition],
+    expected_positionals: Optional[List[str]] = None,
+    exclude_nothing: Optional[bool] = True,
+) -> List[str]:
     check.str_param(decorator_name, "decorator_name")
     check.str_param(fn_name, "fn_name")
     check.callable_param(compute_fn, "compute_fn")
