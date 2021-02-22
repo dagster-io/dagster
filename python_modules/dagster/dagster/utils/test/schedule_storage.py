@@ -4,7 +4,6 @@ import time
 
 import pendulum
 import pytest
-from dagster import DagsterInvariantViolationError
 from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -180,7 +179,7 @@ class TestScheduleStorage:
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.update_job_state(schedule)
 
     def test_delete_schedule_state(self, storage):
@@ -198,7 +197,7 @@ class TestScheduleStorage:
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.delete_job_state(schedule.job_origin_id)
 
     def test_add_schedule_with_same_name(self, storage):
@@ -207,7 +206,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_job_state(schedule)
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.add_job_state(schedule)
 
     def build_tick(self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None):
@@ -407,7 +406,7 @@ class TestScheduleStorage:
 
         job = self.build_sensor("my_sensor")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.update_job_state(job)
 
     def test_delete_job_state(self, storage):
@@ -424,7 +423,7 @@ class TestScheduleStorage:
 
         job = self.build_sensor("my_sensor")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.delete_job_state(job.job_origin_id)
 
     def test_add_job_with_same_name(self, storage):
@@ -433,7 +432,7 @@ class TestScheduleStorage:
         job = self.build_sensor("my_sensor")
         storage.add_job_state(job)
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.add_job_state(job)
 
     def build_sensor_tick(
@@ -561,11 +560,19 @@ class TestScheduleStorage:
         storage.create_job_tick(
             self.build_sensor_tick(four_minutes_ago, JobTickStatus.SUCCESS, run_id="fake_run_id")
         )
-        storage.create_job_tick(self.build_sensor_tick(one_minute_ago, JobTickStatus.SKIPPED))
+        one_minute_tick = storage.create_job_tick(
+            self.build_sensor_tick(one_minute_ago, JobTickStatus.SKIPPED)
+        )
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 3
 
-        storage.purge_job_ticks("my_sensor", JobTickStatus.SKIPPED, now.subtract(minutes=2))
+        latest_tick = storage.get_latest_job_tick("my_sensor")
+        assert latest_tick
+        assert latest_tick.tick_id == one_minute_tick.tick_id
+
+        storage.purge_job_ticks(
+            "my_sensor", JobTickStatus.SKIPPED, now.subtract(minutes=2).timestamp()
+        )
 
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 2

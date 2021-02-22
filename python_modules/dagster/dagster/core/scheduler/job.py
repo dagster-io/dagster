@@ -109,6 +109,7 @@ class JobTickStatus(Enum):
     FAILURE = "FAILURE"
 
 
+@whitelist_for_serdes
 class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def __new__(cls, tick_id, job_tick_data):
         return super(JobTick, cls).__new__(

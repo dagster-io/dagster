@@ -177,7 +177,7 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                 instance.purge_job_ticks(
                     job_state.job_origin_id,
                     tick_status=JobTickStatus.SKIPPED,
-                    before=now.subtract(days=7),  #  keep the last 7 days
+                    before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
                 )
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
