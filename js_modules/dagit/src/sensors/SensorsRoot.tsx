@@ -56,6 +56,26 @@ export const SensorsRoot = (props: Props) => {
                   description="Could not load this repository."
                 />
               );
+            } else if (!sensorsOrError.results.length) {
+              return (
+                <NonIdealState
+                  icon={IconNames.AUTOMATIC_UPDATES}
+                  title="No Sensors Found"
+                  description={
+                    <p>
+                      This repository does not have any sensors defined. Visit the{' '}
+                      <a
+                        href="https://docs.dagster.io/overview/schedules-sensors/sensors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        sensors documentation
+                      </a>{' '}
+                      for more information about creating sensors in Dagster.
+                    </p>
+                  }
+                />
+              );
             } else {
               return (
                 <Group direction="column" spacing={20}>
