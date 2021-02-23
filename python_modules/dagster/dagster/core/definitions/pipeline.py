@@ -321,15 +321,6 @@ class PipelineDefinition(GraphDefinition):
         return [mode_def.name for mode_def in self._mode_definitions]
 
     @property
-    def display_name(self):
-        """str: Display name of pipeline.
-
-        Name suitable for exception messages, logging etc. If pipeline
-        is unnamed the method will return "<<unnamed>>".
-        """
-        return self._name if self._name else "<<unnamed>>"
-
-    @property
     def tags(self):
         return self._tags
 

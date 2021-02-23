@@ -311,4 +311,3 @@ def test_nameless():
     noname = PipelineDefinition([return_one])
 
     assert noname.name.startswith("__pipeline")
-    assert noname.display_name.startswith("__pipeline")
