@@ -43,6 +43,19 @@ def test_inner_types():
     assert inner_type_key_set(list_nullable_int_runtime) == set(["Int", "Optional.Int"])
     assert not list_nullable_int_runtime.kind == DagsterTypeKind.SCALAR
 
+    tuple_optional_list = resolve_dagster_type(Tuple[List[Optional[Int]], List[Dict[str, str]]])
+    assert inner_type_key_set(tuple_optional_list) == set(
+        [
+            "Int",
+            "Optional.Int",
+            "List.Optional.Int",
+            "String",
+            "TypedPythonDict.String.String",
+            "List.TypedPythonDict.String.String",
+        ]
+    )
+    assert not tuple_optional_list.kind == DagsterTypeKind.SCALAR
+
 
 def test_is_any():
     assert not resolve_dagster_type(Int).kind == DagsterTypeKind.ANY
