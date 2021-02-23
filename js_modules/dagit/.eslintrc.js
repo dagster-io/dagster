@@ -53,7 +53,7 @@ module.exports = {
         ],
       },
     ],
-    'react/jsx-no-target-blank': ['error', {warnOnSpreadAttributes: true}],
+    'react/jsx-no-target-blank': 'error',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
