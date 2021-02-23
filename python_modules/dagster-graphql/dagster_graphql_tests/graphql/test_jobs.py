@@ -1,3 +1,4 @@
+from dagster.core.host_representation import RepositoryLocationHandleManager
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (
@@ -31,7 +32,12 @@ query JobQuery($jobSelector: JobSelector!) {
 
 
 def _create_sensor_tick(instance):
-    list(execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon")))
+    with RepositoryLocationHandleManager() as handle_manager:
+        list(
+            execute_sensor_iteration(
+                instance, get_default_daemon_logger("SensorDaemon"), handle_manager
+            )
+        )
 
 
 class TestNextTickRepository(

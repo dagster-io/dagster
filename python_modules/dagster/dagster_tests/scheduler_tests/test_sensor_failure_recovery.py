@@ -1,6 +1,7 @@
 import pendulum
 import pytest
 from dagster.core.definitions.job import JobType
+from dagster.core.host_representation import RepositoryLocationHandleManager
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -17,13 +18,15 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime):
-                list(
-                    execute_sensor_iteration(
-                        instance,
-                        get_default_daemon_logger("SensorDaemon"),
-                        debug_crash_flags=debug_crash_flags,
+                with RepositoryLocationHandleManager() as handle_manager:
+                    list(
+                        execute_sensor_iteration(
+                            instance,
+                            get_default_daemon_logger("SensorDaemon"),
+                            handle_manager,
+                            debug_crash_flags=debug_crash_flags,
+                        )
                     )
-                )
         finally:
             cleanup_test_instance(instance)
 

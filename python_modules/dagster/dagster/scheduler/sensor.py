@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from contextlib import ExitStack
 
 import pendulum
 from dagster import check
@@ -24,6 +25,8 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 RECORDED_TICK_STATES = [JobTickStatus.SUCCESS, JobTickStatus.FAILURE]
 FULFILLED_TICK_STATES = [JobTickStatus.SKIPPED, JobTickStatus.SUCCESS]
+
+MIN_INTERVAL_LOOP_TIME = 5
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -113,7 +116,44 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
+def execute_sensor_iteration_loop(instance, logger, daemon_shutdown_event, until=None):
+    """
+    Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
+    within a given daemon interval.  Rather than relying on the daemon machinery to run the
+    iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
+    each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
+    """
+    from dagster.daemon.daemon import CompletedIteration
+
+    handle_manager = None
+    manager_loaded_time = None
+    RELOAD_LOCATION_MANAGER_INTERVAL = 60
+
+    start_time = pendulum.now("UTC").timestamp()
+    with ExitStack() as stack:
+        while not daemon_shutdown_event or not daemon_shutdown_event.is_set():
+            start_time = pendulum.now("UTC").timestamp()
+            if until and start_time >= until:
+                # provide a way of organically ending the loop to support test environment
+                break
+
+            if (
+                not handle_manager
+                or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
+            ):
+                stack.pop_all()  # remove the previous context
+                handle_manager = stack.enter_context(RepositoryLocationHandleManager())
+                manager_loaded_time = start_time
+
+            yield from execute_sensor_iteration(instance, logger, handle_manager)
+            loop_duration = pendulum.now("UTC").timestamp() - start_time
+            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+            yield CompletedIteration()
+            time.sleep(sleep_time)
+
+
+def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags=None):
+    check.inst_param(handle_manager, "handle_manager", RepositoryLocationHandleManager)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
         s
@@ -129,79 +169,78 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
         )
     )
 
-    with RepositoryLocationHandleManager() as handle_manager:
-        for job_state in sensor_jobs:
-            sensor_debug_crash_flags = (
-                debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
+    for job_state in sensor_jobs:
+        sensor_debug_crash_flags = (
+            debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
+        )
+        error_info = None
+        try:
+            origin = job_state.origin.external_repository_origin.repository_location_origin
+            repo_location_handle = handle_manager.get_handle(origin)
+            repo_location = repo_location_handle.create_location()
+
+            repo_name = job_state.origin.external_repository_origin.repository_name
+
+            if not repo_location.has_repository(repo_name):
+                raise DagsterSensorDaemonError(
+                    f"Could not find repository {repo_name} in location {repo_location.name} to "
+                    + f"run sensor {job_state.job_name}. If this repository no longer exists, you can "
+                    + "turn off the sensor in the Dagit UI.",
+                )
+
+            external_repo = repo_location.get_repository(repo_name)
+            if not external_repo.has_external_job(job_state.job_name):
+                raise DagsterSensorDaemonError(
+                    f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
+                    "sensor no longer exists, you can turn it off in the Dagit UI.",
+                )
+
+            now = pendulum.now("UTC")
+            if _is_under_min_interval(job_state, now):
+                continue
+
+            tick = instance.create_job_tick(
+                JobTickData(
+                    job_origin_id=job_state.job_origin_id,
+                    job_name=job_state.job_name,
+                    job_type=JobType.SENSOR,
+                    status=JobTickStatus.STARTED,
+                    timestamp=now.timestamp(),
+                )
             )
-            error_info = None
-            try:
-                origin = job_state.origin.external_repository_origin.repository_location_origin
-                repo_location_handle = handle_manager.get_handle(origin)
-                repo_location = repo_location_handle.create_location()
 
-                repo_name = job_state.origin.external_repository_origin.repository_name
+            _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
-                if not repo_location.has_repository(repo_name):
-                    raise DagsterSensorDaemonError(
-                        f"Could not find repository {repo_name} in location {repo_location.name} to "
-                        + f"run sensor {job_state.job_name}. If this repository no longer exists, you can "
-                        + "turn off the sensor in the Dagit UI.",
-                    )
-
-                external_repo = repo_location.get_repository(repo_name)
-                if not external_repo.has_external_job(job_state.job_name):
-                    raise DagsterSensorDaemonError(
-                        f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
-                        "sensor no longer exists, you can turn it off in the Dagit UI.",
-                    )
-
-                now = pendulum.now("UTC")
-                if _is_under_min_interval(job_state, now):
-                    continue
-
-                tick = instance.create_job_tick(
-                    JobTickData(
-                        job_origin_id=job_state.job_origin_id,
-                        job_name=job_state.job_name,
-                        job_type=JobType.SENSOR,
-                        status=JobTickStatus.STARTED,
-                        timestamp=now.timestamp(),
-                    )
+            external_sensor = external_repo.get_external_sensor(job_state.job_name)
+            with SensorLaunchContext(
+                external_sensor, job_state, tick, instance, logger
+            ) as tick_context:
+                _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+                _evaluate_sensor(
+                    tick_context,
+                    instance,
+                    repo_location,
+                    external_repo,
+                    external_sensor,
+                    job_state,
+                    sensor_debug_crash_flags,
                 )
 
-                _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
-
-                external_sensor = external_repo.get_external_sensor(job_state.job_name)
-                with SensorLaunchContext(
-                    external_sensor, job_state, tick, instance, logger
-                ) as tick_context:
-                    _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
-                    _evaluate_sensor(
-                        tick_context,
-                        instance,
-                        repo_location,
-                        external_repo,
-                        external_sensor,
-                        job_state,
-                        sensor_debug_crash_flags,
-                    )
-
-                instance.purge_job_ticks(
-                    job_state.job_origin_id,
-                    tick_status=JobTickStatus.SKIPPED,
-                    before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
+            instance.purge_job_ticks(
+                job_state.job_origin_id,
+                tick_status=JobTickStatus.SKIPPED,
+                before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
+            )
+            yield
+        except Exception:  # pylint: disable=broad-except
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            logger.error(
+                "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
+                    sensor_name=job_state.job_name,
+                    error_info=error_info.to_string(),
                 )
-                yield
-            except Exception:  # pylint: disable=broad-except
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                logger.error(
-                    "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
-                        sensor_name=job_state.job_name,
-                        error_info=error_info.to_string(),
-                    )
-                )
-            yield error_info
+            )
+        yield error_info
 
 
 def _evaluate_sensor(
