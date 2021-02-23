@@ -146,7 +146,6 @@ def submit_backfill_runs(instance, repo_location, backfill_job, partition_names=
     external_pipeline = external_repo.get_full_external_pipeline(
         external_partition_set.pipeline_name
     )
-    submitted = []
     for partition_data in result.partition_data:
         pipeline_run = create_backfill_run(
             instance,
@@ -161,8 +160,8 @@ def submit_backfill_runs(instance, repo_location, backfill_job, partition_names=
             # and the partition has had a successful run since the time the backfill was
             # scheduled
             instance.submit_run(pipeline_run.run_id, external_pipeline)
-            submitted.append(pipeline_run.run_id)
-    return submitted
+            yield pipeline_run.run_id
+        yield None
 
 
 def create_backfill_run(

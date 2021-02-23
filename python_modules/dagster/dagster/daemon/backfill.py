@@ -80,13 +80,17 @@ def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
                     _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
                     if chunk:
-                        submit_backfill_runs(instance, repo_location, backfill_job, chunk)
+
+                        for _run_id in submit_backfill_runs(
+                            instance, repo_location, backfill_job, chunk
+                        ):
+                            yield
 
                     _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
                     if has_more:
                         instance.update_backfill(backfill_job.with_partition_checkpoint(checkpoint))
-                        yield None
+                        yield
                         time.sleep(CHECKPOINT_INTERVAL)
                     else:
                         logger.info(
@@ -95,7 +99,7 @@ def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
                         instance.update_backfill(
                             backfill_job.with_status(BulkActionStatus.COMPLETED)
                         )
-                        yield None
+                        yield
         except DagsterBackfillFailedError as e:
             error_info = e.serializable_error_info
             instance.update_backfill(

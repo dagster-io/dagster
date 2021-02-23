@@ -58,7 +58,7 @@ _SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 def execute_scheduler_iteration(instance, logger, max_catchup_runs):
     end_datetime_utc = pendulum.now("UTC")
-    return launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
+    yield from launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
 
 
 def launch_scheduled_runs(
@@ -88,7 +88,7 @@ def launch_scheduled_runs(
                 origin = schedule_state.origin.external_repository_origin.repository_location_origin
                 repo_location_handle = handle_manager.get_handle(origin)
                 repo_location = repo_location_handle.create_location()
-                launch_scheduled_runs_for_schedule(
+                yield from launch_scheduled_runs_for_schedule(
                     instance,
                     logger,
                     schedule_state,
@@ -215,6 +215,7 @@ def launch_scheduled_runs_for_schedule(
                 tick_context,
                 debug_crash_flags,
             )
+            yield
 
 
 def _check_for_debug_crash(debug_crash_flags, key):

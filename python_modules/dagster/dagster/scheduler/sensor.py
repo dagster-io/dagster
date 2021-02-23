@@ -192,6 +192,7 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                     tick_status=JobTickStatus.SKIPPED,
                     before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
                 )
+                yield
             except Exception:  # pylint: disable=broad-except
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 logger.error(

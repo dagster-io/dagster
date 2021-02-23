@@ -175,7 +175,7 @@ class SchedulerDaemon(DagsterDaemon):
         return "SCHEDULER"
 
     def run_iteration(self, instance):
-        return execute_scheduler_iteration(instance, self._logger, self._max_catchup_runs)
+        yield from execute_scheduler_iteration(instance, self._logger, self._max_catchup_runs)
 
 
 class SensorDaemon(DagsterDaemon):
@@ -193,7 +193,7 @@ class SensorDaemon(DagsterDaemon):
         return "SENSOR"
 
     def run_iteration(self, instance):
-        return execute_sensor_iteration(instance, self._logger)
+        yield from execute_sensor_iteration(instance, self._logger)
 
 
 class BackfillDaemon(DagsterDaemon):
@@ -208,4 +208,4 @@ class BackfillDaemon(DagsterDaemon):
         return "BACKFILL"
 
     def run_iteration(self, instance):
-        return execute_backfill_iteration(instance, self._logger)
+        yield from execute_backfill_iteration(instance, self._logger)

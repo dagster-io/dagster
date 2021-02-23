@@ -65,7 +65,11 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         graphene_info.context.instance.add_backfill(backfill)
         return GraphenePartitionBackfillSuccess(backfill_id=backfill_id)
     else:
-        submitted_run_ids = submit_backfill_runs(graphene_info.context.instance, location, backfill)
+        submitted_run_ids = list(
+            run_id
+            for run_id in submit_backfill_runs(graphene_info.context.instance, location, backfill)
+            if run_id != None
+        )
         return GraphenePartitionBackfillSuccess(
             backfill_id=backfill_id, launched_run_ids=submitted_run_ids
         )
