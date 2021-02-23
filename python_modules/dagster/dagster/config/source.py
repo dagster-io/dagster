@@ -72,5 +72,36 @@ class IntSourceType(ScalarUnion):
             )
 
 
+class BoolSourceType(ScalarUnion):
+    def __init__(self):
+        super(BoolSourceType, self).__init__(
+            scalar_type=bool,
+            non_scalar_schema=Selector({"env": str}),
+            _key="BoolSourceType",
+        )
+
+    def post_process(self, value):
+        check.param_invariant(isinstance(value, (dict, bool)), "value", "Should be pre-validated")
+
+        if not isinstance(value, dict):
+            return value
+
+        check.invariant(len(value) == 1, "Selector should have one entry")
+
+        key, cfg = list(value.items())[0]
+        check.invariant(key == "env", "Only valid key is env")
+        value = _ensure_env_variable(cfg)
+        try:
+            return bool(value)
+        except ValueError:
+            raise PostProcessingError(
+                (
+                    'Value "{value}" stored in env variable "{var}" cannot be '
+                    "coerced into an bool."
+                ).format(value=value, var=cfg)
+            )
+
+
 StringSource = StringSourceType()
 IntSource = IntSourceType()
+BoolSource = BoolSourceType()

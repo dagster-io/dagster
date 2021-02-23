@@ -87,6 +87,35 @@ builtin types above.
             }
         )
 
+.. attribute:: BoolSource
+
+   Use this type when you want to read an boolean config value from an environment variable. The
+   value passed to a config field of this type may either be a boolean literal, or a selector
+   describing how to look up the value from the executing process's environment variables. Set the
+   value of the corresponding environment variable to ``""`` to indicate ``False``.
+
+   **Examples:**
+
+   .. code-block:: python
+
+        @solid(config_schema=BoolSource)
+        def secret_bool_solid(context) -> str:
+            return context.solid_config
+
+        execute_solid(
+            secret_bool_solid,
+            run_config={
+                'solids': {'secret_bool_solid': {'config': True}}
+            }
+        )
+
+        execute_solid(
+            secret_bool_solid,
+            run_config={
+                'solids': {'secret_bool_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_BOOL'}}}
+            }
+        )
+
 Config Utilities
 ----------------
 

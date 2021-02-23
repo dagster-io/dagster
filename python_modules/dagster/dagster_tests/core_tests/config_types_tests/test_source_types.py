@@ -1,6 +1,6 @@
 import os
 
-from dagster import Array, IntSource, Noneable, StringSource
+from dagster import Array, BoolSource, IntSource, Noneable, StringSource
 from dagster.config.validate import process_config
 from dagster.core.test_utils import environ
 
@@ -69,3 +69,30 @@ def test_noneable_string_source_array():
         assert process_config(
             Noneable(Array(StringSource)), ["test", {"env": "DAGSTER_TEST_ENV_VAR"}]
         ).success
+
+
+def test_bool_source():
+    assert process_config(BoolSource, True).success
+    assert process_config(BoolSource, False).success
+    assert not process_config(BoolSource, "False").success
+    assert not process_config(BoolSource, "foo").success
+    assert not process_config(BoolSource, 1).success
+
+    assert not process_config(BoolSource, {"env": 1}).success
+
+    assert "DAGSTER_TEST_ENV_VAR" not in os.environ
+    assert not process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
+
+    assert (
+        'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
+        "which is not set. In order for this execution to succeed it must be set in "
+        "this environment."
+    ) in process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+
+    with environ({"DAGSTER_TEST_ENV_VAR": ""}):
+        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
+        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).value == False
+
+    with environ({"DAGSTER_TEST_ENV_VAR": "True"}):
+        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
+        assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).value == True

@@ -159,7 +159,7 @@ from dagster.utils.test import (
 
 from .version import __version__
 
-from dagster.config.source import StringSource, IntSource  # isort:skip
+from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
 
 __all__ = [
@@ -297,6 +297,7 @@ __all__ = [
     "usable_as_dagster_type",
     # config
     "Array",
+    "BoolSource",
     "ConfigSchema",
     "Noneable",
     "Permissive",
