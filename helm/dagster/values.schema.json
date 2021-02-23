@@ -45,6 +45,9 @@
         },
         "busybox": {
             "$ref": "#/definitions/Busybox"
+        },
+        "migrate": {
+            "$ref": "#/definitions/Migrate"
         }
     },
     "required": [
@@ -60,7 +63,8 @@
         "scheduler",
         "runLauncher",
         "dagsterDaemon",
-        "busybox"
+        "busybox",
+        "migrate"
     ],
     "definitions": {
         "PullPolicy": {
@@ -1727,6 +1731,19 @@
             },
             "required": [
                 "image"
+            ]
+        },
+        "Migrate": {
+            "title": "Migrate",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
             ]
         }
     }

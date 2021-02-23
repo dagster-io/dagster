@@ -299,6 +299,10 @@
           {
             "title": "Customizing your Kubernetes Deployment",
             "path": "/deployment/guides/kubernetes/customizing-your-deployment"
+          },
+          {
+            "title": "How to Migrate Your Instance",
+            "path": "/deployment/guides/kubernetes/how-to-migrate-your-instance"
           }
         ]
       },

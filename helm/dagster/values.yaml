@@ -810,5 +810,15 @@ extraManifests:
 #        securityPolicy:
 #          name: "gcp-cloud-armor-policy-test"
 
+####################################################################################################
+# Dagster Instance Migrate: Creates a job to migrate your instance. This field should only be
+# enabled in a one-off setting.
+#
+# For more details, see:
+# https://docs.dagster.io/deployment/guides/kubernetes/how-to-migrate-your-instance
+####################################################################################################
+migrate:
+  enabled: false
+
 serviceAccount:
   create: true

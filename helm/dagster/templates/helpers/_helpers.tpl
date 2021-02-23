@@ -43,6 +43,11 @@ dagit -h 0.0.0.0 -p 80
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "dagster.dagit.migrate" -}}
+{{- $name := default "dagit" .Values.dagit.nameOverride -}}
+{{- printf "%s-%s-instance-migrate" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "dagster.workers.fullname" -}}
 {{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
 {{- $name := $celeryK8sRunLauncherConfig.nameOverride -}}

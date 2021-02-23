@@ -25,3 +25,4 @@ class DagsterHelmValues(BaseModel):
     runLauncher: subschema.RunLauncher
     dagsterDaemon: subschema.Daemon
     busybox: subschema.Busybox
+    migrate: subschema.Migrate
