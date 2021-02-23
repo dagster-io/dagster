@@ -18,6 +18,7 @@ from dagster.utils.backcompat import (
 from ..decorator_utils import get_function_params
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
+from .pipeline import PipelineDefinition
 from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
@@ -150,7 +151,7 @@ class SensorDefinition:
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job: Optional[GraphDefinition] = None,
+        job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
         decorated_fn: Optional[
             Callable[
                 ["SensorEvaluationContext"],

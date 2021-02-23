@@ -174,7 +174,7 @@ class PipelineExecutionResult(GraphExecutionResult):
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline_def,
+            container=pipeline_def.graph,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
             pipeline_def=pipeline_def,

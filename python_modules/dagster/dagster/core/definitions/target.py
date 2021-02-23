@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Union
 
 from dagster import check
 
@@ -22,8 +22,8 @@ class DirectTarget(NamedTuple("_DirectTarget", [("pipeline", PipelineDefinition)
     in to any repository the container is included in.
     """
 
-    def __new__(cls, graph: GraphDefinition):
-        check.inst_param(graph, "graph", GraphDefinition)
+    def __new__(cls, graph: Union[GraphDefinition, PipelineDefinition]):
+        check.inst_param(graph, "graph", (GraphDefinition, PipelineDefinition))
 
         # pipeline will become job / execution target
         if isinstance(graph, PipelineDefinition):

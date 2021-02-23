@@ -2,8 +2,6 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
 
 from dagster import check
-from dagster.core.definitions.input import InputMapping
-from dagster.core.definitions.output import OutputMapping
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.definitions.solid import NodeDefinition
@@ -19,9 +17,7 @@ from dagster.core.storage.root_input_manager import (
 )
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
-from dagster.utils.backcompat import experimental_arg_warning
 
-from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,
     DependencyStructure,
@@ -46,7 +42,7 @@ if TYPE_CHECKING:
     from dagster.core.host_representation import PipelineIndex
 
 
-class PipelineDefinition(GraphDefinition):
+class PipelineDefinition:
     """Defines a Dagster pipeline.
 
     A pipeline is made up of
@@ -138,8 +134,8 @@ class PipelineDefinition(GraphDefinition):
 
     def __init__(
         self,
-        solid_defs: List[NodeDefinition],
-        name: str,
+        solid_defs: Optional[List[NodeDefinition]] = None,
+        name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
             Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
@@ -148,44 +144,40 @@ class PipelineDefinition(GraphDefinition):
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Dict[str, Any] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        input_mappings: Optional[List[InputMapping]] = None,
-        output_mappings: Optional[List[OutputMapping]] = None,
-        config_mapping: Optional[ConfigMapping] = None,
-        positional_inputs: List[str] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
-        _parent_pipeline_def: Optional[
-            "PipelineDefinition"
-        ] = None,  # https://github.com/dagster-io/dagster/issues/2115
+        graph_def=None,
+        _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
     ):
-        # For these warnings they check truthiness because they get changed to [] higher
-        # in the stack for the decorator case
+        # If a graph is specificed directly use it
+        if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
+            self._graph_def = graph_def
+            self._name = name or graph_def.name
 
-        if input_mappings:
-            experimental_arg_warning("input_mappings", "PipelineDefinition")
+        # Otherwise fallback to legacy construction
+        else:
+            if name is None:
+                check.failed("name must be set provided")
+            self._name = name
 
-        if output_mappings:
-            experimental_arg_warning("output_mappings", "PipelineDefinition")
+            if solid_defs is None:
+                check.failed("solid_defs must be provided")
 
-        if config_mapping is not None:
-            experimental_arg_warning("config_mapping", "PipelineDefinition")
+            self._graph_def = GraphDefinition(
+                name=name,
+                dependencies=dependencies,
+                node_defs=solid_defs,
+                input_mappings=None,
+                output_mappings=None,
+                config_mapping=None,
+                description=None,
+            )
 
-        if positional_inputs:
-            experimental_arg_warning("positional_inputs", "PipelineDefinition")
-
-        super(PipelineDefinition, self).__init__(
-            name=name,
-            description=description,
-            dependencies=dependencies,
-            node_defs=solid_defs,
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
-            positional_inputs=positional_inputs,
-            input_mappings=input_mappings,
-            output_mappings=output_mappings,
-            config_mapping=config_mapping,
-        )
-
-        self._current_level_node_defs = solid_defs
+        # tags and description can exist on graph as well, but since
+        # same graph may be in multiple pipelines/jobs, keep separate layer
+        self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
+
+        self._current_level_node_defs = self._graph_def.node_defs
 
         mode_definitions = check.opt_list_param(mode_defs, "mode_defs", of_type=ModeDefinition)
 
@@ -201,7 +193,7 @@ class PipelineDefinition(GraphDefinition):
                     (
                         'Two modes seen with the name "{mode_name}" in "{pipeline_name}". '
                         "Modes must have unique names."
-                    ).format(mode_name=mode_def.name, pipeline_name=self._name)
+                    ).format(mode_name=mode_def.name, pipeline_name=self.name)
                 )
             seen_modes.add(mode_def.name)
 
@@ -218,14 +210,14 @@ class PipelineDefinition(GraphDefinition):
                     (
                         'Two PresetDefinitions seen with the name "{name}" in "{pipeline_name}". '
                         "PresetDefinitions must have unique names."
-                    ).format(name=preset.name, pipeline_name=self._name)
+                    ).format(name=preset.name, pipeline_name=self.name)
                 )
             if preset.mode not in seen_modes:
                 raise DagsterInvalidDefinitionError(
                     (
                         'PresetDefinition "{name}" in "{pipeline_name}" '
                         'references mode "{mode}" which is not defined.'
-                    ).format(name=preset.name, pipeline_name=self._name, mode=preset.mode)
+                    ).format(name=preset.name, pipeline_name=self.name, mode=preset.mode)
                 )
             self._preset_dict[preset.name] = preset
 
@@ -233,10 +225,10 @@ class PipelineDefinition(GraphDefinition):
             mode_def.name: _checked_resource_reqs_for_mode(
                 mode_def,
                 self._current_level_node_defs,
-                self._dagster_type_dict,
-                self._solid_dict,
+                self._graph_def._dagster_type_dict,
+                self._graph_def._solid_dict,
                 self._hook_defs,
-                self._dependency_structure,
+                self._graph_def._dependency_structure,
             )
             for mode_def in self._mode_definitions
         }
@@ -249,36 +241,30 @@ class PipelineDefinition(GraphDefinition):
         self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
         self._cached_external_pipeline = None
 
-    def copy_for_configured(
-        self,
-        name: str,
-        description: Optional[str],
-        config_schema: Any,
-        config_or_config_fn,
-    ) -> "PipelineDefinition":
-        if not self.has_config_mapping:
-            raise DagsterInvalidDefinitionError(
-                "Only pipelines utilizing config mapping can be pre-configured. The pipeline "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
-            )
+    @property
+    def name(self):
+        return self._name
 
-        return PipelineDefinition(
-            solid_defs=self._solid_defs,
-            name=name,
-            description=description or self.description,
-            dependencies=self._dependencies,
-            mode_defs=self._mode_definitions,
-            preset_defs=self.preset_defs,
-            hook_defs=self.hook_defs,
-            input_mappings=self._input_mappings,
-            output_mappings=self._output_mappings,
-            config_mapping=ConfigMapping(
-                self._config_mapping.config_fn, config_schema=config_schema
-            ),
-            positional_inputs=self.positional_inputs,
-            _parent_pipeline_def=self._parent_pipeline_def,
-        )
+    @property
+    def tags(self):
+        # could merge with graph level tags here
+        return self._tags
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def graph(self):
+        return self._graph_def
+
+    @property
+    def dependency_structure(self):
+        return self._graph_def.dependency_structure
+
+    @property
+    def dependencies(self):
+        return self._graph_def.dependencies
 
     def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
         check.str_param(mode, "mode")
@@ -339,7 +325,7 @@ class PipelineDefinition(GraphDefinition):
 
         if mode_def is None:
             check.failed(
-                "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self._name),
+                "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self.name),
             )
 
         return mode_def
@@ -354,18 +340,6 @@ class PipelineDefinition(GraphDefinition):
             for resource_key, resource in self.get_mode_definition(mode).resource_defs.items()
             if resource_key in self._resource_requirements[mode]
         }
-
-    @property
-    def tags(self) -> Dict[str, Any]:
-        return self._tags
-
-    def has_dagster_type(self, name: str) -> bool:
-        check.str_param(name, "name")
-        return name in self._dagster_type_dict
-
-    def dagster_type_named(self, name: str) -> DagsterType:
-        check.str_param(name, "name")
-        return self._dagster_type_dict[name]
 
     @property
     def all_solid_defs(self) -> List[NodeDefinition]:
@@ -385,6 +359,32 @@ class PipelineDefinition(GraphDefinition):
         check.str_param(name, "name")
         return name in self._all_node_defs
 
+    def get_solid(self, handle):
+        return self._graph_def.get_solid(handle)
+
+    def has_solid_named(self, name):
+        return self._graph_def.has_solid_named(name)
+
+    def solid_named(self, name):
+        return self._graph_def.solid_named(name)
+
+    @property
+    def solids(self):
+        return self._graph_def.solids
+
+    @property
+    def solids_in_topological_order(self):
+        return self._graph_def.solids_in_topological_order
+
+    def all_dagster_types(self):
+        return self._graph_def.all_dagster_types()
+
+    def has_dagster_type(self, name):
+        return self._graph_def.has_dagster_type(name)
+
+    def dagster_type_named(self, name):
+        return self._graph_def.dagster_type_named(name)
+
     def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> "PipelineDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
@@ -402,7 +402,9 @@ class PipelineDefinition(GraphDefinition):
                     'Could not find preset for "{name}". Available presets '
                     'for pipeline "{pipeline_name}" are {preset_names}.'
                 ).format(
-                    name=name, preset_names=list(self._preset_dict.keys()), pipeline_name=self._name
+                    name=name,
+                    preset_names=list(self._preset_dict.keys()),
+                    pipeline_name=self.name,
                 )
             )
 
@@ -468,7 +470,7 @@ class PipelineDefinition(GraphDefinition):
 
         # hooks on top-level solid
         name = lineage.pop()
-        solid = self.solid_named(name)
+        solid = self._graph_def.solid_named(name)
         hook_defs = hook_defs.union(solid.hook_defs)
 
         # hooks on non-top-level solids
@@ -500,10 +502,7 @@ class PipelineDefinition(GraphDefinition):
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
-            solid_defs=self.top_level_solid_defs,
-            name=self.name,
-            description=self.description,
-            dependencies=self.dependencies,
+            graph_def=self._graph_def,
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_defs,
             tags=self.tags,
@@ -515,18 +514,25 @@ class PipelineDefinition(GraphDefinition):
 
         return pipeline_def
 
+    # make Callable for decorator reference updates
+    def __call__(self, *args, **kwargs):
+        raise DagsterInvariantViolationError(
+            f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
+            "using an execution API function (e.g. `execute_pipeline`)."
+        )
+
 
 class PipelineSubsetDefinition(PipelineDefinition):
     @property
-    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
-        return frozenset(self._solid_dict.keys())
+    def solids_to_execute(self):
+        return frozenset(self._graph_def.node_names())
 
     @property
     def solid_selection(self) -> List[str]:
         # we currently don't pass the real solid_selection (the solid query list) down here.
         # so in the short-term, to make the call sites cleaner, we will convert the solids to execute
         # to a list
-        return list(self._solid_dict.keys())
+        return self._graph_def.node_names()
 
     @property
     def parent_pipeline_def(self) -> Optional["PipelineDefinition"]:
@@ -565,16 +571,16 @@ def _get_pipeline_subset_def(
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
-
+    graph = pipeline_def.graph
     for solid_name in solids_to_execute:
-        if not pipeline_def.has_solid_named(solid_name):
+        if not graph.has_solid_named(solid_name):
             raise DagsterInvalidSubsetError(
                 "Pipeline {pipeline_name} has no solid named {name}.".format(
                     pipeline_name=pipeline_def.name, name=solid_name
                 ),
             )
 
-    solids = list(map(pipeline_def.solid_named, solids_to_execute))
+    solids = list(map(graph.solid_named, solids_to_execute))
     deps: Dict[
         Union[str, SolidInvocation],
         Dict[str, IDependencyDefinition],
@@ -582,16 +588,14 @@ def _get_pipeline_subset_def(
 
     for solid in solids:
         for input_handle in solid.input_handles():
-            if pipeline_def.dependency_structure.has_direct_dep(input_handle):
+            if graph.dependency_structure.has_direct_dep(input_handle):
                 output_handle = pipeline_def.dependency_structure.get_direct_dep(input_handle)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            if pipeline_def.dependency_structure.has_dynamic_fan_in_dep(input_handle):
-                output_handle = pipeline_def.dependency_structure.get_dynamic_fan_in_dep(
-                    input_handle
-                )
+            if graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
+                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][
                         input_handle.input_def.name
@@ -599,8 +603,8 @@ def _get_pipeline_subset_def(
                         solid_name=output_handle.solid.name,
                         output_name=output_handle.output_def.name,
                     )
-            elif pipeline_def.dependency_structure.has_fan_in_deps(input_handle):
-                output_handles = pipeline_def.dependency_structure.get_fan_in_deps(input_handle)
+            elif graph.dependency_structure.has_fan_in_deps(input_handle):
+                output_handles = graph.dependency_structure.get_fan_in_deps(input_handle)
                 deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
                     [
                         DependencyDefinition(
@@ -956,7 +960,7 @@ def _create_run_config_schema(
 
         ignored_solids = [
             solid
-            for solid in pipeline_def.parent_pipeline_def.solids
+            for solid in pipeline_def.parent_pipeline_def.graph.solids
             if not pipeline_def.has_solid_named(solid.name)
         ]
     else:
@@ -965,8 +969,8 @@ def _create_run_config_schema(
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
-            solids=pipeline_def.solids,
-            dependency_structure=pipeline_def.dependency_structure,
+            solids=pipeline_def.graph.solids,
+            dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,
             logger_defs=mode_definition.loggers,
             ignored_solids=ignored_solids,

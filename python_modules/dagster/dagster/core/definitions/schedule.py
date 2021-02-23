@@ -23,6 +23,7 @@ from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
+from .pipeline import PipelineDefinition
 from .run_request import JobType, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
@@ -183,7 +184,7 @@ class ScheduleDefinition:
         execution_timezone: Optional[str] = None,
         execution_fn: Optional[Callable[[ScheduleEvaluationContext], Any]] = None,
         description: Optional[str] = None,
-        job: Optional[GraphDefinition] = None,
+        job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
     ):
 
         if not croniter.is_valid(cron_schedule):

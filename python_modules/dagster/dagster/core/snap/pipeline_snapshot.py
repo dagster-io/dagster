@@ -107,7 +107,9 @@ class PipelineSnapshot(
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),
-            dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(pipeline_def),
+            dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(
+                pipeline_def.graph
+            ),
             mode_def_snaps=[
                 build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
                 for md in pipeline_def.mode_definitions

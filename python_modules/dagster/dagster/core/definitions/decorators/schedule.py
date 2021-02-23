@@ -1,7 +1,7 @@
 import datetime
 import warnings
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions.partition import (
@@ -10,7 +10,6 @@ from dagster.core.definitions.partition import (
     ScheduleType,
     TimeBasedPartitionParams,
 )
-from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
@@ -20,7 +19,9 @@ from dagster.utils.partitions import (
     create_offset_partition_selector,
 )
 
+from ..graph import GraphDefinition
 from ..mode import DEFAULT_MODE_NAME
+from ..pipeline import PipelineDefinition
 from ..schedule import ScheduleDefinition
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ def schedule(
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
-    job: Optional[PipelineDefinition] = None,
+    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
 ) -> Callable[[Callable[["ScheduleEvaluationContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
