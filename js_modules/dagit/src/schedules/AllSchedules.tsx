@@ -74,7 +74,7 @@ export const AllSchedules: React.FC<Props> = (props) => {
               <a
                 href="https://docs.dagster.io/overview/schedules-sensors/schedules"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noreferrer"
               >
                 scheduler documentation
               </a>{' '}

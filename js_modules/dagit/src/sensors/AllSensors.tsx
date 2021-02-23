@@ -67,7 +67,7 @@ export const AllSensors: React.FC<Props> = (props) => {
               <a
                 href="https://docs.dagster.io/overview/schedules-sensors/sensors"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noreferrer"
               >
                 sensor documentation
               </a>{' '}

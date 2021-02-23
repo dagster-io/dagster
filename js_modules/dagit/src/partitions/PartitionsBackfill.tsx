@@ -197,7 +197,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       message: (
         <div>
           Created backfill job:{' '}
-          <FilteredRunsLink target="_blank" rel="noopener noreferrer" href={filteredRunsPath}>
+          <FilteredRunsLink target="_blank" href={filteredRunsPath}>
             {backfillId}
           </FilteredRunsLink>
         </div>
@@ -488,7 +488,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   <a
                     href="https://docs.dagster.io/overview/daemon"
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                   >
                     dagster-daemon documentation
                   </a>{' '}
@@ -515,7 +515,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   <a
                     href="https://docs.dagster.io/overview/pipeline-runs/run-coordinator"
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                   >
                     queued run coordinator
                   </a>{' '}

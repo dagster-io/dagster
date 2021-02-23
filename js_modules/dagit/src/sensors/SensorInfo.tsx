@@ -29,11 +29,7 @@ export const SensorInfo: React.FC<{
       description={
         <div>
           See the{' '}
-          <a
-            href="https://docs.dagster.io/overview/daemon"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href="https://docs.dagster.io/overview/daemon" target="_blank" rel="noreferrer">
             dagster-daemon documentation
           </a>{' '}
           for more information on how to deploy the dagster-daemon process.
