@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from dagster import DagsterEvent, DagsterEventType, check
 from dagster.core.events.log import EventRecord
+from dagster.core.host_representation import RepositoryLocationHandleManager
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
@@ -73,39 +74,6 @@ class _TagConcurrencyLimitsCounter:
             self._in_progress_limit_counts[tag_value] += 1
 
 
-class _RepositoryLocationHandleManager:
-    """
-    Holds repository location handles for reuse across runs
-    """
-
-    def __init__(self):
-        self._location_handles = {}
-
-    def __enter__(self):
-        return self
-
-    def get_external_pipeline_from_run(self, pipeline_run):
-        repo_location_origin = (
-            pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin
-        )
-        origin_id = repo_location_origin.get_id()
-        if origin_id not in self._location_handles:
-            self._location_handles[origin_id] = repo_location_origin.create_handle()
-
-        return external_pipeline_from_location_handle(
-            self._location_handles[origin_id],
-            pipeline_run.external_pipeline_origin,
-            pipeline_run.solid_selection,
-        )
-
-    def cleanup(self):
-        for handle in self._location_handles.values():
-            handle.cleanup()
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.cleanup()
-
-
 class QueuedRunCoordinatorDaemon(DagsterDaemon):
     """
     Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
@@ -170,7 +138,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             self._tag_concurrency_limits, in_progress_runs
         )
 
-        with _RepositoryLocationHandleManager() as location_manager:
+        with RepositoryLocationHandleManager() as location_manager:
             for run in sorted_runs:
                 if num_dequeued_runs >= max_runs_to_launch:
                     break
@@ -210,7 +178,16 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         return sorted(runs, key=get_priority, reverse=True)
 
     def _dequeue_run(self, instance, run, location_manager):
-        external_pipeline = location_manager.get_external_pipeline_from_run(run)
+        repository_location_origin = (
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin
+        )
+
+        handle = location_manager.get_handle(repository_location_origin)
+
+        external_pipeline = external_pipeline_from_location_handle(
+            handle, run.external_pipeline_origin, run.solid_selection
+        )
+
         # double check that the run is still queued before dequeing
         reloaded_run = instance.get_run_by_id(run.run_id)
 

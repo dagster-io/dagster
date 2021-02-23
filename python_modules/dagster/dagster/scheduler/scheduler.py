@@ -12,6 +12,7 @@ from dagster.core.host_representation import (
     ExternalScheduleExecutionErrorData,
     PipelineSelector,
     RepositoryLocation,
+    RepositoryLocationHandleManager,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
@@ -80,11 +81,12 @@ def launch_scheduled_runs(
     schedule_names = ", ".join([schedule.job_name for schedule in schedules])
     logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
-    for schedule_state in schedules:
-        error_info = None
-        try:
-            origin = schedule_state.origin.external_repository_origin.repository_location_origin
-            with origin.create_handle() as repo_location_handle:
+    with RepositoryLocationHandleManager() as handle_manager:
+        for schedule_state in schedules:
+            error_info = None
+            try:
+                origin = schedule_state.origin.external_repository_origin.repository_location_origin
+                repo_location_handle = handle_manager.get_handle(origin)
                 repo_location = repo_location_handle.create_location()
                 launch_scheduled_runs_for_schedule(
                     instance,
@@ -95,12 +97,12 @@ def launch_scheduled_runs(
                     max_catchup_runs,
                     (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
                 )
-        except Exception:  # pylint: disable=broad-except
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
-            )
-        yield error_info
+            except Exception:  # pylint: disable=broad-except
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                logger.error(
+                    f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
+                )
+            yield error_info
 
 
 def launch_scheduled_runs_for_schedule(

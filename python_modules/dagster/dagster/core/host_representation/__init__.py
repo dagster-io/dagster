@@ -41,6 +41,7 @@ from .handle import (
     RepositoryHandle,
     RepositoryLocationHandle,
 )
+from .handle_manager import RepositoryLocationHandleManager
 from .historical import HistoricalPipeline
 from .origin import (
     IN_PROCESS_NAME,

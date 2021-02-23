@@ -6,7 +6,11 @@ import pendulum
 from dagster import check
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterError
-from dagster.core.host_representation import ExternalPipeline, PipelineSelector
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    PipelineSelector,
+    RepositoryLocationHandleManager,
+)
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
     ExternalSensorExecutionErrorData,
@@ -125,14 +129,15 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
         )
     )
 
-    for job_state in sensor_jobs:
-        sensor_debug_crash_flags = (
-            debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
-        )
-        error_info = None
-        try:
-            origin = job_state.origin.external_repository_origin.repository_location_origin
-            with origin.create_handle() as repo_location_handle:
+    with RepositoryLocationHandleManager() as handle_manager:
+        for job_state in sensor_jobs:
+            sensor_debug_crash_flags = (
+                debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
+            )
+            error_info = None
+            try:
+                origin = job_state.origin.external_repository_origin.repository_location_origin
+                repo_location_handle = handle_manager.get_handle(origin)
                 repo_location = repo_location_handle.create_location()
 
                 repo_name = job_state.origin.external_repository_origin.repository_name
@@ -187,15 +192,15 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                     tick_status=JobTickStatus.SKIPPED,
                     before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
                 )
-        except Exception:  # pylint: disable=broad-except
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
-                    sensor_name=job_state.job_name,
-                    error_info=error_info.to_string(),
+            except Exception:  # pylint: disable=broad-except
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                logger.error(
+                    "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
+                        sensor_name=job_state.job_name,
+                        error_info=error_info.to_string(),
+                    )
                 )
-            )
-        yield error_info
+            yield error_info
 
 
 def _evaluate_sensor(
