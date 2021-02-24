@@ -164,11 +164,13 @@ class RedshiftResource(_BaseRedshiftResource):
 
     @contextmanager
     def _get_conn(self):
+        conn = None
         try:
             conn = psycopg2.connect(**self.conn_args)
             yield conn
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     @contextmanager
     def _get_cursor(self, conn, cursor_factory=None):
