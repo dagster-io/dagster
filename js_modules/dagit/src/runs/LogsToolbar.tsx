@@ -53,8 +53,11 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   const onChange = (value: string) => {
     const tokens = value.split(/\s+/);
     const logQuery = tokens.map((item) => {
-      const [token, value] = item.split(':');
-      return value ? {token, value} : {value: token};
+      const segments = item.split(':');
+      if (segments.length > 1) {
+        return {token: segments[0], value: segments[1]};
+      }
+      return {value: segments[0]};
     });
     onSetFilter({...filter, logQuery: logQuery as LogFilterValue[]});
     setQueryString(value);

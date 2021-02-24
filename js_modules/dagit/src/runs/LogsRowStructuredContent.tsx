@@ -23,10 +23,7 @@ interface IStructuredContentProps {
   metadata: IRunMetadataDict;
 }
 
-export const LogsRowStructuredContent: React.FunctionComponent<IStructuredContentProps> = ({
-  node,
-  metadata,
-}) => {
+export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node, metadata}) => {
   const eventType = node.eventType as string;
   switch (node.__typename) {
     // Errors
@@ -118,7 +115,11 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
     case 'StepMaterializationEvent':
       return (
-        <MaterializationContent message={node.message} materialization={node.materialization} />
+        <MaterializationContent
+          message={node.message}
+          materialization={node.materialization}
+          eventType={eventType}
+        />
       );
     case 'ObjectStoreOperationEvent':
       return (
@@ -263,13 +264,14 @@ const FailureContent: React.FunctionComponent<{
   </>
 );
 
-const MaterializationContent: React.FunctionComponent<{
+const MaterializationContent: React.FC<{
   message: string;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
-}> = ({message, materialization}) => {
+  eventType: string;
+}> = ({message, materialization, eventType}) => {
   if (!materialization.assetKey) {
     return (
-      <DefaultContent message={message} eventType="Materialization">
+      <DefaultContent message={message} eventType={eventType}>
         <MetadataEntries entries={materialization.metadataEntries} />
       </DefaultContent>
     );
@@ -288,7 +290,7 @@ const MaterializationContent: React.FunctionComponent<{
   );
 
   return (
-    <DefaultContent message={message} eventType="AssetMaterialization">
+    <DefaultContent message={message} eventType={eventType}>
       <>
         <LogRowStructuredContentTable
           rows={[

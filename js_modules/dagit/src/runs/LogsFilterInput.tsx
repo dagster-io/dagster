@@ -1,4 +1,5 @@
 import {Colors, Popover} from '@blueprintjs/core';
+import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -45,33 +46,48 @@ const initialState: State = {
   highlight: 0,
 };
 
+const fuseOptions = {
+  threshold: 0.3,
+};
+
 export const LogsFilterInput: React.FC<Props> = (props) => {
   const {value, onChange, suggestionProviders} = props;
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, highlight} = state;
 
-  const {empty, all} = suggestionProviders.reduce(
-    (accum, provider) => {
-      const {token} = provider;
+  const {empty, perProvider} = React.useMemo(() => {
+    const perProvider = suggestionProviders.reduce((accum, provider) => {
       const values = provider.values();
-      return {
-        empty: [...accum.empty, `${token}:`],
-        all: [...accum.all, `${token}:`, ...values.map((value) => `${token}:${value}`)],
-      };
-    },
-    {empty: [], all: []},
-  );
+      return {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}};
+    }, {} as {[token: string]: {fuse: Fuse<string>; all: string[]}});
+    const providerKeys = suggestionProviders.map((provider) => provider.token);
+    return {
+      empty: new Fuse(providerKeys, fuseOptions),
+      perProvider,
+    };
+  }, [suggestionProviders]);
 
   const buildSuggestions = React.useCallback(
-    (queryString: string): string[] =>
-      queryString
-        ? all.filter((value) => {
-            const lower = value.toLowerCase();
-            return lower !== queryString && lower.startsWith(queryString);
-          })
-        : [...empty],
-    [all, empty],
+    (queryString: string): string[] => {
+      if (!queryString) {
+        return Object.keys(perProvider);
+      }
+
+      const [token, value] = queryString.split(':');
+      if (token in perProvider) {
+        const {fuse, all} = perProvider[token];
+        const results = value
+          ? fuse.search(value).map((result) => `${token}:${result.item}`)
+          : all.map((value) => `${token}:${value}`);
+
+        // If the querystring is an exact match, don't suggest anything.
+        return results.map((result) => result.toLowerCase()).includes(queryString) ? [] : results;
+      }
+
+      return empty.search(queryString).map((result) => result.item);
+    },
+    [empty, perProvider],
   );
 
   const {suggestions, onSelectSuggestion} = useSuggestionsForString(buildSuggestions, value);
