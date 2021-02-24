@@ -25,6 +25,7 @@ builtin types above.
 .. autoclass:: Noneable
 
 .. autoclass:: Enum
+    :members: from_python_enum
 
 .. autoclass:: EnumValue
 

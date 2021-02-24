@@ -15,6 +15,9 @@ Dagster CLI
    :prog: dagster instance
    :show-nested:
 
+.. click:: dagster.cli.new_repo:new_repo_cli
+   :prog: dagster new-repo
+
 .. click:: dagster.cli.pipeline:pipeline_cli
    :prog: dagster pipeline
    :show-nested:

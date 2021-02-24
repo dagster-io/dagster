@@ -16,7 +16,7 @@ Resources
 .. autodecorator:: resource
 
 .. autoclass:: ResourceDefinition
-    :members:
+    :members: hardcoded_resource, mock_resource, none_resource, configured
 
 .. autoclass:: InitResourceContext
     :members:

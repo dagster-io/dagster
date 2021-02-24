@@ -33,10 +33,13 @@ Built-in IO Managers
 ------------------------
 
 .. autodata:: mem_io_manager
+  :annotation: IOManagerDefinition
 
 .. autodata:: fs_io_manager
+  :annotation: IOManagerDefinition
 
 .. autodata:: custom_path_fs_io_manager
+  :annotation: IOManagerDefinition
 
 
 Root Input Managers (Experimental)
