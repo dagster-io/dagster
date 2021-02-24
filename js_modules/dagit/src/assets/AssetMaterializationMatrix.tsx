@@ -154,7 +154,7 @@ export const AssetMaterializationMatrix: React.FunctionComponent<AssetMaterializ
                   </div>
                   {isPartitioned && <div className={`cell`}>{partition}</div>}
                   <div className={`cell`} style={{borderBottom: `1px solid ${Colors.LIGHT_GRAY1}`}}>
-                    <Timestamp ms={Number(materializationEvent.timestamp)} />
+                    <Timestamp timestamp={{ms: Number(materializationEvent.timestamp)}} />
                   </div>
                   {metadataLabels.map((label) => {
                     const entry = materializationEvent.materialization.metadataEntries.find(

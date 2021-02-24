@@ -7,8 +7,7 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {timestampToString, Timestamp} from 'src/app/time/Timestamp';
-import {TimezoneContext} from 'src/app/time/TimezoneContext';
+import {Timestamp} from 'src/app/time/Timestamp';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
@@ -245,10 +244,8 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
 
 interface RunTimeProps {
   run: RunTimeFragment;
-  size?: 'standard' | 'minimal';
 }
-export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
-  const [timezone] = React.useContext(TimezoneContext);
+export const RunTime: React.FunctionComponent<RunTimeProps> = ({run}) => {
   const {stats, status} = run;
 
   if (stats.__typename !== 'PipelineRunStatsSnapshot') {
@@ -261,24 +258,15 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
     );
   }
 
-  const useSameDayFormat =
-    size === 'minimal' &&
-    timezone !== 'UTC' &&
-    stats.startTime &&
-    timestampToString({unix: stats.startTime, format: 'MMM DD'}, timezone) ===
-      timestampToString({ms: Date.now(), format: 'MMM DD'}, timezone);
-
   const content = () => {
     if (stats.startTime) {
-      return <Timestamp unix={stats.startTime} format={useSameDayFormat ? 'h:mm A' : undefined} />;
+      return <Timestamp timestamp={{unix: stats.startTime}} />;
     }
     if (stats.launchTime) {
-      return <Timestamp unix={stats.launchTime} format={useSameDayFormat ? 'h:mm A' : undefined} />;
+      return <Timestamp timestamp={{unix: stats.launchTime}} />;
     }
     if (stats.enqueuedTime) {
-      return (
-        <Timestamp unix={stats.enqueuedTime} format={useSameDayFormat ? 'h:mm A' : undefined} />
-      );
+      return <Timestamp timestamp={{unix: stats.enqueuedTime}} />;
     }
 
     switch (status) {

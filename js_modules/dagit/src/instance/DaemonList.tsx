@@ -3,13 +3,13 @@ import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {timestampToString} from 'src/app/time/Timestamp';
-import {browserTimezone} from 'src/app/time/browserTimezone';
+import {Timestamp} from 'src/app/time/Timestamp';
 import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
   DaemonHealthFragment,
   DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
 } from 'src/instance/types/DaemonHealthFragment';
+import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 
 interface DaemonLabelProps {
@@ -35,6 +35,8 @@ const DaemonLabel = (props: DaemonLabelProps) => {
 interface Props {
   daemonHealth: DaemonHealthFragment | undefined;
 }
+
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
 export const DaemonList = (props: Props) => {
   const {daemonHealth} = props;
@@ -65,12 +67,17 @@ export const DaemonList = (props: Props) => {
                   <DaemonHealth daemon={daemon} />
                 </td>
                 <td>
-                  {daemon.lastHeartbeatTime
-                    ? `${timestampToString(
-                        {unix: daemon.lastHeartbeatTime, format: 'YYYY-MM-DD HH:mm:ss z'},
-                        browserTimezone(),
-                      )} (${moment.unix(daemon.lastHeartbeatTime).fromNow()})`
-                    : 'Never'}
+                  {daemon.lastHeartbeatTime ? (
+                    <Group direction="row" spacing={4}>
+                      <Timestamp
+                        timestamp={{unix: daemon.lastHeartbeatTime}}
+                        timeFormat={TIME_FORMAT}
+                      />
+                      <span>({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
+                    </Group>
+                  ) : (
+                    'Never'
+                  )}
                 </td>
               </tr>
             );

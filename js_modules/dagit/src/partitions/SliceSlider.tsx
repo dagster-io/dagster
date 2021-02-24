@@ -1,8 +1,7 @@
 import {Intent, MultiSlider} from '@blueprintjs/core';
+import moment from 'moment-timezone';
 import React from 'react';
 import styled from 'styled-components/macro';
-
-import {Timestamp} from 'src/app/time/Timestamp';
 
 export const SliceSlider: React.FunctionComponent<{
   maxUnix: number;
@@ -23,7 +22,7 @@ export const SliceSlider: React.FunctionComponent<{
         stepSize={0.01}
         labelRenderer={(value: number) => (
           <span style={{whiteSpace: 'nowrap'}}>
-            Run Start &gt; <Timestamp unix={delta * value + minUnix} format="YYYY-MM-DD HH:mm" />
+            Run Start &gt; {moment.unix(delta * value + minUnix).format('YYYY-MM-DD')}
           </span>
         )}
         onChange={(values: number[]) => {

@@ -265,12 +265,12 @@ const OverviewJob = ({
         </Link>
         {lastRun && lastRun.stats.__typename === 'PipelineRunStatsSnapshot' ? (
           <div style={{color: Colors.GRAY3, fontSize: 12, marginTop: 2}}>
-            Last Run: <Timestamp unix={lastRun.stats.endTime || 0} />
+            Last Run: <Timestamp timestamp={{unix: lastRun.stats.endTime || 0}} />
           </div>
         ) : null}
         {nextTick ? (
           <div style={{color: Colors.GRAY3, fontSize: 12, marginTop: 2}}>
-            Next Tick: <Timestamp unix={nextTick.timestamp || 0} />
+            Next Tick: <Timestamp timestamp={{unix: nextTick.timestamp || 0}} />
           </div>
         ) : null}
         {jobState.runs && (

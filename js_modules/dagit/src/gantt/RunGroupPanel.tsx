@@ -89,7 +89,7 @@ export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId})
                 {g.runId.split('-')[0]}
                 {idx === 0 && RootTag}
               </RunTitle>
-              <RunTime run={g} size="minimal" />
+              <RunTime run={g} />
             </div>
 
             <div

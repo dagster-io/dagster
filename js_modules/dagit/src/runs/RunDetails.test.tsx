@@ -9,7 +9,7 @@ import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 
 jest.mock('src/app/time/browserTimezone.ts', () => ({
-  browserTimezone: () => 'US/Pacific',
+  browserTimezone: () => 'America/Los_Angeles',
 }));
 
 describe('RunDetails', () => {
@@ -118,8 +118,8 @@ describe('RunDetails', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('row', {name: /started feb 17, 2021, 6:24:30 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /ended feb 17, 2021, 6:25:16 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:00:46/i})).toBeVisible();
     });
   });
@@ -133,7 +133,7 @@ describe('RunDetails', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started canceled/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /ended feb 17, 2021, 6:25:16 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration canceled/i})).toBeVisible();
     });
   });
@@ -147,7 +147,7 @@ describe('RunDetails', () => {
 
     await waitFor(() => {
       jest.runTimersToTime(5000);
-      expect(screen.getByRole('row', {name: /started feb 17, 2021, 6:24:30 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended canceling/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
     });
@@ -161,8 +161,8 @@ describe('RunDetails', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('row', {name: /started feb 17, 2021, 6:24:30 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /ended feb 17, 2021, 6:25:16 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:00:46/i})).toBeVisible();
     });
   });
@@ -176,7 +176,7 @@ describe('RunDetails', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started failed/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /ended feb 17, 2021, 6:25:16 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration failed/i})).toBeVisible();
     });
   });
@@ -203,7 +203,7 @@ describe('RunDetails', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('row', {name: /started feb 17, 2021, 6:24:30 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended running…/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
     });
@@ -217,7 +217,7 @@ describe('RunDetails', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('row', {name: /started feb 17, 2021, 6:24:30 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended starting…/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
     });
@@ -245,8 +245,8 @@ describe('RunDetails', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('row', {name: /started feb 17, 2021, 6:24:30 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /ended feb 17, 2021, 6:25:16 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:00:46/i})).toBeVisible();
     });
   });

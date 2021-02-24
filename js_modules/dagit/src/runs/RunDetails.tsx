@@ -41,6 +41,8 @@ const LoadingOrValue: React.FC<{
 }> = ({loading, children}) =>
   loading ? <div style={{color: Colors.GRAY3}}>Loading…</div> : <div>{children()}</div>;
 
+const TIME_FORMAT = {showSeconds: true, showTimezone: false};
+
 export const RunDetails: React.FC<{
   loading: boolean;
   run: RunDetailsFragment | undefined;
@@ -56,10 +58,7 @@ export const RunDetails: React.FC<{
               {() => {
                 if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.startTime) {
                   return (
-                    <TimestampDisplay
-                      timestamp={run.stats.startTime}
-                      format="MMM D, YYYY, h:mm:ss A"
-                    />
+                    <TimestampDisplay timestamp={run.stats.startTime} timeFormat={TIME_FORMAT} />
                   );
                 }
                 return (
@@ -76,10 +75,7 @@ export const RunDetails: React.FC<{
               {() => {
                 if (run?.stats.__typename === 'PipelineRunStatsSnapshot' && run.stats.endTime) {
                   return (
-                    <TimestampDisplay
-                      timestamp={run.stats.endTime}
-                      format="MMM D, YYYY, h:mm:ss A"
-                    />
+                    <TimestampDisplay timestamp={run.stats.endTime} timeFormat={TIME_FORMAT} />
                   );
                 }
                 return (

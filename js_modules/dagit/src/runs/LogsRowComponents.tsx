@@ -1,8 +1,10 @@
 import {Colors} from '@blueprintjs/core';
+import moment from 'moment-timezone';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Timestamp} from 'src/app/time/Timestamp';
+import {TimezoneContext} from 'src/app/time/TimezoneContext';
+import {browserTimezone} from 'src/app/time/browserTimezone';
 import {LogLevel} from 'src/runs/LogLevel';
 import {ColumnWidthsContext} from 'src/runs/LogsScrollingTableHeader';
 import {FontFamily} from 'src/ui/styles';
@@ -118,9 +120,13 @@ const SolidColumnTooltipStyle = JSON.stringify({
 
 export const TimestampColumn = (props: {time: string | false}) => {
   const widths = React.useContext(ColumnWidthsContext);
+  const [timezone] = React.useContext(TimezoneContext);
   return (
     <TimestampColumnContainer style={{width: widths.timestamp}}>
-      {props.time && <Timestamp ms={Number(props.time)} format="HH:mm:ss.SSS" />}
+      {props.time &&
+        moment(Number(props.time))
+          .tz(timezone === 'Automatic' ? browserTimezone() : timezone)
+          .format('HH:mm:ss.SSS')}
     </TimestampColumnContainer>
   );
 };

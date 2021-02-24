@@ -2,31 +2,43 @@ import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {timestampToString} from 'src/app/time/Timestamp';
+import {DEFAULT_TIME_FORMAT, TimeFormat} from 'src/app/time/TimestampFormat';
 import {TimezoneContext} from 'src/app/time/TimezoneContext';
+import {timestampToString} from 'src/app/time/timestampToString';
 import {Group} from 'src/ui/Group';
 
 interface Props {
   timestamp: number;
   timezone?: string | null;
-  format: string;
-  tooltipFormat: string;
+  timeFormat?: TimeFormat;
+  tooltipTimeFormat?: TimeFormat;
 }
 
 export const TimestampDisplay = (props: Props) => {
-  const {timestamp, timezone, format, tooltipFormat} = props;
+  const {timestamp, timezone, timeFormat, tooltipTimeFormat} = props;
   const [userTimezone] = React.useContext(TimezoneContext);
-
-  const timestampString = timestampToString({unix: timestamp, format}, userTimezone);
+  const locale = navigator.language;
 
   return (
     <Group direction="row" spacing={8} alignItems="center">
-      <TabularNums>{timestampString}</TabularNums>
+      <TabularNums>
+        {timestampToString({
+          timestamp: {unix: timestamp},
+          locale,
+          timezone: timezone || userTimezone,
+          timeFormat: timeFormat,
+        })}
+      </TabularNums>
       {timezone && timezone !== userTimezone ? (
         <TimestampTooltip
           content={
             <TabularNums>
-              {timestampToString({unix: timestamp, format: tooltipFormat}, timezone)}
+              {timestampToString({
+                timestamp: {unix: timestamp},
+                locale,
+                timezone: userTimezone,
+                timeFormat: tooltipTimeFormat,
+              })}
             </TabularNums>
           }
         >
@@ -38,8 +50,8 @@ export const TimestampDisplay = (props: Props) => {
 };
 
 TimestampDisplay.defaultProps = {
-  format: 'MMM D, YYYY, h:mm A z',
-  tooltipFormat: 'MMM D, YYYY, h:mm A z',
+  timeFormat: DEFAULT_TIME_FORMAT,
+  tooltipTimeFormat: {showSeconds: false, showTimezone: true},
 };
 
 const TabularNums = styled.div`

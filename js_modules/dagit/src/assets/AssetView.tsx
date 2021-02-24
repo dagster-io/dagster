@@ -107,7 +107,7 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
                     {titleForRun({runId: latestEvent.runId})}
                   </Link>
                   <span> at </span>
-                  <Timestamp ms={Number(latestEvent.timestamp)} />
+                  <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
                 </>
               ) : (
                 'No materialization events'

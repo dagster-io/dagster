@@ -30,6 +30,8 @@ import {useScheduleSelector} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
+const TIME_FORMAT = {showSeconds: false, showTimezone: true};
+
 export const ScheduleDetails: React.FC<{
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
@@ -124,6 +126,7 @@ export const ScheduleDetails: React.FC<{
                 <TimestampDisplay
                   timestamp={futureTicks.results[0].timestamp}
                   timezone={executionTimezone}
+                  timeFormat={TIME_FORMAT}
                 />
               </Group>
             ) : null}
@@ -165,7 +168,11 @@ export const ScheduleDetails: React.FC<{
             key: 'Latest tick',
             value: latestTick ? (
               <Group direction="row" spacing={8} alignItems="center">
-                <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
+                <TimestampDisplay
+                  timestamp={latestTick.timestamp}
+                  timezone={executionTimezone}
+                  timeFormat={TIME_FORMAT}
+                />
                 <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
               </Group>
             ) : (

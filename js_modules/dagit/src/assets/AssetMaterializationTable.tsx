@@ -64,7 +64,7 @@ const AssetMaterializationRow: React.FunctionComponent<{
       </td>
       {isPartitioned && <td>{assetMaterialization.partition}</td>}
       <td>
-        <Timestamp ms={Number(timestamp)} />
+        <Timestamp timestamp={{ms: Number(timestamp)}} />
       </td>
       <td>
         {run.pipelineName}
