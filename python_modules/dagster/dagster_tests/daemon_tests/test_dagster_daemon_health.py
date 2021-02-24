@@ -176,11 +176,11 @@ def test_multiple_error_daemon(monkeypatch):
                         instance, SensorDaemon.daemon_type(), now.float_timestamp
                     )
 
-                    assert status.healthy == False
-                    assert len(status.last_heartbeat.errors) == 2
-                    assert status.last_heartbeat.errors[0].message.strip() == "foobar"
-                    assert status.last_heartbeat.errors[1].message.strip() == "bizbuz"
-                    break
+                    if status.healthy == False:
+                        assert len(status.last_heartbeat.errors) == 2
+                        assert status.last_heartbeat.errors[0].message.strip() == "foobar"
+                        assert status.last_heartbeat.errors[1].message.strip() == "bizbuz"
+                        break
 
                 if (now - init_time).total_seconds() > 10:
                     raise Exception("timed out waiting for heartbeat error")

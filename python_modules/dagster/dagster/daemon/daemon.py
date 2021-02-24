@@ -45,6 +45,8 @@ class DagsterDaemon:
         self._current_iteration_exceptions = None
         self._last_iteration_exceptions = None
 
+        self._first_error_logged = False
+
     @abstractclassmethod
     def daemon_type(cls):
         """
@@ -73,7 +75,6 @@ class DagsterDaemon:
         # which is used in the heartbeats. This guarantees that heartbeats contain the full
         # list of errors raised.
         self._current_iteration_exceptions = []
-        first_iteration = not self._last_heartbeat_time
 
         daemon_generator = self.run_iteration(instance)
 
@@ -92,22 +93,22 @@ class DagsterDaemon:
                 self._last_iteration_exceptions = self._current_iteration_exceptions
                 break
             finally:
-                if not first_iteration:
-                    # wait until first iteration completes, since we report any errors from the previous
-                    # iteration in the heartbeat. After the first iteration, start logging a heartbeat
-                    # every time the generator yields.
-                    self._check_add_heartbeat(instance, curr_time, daemon_uuid)
-
-        if first_iteration:
-            self._check_add_heartbeat(instance, curr_time, daemon_uuid)
+                self._check_add_heartbeat(instance, curr_time, daemon_uuid)
 
     def _check_add_heartbeat(self, instance, curr_time, daemon_uuid):
-        if (
+        # Always log a heartbeat after the first time an iteration returns an error to make sure we
+        # don't incorrectly say the daemon is healthy
+        first_time_logging_error = self._last_iteration_exceptions and not self._first_error_logged
+
+        if not first_time_logging_error and (
             self._last_heartbeat_time
             and (curr_time - self._last_heartbeat_time).total_seconds()
             < DAEMON_HEARTBEAT_INTERVAL_SECONDS
         ):
             return
+
+        if first_time_logging_error:
+            self._first_error_logged = True
 
         daemon_type = self.daemon_type()
 
