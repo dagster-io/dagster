@@ -21,9 +21,9 @@ APIs
 Python API
 ^^^^^^^^^^
 
-The ``K8sRunLauncher`` allows Dagit instances to be configured to launch new runs by starting per-run
-Kubernetes Jobs. To configure the ``K8sRunLauncher``\ , your ``dagster.yaml`` should include a section
-like:
+The ``K8sRunLauncher`` allows Dagit instances to be configured to launch new runs by starting
+per-run Kubernetes Jobs. To configure the ``K8sRunLauncher``\ , your ``dagster.yaml`` should
+include a section like:
 
 .. code-block:: yaml
 
@@ -90,7 +90,8 @@ You may experience slow first test runs thanks to image pulls (run ``pytest -svv
 visibility). Building images and loading them to the kind cluster is slow, and there is
 no visibility into the progress of the load.
 
-**NOTE:** This process is quite slow, as it requires bootstrapping a local ``kind`` cluster with Docker images and the ``dagster-k8s`` Helm chart. For faster development, you can either:
+**NOTE:** This process is quite slow, as it requires bootstrapping a local ``kind`` cluster with
+Docker images and the ``dagster-k8s`` Helm chart. For faster development, you can either:
 
 
 #. Keep a warm kind cluster
@@ -121,7 +122,10 @@ For subsequent test runs, you can run:
 
 This will bypass cluster creation, image loading, and Helm chart installation, for much faster tests.
 
-The kind cluster name and Helm namespace for this command can be found in the logs, or retrieved via the respective CLIs, using ``kind get clusters`` and ``kubectl get namespaces``. Note that for ``kubectl`` and ``helm`` to work correctly with a kind cluster, you should override your kubeconfig file location with:
+The kind cluster name and Helm namespace for this command can be found in the logs, or retrieved
+via the respective CLIs, using ``kind get clusters`` and ``kubectl get namespaces``. Note that
+for ``kubectl`` and ``helm`` to work correctly with a kind cluster, you should override your
+kubeconfig file location with:
 
 .. code-block:: shell
 
@@ -131,7 +135,8 @@ The kind cluster name and Helm namespace for this command can be found in the lo
 Manual kind cluster setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The test fixtures provided by ``dagster-k8s`` automate the process described below, but sometimes its useful to manually configure a kind cluster and load images onto it.
+The test fixtures provided by ``dagster-k8s`` automate the process described below, but sometimes
+it's useful to manually configure a kind cluster and load images onto it.
 
 First, ensure you have a Docker image appropriate for your Python version. Run, from the root of
 the repo:
@@ -172,14 +177,16 @@ Then you can run pytest as follows:
 Faster local development (with an existing K8s cluster)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you already have a development K8s cluster available, you can run tests on that cluster vs. running locally in ``kind``.
+If you already have a development K8s cluster available, you can run tests on that cluster vs.
+running locally in ``kind``.
 
-For this to work, first build and deploy the test image to a registry available to your cluster. For example, with ECR:
+For this to work, first build and deploy the test image to a registry available to your cluster.
+For example, with a private ECR repository:
 
 .. code-block::
 
    ./python_modules/dagster-test/dagster_test/test_project/build.sh 3.7.6
-   docker tag dagster-docker-buildkite:latest $AWS_ACCOUNT_ID.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-tests:2020-04-21T21-04-06
+   docker tag dagster-docker-buildkite:latest $AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/dagster-k8s-tests:2020-04-21T21-04-06
 
    aws ecr get-login --no-include-email --region us-west-1 | sh
    docker push $AWS_ACCOUNT_ID.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-tests:2020-04-21T21-04-06
@@ -189,7 +196,7 @@ Then, you can run tests on EKS with:
 .. code-block::
 
    export DAGSTER_DOCKER_IMAGE_TAG="2020-04-21T21-04-06"
-   export DAGSTER_DOCKER_REPOSITORY="$AWS_ACCOUNT_ID.dkr.ecr.us-west-1.amazonaws.com"
+   export DAGSTER_DOCKER_REPOSITORY="$AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com"
    export DAGSTER_DOCKER_IMAGE="dagster-k8s-tests"
 
    # First run with --no-cleanup to leave Helm chart in place
