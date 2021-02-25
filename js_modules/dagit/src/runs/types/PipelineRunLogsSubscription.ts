@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, DagsterEventType, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL subscription operation: PipelineRunLogsSubscription
@@ -237,6 +237,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   stepKey: string | null;
   eventType: DagsterEventType | null;
   error: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepFailureEvent_error;
+  errorSource: ErrorSource | null;
   failureMetadata: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepFailureEvent_failureMetadata | null;
 }
 

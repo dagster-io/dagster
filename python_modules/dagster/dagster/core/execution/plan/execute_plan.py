@@ -246,7 +246,9 @@ def _dagster_event_sequence_for_step(
     # case (3) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:
         yield step_failure_event_from_exc_info(
-            step_context, sys.exc_info(), error_source=ErrorSource.USER_CODE_ERROR
+            step_context,
+            sys.exc_info(),
+            error_source=ErrorSource.USER_CODE_ERROR,
         )
 
         if step_context.raise_on_error:
@@ -254,17 +256,29 @@ def _dagster_event_sequence_for_step(
 
     # case (4) in top comment
     except (KeyboardInterrupt, DagsterExecutionInterruptedError) as interrupt_error:
-        yield step_failure_event_from_exc_info(step_context, sys.exc_info())
+        yield step_failure_event_from_exc_info(
+            step_context,
+            sys.exc_info(),
+            error_source=ErrorSource.INTERRUPT,
+        )
         raise interrupt_error
 
     # case (5) in top comment
     except DagsterError as dagster_error:
-        yield step_failure_event_from_exc_info(step_context, sys.exc_info())
+        yield step_failure_event_from_exc_info(
+            step_context,
+            sys.exc_info(),
+            error_source=ErrorSource.FRAMEWORK_ERROR,
+        )
 
         if step_context.raise_on_error:
             raise dagster_error
 
     # case (6) in top comment
     except Exception as unexpected_exception:  # pylint: disable=broad-except
-        yield step_failure_event_from_exc_info(step_context, sys.exc_info())
+        yield step_failure_event_from_exc_info(
+            step_context,
+            sys.exc_info(),
+            error_source=ErrorSource.UNEXPECTED_ERROR,
+        )
         raise unexpected_exception

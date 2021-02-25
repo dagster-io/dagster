@@ -63,6 +63,10 @@ class ErrorSource(Enum):
     FRAMEWORK_ERROR = "FRAMEWORK_ERROR"
     # An error that occurs while executing user code
     USER_CODE_ERROR = "USER_CODE_ERROR"
+    # An error occurred at an unexpected time
+    UNEXPECTED_ERROR = "UNEXPECTED_ERROR"
+    # Execution was interrupted
+    INTERRUPT = "INTERRUPT"
 
 
 @whitelist_for_serdes
@@ -101,10 +105,8 @@ class StepFailureData(
                 "which are the errors thrown from user code.",
             )
             return self.error.message.strip() + ":\n\n" + user_code_error.to_string()
-        elif self.error_source == ErrorSource.FRAMEWORK_ERROR:
-            return self.error.to_string()
         else:
-            check.failed(f"Unexpected error setting: {self.error_source}")
+            return self.error.to_string()
 
 
 def step_failure_event_from_exc_info(

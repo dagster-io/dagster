@@ -35,6 +35,7 @@ export class CellTruncationProvider extends React.Component<
   {
     style: React.CSSProperties;
     onExpand?: () => void;
+    forceExpandability?: boolean;
   },
   {isOverflowing: boolean}
 > {
@@ -86,7 +87,7 @@ export class CellTruncationProvider extends React.Component<
     return (
       <div style={style}>
         <div ref={this.contentContainerRef}>{this.props.children}</div>
-        {this.state.isOverflowing && (
+        {(this.state.isOverflowing || this.props.forceExpandability) && (
           <>
             <OverflowFade />
             <OverflowBanner onClick={this.onView}>View Full Message</OverflowBanner>

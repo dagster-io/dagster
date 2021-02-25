@@ -1132,7 +1132,15 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   solidHandleID: String
   eventType: DagsterEventType
   error: PythonError!
+  errorSource: ErrorSource
   failureMetadata: FailureMetadata
+}
+
+enum ErrorSource {
+  FRAMEWORK_ERROR
+  USER_CODE_ERROR
+  UNEXPECTED_ERROR
+  INTERRUPT
 }
 
 type FailureMetadata implements DisplayableEvent {

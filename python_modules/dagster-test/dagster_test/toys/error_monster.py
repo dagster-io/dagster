@@ -2,6 +2,7 @@ from dagster import (
     EventMetadataEntry,
     Failure,
     Field,
+    IOManager,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -11,10 +12,49 @@ from dagster import (
     RetryRequested,
     String,
     execute_pipeline,
+    io_manager,
     pipeline,
     solid,
 )
 from dagster.utils import segfault
+
+
+class ExampleException(Exception):
+    pass
+
+
+class ErrorableIOManager(IOManager):
+    def __init__(self, throw_input, throw_output):
+        self._values = {}
+        self._throw_input = throw_input
+        self._throw_output = throw_output
+
+    def handle_output(self, context, obj):
+        if self._throw_output:
+            raise ExampleException("throwing up trying to handle output")
+
+        keys = tuple(context.get_run_scoped_output_identifier())
+        self._values[keys] = obj
+
+    def load_input(self, context):
+        if self._throw_input:
+            raise ExampleException("throwing up trying to load input")
+
+        keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
+        return self._values[keys]
+
+
+@io_manager(
+    config_schema={
+        "throw_in_load_input": Field(bool, is_required=False, default_value=False),
+        "throw_in_handle_output": Field(bool, is_required=False, default_value=False),
+    }
+)
+def errorable_io_manager(init_context):
+    return ErrorableIOManager(
+        init_context.resource_config["throw_in_load_input"],
+        init_context.resource_config["throw_in_handle_output"],
+    )
 
 
 class ErrorableResource:
@@ -38,20 +78,17 @@ def define_errorable_resource():
 
 solid_throw_config = {
     "throw_in_solid": Field(bool, is_required=False, default_value=False),
+    "failure_in_solid": Field(bool, is_required=False, default_value=False),
     "crash_in_solid": Field(bool, is_required=False, default_value=False),
     "return_wrong_type": Field(bool, is_required=False, default_value=False),
     "request_retry": Field(bool, is_required=False, default_value=False),
 }
 
 
-class ExampleException(Exception):
-    pass
-
-
 def _act_on_config(solid_config):
     if solid_config["crash_in_solid"]:
         segfault()
-    if solid_config["throw_in_solid"]:
+    if solid_config["failure_in_solid"]:
         try:
             raise ExampleException("sample cause exception")
         except ExampleException as e:
@@ -65,6 +102,8 @@ def _act_on_config(solid_config):
                     )
                 ],
             ) from e
+    elif solid_config["throw_in_solid"]:
+        raise ExampleException("I threw up")
     elif solid_config["request_retry"]:
         raise RetryRequested()
 
@@ -120,7 +159,11 @@ def str_to_num(context, string):
     ),
     mode_defs=[
         ModeDefinition(
-            name="errorable_mode", resource_defs={"errorable_resource": define_errorable_resource()}
+            name="errorable_mode",
+            resource_defs={
+                "errorable_resource": define_errorable_resource(),
+                "io_manager": errorable_io_manager,
+            },
         )
     ],
     preset_defs=[

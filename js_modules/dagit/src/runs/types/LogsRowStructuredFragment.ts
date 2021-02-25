@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { DagsterEventType, LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { DagsterEventType, LogLevel, ErrorSource, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: LogsRowStructuredFragment
@@ -232,6 +232,7 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   level: LogLevel;
   stepKey: string | null;
   error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error;
+  errorSource: ErrorSource | null;
   failureMetadata: LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 

@@ -1,6 +1,7 @@
 import graphene
 from dagster import check
 from dagster.core.events import DagsterEventType
+from dagster.core.execution.plan.objects import ErrorSource
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 
 from ...implementation.fetch_runs import get_step_stats
@@ -330,6 +331,7 @@ class GrapheneExecutionStepFailureEvent(graphene.ObjectType):
         name = "ExecutionStepFailureEvent"
 
     error = graphene.NonNull(GraphenePythonError)
+    errorSource = graphene.Field(graphene.Enum.from_enum(ErrorSource))
     failureMetadata = graphene.Field(GrapheneFailureMetadata)
 
 

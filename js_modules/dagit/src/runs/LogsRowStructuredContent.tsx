@@ -17,6 +17,7 @@ import {
   LogsRowStructuredFragment_StepMaterializationEvent_materialization,
 } from 'src/runs/types/LogsRowStructuredFragment';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
+import {ErrorSource} from 'src/types/globalTypes';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
@@ -35,6 +36,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           eventType={eventType}
           error={node.error}
           metadataEntries={node?.failureMetadata?.metadataEntries}
+          errorSource={node.errorSource}
         />
       );
 
@@ -233,37 +235,60 @@ const FailureContent: React.FunctionComponent<{
   message?: string;
   eventType: string;
   error?: PythonErrorFragment;
+  errorSource?: ErrorSource | null;
   metadataEntries?: MetadataEntryFragment[];
-}> = ({message, error, eventType, metadataEntries}) => (
-  <>
-    <EventTypeColumn>
-      <Tag minimal={true} intent="danger" style={{fontSize: '0.9em'}}>
-        {eventType}
-      </Tag>
-    </EventTypeColumn>
-    <span style={{flex: 1}}>
-      {message ? (
-        <>
-          <span>{message}</span>
-          <br />
-        </>
-      ) : (
-        <></>
-      )}
-      {error ? <span style={{color: Colors.RED3}}>{`${error.message}`}</span> : null}
-      <MetadataEntries entries={metadataEntries} />
-      {error ? <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span> : null}
-      {error?.cause ? (
+}> = ({message, error, errorSource, eventType, metadataEntries}) => {
+  let contextMessage = null;
+  let errorMessage = null;
+  let errorStack = null;
+  let errorCause = null;
+
+  if (message) {
+    contextMessage = (
+      <>
+        <span>{message}</span>
+        <br />
+      </>
+    );
+  }
+
+  if (error) {
+    errorMessage = <span style={{color: Colors.RED3}}>{`${error.message}`}</span>;
+
+    // omit the outer stack for user code errors with a cause
+    // as the outer stack is just framework code
+    if (!(errorSource == ErrorSource.USER_CODE_ERROR && error.cause)) {
+      errorStack = <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span>;
+    }
+
+    if (error.cause) {
+      errorCause = (
         <>
           {`The above exception was caused by the following exception:\n`}
           <span style={{color: Colors.RED3}}>{`${error.cause.message}`}</span>
           <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
         </>
-      ) : null}
-    </span>
-  </>
-);
+      );
+    }
+  }
 
+  return (
+    <>
+      <EventTypeColumn>
+        <Tag minimal={true} intent="danger" style={{fontSize: '0.9em'}}>
+          {eventType}
+        </Tag>
+      </EventTypeColumn>
+      <span style={{flex: 1}}>
+        {contextMessage}
+        {errorMessage}
+        <MetadataEntries entries={metadataEntries} />
+        {errorStack}
+        {errorCause}
+      </span>
+    </>
+  );
+};
 const MaterializationContent: React.FC<{
   message: string;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;

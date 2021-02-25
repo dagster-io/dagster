@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, DagsterEventType, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunPipelineRunEventFragment
@@ -232,6 +232,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {
   stepKey: string | null;
   eventType: DagsterEventType | null;
   error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
+  errorSource: ErrorSource | null;
   failureMetadata: RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 

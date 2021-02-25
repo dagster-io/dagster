@@ -6,14 +6,15 @@ import styled from 'styled-components';
 import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
+import {ErrorSource} from 'src/types/globalTypes';
 import {FontFamily} from 'src/ui/styles';
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
-  contextMsg?: string;
   error: {message: string} | PythonErrorFragment;
   failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
+  errorSource?: ErrorSource | null;
 }
 
 export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
@@ -22,33 +23,46 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const cause = (props.error as PythonErrorFragment).cause;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
-  const context = props.contextMsg ? <ErrorHeader>{props.contextMsg}</ErrorHeader> : null;
+  const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
   return (
-    <Wrapper>
+    <>
       {context}
-      <ErrorHeader>{message}</ErrorHeader>
-      {metadataEntries ? (
-        <div style={{marginTop: 10, marginBottom: 10}}>
-          <MetadataEntries entries={metadataEntries} />
-        </div>
-      ) : null}
-      {stack ? <Trace>{stack.join('')}</Trace> : null}
-      {cause ? (
-        <>
-          <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
-          <ErrorHeader>{cause.message}</ErrorHeader>
-          {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
-        </>
-      ) : null}
-      {props.showReload && (
-        <Button icon="refresh" onClick={() => window.location.reload()}>
-          Reload
-        </Button>
-      )}
-    </Wrapper>
+      <Wrapper>
+        <ErrorHeader>{message}</ErrorHeader>
+        {metadataEntries ? (
+          <div style={{marginTop: 10, marginBottom: 10}}>
+            <MetadataEntries entries={metadataEntries} />
+          </div>
+        ) : null}
+        {stack ? <Trace>{stack.join('')}</Trace> : null}
+        {cause ? (
+          <>
+            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
+            <ErrorHeader>{cause.message}</ErrorHeader>
+            {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
+          </>
+        ) : null}
+        {props.showReload && (
+          <Button icon="refresh" onClick={() => window.location.reload()}>
+            Reload
+          </Button>
+        )}
+      </Wrapper>
+    </>
   );
+};
+
+const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
+  switch (errorSource) {
+    case ErrorSource.UNEXPECTED_ERROR:
+      return (
+        <ContextHeader>An unexpected exception was thrown. Please file an issue.</ContextHeader>
+      );
+    default:
+      return null;
+  }
 };
 
 export const PYTHON_ERROR_FRAGMENT = gql`
@@ -61,6 +75,11 @@ export const PYTHON_ERROR_FRAGMENT = gql`
       stack
     }
   }
+`;
+
+const ContextHeader = styled.h4`
+  font-weight: 400;
+  margin: 0 0 1em;
 `;
 
 const CauseHeader = styled.h3`

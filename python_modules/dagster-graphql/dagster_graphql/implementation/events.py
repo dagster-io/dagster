@@ -167,6 +167,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneExecutionStepFailureEvent(
             error=GraphenePythonError(dagster_event.step_failure_data.error),
             failureMetadata=dagster_event.step_failure_data.user_failure_data,
+            errorSource=dagster_event.step_failure_data.error_source,
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
