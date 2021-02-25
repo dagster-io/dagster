@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 import warnings
+from contextlib import ExitStack
 
 import click
 import pendulum
@@ -13,7 +14,7 @@ from dagster.daemon.controller import (
     DagsterDaemonController,
     all_daemons_healthy,
     all_daemons_live,
-    create_daemons_from_instance,
+    daemon_controller_from_instance,
     debug_daemon_heartbeats,
     get_daemon_status,
 )
@@ -34,10 +35,7 @@ def run_command():
                     "you have created a dagster.yaml file there."
                 )
 
-            with DagsterDaemonController(
-                instance, create_daemons_from_instance(instance)
-            ) as controller:
-
+            with daemon_controller_from_instance(instance) as controller:
                 start_time = pendulum.now("UTC")
                 while True:
                     # Wait until a daemon has been unhealthy for a long period of time

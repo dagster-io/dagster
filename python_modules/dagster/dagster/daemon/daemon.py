@@ -57,6 +57,12 @@ class DagsterDaemon:
         returns: str
         """
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        pass
+
     def run_loop(self, daemon_uuid, daemon_shutdown_event):
         # Each loop runs in its own thread with its own instance
         with DagsterInstance.get() as instance:

@@ -1,5 +1,6 @@
 import threading
 import uuid
+from contextlib import ExitStack, contextmanager
 
 import pendulum
 from dagster import check
@@ -26,12 +27,16 @@ def _sorted_quoted(strings):
     return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
 
 
-class DagsterDaemonController:
-    @staticmethod
-    def create_from_instance(instance):
-        check.inst_param(instance, "instance", DagsterInstance)
-        return DagsterDaemonController(instance, create_daemons_from_instance(instance))
+@contextmanager
+def daemon_controller_from_instance(instance):
+    check.inst_param(instance, "instance", DagsterInstance)
+    with ExitStack() as stack:
+        daemons = [stack.enter_context(daemon) for daemon in create_daemons_from_instance(instance)]
+        with DagsterDaemonController(instance, daemons) as controller:
+            yield controller
 
+
+class DagsterDaemonController:
     def __init__(self, instance, daemons):
 
         self._daemon_uuid = str(uuid.uuid4())
