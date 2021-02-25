@@ -25,6 +25,10 @@ class LocalArtifactStorage(ConfigurableClass):
         return os.path.join(self.base_dir, "storage", run_id, "")
 
     @property
+    def storage_dir(self):
+        return os.path.join(self.base_dir, "storage")
+
+    @property
     def schedules_dir(self):
         return os.path.join(self.base_dir, "schedules")
 

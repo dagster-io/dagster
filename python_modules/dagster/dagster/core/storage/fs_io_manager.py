@@ -11,7 +11,7 @@ from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)})
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})
 def fs_io_manager(init_context):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 
@@ -59,8 +59,11 @@ def fs_io_manager(init_context):
             solid_b(solid_a())
 
     """
+    base_dir = init_context.resource_config.get(
+        "base_dir", init_context.instance.storage_directory()
+    )
 
-    return PickledObjectFilesystemIOManager(init_context.resource_config["base_dir"])
+    return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
 class PickledObjectFilesystemIOManager(IOManager):
@@ -163,12 +166,12 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             return pickle.load(read_obj)
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)})
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})
 @experimental
 def custom_path_fs_io_manager(init_context):
     """Built-in IO manager that allows users to custom output file path per output definition.
 
-    It also allows users to specify a base directory where all the step output will be stored in. It
+    It requires users to specify a base directory where all the step output will be stored in. It
     serializes and deserializes output values (assets) using pickling and stores the pickled object
     in the user-provided file paths.
 
@@ -186,12 +189,18 @@ def custom_path_fs_io_manager(init_context):
         def sample_data(context, df):
             return df[:5]
 
+        my_custom_path_fs_io_manager = custom_path_fs_io_manager.configured(
+            {"base_dir": "path/to/basedir"}
+        )
+
         @pipeline(
-            mode_defs=[
-                ModeDefinition(resource_defs={"io_manager": custom_path_fs_io_manager}),
-            ],
+            mode_defs=[ModeDefinition(resource_defs={"io_manager": my_custom_path_fs_io_manager})],
         )
         def pipe():
             sample_data()
+
     """
-    return CustomPathPickledObjectFilesystemIOManager(init_context.resource_config["base_dir"])
+
+    return CustomPathPickledObjectFilesystemIOManager(
+        base_dir=init_context.resource_config.get("base_dir")
+    )

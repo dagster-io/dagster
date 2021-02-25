@@ -160,11 +160,11 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
 
 def test_step_subset_with_custom_paths():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        default_io_manager = custom_path_fs_io_manager
+        default_io_manager = custom_path_fs_io_manager.configured({"base_dir": tmpdir_path})
         # pass hardcoded file path via metadata
         test_metadata_dict = {
-            "solid_a": {"path": os.path.join(tmpdir_path, "a")},
-            "solid_b": {"path": os.path.join(tmpdir_path, "b")},
+            "solid_a": {"path": "a"},
+            "solid_b": {"path": "b"},
         }
 
         pipeline_def = define_pipeline(default_io_manager, test_metadata_dict)
@@ -188,7 +188,7 @@ def test_step_subset_with_custom_paths():
             filter(lambda evt: evt.is_step_materialization, step_subset_events)
         )
         assert len(step_materialization_events) == 1
-        assert test_metadata_dict["solid_b"]["path"] == (
+        assert os.path.join(tmpdir_path, test_metadata_dict["solid_b"]["path"]) == (
             step_materialization_events[0]
             .event_specific_data.materialization.metadata_entries[0]
             .entry_data.path

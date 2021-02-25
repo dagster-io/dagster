@@ -138,9 +138,9 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
     @io_manager
     def _io_manager(init_context):
         pipeline_run = init_context.pipeline_run
-        instance = init_context.instance_for_backwards_compat
+        instance = init_context.instance
         pipeline_def = init_context.pipeline_def_for_backwards_compat
-        # depend on InitResourceContext.instance_for_backwards_compat and pipeline_def_for_backwards_compat
+        # depend on InitResourceContext.instance and pipeline_def_for_backwards_compat
         environment_config = EnvironmentConfig.build(
             pipeline_def, pipeline_run.run_config, mode=pipeline_run.mode
         )

@@ -129,7 +129,7 @@ def _core_resource_initialization_event_generator(
                     ),
                     resource_instance_dict=resource_instances,
                     required_resource_keys=resource_def.required_resource_keys,
-                    instance_for_backwards_compat=instance,
+                    instance=instance,
                     pipeline_def_for_backwards_compat=pipeline_def,
                 )
                 manager = single_resource_generation_manager(
