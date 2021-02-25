@@ -174,8 +174,9 @@ UNIQUE_VARCHAR_LEN: int = 512
 
 @compiles(db.Text, "mysql")
 def compiles_text_mysql(element, compiler, **kw):
-    if kw["type_expression"].unique:
-        kw["type_expression"].type.length = UNIQUE_VARCHAR_LEN
+    column = kw["type_expression"]
+    if column.unique or column.foreign_keys:
+        column.type.length = UNIQUE_VARCHAR_LEN
         return compiler.visit_string(element, **kw)
     else:
         return compiler.visit_text(element, **kw)

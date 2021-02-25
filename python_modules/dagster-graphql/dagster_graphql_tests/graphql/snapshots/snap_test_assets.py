@@ -6,64 +6,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['TestAssetAwareEventLog.test_get_all_asset_keys[asset_aware_instance_in_process_env] 1'] = {
-    'assetsOrError': {
-        '__typename': 'AssetConnection',
-        'nodes': [
-            {
-                'key': {
-                    'path': [
-                        'a'
-                    ]
-                }
-            },
-            {
-                'key': {
-                    'path': [
-                        'b'
-                    ]
-                }
-            },
-            {
-                'key': {
-                    'path': [
-                        'c'
-                    ]
-                }
-            }
-        ]
-    }
-}
-
-snapshots['TestAssetAwareEventLog.test_get_all_asset_keys[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
-    'assetsOrError': {
-        '__typename': 'AssetConnection',
-        'nodes': [
-            {
-                'key': {
-                    'path': [
-                        'a'
-                    ]
-                }
-            },
-            {
-                'key': {
-                    'path': [
-                        'b'
-                    ]
-                }
-            },
-            {
-                'key': {
-                    'path': [
-                        'c'
-                    ]
-                }
-            }
-        ]
-    }
-}
-
 snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[asset_aware_instance_in_process_env] 1'] = {
     'assetOrError': {
         'assetMaterializations': [
@@ -101,6 +43,64 @@ snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[asset_aware_insta
 snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
     'assetOrError': {
         '__typename': 'AssetNotFoundError'
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_asset_keys[asset_aware_instance_in_process_env] 1'] = {
+    'assetsOrError': {
+        '__typename': 'AssetConnection',
+        'nodes': [
+            {
+                'key': {
+                    'path': [
+                        'a'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'b'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'c'
+                    ]
+                }
+            }
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_asset_keys[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetsOrError': {
+        '__typename': 'AssetConnection',
+        'nodes': [
+            {
+                'key': {
+                    'path': [
+                        'a'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'b'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'c'
+                    ]
+                }
+            }
+        ]
     }
 }
 

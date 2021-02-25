@@ -90,15 +90,27 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
+        materialization = event.dagster_event.step_materialization_data.materialization
         with self.index_connection() as conn:
             try:
                 conn.execute(
                     AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        asset_key=event.dagster_event.asset_key.to_string()
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        last_materialization=serialize_dagster_namedtuple(materialization),
+                        last_run_id=event.run_id,
                     )
                 )
             except db.exc.IntegrityError:
-                pass
+                conn.execute(
+                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    .values(
+                        last_materialization=serialize_dagster_namedtuple(materialization),
+                        last_run_id=event.run_id,
+                    )
+                    .where(
+                        AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
+                    )
+                )
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
@@ -556,7 +568,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return len(results) > 0
 
-    def get_all_asset_keys(self, prefix_path=None):
+    def get_asset_keys(self, prefix_path=None):
         lazy_migrate = False
 
         if not prefix_path:
@@ -732,6 +744,36 @@ class SqlEventLogStorage(EventLogStorage):
             event_specific_data=updated_event_specific_data
         )
         return event_record._replace(dagster_event=updated_dagster_event)
+
+    def all_asset_tags(self):
+        query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.last_materialization])
+        tags_by_asset_key = defaultdict(dict)
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+            for asset_key, materialization_str in rows:
+                if materialization_str:
+                    materialization = deserialize_json_to_dagster_namedtuple(materialization_str)
+                    tags_by_asset_key[AssetKey.from_db_string(asset_key)] = {
+                        k: v for k, v in (materialization.tags or {}).items()
+                    }
+
+        return tags_by_asset_key
+
+    def get_asset_tags(self, asset_key):
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        query = db.select([AssetKeyTable.c.last_materialization]).where(
+            AssetKeyTable.c.asset_key == asset_key.to_string()
+        )
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+            if not rows:
+                return {}
+
+            if not rows[0]:
+                return {}
+
+            materialization = deserialize_json_to_dagster_namedtuple(rows[0][0])
+            return materialization.tags or {}
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

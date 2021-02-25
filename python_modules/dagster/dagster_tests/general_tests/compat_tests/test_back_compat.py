@@ -370,3 +370,17 @@ def test_0_10_6_add_bulk_actions_table():
             assert not instance.has_bulk_actions_table()
             instance.upgrade()
             assert instance.has_bulk_actions_table()
+
+
+def test_0_11_0_add_asset_details():
+    src_dir = file_relative_path(__file__, "snapshot_0_11_0_pre_asset_details/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "0da417ae1b81"
+        assert "last_materialization" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        assert "last_run_id" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        assert "asset_tags" not in get_sqlite3_tables(db_path)
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+            assert "last_materialization" in set(get_sqlite3_columns(db_path, "asset_keys"))
+            assert "last_run_id" in set(get_sqlite3_columns(db_path, "asset_keys"))

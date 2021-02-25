@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import pyrsistent
 from dagster.core.definitions.events import AssetKey
@@ -105,7 +105,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_all_asset_keys(self, prefix_path: str = None) -> Iterable[AssetKey]:
+    def get_asset_keys(self, prefix_path: str = None) -> Iterable[AssetKey]:
+        pass
+
+    @abstractmethod
+    def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
+        pass
+
+    @abstractmethod
+    def get_asset_tags(self, asset_key: AssetKey) -> Dict[str, str]:
         pass
 
     @abstractmethod

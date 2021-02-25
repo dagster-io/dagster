@@ -780,7 +780,7 @@ class TestEventLogStorage:
         for event in events_one:
             storage.store_event(event)
 
-        assert asset_key in set(storage.get_all_asset_keys())
+        assert asset_key in set(storage.get_asset_keys())
         events = storage.get_asset_events(asset_key)
         assert len(events) == 1
         event = events[0]
@@ -818,7 +818,7 @@ class TestEventLogStorage:
                 return_value="not_an_event_record",
             ):
 
-                assert asset_key in set(storage.get_all_asset_keys())
+                assert asset_key in set(storage.get_asset_keys())
                 events = storage.get_asset_events(asset_key)
                 assert len(events) == 0
                 assert len(_logs) == 1
@@ -830,7 +830,7 @@ class TestEventLogStorage:
                 "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
                 side_effect=seven.JSONDecodeError("error", "", 0),
             ):
-                assert asset_key in set(storage.get_all_asset_keys())
+                assert asset_key in set(storage.get_asset_keys())
                 events = storage.get_asset_events(asset_key)
                 assert len(events) == 0
                 assert len(_logs) == 1
@@ -860,17 +860,17 @@ class TestEventLogStorage:
         for event in events_one:
             storage.store_event(event)
 
-        asset_keys = storage.get_all_asset_keys()
+        asset_keys = storage.get_asset_keys()
         assert len(asset_keys) == 1
         assert asset_key_one in set(asset_keys)
         migrate_asset_key_data(storage)
-        asset_keys = storage.get_all_asset_keys()
+        asset_keys = storage.get_asset_keys()
         assert len(asset_keys) == 1
         assert asset_key_one in set(asset_keys)
         events_two, _ = _synthesize_events(_two)
         for event in events_two:
             storage.store_event(event)
-        asset_keys = storage.get_all_asset_keys()
+        asset_keys = storage.get_asset_keys()
         assert len(asset_keys) == 2
         assert asset_key_one in set(asset_keys)
         assert asset_key_two in set(asset_keys)

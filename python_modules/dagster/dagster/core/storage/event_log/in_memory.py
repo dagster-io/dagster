@@ -1,4 +1,5 @@
 from collections import OrderedDict, defaultdict
+from typing import Dict
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -19,6 +20,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._logs = defaultdict(EventLogSequence)
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
+        self._asset_tags = defaultdict(dict)
         if preload:
             for payload in preload:
                 self._logs[payload.pipeline_run.run_id] = EventLogSequence(payload.event_list)
@@ -52,6 +54,10 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventRecord)
         run_id = event.run_id
         self._logs[run_id] = self._logs[run_id].append(event)
+
+        if event.is_dagster_event and event.dagster_event.asset_key:
+            materialization = event.dagster_event.step_materialization_data.materialization
+            self._asset_tags[event.dagster_event.asset_key] = materialization.tags or {}
 
         for handler in self._handlers[run_id]:
             handler(event)
@@ -90,7 +96,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                     return True
         return False
 
-    def get_all_asset_keys(self, prefix_path=None):
+    def get_asset_keys(self, prefix_path=None):
         asset_records = []
         for records in self._logs.values():
             asset_records += [
@@ -196,3 +202,9 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                     updated_record = record._replace(dagster_event=updated_dagster_event)
                     updated_records.append(updated_record)
             self._logs[run_id] = updated_records
+
+    def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
+        return {asset_key: tags for asset_key, tags in self._asset_tags.items()}
+
+    def get_asset_tags(self, asset_key: AssetKey) -> Dict[str, str]:
+        return self._asset_tags[asset_key]

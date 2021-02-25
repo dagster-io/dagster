@@ -15,27 +15,12 @@ from sqlalchemy import create_engine
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
-    engine = create_engine(conn_string)
-    engine.execute("drop schema public cascade;")
-    engine.execute("create schema public;")
-
-    env = os.environ.copy()
-    env["PGPASSWORD"] = "test"
-    subprocess.check_call(
-        [
-            "psql",
-            "-h",
-            hostname,
-            "-p",
-            "5432",
-            "-U",
-            "test",
-            "-f",
-            file_relative_path(
-                __file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/postgres/pg_dump.txt"
-            ),
-        ],
-        env=env,
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/postgres/pg_dump.txt"
+        ),
     )
 
     run_id = "d5f89349-7477-4fab-913e-0925cef0a959"
@@ -89,27 +74,10 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
 
 def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
-    engine = create_engine(conn_string)
-    engine.execute("drop schema public cascade;")
-    engine.execute("create schema public;")
-
-    env = os.environ.copy()
-    env["PGPASSWORD"] = "test"
-    subprocess.check_call(
-        [
-            "psql",
-            "-h",
-            hostname,
-            "-p",
-            "5432",
-            "-U",
-            "test",
-            "-f",
-            file_relative_path(
-                __file__, "snapshot_0_9_22_pre_asset_partition/postgres/pg_dump.txt"
-            ),
-        ],
-        env=env,
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_9_22_pre_asset_partition/postgres/pg_dump.txt"),
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -145,27 +113,11 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
 
 
 def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
-    engine = create_engine(conn_string)
-    engine.execute("drop schema public cascade;")
-    engine.execute("create schema public;")
-
-    env = os.environ.copy()
-    env["PGPASSWORD"] = "test"
-    subprocess.check_call(
-        [
-            "psql",
-            "-h",
-            hostname,
-            "-p",
-            "5432",
-            "-U",
-            "test",
-            "-f",
-            file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"),
-        ],
-        env=env,
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"),
     )
-
     with tempfile.TemporaryDirectory() as tempdir:
         with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
@@ -198,27 +150,11 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
 
 
 def test_0_10_0_schedule_wipe(hostname, conn_string):
-    engine = create_engine(conn_string)
-    engine.execute("drop schema public cascade;")
-    engine.execute("create schema public;")
-
-    env = os.environ.copy()
-    env["PGPASSWORD"] = "test"
-    subprocess.check_call(
-        [
-            "psql",
-            "-h",
-            hostname,
-            "-p",
-            "5432",
-            "-U",
-            "test",
-            "-f",
-            file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"),
-        ],
-        env=env,
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"),
     )
-
     with tempfile.TemporaryDirectory() as tempdir:
         with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
@@ -237,29 +173,11 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
 
 
 def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
-    engine = create_engine(conn_string)
-    engine.execute("drop schema public cascade;")
-    engine.execute("create schema public;")
-
-    env = os.environ.copy()
-    env["PGPASSWORD"] = "test"
-    subprocess.check_call(
-        [
-            "psql",
-            "-h",
-            hostname,
-            "-p",
-            "5432",
-            "-U",
-            "test",
-            "-f",
-            file_relative_path(
-                __file__, "snapshot_0_10_6_add_bulk_actions_table/postgres/pg_dump.txt"
-            ),
-        ],
-        env=env,
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/postgres/pg_dump.txt"),
     )
-
     with tempfile.TemporaryDirectory() as tempdir:
         with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
@@ -270,6 +188,42 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
             assert not instance.has_bulk_actions_table()
             instance.upgrade()
             assert instance.has_bulk_actions_table()
+
+
+def test_0_11_0_add_asset_details(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_11_0_pre_asset_details/postgres/pg_dump.txt"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            storage = instance._event_storage
+            with pytest.raises(
+                DagsterInstanceMigrationRequired,
+                match=_migration_regex("event log", current_revision="3e71cf573ba6"),
+            ):
+                storage.get_asset_tags(AssetKey(["test"]))
+            instance.upgrade()
+            storage.get_asset_tags(AssetKey(["test"]))
+
+
+def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
+    engine = create_engine(conn_string)
+    engine.execute("drop schema public cascade;")
+    engine.execute("create schema public;")
+    env = os.environ.copy()
+    env["PGPASSWORD"] = password
+    subprocess.check_call(
+        ["psql", "-h", hostname, "-p", "5432", "-U", username, "-f", path],
+        env=env,
+    )
 
 
 def _migration_regex(storage_name, current_revision, expected_revision=None):

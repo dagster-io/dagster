@@ -18,6 +18,7 @@ from dagster.serdes import (
     ConfigurableClass,
     ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
 )
 
 from ..pynotify import await_pg_notifications
@@ -144,11 +145,22 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
+        materialization = event.dagster_event.step_materialization_data.materialization
         with self.index_connection() as conn:
             conn.execute(
                 db.dialects.postgresql.insert(AssetKeyTable)
-                .values(asset_key=event.dagster_event.asset_key.to_string())
-                .on_conflict_do_nothing(index_elements=[AssetKeyTable.c.asset_key])
+                .values(
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    last_materialization=serialize_dagster_namedtuple(materialization),
+                    last_run_id=event.run_id,
+                )
+                .on_conflict_do_update(
+                    index_elements=[AssetKeyTable.c.asset_key],
+                    set_=dict(
+                        last_materialization=serialize_dagster_namedtuple(materialization),
+                        last_run_id=event.run_id,
+                    ),
+                )
             )
 
     def _connect(self):

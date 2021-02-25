@@ -158,3 +158,14 @@ def create_bulk_actions_table():
 
         op.create_index("idx_bulk_actions_key", "bulk_actions", ["key"], unique=True)
         op.create_index("idx_bulk_actions_status", "bulk_actions", ["status"], unique=False)
+
+
+def add_asset_detail_columns():
+    if not has_table("asset_keys"):
+        return
+
+    if has_column("asset_keys", "last_materialization"):
+        return
+
+    op.add_column("asset_keys", db.Column("last_materialization", db.Text))
+    op.add_column("asset_keys", db.Column("last_run_id", db.String(255)))

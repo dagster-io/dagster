@@ -98,9 +98,8 @@ class TestAssetAwareEventLog(
         ]
     )
 ):
-    def test_get_all_asset_keys(self, graphql_context, snapshot):
+    def test_get_asset_keys(self, graphql_context, snapshot):
         _create_run(graphql_context, "multi_asset_pipeline")
-
         result = execute_dagster_graphql(
             graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": None}
         )
