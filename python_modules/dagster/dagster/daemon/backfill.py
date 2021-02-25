@@ -74,6 +74,11 @@ def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
                 repo_location = repo_location_handle.create_location()
                 has_more = True
                 while has_more:
+                    # refetch the backfill job
+                    backfill_job = instance.get_backfill(backfill_job.backfill_id)
+                    if backfill_job.status != BulkActionStatus.REQUESTED:
+                        break
+
                     chunk, checkpoint, has_more = _get_partitions_chunk(
                         instance, logger, backfill_job, CHECKPOINT_COUNT
                     )
@@ -113,6 +118,7 @@ def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
 def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
     check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
     partition_names = backfill_job.partition_names
+    checkpoint = backfill_job.last_submitted_partition_name
 
     if (
         backfill_job.last_submitted_partition_name
@@ -126,9 +132,13 @@ def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
         PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
     completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
+    initial_checkpoint = (
+        partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
+    )
+    partition_names = partition_names[initial_checkpoint:]
     has_more = chunk_size < len(partition_names)
     partitions_chunk = partition_names[:chunk_size]
-    checkpoint = partitions_chunk[-1]
+    next_checkpoint = partitions_chunk[-1]
 
     to_skip = set(partitions_chunk).intersection(completed_partitions)
     if to_skip:
@@ -140,4 +150,4 @@ def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
         for partition_name in partitions_chunk
         if partition_name not in completed_partitions
     ]
-    return to_submit, checkpoint, has_more
+    return to_submit, next_checkpoint, has_more
