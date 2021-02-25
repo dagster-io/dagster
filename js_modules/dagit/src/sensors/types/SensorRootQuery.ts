@@ -141,7 +141,6 @@ export interface SensorRootQuery_instance_daemonHealth {
 export interface SensorRootQuery_instance {
   __typename: "Instance";
   daemonHealth: SensorRootQuery_instance_daemonHealth;
-  sensorDaemonInterval: number;
 }
 
 export interface SensorRootQuery {

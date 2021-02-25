@@ -64,7 +64,6 @@ export const SensorRoot: React.FC<{
                 repoAddress={repoAddress}
                 sensor={sensorOrError}
                 daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                daemonInterval={instance.sensorDaemonInterval}
                 countdownDuration={INTERVAL}
                 countdownStatus={countdownStatus}
                 onRefresh={() => onRefresh()}
@@ -105,7 +104,6 @@ const SENSOR_ROOT_QUERY = gql`
           healthy
         }
       }
-      sensorDaemonInterval
     }
   }
   ${SENSOR_FRAGMENT}
