@@ -1,17 +1,13 @@
 import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
-from dagster.core.storage.sql import (
-    create_engine,
-    get_alembic_config,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
+from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
 from ..utils import (
     create_pg_connection,
+    pg_alembic_config,
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
@@ -57,11 +53,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         # doesn't exist (since we used to not stamp postgres storage when it was first created)
         if "runs" not in table_names:
             with self.connect() as conn:
-                alembic_config = get_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: RunStorageSqlMetadata.create_all(conn))
 
                 # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(alembic_config, conn)
+                stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
             # mark all secondary indexes as built
             self.build_missing_indexes()
@@ -108,9 +103,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         )
 
     def upgrade(self):
-        alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
-            run_alembic_upgrade(alembic_config, conn)
+            run_alembic_upgrade(pg_alembic_config(__file__), conn)
 
     def has_built_index(self, migration_name):
         if migration_name not in self._index_migration_cache:

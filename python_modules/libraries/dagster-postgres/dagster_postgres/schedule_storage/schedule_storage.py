@@ -1,16 +1,12 @@
 import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster.core.storage.sql import (
-    create_engine,
-    get_alembic_config,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
+from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     create_pg_connection,
+    pg_alembic_config,
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
@@ -52,7 +48,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         missing_main_table = "schedules" not in table_names and "jobs" not in table_names
         if missing_main_table:
             with self.connect() as conn:
-                alembic_config = get_alembic_config(__file__)
+                alembic_config = pg_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
 
                 # This revision may be shared by any other dagster storage classes using the same DB
@@ -96,6 +92,6 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return create_pg_connection(self._engine, __file__, "schedule")
 
     def upgrade(self):
-        alembic_config = get_alembic_config(__file__)
+        alembic_config = pg_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)

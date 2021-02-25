@@ -11,12 +11,7 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
-from dagster.core.storage.sql import (
-    create_engine,
-    get_alembic_config,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
+from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import (
     ConfigurableClass,
     ConfigurableClassData,
@@ -26,6 +21,7 @@ from dagster.serdes import (
 from ..pynotify import await_pg_notifications
 from ..utils import (
     create_pg_connection,
+    pg_alembic_config,
     pg_config,
     pg_statement_timeout,
     pg_url_from_config,
@@ -73,7 +69,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if "event_logs" not in table_names:
             with self._connect() as conn:
-                alembic_config = get_alembic_config(__file__)
+                alembic_config = pg_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
 
                 # This revision may be shared by any other dagster storage classes using the same DB
@@ -92,7 +88,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         )
 
     def upgrade(self):
-        alembic_config = get_alembic_config(__file__)
+        alembic_config = pg_alembic_config(__file__)
         with self._connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
 

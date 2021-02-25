@@ -122,6 +122,12 @@ def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
     return True
 
 
+def pg_alembic_config(dunder_file):
+    return get_alembic_config(
+        dunder_file, config_path="../alembic/alembic.ini", script_path="../alembic/"
+    )
+
+
 @contextmanager
 def create_pg_connection(engine, dunder_file, storage_type_desc=None):
     check.inst_param(engine, "engine", sqlalchemy.engine.Engine)
@@ -139,7 +145,7 @@ def create_pg_connection(engine, dunder_file, storage_type_desc=None):
         conn = retry_pg_connection_fn(engine.connect)
         with handle_schema_errors(
             conn,
-            get_alembic_config(dunder_file),
+            pg_alembic_config(dunder_file),
             msg="Postgres {}storage requires migration".format(storage_type_desc),
         ):
             yield conn
