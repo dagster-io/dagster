@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.10.7
+
+**New**
+
+* When user code raises an error inside handle_output, load_input, or a type check function, the log output now includes context about which input or output the error occurred during.
+* Added a secondary index to improve performance when querying run status. Run `dagster instance migrate` to upgrade.
+* [Helm] Celery queues can now be configured with different node selectors. Previously, configuring a node selector applied it to all Celery queues.
+* In Dagit, a repository location reload button is now available in the header of every pipeline, schedule, and sensor page.
+* When viewing a run in Dagit, log filtering behavior has been improved. `step` and `type` filtering now offer fuzzy search, all log event types are now searchable, and visual bugs within the input have been repaired. Additionally, the default setting for “Hide non-matches” has been flipped to `true`.
+* After launching a backfill in Dagit, the success message now includes a link to view the runs for the backfill.
+* The `dagster-daemon` process now runs faster when running multiple schedulers or sensors from the same repository.
+* When launching a backfill from Dagit, the “Re-execute From Last Run” option has been removed, because it had confusing semantics.  “Re-execute From Failure” now includes a tooltip.
+* `fs_io_manager` now defaults the base directory to `base_dir` via the Dagster instance’s `local_artifact_storage` configuration. Previously, it defaults to the directory where the pipeline is executed.
+* Experimental IO managers `versioned_filesystem_io_manager` and `custom_path_fs_io_manager` now require `base_dir` as part of the resource configs. Previously, the `base_dir` defaulted to the directory where the pipeline was executed.
+* Added a backfill daemon that submits backfill runs in a daemon process.  This should relieve memory / CPU requirements for scheduling large backfill jobs.  Enabling this feature requires a schema migration to the runs storage via the CLI command `dagster instance migrate` and configuring your instance with the following settings in `dagster.yaml`:
+* backfill:
+      daemon_enabled: true
+
+There is a corresponding flag in the Dagster helm chart to enable this instance configuration.  See the Helm chart’s `values.yaml` file for more information.
+
+* Both sensors and schedule definitions support a `description` parameter that takes in a human-readable string description and displays it on the corresponding landing page in Dagit.
+
+**Integrations**
+
+* [dagster-gcp] The `gcs_pickle_io_manager` now also retries on 403 Forbidden errors, which previously would only retry on 429 TooManyRequests.
+
+**Bug Fixes**
+
+* The use of `Tuple` with nested inner types in solid definitions no longer causes GraphQL errors
+* When searching assets in Dagit, keyboard navigation to the highlighted suggestion now navigates to the correct asset.
+* In some cases, run status strings in Dagit (e.g. “Queued”, “Running”, “Failed”) did not accurately match the status of the run. This has been repaired.
+* The experimental CLI command `dagster new-repo` should now properly generate subdirectories and files, without needing to install `dagster` from source (e.g. with `pip install --editable`).
+* Sensor minimum intervals now interact in a more compatible way with sensor daemon intervals to minimize evaluation ticks getting skipped.  This should result in the cadence of sensor evaluations being less choppy.
+
+**Dependencies**
+
+* Removed Dagster’s pin of the `pendulum` datetime/timezone library.
+
+**Documentation**
+
+* Added an example of how to write a user-in-the-loop pipeline
+
+
 ## 0.10.6
 
 **New**
@@ -66,7 +109,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 * The message logged for type check failures now includes the description included in the `TypeCheck`
 * The `dagster-daemon` process now runs each of its daemons in its own thread. This allows the scheduler, sensor loop, and daemon for launching queued runs to run in parallel, without slowing each other down. The `dagster-daemon` process will shut down if any of the daemon threads crash or hang, so that the execution environment knows that it needs to be restarted.
 * `dagster new-repo` is a new CLI command that generates a Dagster repository with skeleton code in your filesystem. This CLI command is experimental and it may generate different files in future versions, even between dot releases. As of 0.10.5, `dagster new-repo` does not support Windows. [See here for official API docs.](http://localhost:3001/_apidocs/cli#dagster-new-repo)
-* When using a `grpc_server` repository location, Dagit will automatically detect changes and prompt you to reload when the remote server updates. 
+* When using a `grpc_server` repository location, Dagit will automatically detect changes and prompt you to reload when the remote server updates.
 * Improved consistency of headers across pages in Dagit.
 * Added support for assets to the default SQLite event log storage.
 
@@ -74,7 +117,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 
 * [dagster-pandas] - Improved the error messages on failed pandas type checks.
 * [dagster-postgres] - postgres_url is now a StringSource and can be loaded by environment variable
-* [helm] - Users can set Kubernetes labels on Celery worker deployments 
+* [helm] - Users can set Kubernetes labels on Celery worker deployments
 * [helm] - Users can set environment variables for Flower deployment
 * [helm] - The redis helm chart is now included as an optional dagster helm chart dependency
 
