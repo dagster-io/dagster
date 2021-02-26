@@ -85,6 +85,7 @@ def main(quiet):
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
         "-e python_modules/libraries/dagster-azure",
+        "-e helm/dagster/schema[test]"
         #
         # https://github.com/dagster-io/dagster/issues/3488
         # "-e python_modules/libraries/dagster-airflow",
