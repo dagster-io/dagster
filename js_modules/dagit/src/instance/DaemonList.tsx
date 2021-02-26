@@ -28,7 +28,7 @@ const DaemonLabel = (props: DaemonLabelProps) => {
     case 'BACKFILL':
       return <div>Backfill</div>;
     default:
-      throw new Error('Unknown daemon type');
+      return <div>{daemon.daemonType}</div>;
   }
 };
 
