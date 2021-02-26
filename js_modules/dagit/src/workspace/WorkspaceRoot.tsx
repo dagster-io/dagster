@@ -6,6 +6,7 @@ import {PipelineRoot} from 'src/pipelines/PipelineRoot';
 import {ScheduleRoot} from 'src/schedules/ScheduleRoot';
 import {SensorRoot} from 'src/sensors/SensorRoot';
 import {MainContent} from 'src/ui/MainContent';
+import {AllPipelinesRoot} from 'src/workspace/AllPipelinesRoot';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 import {WorkspaceOverviewRoot} from 'src/workspace/WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from 'src/workspace/WorkspacePipelineRoot';
@@ -102,6 +103,7 @@ export const WorkspaceRoot = () => (
           <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
         )}
       />
+      <Route path="/workspace/pipelines" exact render={() => <AllPipelinesRoot />} />
       <Route
         path="/workspace/:repoPath"
         render={(props: RouteComponentProps<{repoPath: string}>) => (

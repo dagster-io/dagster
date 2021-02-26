@@ -512,8 +512,7 @@
                 "port",
                 "brokerDbNumber",
                 "backendDbNumber"
-            ],
-            "additionalProperties": false
+            ]
         },
         "Flower": {
             "title": "Flower",
@@ -1256,6 +1255,12 @@
             ],
             "type": "string"
         },
+        "Labels": {
+            "title": "Labels",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
+        },
         "CeleryWorkerQueue": {
             "title": "CeleryWorkerQueue",
             "type": "object",
@@ -1268,6 +1273,28 @@
                 "name": {
                     "title": "Name",
                     "type": "string"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Labels"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "nodeSelector": {
+                    "title": "NodeSelector",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/NodeSelector"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1557,6 +1584,19 @@
                 "config"
             ]
         },
+        "Backfill": {
+            "title": "Backfill",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ]
+        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -1570,6 +1610,9 @@
                 },
                 "queuedRunCoordinator": {
                     "$ref": "#/definitions/QueuedRunCoordinator"
+                },
+                "backfill": {
+                    "$ref": "#/definitions/Backfill"
                 },
                 "env": {
                     "title": "Env",
@@ -1624,6 +1667,7 @@
                 "enabled",
                 "image",
                 "queuedRunCoordinator",
+                "backfill",
                 "env",
                 "envConfigMaps",
                 "envSecrets",

@@ -74,7 +74,8 @@ def resolve_to_config_type(dagster_type):
             "You have passed a DagsterType class {dagster_type} to the config system. "
             "The DagsterType and config schema systems are separate. "
             "Valid config values are:\n{desc}".format(
-                dagster_type=repr(dagster_type), desc=VALID_CONFIG_DESC,
+                dagster_type=repr(dagster_type),
+                desc=VALID_CONFIG_DESC,
             )
         )
 
@@ -236,7 +237,11 @@ class Field:
         return config_type
 
     def __init__(
-        self, config, default_value=FIELD_NO_DEFAULT_PROVIDED, is_required=None, description=None,
+        self,
+        config,
+        default_value=FIELD_NO_DEFAULT_PROVIDED,
+        is_required=None,
+        description=None,
     ):
         from .validate import validate_config
         from .post_process import resolve_defaults
@@ -278,7 +283,9 @@ class Field:
             evr = validate_config(self.config_type, default_value)
             if not evr.success:
                 raise DagsterInvalidConfigError(
-                    "Invalid default_value for Field.", evr.errors, default_value,
+                    "Invalid default_value for Field.",
+                    evr.errors,
+                    default_value,
                 )
 
         if is_required is None:
@@ -291,7 +298,9 @@ class Field:
                 evr = resolve_defaults(self.config_type, None)
                 if not evr.success:
                     raise DagsterInvalidConfigError(
-                        "Unable to resolve implicit default_value for Field.", evr.errors, None,
+                        "Unable to resolve implicit default_value for Field.",
+                        evr.errors,
+                        None,
                     )
                 self._default_value = evr.value
         self._is_required = is_required

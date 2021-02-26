@@ -37,34 +37,32 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
 
     def __new__(cls, image, build_cm=do_nothing):
         return super(DagsterDockerImage, cls).__new__(
-            cls, check.str_param(image, "image"), check.callable_param(build_cm, "build_cm"),
+            cls,
+            check.str_param(image, "image"),
+            check.callable_param(build_cm, "build_cm"),
         )
 
     @property
     def python_versions(self):
-        """List of Python versions supported for this image.
-        """
+        """List of Python versions supported for this image."""
         with open(os.path.join(self.path, "versions.yaml"), "r") as f:
             versions = yaml.safe_load(f.read())
         return list(versions.keys())
 
     @property
     def path(self):
-        """Image Dockerfiles are located at docker/images/<IMAGE NAME>
-        """
+        """Image Dockerfiles are located at docker/images/<IMAGE NAME>"""
         return os.path.join(os.path.dirname(__file__), "images", self.image)
 
     def _get_last_updated_for_python_version(self, python_version):
-        """Retrieve the last_updated timestamp for a particular python_version of this image.
-        """
+        """Retrieve the last_updated timestamp for a particular python_version of this image."""
         check.str_param(python_version, "python_version")
         with open(os.path.join(self.path, "last_updated.yaml"), "r") as f:
             last_updated = yaml.safe_load(f.read())
             return last_updated[python_version]
 
     def _set_last_updated_for_python_version(self, timestamp, python_version):
-        """Update the last_updated timestamp for a particular python_version of this image.
-        """
+        """Update the last_updated timestamp for a particular python_version of this image."""
         check.str_param(timestamp, "timestamp")
         check.str_param(python_version, "python_version")
 
@@ -81,8 +79,7 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
             yaml.dump(last_updated, f, default_flow_style=False)
 
     def local_image(self, python_version):
-        """Generates the local image name, like: "dagster/foo:some-tag"
-        """
+        """Generates the local image name, like: "dagster/foo:some-tag" """
         check.str_param(python_version, "python_version")
 
         last_updated = self._get_last_updated_for_python_version(python_version)
@@ -104,7 +101,10 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
             tag = custom_tag
 
         return ecr_image(
-            self.image, tag, aws_account_id=get_aws_account_id(), aws_region=get_aws_region(),
+            self.image,
+            tag,
+            aws_account_id=get_aws_account_id(),
+            aws_region=get_aws_region(),
         )
 
     def _get_docker_args(self, python_version):
@@ -159,8 +159,7 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
             )
 
     def push(self, python_version, custom_tag=None):
-        """Push this image to ECR.
-        """
+        """Push this image to ECR."""
 
         if custom_tag:
             execute_docker_tag(

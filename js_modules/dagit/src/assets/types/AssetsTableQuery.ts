@@ -8,11 +8,6 @@
 // GraphQL query operation: AssetsTableQuery
 // ====================================================
 
-export interface AssetsTableQuery_assetsOrError_AssetsNotSupportedError {
-  __typename: "AssetsNotSupportedError";
-  message: string;
-}
-
 export interface AssetsTableQuery_assetsOrError_AssetConnection_nodes_key {
   __typename: "AssetKey";
   path: string[];
@@ -41,7 +36,7 @@ export interface AssetsTableQuery_assetsOrError_PythonError {
   cause: AssetsTableQuery_assetsOrError_PythonError_cause | null;
 }
 
-export type AssetsTableQuery_assetsOrError = AssetsTableQuery_assetsOrError_AssetsNotSupportedError | AssetsTableQuery_assetsOrError_AssetConnection | AssetsTableQuery_assetsOrError_PythonError;
+export type AssetsTableQuery_assetsOrError = AssetsTableQuery_assetsOrError_AssetConnection | AssetsTableQuery_assetsOrError_PythonError;
 
 export interface AssetsTableQuery {
   assetsOrError: AssetsTableQuery_assetsOrError;

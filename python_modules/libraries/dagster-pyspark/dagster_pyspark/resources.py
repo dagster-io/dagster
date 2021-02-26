@@ -34,8 +34,19 @@ def pyspark_resource(init_context):
 
     Example:
 
-    .. literalinclude:: ../../../../../examples/basic_pyspark/repo.py
-       :language: python
+        .. code-block:: python
 
+            @solid(required_resource_keys={"pyspark"})
+            def my_solid(context):
+                spark_session = context.pyspark.spark_session
+                dataframe = spark_session.read.json("examples/src/main/resources/people.json")
+
+            my_pyspark_resource = pyspark_resource.configured(
+                {"spark_conf": {"spark.executor.memory": "2g"}}
+            )
+
+            @pipeline(mode_defs=[ModeDefinition(resource_defs={"pyspark"})])
+            def my_pipeline():
+                my_solid()
     """
     return PySparkResource(init_context.resource_config["spark_conf"])

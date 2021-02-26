@@ -1,5 +1,6 @@
 import os
 import tempfile
+from unittest import mock
 
 import pytest
 from airline_demo.cache_file_from_s3 import cache_file_from_s3
@@ -12,7 +13,6 @@ from dagster import (
     pipeline,
 )
 from dagster.core.storage.file_cache import LocalFileHandle, fs_file_cache
-from dagster.seven import mock
 
 
 def execute_solid_with_resources(solid_def, resource_defs, run_config):

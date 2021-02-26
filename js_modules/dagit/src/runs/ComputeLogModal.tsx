@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Dialog, Intent, Spinner} from '@blueprintjs/core';
+import {Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -11,6 +11,7 @@ import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFil
 import {ComputeLogsSubscription} from 'src/runs/types/ComputeLogsSubscription';
 import {ComputeLogsSubscriptionFragment} from 'src/runs/types/ComputeLogsSubscriptionFragment';
 import {ComputeIOType} from 'src/types/globalTypes';
+import {Spinner} from 'src/ui/Spinner';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
@@ -57,7 +58,7 @@ export const ComputeLogLink = ({runState, stepKey, children}: IComputeLogLink) =
           />
         ) : (
           <LoadingContainer>
-            <Spinner intent={Intent.NONE} size={32} />
+            <Spinner purpose="section" />
           </LoadingContainer>
         )}
       </Dialog>
@@ -79,7 +80,7 @@ const ComputeLogModal = ({runId, onRequestClose, stepKey, runState}: ComputeLogM
         if (isLoading) {
           return (
             <LoadingContainer>
-              <Spinner intent={Intent.NONE} size={32} />
+              <Spinner purpose="section" />
             </LoadingContainer>
           );
         }

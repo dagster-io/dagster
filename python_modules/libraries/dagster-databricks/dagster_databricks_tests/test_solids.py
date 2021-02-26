@@ -1,6 +1,7 @@
+from unittest import mock
+
 import pytest
 from dagster import ModeDefinition, execute_pipeline, pipeline
-from dagster.seven import mock
 from dagster_databricks import create_databricks_job_solid, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
 from dagster_databricks.solids import create_ui_url
@@ -25,7 +26,7 @@ def test_run_create_databricks_job_solid(
     )
     def test_pipe():
         create_databricks_job_solid(num_inputs=0).configured(
-            {"job": databricks_run_config, "poll_interval_sec": 0.01}, name="test"
+            {"job": databricks_run_config, "poll_interval_sec": 0.01}, "test"
         )()
 
     RUN_ID = 1

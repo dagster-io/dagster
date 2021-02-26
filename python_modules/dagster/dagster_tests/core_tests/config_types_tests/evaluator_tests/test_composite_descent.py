@@ -81,7 +81,9 @@ def test_single_layer_pipeline_composite_descent():
 
     result = execute_pipeline(
         return_int_pipeline_passthrough,
-        {"solids": {"return_int_passthrough": {"solids": {"return_int": {"config": 34}}}},},
+        {
+            "solids": {"return_int_passthrough": {"solids": {"return_int": {"config": 34}}}},
+        },
     )
 
     assert result.success
@@ -206,7 +208,6 @@ def test_mix_layer_computed_mapping():
     assert 'Solid "layer_two_double_wrap" with definition "layer_two_double_wrap"' in str(
         exc_info.value
     )
-    print(str(exc_info.value))
     assert (
         'Error 1: Invalid scalar at path root:layer_three_wrap:config:number. Value "a_string"'
     ) in str(exc_info.value)
@@ -433,7 +434,6 @@ def test_direct_composite_descent_with_error():
         'Solid "layer1" with definition "wrap_coerce_to_wrong_type" has a configuration error.'
         in str(exc_info.value)
     )
-    print(str(exc_info.value))
     assert 'Error 1: Invalid scalar at path root:layer2:config. Value "214"' in str(exc_info.value)
 
 
@@ -783,30 +783,6 @@ def test_configured_composite_solid_cannot_stub_inner_solids_config():
                 }
             },
         )
-
-
-def test_configuring_solids_without_specifying_name():
-    @solid(config_schema=int)
-    def return_int(context):
-        return context.solid_config
-
-    @composite_solid(
-        config_schema={"num": int}, config_fn=lambda cfg: {"return_int": {"config": cfg["num"]}}
-    )
-    def return_int_composite():
-        return_int()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='Missing string param "name" while attempting to configure the node "return_int',
-    ):
-        configured(return_int)(2)
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='Missing string param "name" while attempting to configure the node "return_int_composite"',
-    ):
-        configured(return_int_composite)({"num": 5})
 
 
 def test_configuring_composite_solid_with_no_config_mapping():

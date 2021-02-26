@@ -9,7 +9,8 @@ def test_module_with_no_lakehouse():
 
     with instance_for_test():
         result = runner.invoke(
-            update_cli, ["--module", "lakehouse_tests.module_with_no_lakehouse"],
+            update_cli,
+            ["--module", "lakehouse_tests.module_with_no_lakehouse"],
         )
 
     assert result.exit_code != 0

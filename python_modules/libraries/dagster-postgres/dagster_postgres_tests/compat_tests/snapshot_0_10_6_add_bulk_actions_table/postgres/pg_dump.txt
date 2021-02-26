@@ -1,0 +1,905 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.0
+-- Dumped by pg_dump version 13.0
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: normalized_cereals; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.normalized_cereals (
+    id integer NOT NULL,
+    name character varying,
+    mfr character varying,
+    type character varying,
+    calories double precision,
+    protein double precision,
+    fat double precision,
+    sodium double precision,
+    fiber double precision,
+    carbo double precision,
+    sugars double precision,
+    potass double precision,
+    vitamins double precision,
+    shelf double precision,
+    weight double precision,
+    cups double precision,
+    rating double precision
+);
+
+
+ALTER TABLE public.normalized_cereals OWNER TO test;
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.normalized_cereals_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.normalized_cereals_id_seq OWNER TO test;
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.normalized_cereals_id_seq OWNED BY public.normalized_cereals.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: normalized_cereals id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.normalized_cereals ALTER COLUMN id SET DEFAULT nextval('public.normalized_cereals_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+4ea2b1f6f67b
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, create_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: normalized_cereals; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.normalized_cereals (id, name, mfr, type, calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating) FROM stdin;
+1	100% Bran	N	C	212.12121212121212	12.121212121212121	3.0303030303030303	393.93939393939394	30.303030303030305	15.151515151515152	18.18181818181818	848.4848484848485	75.75757575757575	3	3.0303030303030303	0.33	68.402973
+2	100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+3	All-Bran	K	C	212.12121212121212	12.121212121212121	3.0303030303030303	787.8787878787879	27.272727272727273	21.21212121212121	15.151515151515152	969.6969696969697	75.75757575757575	3	3.0303030303030303	0.33	59.425505
+4	All-Bran with Extra Fiber	K	C	100	8	0	280	28	16	0	660	50	3	2	0.5	93.704912
+5	Almond Delight	R	C	146.66666666666666	2.6666666666666665	2.6666666666666665	266.66666666666663	1.3333333333333333	18.666666666666664	10.666666666666666	-1.3333333333333333	33.33333333333333	3	1.3333333333333333	0.75	34.384843
+6	Apple Cinnamon Cheerios	G	C	146.66666666666666	2.6666666666666665	2.6666666666666665	240	2	14	13.333333333333332	93.33333333333333	33.33333333333333	1	1.3333333333333333	0.75	29.509541
+7	Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+8	Basic 4	G	C	173.33333333333331	4	2.6666666666666665	280	2.6666666666666665	24	10.666666666666666	133.33333333333331	33.33333333333333	3	1.7733333333333334	0.75	37.038562
+9	Bran Chex	R	C	134.32835820895522	2.9850746268656714	1.4925373134328357	298.5074626865671	5.970149253731343	22.388059701492537	8.955223880597014	186.56716417910445	37.31343283582089	1	1.4925373134328357	0.67	49.120253
+10	Bran Flakes	P	C	134.32835820895522	4.477611940298507	0	313.4328358208955	7.462686567164178	19.402985074626862	7.462686567164178	283.58208955223876	37.31343283582089	3	1.4925373134328357	0.67	53.313813
+11	Cap'n'Crunch	Q	C	160	1.3333333333333333	2.6666666666666665	293.3333333333333	0	16	16	46.666666666666664	33.33333333333333	2	1.3333333333333333	0.75	18.042851
+12	Cheerios	G	C	88	4.800000000000001	1.6	232	1.6	13.600000000000001	0.8	84	20	1	0.8	1.25	50.764999
+13	Cinnamon Toast Crunch	G	C	160	1.3333333333333333	4	280	0	17.333333333333332	12	60	33.33333333333333	2	1.3333333333333333	0.75	19.823573
+14	Clusters	G	C	220	6	4	280	4	26	14	210	50	3	2	0.5	40.400208
+15	Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+16	Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+17	Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+18	Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+19	Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+20	Cracklin' Oat Bran	K	C	220	6	6	280	8	20	14	320	50	3	2	0.5	40.448772
+21	Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+22	Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+23	Crispy Wheat & Raisins	G	C	133.33333333333331	2.6666666666666665	1.3333333333333333	186.66666666666666	2.6666666666666665	14.666666666666666	13.333333333333332	160	33.33333333333333	3	1.3333333333333333	0.75	36.176196
+24	Double Chex	R	C	133.33333333333331	2.6666666666666665	0	253.33333333333331	1.3333333333333333	24	6.666666666666666	106.66666666666666	33.33333333333333	3	1.3333333333333333	0.75	44.330856
+25	Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+26	Frosted Flakes	K	C	146.66666666666666	1.3333333333333333	0	266.66666666666663	1.3333333333333333	18.666666666666664	14.666666666666666	33.33333333333333	33.33333333333333	1	1.3333333333333333	0.75	31.435973
+27	Frosted Mini-Wheats	K	C	125	3.75	0	0	3.75	17.5	8.75	125	31.25	2	1.25	0.8	58.345141
+28	Fruit & Fibre Dates; Walnuts; and Oats	P	C	179.1044776119403	4.477611940298507	2.9850746268656714	238.8059701492537	7.462686567164178	17.91044776119403	14.925373134328357	298.5074626865671	37.31343283582089	3	1.8656716417910446	0.67	40.917047
+29	Fruitful Bran	K	C	179.1044776119403	4.477611940298507	0	358.2089552238806	7.462686567164178	20.8955223880597	17.91044776119403	283.58208955223876	37.31343283582089	3	1.9850746268656716	0.67	41.015492
+30	Fruity Pebbles	P	C	146.66666666666666	1.3333333333333333	1.3333333333333333	180	0	17.333333333333332	16	33.33333333333333	33.33333333333333	2	1.3333333333333333	0.75	28.025765
+31	Golden Crisp	P	C	113.63636363636364	2.272727272727273	0	51.13636363636364	0	12.500000000000002	17.045454545454547	45.45454545454546	28.40909090909091	1	1.1363636363636365	0.88	35.252444
+32	Golden Grahams	G	C	146.66666666666666	1.3333333333333333	1.3333333333333333	373.3333333333333	0	20	12	60	33.33333333333333	2	1.3333333333333333	0.75	23.804043
+33	Grape Nuts Flakes	P	C	113.63636363636364	3.409090909090909	1.1363636363636365	159.0909090909091	3.409090909090909	17.045454545454547	5.6818181818181825	96.5909090909091	28.40909090909091	3	1.1363636363636365	0.88	52.076897
+34	Grape-Nuts	P	C	440	12	0	680	12	68	12	360	100	3	4	0.25	53.371007
+35	Great Grains Pecan	P	C	363.6363636363636	9.09090909090909	9.09090909090909	227.27272727272728	9.09090909090909	39.39393939393939	12.121212121212121	303.030303030303	75.75757575757575	3	3.0303030303030303	0.33	45.811716
+36	Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+37	Honey Nut Cheerios	G	C	146.66666666666666	4	1.3333333333333333	333.3333333333333	2	15.333333333333332	13.333333333333332	120	33.33333333333333	1	1.3333333333333333	0.75	31.072217
+38	Honey-comb	P	C	82.70676691729322	0.7518796992481203	0	135.33834586466165	0	10.526315789473683	8.270676691729323	26.31578947368421	18.796992481203006	1	0.7518796992481203	1.33	28.742414
+39	Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+40	Just Right Fruit & Nut	K	C	186.66666666666666	4	1.3333333333333333	226.66666666666666	2.6666666666666665	26.666666666666664	12	126.66666666666666	133.33333333333331	3	1.7333333333333334	0.75	36.471512
+41	Kix	G	C	73.33333333333333	1.3333333333333333	0.6666666666666666	173.33333333333331	0	14	2	26.666666666666664	16.666666666666664	2	0.6666666666666666	1.5	39.241114
+42	Life	Q	C	149.25373134328356	5.970149253731343	2.9850746268656714	223.88059701492534	2.9850746268656714	17.91044776119403	8.955223880597014	141.79104477611938	37.31343283582089	2	1.4925373134328357	0.67	45.328074
+43	Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+44	Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+45	Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+46	Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+47	Mueslix Crispy Blend	K	C	238.8059701492537	4.477611940298507	2.9850746268656714	223.88059701492534	4.477611940298507	25.373134328358205	19.402985074626862	238.8059701492537	37.31343283582089	3	2.2388059701492535	0.67	30.313351
+48	Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+49	Nut&Honey Crunch	K	C	179.1044776119403	2.9850746268656714	1.4925373134328357	283.58208955223876	0	22.388059701492537	13.432835820895521	59.70149253731343	37.31343283582089	2	1.4925373134328357	0.67	29.924285
+50	Nutri-Grain Almond-Raisin	K	C	208.955223880597	4.477611940298507	2.9850746268656714	328.35820895522386	4.477611940298507	31.343283582089548	10.44776119402985	194.02985074626864	37.31343283582089	3	1.9850746268656716	0.67	40.69232
+51	Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+52	Oatmeal Raisin Crisp	G	C	260	6	4	340	3	27	20	240	50	3	2.5	0.5	30.450843
+53	Post Nat. Raisin Bran	P	C	179.1044776119403	4.477611940298507	1.4925373134328357	298.5074626865671	8.955223880597014	16.417910447761194	20.8955223880597	388.0597014925373	37.31343283582089	3	1.9850746268656716	0.67	37.840594
+54	Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+55	Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+56	Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+57	Quaker Oat Squares	Q	C	200	8	2	270	4	28	12	220	50	3	2	0.5	49.511874
+58	Quaker Oatmeal	Q	H	149.25373134328356	7.462686567164178	2.9850746268656714	0	4.029850746268656	-1.4925373134328357	-1.4925373134328357	164.17910447761193	0	1	1.4925373134328357	0.67	50.828392
+59	Raisin Bran	K	C	160	4	1.3333333333333333	280	6.666666666666666	18.666666666666664	16	320	33.33333333333333	2	1.7733333333333334	0.75	39.259197
+60	Raisin Nut Bran	G	C	200	6	4	280	5	21	16	280	50	3	2	0.5	39.7034
+61	Raisin Squares	K	C	180	4	0	0	4	30	12	220	50	3	2	0.5	55.333142
+62	Rice Chex	R	C	97.34513274336284	0.8849557522123894	0	212.38938053097345	0	20.353982300884958	1.7699115044247788	26.548672566371682	22.123893805309734	1	0.8849557522123894	1.13	41.998933
+63	Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+64	Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+65	Shredded Wheat 'n'Bran	N	C	134.32835820895522	4.477611940298507	0	0	5.970149253731343	28.35820895522388	0	208.955223880597	0	1	1.4925373134328357	0.67	74.472949
+66	Shredded Wheat spoon size	N	C	134.32835820895522	4.477611940298507	0	0	4.477611940298507	29.850746268656714	0	179.1044776119403	0	1	1.4925373134328357	0.67	72.801787
+67	Smacks	K	C	146.66666666666666	2.6666666666666665	1.3333333333333333	93.33333333333333	1.3333333333333333	12	20	53.33333333333333	33.33333333333333	2	1.3333333333333333	0.75	31.230054
+68	Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+69	Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+70	Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+71	Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+72	Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+73	Triples	G	C	146.66666666666666	2.6666666666666665	1.3333333333333333	333.3333333333333	0	28	4	80	33.33333333333333	3	1.3333333333333333	0.75	39.106174
+74	Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+75	Wheat Chex	R	C	149.25373134328356	4.477611940298507	1.4925373134328357	343.2835820895522	4.477611940298507	25.373134328358205	4.477611940298507	171.6417910447761	37.31343283582089	1	1.4925373134328357	0.67	49.787445
+76	Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+77	Wheaties Honey Gold	G	C	146.66666666666666	2.6666666666666665	1.3333333333333333	266.66666666666663	1.3333333333333333	21.333333333333332	10.666666666666666	80	33.33333333333333	1	1.3333333333333333	0.75	36.187559
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, status, run_body, partition, partition_set, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	run_partitions	2021-02-12 01:00:31.236069	2021-02-11 17:00:31.232932
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 10, true);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 1788, true);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, true);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 19, true);
+
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.normalized_cereals_id_seq', 77, true);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 2, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 1, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: normalized_cereals normalized_cereals_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.normalized_cereals
+    ADD CONSTRAINT normalized_cereals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

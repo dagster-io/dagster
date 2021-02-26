@@ -35,7 +35,7 @@ def test_jar_not_found():
     assert result.failure_data
     assert (
         "does not exist. A valid jar must be built before running this solid."
-        in result.failure_data.error.message
+        in result.failure_data.error.cause.message
     )
 
 
@@ -69,5 +69,5 @@ def test_no_spark_home():
     assert result.failure_data
     assert (
         "No spark home set. You must either pass spark_home in config or set "
-        "$SPARK_HOME in your environment (got None)." in result.failure_data.error.message
+        "$SPARK_HOME in your environment (got None)." in result.failure_data.error.cause.message
     )

@@ -42,11 +42,14 @@ def construct_log_string(synth_props, logging_tags, message_props):
     )
 
     event_specific_data = dagster_event.get("event_specific_data")
-    stack = ""
+    error = ""
     if hasattr(event_specific_data, "error") and isinstance(
         event_specific_data.error, SerializableErrorInfo
     ):
-        stack = "\n\n" + event_specific_data.error.to_string()
+        if hasattr(event_specific_data, "error_display_string"):
+            error = "\n\n" + event_specific_data.error_display_string
+        else:
+            error = "\n\n" + event_specific_data.error.to_string()
 
     log_source_prefix = (
         "resource:%s" % logging_tags["resource_name"]
@@ -67,7 +70,7 @@ def construct_log_string(synth_props, logging_tags, message_props):
             ),
         )
     )
-    return prefix + stack
+    return prefix + error
 
 
 def coerce_valid_log_level(log_level):

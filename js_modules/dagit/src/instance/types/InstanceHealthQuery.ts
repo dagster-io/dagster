@@ -4,31 +4,32 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { DaemonType, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceHealthQuery
 // ====================================================
 
-export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  id: string;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 
@@ -215,6 +216,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet | null;
   scheduleState: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState;
   futureTicks: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;
@@ -301,6 +303,8 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
+  minIntervalSeconds: number;
   nextTick: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
 }

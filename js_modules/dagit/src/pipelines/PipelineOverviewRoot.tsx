@@ -3,8 +3,8 @@ import {Colors, NonIdealState, Tooltip} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
+import {Timestamp} from 'src/app/time/Timestamp';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
@@ -27,9 +27,9 @@ import {
   RUN_TIME_FRAGMENT,
 } from 'src/runs/RunUtils';
 import {JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
-import {Timestamp} from 'src/ui/TimeComponents';
 import {FontFamily} from 'src/ui/styles';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -101,8 +101,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
         const sensors = pipelineSnapshotOrError.sensors;
 
         return (
-          <RootContainer>
-            <MainContainer>
+          <Box flex={{direction: 'row'}} padding={20}>
+            <Box style={{flexBasis: '50%'}} margin={{right: 32}}>
               <OverviewSection title="Definition">
                 <div
                   style={{
@@ -138,11 +138,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
               <OverviewSection title="Description">
                 {pipelineSnapshotOrError.description || 'No description provided'}
               </OverviewSection>
-            </MainContainer>
-            <SecondaryContainer>
+            </Box>
+            <Box style={{flexBasis: '25%'}} margin={{right: 32}}>
               <OverviewSection title="Schedule">
                 {schedules.length ? (
-                  <Table striped style={{width: '100%'}}>
+                  <Table $compact>
                     <tbody>
                       {schedules.map((schedule) => (
                         <OverviewJob
@@ -162,7 +162,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
               </OverviewSection>
               <OverviewSection title="Sensor">
                 {sensors.length ? (
-                  <Table striped style={{width: '100%'}}>
+                  <Table $compact>
                     <tbody>
                       {sensors.map((sensor) => (
                         <OverviewJob
@@ -183,7 +183,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
               <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
                 <OverviewSection title="Recent runs">
                   {pipelineSnapshotOrError.runs.length ? (
-                    <Table striped>
+                    <Table $compact>
                       <tbody>
                         {pipelineSnapshotOrError.runs.map((run) => (
                           <OverviewRun run={run} key={run.runId} />
@@ -195,11 +195,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   )}
                 </OverviewSection>
               </RunsQueryRefetchContext.Provider>
-            </SecondaryContainer>
-            <SecondaryContainer>
+            </Box>
+            <div style={{flexBasis: '25%'}}>
               <OverviewAssets runs={pipelineSnapshotOrError.runs} />
-            </SecondaryContainer>
-          </RootContainer>
+            </div>
+          </Box>
         );
       }}
     </Loading>
@@ -218,7 +218,7 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
   return (
     <OverviewSection title="Related assets">
       {assetKeys.length ? (
-        <Table striped style={{width: '100%'}}>
+        <Table>
           <tbody>
             {assetKeys.map((assetKey) => (
               <tr key={assetKey} style={{padding: 10, paddingBottom: 30}}>
@@ -312,8 +312,10 @@ const OverviewRun = ({run}: {run: Run}) => {
 
   return (
     <tr>
-      <td style={{maxWidth: 30, textAlign: 'center'}}>
-        <RunStatusWithStats status={run.status} runId={run.runId} />
+      <td style={{width: '20px'}}>
+        <div style={{paddingTop: '1px'}}>
+          <RunStatusWithStats status={run.status} runId={run.runId} />
+        </div>
       </td>
       <td style={{width: '100%'}}>
         <div style={{fontFamily: FontFamily.monospace}}>
@@ -346,24 +348,6 @@ const OverviewSection = ({title, children}: {title: string; children: any}) => {
     </div>
   );
 };
-
-const RootContainer = styled.div`
-  flex: 1;
-  display: flex;
-  overflow: auto;
-`;
-
-const MainContainer = styled.div`
-  flex: 2;
-  max-width: 1200px;
-  padding: 20px;
-`;
-
-const SecondaryContainer = ({children}: {children: React.ReactNode}) => (
-  <div style={{maxWidth: 600, padding: 20, flex: 1}}>
-    <div style={{maxWidth: '25vw'}}>{children}</div>
-  </div>
-);
 
 const OVERVIEW_JOB_FRAGMENT = gql`
   fragment OverviewJobFragment on JobState {

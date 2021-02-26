@@ -119,6 +119,12 @@ def inst(obj: Any, ttype: Type, desc: str = None) -> Any:
     return obj
 
 
+def opt_inst(obj: Any, ttype: Type, desc: str = None, default: Any = None) -> Any:
+    if obj is not None and not isinstance(obj, ttype):
+        raise_with_traceback(_type_mismatch_error(obj, ttype, desc))
+    return default if obj is None else obj
+
+
 def subclass(obj: Any, superclass: Type, desc: str = None) -> Any:
     if not issubclass(obj, superclass):
         raise_with_traceback(_type_mismatch_error(obj, superclass, desc))
@@ -404,7 +410,7 @@ def _check_set_items(obj_set: Any, of_type: Type) -> Set:
     return obj_set
 
 
-def _check_tuple_items(obj_tuple: Any, of_type: Type) -> Tuple:
+def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
     if isinstance(of_type, tuple):
         len_tuple = len(obj_tuple)
         len_type = len(of_type)
@@ -608,8 +614,7 @@ def opt_nullable_dict_param(
     value_type: Type = None,
     value_class: Type = None,
 ) -> Optional[Dict]:
-    """Ensures argument obj is either a dictionary or None;
-    """
+    """Ensures argument obj is either a dictionary or None;"""
     from dagster.utils import frozendict
 
     if obj is not None and not isinstance(obj, (frozendict, dict)):
@@ -733,21 +738,26 @@ def opt_generator_param(obj: Any, param_name: str) -> Optional[Generator]:
     return obj
 
 
-def list_elem(ddict: Dict, key: str) -> List:  # type: ignore[return]
+def list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:  # type: ignore[return]
     dict_param(ddict, "ddict")
     str_param(key, "key")
+    opt_type_param(of_type, "of_type")
 
     value = ddict.get(key)
 
     if isinstance(value, list):
-        return value
+        if not of_type:
+            return value
+
+        return _check_list_items(value, of_type)
 
     raise_with_traceback(_element_check_error(key, value, ddict, list))
 
 
-def opt_list_elem(ddict: Dict, key: str) -> List:
+def opt_list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
+    opt_type_param(of_type, "of_type")
 
     value = ddict.get(key)
 
@@ -756,7 +766,11 @@ def opt_list_elem(ddict: Dict, key: str) -> List:
 
     if not isinstance(value, list):
         raise_with_traceback(_element_check_error(key, value, ddict, list))
-    return value
+
+    if not of_type:
+        return value
+
+    return _check_list_items(value, of_type)
 
 
 def dict_elem(ddict: Dict, key: str) -> Dict:
@@ -873,7 +887,9 @@ def class_param(obj: Any, param_name: str) -> Union[ParameterCheckError, type]:
     if not inspect.isclass(obj):
         return ParameterCheckError(
             'Param "{name}" is not a class. Got {obj} which is type {obj_type}.'.format(
-                name=param_name, obj=repr(obj), obj_type=type(obj),
+                name=param_name,
+                obj=repr(obj),
+                obj_type=type(obj),
             )
         )
     return obj

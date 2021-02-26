@@ -1,5 +1,6 @@
 import datetime
 import warnings
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
@@ -17,28 +18,32 @@ from dagster.utils.partitions import (
 from ..mode import DEFAULT_MODE_NAME
 from ..schedule import ScheduleDefinition
 
+if TYPE_CHECKING:
+    from dagster import ScheduleExecutionContext, Partition
+
 # Error messages are long
 # pylint: disable=C0301
 
 
 def schedule(
-    cron_schedule,
-    pipeline_name,
-    name=None,
-    tags=None,
-    tags_fn=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    execution_timezone=None,
-):
+    cron_schedule: str,
+    pipeline_name: str,
+    name: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+    tags_fn: Optional[Callable[["ScheduleExecutionContext"], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    execution_timezone: Optional[str] = None,
+    description: Optional[str] = None,
+) -> Callable[[Callable[["ScheduleExecutionContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
@@ -63,9 +68,10 @@ def schedule(
             the schedule.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        description (Optional[str]): A human-readable description of the schedule.
     """
 
-    def inner(fn):
+    def inner(fn: Callable[["ScheduleExecutionContext"], Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -82,25 +88,28 @@ def schedule(
             should_execute=should_execute,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
 
 
 def monthly_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_day_of_month=1,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_day_of_month: int = 1,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[datetime.datetime] = None,
+    execution_timezone: Optional[str] = None,
+    partition_months_offset: Optional[int] = 1,
+    description: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs monthly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -132,6 +141,11 @@ def monthly_schedule(
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        partition_months_offset (Optional[int]): How many months back to go when choosing the partition
+            for a given schedule execution. For example, when partition_months_offset=1, the schedule
+            that executes during month N will fill in the partition for month N-1.
+            (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -145,6 +159,8 @@ def monthly_schedule(
     check.int_param(execution_day_of_month, "execution_day")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
+    check.opt_int_param(partition_months_offset, "partition_months_offset")
+    check.opt_str_param(description, "description")
 
     if (
         start_date.day != 1
@@ -183,7 +199,7 @@ def my_schedule_definition(_):
     execution_time_to_partition_fn = (
         lambda d: pendulum.instance(d)
         .replace(hour=0, minute=0)
-        .subtract(months=1, days=execution_day_of_month - 1)
+        .subtract(months=partition_months_offset, days=execution_day_of_month - 1)
     )
 
     partition_fn = schedule_partition_range(
@@ -193,16 +209,22 @@ def my_schedule_definition(_):
         fmt=fmt,
         timezone=execution_timezone,
         execution_time_to_partition_fn=execution_time_to_partition_fn,
+        inclusive=(partition_months_offset == 0),
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -223,31 +245,34 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
 
 
 def weekly_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_day_of_week=0,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_day_of_week: int = 0,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[datetime.datetime] = None,
+    execution_timezone: Optional[str] = None,
+    partition_weeks_offset: Optional[int] = 1,
+    description: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs weekly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -273,6 +298,11 @@ def weekly_schedule(
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        partition_weeks_offset (Optional[int]): How many weeks back to go when choosing the partition
+            for a given schedule execution. For example, when partition_weeks_offset=1, the schedule
+            that executes during week N will fill in the partition for week N-1.
+            (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -286,6 +316,8 @@ def weekly_schedule(
     check.int_param(execution_day_of_week, "execution_day_of_week")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
+    check.opt_int_param(partition_weeks_offset, "partition_weeks_offset")
+    check.opt_str_param(description, "description")
 
     if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -321,7 +353,7 @@ def my_schedule_definition(_):
     execution_time_to_partition_fn = (
         lambda d: pendulum.instance(d)
         .replace(hour=0, minute=0)
-        .subtract(weeks=1, days=day_difference)
+        .subtract(weeks=partition_weeks_offset, days=day_difference)
     )
 
     partition_fn = schedule_partition_range(
@@ -331,16 +363,22 @@ def my_schedule_definition(_):
         fmt=fmt,
         timezone=execution_timezone,
         execution_time_to_partition_fn=execution_time_to_partition_fn,
+        inclusive=(partition_weeks_offset == 0),
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -361,30 +399,33 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
 
 
 def daily_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[datetime.datetime] = None,
+    execution_timezone: Optional[str] = None,
+    partition_days_offset: Optional[int] = 1,
+    description: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs daily.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -408,6 +449,11 @@ def daily_schedule(
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        partition_days_offset (Optional[int]): How many days back to go when choosing the partition
+            for a given schedule execution. For example, when partition_days_offset=1, the schedule
+            that executes during day N will fill in the partition for day N-1.
+            (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -420,6 +466,8 @@ def daily_schedule(
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(execution_timezone, "execution_timezone")
+    check.opt_int_param(partition_days_offset, "partition_days_offset")
+    check.opt_str_param(description, "description")
 
     if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -444,7 +492,11 @@ def my_schedule_definition(_):
     fmt = DEFAULT_DATE_FORMAT
 
     execution_time_to_partition_fn = (
-        lambda d: pendulum.instance(d).replace(hour=0, minute=0).subtract(days=1,)
+        lambda d: pendulum.instance(d)
+        .replace(hour=0, minute=0)
+        .subtract(
+            days=partition_days_offset,
+        )
     )
 
     partition_fn = schedule_partition_range(
@@ -454,16 +506,22 @@ def my_schedule_definition(_):
         fmt=fmt,
         timezone=execution_timezone,
         execution_time_to_partition_fn=execution_time_to_partition_fn,
+        inclusive=(partition_days_offset == 0),
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -484,30 +542,33 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner
 
 
 def hourly_schedule(
-    pipeline_name,
-    start_date,
-    name=None,
-    execution_time=datetime.time(0, 0),
-    tags_fn_for_date=None,
-    solid_selection=None,
-    mode="default",
-    should_execute=None,
-    environment_vars=None,
-    end_date=None,
-    execution_timezone=None,
-):
+    pipeline_name: str,
+    start_date: datetime.datetime,
+    name: Optional[str] = None,
+    execution_time: datetime.time = datetime.time(0, 0),
+    tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = "default",
+    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    environment_vars: Optional[Dict[str, str]] = None,
+    end_date: Optional[str] = None,
+    execution_timezone: Optional[str] = None,
+    partition_hours_offset: Optional[int] = 1,
+    description: Optional[str] = None,
+) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule that runs hourly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    for the scheduled execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -533,6 +594,11 @@ def hourly_schedule(
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        partition_hours_offset (Optional[int]): How many hours back to go when choosing the partition
+            for a given schedule execution. For example, when partition_hours_offset=1, the schedule
+            that executes during hour N will fill in the partition for hour N-1.
+            (Default: 1)
+        description (Optional[str]): A human-readable description of the schedule.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -545,6 +611,8 @@ def hourly_schedule(
     check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
+    check.opt_int_param(partition_hours_offset, "partition_hours_offset")
+    check.opt_str_param(description, "description")
 
     if start_date.minute != 0 or start_date.second != 0:
         warnings.warn(
@@ -581,7 +649,7 @@ def my_schedule_definition(_):
     )
 
     execution_time_to_partition_fn = lambda d: pendulum.instance(d).subtract(
-        hours=1, minutes=(execution_time.minute - start_date.minute) % 60
+        hours=partition_hours_offset, minutes=(execution_time.minute - start_date.minute) % 60
     )
 
     partition_fn = schedule_partition_range(
@@ -591,16 +659,22 @@ def my_schedule_definition(_):
         fmt=fmt,
         timezone=execution_timezone,
         execution_time_to_partition_fn=execution_time_to_partition_fn,
+        inclusive=(partition_hours_offset == 0),
     )
 
-    def inner(fn):
+    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
-        tags_fn_for_partition_value = lambda partition: {}
+        tags_fn_for_partition_value: Callable[
+            ["Partition"], Optional[Dict[str, str]]
+        ] = lambda partition: {}
         if tags_fn_for_date:
-            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+            tags_fn = cast(
+                Callable[[datetime.datetime], Optional[Dict[str, str]]], tags_fn_for_date
+            )
+            tags_fn_for_partition_value = lambda partition: tags_fn(partition.value)
 
         partition_set = PartitionSetDefinition(
             name="{}_partitions".format(schedule_name),
@@ -621,6 +695,7 @@ def my_schedule_definition(_):
                 execution_time_to_partition_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
+            description=description,
         )
 
     return inner

@@ -1,11 +1,14 @@
-import {IBreadcrumbProps} from '@blueprintjs/core';
+import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
-import {TopNav} from 'src/nav/TopNav';
 import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
 import {SensorsRoot} from 'src/sensors/SensorsRoot';
 import {SolidsRoot} from 'src/solids/SolidsRoot';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
+import {PageHeader} from 'src/ui/PageHeader';
+import {Heading} from 'src/ui/Text';
 import {RepositoryPipelinesList} from 'src/workspace/RepositoryPipelinesList';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
@@ -19,11 +22,6 @@ interface Props {
 export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {repoAddress, tab} = props;
   const path = repoAddressAsString(repoAddress);
-
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {icon: 'cube', text: 'Workspace', href: '/workspace'},
-    {text: path},
-  ];
 
   const tabs = [
     {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')},
@@ -46,17 +44,23 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   };
 
   return (
-    <div
-      style={{
-        height: '100%',
-        width: '100%',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <TopNav activeTab={activeTab()} breadcrumbs={breadcrumbs} tabs={tabs} />
-      <div style={{flex: 1}}>
+    <Box flex={{direction: 'column'}} style={{height: '100%'}}>
+      <Group direction="column" spacing={16} padding={{top: 20, horizontal: 20}}>
+        <PageHeader
+          title={<Heading>{path}</Heading>}
+          icon="cube"
+          description={<Link to="/workspace">Repository</Link>}
+        />
+        <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+          <Tabs large={false} selectedTabId={activeTab()}>
+            {tabs.map((tab) => {
+              const {href, text} = tab;
+              return <Tab key={text} id={text} title={<Link to={href}>{text}</Link>} />;
+            })}
+          </Tabs>
+        </Box>
+      </Group>
+      <div style={{flex: 1, flexGrow: 1}}>
         <Switch>
           <Route
             path="/workspace/:repoPath/schedules"
@@ -82,6 +86,6 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
           />
         </Switch>
       </div>
-    </div>
+    </Box>
   );
 };

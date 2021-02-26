@@ -89,6 +89,7 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
     __typename
     ... on MessageEvent {
       message
+      eventType
       timestamp
       level
       stepKey
@@ -221,6 +222,7 @@ interface UnstructuredProps {
 export class Unstructured extends React.Component<UnstructuredProps> {
   onExpand = () => {
     showCustomAlert({
+      title: 'Log',
       body: <div style={{whiteSpace: 'pre-wrap'}}>{this.props.node.message}</div>,
     });
   };

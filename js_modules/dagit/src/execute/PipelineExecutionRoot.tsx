@@ -15,6 +15,7 @@ import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
 } from 'src/execute/ConfigEditorConfigPicker';
+import {ExecutionSessionContainer} from 'src/execute/ExecutionSessionContainer';
 import {ExecutionSessionContainerError} from 'src/execute/ExecutionSessionContainerError';
 import {ExecutionSessionContainerLoading} from 'src/execute/ExecutionSessionContainerLoading';
 import {ExecutionTabs} from 'src/execute/ExecutionTabs';
@@ -31,8 +32,6 @@ import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
-
-const ExecutionSessionContainer = React.lazy(() => import('src/execute/ExecutionSessionContainer'));
 
 interface Props {
   pipelinePath: string;
@@ -150,19 +149,17 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
               }
 
               return (
-                <React.Suspense fallback={<div />}>
-                  <ExecutionSessionContainer
-                    data={data}
-                    onSaveSession={(changes) => onSaveSession(data.current, changes)}
-                    onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
-                    pipeline={pipelineOrError}
-                    partitionSets={partitionSetsOrError}
-                    runConfigSchemaOrError={configSchemaOrError}
-                    currentSession={session}
-                    pipelineSelector={pipelineSelector}
-                    repoAddress={repoAddress}
-                  />
-                </React.Suspense>
+                <ExecutionSessionContainer
+                  data={data}
+                  onSaveSession={(changes) => onSaveSession(data.current, changes)}
+                  onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
+                  pipeline={pipelineOrError}
+                  partitionSets={partitionSetsOrError}
+                  runConfigSchemaOrError={configSchemaOrError}
+                  currentSession={session}
+                  pipelineSelector={pipelineSelector}
+                  repoAddress={repoAddress}
+                />
               );
             }}
           </Query>

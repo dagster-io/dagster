@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
 
-from dagster import check
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
@@ -45,8 +44,7 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
     def output_config_schema(self):
         return self._output_config_schema
 
-    def copy_for_configured(self, name, description, config_schema, _):
-        check.invariant(name is None, "ResourceDefintions do not have names")
+    def copy_for_configured(self, description, config_schema, _):
         return OutputManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,

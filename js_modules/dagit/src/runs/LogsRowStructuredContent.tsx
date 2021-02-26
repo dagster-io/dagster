@@ -3,7 +3,6 @@ import * as React from 'react';
 
 import {assertUnreachable} from 'src/app/Util';
 import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
-import {AssetsSupported} from 'src/runs/AssetsSupported';
 import {ComputeLogLink} from 'src/runs/ComputeLogModal';
 import {EventTypeColumn} from 'src/runs/LogsRowComponents';
 import {
@@ -24,38 +23,30 @@ interface IStructuredContentProps {
   metadata: IRunMetadataDict;
 }
 
-export const LogsRowStructuredContent: React.FunctionComponent<IStructuredContentProps> = ({
-  node,
-  metadata,
-}) => {
+export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node, metadata}) => {
+  const eventType = node.eventType as string;
   switch (node.__typename) {
     // Errors
     case 'PipelineInitFailureEvent':
-      return <FailureContent error={node.error} eventType="Pipeline Init Failed" />;
+      return <FailureContent error={node.error} eventType={eventType} />;
     case 'ExecutionStepFailureEvent':
       return (
         <FailureContent
-          eventType="Step Failed"
+          eventType={eventType}
           error={node.error}
           metadataEntries={node?.failureMetadata?.metadataEntries}
         />
       );
 
     case 'ExecutionStepUpForRetryEvent':
-      return (
-        <DefaultContent
-          eventType="Step Requested Retry"
-          message={node.message}
-          eventIntent="warning"
-        />
-      );
+      return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
 
     case 'ExecutionStepStartEvent':
       if (!node.stepKey) {
-        return <DefaultContent message={node.message} eventType="Step Start" />;
+        return <DefaultContent message={node.message} eventType={eventType} />;
       } else {
         return (
-          <DefaultContent message={node.message} eventType="Step Start">
+          <DefaultContent message={node.message} eventType={eventType}>
             <LogRowStructuredContentTable
               rows={[
                 {
@@ -78,25 +69,23 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       return (
         <DefaultContent
           message={node.message}
-          eventType="Step Skipped"
+          eventType={eventType}
           eventColor="rgba(173, 185, 152, 0.3)"
         />
       );
 
     case 'ExecutionStepRestartEvent':
-      return <DefaultContent message={node.message} eventType="Step Restart" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
 
     case 'ExecutionStepSuccessEvent':
-      return (
-        <DefaultContent message={node.message} eventType="Step Finished" eventIntent="success" />
-      );
+      return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
     case 'ExecutionStepInputEvent':
       return (
         <DefaultContent
           message={
             node.message + (node.typeCheck.description ? ' ' + node.typeCheck.description : '')
           }
-          eventType="Input"
+          eventType={eventType}
           eventIntent={node.typeCheck.success ? 'success' : 'warning'}
         >
           <MetadataEntries entries={node.typeCheck.metadataEntries} />
@@ -108,7 +97,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
           message={
             node.message + (node.typeCheck.description ? ' ' + node.typeCheck.description : '')
           }
-          eventType="Output"
+          eventType={eventType}
           eventIntent={node.typeCheck.success ? 'success' : 'warning'}
         >
           <MetadataEntries entries={node.typeCheck.metadataEntries} />
@@ -118,7 +107,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       return (
         <DefaultContent
           message={node.message}
-          eventType="Expectation"
+          eventType={eventType}
           eventIntent={node.expectationResult.success ? 'success' : 'warning'}
         >
           <MetadataEntries entries={node.expectationResult.metadataEntries} />
@@ -126,82 +115,65 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
     case 'StepMaterializationEvent':
       return (
-        <MaterializationContent message={node.message} materialization={node.materialization} />
+        <MaterializationContent
+          message={node.message}
+          materialization={node.materialization}
+          eventType={eventType}
+        />
       );
     case 'ObjectStoreOperationEvent':
       return (
-        <DefaultContent
-          message={node.message}
-          eventType={
-            node.operationResult.op === 'SET_OBJECT'
-              ? 'Store'
-              : node.operationResult.op === 'GET_OBJECT'
-              ? 'Retrieve'
-              : ''
-          }
-        >
+        <DefaultContent message={node.message} eventType={eventType}>
           <MetadataEntries entries={node.operationResult.metadataEntries} />
         </DefaultContent>
       );
     case 'HandledOutputEvent':
-      return <DefaultContent message={node.message} eventType="Handled Output" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'LoadedInputEvent':
-      return <DefaultContent message={node.message} eventType="Loaded Input" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'HookCompletedEvent':
-      return <DefaultContent eventType="Hook Event" message={node.message} />;
+      return <DefaultContent eventType={eventType} message={node.message} />;
     case 'HookSkippedEvent':
-      return <DefaultContent eventType="Hook Event" message={node.message} />;
+      return <DefaultContent eventType={eventType} message={node.message} />;
     case 'HookErroredEvent':
-      return <FailureContent eventType="Hook Failed" error={node.error} />;
+      return <FailureContent eventType={eventType} error={node.error} />;
     case 'PipelineFailureEvent':
       if (node.pipelineFailureError) {
         return (
           <FailureContent
             message={node.message}
             error={node.pipelineFailureError}
-            eventType="Pipeline Failed"
+            eventType={eventType}
           />
         );
       }
 
-      return (
-        <DefaultContent message={node.message} eventType="Pipeline Failed" eventIntent="danger" />
-      );
+      return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
     case 'PipelineSuccessEvent':
-      return (
-        <DefaultContent
-          message={node.message}
-          eventType="Pipeline Finished"
-          eventIntent="success"
-        />
-      );
+      return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
 
     case 'PipelineStartEvent':
-      return <DefaultContent message={node.message} eventType="Pipeline Started" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'PipelineEnqueuedEvent':
-      return <DefaultContent message={node.message} eventType="Pipeline Enqueued" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'PipelineDequeuedEvent':
-      return <DefaultContent message={node.message} eventType="Pipeline Dequeued" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'PipelineStartingEvent':
-      return <DefaultContent message={node.message} eventType="Pipeline Starting" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'PipelineCancelingEvent':
-      return <DefaultContent message={node.message} eventType="Canceling Pipeline" />;
+      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'PipelineCanceledEvent':
-      return <FailureContent message={node.message} eventType="Pipeline Canceled" />;
+      return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
       if (node.engineError) {
         return (
-          <FailureContent
-            message={node.message}
-            error={node.engineError}
-            eventType="Engine Event"
-          />
+          <FailureContent message={node.message} error={node.engineError} eventType={eventType} />
         );
       }
       return (
         <DefaultContent
           message={node.message}
-          eventType="Engine Event"
+          eventType={eventType}
           eventColor="rgba(27,164,206,0.2)"
         >
           <MetadataEntries entries={node.metadataEntries} />
@@ -292,21 +264,20 @@ const FailureContent: React.FunctionComponent<{
   </>
 );
 
-const MaterializationContent: React.FunctionComponent<{
+const MaterializationContent: React.FC<{
   message: string;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
-}> = ({message, materialization}) => {
-  const assetsSupported = React.useContext(AssetsSupported);
-
+  eventType: string;
+}> = ({message, materialization, eventType}) => {
   if (!materialization.assetKey) {
     return (
-      <DefaultContent message={message} eventType="Materialization">
+      <DefaultContent message={message} eventType={eventType}>
         <MetadataEntries entries={materialization.metadataEntries} />
       </DefaultContent>
     );
   }
 
-  const assetDashboardLink = assetsSupported ? (
+  const assetDashboardLink = (
     <span style={{marginLeft: 10}}>
       [
       <MetadataEntryLink
@@ -316,10 +287,10 @@ const MaterializationContent: React.FunctionComponent<{
       </MetadataEntryLink>
       ]
     </span>
-  ) : null;
+  );
 
   return (
-    <DefaultContent message={message} eventType="AssetMaterialization">
+    <DefaultContent message={message} eventType={eventType}>
       <>
         <LogRowStructuredContentTable
           rows={[

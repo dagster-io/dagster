@@ -36,7 +36,9 @@ def mock_ecs_task_definition(mock_ecs_client):
     task_definition = mock_ecs_client.register_task_definition(
         family="dagster",
         requiresCompatibilities=["FARGATE"],
-        containerDefinitions=[{"name": "HelloWorld", "image": "hello-world:latest", "cpu": 256},],
+        containerDefinitions=[
+            {"name": "HelloWorld", "image": "hello-world:latest", "cpu": 256},
+        ],
         networkMode="awsvpc",
         cpu="256",
         memory="512",
@@ -49,7 +51,9 @@ def test_set_task(mock_ecs_client, mock_ecs_cluster, mock_subnets):
     definition = dict(
         family="dagster",
         requiresCompatibilities=["FARGATE"],
-        containerDefinitions=[{"name": "HelloWorld", "image": "hello-world:latest", "cpu": 256},],
+        containerDefinitions=[
+            {"name": "HelloWorld", "image": "hello-world:latest", "cpu": 256},
+        ],
         networkMode="awsvpc",
         cpu="256",
         memory="512",

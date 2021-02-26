@@ -8,15 +8,45 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum BulkActionStatus {
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  REQUESTED = "REQUESTED",
+}
+
 export enum ComputeIOType {
   STDERR = "STDERR",
   STDOUT = "STDOUT",
 }
 
-export enum DaemonType {
-  QUEUED_RUN_COORDINATOR = "QUEUED_RUN_COORDINATOR",
-  SCHEDULER = "SCHEDULER",
-  SENSOR = "SENSOR",
+export enum DagsterEventType {
+  ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION",
+  ENGINE_EVENT = "ENGINE_EVENT",
+  HANDLED_OUTPUT = "HANDLED_OUTPUT",
+  HOOK_COMPLETED = "HOOK_COMPLETED",
+  HOOK_ERRORED = "HOOK_ERRORED",
+  HOOK_SKIPPED = "HOOK_SKIPPED",
+  LOADED_INPUT = "LOADED_INPUT",
+  OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION",
+  PIPELINE_CANCELED = "PIPELINE_CANCELED",
+  PIPELINE_CANCELING = "PIPELINE_CANCELING",
+  PIPELINE_DEQUEUED = "PIPELINE_DEQUEUED",
+  PIPELINE_ENQUEUED = "PIPELINE_ENQUEUED",
+  PIPELINE_FAILURE = "PIPELINE_FAILURE",
+  PIPELINE_INIT_FAILURE = "PIPELINE_INIT_FAILURE",
+  PIPELINE_START = "PIPELINE_START",
+  PIPELINE_STARTING = "PIPELINE_STARTING",
+  PIPELINE_SUCCESS = "PIPELINE_SUCCESS",
+  STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT",
+  STEP_FAILURE = "STEP_FAILURE",
+  STEP_INPUT = "STEP_INPUT",
+  STEP_MATERIALIZATION = "STEP_MATERIALIZATION",
+  STEP_OUTPUT = "STEP_OUTPUT",
+  STEP_RESTARTED = "STEP_RESTARTED",
+  STEP_SKIPPED = "STEP_SKIPPED",
+  STEP_START = "STEP_START",
+  STEP_SUCCESS = "STEP_SUCCESS",
+  STEP_UP_FOR_RETRY = "STEP_UP_FOR_RETRY",
 }
 
 export enum EvaluationErrorReason {
@@ -120,12 +150,19 @@ export interface ExecutionTag {
   value: string;
 }
 
+export interface JobSelector {
+  repositoryName: string;
+  repositoryLocationName: string;
+  jobName: string;
+}
+
 export interface PartitionBackfillParams {
   selector: PartitionSetSelector;
   partitionNames: string[];
   reexecutionSteps?: string[] | null;
   fromFailure?: boolean | null;
   tags?: ExecutionTag[] | null;
+  forceSynchronousSubmission?: boolean | null;
 }
 
 export interface PartitionSetSelector {

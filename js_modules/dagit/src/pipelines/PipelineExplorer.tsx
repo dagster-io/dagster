@@ -303,7 +303,7 @@ const OptionsOverlay = styled.div`
 
 const SearchOverlay = styled.div`
   z-index: 2;
-  padding: 7px 5px;
+  padding: 12px 12px 0 0;
   display: inline-flex;
   align-items: stretch;
   position: absolute;
@@ -313,8 +313,7 @@ const SearchOverlay = styled.div`
 
 const PathOverlay = styled.div`
   z-index: 2;
-  padding: 7px;
-  padding-left: 10px;
+  padding: 12px 0 0 20px;
   max-width: calc(100% - 250px);
   display: inline-flex;
   align-items: center;

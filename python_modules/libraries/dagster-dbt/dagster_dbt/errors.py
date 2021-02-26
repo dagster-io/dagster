@@ -31,12 +31,18 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
 
     def __init__(self, description: str, logs: List[Dict[str, Any]], raw_output: str):
         metadata_entries = [
-            EventMetadataEntry.json({"logs": logs}, label="Parsed CLI Output (JSON)",),
+            EventMetadataEntry.json(
+                {"logs": logs},
+                label="Parsed CLI Output (JSON)",
+            ),
             EventMetadataEntry.text(
                 DagsterDbtCliRuntimeError.stitch_messages(logs),
                 label="Parsed CLI Output (JSON) Message Attributes",
             ),
-            EventMetadataEntry.text(raw_output, label="Raw CLI Output",),
+            EventMetadataEntry.text(
+                raw_output,
+                label="Raw CLI Output",
+            ),
         ]
         super().__init__(description, metadata_entries)
 

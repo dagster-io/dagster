@@ -5,8 +5,7 @@ from dagster import check
 
 
 def build_pyspark_zip(zip_file, path):
-    """Archives the current path into a file named `zip_file`
-    """
+    """Archives the current path into a file named `zip_file`"""
     check.str_param(zip_file, "zip_file")
     check.str_param(path, "path")
 

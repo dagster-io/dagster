@@ -45,7 +45,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool,
+            self.postgres_url,
+            isolation_level="AUTOCOMMIT",
+            poolclass=db.pool.NullPool,
         )
 
         self._index_migration_cache = {}
@@ -60,6 +62,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(alembic_config, conn)
+
+            # mark all secondary indexes as built
+            self.build_missing_indexes()
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection and set statement_timeout
@@ -96,7 +101,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         return PostgresRunStorage(postgres_url)
 
     def connect(self):
-        return create_pg_connection(self._engine, __file__, "run",)
+        return create_pg_connection(
+            self._engine,
+            __file__,
+            "run",
+        )
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
@@ -123,7 +132,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)
                 .values(  # pylint: disable=no-value-for-parameter
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
-                    daemon_type=daemon_heartbeat.daemon_type.value,
+                    daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_dagster_namedtuple(daemon_heartbeat),
                 )

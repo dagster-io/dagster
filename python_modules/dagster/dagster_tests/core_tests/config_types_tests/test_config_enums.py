@@ -41,7 +41,10 @@ def test_enum_in_pipeline_execution():
     called = {}
 
     @solid(
-        config_schema={"int_field": Int, "enum_field": Enum("AnEnum", [EnumValue("ENUM_VALUE")]),}
+        config_schema={
+            "int_field": Int,
+            "enum_field": Enum("AnEnum", [EnumValue("ENUM_VALUE")]),
+        }
     )
     def config_me(context):
         assert context.solid_config["int_field"] == 2

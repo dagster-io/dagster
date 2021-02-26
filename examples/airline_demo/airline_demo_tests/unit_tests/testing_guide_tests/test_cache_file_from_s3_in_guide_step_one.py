@@ -1,9 +1,9 @@
 import os
 import shutil
+from unittest import mock
 
 import boto3
 from dagster import execute_pipeline, pipeline, solid
-from dagster.seven import mock
 from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
 from dagster.utils.test import execute_solid
 from dagster_aws.s3 import S3Coordinate

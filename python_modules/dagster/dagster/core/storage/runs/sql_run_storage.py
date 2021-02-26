@@ -7,8 +7,13 @@ from enum import Enum
 
 import sqlalchemy as db
 from dagster import check
-from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
+from dagster.core.errors import (
+    DagsterInvariantViolationError,
+    DagsterRunAlreadyExists,
+    DagsterSnapshotDoesNotExist,
+)
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -24,6 +29,7 @@ from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
 from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
+    BulkActionsTable,
     DaemonHeartbeatsTable,
     RunTagsTable,
     RunsTable,
@@ -38,8 +44,7 @@ class SnapshotType(Enum):
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
-    """Base class for SQL based run storages
-    """
+    """Base class for SQL based run storages"""
 
     @abstractmethod
     def connect(self):
@@ -334,7 +339,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             db.select([RunsTable.c.run_body])
             .select_from(
                 root_to_run.join(
-                    RunsTable, root_to_run.c.run_id == RunsTable.c.run_id, isouter=True,
+                    RunsTable,
+                    root_to_run.c.run_id == RunsTable.c.run_id,
+                    isouter=True,
                 )
             )
             .alias("run_group")
@@ -384,7 +391,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         runs_augmented = (
             db.select(
-                [runs.c.run_id.label("run_id"), all_descendant_runs.c.value.label("root_run_id"),]
+                [
+                    runs.c.run_id.label("run_id"),
+                    all_descendant_runs.c.value.label("root_run_id"),
+                ]
             )
             .select_from(
                 runs.join(
@@ -522,12 +532,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.inst_param(snapshot_type, "snapshot_type", SnapshotType)
 
         with self.connect() as conn:
-            snapshot_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                snapshot_id=snapshot_id,
-                snapshot_body=zlib.compress(
-                    serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
-                ),
-                snapshot_type=snapshot_type.value,
+            snapshot_insert = (
+                SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    snapshot_id=snapshot_id,
+                    snapshot_body=zlib.compress(
+                        serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
+                    ),
+                    snapshot_type=snapshot_type.value,
+                )
             )
             conn.execute(snapshot_insert)
             return snapshot_id
@@ -596,8 +608,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return len(results) > 0
 
     def mark_index_built(self, migration_name):
-        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-            name=migration_name, migration_completed=datetime.now(),
+        query = (
+            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+                name=migration_name,
+                migration_completed=datetime.now(),
+            )
         )
         with self.connect() as conn:
             try:
@@ -619,7 +634,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 conn.execute(
                     DaemonHeartbeatsTable.insert().values(  # pylint: disable=no-value-for-parameter
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
-                        daemon_type=daemon_heartbeat.daemon_type.value,
+                        daemon_type=daemon_heartbeat.daemon_type,
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_dagster_namedtuple(daemon_heartbeat),
                     )
@@ -627,9 +642,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             except db.exc.IntegrityError:
                 conn.execute(
                     DaemonHeartbeatsTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(
-                        DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type.value
-                    )
+                    .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
                     .values(  # pylint: disable=no-value-for-parameter
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
@@ -641,7 +654,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
-            heartbeats = [deserialize_json_to_dagster_namedtuple(row.body) for row in rows]
+            heartbeats = []
+            for row in rows:
+                heartbeats.append(deserialize_json_to_dagster_namedtuple(row.body))
             return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self):
@@ -657,6 +672,54 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
+
+    def has_bulk_actions_table(self):
+        with self.connect() as conn:
+            inspector = db.engine.reflection.Inspector.from_engine(conn.engine)
+            return "bulk_actions" in inspector.get_table_names()
+
+    def get_backfills(self, status=None):
+        check.opt_inst_param(status, "status", BulkActionStatus)
+        query = db.select([BulkActionsTable.c.body])
+        if status:
+            query = query.where(BulkActionsTable.c.status == status.value)
+        rows = self.fetchall(query)
+        return [deserialize_json_to_dagster_namedtuple(row[0]) for row in rows]
+
+    def get_backfill(self, backfill_id):
+        check.str_param(backfill_id, "backfill_id")
+        query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
+        row = self.fetchone(query)
+        return deserialize_json_to_dagster_namedtuple(row[0]) if row else None
+
+    def add_backfill(self, partition_backfill):
+        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+        with self.connect() as conn:
+            conn.execute(
+                BulkActionsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    key=partition_backfill.backfill_id,
+                    status=partition_backfill.status.value,
+                    timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
+                    body=serialize_dagster_namedtuple(partition_backfill),
+                )
+            )
+
+    def update_backfill(self, partition_backfill):
+        check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+        backfill_id = partition_backfill.backfill_id
+        if not self.get_backfill(backfill_id):
+            raise DagsterInvariantViolationError(
+                f"Backfill {backfill_id} is not present in storage"
+            )
+        with self.connect() as conn:
+            conn.execute(
+                BulkActionsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(BulkActionsTable.c.key == backfill_id)
+                .values(
+                    status=partition_backfill.status.value,
+                    body=serialize_dagster_namedtuple(partition_backfill),
+                )
+            )
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

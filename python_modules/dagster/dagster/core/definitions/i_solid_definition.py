@@ -2,7 +2,7 @@ import warnings
 from abc import abstractmethod, abstractproperty
 
 from dagster import check
-from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.utils import frozendict, frozenlist
 
 from .hook import HookDefinition
@@ -11,9 +11,15 @@ from .utils import check_valid_name, validate_tags
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
-class NodeDefinition(ConfigurableDefinition):
+class NodeDefinition(NamedConfigurableDefinition):
     def __init__(
-        self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None,
+        self,
+        name,
+        input_defs,
+        output_defs,
+        description=None,
+        tags=None,
+        positional_inputs=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -150,28 +156,28 @@ class NodeDefinition(ConfigurableDefinition):
             yield from output_def.dagster_type.inner_types
 
     def __call__(self, *args, **kwargs):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
-        return CallableNode(self)(*args, **kwargs)
+        return PendingNodeInvocation(self)(*args, **kwargs)
 
     def alias(self, name):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
         check.str_param(name, "name")
 
-        return CallableNode(self, given_alias=name)
+        return PendingNodeInvocation(self, given_alias=name)
 
     def tag(self, tags):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
-        return CallableNode(self, tags=validate_tags(tags))
+        return PendingNodeInvocation(self, tags=validate_tags(tags))
 
     def with_hooks(self, hook_defs):
-        from .composition import CallableNode
+        from .composition import PendingNodeInvocation
 
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
 
-        return CallableNode(self, hook_defs=hook_defs)
+        return PendingNodeInvocation(self, hook_defs=hook_defs)
 
     @abstractproperty
     def required_resource_keys(self):

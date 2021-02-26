@@ -1,24 +1,15 @@
-import {gql, NetworkStatus} from '@apollo/client';
-import {
-  Callout,
-  Colors,
-  Divider,
-  Icon,
-  NonIdealState,
-  Spinner,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core';
+import {gql} from '@apollo/client';
+import {Colors, Divider, NonIdealState, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {QueryCountdown} from 'src/app/QueryCountdown';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {AllScheduledTicks, SCHEDULED_TICKS_FRAGMENT} from 'src/runs/AllScheduledTicks';
+import {AllScheduledTicks} from 'src/runs/AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
@@ -31,14 +22,14 @@ import {CountFragment} from 'src/runs/types/CountFragment';
 import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
-import {useCountdown} from 'src/ui/Countdown';
 import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
+import {PageHeader} from 'src/ui/PageHeader';
 import {Heading} from 'src/ui/Text';
 import {TokenizingFieldValue} from 'src/ui/TokenizingField';
 
@@ -91,12 +82,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     pageSize: PAGE_SIZE,
   });
 
-  const countdownStatus = queryResult.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
-  const timeRemaining = useCountdown({
-    duration: POLL_INTERVAL,
-    status: countdownStatus,
-  });
-
   const setStatusFilter = (statuses: PipelineRunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
@@ -108,12 +93,10 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const tabColor = (match: string) =>
     selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
 
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-
   return (
     <Page>
       <Group direction="column" spacing={8}>
-        <Heading>Runs</Heading>
+        <PageHeader title={<Heading>Runs</Heading>} />
         <Box
           border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
@@ -141,7 +124,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                   <Group direction="row" spacing={4} alignItems="center">
                     <div>Queued</div>
                     <CountTag
-                      loading={queryResult.loading}
+                      loading={queryResult.loading && !queryResult.data}
                       fragment={
                         queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
                           ? queryResult.data?.queuedCount
@@ -163,7 +146,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                   <Group direction="row" spacing={4} alignItems="center">
                     <div>In progress</div>
                     <CountTag
-                      loading={queryResult.loading}
+                      loading={queryResult.loading && !queryResult.data}
                       fragment={
                         queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
                           ? queryResult.data?.inProgressCount
@@ -204,11 +187,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             />
           </Tabs>
           <Box padding={{bottom: 8}}>
-            <RefreshableCountdown
-              refreshing={countdownRefreshing}
-              seconds={Math.floor(timeRemaining / 1000)}
-              onRefresh={() => queryResult.refetch()}
-            />
+            <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
           </Box>
         </Box>
         {showScheduled ? null : (
@@ -219,13 +198,14 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           />
         )}
         {selectedTab === 'queued' ? (
-          <Callout icon={<Icon icon="multi-select" iconSize={20} />}>
-            <Link to="/instance/config#run_coordinator">View queue configuration</Link>
-          </Callout>
+          <Alert
+            intent="info"
+            title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+          />
         ) : null}
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>
-            {({pipelineRunsOrError, repositoriesOrError}) => {
+            {({pipelineRunsOrError}) => {
               if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
                 return (
                   <NonIdealState
@@ -239,7 +219,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               if (showScheduled) {
                 return (
                   <Box margin={{top: 4}}>
-                    <AllScheduledTicks repos={repositoriesOrError} />
+                    <AllScheduledTicks />
                   </Box>
                 );
               }
@@ -299,14 +279,10 @@ const RUNS_ROOT_QUERY = gql`
     inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
       ...CountFragment
     }
-    repositoriesOrError {
-      ...ScheduledTicksFragment
-    }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
-  ${SCHEDULED_TICKS_FRAGMENT}
 `;
 
 const TabButton = styled(ButtonLink)`
@@ -323,7 +299,7 @@ const CountTag = (props: CountTagProps) => {
   if (loading) {
     return (
       <CountTagStyled minimal intent="none">
-        <Spinner size={10} />
+        –
       </CountTagStyled>
     );
   }

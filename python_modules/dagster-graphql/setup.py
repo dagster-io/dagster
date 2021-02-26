@@ -28,6 +28,11 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["graphene>=2.1.3", "gevent-websocket>=0.10.1", "gevent", "requests",],
+        install_requires=[
+            "graphene>=2.1.3",
+            "gevent-websocket>=0.10.1",
+            "gevent",
+            "requests",
+        ],
         entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
     )

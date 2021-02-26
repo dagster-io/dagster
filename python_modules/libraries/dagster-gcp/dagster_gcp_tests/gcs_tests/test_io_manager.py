@@ -59,7 +59,15 @@ def define_inty_pipeline():
 def test_gcs_pickle_io_manager_execution(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
-    run_config = {"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket,}}}}
+    run_config = {
+        "resources": {
+            "io_manager": {
+                "config": {
+                    "gcs_bucket": gcs_bucket,
+                }
+            }
+        }
+    }
 
     run_id = make_new_run_id()
 

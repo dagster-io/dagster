@@ -4,9 +4,9 @@ from functools import wraps
 from dagster import check
 
 EXPERIMENTAL_WARNING_HELP = (
-    "To mute warnings for experimental functionality, set"
-    " PYTHONWARNINGS=ignore::ExperimentalWarning in your environment or use one of the other "
-    " methods described at"
+    "To mute warnings for experimental functionality, invoke"
+    ' warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning) or use'
+    " one of the other methods described at"
     " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
 )
 
@@ -82,7 +82,9 @@ def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=Non
     """
     warnings.warn(
         '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}" instead.'.format(
-            old_name=old_name, new_name=new_name, breaking_version=breaking_version,
+            old_name=old_name,
+            new_name=new_name,
+            breaking_version=breaking_version,
         )
         + ((" " + additional_warn_txt) if additional_warn_txt else ""),
         stacklevel=stacklevel,

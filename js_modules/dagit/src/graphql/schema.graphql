@@ -10,6 +10,7 @@ type Query {
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+  jobStateOrError(jobSelector: JobSelector!): JobStateOrError!
   unloadableJobStatesOrError(jobType: JobType): JobStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
@@ -24,6 +25,7 @@ type Query {
   instance: Instance!
   assetsOrError(prefixPath: [String!]): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+  partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -119,6 +121,7 @@ type OutputDefinition {
   solidDefinition: SolidDefinition!
   name: String!
   description: String
+  isDynamic: Boolean
   type: DagsterType!
 }
 
@@ -310,6 +313,8 @@ type PipelineRunStatsSnapshot {
   stepsFailed: Int!
   materializations: Int!
   expectations: Int!
+  enqueuedTime: Float
+  launchTime: Float
   startTime: Float
   endTime: Float
 }
@@ -423,6 +428,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   materialization: Materialization!
   stepStats: PipelineRunStepStats!
 }
@@ -434,6 +440,7 @@ interface MessageEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 enum LogLevel {
@@ -442,6 +449,36 @@ enum LogLevel {
   INFO
   WARNING
   DEBUG
+}
+
+enum DagsterEventType {
+  STEP_OUTPUT
+  STEP_INPUT
+  STEP_FAILURE
+  STEP_START
+  STEP_SUCCESS
+  STEP_SKIPPED
+  STEP_UP_FOR_RETRY
+  STEP_RESTARTED
+  STEP_MATERIALIZATION
+  STEP_EXPECTATION_RESULT
+  PIPELINE_INIT_FAILURE
+  PIPELINE_ENQUEUED
+  PIPELINE_DEQUEUED
+  PIPELINE_STARTING
+  PIPELINE_START
+  PIPELINE_SUCCESS
+  PIPELINE_FAILURE
+  PIPELINE_CANCELING
+  PIPELINE_CANCELED
+  OBJECT_STORE_OPERATION
+  ASSET_STORE_OPERATION
+  LOADED_INPUT
+  HANDLED_OUTPUT
+  ENGINE_EVENT
+  HOOK_COMPLETED
+  HOOK_ERRORED
+  HOOK_SKIPPED
 }
 
 interface StepEvent {
@@ -464,9 +501,11 @@ type Schedule {
   solidSelection: [String]
   mode: String!
   executionTimezone: String
+  description: String
   scheduleState: JobState!
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int): FutureJobTicks!
+  futureTick(tickTimestamp: Int!): FutureJobTick!
 }
 
 type JobState {
@@ -478,7 +517,8 @@ type JobState {
   jobSpecificData: JobSpecificData
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
-  ticks(limit: Int): [JobTick!]!
+  ticks(dayRange: Int, dayOffset: Int, limit: Int): [JobTick!]!
+  nextTick: FutureJobTick
   runningCount: Int!
 }
 
@@ -519,6 +559,23 @@ enum JobTickStatus {
   SKIPPED
   SUCCESS
   FAILURE
+}
+
+type FutureJobTick {
+  timestamp: Float!
+  evaluationResult: TickEvaluation
+}
+
+type TickEvaluation {
+  runRequests: [RunRequest]
+  skipReason: String
+  error: PythonError
+}
+
+type RunRequest {
+  runKey: String
+  tags: [PipelineTag!]!
+  runConfigYaml: String!
 }
 
 type PartitionSet {
@@ -591,10 +648,6 @@ type FutureJobTicks {
   cursor: Float!
 }
 
-type FutureJobTick {
-  timestamp: Float!
-}
-
 type Sensor {
   id: ID!
   jobOriginId: String!
@@ -603,6 +656,8 @@ type Sensor {
   solidSelection: [String]
   mode: String!
   sensorState: JobState!
+  minIntervalSeconds: Int!
+  description: String
   nextTick: FutureJobTick
 }
 
@@ -665,7 +720,7 @@ input PipelineSelector {
   solidSelection: [String!]
 }
 
-union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
+union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
 
 type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   name: String!
@@ -737,6 +792,14 @@ union SensorsOrError = Sensors | RepositoryNotFoundError | PythonError
 
 type Sensors {
   results: [Sensor!]!
+}
+
+union JobStateOrError = JobState | PythonError
+
+input JobSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  jobName: String!
 }
 
 union JobStatesOrError = JobStates | PythonError
@@ -851,9 +914,11 @@ type ModeNotFoundError implements Error {
 type Instance {
   info: String!
   runLauncher: RunLauncher
-  assetsSupported: Boolean!
+  runQueuingSupported: Boolean!
   executablePath: String!
   daemonHealth: DaemonHealth!
+  sensorDaemonInterval: Int!
+  daemonBackfillEnabled: Boolean!
 }
 
 type RunLauncher {
@@ -861,35 +926,26 @@ type RunLauncher {
 }
 
 type DaemonHealth {
-  daemonStatus(daemonType: DaemonType): DaemonStatus!
+  daemonStatus(daemonType: String): DaemonStatus!
   allDaemonStatuses: [DaemonStatus!]!
 }
 
 type DaemonStatus {
-  daemonType: DaemonType!
+  daemonType: String
+  id: ID!
   required: Boolean!
   healthy: Boolean
   lastHeartbeatTime: Float
-  lastHeartbeatError: PythonError
+  lastHeartbeatErrors: [PythonError!]!
 }
 
-enum DaemonType {
-  SENSOR
-  SCHEDULER
-  QUEUED_RUN_COORDINATOR
-}
-
-union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError
+union AssetsOrError = AssetConnection | PythonError
 
 type AssetConnection {
   nodes: [Asset!]!
 }
 
-type AssetsNotSupportedError implements Error {
-  message: String!
-}
-
-union AssetOrError = Asset | AssetsNotSupportedError | AssetNotFoundError
+union AssetOrError = Asset | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!
@@ -897,6 +953,25 @@ type AssetNotFoundError implements Error {
 
 input AssetKeyInput {
   path: [String!]!
+}
+
+union PartitionBackfillOrError = PartitionBackfill | PythonError
+
+type PartitionBackfill {
+  backfillId: String!
+  status: BulkActionStatus!
+  isPersisted: Boolean!
+  numRequested: Int
+  numTotal: Int
+  fromFailure: Boolean
+  reexecutionSteps: [String!]
+  runs(limit: Int): [PipelineRun!]!
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
 }
 
 type Mutation {
@@ -1013,7 +1088,7 @@ union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundE
 
 type PartitionBackfillSuccess {
   backfillId: String!
-  launchedRunIds: [String!]!
+  launchedRunIds: [String]
 }
 
 input PartitionBackfillParams {
@@ -1022,6 +1097,7 @@ input PartitionBackfillParams {
   reexecutionSteps: [String!]
   fromFailure: Boolean
   tags: [ExecutionTag!]
+  forceSynchronousSubmission: Boolean
 }
 
 input PartitionSetSelector {
@@ -1051,6 +1127,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   error: PythonError!
   failureMetadata: FailureMetadata
 }
@@ -1068,6 +1145,7 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   inputName: String!
   typeCheck: TypeCheck!
 }
@@ -1086,6 +1164,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   outputName: String!
   typeCheck: TypeCheck!
 }
@@ -1097,6 +1176,7 @@ type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type ExecutionStepStartEvent implements MessageEvent & StepEvent {
@@ -1106,6 +1186,7 @@ type ExecutionStepStartEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
@@ -1115,6 +1196,7 @@ type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
@@ -1124,6 +1206,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   error: PythonError!
   secondsToWait: Int
 }
@@ -1135,6 +1218,7 @@ type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type LogMessageEvent implements MessageEvent {
@@ -1144,6 +1228,7 @@ type LogMessageEvent implements MessageEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type PipelineFailureEvent implements MessageEvent & PipelineEvent {
@@ -1153,6 +1238,7 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
   error: PythonError
 }
@@ -1168,6 +1254,7 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
   error: PythonError!
 }
@@ -1179,6 +1266,7 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1189,6 +1277,7 @@ type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1199,6 +1288,7 @@ type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1209,6 +1299,7 @@ type PipelineStartingEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1219,6 +1310,7 @@ type PipelineCancelingEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1229,6 +1321,7 @@ type PipelineCanceledEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1239,6 +1332,7 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   pipelineName: String!
 }
 
@@ -1249,6 +1343,7 @@ type HandledOutputEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   outputName: String!
   managerKey: String!
 }
@@ -1260,6 +1355,7 @@ type LoadedInputEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   inputName: String!
   managerKey: String!
   upstreamOutputName: String
@@ -1273,6 +1369,7 @@ type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   operationResult: ObjectStoreOperationResult!
 }
 
@@ -1297,6 +1394,7 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   expectationResult: ExpectationResult!
 }
 
@@ -1307,6 +1405,7 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
@@ -1322,6 +1421,7 @@ type HookCompletedEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type HookSkippedEvent implements MessageEvent & StepEvent {
@@ -1331,6 +1431,7 @@ type HookSkippedEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type HookErroredEvent implements MessageEvent & StepEvent {
@@ -1340,6 +1441,7 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  eventType: DagsterEventType
   error: PythonError!
 }
 
@@ -1373,48 +1475,185 @@ enum LocationStateChangeEventType {
   LOCATION_ERROR
 }
 
-type RegularConfigType implements ConfigType {
-  key: String!
+type EventFloatMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  givenName: String!
+  floatValue: Float!
 }
 
-type ArrayConfigType implements ConfigType & WrappingConfigType {
-  key: String!
+type EventIntMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  ofType: ConfigType!
+  intValue: Int!
 }
 
-interface WrappingConfigType {
-  ofType: ConfigType!
+type EventJsonMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
 }
 
-type ScalarUnionConfigType implements ConfigType {
-  key: String!
+type EventMarkdownMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  scalarType: ConfigType!
-  nonScalarType: ConfigType!
-  scalarTypeKey: String!
-  nonScalarTypeKey: String!
+  mdStr: String!
 }
 
-type NullableConfigType implements ConfigType & WrappingConfigType {
-  key: String!
+type EventPathMetadataEntry implements EventMetadataEntry {
+  label: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  ofType: ConfigType!
+  path: String!
 }
+
+type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
+type EventTextMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type EventUrlMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
+}
+
+type FieldNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldName: String!
+}
+
+type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldNames: [String!]!
+}
+
+type MissingFieldConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  field: ConfigTypeField!
+}
+
+type MissingFieldsConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fields: [ConfigTypeField!]!
+}
+
+type RuntimeMismatchConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  valueRep: String
+}
+
+type SelectorTypeConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  incomingFields: [String!]!
+}
+
+type UnknownPipeline implements PipelineReference {
+  name: String!
+  solidSelection: [String!]
+}
+
+type DeleteRunMutation {
+  Output: DeletePipelineRunResult!
+}
+
+type LaunchPartitionBackfillMutation {
+  Output: PartitionBackfillResult!
+}
+
+type LaunchPipelineExecutionMutation {
+  Output: LaunchPipelineExecutionResult!
+}
+
+type LaunchPipelineReexecutionMutation {
+  Output: LaunchPipelineReexecutionResult!
+}
+
+type ReloadRepositoryLocationMutation {
+  Output: ReloadRepositoryLocationMutationResult!
+}
+
+type TerminatePipelineExecutionMutation {
+  Output: TerminatePipelineExecutionResult!
+}
+
+type ReconcileSchedulerStateMutation {
+  Output: ReconcileSchedulerStateMutationResult!
+}
+
+enum ScheduleStatus {
+  RUNNING
+  STOPPED
+  ENDED
+}
+
+type ScheduleTick {
+  tickId: String!
+  status: JobTickStatus!
+  timestamp: Float!
+  tickSpecificData: ScheduleTickSpecificData
+}
+
+union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
+
+type ScheduleTickSuccessData {
+  run: PipelineRun
+}
+
+type ScheduleTickFailureData {
+  error: PythonError!
+}
+
+type ScheduleTickStatsSnapshot {
+  ticksStarted: Int!
+  ticksSucceeded: Int!
+  ticksSkipped: Int!
+  ticksFailed: Int!
+}
+
+type StartScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+type StopRunningScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError | PythonError
 
 type EnumConfigType implements ConfigType {
   key: String!
@@ -1440,58 +1679,47 @@ type CompositeConfigType implements ConfigType {
   fields: [ConfigTypeField!]!
 }
 
-type RuntimeMismatchConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  valueRep: String
+type RegularConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  givenName: String!
 }
 
-type MissingFieldConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  field: ConfigTypeField!
+type ArrayConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
 }
 
-type MissingFieldsConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fields: [ConfigTypeField!]!
+interface WrappingConfigType {
+  ofType: ConfigType!
 }
 
-type FieldNotDefinedConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fieldName: String!
+type NullableConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
 }
 
-type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fieldNames: [String!]!
-}
-
-type SelectorTypeConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  incomingFields: [String!]!
-}
-
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
+type ScalarUnionConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  scalarType: ConfigType!
+  nonScalarType: ConfigType!
+  scalarTypeKey: String!
+  nonScalarTypeKey: String!
 }
 
 type ListDagsterType implements DagsterType & WrappingDagsterType {
@@ -1528,6 +1756,45 @@ type NullableDagsterType implements DagsterType & WrappingDagsterType {
   ofType: DagsterType!
 }
 
+input MarshalledInput {
+  inputName: String!
+  key: String!
+}
+
+input MarshalledOutput {
+  outputName: String!
+  key: String!
+}
+
+input Retries {
+  mode: String
+  retriesPreviousAttempts: [RetriesPreviousAttempts]
+}
+
+input RetriesPreviousAttempts {
+  key: String
+  count: Int
+}
+
+input StepExecution {
+  stepKey: String!
+  marshalledInputs: [MarshalledInput!]
+  marshalledOutputs: [MarshalledOutput!]
+}
+
+input StepOutputHandle {
+  stepKey: String!
+  outputName: String!
+}
+
+type RunGroups {
+  results: [RunGroup!]!
+}
+
+type StopSensorMutation {
+  Output: StopSensorMutationResultOrError!
+}
+
 type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   name: String!
   description: String
@@ -1548,86 +1815,4 @@ type InputMapping {
 type OutputMapping {
   mappedOutput: Output!
   definition: OutputDefinition!
-}
-
-type UnknownPipeline implements PipelineReference {
-  name: String!
-  solidSelection: [String!]
-}
-
-type MissingRunIdErrorEvent {
-  invalidRunId: String!
-}
-
-type EventPathMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  path: String!
-}
-
-type EventJsonMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  jsonString: String!
-}
-
-type EventTextMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  text: String!
-}
-
-type EventUrlMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  url: String!
-}
-
-type EventMarkdownMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  mdStr: String!
-}
-
-type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  module: String!
-  name: String!
-}
-
-type EventFloatMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  floatValue: Float!
-}
-
-type EventIntMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  intValue: Int!
-}
-
-type ScheduleTick {
-  tickId: String!
-  status: JobTickStatus!
-  timestamp: Float!
-  tickSpecificData: ScheduleTickSpecificData
-}
-
-union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
-
-type ScheduleTickSuccessData {
-  run: PipelineRun
-}
-
-type ScheduleTickFailureData {
-  error: PythonError!
-}
-
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
 }

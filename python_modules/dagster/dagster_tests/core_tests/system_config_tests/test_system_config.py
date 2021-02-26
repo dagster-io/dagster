@@ -135,7 +135,9 @@ def test_solid_dictionary_type():
 
     env_obj = EnvironmentConfig.build(
         pipeline_def,
-        {"solids": {"int_config_solid": {"config": 1}, "string_config_solid": {"config": "bar"}},},
+        {
+            "solids": {"int_config_solid": {"config": 1}, "string_config_solid": {"config": "bar"}},
+        },
     )
 
     value = env_obj.solids
@@ -405,7 +407,8 @@ def test_required_solid_with_required_subfield():
     assert env_type.fields["execution"].is_required is False
 
     env_obj = EnvironmentConfig.build(
-        pipeline_def, {"solids": {"int_config_solid": {"config": {"required_field": "foobar"}}}},
+        pipeline_def,
+        {"solids": {"int_config_solid": {"config": {"required_field": "foobar"}}}},
     )
 
     assert env_obj.solids["int_config_solid"].config["required_field"] == "foobar"
@@ -457,7 +460,8 @@ def test_required_resource_with_required_subfield():
             ModeDefinition(
                 resource_defs={
                     "with_required": ResourceDefinition(
-                        resource_fn=lambda _: None, config_schema={"required_field": String},
+                        resource_fn=lambda _: None,
+                        config_schema={"required_field": String},
                     )
                 }
             )
@@ -516,7 +520,8 @@ def test_optional_and_required_context():
                         config_schema={"optional_field": Field(String, is_required=False)},
                     ),
                     "required_resource": ResourceDefinition(
-                        lambda _: None, config_schema={"required_field": String},
+                        lambda _: None,
+                        config_schema={"required_field": String},
                     ),
                 },
             )
@@ -545,7 +550,8 @@ def test_optional_and_required_context():
     ).is_required
 
     env_obj = EnvironmentConfig.build(
-        pipeline_def, {"resources": {"required_resource": {"config": {"required_field": "foo"}}}},
+        pipeline_def,
+        {"resources": {"required_resource": {"config": {"required_field": "foo"}}}},
     )
 
     assert env_obj.resources == {

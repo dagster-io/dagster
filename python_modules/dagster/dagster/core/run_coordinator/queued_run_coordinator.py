@@ -6,7 +6,7 @@ from dagster import DagsterEvent, DagsterEventType, DagsterInstance, String, che
 from dagster.config import Field
 from dagster.config.config_type import Array, Noneable
 from dagster.config.field_utils import Shape
-from dagster.core.events.log import DagsterEventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -33,7 +33,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             max_concurrent_runs, "max_concurrent_runs", 10
         )
         self.tag_concurrency_limits = check.opt_list_param(
-            tag_concurrency_limits, "tag_concurrency_limits",
+            tag_concurrency_limits,
+            "tag_concurrency_limits",
         )
         self.dequeue_interval_seconds = check.opt_int_param(
             dequeue_interval_seconds, "dequeue_interval_seconds", 5
@@ -91,7 +92,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
             pipeline_name=pipeline_run.pipeline_name,
         )
-        event_record = DagsterEventRecord(
+        event_record = EventRecord(
             message="",
             user_message="",
             level=logging.INFO,
@@ -122,7 +123,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         # https://github.com/dagster-io/dagster/issues/3323
         if run.status == PipelineRunStatus.QUEUED:
             self._instance.report_run_canceling(
-                run, message="Canceling run from the queue.",
+                run,
+                message="Canceling run from the queue.",
             )
             self._instance.report_run_canceled(run)
             return True

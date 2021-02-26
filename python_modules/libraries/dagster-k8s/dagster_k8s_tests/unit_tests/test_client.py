@@ -1,9 +1,9 @@
 import time
 from collections import namedtuple
+from unittest import mock
 
 import kubernetes
 import pytest
-from dagster.seven import mock
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,

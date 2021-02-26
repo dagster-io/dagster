@@ -21,7 +21,7 @@ dagit:
   replicaCount: 1
   # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: "dagster/k8s-dagit-example"
+    repository: "dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
 
@@ -168,7 +168,7 @@ userDeployments:
   deployments:
     - name: "k8s-example-user-code-1"
       image:
-        repository: "dagster/k8s-example"
+        repository: "dagster/user-code-example"
         tag: latest
         # Change with caution! If you're using a fixed tag for pipeline run images, changing the
         # image pull policy to anything other than "Always" will use a cached/stale image, which is
@@ -261,7 +261,7 @@ userDeployments:
 ####################################################################################################
 pipelineRun:
   image:
-    repository: "dagster/k8s-example"
+    repository: "dagster/user-code-example"
     tag: "latest"
     pullPolicy: Always
 
@@ -274,8 +274,7 @@ pipelineRun:
   # env:
   #   ENV_ONE: one
   #   ENV_TWO: two
-  env:
-    YOUR_ENV_VAR: ""
+  env: {}
 
 ####################################################################################################
 # Scheduler: Configuration for the scheduler
@@ -295,7 +294,7 @@ scheduler:
       # (to call `dagster api launch_scheduled_execution`) and instance yaml
       # but does not need access to user code.
       image:
-        repository: "dagster/k8s-dagit"
+        repository: "dagster/dagster-celery-k8s"
         tag: "latest"
         pullPolicy: Always
 
@@ -376,7 +375,7 @@ runLauncher:
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
       image:
-        repository: "dagster/k8s-celery-worker"
+        repository: "dagster/dagster-celery-k8s"
         tag: "latest"
         pullPolicy: Always
 
@@ -390,9 +389,14 @@ runLauncher:
 
       # Additional Celery worker queues can be configured here. When overriding, be sure to
       # provision a "dagster" worker queue, as this is the default queue used by Dagster.
+      #
+      # Optionally, labels and node selectors can be set on the Celery queue's workers.
+      # Specifying a queue's node selector will override any existing node selector defaults.
       workerQueues:
         - name: "dagster"
           replicaCount: 2
+          labels: {}
+          nodeSelector: {}
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -423,12 +427,17 @@ runLauncher:
       #   - name: secret
       envSecrets: []
 
-      # Support Node, affinity and tolerations for Celery pod assignment. See:
+      annotations: {}
+
+      # Sets a node selector as a default for all Celery queues.
+      #
+      # See:
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+      nodeSelector: {}
+
+      # Support affinity and tolerations for Celery pod assignment. See:
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
       # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-      annotations: {}
-      nodeSelector: {}
       affinity: {}
       tolerations: []
       podSecurityContext: {}
@@ -523,8 +532,11 @@ rabbitmq:
 # Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
 ####################################################################################################
 redis:
-  # if enabled, external redis will be used instead of rabbitmq
+  # To use redis instead of rabbitmq, set `enabled` to true.
   enabled: false
+
+  # To use an external redis, set `external` to `true`. To manage redis via helm, set `external` to `false`.
+  external: true
 
   # Redis host URL
   host: ""
@@ -652,8 +664,8 @@ ingress:
     succeedingPaths: []
 
 ####################################################################################################
-# Dagster Daemon (Optional) Deploy a daemon for launching queued runs and running schedules and
-# sensors.
+# Dagster Daemon (Optional) Deploy a daemon for launching queued runs, running partition backfills,
+# and running schedules and sensors.
 #
 # By default, this daemon is included in your deployment and used to run schedules and sensors.
 # Setting `enabled` to false will stop the daemon from being included in your deployment.
@@ -663,18 +675,24 @@ ingress:
 #
 # Setting `enabled` in `queuedRunCoordinator` allows you to set limits on the total number of runs
 # that can execute at once.
+#
+# Setting `enabled` in `backfill` allows you to schedule backfills asynchronously instead of in a
+# dagit request (which might aggressively tie up resources for large backfill jobs).
 ####################################################################################################
 dagsterDaemon:
   enabled: true
 
   image:
-    repository: "dagster/k8s-dagit"
+    repository: "dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
 
   queuedRunCoordinator:
     enabled: false
     config: {}
+
+  backfill:
+    enabled: false
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -717,7 +735,7 @@ dagsterDaemon:
     exec:
       command:
         - "dagster-daemon"
-        - "health-check"
+        - "liveness-check"
     # initialDelaySeconds: 60
     periodSeconds: 30
     failureThreshold: 3
@@ -731,7 +749,7 @@ dagsterDaemon:
     exec:
       command:
         - "dagster-daemon"
-        - "health-check"
+        - "liveness-check"
     periodSeconds: 10
     failureThreshold: 12
     timeoutSeconds: 3

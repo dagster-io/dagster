@@ -84,8 +84,7 @@ RE_PARTITION_SUFFIX = r"(\$\d{8})?"
 
 
 def _is_valid_dataset(config_value):
-    """Datasets must be of form "project.dataset" or "dataset"
-    """
+    """Datasets must be of form "project.dataset" or "dataset" """
     return re.match(
         # regex matches: project.dataset -- OR -- dataset
         r"^" + RE_PROJECT + r"\." + RE_DS_TABLE + r"$|^" + RE_DS_TABLE + r"$",

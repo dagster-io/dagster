@@ -19,7 +19,8 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     """
 
     def __init__(
-        self, inst_data=None,
+        self,
+        inst_data=None,
     ):
         self._inst_data = inst_data
 

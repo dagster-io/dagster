@@ -58,7 +58,7 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PresetNotFoundE
 }
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_PipelineConfigValidationInvalid_errors {
-  __typename: "RuntimeMismatchConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "SelectorTypeConfigError";
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
   path: string[];
   reason: EvaluationErrorReason;

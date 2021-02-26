@@ -3,7 +3,9 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {SharedToaster} from 'src/app/DomUtils';
+import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
+import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
 import {IStepState} from 'src/runs/RunMetadataProvider';
 import {doneStatuses} from 'src/runs/RunStatuses';
 import {ReExecutionStyle} from 'src/runs/RunUtils';
@@ -25,12 +27,10 @@ const REEXECUTE_SUBSET_NOT_DONE = 'Wait for the selected steps to finish to re-e
 
 interface RunActionButtonsProps {
   run?: RunFragment;
+  runtimeStepKeys: string[];
   selection: StepSelection;
   selectionStates: IStepState[];
   artifactsPersisted: boolean;
-  executionPlan?: {
-    artifactsPersisted: boolean;
-  } | null;
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
@@ -88,7 +88,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
   artifactsPersisted,
   onLaunch,
   run,
-  executionPlan,
+  runtimeStepKeys,
 }) => {
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
@@ -98,8 +98,8 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
   );
   const isFinalStatus = !!(run && doneStatuses.has(run.status));
   const isFailedWithPlan =
-    executionPlan &&
     run &&
+    run.executionPlan &&
     (run.status === PipelineRunStatus.FAILURE || run.status == PipelineRunStatus.CANCELED);
   const isFailureInSelection = selection.keys.length && selectionStates.includes(IStepState.FAILED);
 
@@ -140,7 +140,23 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
     title: 'From Selected',
     disabled: !isFinalStatus || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
-    onClick: () => onLaunch({type: 'from-selected', selection}),
+    onClick: () => {
+      if (!run?.executionPlan) {
+        console.warn('Run execution plan must be present to launch from-selected execution');
+        return Promise.resolve();
+      }
+      const selectionAndDownstreamQuery = selection.keys.map((k) => `${k}*`).join(',');
+      const graph = toGraphQueryItems(run.executionPlan, runtimeStepKeys);
+      const graphFiltered = filterByQuery(graph, selectionAndDownstreamQuery);
+
+      return onLaunch({
+        type: 'selection',
+        selection: {
+          keys: graphFiltered.all.map((node) => node.name),
+          query: selectionAndDownstreamQuery,
+        },
+      });
+    },
   };
 
   const fromFailure: LaunchButtonConfiguration = {
@@ -185,7 +201,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
 
 function usePipelineAvailabilityErrorForRun(
   run: RunFragment | null | undefined,
-): null | {tooltip?: string; icon?: IconName; disabled: boolean} {
+): null | {tooltip?: string | JSX.Element; icon?: IconName; disabled: boolean} {
   const repoMatch = useRepositoryForRun(run);
 
   // The run hasn't loaded, so no error.
@@ -220,10 +236,23 @@ function usePipelineAvailabilityErrorForRun(
     };
   }
 
-  // We could not find a repo that contained this pipeline.
+  // We could not find a repo that contained this pipeline. Inform the user that they should
+  // load the missing repository.
+  const repoForRun = run.repositoryOrigin?.repositoryName;
+  const repoLocationForRun = run.repositoryOrigin?.repositoryLocationName;
+
+  const tooltip = (
+    <Group direction="column" spacing={8}>
+      <div>{`"${run.pipeline.name}" is not available in the current workspace.`}</div>
+      {repoForRun && repoLocationForRun ? (
+        <div>{`Load repository ${repoForRun}@${repoLocationForRun} and try again.`}</div>
+      ) : null}
+    </Group>
+  );
+
   return {
     icon: IconNames.ERROR,
-    tooltip: `"${run.pipeline.name}" is not available in the current workspace.`,
+    tooltip,
     disabled: true,
   };
 }

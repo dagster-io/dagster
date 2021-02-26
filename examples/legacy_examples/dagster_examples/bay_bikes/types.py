@@ -8,7 +8,9 @@ from pandas import Timestamp
 def compute_trip_dataframe_event_metadata(dataframe):
     return [
         EventMetadataEntry.text(
-            str(min(dataframe["start_time"])), "min_start_time", "Date data collection started",
+            str(min(dataframe["start_time"])),
+            "min_start_time",
+            "Date data collection started",
         ),
         EventMetadataEntry.text(
             str(max(dataframe["end_time"])), "max_end_time", "Timestamp of last trip"
@@ -24,8 +26,14 @@ def compute_trip_dataframe_event_metadata(dataframe):
 
 TripDataFrameSchema = [
     PandasColumn.integer_column("bike_id", min_value=0),
-    PandasColumn.datetime_column("start_time", min_datetime=Timestamp(year=2017, month=1, day=1),),
-    PandasColumn.datetime_column("end_time", min_datetime=Timestamp(year=2017, month=1, day=1),),
+    PandasColumn.datetime_column(
+        "start_time",
+        min_datetime=Timestamp(year=2017, month=1, day=1),
+    ),
+    PandasColumn.datetime_column(
+        "end_time",
+        min_datetime=Timestamp(year=2017, month=1, day=1),
+    ),
     PandasColumn.string_column("interval_date"),
 ]
 
@@ -56,7 +64,9 @@ def compute_traffic_dataframe_event_metadata(dataframe):
             str(max(dataframe["peak_traffic_load"])), "max_traffic_load", "Worst Peak Load"
         ),
         EventMetadataEntry.text(
-            str(mean(dataframe["peak_traffic_load"])), "mean_traffic_load", "Mean peak traffic",
+            str(mean(dataframe["peak_traffic_load"])),
+            "mean_traffic_load",
+            "Mean peak traffic",
         ),
         EventMetadataEntry.text(
             str(median(dataframe["peak_traffic_load"])),
@@ -152,7 +162,10 @@ def validate_snapshot_timeseries(_, training_set_data):
     timeseries_length, snapshot_length, num_timeseries = X.shape
     output_vector_length = y.shape[0]
     if num_timeseries == 0 or output_vector_length == 0:
-        return TypeCheck(success=False, description="No empty training sets allowed",)
+        return TypeCheck(
+            success=False,
+            description="No empty training sets allowed",
+        )
 
     if timeseries_length != output_vector_length:
         return TypeCheck(

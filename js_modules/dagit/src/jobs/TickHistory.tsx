@@ -1,5 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Checkbox, Classes, Colors, Dialog, Spinner, Tabs, Tab} from '@blueprintjs/core';
+import {
+  Button,
+  Checkbox,
+  Classes,
+  Colors,
+  Dialog,
+  NonIdealState,
+  Tabs,
+  Tab,
+} from '@blueprintjs/core';
 import {TimeUnit} from 'chart.js';
 import moment from 'moment-timezone';
 import * as React from 'react';
@@ -8,22 +17,24 @@ import {Line, ChartComponentProps} from 'react-chartjs-2';
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {TICK_TAG_FRAGMENT, RunList, TickTag} from 'src/jobs/JobTick';
-import {JobHistoryFragment, JobHistoryFragment_ticks} from 'src/jobs/types/JobHistoryFragment';
-import {ScheduleTickHistoryQuery} from 'src/jobs/types/ScheduleTickHistoryQuery';
-import {SensorTickHistoryQuery} from 'src/jobs/types/SensorTickHistoryQuery';
+import {LiveTickTimeline} from 'src/jobs/LiveTickTimeline';
+import {
+  JobTickHistoryQuery,
+  JobTickHistoryQuery_jobStateOrError_JobState_ticks,
+} from 'src/jobs/types/JobTickHistoryQuery';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
-import {SensorTimeline} from 'src/sensors/SensorTimeline';
-import {SensorFragment} from 'src/sensors/types/SensorFragment';
 import {JobTickStatus, JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 import {Subheading} from 'src/ui/Text';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
 import 'chartjs-plugin-zoom';
+
+const MIN_ZOOM_RANGE = 30 * 60 * 1000; // 30 minutes
 
 const COLOR_MAP = {
   [JobTickStatus.SUCCESS]: Colors.BLUE3,
@@ -52,96 +63,108 @@ const STATUS_TEXT_MAP = {
   [JobTickStatus.SKIPPED]: 'Skipped',
 };
 
-export const ScheduleTickHistory: React.FC<{
-  schedule: ScheduleFragment;
-  repoAddress: RepoAddress;
-  onHighlightRunIds: (runIds: string[]) => void;
-}> = ({schedule, repoAddress, onHighlightRunIds}) => {
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: schedule.name,
-  };
-  const {data} = useQuery<ScheduleTickHistoryQuery>(SCHEDULE_TICK_HISTORY_QUERY, {
-    variables: {
-      scheduleSelector,
-    },
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 15 * 1000,
-    partialRefetch: true,
-  });
+const TABS = [
+  {
+    id: 'recent',
+    label: 'Recent',
+    range: 1,
+  },
+  {
+    id: '7d',
+    label: '7 days',
+    range: 7,
+  },
+  {
+    id: '14d',
+    label: '14 days',
+    range: 14,
+  },
+  {
+    id: '30d',
+    label: '30 days',
+    range: 30,
+  },
+  {id: 'all', label: 'All'},
+];
 
-  if (!data || data?.scheduleOrError.__typename !== 'Schedule') {
-    return <Spinner />;
-  }
+type JobTick = JobTickHistoryQuery_jobStateOrError_JobState_ticks;
+const MILLIS_PER_DAY = 86400 * 1000;
 
-  return (
-    <Box margin={{vertical: 20}}>
-      <JobTickHistory
-        jobName={schedule.name}
-        jobState={data.scheduleOrError.scheduleState}
-        repoAddress={repoAddress}
-        onHighlightRunIds={onHighlightRunIds}
-      />
-    </Box>
-  );
-};
-
-export const SensorTickHistory: React.FC<{
-  sensor: SensorFragment;
-  repoAddress: RepoAddress;
-  daemonHealth: boolean | null;
-  onHighlightRunIds: (runIds: string[]) => void;
-}> = ({sensor, repoAddress, onHighlightRunIds}) => {
-  const sensorSelector = {
-    ...repoAddressToSelector(repoAddress),
-    sensorName: sensor.name,
-  };
-  const {data} = useQuery<SensorTickHistoryQuery>(SENSOR_TICK_HISTORY_QUERY, {
-    variables: {
-      sensorSelector,
-    },
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 15 * 1000,
-    partialRefetch: true,
-  });
-
-  if (!data || data?.sensorOrError.__typename !== 'Sensor') {
-    return <Spinner />;
-  }
-
-  return (
-    <Box margin={{vertical: 20}}>
-      <JobTickHistory
-        jobName={sensor.name}
-        jobState={data.sensorOrError.sensorState}
-        repoAddress={repoAddress}
-        onHighlightRunIds={onHighlightRunIds}
-      />
-    </Box>
-  );
-};
-
-const JobTickHistory = ({
+export const JobTickHistory = ({
   jobName,
-  jobState,
   repoAddress,
   onHighlightRunIds,
+  showRecent,
 }: {
   jobName: string;
-  jobState: JobHistoryFragment;
   repoAddress: RepoAddress;
   onHighlightRunIds: (runIds: string[]) => void;
+  showRecent?: boolean;
 }) => {
+  const [selectedTab, setSelectedTab] = React.useState<string>('recent');
   const [shownStates, setShownStates] = React.useState<ShownStatusState>(
     DEFAULT_SHOWN_STATUS_STATE,
   );
-  const [selectedTab, setSelectedTab] = React.useState<string>('recent');
-  const [selectedTick, setSelectedTick] = React.useState<JobHistoryFragment_ticks | undefined>();
+  const [pollingPaused, pausePolling] = React.useState<boolean>(false);
+  const [selectedTick, setSelectedTick] = React.useState<
+    JobTickHistoryQuery_jobStateOrError_JobState_ticks | undefined
+  >();
+  React.useEffect(() => {
+    if (!showRecent && selectedTab === 'recent') {
+      setSelectedTab('7d');
+    }
+  }, [selectedTab, showRecent]);
+  const selectedRange = TABS.find((x) => x.id === selectedTab)?.range;
+  const {data} = useQuery<JobTickHistoryQuery>(JOB_TICK_HISTORY_QUERY, {
+    variables: {
+      jobSelector: {
+        ...repoAddressToSelector(repoAddress),
+        jobName,
+      },
+      dayRange: selectedRange,
+      limit: selectedTab === 'recent' ? 15 : undefined,
+    },
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+    pollInterval: selectedTab === 'recent' && !pollingPaused ? 1000 : 0,
+  });
 
-  const {ticks} = jobState;
+  const tabs = (
+    <Tabs selectedTabId={selectedTab}>
+      {TABS.map((tab) =>
+        tab.id === 'recent' && !showRecent ? null : (
+          <Tab
+            id={tab.id}
+            key={tab.id}
+            title={
+              <ButtonLink underline={false} onClick={() => setSelectedTab(tab.id)}>
+                {tab.label}
+              </ButtonLink>
+            }
+          />
+        ),
+      )}
+    </Tabs>
+  );
+
+  if (!data) {
+    return (
+      <Group direction="column" spacing={12}>
+        <Subheading>Tick History</Subheading>
+        {tabs}
+        <Spinner purpose="section" />
+      </Group>
+    );
+  }
+
+  if (data.jobStateOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={data.jobStateOrError} />;
+  }
+
+  const {ticks, nextTick, jobType} = data.jobStateOrError;
   const displayedTicks = ticks.filter((tick) =>
     tick.status === JobTickStatus.SKIPPED
-      ? jobState.jobType === JobType.SCHEDULE && shownStates[tick.status]
+      ? jobType === JobType.SCHEDULE && shownStates[tick.status]
       : shownStates[tick.status],
   );
   const StatusFilter = ({status}: {status: JobTickStatus}) => (
@@ -152,7 +175,7 @@ const JobTickHistory = ({
       onClick={() => setShownStates({...shownStates, [status]: !shownStates[status]})}
     />
   );
-  const onTickClick = (tick?: JobHistoryFragment_ticks) => {
+  const onTickClick = (tick?: JobTick) => {
     setSelectedTick(tick);
     if (!tick) {
       return;
@@ -164,61 +187,56 @@ const JobTickHistory = ({
       });
     }
   };
+  const onTickHover = (tick?: JobTick) => {
+    if (!tick) {
+      pausePolling(false);
+    }
+    if (tick?.runIds) {
+      onHighlightRunIds(tick.runIds);
+      pausePolling(true);
+    }
+  };
 
+  const now = Date.now();
   return (
     <Group direction="column" spacing={12}>
       <Subheading>Tick History</Subheading>
-      {jobState.jobType === JobType.SENSOR ? (
-        <Tabs selectedTabId={selectedTab}>
-          <Tab
-            id="recent"
-            title={
-              <ButtonLink underline={false} onClick={() => setSelectedTab('recent')}>
-                Recent
-              </ButtonLink>
-            }
-          />
-          <Tab
-            id="history"
-            title={
-              <ButtonLink underline={false} onClick={() => setSelectedTab('history')}>
-                All
-              </ButtonLink>
-            }
-          />
-        </Tabs>
-      ) : null}
-      {jobState.jobType === JobType.SENSOR && selectedTab === 'recent' ? (
-        <SensorTimeline
-          repoAddress={repoAddress}
-          sensorName={jobName}
-          onHighlightRunIds={onHighlightRunIds}
+      {tabs}
+      {showRecent && selectedTab === 'recent' ? (
+        <LiveTickTimeline
+          ticks={ticks}
+          nextTick={nextTick}
+          onHoverTick={onTickHover}
           onSelectTick={onTickClick}
         />
-      ) : (
+      ) : ticks.length ? (
         <>
           <Box flex={{justifyContent: 'flex-end'}}>
             <Group direction="row" spacing={16}>
               <StatusFilter status={JobTickStatus.SUCCESS} />
               <StatusFilter status={JobTickStatus.FAILURE} />
-              {jobState.jobType === JobType.SCHEDULE ? (
+              {jobType === JobType.SCHEDULE ? (
                 <StatusFilter status={JobTickStatus.SKIPPED} />
               ) : null}
             </Group>
           </Box>
-          {displayedTicks.length ? (
-            <TickHistoryGraph
-              ticks={displayedTicks}
-              selectedTick={selectedTick}
-              onSelectTick={onTickClick}
-              onHighlightRunIds={onHighlightRunIds}
-            />
-          ) : (
-            <Box margin={{vertical: 8}} flex={{justifyContent: 'center'}}>
-              No ticks recorded
-            </Box>
-          )}
+          <TickHistoryGraph
+            ticks={displayedTicks}
+            selectedTick={selectedTick}
+            onSelectTick={onTickClick}
+            onHoverTick={onTickHover}
+            selectedTab={selectedTab}
+            maxBounds={
+              selectedTab === 'all'
+                ? undefined
+                : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
+            }
+          />
         </>
+      ) : (
+        <Box margin={{top: 16, bottom: 32}} flex={{justifyContent: 'center'}}>
+          <NonIdealState description="No ticks to display" />
+        </Box>
       )}
       <Dialog
         isOpen={
@@ -263,12 +281,18 @@ interface Bounds {
 }
 
 const TickHistoryGraph: React.FC<{
-  ticks: JobHistoryFragment_ticks[];
-  selectedTick?: JobHistoryFragment_ticks;
-  onSelectTick: (tick: JobHistoryFragment_ticks) => void;
-  onHighlightRunIds: (runIds: string[]) => void;
-}> = ({ticks, selectedTick, onSelectTick, onHighlightRunIds}) => {
+  ticks: JobTick[];
+  selectedTick?: JobTick;
+  onSelectTick: (tick: JobTick) => void;
+  onHoverTick: (tick?: JobTick) => void;
+  selectedTab: string;
+  maxBounds?: Bounds;
+}> = ({ticks, selectedTick, onSelectTick, onHoverTick, selectedTab, maxBounds}) => {
   const [bounds, setBounds] = React.useState<Bounds | null>(null);
+  const [hoveredTick, setHoveredTick] = React.useState<JobTick | undefined>();
+  React.useEffect(() => {
+    setBounds(null);
+  }, [selectedTab]);
   const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
   const graphData: ChartComponentProps['data'] = {
     labels: ['ticks'],
@@ -292,16 +316,25 @@ const TickHistoryGraph: React.FC<{
     ],
   };
 
-  const dataMin = Math.min(...tickData.map((_) => _.x));
-  const dataMax = Math.max(...tickData.map((_) => _.x));
-  const buffer = (dataMax - dataMin) / 25;
-  const dataBounds = {min: dataMin - buffer, max: dataMax + buffer};
+  const getMaxBounds = () => {
+    if (maxBounds) {
+      return maxBounds;
+    }
+    const dataMin = Math.min(...tickData.map((_) => _.x));
+    const dataMax = Math.max(...tickData.map((_) => _.x));
+    const buffer = (dataMax - dataMin) / 25;
+    const now = Date.now();
+    return {
+      min: dataMax ? dataMin - buffer : now - MIN_ZOOM_RANGE,
+      max: dataMax ? dataMax + buffer : now,
+    };
+  };
 
   const calculateBounds = () => {
     if (bounds) {
       return bounds;
     }
-    return dataBounds;
+    return getMaxBounds();
   };
 
   const calculateUnit: () => TimeUnit = () => {
@@ -338,6 +371,7 @@ const TickHistoryGraph: React.FC<{
       ? dateFormat(bounds.min)
       : `${dateFormat(bounds.min)} - ${dateFormat(bounds.max)}`
     : undefined;
+
   const options: ChartComponentProps['options'] = {
     title: {
       display: !!title,
@@ -369,35 +403,44 @@ const TickHistoryGraph: React.FC<{
     tooltips: {
       displayColors: false,
       callbacks: {
-        label: function (tooltipItem, _data) {
-          if (tooltipItem.index === undefined || tooltipItem.index === ticks.length) {
+        title: function (_item, _data) {
+          if (!hoveredTick) {
             return '';
           }
-          const tick = ticks[tooltipItem.index];
-          if (tick.status === JobTickStatus.SKIPPED && tick.skipReason) {
-            return snippet(tick.skipReason);
+          return moment(hoveredTick.timestamp * 1000).format('MMM D, YYYY h:mm:ss A z');
+        },
+        label: function (_tooltipItem, _data) {
+          if (!hoveredTick) {
+            return '';
           }
-          if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
-            return tick.runIds;
+          if (hoveredTick.status === JobTickStatus.SKIPPED && hoveredTick.skipReason) {
+            return snippet(hoveredTick.skipReason);
           }
-          if (tick.status == JobTickStatus.FAILURE && tick.error?.message) {
-            return snippet(tick.error.message);
+          if (hoveredTick.status === JobTickStatus.SUCCESS && hoveredTick.runIds.length) {
+            return hoveredTick.runIds;
+          }
+          if (hoveredTick.status == JobTickStatus.FAILURE && hoveredTick.error?.message) {
+            return snippet(hoveredTick.error.message);
           }
           return '';
         },
       },
     },
+
     onHover: (event: MouseEvent, activeElements: any[]) => {
       if (event?.target instanceof HTMLElement) {
         event.target.style.cursor = activeElements.length ? 'pointer' : 'default';
       }
+
       if (activeElements.length && activeElements[0] && activeElements[0]._index < ticks.length) {
         const tick = ticks[activeElements[0]._index];
-        onHighlightRunIds(tick.runIds || []);
+        setHoveredTick(tick);
+        onHoverTick(tick);
       } else {
-        onHighlightRunIds([]);
+        onHoverTick(undefined);
       }
     },
+
     onClick: (_event: MouseEvent, activeElements: any[]) => {
       if (!activeElements.length) {
         return;
@@ -415,24 +458,33 @@ const TickHistoryGraph: React.FC<{
           enabled: true,
           mode: 'x',
           rangeMin: {
-            x: dataBounds.min,
+            x: getMaxBounds().min,
           },
           rangeMax: {
-            x: dataBounds.max,
+            x: getMaxBounds().max,
           },
           onZoom: ({chart}: {chart: Chart}) => {
             const {min, max} = chart.options.scales?.xAxes?.[0].ticks || {};
             if (min && max) {
-              setBounds({min, max});
+              const diff = max - min;
+              if (diff > MIN_ZOOM_RANGE) {
+                setBounds({min, max});
+              } else if (bounds) {
+                const offset = (bounds.max - bounds.min - MIN_ZOOM_RANGE) / 2;
+                setBounds({min: bounds.min + offset, max: bounds.max - offset});
+              } else {
+                const offset = (getMaxBounds().max - getMaxBounds().min - MIN_ZOOM_RANGE) / 2;
+                setBounds({min: getMaxBounds().min + offset, max: getMaxBounds().max - offset});
+              }
             }
           },
         },
         pan: {
           rangeMin: {
-            x: dataBounds.min,
+            x: getMaxBounds().min,
           },
           rangeMax: {
-            x: dataBounds.max,
+            x: getMaxBounds().max,
           },
           enabled: true,
           mode: 'x',
@@ -464,54 +516,33 @@ const TickHistoryGraph: React.FC<{
   );
 };
 
-const JOB_HISTORY_FRAGMENT = gql`
-  fragment JobHistoryFragment on JobState {
-    id
-    jobType
-    ticks {
-      id
-      status
-      timestamp
-      skipReason
-      runIds
-      error {
+const JOB_TICK_HISTORY_QUERY = gql`
+  query JobTickHistoryQuery($jobSelector: JobSelector!, $dayRange: Int, $limit: Int) {
+    jobStateOrError(jobSelector: $jobSelector) {
+      __typename
+      ... on JobState {
+        id
+        jobType
+        nextTick {
+          timestamp
+        }
+        ticks(dayRange: $dayRange, limit: $limit) {
+          id
+          status
+          timestamp
+          skipReason
+          runIds
+          error {
+            ...PythonErrorFragment
+          }
+          ...TickTagFragment
+        }
+      }
+      ... on PythonError {
         ...PythonErrorFragment
       }
-      ...TickTagFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
-`;
-
-const SCHEDULE_TICK_HISTORY_QUERY = gql`
-  query ScheduleTickHistoryQuery($scheduleSelector: ScheduleSelector!) {
-    scheduleOrError(scheduleSelector: $scheduleSelector) {
-      __typename
-      ... on Schedule {
-        id
-        scheduleState {
-          id
-          ...JobHistoryFragment
-        }
-      }
-    }
-  }
-  ${JOB_HISTORY_FRAGMENT}
-`;
-
-const SENSOR_TICK_HISTORY_QUERY = gql`
-  query SensorTickHistoryQuery($sensorSelector: SensorSelector!) {
-    sensorOrError(sensorSelector: $sensorSelector) {
-      __typename
-      ... on Sensor {
-        id
-        sensorState {
-          id
-          ...JobHistoryFragment
-        }
-      }
-    }
-  }
-  ${JOB_HISTORY_FRAGMENT}
 `;

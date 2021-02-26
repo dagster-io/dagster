@@ -1,4 +1,4 @@
-import {Spinner, Button, Dialog, Colors} from '@blueprintjs/core';
+import {Button, Dialog, Colors} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -14,6 +14,7 @@ import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} 
 import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
 import {useQueryPersistedRunFilters} from 'src/runs/RunsFilter';
 import {CursorHistoryControls} from 'src/ui/CursorControls';
+import {Spinner} from 'src/ui/Spinner';
 import {RepoAddress} from 'src/workspace/types';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
@@ -37,11 +38,11 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [pageSize, setPageSize] = useQueryPersistedState<number | 'all'>({
     encode: (val) => ({pageSize: val}),
-    decode: (qs) => Number(qs.pageSize || 30),
+    decode: (qs) => (qs.pageSize === 'all' ? 'all' : Number(qs.pageSize || 30)),
   });
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
-  const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
+  const {loading, loadingPercent, partitions, paginationProps} = useChunkedPartitionsQuery(
     partitionSet.name,
     pageSize,
     runTags,
@@ -102,9 +103,9 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         </Button>
         {loading && (
           <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>
-            <Spinner size={19} />
+            <Spinner purpose="body-text" value={loadingPercent} />
             <div style={{width: 5}} />
-            Loading Partitions...
+            Loading partitions…
           </div>
         )}
         <div style={{flex: 1}} />

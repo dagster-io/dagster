@@ -52,7 +52,8 @@ def test_execute_queeud_run_on_celery_k8s(  # pylint: disable=redefined-outer-na
             ]
         ),
         get_celery_engine_config(
-            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace_for_daemon,
+            dagster_docker_image=dagster_docker_image,
+            job_namespace=helm_namespace_for_daemon,
         ),
     )
     pipeline_name = "demo_pipeline_celery"
@@ -67,7 +68,8 @@ def test_execute_queeud_run_on_celery_k8s(  # pylint: disable=redefined-outer-na
     )
 
     dagster_instance_for_daemon.submit_run(
-        run.run_id, reoriginated_pipeline,
+        run.run_id,
+        reoriginated_pipeline,
     )
 
     wait_for_job_and_get_raw_logs(
@@ -76,5 +78,6 @@ def test_execute_queeud_run_on_celery_k8s(  # pylint: disable=redefined-outer-na
 
     logs = dagster_instance_for_daemon.all_logs(run.run_id)
     assert_events_in_order(
-        logs, ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
+        logs,
+        ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
     )

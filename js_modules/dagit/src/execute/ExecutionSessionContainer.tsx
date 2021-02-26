@@ -1,5 +1,5 @@
-import {ApolloClient, gql, ApolloConsumer} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
+import {gql, useApolloClient} from '@apollo/client';
+import {Button, Colors, Icon} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,6 +7,7 @@ import * as yaml from 'yaml';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/app/LocalStorage';
+import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {ConfigEditor} from 'src/configeditor/ConfigEditor';
 import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
@@ -15,18 +16,20 @@ import {
   responseToYamlValidationResult,
 } from 'src/configeditor/ConfigEditorUtils';
 import {isHelpContextEqual} from 'src/configeditor/isHelpContextEqual';
-import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {ConfigEditorConfigPicker} from 'src/execute/ConfigEditorConfigPicker';
+import {
+  ConfigEditorConfigPicker,
+  CONFIG_PARTITION_SELECTION_QUERY,
+} from 'src/execute/ConfigEditorConfigPicker';
 import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
 import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
 import {LoadingOverlay} from 'src/execute/LoadingOverlay';
-import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from 'src/execute/RunPreview';
 import {SessionSettingsBar} from 'src/execute/SessionSettingsBar';
 import {SolidSelector} from 'src/execute/SolidSelector';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {scaffoldPipelineConfig} from 'src/execute/scaffoldType';
+import {ConfigEditorGeneratorPipelineFragment_presets} from 'src/execute/types/ConfigEditorGeneratorPipelineFragment';
 import {ExecutionSessionContainerPartitionSetsFragment} from 'src/execute/types/ExecutionSessionContainerPartitionSetsFragment';
 import {ExecutionSessionContainerPipelineFragment} from 'src/execute/types/ExecutionSessionContainerPipelineFragment';
 import {ExecutionSessionContainerRunConfigSchemaFragment} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
@@ -35,14 +38,20 @@ import {
   PreviewConfigQueryVariables,
 } from 'src/execute/types/PreviewConfigQuery';
 import {DagsterTag} from 'src/runs/RunTag';
-import {PipelineSelector} from 'src/types/globalTypes';
+import {PipelineSelector, RepositorySelector} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
+import {ButtonLink} from 'src/ui/ButtonLink';
+import {Group} from 'src/ui/Group';
 import {SecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
 const LOADING_RUN_PREVIEW = `Checking config...`;
+
+type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 
 interface IExecutionSessionContainerProps {
   data: IStorageData;
@@ -60,68 +69,112 @@ interface IExecutionSessionContainerState {
   preview: PreviewConfigQuery | null;
   previewLoading: boolean;
   previewedDocument: any | null;
-
   configLoading: boolean;
   editorHelpContext: ConfigEditorHelpContext | null;
   showWhitespace: boolean;
   tagEditorOpen: boolean;
 }
 
-class ExecutionSessionContainer extends React.Component<
-  IExecutionSessionContainerProps,
-  IExecutionSessionContainerState
-> {
-  state: IExecutionSessionContainerState = {
-    preview: null,
-    previewLoading: false,
-    previewedDocument: null,
+type Action =
+  | {type: 'preview-loading'; payload: boolean}
+  | {
+      type: 'set-preview';
+      payload: {
+        preview: PreviewConfigQuery | null;
+        previewLoading: boolean;
+        previewedDocument: any | null;
+      };
+    }
+  | {type: 'toggle-tag-editor'; payload: boolean}
+  | {type: 'toggle-config-loading'; payload: boolean}
+  | {type: 'set-editor-help-context'; payload: ConfigEditorHelpContext | null}
+  | {type: 'toggle-whitepsace'; payload: boolean};
 
-    configLoading: false,
-    showWhitespace: true,
-    editorHelpContext: null,
-    tagEditorOpen: false,
-  };
-
-  editor = React.createRef<ConfigEditor>();
-
-  editorSplitPanelContainer = React.createRef<SplitPanelContainer>();
-
-  mounted = false;
-
-  previewCounter = 0;
-
-  componentDidMount() {
-    this.mounted = true;
+const reducer = (state: IExecutionSessionContainerState, action: Action) => {
+  switch (action.type) {
+    case 'preview-loading':
+      return {...state, previewLoading: action.payload};
+    case 'set-preview': {
+      const {preview, previewedDocument, previewLoading} = action.payload;
+      return {
+        ...state,
+        preview,
+        previewedDocument,
+        previewLoading,
+      };
+    }
+    case 'toggle-tag-editor':
+      return {...state, tagEditorOpen: action.payload};
+    case 'toggle-config-loading':
+      return {...state, configLoading: action.payload};
+    case 'set-editor-help-context':
+      return {...state, editorHelpContext: action.payload};
+    case 'toggle-whitepsace':
+      return {...state, showWhitespace: action.payload};
+    default:
+      return state;
   }
+};
 
-  componentWillUnmount() {
-    this.mounted = false;
-  }
+const initialState: IExecutionSessionContainerState = {
+  preview: null,
+  previewLoading: false,
+  previewedDocument: null,
+  configLoading: false,
+  showWhitespace: true,
+  editorHelpContext: null,
+  tagEditorOpen: false,
+};
 
-  onConfigChange = (config: any) => {
-    this.props.onSaveSession({
+export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
+  const {
+    currentSession,
+    onCreateSession,
+    onSaveSession,
+    partitionSets,
+    pipeline,
+    pipelineSelector,
+    repoAddress,
+    runConfigSchemaOrError,
+  } = props;
+
+  const client = useApolloClient();
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const mounted = React.useRef<boolean>(false);
+  const editor = React.useRef<ConfigEditor | null>(null);
+  const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
+  const previewCounter = React.useRef(0);
+
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  });
+
+  const onConfigChange = (config: any) => {
+    onSaveSession({
       runConfigYaml: config,
     });
   };
 
-  onSolidSelectionChange = (
+  const onSolidSelectionChange = (
     solidSelection: string[] | null,
     solidSelectionQuery: string | null,
   ) => {
-    this.props.onSaveSession({
+    onSaveSession({
       solidSelection,
       solidSelectionQuery,
     });
   };
 
-  onModeChange = (mode: string) => {
-    this.props.onSaveSession({mode});
+  const onModeChange = (mode: string) => {
+    onSaveSession({mode});
   };
 
-  onRemoveExtraPaths = (paths: string[]) => {
-    const {currentSession} = this.props;
-
-    function deletePropertyPath(obj: any, path: string) {
+  const onRemoveExtraPaths = (paths: string[]) => {
+    const deletePropertyPath = (obj: any, path: string) => {
       const parts = path.split('.');
 
       // Here we iterate through the parts of the path to get to
@@ -138,7 +191,7 @@ class ExecutionSessionContainer extends React.Component<
       if (lastKey) {
         delete obj[lastKey];
       }
-    }
+    };
 
     let runConfigData = {};
     try {
@@ -151,22 +204,20 @@ class ExecutionSessionContainer extends React.Component<
       }
 
       const runConfigYaml = yaml.stringify(runConfigData);
-      this.props.onSaveSession({runConfigYaml});
+      onSaveSession({runConfigYaml});
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
     }
   };
 
-  onScaffoldMissingConfig = () => {
-    const {currentSession} = this.props;
+  const runConfigSchema =
+    runConfigSchemaOrError?.__typename === 'RunConfigSchema' ? runConfigSchemaOrError : undefined;
+  const modeError =
+    runConfigSchemaOrError?.__typename === 'ModeNotFoundError' ? runConfigSchemaOrError : undefined;
 
-    let config = {};
-    const runConfigSchema = this.getRunConfigSchema();
-    if (runConfigSchema) {
-      config = scaffoldPipelineConfig(runConfigSchema);
-    }
-
+  const onScaffoldMissingConfig = () => {
+    const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
@@ -174,15 +225,13 @@ class ExecutionSessionContainer extends React.Component<
 
       const updatedRunConfigData = merge(config, runConfigData);
       const runConfigYaml = yaml.stringify(updatedRunConfigData);
-      this.props.onSaveSession({runConfigYaml});
+      onSaveSession({runConfigYaml});
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
     }
   };
 
-  buildExecutionVariables = () => {
-    const {currentSession, pipelineSelector} = this.props;
-
+  const buildExecutionVariables = () => {
     if (!currentSession || !currentSession.mode) {
       return;
     }
@@ -229,25 +278,7 @@ class ExecutionSessionContainer extends React.Component<
     };
   };
 
-  // have this return an object with prebuilt index
-  // https://github.com/dagster-io/dagster/issues/1966
-  getRunConfigSchema = (): ConfigEditorRunConfigSchemaFragment | undefined => {
-    const obj = this.props.runConfigSchemaOrError;
-    if (obj && obj.__typename === 'RunConfigSchema') {
-      return obj;
-    }
-    return undefined;
-  };
-
-  getModeError = (): ModeNotFoundError => {
-    const obj = this.props.runConfigSchemaOrError;
-    if (obj && obj.__typename === 'ModeNotFoundError') {
-      return obj;
-    }
-    return undefined;
-  };
-
-  saveTags = (tags: PipelineRunTag[]) => {
+  const saveTags = (tags: PipelineRunTag[]) => {
     const tagDict = {};
     const toSave: PipelineRunTag[] = [];
     tags.forEach((tag: PipelineRunTag) => {
@@ -256,18 +287,16 @@ class ExecutionSessionContainer extends React.Component<
         toSave.push(tag);
       }
     });
-    this.props.onSaveSession({tags: toSave});
+    onSaveSession({tags: toSave});
   };
 
-  checkConfig = async (client: ApolloClient<any>, configJSON: Record<string, unknown>) => {
-    const {currentSession, pipelineSelector} = this.props;
-
+  const checkConfig = async (configJSON: Record<string, unknown>) => {
     // Another request to preview a newer document may be made while this request
     // is in flight, in which case completion of this async method should not set loading=false.
-    this.previewCounter += 1;
-    const currentPreviewCount = this.previewCounter;
+    previewCounter.current += 1;
+    const currentPreviewCount = previewCounter.current;
 
-    this.setState({previewLoading: true});
+    dispatch({type: 'preview-loading', payload: true});
 
     const {data} = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
       fetchPolicy: 'no-cache',
@@ -279,184 +308,324 @@ class ExecutionSessionContainer extends React.Component<
       },
     });
 
-    if (this.mounted) {
-      const isLatestRequest = currentPreviewCount === this.previewCounter;
-      this.setState({
-        preview: data,
-        previewedDocument: configJSON,
-        previewLoading: isLatestRequest ? false : this.state.previewLoading,
+    if (mounted.current) {
+      const isLatestRequest = currentPreviewCount === previewCounter.current;
+      dispatch({
+        type: 'set-preview',
+        payload: {
+          preview: data,
+          previewedDocument: configJSON,
+          previewLoading: isLatestRequest ? false : state.previewLoading,
+        },
       });
     }
 
     return responseToYamlValidationResult(configJSON, data.isPipelineConfigValid);
   };
 
-  openTagEditor = () => this.setState({tagEditorOpen: true});
-  closeTagEditor = () => this.setState({tagEditorOpen: false});
+  const onSelectPreset = async (preset: Preset) => {
+    const tagsDict: {[key: string]: string} = [...(pipeline?.tags || []), ...preset.tags].reduce(
+      (tags, kv) => {
+        tags[kv.key] = kv.value;
+        return tags;
+      },
+      {},
+    );
 
-  onConfigLoading = () => this.setState({configLoading: true});
-  onConfigLoaded = () => this.setState({configLoading: false});
+    onSaveSession({
+      base: {presetName: preset.name},
+      name: preset.name,
+      runConfigYaml: preset.runConfigYaml || '',
+      solidSelection: preset.solidSelection,
+      solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
+      mode: preset.mode,
+      tags: Object.entries(tagsDict).map(([key, value]) => ({key, value})),
+      needsRefresh: false,
+    });
+  };
 
-  render() {
-    const {
-      currentSession,
-      onCreateSession,
-      onSaveSession,
-      partitionSets,
-      pipeline,
-      repoAddress,
-    } = this.props;
-    const {
-      preview,
-      previewLoading,
-      previewedDocument,
-      configLoading,
-      editorHelpContext,
-      showWhitespace,
-      tagEditorOpen,
-    } = this.state;
-    const runConfigSchema = this.getRunConfigSchema();
-    const modeError = this.getModeError();
+  const onSelectPartition = async (
+    repositorySelector: RepositorySelector,
+    partitionSetName: string,
+    partitionName: string,
+    sessionSolidSelection?: string[] | null,
+  ) => {
+    onConfigLoading();
+    try {
+      const {base} = currentSession;
+      const {data} = await client.query({
+        query: CONFIG_PARTITION_SELECTION_QUERY,
+        variables: {repositorySelector, partitionSetName, partitionName},
+      });
 
-    const tags = currentSession.tags || [];
-    return (
-      <SplitPanelContainer
-        axis={'vertical'}
-        identifier={'execution'}
-        firstMinSize={100}
-        firstInitialPercent={75}
-        first={
-          <>
-            <LoadingOverlay isLoading={configLoading} message={LOADING_CONFIG_FOR_PARTITION} />
-            <SessionSettingsBar>
-              <ConfigEditorConfigPicker
-                pipeline={pipeline}
-                partitionSets={partitionSets.results}
-                base={currentSession.base}
-                solidSelection={currentSession.solidSelection}
-                onLoading={this.onConfigLoading}
-                onLoaded={this.onConfigLoaded}
-                onCreateSession={onCreateSession}
-                onSaveSession={onSaveSession}
-                repoAddress={repoAddress}
-              />
-              <SessionSettingsSpacer />
-              <SolidSelector
-                serverProvidedSubsetError={
-                  preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
-                    ? preview.isPipelineConfigValid
-                    : undefined
-                }
-                pipelineName={pipeline.name}
-                value={currentSession.solidSelection || null}
-                query={currentSession.solidSelectionQuery || null}
-                onChange={this.onSolidSelectionChange}
-                repoAddress={repoAddress}
-              />
-              <SessionSettingsSpacer />
-              <ConfigEditorModePicker
-                modes={pipeline.modes}
-                modeError={modeError}
-                onModeChange={this.onModeChange}
-                modeName={currentSession.mode}
-              />
-              {tags.length || tagEditorOpen ? null : (
+      if (
+        !data ||
+        !data.partitionSetOrError ||
+        data.partitionSetOrError.__typename !== 'PartitionSet'
+      ) {
+        onConfigLoaded();
+        return;
+      }
+
+      const {partition} = data.partitionSetOrError;
+
+      let tags;
+      if (partition.tagsOrError.__typename === 'PythonError') {
+        tags = (pipeline?.tags || []).slice();
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
+        });
+      } else {
+        tags = [...(pipeline?.tags || []), ...partition.tagsOrError.results];
+      }
+
+      let runConfigYaml;
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        runConfigYaml = '';
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
+        });
+      } else {
+        runConfigYaml = partition.runConfigOrError.yaml;
+      }
+
+      const solidSelection = sessionSolidSelection || partition.solidSelection;
+
+      onSaveSession({
+        name: partition.name,
+        base: Object.assign({}, base, {
+          partitionName: partition.name,
+        }),
+        runConfigYaml,
+        solidSelection,
+        solidSelectionQuery: solidSelection === null ? '*' : solidSelection.join(','),
+        mode: partition.mode,
+        tags,
+        needsRefresh: false,
+      });
+    } catch {}
+    onConfigLoaded();
+  };
+
+  const onRefreshConfig = async () => {
+    const {base} = currentSession;
+    if (!base) {
+      return;
+    }
+
+    // Handle preset-based configuration.
+    if ('presetName' in base) {
+      const {presetName} = base;
+      const matchingPreset = pipeline.presets.find((preset) => preset.name === presetName);
+      if (matchingPreset) {
+        onSelectPreset({
+          ...matchingPreset,
+          solidSelection: currentSession.solidSelection || matchingPreset.solidSelection,
+        });
+      }
+      return;
+    }
+
+    // Otherwise, handle partition-based configuration.
+    const {partitionName, partitionsSetName} = base;
+    const repositorySelector = repoAddressToSelector(repoAddress);
+
+    if (partitionName) {
+      onConfigLoading();
+      await onSelectPartition(
+        repositorySelector,
+        partitionsSetName,
+        partitionName,
+        currentSession.solidSelection,
+      );
+      onConfigLoaded();
+    }
+  };
+
+  const onDismissRefreshWarning = () => {
+    onSaveSession({needsRefresh: false});
+  };
+
+  const openTagEditor = () => dispatch({type: 'toggle-tag-editor', payload: true});
+  const closeTagEditor = () => dispatch({type: 'toggle-tag-editor', payload: false});
+
+  const onConfigLoading = () => dispatch({type: 'toggle-config-loading', payload: true});
+  const onConfigLoaded = () => dispatch({type: 'toggle-config-loading', payload: false});
+
+  const {
+    preview,
+    previewLoading,
+    previewedDocument,
+    configLoading,
+    editorHelpContext,
+    showWhitespace,
+    tagEditorOpen,
+  } = state;
+
+  const tags = currentSession.tags || [];
+  return (
+    <SplitPanelContainer
+      axis={'vertical'}
+      identifier={'execution'}
+      firstMinSize={100}
+      firstInitialPercent={75}
+      first={
+        <>
+          <LoadingOverlay isLoading={configLoading} message={LOADING_CONFIG_FOR_PARTITION} />
+          <SessionSettingsBar>
+            <ConfigEditorConfigPicker
+              pipeline={pipeline}
+              partitionSets={partitionSets.results}
+              base={currentSession.base}
+              solidSelection={currentSession.solidSelection}
+              onLoading={onConfigLoading}
+              onLoaded={onConfigLoaded}
+              onCreateSession={onCreateSession}
+              onSaveSession={onSaveSession}
+              onSelectPreset={onSelectPreset}
+              onSelectPartition={onSelectPartition}
+              repoAddress={repoAddress}
+            />
+            <SessionSettingsSpacer />
+            <SolidSelector
+              serverProvidedSubsetError={
+                preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
+                  ? preview.isPipelineConfigValid
+                  : undefined
+              }
+              pipelineName={pipeline.name}
+              value={currentSession.solidSelection || null}
+              query={currentSession.solidSelectionQuery || null}
+              onChange={onSolidSelectionChange}
+              repoAddress={repoAddress}
+            />
+            <SessionSettingsSpacer />
+            <ConfigEditorModePicker
+              modes={pipeline.modes}
+              modeError={modeError}
+              onModeChange={onModeChange}
+              modeName={currentSession.mode}
+            />
+            {tags.length ? null : (
+              <Box margin={{left: 12}}>
                 <ShortcutHandler
                   shortcutLabel={'⌥T'}
                   shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
-                  onShortcut={this.openTagEditor}
+                  onShortcut={openTagEditor}
                 >
-                  <TagEditorLink onClick={this.openTagEditor}>+ Add tags</TagEditorLink>
+                  <ButtonLink
+                    color={{link: Colors.GRAY3, hover: Colors.DARK_GRAY3}}
+                    onClick={openTagEditor}
+                    underline="always"
+                  >
+                    + Add tags
+                  </ButtonLink>
                 </ShortcutHandler>
-              )}
-              <TagEditor
-                tags={tags}
-                onChange={this.saveTags}
-                open={tagEditorOpen}
-                onRequestClose={this.closeTagEditor}
-              />
-              <div style={{flex: 1}} />
-              <Button
-                icon="paragraph"
-                small={true}
-                active={showWhitespace}
-                style={{marginLeft: 'auto'}}
-                onClick={() => this.setState({showWhitespace: !showWhitespace})}
-              />
-              <SessionSettingsSpacer />
-              <SecondPanelToggle axis="horizontal" container={this.editorSplitPanelContainer} />
-            </SessionSettingsBar>
-            {tags.length ? <TagContainer tags={tags} onRequestEdit={this.openTagEditor} /> : null}
-            <SplitPanelContainer
-              ref={this.editorSplitPanelContainer}
-              axis="horizontal"
-              identifier="execution-editor"
-              firstMinSize={100}
-              firstInitialPercent={70}
-              first={
-                <ApolloConsumer>
-                  {(client) => (
-                    <ConfigEditor
-                      ref={this.editor}
-                      readOnly={false}
-                      runConfigSchema={runConfigSchema}
-                      configCode={currentSession.runConfigYaml}
-                      onConfigChange={this.onConfigChange}
-                      onHelpContextChange={(next) => {
-                        if (!isHelpContextEqual(editorHelpContext, next)) {
-                          this.setState({editorHelpContext: next});
-                        }
-                      }}
-                      showWhitespace={showWhitespace}
-                      checkConfig={async (configJSON) => {
-                        return await this.checkConfig(client, configJSON);
-                      }}
-                    />
-                  )}
-                </ApolloConsumer>
-              }
-              second={
-                <ConfigEditorHelp
-                  context={editorHelpContext}
-                  allInnerTypes={runConfigSchema?.allConfigTypes || []}
-                />
-              }
+              </Box>
+            )}
+            <TagEditor
+              tags={tags}
+              onChange={saveTags}
+              open={tagEditorOpen}
+              onRequestClose={closeTagEditor}
             />
-          </>
-        }
-        second={
-          <>
-            <LoadingOverlay
-              isLoading={!runConfigSchema || previewLoading}
-              message={!runConfigSchema ? LOADING_CONFIG_SCHEMA : LOADING_RUN_PREVIEW}
+            <div style={{flex: 1}} />
+            <Button
+              icon="paragraph"
+              small={true}
+              active={showWhitespace}
+              style={{marginLeft: 'auto'}}
+              onClick={() => dispatch({type: 'toggle-whitepsace', payload: !showWhitespace})}
             />
-            <RunPreview
-              document={previewedDocument}
-              validation={preview ? preview.isPipelineConfigValid : null}
-              solidSelection={currentSession.solidSelection}
-              runConfigSchema={runConfigSchema}
-              onHighlightPath={(path) => this.editor.current?.moveCursorToPath(path)}
-              onRemoveExtraPaths={(paths) => this.onRemoveExtraPaths(paths)}
-              onScaffoldMissingConfig={this.onScaffoldMissingConfig}
-              actions={
-                <LaunchRootExecutionButton
-                  pipelineName={pipeline.name}
-                  getVariables={this.buildExecutionVariables}
-                  disabled={
-                    preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'
+            <SessionSettingsSpacer />
+            <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
+          </SessionSettingsBar>
+          {tags.length ? <TagContainer tags={tags} onRequestEdit={openTagEditor} /> : null}
+          {currentSession.base !== null && currentSession.needsRefresh ? (
+            <Box
+              padding={{vertical: 8, horizontal: 12}}
+              border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}
+            >
+              <Group direction="row" spacing={8} alignItems="center">
+                <Icon icon="warning-sign" color={Colors.GOLD3} />
+                <div>
+                  Your repository has been manually refreshed, and this configuration may now be out
+                  of date.
+                </div>
+                <Button
+                  small
+                  intent="primary"
+                  onClick={onRefreshConfig}
+                  disabled={state.configLoading}
+                >
+                  Refresh config
+                </Button>
+                <Button small onClick={onDismissRefreshWarning}>
+                  Dismiss
+                </Button>
+              </Group>
+            </Box>
+          ) : null}
+          <SplitPanelContainer
+            ref={editorSplitPanelContainer}
+            axis="horizontal"
+            identifier="execution-editor"
+            firstMinSize={100}
+            firstInitialPercent={70}
+            first={
+              <ConfigEditor
+                ref={editor}
+                readOnly={false}
+                runConfigSchema={runConfigSchema}
+                configCode={currentSession.runConfigYaml}
+                onConfigChange={onConfigChange}
+                onHelpContextChange={(next) => {
+                  if (!isHelpContextEqual(editorHelpContext, next)) {
+                    dispatch({type: 'set-editor-help-context', payload: next});
                   }
-                />
-              }
-            />
-          </>
-        }
-      />
-    );
-  }
-}
-
-// eslint-disable-next-line import/no-default-export
-export default ExecutionSessionContainer;
+                }}
+                showWhitespace={showWhitespace}
+                checkConfig={checkConfig}
+              />
+            }
+            second={
+              <ConfigEditorHelp
+                context={editorHelpContext}
+                allInnerTypes={runConfigSchema?.allConfigTypes || []}
+              />
+            }
+          />
+        </>
+      }
+      second={
+        <>
+          <LoadingOverlay
+            isLoading={previewLoading}
+            message={!runConfigSchema ? LOADING_CONFIG_SCHEMA : LOADING_RUN_PREVIEW}
+          />
+          <RunPreview
+            document={previewedDocument}
+            validation={preview ? preview.isPipelineConfigValid : null}
+            solidSelection={currentSession.solidSelection}
+            runConfigSchema={runConfigSchema}
+            onHighlightPath={(path) => editor.current?.moveCursorToPath(path)}
+            onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}
+            onScaffoldMissingConfig={onScaffoldMissingConfig}
+            actions={
+              <LaunchRootExecutionButton
+                pipelineName={pipeline.name}
+                getVariables={buildExecutionVariables}
+                disabled={
+                  preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'
+                }
+              />
+            }
+          />
+        </>
+      }
+    />
+  );
+};
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
@@ -475,14 +644,4 @@ const PREVIEW_CONFIG_QUERY = gql`
 
 const SessionSettingsSpacer = styled.div`
   width: 5px;
-`;
-
-const TagEditorLink = styled.div`
-  color: #666;
-  cursor: pointer;
-  margin-left: 15px;
-  text-decoration: underline;
-  &:hover {
-    color: #aaa;
-  }
 `;

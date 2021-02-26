@@ -1,5 +1,6 @@
+from unittest import mock
+
 from dagster import ModeDefinition, configured, execute_pipeline, pipeline, solid
-from dagster.seven import mock
 from dagster_gcp.gcs.file_manager import GCSFileHandle, GCSFileManager
 from dagster_gcp.gcs.resources import gcs_file_manager
 from google.cloud import storage

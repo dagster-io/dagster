@@ -125,7 +125,12 @@ def execute_posix_tail(path, stream):
         # current process is suddenly killed)
         watcher_file = os.path.abspath(watch_orphans.__file__)
         watcher_process = subprocess.Popen(
-            [sys.executable, watcher_file, str(os.getpid()), str(tail_process.pid),]
+            [
+                sys.executable,
+                watcher_file,
+                str(os.getpid()),
+                str(tail_process.pid),
+            ]
         )
 
         yield (tail_process.pid, watcher_process.pid)

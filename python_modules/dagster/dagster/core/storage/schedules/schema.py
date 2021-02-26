@@ -1,5 +1,7 @@
 import sqlalchemy as db
 
+from ..sql import get_current_timestamp
+
 ScheduleStorageSqlMetadata = db.MetaData()
 
 JobTable = db.Table(
@@ -11,8 +13,8 @@ JobTable = db.Table(
     db.Column("status", db.String(63)),
     db.Column("job_type", db.String(63), index=True),
     db.Column("job_body", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
-    db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
 JobTickTable = db.Table(
@@ -24,8 +26,8 @@ JobTickTable = db.Table(
     db.Column("type", db.String(63)),
     db.Column("timestamp", db.types.TIMESTAMP),
     db.Column("tick_body", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
-    db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
 db.Index("idx_job_tick_status", JobTickTable.c.job_origin_id, JobTickTable.c.status)

@@ -339,8 +339,16 @@ test_make_repo_inputs = [
         None,
         ["airflow_example_complex", "airflow_example_bash_operator"],
     ),
-    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS)], "complex.py", ["airflow_example_complex"],),
-    ([("bash.py", BASH_DAG_FILE_CONTENTS)], "bash.py", ["airflow_example_bash_operator"],),
+    (
+        [("complex.py", COMPLEX_DAG_FILE_CONTENTS)],
+        "complex.py",
+        ["airflow_example_complex"],
+    ),
+    (
+        [("bash.py", BASH_DAG_FILE_CONTENTS)],
+        "bash.py",
+        ["airflow_example_bash_operator"],
+    ),
     (
         [("combined.py", COMBINED_FILE_CONTENTS)],
         None,
@@ -350,10 +358,13 @@ test_make_repo_inputs = [
 
 
 @pytest.mark.parametrize(
-    "path_and_content_tuples, fn_arg_path, expected_pipeline_names", test_make_repo_inputs,
+    "path_and_content_tuples, fn_arg_path, expected_pipeline_names",
+    test_make_repo_inputs,
 )
 def test_make_repo(
-    path_and_content_tuples, fn_arg_path, expected_pipeline_names,
+    path_and_content_tuples,
+    fn_arg_path,
+    expected_pipeline_names,
 ):
     repo_name = "my_repo_name"
     with tempfile.TemporaryDirectory() as tmpdir_path:
@@ -362,7 +373,10 @@ def test_make_repo(
                 f.write(bytes(content.encode("utf-8")))
 
         repo = (
-            make_dagster_repo_from_airflow_dags_path(tmpdir_path, repo_name,)
+            make_dagster_repo_from_airflow_dags_path(
+                tmpdir_path,
+                repo_name,
+            )
             if fn_arg_path is None
             else make_dagster_repo_from_airflow_dags_path(
                 os.path.join(tmpdir_path, fn_arg_path), repo_name
@@ -420,11 +434,13 @@ test_airflow_example_dags_inputs = [
 
 
 @pytest.mark.parametrize(
-    "expected_pipeline_names, exclude_from_execution_tests", test_airflow_example_dags_inputs,
+    "expected_pipeline_names, exclude_from_execution_tests",
+    test_airflow_example_dags_inputs,
 )
 @requires_airflow_db
 def test_airflow_example_dags(
-    expected_pipeline_names, exclude_from_execution_tests,
+    expected_pipeline_names,
+    exclude_from_execution_tests,
 ):
     repo = make_dagster_repo_from_airflow_example_dags()
 

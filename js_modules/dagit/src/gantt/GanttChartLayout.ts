@@ -13,6 +13,7 @@ import {
   LEFT_INSET,
   FLAT_INSET_FROM_PARENT,
 } from 'src/gantt/Constants';
+import {isDynamicStep} from 'src/gantt/DynamicStepSupport';
 import {IRunMetadataDict, IStepAttempt, IStepState} from 'src/runs/RunMetadataProvider';
 
 export interface BuildLayoutParams {
@@ -95,7 +96,11 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (!highestYParent) {
         continue;
       }
-
+      // Don't re-order the first row of nodes that "fan out" from a dynamic output. this
+      // ensures that these nodes are always "waterfall" visually by ascending index.
+      if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
+        continue;
+      }
       const onTargetY = boxesByY[`${highestYParent.y}`];
       const taken = onTargetY.find((r) => r.x === box.x);
       if (taken) {
@@ -226,9 +231,9 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const ColorsForStates = {
-  [IStepState.RETRY_REQUESTED]: Colors.ORANGE2,
+  [IStepState.RETRY_REQUESTED]: Colors.ORANGE3,
   [IStepState.RUNNING]: Colors.GRAY3,
-  [IStepState.SUCCEEDED]: Colors.GREEN2,
+  [IStepState.SUCCEEDED]: Colors.GREEN3,
   [IStepState.FAILED]: Colors.RED3,
   [IStepState.SKIPPED]: 'rgb(173, 185, 152)',
 };
@@ -241,7 +246,10 @@ export const boxStyleFor = (
   },
 ) => {
   // Not running and not viewing waterfall? We always use a nice blue
-  if (!context.metadata.firstLogAt && context.options.mode !== GanttChartMode.WATERFALL_TIMED) {
+  if (
+    !context.metadata.startedPipelineAt &&
+    context.options.mode !== GanttChartMode.WATERFALL_TIMED
+  ) {
     return {background: `${ROUNDING_GRADIENT}, #2491eb`};
   }
 
@@ -379,8 +387,8 @@ export const adjustLayoutWithRunMetadata = (
   // step ordering, etc. should obey the constraints we already planned for). We just push
   // boxes around on their existing rows.
   if (options.mode === GanttChartMode.WATERFALL_TIMED) {
-    const firstLogAt = metadata.firstLogAt || nowMs;
-    const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt) * scale;
+    const startedPipelineAt = metadata.startedPipelineAt || nowMs;
+    const xForMs = (time: number) => LEFT_INSET + (time - startedPipelineAt) * scale;
     const widthForMs = ({start, end}: {start: number; end?: number}) =>
       Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
 

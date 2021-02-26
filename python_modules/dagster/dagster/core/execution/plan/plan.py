@@ -44,7 +44,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
-from .compute import create_compute_step, create_unresolved_step
+from .compute import create_step_outputs
 from .inputs import (
     FromConfig,
     FromDefaultValue,
@@ -201,7 +201,7 @@ class _PlanBuilder:
                     step_inputs.append(
                         UnresolvedStepInput(
                             name=input_name,
-                            dagster_type=input_def.dagster_type,
+                            dagster_type_key=input_def.dagster_type.key,
                             source=step_input_source,
                         )
                     )
@@ -210,7 +210,7 @@ class _PlanBuilder:
                     step_inputs.append(
                         StepInput(
                             name=input_name,
-                            dagster_type=input_def.dagster_type,
+                            dagster_type_key=input_def.dagster_type.key,
                             source=step_input_source,
                         )
                     )
@@ -218,21 +218,24 @@ class _PlanBuilder:
             ### 2a. COMPUTE FUNCTION
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
+                step_outputs = create_step_outputs(solid, handle, self.environment_config)
+                tags = solid.definition.tags
+
                 if has_unresolved_input:
-                    step: ExecutionStepUnion = create_unresolved_step(
-                        solid=solid,
-                        solid_handle=handle,
-                        step_inputs=step_inputs,
-                        environment_config=self.environment_config,
+                    step: ExecutionStepUnion = UnresolvedExecutionStep(
+                        handle=UnresolvedStepHandle(solid_handle=handle),
                         pipeline_name=self.pipeline_name,
+                        step_inputs=step_inputs,
+                        step_outputs=step_outputs,
+                        tags=tags,
                     )
                 else:
-                    step = create_compute_step(
-                        solid=solid,
-                        solid_handle=handle,
-                        step_inputs=cast(List[StepInput], step_inputs),
-                        environment_config=self.environment_config,
+                    step = ExecutionStep(
+                        handle=StepHandle(solid_handle=handle),
                         pipeline_name=self.pipeline_name,
+                        step_inputs=cast(List[StepInput], step_inputs),
+                        step_outputs=step_outputs,
+                        tags=tags,
                     )
 
                 self.add_step(step)
@@ -282,7 +285,13 @@ class _PlanBuilder:
 
 
 def get_step_input_source(
-    plan_builder, solid, input_name, input_def, dependency_structure, handle, parent_step_inputs
+    plan_builder: _PlanBuilder,
+    solid: Solid,
+    input_name: str,
+    input_def: InputDefinition,
+    dependency_structure: DependencyStructure,
+    handle: SolidHandle,
+    parent_step_inputs: Optional[List[Union[StepInput, UnresolvedStepInput]]],
 ):
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
     check.inst_param(solid, "solid", Solid)
@@ -290,15 +299,16 @@ def get_step_input_source(
     check.inst_param(input_def, "input_def", InputDefinition)
     check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
     check.opt_inst_param(handle, "handle", SolidHandle)
-    check.opt_list_param(parent_step_inputs, "parent_step_inputs", of_type=StepInput)
+    check.opt_list_param(
+        parent_step_inputs, "parent_step_inputs", of_type=(StepInput, UnresolvedStepInput)
+    )
 
     input_handle = solid.input_handle(input_name)
     solid_config = plan_builder.environment_config.solids.get(str(handle))
-    input_config = solid_config.inputs.get(input_name) if solid_config else None
 
     input_def = solid.definition.input_def_named(input_name)
     if input_def.root_manager_key and not dependency_structure.has_deps(input_handle):
-        return FromRootInputManager(input_def=input_def, config_data=input_config)
+        return FromRootInputManager(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_singular_dep(input_handle):
         solid_output_handle = dependency_structure.get_singular_dep(input_handle)
@@ -306,21 +316,21 @@ def get_step_input_source(
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromUnresolvedStepOutput(
                 unresolved_step_output_handle=step_output_handle,
-                input_def=input_def,
-                config_data=input_config,
+                solid_handle=handle,
+                input_name=input_name,
             )
 
         if solid_output_handle.output_def.is_dynamic:
             return FromPendingDynamicStepOutput(
                 step_output_handle=step_output_handle,
-                input_def=input_def,
-                config_data=input_config,
+                solid_handle=handle,
+                input_name=input_name,
             )
 
         return FromStepOutput(
             step_output_handle=step_output_handle,
-            input_def=input_def,
-            config_data=input_config,
+            solid_handle=handle,
+            input_name=input_name,
             fan_in=False,
         )
 
@@ -330,6 +340,9 @@ def get_step_input_source(
             dependency_structure.get_multi_deps(input_handle)
         ):
             if handle_or_placeholder is MappedInputPlaceholder:
+                if parent_step_inputs is None:
+                    check.failed("unexpected error in composition descent during plan building")
+
                 parent_name = solid.container_mapped_fan_in_input(input_name, idx).definition.name
                 parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
                 parent_input = parent_inputs[parent_name]
@@ -338,22 +351,20 @@ def get_step_input_source(
                 sources.append(
                     FromStepOutput(
                         step_output_handle=plan_builder.get_output_handle(handle_or_placeholder),
-                        input_def=input_def,
-                        config_data=input_config,
+                        solid_handle=handle,
+                        input_name=input_name,
                         fan_in=True,
                     )
                 )
 
-        return FromMultipleSources(sources)
-
+        return FromMultipleSources(solid_handle=handle, input_name=input_name, sources=sources)
     if solid_config and input_name in solid_config.inputs:
-        return FromConfig(
-            solid_config.inputs[input_name],
-            dagster_type=input_def.dagster_type,
-            input_name=input_name,
-        )
+        return FromConfig(solid_handle=handle, input_name=input_name)
 
     if solid.container_maps_input(input_name):
+        if parent_step_inputs is None:
+            check.failed("unexpected error in composition descent during plan building")
+
         parent_name = solid.container_mapped_input(input_name).definition.name
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
@@ -362,7 +373,7 @@ def get_step_input_source(
         # else fall through to Nothing case or raise
 
     if solid.definition.input_has_default(input_name):
-        return FromDefaultValue(solid.definition.default_value_for_input(input_name))
+        return FromDefaultValue(solid_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
     # the output of another solid or provided via environment config.
@@ -397,7 +408,11 @@ class ExecutionPlan(
     )
 ):
     def __new__(
-        cls, pipeline, step_dict, step_handles_to_execute, environment_config,
+        cls,
+        pipeline,
+        step_dict,
+        step_handles_to_execute,
+        environment_config,
     ):
         check.list_param(
             step_handles_to_execute,
@@ -477,7 +492,10 @@ class ExecutionPlan(
         return step.step_output_named(step_output_handle.output_name)
 
     def get_manager_key(self, step_output_handle: StepOutputHandle) -> str:
-        return self.get_step_output(step_output_handle).output_def.io_manager_key
+        step_output = self.get_step_output(step_output_handle)
+        solid_handle = step_output.solid_handle
+        output_def = self.pipeline_def.get_solid(solid_handle).output_def_named(step_output.name)
+        return output_def.io_manager_key
 
     def has_step(self, handle: StepHandleUnion) -> bool:
         check.inst_param(handle, "handle", StepHandleTypes)
@@ -557,7 +575,8 @@ class ExecutionPlan(
             # don't resolve steps we are not executing
             if unresolved_step_handle in self.step_handles_to_execute:
                 unresolved_step = cast(
-                    UnresolvedExecutionStep, self.step_dict[unresolved_step_handle],
+                    UnresolvedExecutionStep,
+                    self.step_dict[unresolved_step_handle],
                 )
                 resolved_steps += unresolved_step.resolve(resolved_by_step_key, mappings)
 
@@ -610,7 +629,10 @@ class ExecutionPlan(
             )
 
         return ExecutionPlan(
-            self.pipeline, self.step_dict, step_handles_to_execute, self.environment_config,
+            self.pipeline,
+            self.step_dict,
+            step_handles_to_execute,
+            self.environment_config,
         )
 
     def resolve_step_versions(self) -> Dict[str, Optional[str]]:
@@ -620,7 +642,9 @@ class ExecutionPlan(
         return resolve_step_output_versions_helper(self)
 
     def start(
-        self, retries: Retries, sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        self,
+        retries: Retries,
+        sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -637,7 +661,8 @@ class ExecutionPlan(
         if len(self.step_handles_to_execute) == 1:
             only_step = self.step_dict[self.step_handles_to_execute[0]]
             check.invariant(
-                isinstance(only_step, ExecutionStep), "Unexpected unresolved single step plan",
+                isinstance(only_step, ExecutionStep),
+                "Unexpected unresolved single step plan",
             )
             return cast(ExecutionStep, only_step).handle
 
@@ -664,7 +689,10 @@ class ExecutionPlan(
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         plan_builder = _PlanBuilder(
-            pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute,
+            pipeline,
+            environment_config,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
         )
 
         # Finally, we build and return the execution plan
@@ -762,7 +790,7 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
     step = execution_plan.get_executable_step_by_key(step_key)
     for step_input in step.step_inputs:
         for source_handle in step_input.get_step_output_handle_dependencies():
-            if execution_plan.get_step_output(source_handle).output_def.optional:
+            if not execution_plan.get_step_output(source_handle).is_required:
                 optional_source_handles.add(source_handle)
 
     # early terminate to avoid unnecessary instance/db calls

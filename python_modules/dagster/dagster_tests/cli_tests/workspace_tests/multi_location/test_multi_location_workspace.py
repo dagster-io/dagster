@@ -1,17 +1,11 @@
 import sys
+from contextlib import ExitStack
 
 import pytest
 import yaml
 from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.load import (
-    load_workspace_from_config,
-    load_workspace_from_yaml_paths,
-    location_origins_from_config,
-)
-from dagster.core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-    RepositoryLocation,
-)
+from dagster.cli.workspace.load import load_workspace_from_yaml_paths, location_origins_from_config
+from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationHandle
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils import file_relative_path
 
@@ -92,9 +86,9 @@ def test_multi_file_override_workspace():
         assert workspace.has_repository_location_handle("loaded_from_module")
         assert workspace.has_repository_location_handle("loaded_from_package")
 
-        loaded_from_file = RepositoryLocation.from_handle(
-            workspace.get_repository_location_handle("loaded_from_file")
-        )
+        loaded_from_file = workspace.get_repository_location_handle(
+            "loaded_from_file"
+        ).create_location()
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -117,9 +111,9 @@ def test_multi_file_extend_and_override_workspace():
         assert workspace.has_repository_location_handle("loaded_from_package")
         assert workspace.has_repository_location_handle("extra_location")
 
-        loaded_from_file = RepositoryLocation.from_handle(
-            workspace.get_repository_location_handle("loaded_from_file")
-        )
+        loaded_from_file = workspace.get_repository_location_handle(
+            "loaded_from_file"
+        ).create_location()
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -274,35 +268,36 @@ def test_multi_location_origins(config_source):
     [_get_multi_location_workspace_yaml, _get_multi_location_python_env_workspace_yaml],
 )
 def test_grpc_multi_location_workspace(config_source):
-    with load_workspace_from_config(
+    origins = location_origins_from_config(
         yaml.safe_load(config_source(sys.executable)),
         # fake out as if it were loaded by a yaml file in this directory
         file_relative_path(__file__, "not_a_real.yaml"),
-    ) as workspace:
-        assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 6
-        assert workspace.has_repository_location_handle("loaded_from_file")
-        assert workspace.has_repository_location_handle("loaded_from_module")
+    )
+    with ExitStack() as stack:
+        repository_location_handles = {
+            name: stack.enter_context(origin.create_handle()) for name, origin in origins.items()
+        }
 
-        loaded_from_file_handle = workspace.get_repository_location_handle("loaded_from_file")
+        assert len(repository_location_handles) == 6
+        assert "loaded_from_file" in repository_location_handles
+        assert "loaded_from_module" in repository_location_handles
+
+        loaded_from_file_handle = repository_location_handles.get("loaded_from_file")
         assert isinstance(loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
-
         assert loaded_from_file_handle.repository_names == {"hello_world_repository"}
 
-        loaded_from_module_handle = workspace.get_repository_location_handle("loaded_from_module")
+        loaded_from_module_handle = repository_location_handles.get("loaded_from_module")
         assert isinstance(loaded_from_module_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
 
         assert loaded_from_module_handle.repository_names == {"hello_world_repository"}
 
-        named_loaded_from_file_handle = workspace.get_repository_location_handle(
-            "named_loaded_from_file"
-        )
+        named_loaded_from_file_handle = repository_location_handles.get("named_loaded_from_file")
         assert named_loaded_from_file_handle.repository_names == {"hello_world_repository_name"}
         assert isinstance(
             named_loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
         )
 
-        named_loaded_from_module_handle = workspace.get_repository_location_handle(
+        named_loaded_from_module_handle = repository_location_handles.get(
             "named_loaded_from_module"
         )
         assert named_loaded_from_module_handle.repository_names == {"hello_world_repository_name"}
@@ -310,7 +305,7 @@ def test_grpc_multi_location_workspace(config_source):
             named_loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
         )
 
-        named_loaded_from_module_attribute_handle = workspace.get_repository_location_handle(
+        named_loaded_from_module_attribute_handle = repository_location_handles.get(
             "named_loaded_from_module_attribute"
         )
         assert named_loaded_from_module_attribute_handle.repository_names == {
@@ -320,7 +315,7 @@ def test_grpc_multi_location_workspace(config_source):
             named_loaded_from_module_attribute_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
         )
 
-        named_loaded_from_file_attribute_handle = workspace.get_repository_location_handle(
+        named_loaded_from_file_attribute_handle = repository_location_handles.get(
             "named_loaded_from_file_attribute"
         )
         assert named_loaded_from_file_attribute_handle.repository_names == {

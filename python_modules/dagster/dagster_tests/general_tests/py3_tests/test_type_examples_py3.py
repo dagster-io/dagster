@@ -239,7 +239,9 @@ def test_set_solid_configable_input():
 
 
 def test_set_solid_configable_input_bad():
-    with pytest.raises(DagsterInvalidConfigError,) as exc_info:
+    with pytest.raises(
+        DagsterInvalidConfigError,
+    ) as exc_info:
         execute_solid(
             set_solid,
             run_config={"solids": {"set_solid": {"inputs": {"set_input": {"foo", "bar", "baz"}}}}},
@@ -398,7 +400,9 @@ def test_div_y():
 
 def test_div_y_var():
     res = execute_solid(
-        div_y_var, input_values={"x": 3.0}, run_config={"solids": {"div_y_var": {"config": 2.0}}},
+        div_y_var,
+        input_values={"x": 3.0},
+        run_config={"solids": {"div_y_var": {"config": 2.0}}},
     )
     assert res.output_value() == 1.5
 
@@ -419,7 +423,8 @@ def test_unpickle():
 
 def test_concat_config():
     res = execute_solid(
-        concat_config, run_config={"solids": {"concat_config": {"config": ["foo", "bar", "baz"]}}},
+        concat_config,
+        run_config={"solids": {"concat_config": {"config": ["foo", "bar", "baz"]}}},
     )
     assert res.output_value() == "foobarbaz"
 

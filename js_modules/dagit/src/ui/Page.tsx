@@ -1,5 +1,7 @@
 import styled from 'styled-components';
 
 export const Page = styled.div`
-  padding: 16px;
+  overflow-y: auto;
+  padding: 20px;
+  width: 100%;
 `;

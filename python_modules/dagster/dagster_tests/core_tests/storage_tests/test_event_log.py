@@ -17,7 +17,7 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import DagsterEventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.storage.event_log import (
@@ -27,8 +27,11 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
 )
+from dagster.core.storage.event_log.migration import REINDEX_DATA_MIGRATIONS
+from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.sql import create_engine
 from dagster.seven import multiprocessing
+from watchdog.utils import platform
 
 
 @contextmanager
@@ -80,7 +83,7 @@ def test_event_log_storage_store_events_and_wipe(event_storage_factory_cm_fn):
     with event_storage_factory_cm_fn() as storage:
         assert len(storage.get_logs_for_run("foo")) == 0
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "Message2",
                 "debug",
@@ -107,7 +110,7 @@ def test_event_log_storage_store_with_multiple_runs(event_storage_factory_cm_fn)
         for run_id in runs:
             assert len(storage.get_logs_for_run(run_id)) == 0
             storage.store_event(
-                DagsterEventRecord(
+                EventRecord(
                     None,
                     "Message2",
                     "debug",
@@ -132,9 +135,13 @@ def test_event_log_storage_store_with_multiple_runs(event_storage_factory_cm_fn)
 
 
 @event_storage_test
+@pytest.mark.skipif(
+    platform.is_darwin(),
+    reason="watchdog's default Mac OSX FSEventsObserver sometimes fails to pick up changes",
+)
 def test_event_log_storage_watch(event_storage_factory_cm_fn):
     def evt(name):
-        return DagsterEventRecord(
+        return EventRecord(
             None,
             name,
             "debug",
@@ -185,7 +192,7 @@ def test_event_log_storage_watch(event_storage_factory_cm_fn):
 @event_storage_test
 def test_event_log_storage_pagination(event_storage_factory_cm_fn):
     def evt(name):
-        return DagsterEventRecord(
+        return EventRecord(
             None,
             name,
             "debug",
@@ -216,7 +223,7 @@ def test_event_log_delete(event_storage_factory_cm_fn):
     with event_storage_factory_cm_fn() as storage:
         assert len(storage.get_logs_for_run("foo")) == 0
         storage.store_event(
-            DagsterEventRecord(
+            EventRecord(
                 None,
                 "Message2",
                 "debug",
@@ -246,12 +253,67 @@ def test_event_log_get_stats_without_start_and_success(event_storage_factory_cm_
         assert storage.get_stats_for_run("foo")
 
 
+@event_storage_test
+def test_event_log_get_stats_for_run(event_storage_factory_cm_fn):
+    import math
+
+    with event_storage_factory_cm_fn() as storage:
+        enqueued_time = time.time()
+        launched_time = enqueued_time + 20
+        start_time = launched_time + 50
+        storage.store_event(
+            EventRecord(
+                None,
+                "message",
+                "debug",
+                "",
+                "foo",
+                enqueued_time,
+                dagster_event=DagsterEvent(
+                    DagsterEventType.PIPELINE_ENQUEUED.value,
+                    "nonce",
+                ),
+            )
+        )
+        storage.store_event(
+            EventRecord(
+                None,
+                "message",
+                "debug",
+                "",
+                "foo",
+                launched_time,
+                dagster_event=DagsterEvent(
+                    DagsterEventType.PIPELINE_STARTING.value,
+                    "nonce",
+                ),
+            )
+        )
+        storage.store_event(
+            EventRecord(
+                None,
+                "message",
+                "debug",
+                "",
+                "foo",
+                start_time,
+                dagster_event=DagsterEvent(
+                    DagsterEventType.PIPELINE_START.value,
+                    "nonce",
+                ),
+            )
+        )
+        assert math.isclose(storage.get_stats_for_run("foo").enqueued_time, enqueued_time)
+        assert math.isclose(storage.get_stats_for_run("foo").launch_time, launched_time)
+        assert math.isclose(storage.get_stats_for_run("foo").start_time, start_time)
+
+
 def test_filesystem_event_log_storage_run_corrupted():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)
         # URL begins sqlite:///
         # pylint: disable=protected-access
-        with open(os.path.abspath(storage.conn_string_for_run_id("foo")[10:]), "w") as fd:
+        with open(os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w") as fd:
             fd.write("some nonsense")
         with pytest.raises(sqlalchemy.exc.DatabaseError):
             storage.get_logs_for_run("foo")
@@ -260,21 +322,25 @@ def test_filesystem_event_log_storage_run_corrupted():
 def test_filesystem_event_log_storage_run_corrupted_bad_data():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         storage = SqliteEventLogStorage(tmpdir_path)
-        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_run_id("foo")))
-        with storage.connect("foo") as conn:
-            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
+        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("foo")))
+        with storage.run_connection("foo") as conn:
+            event_insert = (
+                SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
+                )
             )
             conn.execute(event_insert)
 
         with pytest.raises(DagsterEventLogInvalidForRun):
             storage.get_logs_for_run("foo")
 
-        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_run_id("bar")))
+        SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("bar")))
 
-        with storage.connect("bar") as conn:  # pylint: disable=protected-access
-            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id="bar", event="3", dagster_event_type=None, timestamp=None
+        with storage.run_connection("bar") as conn:
+            event_insert = (
+                SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    run_id="bar", event="3", dagster_event_type=None, timestamp=None
+                )
             )
             conn.execute(event_insert)
         with pytest.raises(DagsterEventLogInvalidForRun):
@@ -417,7 +483,7 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     pipeline_name = "pipeline_name"
     solid_handle = SolidHandle(solid_name, None)
     step_handle = StepHandle(solid_handle)
-    return DagsterEventRecord(
+    return EventRecord(
         None,
         "",
         "debug",
@@ -436,24 +502,23 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     )
 
 
-def test_secondary_index():
-    with create_consolidated_sqlite_run_event_log_storage() as storage:
-        # Only consolidated_sqlite, postgres storage support secondary indexes
-        assert not storage.has_secondary_index("A")
-        assert not storage.has_secondary_index("B")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
-        storage.enable_secondary_index("A")
-        assert "A" not in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert storage.has_secondary_index("A")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert not storage.has_secondary_index("B")
-        storage.enable_secondary_index("B")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" not in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert storage.has_secondary_index("A")
-        assert storage.has_secondary_index("B")
-        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
-        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
+@event_storage_test
+def test_secondary_index(event_storage_factory_cm_fn):
+
+    with event_storage_factory_cm_fn() as storage:
+        if not isinstance(storage, SqlEventLogStorage):
+            return
+
+        # test that newly initialized DBs will have the secondary indexes built
+        for name in REINDEX_DATA_MIGRATIONS.keys():
+            assert storage.has_secondary_index(name)
+
+        # test the generic API with garbage migration names
+        assert not storage.has_secondary_index("_A")
+        assert not storage.has_secondary_index("_B")
+        storage.enable_secondary_index("_A")
+        assert storage.has_secondary_index("_A")
+        assert not storage.has_secondary_index("_B")
+        storage.enable_secondary_index("_B")
+        assert storage.has_secondary_index("_A")
+        assert storage.has_secondary_index("_B")

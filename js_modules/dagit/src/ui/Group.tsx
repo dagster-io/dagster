@@ -39,11 +39,11 @@ export const Group: React.FC<Props> = (props) => {
   }
 
   return (
-    <Box {...rest}>
+    <Outer {...rest}>
       <Inner flex={flex} direction={direction} spacing={spacing}>
         {wrappedChildren}
       </Inner>
-    </Box>
+    </Outer>
   );
 };
 
@@ -53,6 +53,7 @@ type GroupChildProps = {
 
 const GroupChild = styled(({empty, ...rest}) => <Box {...rest} />)<GroupChildProps>`
   ${({empty}) => (empty ? 'display: none;' : '')}
+  pointer-events: auto;
 `;
 
 type InnerProps = {
@@ -70,6 +71,10 @@ const marginAdjustment = (props: InnerProps) => {
         margin-top: -${spacing}px;
       `;
 };
+
+const Outer = styled(Box)`
+  pointer-events: none;
+`;
 
 const Inner = styled(({direction, spacing, ...rest}) => <Box {...rest} />)<InnerProps>`
   ${marginAdjustment}

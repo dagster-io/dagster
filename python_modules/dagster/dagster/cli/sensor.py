@@ -113,7 +113,8 @@ def extract_sensor_name(sensor_name):
 
 
 @click.command(
-    name="list", help="List all sensors that correspond to a repository.",
+    name="list",
+    help="List all sensors that correspond to a repository.",
 )
 @repository_target_argument
 @click.option("--running", help="Filter for running sensors", is_flag=True, default=False)
@@ -143,7 +144,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             all_state = [
                 stored_sensors_by_id.get(
                     external_sensor.get_external_origin_id(),
-                    external_sensor.get_default_job_state(),
+                    external_sensor.get_default_job_state(instance),
                 )
                 for external_sensor in external_repo.get_external_sensors()
             ]
@@ -243,7 +244,9 @@ def execute_stop_command(sensor_name, cli_args, print_fn, instance=None):
     default=None,
 )
 @click.option(
-    "--last_run_key", help="Set the last_run_key value for the sensor context", default=None,
+    "--last_run_key",
+    help="Set the last_run_key value for the sensor context",
+    default=None,
 )
 @repository_target_argument
 def sensor_preview_command(sensor_name, since, last_run_key, **kwargs):

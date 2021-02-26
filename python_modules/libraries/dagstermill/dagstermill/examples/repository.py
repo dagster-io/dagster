@@ -79,6 +79,16 @@ def hello_world_pipeline():
     hello_world()
 
 
+hello_world_with_custom_tags_and_description = test_nb_solid(
+    "hello_world", output_defs=[], tags={"foo": "bar"}, description="custom description"
+)
+
+
+@pipeline(mode_defs=default_mode_defs)
+def hello_world_with_custom_tags_and_description_pipeline():
+    hello_world_with_custom_tags_and_description()
+
+
 hello_world_config = test_nb_solid(
     "hello_world_config",
     config_schema={"greeting": Field(String, is_required=False, default_value="hello")},
@@ -198,11 +208,13 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
     # FIXME add an output to this
     tutorial_LR = test_nb_solid(
-        "tutorial_LR", input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+        "tutorial_LR",
+        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
     )
 
     tutorial_RF = test_nb_solid(
-        "tutorial_RF", input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
+        "tutorial_RF",
+        input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
     )
 
     @pipeline(mode_defs=default_mode_defs)
@@ -220,7 +232,9 @@ def resource_solid(context):
 
 
 hello_world_resource = test_nb_solid(
-    "hello_world_resource", input_defs=[InputDefinition("nonce")], required_resource_keys={"list"},
+    "hello_world_resource",
+    input_defs=[InputDefinition("nonce")],
+    required_resource_keys={"list"},
 )
 
 hello_world_resource_with_exception = test_nb_solid(
@@ -349,6 +363,7 @@ def notebook_repo():
         bad_kernel_pipeline,
         error_pipeline,
         hello_world_pipeline,
+        hello_world_with_custom_tags_and_description_pipeline,
         hello_world_config_pipeline,
         hello_world_explicit_yield_pipeline,
         hello_world_output_pipeline,

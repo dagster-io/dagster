@@ -1,5 +1,5 @@
 """As an open source project, we collect usage statistics to inform development priorities.
-For more information, check out the docs at https://docs.dagster.io/install/telemetry/'
+For more information, check out the docs at https://docs.dagster.io/install#telemetry'
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
@@ -23,7 +23,6 @@ from functools import wraps
 from logging.handlers import RotatingFileHandler
 
 import click
-import requests
 import yaml
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
@@ -406,16 +405,15 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
         )
 
 
-def log_workspace_stats(instance, workspace):
-    from dagster.cli.workspace import Workspace
-    from dagster.core.host_representation import RepositoryLocation
+def log_workspace_stats(instance, workspace_process_context):
+    from dagster.cli.workspace import WorkspaceProcessContext
 
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", Workspace)
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
 
-    for repository_location_handle in workspace.repository_location_handles:
-        repo_location = RepositoryLocation.from_handle(repository_location_handle)
-
+    for repo_location in workspace_process_context.repository_locations:
         for external_repo in repo_location.get_repositories().values():
             log_external_repo_stats(instance, source="dagit", external_repo=external_repo)
 
@@ -445,7 +443,7 @@ TELEMETRY_TEXT = """
   %(telemetry)s
 
   As an open source project, we collect usage statistics to inform development priorities. For more
-  information, read https://docs.dagster.io/install/telemetry.
+  information, read https://docs.dagster.io/install#telemetry.
 
   We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
   any data that is processed within solids and pipelines.
@@ -534,6 +532,9 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors)
     """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory """
 
     try:
+        # lazy import for perf
+        import requests
+
         if log_size > 0:
             # Delete contents of dagster_log_queue_dir so that new logs can be copied over
             for f in os.listdir(dagster_log_queue_dir):

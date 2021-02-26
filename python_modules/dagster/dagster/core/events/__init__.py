@@ -492,15 +492,18 @@ class DagsterEvent(
     @staticmethod
     def step_output_event(step_context, step_output_data):
         check.inst_param(step_output_data, "step_output_data", StepOutputData)
+
+        output_def = step_context.solid.output_def_named(
+            step_output_data.step_output_handle.output_name
+        )
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
             message='Yielded output "{output_name}"{mapping_clause} of type "{output_type}".{type_check_clause}'.format(
                 output_name=step_output_data.step_output_handle.output_name,
-                output_type=step_context.step.step_output_named(
-                    step_output_data.step_output_handle.output_name
-                ).output_def.dagster_type.display_name,
+                output_type=output_def.dagster_type.display_name,
                 type_check_clause=(
                     " Warning! Type check failed."
                     if not step_output_data.type_check_data.success
@@ -539,15 +542,16 @@ class DagsterEvent(
 
     @staticmethod
     def step_input_event(step_context, step_input_data):
+        step_input = step_context.step.step_input_named(step_input_data.input_name)
+        input_def = step_input.source.get_input_def(step_context.pipeline_def)
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
             step_context=step_context,
             event_specific_data=step_input_data,
             message='Got input "{input_name}" of type "{input_type}".{type_check_clause}'.format(
                 input_name=step_input_data.input_name,
-                input_type=step_context.step.step_input_named(
-                    step_input_data.input_name
-                ).dagster_type.display_name,
+                input_type=input_def.dagster_type.display_name,
                 type_check_clause=(
                     " Warning! Type check failed."
                     if not step_input_data.type_check_data.success
@@ -585,7 +589,8 @@ class DagsterEvent(
             step_context=step_context,
             event_specific_data=success,
             message='Finished execution of step "{step_key}" in {duration}.'.format(
-                step_key=step_context.step.key, duration=format_duration(success.duration_ms),
+                step_key=step_context.step.key,
+                duration=format_duration(success.duration_ms),
             ),
         )
 
@@ -719,7 +724,8 @@ class DagsterEvent(
                 ", ".join(sorted(resource_init_times.keys()))
             ),
             event_specific_data=EngineEventData(
-                metadata_entries=metadata_entries, marker_end="resources",
+                metadata_entries=metadata_entries,
+                marker_end="resources",
             ),
         )
 
@@ -732,7 +738,9 @@ class DagsterEvent(
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Initialization of resources [{}] failed.".format(", ".join(resource_keys)),
             event_specific_data=EngineEventData(
-                metadata_entries=[], marker_end="resources", error=error,
+                metadata_entries=[],
+                marker_end="resources",
+                error=error,
             ),
         )
 
@@ -745,7 +753,10 @@ class DagsterEvent(
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Teardown of resources [{}] failed.".format(", ".join(resource_keys)),
             event_specific_data=EngineEventData(
-                metadata_entries=[], marker_start=None, marker_end=None, error=error,
+                metadata_entries=[],
+                marker_start=None,
+                marker_end=None,
+                error=error,
             ),
         )
 
@@ -866,22 +877,28 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def handled_output(step_context, output_name, manager_key):
+    def handled_output(step_context, output_name, manager_key, message_override=None):
         check.str_param(output_name, "output_name")
         check.str_param(manager_key, "manager_key")
-        message = f'Handled output "{output_name}" using output manager ' f'"{manager_key}"'
+        message = f'Handled output "{output_name}" using output manager "{manager_key}"'
         return DagsterEvent.from_step(
             event_type=DagsterEventType.HANDLED_OUTPUT,
             step_context=step_context,
             event_specific_data=HandledOutputData(
-                output_name=output_name, manager_key=manager_key,
+                output_name=output_name,
+                manager_key=manager_key,
             ),
-            message=message,
+            message=message_override or message,
         )
 
     @staticmethod
     def loaded_input(
-        step_context, input_name, manager_key, upstream_output_name=None, upstream_step_key=None
+        step_context,
+        input_name,
+        manager_key,
+        upstream_output_name=None,
+        upstream_step_key=None,
+        message_override=None,
     ):
 
         check.str_param(input_name, "input_name")
@@ -889,7 +906,7 @@ class DagsterEvent(
         check.opt_str_param(upstream_output_name, "upstream_output_name")
         check.opt_str_param(upstream_step_key, "upstream_step_key")
 
-        message = f'Loaded input "{input_name}" using input manager ' f'"{manager_key}"'
+        message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
         if upstream_output_name:
             message += f', from output "{upstream_output_name}" of step ' f'"{upstream_step_key}"'
 
@@ -902,7 +919,7 @@ class DagsterEvent(
                 upstream_output_name=upstream_output_name,
                 upstream_step_key=upstream_step_key,
             ),
-            message=message,
+            message=message_override or message,
         )
 
     @staticmethod
@@ -923,7 +940,9 @@ class DagsterEvent(
         )
 
         hook_context.log.debug(
-            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_name,
+            event.message,
+            dagster_event=event,
+            pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -949,7 +968,9 @@ class DagsterEvent(
         )
 
         hook_context.log.error(
-            str(error), dagster_event=event, pipeline_name=hook_context.pipeline_name,
+            str(error),
+            dagster_event=event,
+            pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -973,7 +994,9 @@ class DagsterEvent(
         )
 
         hook_context.log.debug(
-            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_name,
+            event.message,
+            dagster_event=event,
+            pipeline_name=hook_context.pipeline_name,
         )
 
         return event
@@ -1111,7 +1134,8 @@ class PipelineCanceledData(namedtuple("_PipelineCanceledData", "error")):
 class HookErroredData(namedtuple("_HookErroredData", "error")):
     def __new__(cls, error):
         return super(HookErroredData, cls).__new__(
-            cls, error=check.inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -1142,19 +1166,19 @@ class LoadedInputData(
 ###################################################################################################
 # THE GRAVEYARD
 #
-#            -|-
-#             |
-#        _-'~~~~~`-_
-#      .'           '.
-#      |    R I P    |
-#      |             |
-#      |  Synthetic  |
-#      |   Process   |
-#      |   Events    |
-#      |             |
+#            -|-                  -|-
+#             |                    |
+#        _-'~~~~~`-_ .        _-'~~~~~`-_
+#      .'           '.      .'           '.
+#      |    R I P    |      |    R I P    |
+#      |             |      |             |
+#      |  Synthetic  |      |    Asset    |
+#      |   Process   |      |    Store    |
+#      |   Events    |      |  Operations |
+#      |             |      |             |
 ###################################################################################################
 
-
+# Keep these around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
 @whitelist_for_serdes
 class AssetStoreOperationData(
     namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
@@ -1164,7 +1188,6 @@ class AssetStoreOperationData(
 
 @whitelist_for_serdes
 class AssetStoreOperationType(Enum):
-    # keep this around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
     SET_ASSET = "SET_ASSET"
     GET_ASSET = "GET_ASSET"
 
@@ -1200,6 +1223,5 @@ register_serdes_tuple_fallbacks(
         "PipelineProcessStartedData": None,
         "PipelineProcessExitedData": None,
         "PipelineProcessStartData": None,
-        "AssetStoreOperationData": AssetStoreOperationData,
     }
 )

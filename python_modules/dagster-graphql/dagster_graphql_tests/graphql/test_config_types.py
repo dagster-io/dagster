@@ -101,7 +101,11 @@ def execute_config_graphql(context, pipeline_name, run_config, mode):
     return execute_dagster_graphql(
         context,
         CONFIG_VALIDATION_QUERY,
-        {"runConfigData": run_config, "pipeline": selector, "mode": mode,},
+        {
+            "runConfigData": run_config,
+            "pipeline": selector,
+            "mode": mode,
+        },
     )
 
 
@@ -527,7 +531,9 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
     def test_smoke_test_config_type_system(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
         result = execute_dagster_graphql(
-            graphql_context, ALL_CONFIG_TYPES_QUERY, {"selector": selector, "mode": "default"},
+            graphql_context,
+            ALL_CONFIG_TYPES_QUERY,
+            {"selector": selector, "mode": "default"},
         )
 
         config_types_data = result.data["runConfigSchemaOrError"]["allConfigTypes"]

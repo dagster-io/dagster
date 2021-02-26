@@ -48,8 +48,8 @@ export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError
 
 export type PartitionsBackfillSelectorQuery_partitionSetOrError = PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet | PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSetNotFoundError | PartitionsBackfillSelectorQuery_partitionSetOrError_PythonError;
 
-export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError {
-  __typename: "PipelineSnapshotNotFoundError" | "PipelineNotFoundError" | "PythonError";
+export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "PipelineSnapshotNotFoundError" | "PythonError";
 }
 
 export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition {
@@ -108,16 +108,30 @@ export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_Pipelin
   solidHandles: PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }
 
-export type PartitionsBackfillSelectorQuery_pipelineSnapshotOrError = PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot;
+export type PartitionsBackfillSelectorQuery_pipelineSnapshotOrError = PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineNotFoundError | PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot;
 
 export interface PartitionsBackfillSelectorQuery_instance_runLauncher {
   __typename: "RunLauncher";
   name: string;
 }
 
+export interface PartitionsBackfillSelectorQuery_instance_daemonHealth_daemonStatus {
+  __typename: "DaemonStatus";
+  id: string;
+  healthy: boolean | null;
+}
+
+export interface PartitionsBackfillSelectorQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  daemonStatus: PartitionsBackfillSelectorQuery_instance_daemonHealth_daemonStatus;
+}
+
 export interface PartitionsBackfillSelectorQuery_instance {
   __typename: "Instance";
   runLauncher: PartitionsBackfillSelectorQuery_instance_runLauncher | null;
+  daemonHealth: PartitionsBackfillSelectorQuery_instance_daemonHealth;
+  daemonBackfillEnabled: boolean;
+  runQueuingSupported: boolean;
 }
 
 export interface PartitionsBackfillSelectorQuery {

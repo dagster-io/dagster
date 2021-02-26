@@ -10,7 +10,9 @@ from dagster.daemon.controller import (
 from .utils import setup_instance, start_daemon
 
 
-def test_heartbeat(tmpdir,):
+def test_heartbeat(
+    tmpdir,
+):
 
     dagster_home_path = tmpdir.strpath
     with setup_instance(dagster_home_path, "") as instance:

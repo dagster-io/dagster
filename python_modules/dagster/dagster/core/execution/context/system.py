@@ -107,15 +107,20 @@ class SystemExecutionContextData(
 
 
 class SystemExecutionContext:
-    __slots__ = ["_execution_context_data", "_log_manager"]
+    __slots__ = ["_execution_context_data", "_log_manager", "_output_capture"]
 
     def __init__(
-        self, execution_context_data: SystemExecutionContextData, log_manager: DagsterLogManager
+        self,
+        execution_context_data: SystemExecutionContextData,
+        log_manager: DagsterLogManager,
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
         self._execution_context_data = check.inst_param(
             execution_context_data, "execution_context_data", SystemExecutionContextData
         )
         self._log_manager = check.inst_param(log_manager, "log_manager", DagsterLogManager)
+
+        self._output_capture = output_capture
 
     @property
     def pipeline_run(self) -> PipelineRun:
@@ -188,6 +193,10 @@ class SystemExecutionContext:
     def execution_plan(self):
         return self._execution_context_data.execution_plan
 
+    @property
+    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+        return self._output_capture
+
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
         return key in self.logging_tags
@@ -201,20 +210,14 @@ class SystemExecutionContext:
         check.inst_param(step, "step", ExecutionStep)
 
         return SystemStepExecutionContext(
-            self._execution_context_data, self._log_manager.with_tags(**step.logging_tags), step,
+            self._execution_context_data,
+            self._log_manager.with_tags(**step.logging_tags),
+            step,
+            self.output_capture,
         )
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(self._execution_context_data, self.log, dagster_type)
-
-    def using_io_manager(self, step_output_handle: StepOutputHandle) -> bool:
-        # pylint: disable=comparison-with-callable
-        from dagster.core.storage.mem_io_manager import mem_io_manager
-
-        output_manager_key = self.execution_plan.get_step_output(
-            step_output_handle
-        ).output_def.io_manager_key
-        return self.mode_def.resource_defs[output_manager_key] != mem_io_manager
 
 
 class SystemPipelineExecutionContext(SystemExecutionContext):
@@ -225,8 +228,11 @@ class SystemPipelineExecutionContext(SystemExecutionContext):
         execution_context_data: SystemExecutionContextData,
         log_manager: DagsterLogManager,
         executor: Executor,
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
-        super(SystemPipelineExecutionContext, self).__init__(execution_context_data, log_manager)
+        super(SystemPipelineExecutionContext, self).__init__(
+            execution_context_data, log_manager, output_capture=output_capture
+        )
         self._executor = check.inst_param(executor, "executor", Executor)
 
     @property
@@ -242,6 +248,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
         execution_context_data: SystemExecutionContextData,
         log_manager: DagsterLogManager,
         step: ExecutionStep,
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -271,6 +278,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             self._step_launcher = step_launcher_resources[0]
 
         self._log_manager = log_manager
+        self._output_capture = output_capture
 
     def for_compute(self) -> "SystemComputeExecutionContext":
         return SystemComputeExecutionContext(self._execution_context_data, self.log, self.step)
@@ -373,13 +381,20 @@ class SystemStepExecutionContext(SystemExecutionContext):
 
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
-        # backcompat: if intermediate storage is specified, adapt it to object manager
-        if self.using_default_intermediate_storage():
-            output_manager = getattr(self.resources, step_output.output_def.io_manager_key)
-        else:
+        io_manager_key = (
+            self.pipeline_def.get_solid(step_output.solid_handle)
+            .output_def_named(step_output.name)
+            .io_manager_key
+        )
+
+        # backcompat: if intermediate storage is specified and the user hasn't overridden
+        # io_manager_key on the output, use the intermediate storage.
+        if io_manager_key == "io_manager" and not self.using_default_intermediate_storage():
             from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
             output_manager = IntermediateStorageAdapter(self.intermediate_storage)
+        else:
+            output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
 
@@ -670,7 +685,12 @@ def get_output_context(
     else:
         output_config = None
 
-    io_manager_key = execution_plan.get_step_output(step_output_handle).output_def.io_manager_key
+    pipeline_def = execution_plan.pipeline.get_definition()
+
+    step_output = execution_plan.get_step_output(step_output_handle)
+    output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
+
+    io_manager_key = output_def.io_manager_key
     resource_config = environment_config.resources[io_manager_key].get("config", {})
 
     resources = build_resources_for_manager(io_manager_key, step_context) if step_context else None
@@ -678,13 +698,13 @@ def get_output_context(
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
-        pipeline_name=execution_plan.pipeline.get_definition().name,
+        pipeline_name=pipeline_def.name,
         run_id=run_id,
-        metadata=execution_plan.get_step_output(step_output_handle).output_def.metadata,
+        metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
-        solid_def=step.solid.definition,
-        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
+        solid_def=pipeline_def.get_solid(step.solid_handle).definition,
+        dagster_type=output_def.dagster_type,
         log_manager=log_manager,
         version=_step_output_version(execution_plan, step_output_handle)
         if MEMOIZED_RUN_TAG in execution_plan.pipeline.get_definition().tags

@@ -3,7 +3,7 @@ import pickle
 from dagster import Field, IOManager, StringSource, check, io_manager
 from dagster.utils import PICKLE_PROTOCOL
 from dagster.utils.backoff import backoff
-from google.api_core.exceptions import TooManyRequests
+from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage
 
 DEFAULT_LEASE_DURATION = 60  # One minute
@@ -19,7 +19,16 @@ class PickledObjectGCSIOManager(IOManager):
 
     def _get_path(self, context):
         run_id, step_key, name = context.get_run_scoped_output_identifier()
-        return "/".join([self.prefix, "storage", run_id, "files", step_key, name,])
+        return "/".join(
+            [
+                self.prefix,
+                "storage",
+                run_id,
+                "files",
+                step_key,
+                name,
+            ]
+        )
 
     def _rm_object(self, key):
         check.str_param(key, "key")
@@ -60,7 +69,7 @@ class PickledObjectGCSIOManager(IOManager):
         backoff(
             self.bucket_obj.blob(key).upload_from_string,
             args=[pickled_obj],
-            retry_on=(TooManyRequests,),
+            retry_on=(TooManyRequests, Forbidden),
         )
 
 

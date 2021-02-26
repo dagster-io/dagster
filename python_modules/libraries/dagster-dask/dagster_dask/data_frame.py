@@ -26,11 +26,21 @@ from dagster import (
 from .utils import DataFrameUtilities, apply_utilities_to_df
 
 WriteCompressionTextOptions = Enum(
-    "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
+    "WriteCompressionText",
+    [
+        EnumValue("gzip"),
+        EnumValue("bz2"),
+        EnumValue("xz"),
+    ],
 )
 
 EngineParquetOptions = Enum(
-    "EngineParquet", [EnumValue("auto"), EnumValue("fastparquet"), EnumValue("pyarrow"),],
+    "EngineParquet",
+    [
+        EnumValue("auto"),
+        EnumValue("fastparquet"),
+        EnumValue("pyarrow"),
+    ],
 )
 
 
@@ -354,14 +364,20 @@ def _dataframe_loader_config():
 
     return Shape(
         {
-            "read": Field(Selector(read_fields), is_required=False,),
+            "read": Field(
+                Selector(read_fields),
+                is_required=False,
+            ),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()
             },
             # https://github.com/dagster-io/dagster/issues/2872
             **{
-                field_name: Field(field_config, is_required=False,)
+                field_name: Field(
+                    field_config,
+                    is_required=False,
+                )
                 for field_name, field_config in read_fields.items()
             },
         }
@@ -424,14 +440,20 @@ def _dataframe_materializer_config():
 
     return Shape(
         {
-            "to": Field(Selector(to_fields), is_required=False,),
+            "to": Field(
+                Selector(to_fields),
+                is_required=False,
+            ),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()
             },
             # https://github.com/dagster-io/dagster/issues/2872
             **{
-                field_name: Field(field_config, is_required=False,)
+                field_name: Field(
+                    field_config,
+                    is_required=False,
+                )
                 for field_name, field_config in to_fields.items()
             },
         }

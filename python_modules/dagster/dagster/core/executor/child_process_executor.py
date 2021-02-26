@@ -38,7 +38,7 @@ class ChildProcessCommand(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def execute(self):
-        """ This method is invoked in the child process.
+        """This method is invoked in the child process.
 
         Yields a sequence of events to be handled by _execute_command_in_child_process."""
 

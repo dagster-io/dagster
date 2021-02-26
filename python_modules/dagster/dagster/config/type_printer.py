@@ -57,7 +57,10 @@ def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True)
                 else:
                     printer.append(name + "?: ")
                 _do_print(
-                    config_schema_snapshot, field_snap.type_key, printer, with_lines=with_lines,
+                    config_schema_snapshot,
+                    field_snap.type_key,
+                    printer,
+                    with_lines=with_lines,
                 )
                 line_break_fn("")
 

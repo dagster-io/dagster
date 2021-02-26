@@ -10,7 +10,11 @@ from .databricks import DatabricksClient
             is_required=True,
             description="Databricks host, e.g. uksouth.azuredatabricks.com",
         ),
-        "token": Field(StringSource, is_required=True, description="Databricks access token",),
+        "token": Field(
+            StringSource,
+            is_required=True,
+            description="Databricks access token",
+        ),
         "workspace_id": Field(
             StringSource,
             description="The Databricks workspace ID, as described in"

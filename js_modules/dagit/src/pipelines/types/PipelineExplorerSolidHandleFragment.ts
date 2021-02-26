@@ -99,11 +99,12 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefin
 export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_outputDefinitions_type;
 }
 
 export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_configField_configType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
   description: string | null;
 }
@@ -147,6 +148,7 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeS
 export interface PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: PipelineExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
 }
 

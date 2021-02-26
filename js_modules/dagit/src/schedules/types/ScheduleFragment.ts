@@ -122,6 +122,7 @@ export interface ScheduleFragment {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: ScheduleFragment_partitionSet | null;
   scheduleState: ScheduleFragment_scheduleState;
   futureTicks: ScheduleFragment_futureTicks;

@@ -72,7 +72,7 @@ def test_experimental_fn_warning():
     with pytest.warns(
         ExperimentalWarning,
         match='"my_experimental_function" is an experimental function. It may break in future'
-        " versions, even between dot releases. " + EXPERIMENTAL_WARNING_HELP,
+        " versions, even between dot releases. ",
     ) as warning:
         my_experimental_function()
 
@@ -87,7 +87,7 @@ def test_experimental_class_warning():
     with pytest.warns(
         ExperimentalWarning,
         match='"MyExperimentalClass" is an experimental class. It may break in future'
-        " versions, even between dot releases. " + EXPERIMENTAL_WARNING_HELP,
+        " versions, even between dot releases. ",
     ) as warning:
         MyExperimentalClass()
 
@@ -101,7 +101,7 @@ def test_experimental_arg_warning():
     with pytest.warns(
         ExperimentalWarning,
         match='"experimental_arg" is an experimental argument to function "stable_function". '
-        "It may break in future versions, even between dot releases. " + EXPERIMENTAL_WARNING_HELP,
+        "It may break in future versions, even between dot releases. ",
     ) as warning:
         stable_function(1, 2)
 
@@ -121,7 +121,7 @@ def test_experimental_decorator():
     with pytest.warns(
         ExperimentalWarning,
         match='"my_experimental_function" is an experimental function. It may break in future'
-        " versions, even between dot releases. " + EXPERIMENTAL_WARNING_HELP,
+        " versions, even between dot releases. ",
     ) as warning:
         assert my_experimental_function(5) == 4
 

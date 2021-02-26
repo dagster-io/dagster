@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -11,7 +12,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
-from dagster.seven import mock
 from dagster.utils.merger import deep_merge_dicts
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
 from dagster_azure.adls2 import adls2_plus_default_intermediate_storage_defs, adls2_resource
@@ -35,7 +35,9 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             "new": {
                 "size": {"num_workers": 1},
                 "spark_version": "6.5.x-scala2.11",
-                "nodes": {"node_types": {"node_type_id": "Standard_DS3_v2"},},
+                "nodes": {
+                    "node_types": {"node_type_id": "Standard_DS3_v2"},
+                },
             },
         },
         "libraries": [
@@ -114,7 +116,9 @@ def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(required_resource_keys={"pyspark_step_launcher", "pyspark"},)
+@solid(
+    required_resource_keys={"pyspark_step_launcher", "pyspark"},
+)
 def do_nothing_solid(_):
     pass
 

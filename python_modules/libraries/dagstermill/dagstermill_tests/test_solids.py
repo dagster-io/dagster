@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import nbformat
 import pytest
 from dagster import execute_pipeline, pipeline
+from dagster.check import CheckError
 from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
@@ -194,7 +195,8 @@ def test_add_pipeline():
 @pytest.mark.notebook_test
 def test_notebook_dag():
     with exec_for_test(
-        "notebook_dag_pipeline", {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
+        "notebook_dag_pipeline",
+        {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
         assert result.result_for_solid("add_two_numbers").output_value() == 3
@@ -271,7 +273,9 @@ def test_hello_world_reexecution():
 def test_resources_notebook():
     with safe_tempfile_path() as path:
         with exec_for_test(
-            "resource_pipeline", {"resources": {"list": {"config": path}}}, mode="prod",
+            "resource_pipeline",
+            {"resources": {"list": {"config": path}}},
+            mode="prod",
         ) as result:
             assert result.success
 
@@ -309,7 +313,8 @@ def test_resources_notebook_with_exception():
             assert not result.success
             assert result.step_event_list[8].event_type.value == "STEP_FAILURE"
             assert (
-                "raise Exception()" in result.step_event_list[8].event_specific_data.error.message
+                "raise Exception()"
+                in result.step_event_list[8].event_specific_data.error.cause.message
             )
 
             # Expect something like:
@@ -366,6 +371,12 @@ def test_yield_obj_pipeline():
         assert result.result_for_solid("yield_obj").output_value().x == 3
 
 
+@pytest.mark.notebook_test
+def test_hello_world_with_custom_tags_and_description_pipeline():
+    with exec_for_test("hello_world_with_custom_tags_and_description_pipeline") as result:
+        assert result.success
+
+
 def test_non_reconstructable_pipeline():
     foo_solid = define_dagstermill_solid("foo", file_relative_path(__file__, "notebooks/foo.ipynb"))
 
@@ -375,3 +386,51 @@ def test_non_reconstructable_pipeline():
 
     with pytest.raises(DagstermillError, match="pipeline that is not reconstructable."):
         execute_pipeline(non_reconstructable)
+
+
+# Test Solid Tags & Description
+
+BACKING_NB_NAME = "hello_world"
+BACKING_NB_PATH = file_relative_path(__file__, f"notebooks/{BACKING_NB_NAME}.ipynb")
+
+
+def test_default_tags():
+    test_solid_default_tags = define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH)
+
+    assert test_solid_default_tags.tags == {
+        "kind": "ipynb",
+        "notebook_path": BACKING_NB_PATH,
+    }
+
+
+def test_custom_tags():
+    test_solid_custom_tags = define_dagstermill_solid(
+        BACKING_NB_NAME, BACKING_NB_PATH, tags={"foo": "bar"}
+    )
+
+    assert test_solid_custom_tags.tags == {
+        "kind": "ipynb",
+        "notebook_path": BACKING_NB_PATH,
+        "foo": "bar",
+    }
+
+
+def test_reserved_tags_not_overridden():
+    with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
+        define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH, tags={"notebook_path": "~"})
+
+    with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
+        define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH, tags={"kind": "py"})
+
+
+def test_default_description():
+    test_solid = define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH)
+    assert test_solid.description.startswith("This solid is backed by the notebook at ")
+
+
+def test_custom_description():
+    test_description = "custom description"
+    test_solid = define_dagstermill_solid(
+        BACKING_NB_NAME, BACKING_NB_PATH, description=test_description
+    )
+    assert test_solid.description == test_description

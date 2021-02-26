@@ -93,14 +93,12 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   const focus = new Set<T>();
 
   for (const clause of clauses) {
-    const parts = /(\*?\+*)([.\w\d_-]+)(\+*\*?)/.exec(clause.trim());
+    const parts = /(\*?\+*)([.\w\d\[\]_-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) {
       continue;
     }
     const [, parentsClause, itemName, descendentsClause] = parts;
-    const itemsMatching = items.filter(
-      (s) => itemName === s.name || (itemName.length > 3 && s.name.includes(itemName)),
-    );
+    const itemsMatching = items.filter((s) => itemName.length > 3 && s.name.includes(itemName));
 
     for (const item of itemsMatching) {
       const upDepth = expansionDepthForClause(parentsClause);

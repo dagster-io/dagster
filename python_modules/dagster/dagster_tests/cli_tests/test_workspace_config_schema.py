@@ -241,6 +241,42 @@ def test_load_from_grpc_server():
         assert validation_result.success
 
 
+def test_load_from_grpc_server_env():
+    with environ(
+        {
+            "TEST_EXECUTABLE_PATH": "executable/path/bin/python",
+            "FOO_PORT": "1234",
+            "FOO_SOCKET": "barsocket",
+            "FOO_HOST": "barhost",
+        }
+    ):
+        valid_yaml = """
+    load_from:
+        - grpc_server:
+            host:
+              env: FOO_HOST
+            port:
+              env: FOO_PORT
+            location_name: 'my_grpc_server'
+    """
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        valid_socket_yaml = """
+    load_from:
+        - grpc_server:
+            host:
+              env: FOO_HOST
+            socket:
+              env: FOO_SOCKET
+            location_name: 'my_grpc_server'
+    """
+
+        validation_result = _validate_yaml_contents(valid_socket_yaml)
+
+        assert validation_result.success
+
+
 def test_load_python_environment_and_grpc_server():
     with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
         valid_yaml = """

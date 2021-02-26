@@ -1,6 +1,6 @@
 import os
 import sys
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
 
 from dagster import check
@@ -52,7 +52,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin):
 
 class RepositoryLocationOrigin(ABC):
     """Serializable representation of a RepositoryLocation that can be used to
-       uniquely identify the location or reload it in across process boundaries.
+    uniquely identify the location or reload it in across process boundaries.
     """
 
     @property
@@ -70,13 +70,22 @@ class RepositoryLocationOrigin(ABC):
     def get_id(self):
         return create_snapshot_id(self)
 
+    @abstractmethod
+    def create_handle(self):
+        pass
+
+    @abstractproperty
+    def location_name(self):
+        pass
+
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
-    namedtuple("_InProcessRepositoryLocationOrigin", "recon_repo"), RepositoryLocationOrigin,
+    namedtuple("_InProcessRepositoryLocationOrigin", "recon_repo"),
+    RepositoryLocationOrigin,
 ):
     """Identifies a repository location constructed in the host process. Should only be
-       used in tests.
+    used in tests.
     """
 
     def __new__(cls, recon_repo):
@@ -100,6 +109,11 @@ class InProcessRepositoryLocationOrigin(
             "in_process_code_pointer": self.recon_repo.pointer.describe(),
         }
 
+    def create_handle(self):
+        from dagster.core.host_representation.handle import InProcessRepositoryLocationHandle
+
+        return InProcessRepositoryLocationHandle(self)
+
 
 @whitelist_for_serdes
 class ManagedGrpcPythonEnvRepositoryLocationOrigin(
@@ -109,7 +123,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     RepositoryLocationOrigin,
 ):
     """Identifies a repository location in a Python environment. Dagster creates a gRPC server
-       for these repository locations on startup.
+    for these repository locations on startup.
     """
 
     def __new__(cls, loadable_target_origin, location_name=None):
@@ -140,6 +154,13 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             ),
         }
         return {key: value for key, value in metadata.items() if value is not None}
+
+    def create_handle(self):
+        from dagster.core.host_representation.handle import (
+            ManagedGrpcPythonEnvRepositoryLocationHandle,
+        )
+
+        return ManagedGrpcPythonEnvRepositoryLocationHandle(self)
 
 
 @whitelist_for_serdes
@@ -174,13 +195,18 @@ class GrpcServerRepositoryLocationOrigin(
         metadata = {"host": self.host, "port": self.port, "socket": self.socket}
         return {key: value for key, value in metadata.items() if value is not None}
 
+    def create_handle(self):
+        from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+
+        return GrpcServerRepositoryLocationHandle(self)
+
 
 @whitelist_for_serdes
 class ExternalRepositoryOrigin(
     namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
 ):
     """Serializable representation of an ExternalRepository that can be used to
-       uniquely it or reload it in across process boundaries.
+    uniquely it or reload it in across process boundaries.
     """
 
     def __new__(cls, repository_location_origin, repository_name):
@@ -213,14 +239,16 @@ class ExternalPipelineOrigin(
     namedtuple("_ExternalPipelineOrigin", "external_repository_origin pipeline_name")
 ):
     """Serializable representation of an ExternalPipeline that can be used to
-       uniquely it or reload it in across process boundaries.
+    uniquely it or reload it in across process boundaries.
     """
 
     def __new__(cls, external_repository_origin, pipeline_name):
         return super(ExternalPipelineOrigin, cls).__new__(
             cls,
             check.inst_param(
-                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+                external_repository_origin,
+                "external_repository_origin",
+                ExternalRepositoryOrigin,
             ),
             check.str_param(pipeline_name, "pipeline_name"),
         )
@@ -235,14 +263,16 @@ class ExternalPipelineOrigin(
 @whitelist_for_serdes
 class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")):
     """Serializable representation of an ExternalJob that can be used to
-       uniquely it or reload it in across process boundaries.
+    uniquely it or reload it in across process boundaries.
     """
 
     def __new__(cls, external_repository_origin, job_name):
         return super(ExternalJobOrigin, cls).__new__(
             cls,
             check.inst_param(
-                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+                external_repository_origin,
+                "external_repository_origin",
+                ExternalRepositoryOrigin,
             ),
             check.str_param(job_name, "job_name"),
         )
@@ -259,14 +289,16 @@ class ExternalPartitionSetOrigin(
     namedtuple("_PartitionSetOrigin", "external_repository_origin partition_set_name")
 ):
     """Serializable representation of an ExternalPartitionSet that can be used to
-       uniquely it or reload it in across process boundaries.
+    uniquely it or reload it in across process boundaries.
     """
 
     def __new__(cls, external_repository_origin, partition_set_name):
         return super(ExternalPartitionSetOrigin, cls).__new__(
             cls,
             check.inst_param(
-                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+                external_repository_origin,
+                "external_repository_origin",
+                ExternalRepositoryOrigin,
             ),
             check.str_param(partition_set_name, "partition_set_name"),
         )

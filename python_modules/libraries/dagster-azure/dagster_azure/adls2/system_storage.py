@@ -20,37 +20,37 @@ from .object_store import ADLS2ObjectStore
 def adls2_intermediate_storage(init_context):
     """Persistent intermediate storage using Azure Data Lake Storage Gen2 for storage.
 
-       Suitable for intermediates storage for distributed executors, so long as
-       each execution node has network connectivity and credentials for ADLS and
-       the backing container.
+    Suitable for intermediates storage for distributed executors, so long as
+    each execution node has network connectivity and credentials for ADLS and
+    the backing container.
 
-       Attach this intermediate storage definition, as well as the :py:data:`~dagster_azure.adls2_resource`
-       it requires, to a :py:class:`~dagster.ModeDefinition` in order to make it available to your
-       pipeline:
+    Attach this intermediate storage definition, as well as the :py:data:`~dagster_azure.adls2_resource`
+    it requires, to a :py:class:`~dagster.ModeDefinition` in order to make it available to your
+    pipeline:
 
-       .. code-block:: python
+    .. code-block:: python
 
-           pipeline_def = PipelineDefinition(
-               mode_defs=[
-                   ModeDefinition(
-                       resource_defs={'adls2': adls2_resource, ...},
-                       intermediate_storage_defs=[adls2_intermediate_storage],
-                       ...
-                   ), ...
-               ], ...
-           )
+        pipeline_def = PipelineDefinition(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={'adls2': adls2_resource, ...},
+                    intermediate_storage_defs=[adls2_intermediate_storage],
+                    ...
+                ), ...
+            ], ...
+        )
 
-       You may configure this storage as follows:
+    You may configure this storage as follows:
 
-       .. code-block:: YAML
+    .. code-block:: YAML
 
-           intermediate_storage:
-             adls2:
-               config:
-                 adls2_sa: my-best-storage-account
-                 adls2_file_system: my-cool-file-system
-                 adls2_prefix: good/prefix-for-files-
-       """
+        intermediate_storage:
+          adls2:
+            config:
+              adls2_sa: my-best-storage-account
+              adls2_file_system: my-cool-file-system
+              adls2_prefix: good/prefix-for-files-
+    """
     resource = init_context.resources.adls2
     file_system = init_context.intermediate_storage_config["adls2_file_system"]
     adls2_client = resource.adls2_client

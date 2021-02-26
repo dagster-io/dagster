@@ -41,7 +41,11 @@ class ConstraintWithMetadataException(Exception):
         self.actual = check.opt_inst_param(actual, "actual", (dict, list, str, set))
         super(ConstraintWithMetadataException, self).__init__(
             "Violated {} - {}, {} was/were expected, but we received {} which was/were {}".format(
-                constraint_name, constraint_description, expectation, offending, actual,
+                constraint_name,
+                constraint_description,
+                expectation,
+                offending,
+                actual,
             )
         )
 
@@ -92,7 +96,7 @@ class ColumnConstraintViolationException(ConstraintViolationException):
         super(ColumnConstraintViolationException, self).__init__(self.construct_message())
 
     def construct_message(self):
-        base_message = "Violated {constraint_name} ({constraint_description}) for Column Name ({column_name}) ".format(
+        base_message = 'Violated "{constraint_name}" for column "{column_name}" - {constraint_description}'.format(
             constraint_name=self.constraint_name,
             constraint_description=self.constraint_description,
             column_name=self.column_name,
@@ -197,20 +201,20 @@ class ConstraintWithMetadata:
 
 class MultiConstraintWithMetadata(ConstraintWithMetadata):
     """
-        Use this class if you have multiple constraints to check over the entire dataframe
+    Use this class if you have multiple constraints to check over the entire dataframe
 
-        args:
-            description (str): description of the constraint
-            validation_fn_arr(List[Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
-                        a list of the validation functions to run over inputted data
-                        Each function should return a tuple of a boolean for success or failure, and a dict containing
-                        metadata about the test -- this metadata will be passed to the resulting exception if validation
-                        fails.
-            resulting_exception (ConstraintWithMetadataException):  what response a failed typecheck should induce
-            raise_or_typecheck (Optional[bool]): whether to raise an exception (if set to True) or emit a failed typecheck event
-                        (if set to False) when validation fails
-            name (Optional[str]): what to call the constraint, defaults to the class name.
-        """
+    args:
+        description (str): description of the constraint
+        validation_fn_arr(List[Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
+                    a list of the validation functions to run over inputted data
+                    Each function should return a tuple of a boolean for success or failure, and a dict containing
+                    metadata about the test -- this metadata will be passed to the resulting exception if validation
+                    fails.
+        resulting_exception (ConstraintWithMetadataException):  what response a failed typecheck should induce
+        raise_or_typecheck (Optional[bool]): whether to raise an exception (if set to True) or emit a failed typecheck event
+                    (if set to False) when validation fails
+        name (Optional[str]): what to call the constraint, defaults to the class name.
+    """
 
     def __init__(
         self,
@@ -488,23 +492,23 @@ class ColumnConstraintWithMetadata(ConstraintWithMetadata):
 
 class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
     """
-        This class is useful for constructing more complicated relationships between columns
-        and expectations -- i.e. you want some validations on column A, others on column B, etc.
-        This lets you package up the metadata neatly,
-        and also allows for cases like 'fail if any one of these constraints fails but still run all of them'
+    This class is useful for constructing more complicated relationships between columns
+    and expectations -- i.e. you want some validations on column A, others on column B, etc.
+    This lets you package up the metadata neatly,
+    and also allows for cases like 'fail if any one of these constraints fails but still run all of them'
 
-        Args:
-            description (str): description of the overall set of validations
-            fn_and_columns_dict (Dict[str, List[Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
-                                        while this is a relatively complex type,
-                                        what it amounts to is 'a dict mapping columns to the functions to
-                                        run on them'
-            resulting_exception (type): the response to generate if validation fails. Subclass of
-                                        ConstraintWithMetadataException
-            raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
-            type_for_internal (Optional[type]): what type to use for internal validators.  Subclass of
-                                                ConstraintWithMetadata
-            name (Optional[str]): what to call the constraint, defaults to the class name.
+    Args:
+        description (str): description of the overall set of validations
+        fn_and_columns_dict (Dict[str, List[Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
+                                    while this is a relatively complex type,
+                                    what it amounts to is 'a dict mapping columns to the functions to
+                                    run on them'
+        resulting_exception (type): the response to generate if validation fails. Subclass of
+                                    ConstraintWithMetadataException
+        raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
+        type_for_internal (Optional[type]): what type to use for internal validators.  Subclass of
+                                            ConstraintWithMetadata
+        name (Optional[str]): what to call the constraint, defaults to the class name.
     """
 
     def __init__(
@@ -571,22 +575,22 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
 
 class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
     """
-        This class is similar to multicolumn, but takes in functions that operate on the whole column at once
-        rather than ones that operate on each value --
-        consider this similar to the difference between apply-map and apply aggregate.
+    This class is similar to multicolumn, but takes in functions that operate on the whole column at once
+    rather than ones that operate on each value --
+    consider this similar to the difference between apply-map and apply aggregate.
 
-        Args:
-            description (str): description of the overall set of validations (TODO:  support multiple descriptions)
-            fn_and_columns_dict (Dict[str, List[Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
-                                        while this is a relatively complex type,
-                                        what it amounts to is a dict mapping columns to the functions to
-                                        run on them'
-            resulting_exception (type): the response to generate if validation fails. Subclass of
-                                        ConstraintWithMetadataException
-            raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
-            type_for_internal (Optional[type]): what type to use for internal validators.  Subclass of
-                                                ConstraintWithMetadata
-            name (Optional[str]): what to call the constraint, defaults to the class name.
+    Args:
+        description (str): description of the overall set of validations (TODO:  support multiple descriptions)
+        fn_and_columns_dict (Dict[str, List[Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
+                                    while this is a relatively complex type,
+                                    what it amounts to is a dict mapping columns to the functions to
+                                    run on them'
+        resulting_exception (type): the response to generate if validation fails. Subclass of
+                                    ConstraintWithMetadataException
+        raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
+        type_for_internal (Optional[type]): what type to use for internal validators.  Subclass of
+                                            ConstraintWithMetadata
+        name (Optional[str]): what to call the constraint, defaults to the class name.
     """
 
     def __init__(
@@ -786,8 +790,8 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
             return True, {}
         return (x in categories), {}
 
-    categorical_validation_fn.__doc__ = "checks whether values are within this set of values: {}".format(
-        categories
+    categorical_validation_fn.__doc__ = (
+        "checks whether values are within this set of values: {}".format(categories)
     )
     if ignore_missing_vals:
         categorical_validation_fn.__doc__ += ", ignoring nulls"
@@ -893,7 +897,7 @@ class ColumnConstraint(Constraint):
 
 class ColumnDTypeFnConstraint(ColumnConstraint):
     """
-    A column constraint that applies a pandas dtype validation function to a columns dtypes.
+    A column constraint that applies a pandas dtype validation function to a columns dtype.
 
     Args:
         type_fn (Callable[[Set[str]], bool]): This is a function that takes the pandas columns dtypes and
@@ -902,21 +906,17 @@ class ColumnDTypeFnConstraint(ColumnConstraint):
 
     def __init__(self, type_fn):
         self.type_fn = check.callable_param(type_fn, "type_fn")
-        description = "{fn} must evaluate to True for column dtypes".format(
-            fn=self.type_fn.__name__
-        )
+        description = f'Dtype must satisfy "{self.type_fn.__name__}"'
         super(ColumnDTypeFnConstraint, self).__init__(
             error_description=description, markdown_description=description
         )
 
     def validate(self, dataframe, column_name):
-        received_dtypes = dataframe[column_name].dtype
-        if not self.type_fn(received_dtypes):
+        column_dtype = dataframe[column_name].dtype
+        if not self.type_fn(column_dtype):
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description="{base_error_message}. Dtypes received: {received_dtypes}.".format(
-                    base_error_message=self.error_description, received_dtypes=received_dtypes
-                ),
+                constraint_description=f'{self.error_description}, but was "{column_dtype}"',
                 column_name=column_name,
             )
 

@@ -54,7 +54,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else if (!repositoryOrError.schedules.length) {
             schedulesSection = (
               <NonIdealState
-                icon={IconNames.ERROR}
+                icon={IconNames.TIME}
                 title="No Schedules Found"
                 description={
                   <p>
@@ -62,7 +62,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
                     <a href="https://docs.dagster.io/overview/schedules-sensors/schedules">
                       scheduler documentation
                     </a>{' '}
-                    for more information about scheduling pipeline runs in Dagster. .
+                    for more information about scheduling pipeline runs in Dagster.
                   </p>
                 }
               />

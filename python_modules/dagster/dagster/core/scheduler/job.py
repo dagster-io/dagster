@@ -15,12 +15,13 @@ class JobStatus(Enum):
 
 
 @whitelist_for_serdes
-class SensorJobData(namedtuple("_SensorJobData", "last_tick_timestamp last_run_key")):
-    def __new__(cls, last_tick_timestamp=None, last_run_key=None):
+class SensorJobData(namedtuple("_SensorJobData", "last_tick_timestamp last_run_key min_interval")):
+    def __new__(cls, last_tick_timestamp=None, last_run_key=None, min_interval=None):
         return super(SensorJobData, cls).__new__(
             cls,
             check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
             check.opt_str_param(last_run_key, "last_run_key"),
+            check.opt_int_param(min_interval, "min_interval"),
         )
 
 
@@ -108,6 +109,7 @@ class JobTickStatus(Enum):
     FAILURE = "FAILURE"
 
 
+@whitelist_for_serdes
 class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def __new__(cls, tick_id, job_tick_data):
         return super(JobTick, cls).__new__(
@@ -281,11 +283,16 @@ def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_rea
 
 class JobTickStatsSnapshot(
     namedtuple(
-        "JobTickStatsSnapshot", ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
+        "JobTickStatsSnapshot",
+        ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
     )
 ):
     def __new__(
-        cls, ticks_started, ticks_succeeded, ticks_skipped, ticks_failed,
+        cls,
+        ticks_started,
+        ticks_succeeded,
+        ticks_skipped,
+        ticks_failed,
     ):
         return super(JobTickStatsSnapshot, cls).__new__(
             cls,

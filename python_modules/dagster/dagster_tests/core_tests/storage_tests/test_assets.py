@@ -17,13 +17,14 @@ from dagster import (
 from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.core.events import DagsterEvent, StepMaterializationData
-from dagster.core.events.log import DagsterEventRecord, EventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
+    SqliteEventLogStorage,
 )
 from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -60,9 +61,21 @@ def create_consolidated_sqlite_event_log_instance():
         yield [instance, asset_storage]
 
 
+@contextmanager
+def create_default_sqlite_event_log_instance():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        asset_storage = SqliteEventLogStorage(temp_dir)
+        instance = get_instance(temp_dir, asset_storage)
+        yield [instance, asset_storage]
+
+
 asset_test = pytest.mark.parametrize(
     "asset_aware_context",
-    [create_in_memory_event_log_instance, create_consolidated_sqlite_event_log_instance,],
+    [
+        create_in_memory_event_log_instance,
+        create_consolidated_sqlite_event_log_instance,
+        create_default_sqlite_event_log_instance,
+    ],
 )
 
 
@@ -186,6 +199,70 @@ def test_asset_events(asset_aware_context):
 
 
 @asset_test
+def test_asset_events_range(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_pipeline(pipeline_one, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+
+        # descending
+        asset_events = event_log_storage.get_asset_events(AssetKey("asset_1"), include_cursor=True)
+        assert len(asset_events) == 3
+        [id_three, id_two, id_one] = [id for id, event in asset_events]
+
+        after_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, after_cursor=id_one
+        )
+        assert len(after_events) == 2
+        assert [id for id, event in after_events] == [id_three, id_two]
+
+        before_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, before_cursor=id_three
+        )
+        assert len(before_events) == 2
+        assert [id for id, event in before_events] == [id_two, id_one]
+
+        between_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"),
+            include_cursor=True,
+            before_cursor=id_three,
+            after_cursor=id_one,
+        )
+        assert len(between_events) == 1
+        assert [id for id, event in between_events] == [id_two]
+
+        # ascending
+        asset_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, ascending=True
+        )
+        assert len(asset_events) == 3
+        [id_one, id_two, id_three] = [id for id, event in asset_events]
+
+        after_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, after_cursor=id_one, ascending=True
+        )
+        assert len(after_events) == 2
+        assert [id for id, event in after_events] == [id_two, id_three]
+
+        before_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"), include_cursor=True, before_cursor=id_three, ascending=True
+        )
+        assert len(before_events) == 2
+        assert [id for id, event in before_events] == [id_one, id_two]
+
+        between_events = event_log_storage.get_asset_events(
+            AssetKey("asset_1"),
+            include_cursor=True,
+            before_cursor=id_three,
+            after_cursor=id_one,
+            ascending=True,
+        )
+        assert len(between_events) == 1
+        assert [id for id, event in between_events] == [id_two]
+
+
+@asset_test
 def test_asset_run_ids(asset_aware_context):
     with asset_aware_context() as ctx:
         instance, event_log_storage = ctx
@@ -300,7 +377,7 @@ def test_asset_partition_query(asset_aware_context):
 
 
 def _materialization_event_record(run_id, asset_key):
-    return DagsterEventRecord(
+    return EventRecord(
         None,
         "",
         "debug",

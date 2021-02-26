@@ -58,13 +58,27 @@ def test_pyspark_assets_pipeline():
         run_config = {
             "solids": {
                 "get_max_temp_per_station": {
-                    "config": {"temperature_file": "temperature.csv", "version_salt": "foo",}
+                    "config": {
+                        "temperature_file": "temperature.csv",
+                        "version_salt": "foo",
+                    }
                 },
                 "get_consolidated_location": {
-                    "config": {"station_file": "stations.csv", "version_salt": "foo",}
+                    "config": {
+                        "station_file": "stations.csv",
+                        "version_salt": "foo",
+                    }
                 },
-                "combine_dfs": {"config": {"version_salt": "foo",}},
-                "pretty_output": {"config": {"version_salt": "foo",}},
+                "combine_dfs": {
+                    "config": {
+                        "version_salt": "foo",
+                    }
+                },
+                "pretty_output": {
+                    "config": {
+                        "version_salt": "foo",
+                    }
+                },
             },
             "resources": {
                 "source_data_dir": {
@@ -76,7 +90,10 @@ def test_pyspark_assets_pipeline():
             },
         }
 
-        result = execute_pipeline(pyspark_assets_pipeline, run_config=run_config,)
+        result = execute_pipeline(
+            pyspark_assets_pipeline,
+            run_config=run_config,
+        )
         assert result.success
 
 
@@ -155,7 +172,8 @@ def test_error_monster_type_error():
 
 def test_composition_pipeline():
     result = execute_pipeline(
-        composition, run_config={"solids": {"add_four": {"inputs": {"num": 3}}}},
+        composition,
+        run_config={"solids": {"add_four": {"inputs": {"num": 3}}}},
     )
 
     assert result.success

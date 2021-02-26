@@ -65,7 +65,13 @@ def test_enum_query(graphql_context):
     }
     """
 
-    result = execute_dagster_graphql(graphql_context, ENUM_QUERY, {"selector": selector,},)
+    result = execute_dagster_graphql(
+        graphql_context,
+        ENUM_QUERY,
+        {
+            "selector": selector,
+        },
+    )
 
     assert not result.errors
     assert result.data

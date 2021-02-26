@@ -69,7 +69,7 @@ def usable_as_dagster_type(
             @property
             def s3_path(self):
                 return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
-        """
+    """
 
     def _with_args(bare_cls):
         check.type_param(bare_cls, "bare_cls")

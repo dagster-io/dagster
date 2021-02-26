@@ -54,7 +54,11 @@ def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
     run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
-    result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance,)
+    result = execute_pipeline(
+        pipeline_def,
+        run_config=run_config,
+        instance=instance,
+    )
 
     assert result.success
 
@@ -113,7 +117,10 @@ def test_execution_plan_wrong_run_id():
 
     with pytest.raises(DagsterRunNotFoundError) as exc_info:
         execute_plan(
-            execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
+            execution_plan,
+            run_config=run_config,
+            pipeline_run=pipeline_run,
+            instance=instance,
         )
 
     assert str(exc_info.value) == "Run id {} set as parent run id was not found in instance".format(

@@ -50,7 +50,7 @@ class StepLauncher(ABC):
         """
         Args:
             step_context (SystemStepExecutionContext): The context that we're executing the step in.
-            int: The number of times this step has been attempted in the same run.
+            prior_attempts_count (int): The number of times this step has been attempted in the same run.
 
         Returns:
             Iterator[DagsterEvent]: The events for the step.

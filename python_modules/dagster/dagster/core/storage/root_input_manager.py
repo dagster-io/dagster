@@ -54,8 +54,7 @@ class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     def input_config_schema(self):
         return self._input_config_schema
 
-    def copy_for_configured(self, name, description, config_schema, _):
-        check.invariant(name is None, "ResourceDefintions do not have names")
+    def copy_for_configured(self, description, config_schema, _):
         return RootInputManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,

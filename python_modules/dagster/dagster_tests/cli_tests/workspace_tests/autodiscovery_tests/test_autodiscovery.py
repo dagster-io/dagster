@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from unittest import mock
 
 import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
@@ -11,7 +12,6 @@ from dagster.cli.workspace.autodiscovery import (
 )
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
-from dagster.seven import mock
 from dagster.utils import alter_sys_path, file_relative_path, restore_sys_modules
 
 

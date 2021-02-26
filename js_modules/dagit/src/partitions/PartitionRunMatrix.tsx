@@ -63,6 +63,13 @@ interface PartitionRunMatrixProps {
   setStepQuery: (val: string) => void;
 }
 
+const _backfillIdFromTags = (runTags: TokenizingFieldValue[]) => {
+  const [backfillId] = runTags
+    .filter((_) => _.token === 'tag' && _.value.startsWith('dagster/backfill='))
+    .map((_) => _.value.split('=')[1]);
+  return backfillId;
+};
+
 export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
   const {viewport, containerProps} = useViewport();
   const [colorizeSliceUnix, setColorizeSliceUnix] = React.useState(0);
@@ -194,12 +201,12 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             tokens={props.runTags}
           />
         </Group>
-        {props.runTags.length ? (
+        {props.runTags.length && _backfillIdFromTags(props.runTags) ? (
           <Box flex={{grow: 1}} margin={{left: 12, right: 8}}>
             <PartitionProgress
               pipelineName={props.pipelineName}
               repoAddress={props.repoAddress}
-              runTags={props.runTags}
+              backfillId={_backfillIdFromTags(props.runTags)}
             />
           </Box>
         ) : null}
@@ -274,7 +281,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         }}
       >
         <GridFloatingContainer floating={viewport.left > 0}>
-          <GridColumn disabled style={{flexShrink: 1, overflow: 'hidden'}}>
+          <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel>
               <GraphQueryInput
                 small
@@ -298,29 +305,31 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             <Divider />
             <LeftLabel style={{paddingLeft: 5}}>Runs</LeftLabel>
           </GridColumn>
-          <GridColumn disabled>
-            <TopLabel>
-              <div
-                style={{cursor: 'pointer'}}
-                className="square failure-blank"
-                title={TITLE_TOTAL_FAILURES}
-                onClick={() =>
-                  setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
-                }
-              />
-            </TopLabel>
-            {stepRows.map(({totalFailurePercent, name}, idx) => (
-              <LeftLabel
-                key={idx}
-                title={TITLE_TOTAL_FAILURES}
-                hovered={name === hovered?.stepName}
-                redness={totalFailurePercent / 100}
-              >
-                {`${totalFailurePercent}%`}
-              </LeftLabel>
-            ))}
-            <Divider />
-          </GridColumn>
+          {options.showPrevious && (
+            <GridColumn disabled>
+              <TopLabel>
+                <div
+                  style={{cursor: 'pointer'}}
+                  className="square failure-blank"
+                  title={TITLE_TOTAL_FAILURES}
+                  onClick={() =>
+                    setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
+                  }
+                />
+              </TopLabel>
+              {stepRows.map(({totalFailurePercent, name}, idx) => (
+                <LeftLabel
+                  key={idx}
+                  title={TITLE_TOTAL_FAILURES}
+                  hovered={name === hovered?.stepName}
+                  redness={totalFailurePercent / 100}
+                >
+                  {`${totalFailurePercent}%`}
+                </LeftLabel>
+              ))}
+              <Divider />
+            </GridColumn>
+          )}
           <GridColumn disabled>
             <TopLabel>
               <div
@@ -371,7 +380,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                   <div
                     key={name}
                     className={`
-                      square 
+                      square
                       ${p.runs.length === 0 && 'empty'}
                       ${(options.showPrevious
                         ? color

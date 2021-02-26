@@ -24,32 +24,41 @@ def test_from_glob_list():
         "key_one": {"key_one_one": "value_one"}
     }
 
-    assert load_yaml_from_glob_list(
-        [
-            file_relative_path(__file__, "yamls/yaml_one.yaml"),
-            file_relative_path(__file__, "yamls/yaml_two.yaml"),
-        ]
-    ) == {"key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}}
+    assert (
+        load_yaml_from_glob_list(
+            [
+                file_relative_path(__file__, "yamls/yaml_one.yaml"),
+                file_relative_path(__file__, "yamls/yaml_two.yaml"),
+            ]
+        )
+        == {"key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}}
+    )
 
     assert load_yaml_from_glob_list([file_relative_path(__file__, "yamls/*.yaml")]) == {
         "key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}
     }
 
-    assert load_yaml_from_globs(
-        file_relative_path(__file__, "yamls/yaml_one.yaml"),
-        file_relative_path(__file__, "yamls/yaml_two.yaml"),
-    ) == {"key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}}
+    assert (
+        load_yaml_from_globs(
+            file_relative_path(__file__, "yamls/yaml_one.yaml"),
+            file_relative_path(__file__, "yamls/yaml_two.yaml"),
+        )
+        == {"key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}}
+    )
 
     assert load_yaml_from_glob_list(["flskhfhjsdf"]) == {}
 
 
 def test_merge_yamls():
-    assert merge_yamls(
-        [
-            file_relative_path(__file__, os.path.join("yamls", "yaml_one.yaml")),
-            file_relative_path(__file__, os.path.join("yamls", "yaml_two.yaml")),
-        ]
-    ) == {"key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}}
+    assert (
+        merge_yamls(
+            [
+                file_relative_path(__file__, os.path.join("yamls", "yaml_one.yaml")),
+                file_relative_path(__file__, os.path.join("yamls", "yaml_two.yaml")),
+            ]
+        )
+        == {"key_one": {"key_one_one": "value_one", "key_one_two": "value_two"}}
+    )
 
     with pytest.raises(
         check.CheckError,

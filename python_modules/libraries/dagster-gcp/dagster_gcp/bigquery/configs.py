@@ -38,8 +38,7 @@ def bq_resource_config():
 
 
 def _define_shared_fields():
-    """The following fields are shared between both QueryJobConfig and LoadJobConfig.
-    """
+    """The following fields are shared between both QueryJobConfig and LoadJobConfig."""
 
     clustering_fields = Field(
         [String],

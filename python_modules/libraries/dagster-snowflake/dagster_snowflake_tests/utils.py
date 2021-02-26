@@ -1,4 +1,4 @@
-from dagster.seven import mock
+from unittest import mock
 
 
 def create_mock_connector(*_args, **_kwargs):

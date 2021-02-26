@@ -14,14 +14,15 @@ def generate_materializations(
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     for node_result in dbt_output.result.results:
-        if node_result.node["resource_type"] in ["model", "snapshot"]:
+        if node_result.node.get("resource_type", None) in ["model", "snapshot"]:
             success = not node_result.fail and not node_result.skip and not node_result.error
             if success:
                 entries = [
                     EventMetadataEntry.json(data=node_result.node, label="Node"),
                     EventMetadataEntry.text(text=str(node_result.status), label="Status"),
                     EventMetadataEntry.float(
-                        value=node_result.execution_time, label="Execution Time (seconds)",
+                        value=node_result.execution_time,
+                        label="Execution Time (seconds)",
                     ),
                     EventMetadataEntry.text(
                         text=node_result.node["config"]["materialized"],

@@ -41,6 +41,7 @@ from .handle import (
     RepositoryHandle,
     RepositoryLocationHandle,
 )
+from .handle_manager import RepositoryLocationHandleManager
 from .historical import HistoricalPipeline
 from .origin import (
     IN_PROCESS_NAME,
@@ -59,4 +60,10 @@ from .repository_location import (
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline
-from .selector import PipelineSelector, RepositorySelector, ScheduleSelector, SensorSelector
+from .selector import (
+    JobSelector,
+    PipelineSelector,
+    RepositorySelector,
+    ScheduleSelector,
+    SensorSelector,
+)

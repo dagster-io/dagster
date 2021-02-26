@@ -20,12 +20,12 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata
-from ..sql_event_log import AssetAwareSqlEventLogStorage
+from ..sql_event_log import SqlEventLogStorage
 
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 
 
-class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
+class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed consolidated event log storage intended for test cases only.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
@@ -76,15 +76,21 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         engine = create_engine(self._conn_string, poolclass=NullPool)
         alembic_config = get_alembic_config(__file__)
 
+        should_mark_indexes = False
         with engine.connect() as connection:
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 SqlEventLogStorageMetadata.create_all(engine)
                 engine.execute("PRAGMA journal_mode=WAL;")
                 stamp_alembic_rev(alembic_config, connection)
+                should_mark_indexes = True
+
+        if should_mark_indexes:
+            # mark all secondary indexes
+            self.reindex()
 
     @contextmanager
-    def connect(self, run_id=None):
+    def _connect(self):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
@@ -97,22 +103,28 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         finally:
             conn.close()
 
+    def run_connection(self, run_id):
+        return self._connect()
+
+    def index_connection(self):
+        return self._connect()
+
     def get_db_path(self):
         return os.path.join(self._base_dir, "{}.db".format(SQLITE_EVENT_LOG_FILENAME))
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        with self.connect() as conn:
+        with self._connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
 
-    def has_secondary_index(self, name, run_id=None):
+    def has_secondary_index(self, name):
         if name not in self._secondary_index_cache:
             self._secondary_index_cache[name] = super(
                 ConsolidatedSqliteEventLogStorage, self
-            ).has_secondary_index(name, run_id)
+            ).has_secondary_index(name)
         return self._secondary_index_cache[name]
 
-    def enable_secondary_index(self, name, run_id=None):
+    def enable_secondary_index(self, name):
         super(ConsolidatedSqliteEventLogStorage, self).enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]

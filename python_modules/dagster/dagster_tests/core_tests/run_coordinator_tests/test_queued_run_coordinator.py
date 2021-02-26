@@ -69,7 +69,11 @@ def test_config():
                 "run_coordinator": {
                     "module": "dagster.core.run_coordinator",
                     "class": "QueuedRunCoordinator",
-                    "config": {"tag_concurrency_limits": [{"key": "backfill"},],},
+                    "config": {
+                        "tag_concurrency_limits": [
+                            {"key": "backfill"},
+                        ],
+                    },
                 }
             }
         ) as _:

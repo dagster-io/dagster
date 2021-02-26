@@ -135,9 +135,9 @@ const Tabs = styled.div`
 `;
 
 const Tab = styled.div<{active: boolean}>`
-  color: ${(p) => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
+  color: ${(p) => (p.active ? Colors.BLUE3 : Colors.GRAY2)}
   border-top: 3px solid transparent;
-  border-bottom: 3px solid ${(p) => (p.active ? Colors.COBALT3 : 'transparent')};
+  border-bottom: 3px solid ${(p) => (p.active ? Colors.BLUE3 : 'transparent')};
   text-decoration: none;
   white-space: nowrap;
   min-width: 40px;

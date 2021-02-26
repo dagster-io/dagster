@@ -43,15 +43,23 @@ def construct_intermediate_storage_data(storage_init_context):
 
 
 def executor_def_from_config(mode_definition, environment_config):
-    for executor_def in mode_definition.executor_defs:
-        if executor_def.name == environment_config.execution.execution_engine_name:
-            return executor_def
+    selected_executor = environment_config.execution.execution_engine_name
+    if selected_executor is None:
+        if len(mode_definition.executor_defs) == 1:
+            return mode_definition.executor_defs[0]
 
-    check.failed(
-        "Could not find executor {}. Should have be caught by config system".format(
-            environment_config.execution.execution_engine_name
+        check.failed(
+            f"No executor selected but there are {len(mode_definition.executor_defs)} options."
         )
-    )
+
+    else:
+        for executor_def in mode_definition.executor_defs:
+            if executor_def.name == selected_executor:
+                return executor_def
+
+        check.failed(
+            f'Could not find executor "{selected_executor}". This should have been caught at config validation time.'
+        )
 
 
 # This represents all the data that is passed *into* context creation process.
@@ -74,7 +82,10 @@ class ContextCreationData(
 
 
 def create_context_creation_data(
-    execution_plan, run_config, pipeline_run, instance,
+    execution_plan,
+    run_config,
+    pipeline_run,
+    instance,
 ):
     pipeline_def = execution_plan.pipeline.get_definition()
     environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
@@ -109,6 +120,7 @@ class ExecutionContextManager(ABC):
         intermediate_storage=None,
         raise_on_error=False,
         resource_instances_to_override=None,
+        output_capture=None,
     ):
         scoped_resources_builder_cm = check.opt_callable_param(
             scoped_resources_builder_cm,
@@ -124,6 +136,7 @@ class ExecutionContextManager(ABC):
             intermediate_storage,
             raise_on_error,
             resource_instances_to_override,
+            output_capture,
         )
 
         self._manager = EventGenerationManager(generator, self.context_type, raise_on_error)
@@ -140,6 +153,7 @@ class ExecutionContextManager(ABC):
         intermediate_storage,
         log_manager,
         raise_on_error,
+        output_capture,
     ):
         pass
 
@@ -162,6 +176,7 @@ class ExecutionContextManager(ABC):
         intermediate_storage=None,
         raise_on_error=False,
         resource_instances_to_override=None,
+        output_capture=None,
     ):
         execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         pipeline_def = execution_plan.pipeline.get_definition()
@@ -186,7 +201,10 @@ class ExecutionContextManager(ABC):
 
         try:
             context_creation_data = create_context_creation_data(
-                execution_plan, run_config, pipeline_run, instance,
+                execution_plan,
+                run_config,
+                pipeline_run,
+                instance,
             )
 
             log_manager = create_log_manager(context_creation_data)
@@ -205,7 +223,9 @@ class ExecutionContextManager(ABC):
             )
 
             intermediate_storage = create_intermediate_storage(
-                context_creation_data, intermediate_storage, scoped_resources_builder,
+                context_creation_data,
+                intermediate_storage,
+                scoped_resources_builder,
             )
 
             execution_context = self.construct_context(
@@ -214,6 +234,7 @@ class ExecutionContextManager(ABC):
                 log_manager=log_manager,
                 intermediate_storage=intermediate_storage,
                 raise_on_error=raise_on_error,
+                output_capture=output_capture,
             )
 
             _validate_plan_with_context(execution_context, execution_plan)
@@ -263,6 +284,7 @@ class PipelineExecutionContextManager(ExecutionContextManager):
         intermediate_storage,
         log_manager,
         raise_on_error,
+        output_capture,
     ):
         executor = check.inst(
             create_executor(context_creation_data), Executor, "Must return an Executor"
@@ -279,6 +301,7 @@ class PipelineExecutionContextManager(ExecutionContextManager):
             ),
             executor=executor,
             log_manager=log_manager,
+            output_capture=output_capture,
         )
 
 
@@ -314,6 +337,7 @@ class PlanExecutionContextManager(ExecutionContextManager):
         intermediate_storage,
         log_manager,
         raise_on_error,
+        output_capture=None,
     ):
         return SystemExecutionContext(
             construct_execution_context_data(
@@ -325,6 +349,7 @@ class PlanExecutionContextManager(ExecutionContextManager):
                 raise_on_error=raise_on_error,
             ),
             log_manager=log_manager,
+            output_capture=output_capture,
         )
 
 
@@ -334,7 +359,9 @@ def _validate_plan_with_context(pipeline_context, execution_plan):
 
 
 def create_intermediate_storage(
-    context_creation_data, intermediate_storage_data, scoped_resources_builder,
+    context_creation_data,
+    intermediate_storage_data,
+    scoped_resources_builder,
 ):
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
@@ -429,7 +456,7 @@ def scoped_pipeline_context(
     raise_on_error=False,
     resource_instances_to_override=None,
 ):
-    """ Utility context manager which acts as a very thin wrapper around
+    """Utility context manager which acts as a very thin wrapper around
     `pipeline_initialization_manager`, iterating through all the setup/teardown events and
     discarding them.  It yields the resulting `pipeline_context`.
 

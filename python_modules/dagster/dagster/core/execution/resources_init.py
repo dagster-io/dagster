@@ -45,8 +45,7 @@ def resource_initialization_manager(
 
 
 def _resolve_resource_dependencies(resource_defs):
-    """Generates a dictionary that maps resource key to resource keys it requires for initialization
-    """
+    """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
     }
@@ -97,7 +96,9 @@ def _core_resource_initialization_event_generator(
     try:
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                execution_plan, resource_log_manager, resource_keys_to_init,
+                execution_plan,
+                resource_log_manager,
+                resource_keys_to_init,
             )
 
         resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
@@ -128,7 +129,7 @@ def _core_resource_initialization_event_generator(
                     ),
                     resource_instance_dict=resource_instances,
                     required_resource_keys=resource_def.required_resource_keys,
-                    instance_for_backwards_compat=instance,
+                    instance=instance,
                     pipeline_def_for_backwards_compat=pipeline_def,
                 )
                 manager = single_resource_generation_manager(
@@ -218,7 +219,7 @@ def resource_initialization_event_generator(
 
 
 class InitializedResource:
-    """ Utility class to wrap the untyped resource object emitted from the user-supplied
+    """Utility class to wrap the untyped resource object emitted from the user-supplied
     resource function.  Used for distinguishing from the framework-yielded events in an
     `EventGenerationManager`-wrapped event stream.
     """
@@ -303,9 +304,13 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
     # add input type, input loader, and input asset store resource keys
     for step_input in execution_step.step_inputs:
-        resource_keys = resource_keys.union(step_input.dagster_type.required_resource_keys)
+        input_def = step_input.source.get_input_def(execution_plan.pipeline_def)
 
-        resource_keys = resource_keys.union(step_input.source.required_resource_keys())
+        resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
+
+        resource_keys = resource_keys.union(
+            step_input.source.required_resource_keys(execution_plan.pipeline_def)
+        )
 
         if isinstance(step_input, StepInput):
             source_handles = step_input.get_step_output_handle_dependencies()
@@ -323,15 +328,17 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
     # add output type, output materializer, and output asset store resource keys
     for step_output in execution_step.step_outputs:
-        resource_keys = resource_keys.union(
-            step_output.output_def.dagster_type.required_resource_keys
-        )
-        if step_output.should_materialize and step_output.output_def.dagster_type.materializer:
+
+        # Load the output type
+        output_def = solid_def.output_def_named(step_output.name)
+
+        resource_keys = resource_keys.union(output_def.dagster_type.required_resource_keys)
+        if step_output.should_materialize and output_def.dagster_type.materializer:
             resource_keys = resource_keys.union(
-                step_output.output_def.dagster_type.materializer.required_resource_keys()
+                output_def.dagster_type.materializer.required_resource_keys()
             )
-        if step_output.output_def.io_manager_key:
-            resource_keys = resource_keys.union([step_output.output_def.io_manager_key])
+        if output_def.io_manager_key:
+            resource_keys = resource_keys.union([output_def.io_manager_key])
 
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():

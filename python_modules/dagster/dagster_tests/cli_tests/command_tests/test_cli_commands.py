@@ -13,6 +13,7 @@ from dagster import (
     PartitionSetDefinition,
     PresetDefinition,
     ScheduleDefinition,
+    execute_pipeline,
     lambda_solid,
     pipeline,
     repository,
@@ -20,7 +21,7 @@ from dagster import (
 )
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.run import run_list_command, run_wipe_command
+from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.sensor import RunRequest
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
@@ -45,7 +46,10 @@ def do_input(x):
 
 
 @pipeline(
-    name="foo", preset_defs=[PresetDefinition(name="test", tags={"foo": "bar"}),],
+    name="foo",
+    preset_defs=[
+        PresetDefinition(name="test", tags={"foo": "bar"}),
+    ],
 )
 def foo_pipeline():
     do_input(do_something())
@@ -80,7 +84,10 @@ def define_bar_schedules():
     )
     return {
         "foo_schedule": ScheduleDefinition(
-            "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
+            "foo_schedule",
+            cron_schedule="* * * * *",
+            pipeline_name="test_pipeline",
+            run_config={},
         ),
         "partitioned_schedule": partition_set.create_schedule_definition(
             schedule_name="partitioned_schedule",
@@ -107,10 +114,14 @@ def define_bar_partitions():
             },
         ),
         "error_name_partitions": PartitionSetDefinition(
-            name="error_name_partitions", pipeline_name="baz", partition_fn=error_name,
+            name="error_name_partitions",
+            pipeline_name="baz",
+            partition_fn=error_name,
         ),
         "error_config_partitions": PartitionSetDefinition(
-            name="error_config_partitions", pipeline_name="baz", partition_fn=error_config,
+            name="error_config_partitions",
+            pipeline_name="baz",
+            partition_fn=error_config,
         ),
     }
 
@@ -136,7 +147,7 @@ def bar():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
-        "jobs": define_bar_sensors(),
+        "sensors": define_bar_sensors(),
     }
 
 
@@ -163,7 +174,10 @@ def stderr_pipeline():
 @contextmanager
 def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
-        "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher",}
+        "run_launcher": {
+            "module": "dagster.core.test_utils",
+            "class": "MockedRunLauncher",
+        }
     }
     with instance_for_test_tempdir(
         temp_dir, overrides=merge_dicts(default_overrides, (overrides if overrides else {}))
@@ -312,7 +326,8 @@ def schedule_command_contexts():
 def sensor_command_contexts():
     return [
         args_with_instance(
-            scheduler_instance(), ["-w", file_relative_path(__file__, "workspace.yaml")],
+            scheduler_instance(),
+            ["-w", file_relative_path(__file__, "workspace.yaml")],
         ),
         grpc_server_scheduler_cli_args(),
     ]
@@ -459,7 +474,12 @@ def valid_pipeline_python_origin_target_cli_args():
             "foo",
         ],
         ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "foo_pipeline"],
-        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "define_foo_pipeline",],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-a",
+            "define_foo_pipeline",
+        ],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
@@ -533,6 +553,32 @@ def test_run_wipe_incorrect_delete_message():
         runner = CliRunner()
         result = runner.invoke(run_wipe_command, input="WRONG\n")
         assert "Exiting without deleting all run history and event logs" in result.output
+        assert result.exit_code == 0
+
+
+def test_run_delete_bad_id():
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=["1234"], input="DELETE\n")
+        assert "No run found with id 1234" in result.output
+        assert result.exit_code == 0
+
+
+def test_run_delete_correct_delete_message():
+    with instance_for_test() as instance:
+        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="DELETE\n")
+        assert "Deleted run" in result.output
+        assert result.exit_code == 0
+
+
+def test_run_delete_incorrect_delete_message():
+    with instance_for_test() as instance:
+        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
+        assert "Exiting without deleting" in result.output
         assert result.exit_code == 0
 
 

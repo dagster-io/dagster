@@ -42,7 +42,12 @@ class PresetDefinition(
     """
 
     def __new__(
-        cls, name, run_config=None, solid_selection=None, mode=None, tags=None,
+        cls,
+        name,
+        run_config=None,
+        solid_selection=None,
+        mode=None,
+        tags=None,
     ):
 
         return super(PresetDefinition, cls).__new__(

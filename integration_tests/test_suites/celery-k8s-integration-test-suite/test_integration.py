@@ -57,7 +57,10 @@ def test_execute_on_celery_k8s_default(  # pylint: disable=redefined-outer-name
 
     pipeline_name = "demo_pipeline_celery"
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode="default",
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        run_config=run_config,
+        mode="default",
     )
 
     dagster_instance.launch_run(
@@ -120,7 +123,10 @@ def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-oute
 
     pipeline_name = "retry_pipeline"
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode="default",
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        run_config=run_config,
+        mode="default",
     )
 
     dagster_instance.launch_run(
@@ -166,7 +172,11 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
     dagster_docker_image, dagster_instance, helm_namespace
 ):
     run_config = merge_dicts(
-        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
+        merge_yamls(
+            [
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+            ]
+        ),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
@@ -174,7 +184,10 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
 
     pipeline_name = "resources_limit_pipeline_celery"
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode="default",
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        run_config=run_config,
+        mode="default",
     )
 
     dagster_instance.launch_run(
@@ -192,7 +205,10 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
 def _test_termination(dagster_instance, run_config):
     pipeline_name = "resource_pipeline"
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode="default",
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        run_config=run_config,
+        mode="default",
     )
 
     dagster_instance.launch_run(
@@ -295,7 +311,11 @@ def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-ou
     dagster_docker_image, dagster_instance, helm_namespace
 ):
     run_config = merge_dicts(
-        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
+        merge_yamls(
+            [
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+            ]
+        ),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
@@ -319,7 +339,11 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=
     dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
 ):
     run_config = merge_dicts(
-        merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
+        merge_yamls(
+            [
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+            ]
+        ),
         get_celery_engine_config(
             dagster_docker_image=dagster_docker_image,
             job_namespace={"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
@@ -334,7 +358,11 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
 ):
     run_config = merge_dicts(
         merge_dicts(
-            merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),]),
+            merge_yamls(
+                [
+                    os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+                ]
+            ),
             get_celery_engine_config(
                 dagster_docker_image=dagster_docker_image,
                 job_namespace={"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
@@ -345,7 +373,10 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
 
     pipeline_name = "hard_failer"
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode="default",
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        run_config=run_config,
+        mode="default",
     )
 
     dagster_instance.launch_run(

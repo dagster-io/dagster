@@ -4,7 +4,6 @@ import time
 
 import pendulum
 import pytest
-from dagster import DagsterInvariantViolationError
 from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -52,6 +51,11 @@ class TestScheduleStorage:
         with request.param() as s:
             yield s
 
+    # Override this for schedule storages that are not allowed to delete jobs
+    # or ticks
+    def can_delete(self):
+        return True
+
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
@@ -85,7 +89,8 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_job_state(schedule)
         schedules = storage.all_stored_job_state(
-            self.fake_repo_target().get_id(), JobType.SCHEDULE,
+            self.fake_repo_target().get_id(),
+            JobType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -179,11 +184,14 @@ class TestScheduleStorage:
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.update_job_state(schedule)
 
     def test_delete_schedule_state(self, storage):
         assert storage
+
+        if not self.can_delete():
+            pytest.skip("Storage cannot delete")
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_job_state(schedule)
@@ -195,9 +203,12 @@ class TestScheduleStorage:
     def test_delete_schedule_not_found(self, storage):
         assert storage
 
+        if not self.can_delete():
+            pytest.skip("Storage cannot delete")
+
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.delete_job_state(schedule.job_origin_id)
 
     def test_add_schedule_with_same_name(self, storage):
@@ -206,7 +217,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_job_state(schedule)
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.add_job_state(schedule)
 
     def build_tick(self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None):
@@ -316,7 +327,9 @@ class TestScheduleStorage:
             )
 
         for x in range(4):
-            storage.create_job_tick(self.build_tick(current_time, JobTickStatus.SKIPPED),)
+            storage.create_job_tick(
+                self.build_tick(current_time, JobTickStatus.SKIPPED),
+            )
 
         for x in range(5):
             storage.create_job_tick(
@@ -404,11 +417,15 @@ class TestScheduleStorage:
 
         job = self.build_sensor("my_sensor")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.update_job_state(job)
 
     def test_delete_job_state(self, storage):
         assert storage
+
+        if not self.can_delete():
+            pytest.skip("Storage cannot delete")
+
         job = self.build_sensor("my_sensor")
         storage.add_job_state(job)
         storage.delete_job_state(job.job_origin_id)
@@ -419,9 +436,12 @@ class TestScheduleStorage:
     def test_delete_job_not_found(self, storage):
         assert storage
 
+        if not self.can_delete():
+            pytest.skip("Storage cannot delete")
+
         job = self.build_sensor("my_sensor")
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.delete_job_state(job.job_origin_id)
 
     def test_add_job_with_same_name(self, storage):
@@ -430,7 +450,7 @@ class TestScheduleStorage:
         job = self.build_sensor("my_sensor")
         storage.add_job_state(job)
 
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(Exception):
             storage.add_job_state(job)
 
     def build_sensor_tick(
@@ -462,6 +482,26 @@ class TestScheduleStorage:
         assert tick.status == JobTickStatus.STARTED
         assert tick.run_ids == []
         assert tick.error == None
+
+    def test_get_job_tick(self, storage):
+        assert storage
+        now = pendulum.now()
+        five_days_ago = now.subtract(days=5).timestamp()
+        four_days_ago = now.subtract(days=4).timestamp()
+        one_day_ago = now.subtract(days=1).timestamp()
+
+        storage.create_job_tick(self.build_sensor_tick(five_days_ago, JobTickStatus.SKIPPED))
+        storage.create_job_tick(self.build_sensor_tick(four_days_ago, JobTickStatus.SKIPPED))
+        storage.create_job_tick(self.build_sensor_tick(one_day_ago, JobTickStatus.SKIPPED))
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 3
+
+        ticks = storage.get_job_ticks("my_sensor", after=five_days_ago + 1)
+        assert len(ticks) == 2
+        ticks = storage.get_job_ticks("my_sensor", before=one_day_ago - 1)
+        assert len(ticks) == 2
+        ticks = storage.get_job_ticks("my_sensor", after=five_days_ago + 1, before=one_day_ago - 1)
+        assert len(ticks) == 1
 
     def test_update_job_tick_to_success(self, storage):
         assert storage
@@ -538,16 +578,28 @@ class TestScheduleStorage:
         storage.create_job_tick(
             self.build_sensor_tick(four_minutes_ago, JobTickStatus.SUCCESS, run_id="fake_run_id")
         )
-        storage.create_job_tick(self.build_sensor_tick(one_minute_ago, JobTickStatus.SKIPPED))
+        one_minute_tick = storage.create_job_tick(
+            self.build_sensor_tick(one_minute_ago, JobTickStatus.SKIPPED)
+        )
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 3
 
-        storage.purge_job_ticks("my_sensor", JobTickStatus.SKIPPED, now.subtract(minutes=2))
+        latest_tick = storage.get_latest_job_tick("my_sensor")
+        assert latest_tick
+        assert latest_tick.tick_id == one_minute_tick.tick_id
+
+        storage.purge_job_ticks(
+            "my_sensor", JobTickStatus.SKIPPED, now.subtract(minutes=2).timestamp()
+        )
 
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 2
 
     def test_migrate_schedulers(self, storage):
+
+        if not self.can_delete():
+            pytest.skip("Storage cannot delete")
+
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_job_state(schedule)
 

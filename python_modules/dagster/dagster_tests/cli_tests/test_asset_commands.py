@@ -11,7 +11,8 @@ def mock_asset_instance(mocker):
     # can use the ephemeral instance, since the default InMemoryEventLogStorage is asset aware
     instance = DagsterInstance.ephemeral()
     mocker.patch(
-        "dagster.core.instance.DagsterInstance.get", return_value=instance,
+        "dagster.core.instance.DagsterInstance.get",
+        return_value=instance,
     )
     yield instance
 
@@ -72,7 +73,6 @@ def test_asset_single_wipe(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 
@@ -96,7 +96,6 @@ def test_asset_multi_wipe(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 
@@ -115,7 +114,6 @@ def test_asset_wipe_all(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 

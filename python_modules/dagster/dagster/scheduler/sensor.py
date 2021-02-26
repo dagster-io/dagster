@@ -1,17 +1,16 @@
 import os
 import sys
 import time
+from contextlib import ExitStack
 
 import pendulum
 from dagster import check
 from dagster.core.definitions.job import JobType
-from dagster.core.errors import DagsterSubprocessError
-from dagster.core.events import EngineEventData
+from dagster.core.errors import DagsterError
 from dagster.core.host_representation import (
     ExternalPipeline,
     PipelineSelector,
-    RepositoryLocation,
-    RepositoryLocationHandle,
+    RepositoryLocationHandleManager,
 )
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
@@ -27,9 +26,16 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 RECORDED_TICK_STATES = [JobTickStatus.SUCCESS, JobTickStatus.FAILURE]
 FULFILLED_TICK_STATES = [JobTickStatus.SKIPPED, JobTickStatus.SUCCESS]
 
+MIN_INTERVAL_LOOP_TIME = 5
+
+
+class DagsterSensorDaemonError(DagsterError):
+    """Error when running the SensorDaemon"""
+
 
 class SensorLaunchContext:
-    def __init__(self, job_state, tick, instance, logger):
+    def __init__(self, external_sensor, job_state, tick, instance, logger):
+        self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
         self._job_state = job_state
@@ -62,13 +68,21 @@ class SensorLaunchContext:
     def _write(self):
         self._instance.update_job_tick(self._tick)
         if self._tick.status in FULFILLED_TICK_STATES:
-            last_run_key = None
+            last_run_key = (
+                self._job_state.job_specific_data.last_run_key
+                if self._job_state.job_specific_data
+                else None
+            )
             if self._tick.run_keys:
                 last_run_key = self._tick.run_keys[-1]
-            elif self._job_state.job_specific_data:
-                last_run_key = self._job_state.job_specific_data.last_run_key
             self._instance.update_job_state(
-                self._job_state.with_data(SensorJobData(self._tick.timestamp, last_run_key))
+                self._job_state.with_data(
+                    SensorJobData(
+                        last_tick_timestamp=self._tick.timestamp,
+                        last_run_key=last_run_key,
+                        min_interval=self._external_sensor.min_interval_seconds,
+                    )
+                )
             )
 
     def __enter__(self):
@@ -102,7 +116,44 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
+def execute_sensor_iteration_loop(instance, logger, daemon_shutdown_event, until=None):
+    """
+    Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
+    within a given daemon interval.  Rather than relying on the daemon machinery to run the
+    iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
+    each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
+    """
+    from dagster.daemon.daemon import CompletedIteration
+
+    handle_manager = None
+    manager_loaded_time = None
+    RELOAD_LOCATION_MANAGER_INTERVAL = 60
+
+    start_time = pendulum.now("UTC").timestamp()
+    with ExitStack() as stack:
+        while not daemon_shutdown_event or not daemon_shutdown_event.is_set():
+            start_time = pendulum.now("UTC").timestamp()
+            if until and start_time >= until:
+                # provide a way of organically ending the loop to support test environment
+                break
+
+            if (
+                not handle_manager
+                or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
+            ):
+                stack.pop_all()  # remove the previous context
+                handle_manager = stack.enter_context(RepositoryLocationHandleManager())
+                manager_loaded_time = start_time
+
+            yield from execute_sensor_iteration(instance, logger, handle_manager)
+            loop_duration = pendulum.now("UTC").timestamp() - start_time
+            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+            yield CompletedIteration()
+            time.sleep(sleep_time)
+
+
+def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags=None):
+    check.inst_param(handle_manager, "handle_manager", RepositoryLocationHandleManager)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
         s
@@ -122,64 +173,74 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
         sensor_debug_crash_flags = (
             debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
         )
+        error_info = None
         try:
-            with RepositoryLocationHandle.create_from_repository_location_origin(
-                job_state.origin.external_repository_origin.repository_location_origin
-            ) as repo_location_handle:
-                repo_location = RepositoryLocation.from_handle(repo_location_handle)
+            origin = job_state.origin.external_repository_origin.repository_location_origin
+            repo_location_handle = handle_manager.get_handle(origin)
+            repo_location = repo_location_handle.create_location()
 
-                repo_name = job_state.origin.external_repository_origin.repository_name
+            repo_name = job_state.origin.external_repository_origin.repository_name
 
-                check.invariant(
-                    repo_location.has_repository(repo_name),
-                    "Could not find repository {repo_name} in location {repo_location_name}".format(
-                        repo_name=repo_name, repo_location_name=repo_location.name
-                    ),
+            if not repo_location.has_repository(repo_name):
+                raise DagsterSensorDaemonError(
+                    f"Could not find repository {repo_name} in location {repo_location.name} to "
+                    + f"run sensor {job_state.job_name}. If this repository no longer exists, you can "
+                    + "turn off the sensor in the Dagit UI.",
                 )
 
-                external_repo = repo_location.get_repository(repo_name)
-                if not external_repo.has_external_job(job_state.job_name):
-                    continue
-
-                now = pendulum.now("UTC")
-                tick = instance.create_job_tick(
-                    JobTickData(
-                        job_origin_id=job_state.job_origin_id,
-                        job_name=job_state.job_name,
-                        job_type=JobType.SENSOR,
-                        status=JobTickStatus.STARTED,
-                        timestamp=now.timestamp(),
-                    )
+            external_repo = repo_location.get_repository(repo_name)
+            if not external_repo.has_external_job(job_state.job_name):
+                raise DagsterSensorDaemonError(
+                    f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
+                    "sensor no longer exists, you can turn it off in the Dagit UI.",
                 )
 
-                _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+            now = pendulum.now("UTC")
+            if _is_under_min_interval(job_state, now):
+                continue
 
-                external_sensor = external_repo.get_external_sensor(job_state.job_name)
-                with SensorLaunchContext(job_state, tick, instance, logger) as tick_context:
-                    _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
-                    _evaluate_sensor(
-                        tick_context,
-                        instance,
-                        repo_location,
-                        external_repo,
-                        external_sensor,
-                        job_state,
-                        sensor_debug_crash_flags,
-                    )
-
-                instance.purge_job_ticks(
-                    job_state.job_origin_id,
-                    tick_status=JobTickStatus.SKIPPED,
-                    before=now.subtract(days=7),  #  keep the last 7 days
-                )
-        except Exception:  # pylint: disable=broad-except
-            logger.error(
-                "Sensor failed for {sensor_name} : {error_info}".format(
-                    sensor_name=job_state.job_name,
-                    error_info=serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
+            tick = instance.create_job_tick(
+                JobTickData(
+                    job_origin_id=job_state.job_origin_id,
+                    job_name=job_state.job_name,
+                    job_type=JobType.SENSOR,
+                    status=JobTickStatus.STARTED,
+                    timestamp=now.timestamp(),
                 )
             )
-        yield
+
+            _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+
+            external_sensor = external_repo.get_external_sensor(job_state.job_name)
+            with SensorLaunchContext(
+                external_sensor, job_state, tick, instance, logger
+            ) as tick_context:
+                _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+                _evaluate_sensor(
+                    tick_context,
+                    instance,
+                    repo_location,
+                    external_repo,
+                    external_sensor,
+                    job_state,
+                    sensor_debug_crash_flags,
+                )
+
+            instance.purge_job_ticks(
+                job_state.job_origin_id,
+                tick_status=JobTickStatus.SKIPPED,
+                before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
+            )
+            yield
+        except Exception:  # pylint: disable=broad-except
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            logger.error(
+                "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
+                    sensor_name=job_state.job_name,
+                    error_info=error_info.to_string(),
+                )
+            )
+        yield error_info
 
 
 def _evaluate_sensor(
@@ -201,7 +262,8 @@ def _evaluate_sensor(
     if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
         context.logger.error(
             "Failed to resolve sensor for {sensor_name} : {error_info}".format(
-                sensor_name=external_sensor.name, error_info=sensor_runtime_data.error.to_string(),
+                sensor_name=external_sensor.name,
+                error_info=sensor_runtime_data.error.to_string(),
             )
         )
         context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
@@ -230,7 +292,8 @@ def _evaluate_sensor(
     )
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
     external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+        subset_pipeline_result.external_pipeline_data,
+        external_repo.handle,
     )
 
     for run_request in sensor_runtime_data.run_requests:
@@ -269,25 +332,39 @@ def _evaluate_sensor(
         context.update_state(JobTickStatus.SKIPPED)
 
 
+def _is_under_min_interval(job_state, now):
+    if not job_state.job_specific_data:
+        return False
+
+    if not job_state.job_specific_data.last_tick_timestamp:
+        return False
+
+    if not job_state.job_specific_data.min_interval:
+        return False
+
+    elapsed = now.timestamp() - job_state.job_specific_data.last_tick_timestamp
+    return elapsed < job_state.job_specific_data.min_interval
+
+
 def _get_or_create_sensor_run(
     context, instance, repo_location, external_sensor, external_pipeline, run_request
 ):
 
     if not run_request.run_key:
         return _create_sensor_run(
-            context, instance, repo_location, external_sensor, external_pipeline, run_request
+            instance, repo_location, external_sensor, external_pipeline, run_request
         )
 
     existing_runs = instance.get_runs(
         PipelineRunsFilter(
             tags=merge_dicts(
-                PipelineRun.tags_for_sensor(external_sensor), {RUN_KEY_TAG: run_request.run_key},
+                PipelineRun.tags_for_sensor(external_sensor),
+                {RUN_KEY_TAG: run_request.run_key},
             )
         )
     )
 
     if len(existing_runs):
-        check.invariant(len(existing_runs) == 1)
         run = existing_runs[0]
         if run.status != PipelineRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
@@ -310,49 +387,37 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        context, instance, repo_location, external_sensor, external_pipeline, run_request
+        instance, repo_location, external_sensor, external_pipeline, run_request
     )
 
 
-def _create_sensor_run(
-    context, instance, repo_location, external_sensor, external_pipeline, run_request
-):
-    execution_plan_errors = []
-    execution_plan_snapshot = None
-    try:
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline,
-            run_request.run_config,
-            external_sensor.mode,
-            step_keys_to_execute=None,
-        )
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except DagsterSubprocessError as e:
-        execution_plan_errors.extend(e.subprocess_error_infos)
-    except Exception as e:  # pylint: disable=broad-except
-        execution_plan_errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
+def _create_sensor_run(instance, repo_location, external_sensor, external_pipeline, run_request):
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        run_request.run_config,
+        external_sensor.mode,
+        step_keys_to_execute=None,
+    )
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(
-        merge_dicts(pipeline_tags, run_request.tags), PipelineRun.tags_for_sensor(external_sensor),
+        merge_dicts(pipeline_tags, run_request.tags),
+        PipelineRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 
-    run = instance.create_run(
+    return instance.create_run(
         pipeline_name=external_sensor.pipeline_name,
         run_id=None,
         run_config=run_request.run_config,
         mode=external_sensor.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
+        status=PipelineRunStatus.NOT_STARTED,
         solid_selection=external_sensor.solid_selection,
-        status=(
-            PipelineRunStatus.FAILURE
-            if len(execution_plan_errors) > 0
-            else PipelineRunStatus.NOT_STARTED
-        ),
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
@@ -361,18 +426,3 @@ def _create_sensor_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
     )
-
-    if len(execution_plan_errors) > 0:
-        for error in execution_plan_errors:
-            instance.report_engine_event(
-                error.message, run, EngineEventData.engine_error(error),
-            )
-        instance.report_run_failed(run)
-        context.logger.error(
-            "Failed to fetch execution plan for {sensor_name}: {error_string}".format(
-                sensor_name=external_sensor.name,
-                error_string="\n".join([error.to_string() for error in execution_plan_errors]),
-            ),
-        )
-
-    return run

@@ -3,6 +3,7 @@ import datetime
 import pendulum
 from croniter import croniter
 from dagster import check
+from dagster.seven import to_timezone
 
 
 def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_timezone):
@@ -17,10 +18,7 @@ def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_t
 
     # Go back one iteration so that the next iteration is the first time that is >= start_datetime
     # and matches the cron schedule
-    date_iter.get_prev(datetime.datetime)
-    next_date = pendulum.instance(date_iter.get_next(datetime.datetime)).in_tz(timezone_str)
-
-    yield next_date
+    next_date = to_timezone(pendulum.instance(date_iter.get_prev(datetime.datetime)), timezone_str)
 
     cron_parts = cron_schedule.split(" ")
 
@@ -70,6 +68,8 @@ def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_t
 
             next_date = next_date_cand
         else:
-            next_date = pendulum.instance(date_iter.get_next(datetime.datetime)).in_tz(timezone_str)
+            next_date = to_timezone(
+                pendulum.instance(date_iter.get_next(datetime.datetime)), timezone_str
+            )
 
         yield next_date

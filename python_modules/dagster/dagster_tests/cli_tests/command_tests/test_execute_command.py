@@ -140,10 +140,12 @@ def test_execute_command_no_env(gen_execute_args):
 def test_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
-            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)}, cli_args,
+            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
+            cli_args,
         )
         execute_execute_command(
-            kwargs=kwargs, instance=instance,
+            kwargs=kwargs,
+            instance=instance,
         )
 
 
@@ -252,7 +254,8 @@ def test_invalid_parameters(args):
             match=re.escape("Invalid set of CLI arguments for loading repository/pipeline"),
         ):
             execute_execute_command(
-                kwargs=args, instance=instance,
+                kwargs=args,
+                instance=instance,
             )
 
 
@@ -360,7 +363,10 @@ def test_override_with_in_memory_storage():
             "module_name": None,
             "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
         }
-        result = execute_execute_command(kwargs=cli_args, instance=instance,)
+        result = execute_execute_command(
+            kwargs=cli_args,
+            instance=instance,
+        )
         assert result.success
 
 
@@ -373,7 +379,10 @@ def test_override_with_filesystem_storage():
             "module_name": None,
             "config": (file_relative_path(__file__, "filesystem_env.yaml"),),
         }
-        result = execute_execute_command(kwargs=cli_args, instance=instance,)
+        result = execute_execute_command(
+            kwargs=cli_args,
+            instance=instance,
+        )
         assert result.success
 
 

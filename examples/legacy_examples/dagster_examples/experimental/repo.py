@@ -60,7 +60,9 @@ def daily_rollup_schedule(date):
 
 
 @schedule(
-    name="test_schedule", cron_schedule="* * * * *", pipeline_name="metrics_pipeline",
+    name="test_schedule",
+    cron_schedule="* * * * *",
+    pipeline_name="metrics_pipeline",
 )
 def test_schedule(_):
     return {
@@ -133,7 +135,13 @@ def rollup_pipeline():
         "default_value": Field(str, default_value="default_value"),
         "enum": Enum("CowboyType", [EnumValue("good"), EnumValue("bad"), EnumValue("ugly")]),
         "array": Array(String),
-        "selector": Selector({"a": str, "b": str, "c": str,}),
+        "selector": Selector(
+            {
+                "a": str,
+                "b": str,
+                "c": str,
+            }
+        ),
         "noneable_array": Noneable(Array(String)),
         "noneable_string": Noneable(String),
     }
@@ -155,7 +163,13 @@ def my_resource(_):
         "default_value": Field(str, default_value="default_value"),
         "enum": Enum("CowboyType", [EnumValue("good"), EnumValue("bad"), EnumValue("ugly")]),
         "array": Array(String),
-        "selector": Selector({"a": str, "b": str, "c": str,}),
+        "selector": Selector(
+            {
+                "a": str,
+                "b": str,
+                "c": str,
+            }
+        ),
         "noneable_array": Noneable(Array(String)),
         "noneable_string": Noneable(String),
         "complex_shape": Shape(

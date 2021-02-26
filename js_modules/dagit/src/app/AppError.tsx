@@ -83,19 +83,11 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
       <br />
       <br />
       If you have a minute, consider reporting this error either by{' '}
-      <a
-        href="https://github.com/dagster-io/dagster/issues/"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
+      <a href="https://github.com/dagster-io/dagster/issues/" rel="noreferrer" target="_blank">
         filing a Github issue
       </a>{' '}
       or by{' '}
-      <a
-        href="https://dagster.slack.com/archives/CCCR6P2UR"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
+      <a href="https://dagster.slack.com/archives/CCCR6P2UR" rel="noreferrer" target="_blank">
         messaging in the Dagster slack
       </a>
       . Use the <code>&quot;Copy&quot;</code> button below to include error information that is

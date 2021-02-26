@@ -120,7 +120,10 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       <SidebarSection title={'Outputs'}>
         {definition.outputDefinitions.map((outputDef, idx) => (
           <SectionItemContainer key={idx}>
-            <SectionSmallHeader>{breakOnUnderscores(outputDef.name)}</SectionSmallHeader>
+            <SectionSmallHeader>
+              {breakOnUnderscores(outputDef.name)}
+              {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
+            </SectionSmallHeader>
             <TypeWrapper>
               <TypeWithTooltip type={outputDef.type} />
             </TypeWrapper>
@@ -157,6 +160,7 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
     outputDefinitions {
       name
       description
+      isDynamic
       type {
         ...DagsterTypeWithTooltipFragment
       }

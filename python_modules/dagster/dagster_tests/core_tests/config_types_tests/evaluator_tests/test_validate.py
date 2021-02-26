@@ -496,7 +496,8 @@ def test_scalar_or_dict():
 
 def test_scalar_or_selector():
     int_or_selector = ScalarUnion(
-        scalar_type=int, non_scalar_schema=Selector({"a_string": str, "an_int": int}),
+        scalar_type=int,
+        non_scalar_schema=Selector({"a_string": str, "an_int": int}),
     )
 
     assert validate_config(int_or_selector, 2).success

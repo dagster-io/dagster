@@ -21,6 +21,8 @@ from slack import WebClient
 def slack_resource(context):
     """This resource is for connecting to Slack.
 
+    The resource object is a `slack.WebClient`.
+
     By configuring this Slack resource, you can post messages to Slack from any Dagster solid:
 
     Examples:

@@ -13,7 +13,6 @@ from dagster.core.host_representation import (
     ExternalRepository,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .utils import get_bar_repo_grpc_repository_location_handle
@@ -63,22 +62,22 @@ def giant_pipeline():
 @repository
 def giant_repo():
     return {
-        "pipelines": {"giant": giant_pipeline,},
+        "pipelines": {
+            "giant": giant_pipeline,
+        },
     }
 
 
 @contextmanager
 def get_giant_repo_grpc_repository_location_handle():
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                attribute="giant_repo",
-                module_name="dagster_tests.api_tests.test_api_snapshot_repository",
-            ),
-            location_name="giant_repo_location",
-        )
-    ) as handle:
+    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="giant_repo",
+            module_name="dagster_tests.api_tests.test_api_snapshot_repository",
+        ),
+        location_name="giant_repo_location",
+    ).create_handle() as handle:
         yield handle
 
 
@@ -91,7 +90,8 @@ def test_giant_external_repository_grpc():
             match=re.escape("Received message larger than max"),
         ):
             sync_get_external_repositories_grpc(
-                repository_location_handle.client, repository_location_handle,
+                repository_location_handle.client,
+                repository_location_handle,
             )
 
 

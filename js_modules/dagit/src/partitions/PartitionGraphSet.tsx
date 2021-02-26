@@ -54,7 +54,7 @@ export const PartitionGraphSet: React.FunctionComponent<{
 
   return (
     <PartitionContentContainer>
-      <div style={{flex: 1}}>
+      <div style={{flex: 1, minWidth: 450}}>
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
@@ -130,6 +130,5 @@ const PartitionContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   position: relative;
-  max-width: 1600px;
   margin: 0 auto;
 `;

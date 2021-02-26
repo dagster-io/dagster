@@ -17,7 +17,7 @@ from dagster.cli.api import ExecuteStepArgs
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
-from dagster.core.events.log import DagsterEventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster.core.execution.retries import Retries
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -74,7 +74,7 @@ def celery_k8s_job_executor(init_context):
     :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
     :py:class:`~dagster.ModeDefinition` as follows:
 
-    .. literalinclude:: ../dagster_celery_k8s_tests/example_celery_mode_def.py
+    .. literalinclude:: ../../../../../python_modules/libraries/dagster-celery-k8s/dagster_celery_k8s_tests/example_celery_mode_def.py
        :language: python
 
     Then you can configure the executor as follows:
@@ -246,7 +246,7 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
             user_failure_data=UserFailureData(label="K8sError"),
         ),
     )
-    event_record = DagsterEventRecord(
+    event_record = EventRecord(
         message=str(err),
         user_message=str(err),
         level=logging.ERROR,
@@ -272,10 +272,12 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
     ):
-        """Run step execution in a K8s job pod.
-        """
+        """Run step execution in a K8s job pod."""
         execute_step_args = unpack_value(
-            check.dict_param(execute_step_args_packed, "execute_step_args_packed",)
+            check.dict_param(
+                execute_step_args_packed,
+                "execute_step_args_packed",
+            )
         )
         check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
         check.invariant(
@@ -294,7 +296,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             user_defined_k8s_config_dict
         )
         check.opt_inst_param(
-            user_defined_k8s_config, "user_defined_k8s_config", UserDefinedDagsterK8sConfig,
+            user_defined_k8s_config,
+            "user_defined_k8s_config",
+            UserDefinedDagsterK8sConfig,
         )
         check.opt_str_param(kubeconfig_file, "kubeconfig_file")
 
@@ -333,7 +337,11 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             instance.report_engine_event(
                 "Not scheduling step because pipeline run status is not STARTED",
                 pipeline_run,
-                EngineEventData([EventMetadataEntry.text(step_key, "Step key"),]),
+                EngineEventData(
+                    [
+                        EventMetadataEntry.text(step_key, "Step key"),
+                    ]
+                ),
                 CeleryK8sJobExecutor,
                 step_key=step_key,
             )
@@ -413,7 +421,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     "exiting.".format(job_name, step_key),
                     pipeline_run,
                     EngineEventData(
-                        [EventMetadataEntry.text(step_key, "Step key"),],
+                        [
+                            EventMetadataEntry.text(step_key, "Step key"),
+                        ],
                         error=serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
                     CeleryK8sJobExecutor,
@@ -462,7 +472,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "exiting.".format(job_name, step_key),
                 pipeline_run,
                 EngineEventData(
-                    [EventMetadataEntry.text(step_key, "Step key"),],
+                    [
+                        EventMetadataEntry.text(step_key, "Step key"),
+                    ],
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
                 CeleryK8sJobExecutor,
@@ -478,7 +490,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "exiting.".format(job_name, step_key),
                 pipeline_run,
                 EngineEventData(
-                    [EventMetadataEntry.text(step_key, "Step key"),],
+                    [
+                        EventMetadataEntry.text(step_key, "Step key"),
+                    ],
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
                 CeleryK8sJobExecutor,
@@ -509,7 +523,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     ),
                     pipeline_run,
                     EngineEventData(
-                        [EventMetadataEntry.text(step_key, "Step key"),],
+                        [
+                            EventMetadataEntry.text(step_key, "Step key"),
+                        ],
                         error=serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
                     CeleryK8sJobExecutor,

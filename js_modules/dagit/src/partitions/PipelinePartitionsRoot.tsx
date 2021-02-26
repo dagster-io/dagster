@@ -12,6 +12,7 @@ import {
   PipelinePartitionsRootQueryVariables,
 } from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
+import {Box} from 'src/ui/Box';
 import {Loading} from 'src/ui/Loading';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -86,7 +87,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
             : partitionSetsOrError.results[0];
 
         return (
-          <PartitionRootContainer>
+          <Box padding={20}>
             <PartitionView
               partitionSet={partitionSet}
               partitionSets={partitionSetsOrError.results}
@@ -94,7 +95,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
               pipelineName={pipelineName}
               repoAddress={repoAddress}
             />
-          </PartitionRootContainer>
+          </Box>
         );
       }}
     </Loading>
@@ -124,17 +125,7 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
 `;
 
 const Wrapper = styled.div`
-  flex: 1 1;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   height: 100%;
   min-width: 0;
-  overflow: auto;
-`;
-
-const PartitionRootContainer = styled.div`
-  padding: 15px;
-  overflow-y: auto;
-  min-height: calc(100vh - 45px);
 `;

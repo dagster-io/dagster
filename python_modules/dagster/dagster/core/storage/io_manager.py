@@ -52,8 +52,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
     def output_config_schema(self):
         return self._output_config_schema
 
-    def copy_for_configured(self, name, description, config_schema, _):
-        check.invariant(name is None, "ResourceDefintions do not have names")
+    def copy_for_configured(self, description, config_schema, _):
         return IOManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,

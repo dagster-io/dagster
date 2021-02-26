@@ -122,9 +122,12 @@ def test_reconstructable_cli_args():
     recon_file = ReconstructableRepository.for_file(
         "foo_file", "bar_function", "/path/to/working_dir"
     )
-    assert recon_file.get_cli_args() == "-f {foo_file} -a bar_function -d {working_directory}".format(
-        foo_file=os.path.abspath(os.path.expanduser("foo_file")),
-        working_directory=os.path.abspath(os.path.expanduser("/path/to/working_dir")),
+    assert (
+        recon_file.get_cli_args()
+        == "-f {foo_file} -a bar_function -d {working_directory}".format(
+            foo_file=os.path.abspath(os.path.expanduser("foo_file")),
+            working_directory=os.path.abspath(os.path.expanduser("/path/to/working_dir")),
+        )
     )
     recon_file = ReconstructableRepository.for_file("foo_file", "bar_function")
     assert recon_file.get_cli_args() == "-f {foo_file} -a bar_function -d {working_dir}".format(

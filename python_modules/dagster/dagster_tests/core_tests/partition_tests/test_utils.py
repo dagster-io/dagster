@@ -179,7 +179,12 @@ def test_date_partition_range(
 ):
 
     partition_generator = date_partition_range(
-        start, end, delta_range=delta_range, fmt=fmt, inclusive=inclusive, timezone=timezone,
+        start,
+        end,
+        delta_range=delta_range,
+        fmt=fmt,
+        inclusive=inclusive,
+        timezone=timezone,
     )
     generated_partitions = partition_generator()
 

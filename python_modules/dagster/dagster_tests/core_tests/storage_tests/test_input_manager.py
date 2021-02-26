@@ -12,7 +12,7 @@ from dagster import (
     PythonObjectDagsterType,
     RootInputManagerDefinition,
     execute_pipeline,
-    fs_io_manager,
+    execute_solid,
     io_manager,
     pipeline,
     resource,
@@ -123,7 +123,10 @@ def test_only_used_for_root():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"my_io_manager": my_io_manager, "my_root_manager": root_manager,}
+                resource_defs={
+                    "my_io_manager": my_io_manager,
+                    "my_root_manager": root_manager,
+                }
             )
         ]
     )
@@ -311,24 +314,6 @@ def test_input_manager_required_resource_keys():
     assert result.success
 
 
-def test_manager_not_provided():
-    @solid(input_defs=[InputDefinition("_input", root_manager_key="not_here")])
-    def solid_requires_manager(_, _input):
-        pass
-
-    @pipeline
-    def basic():
-        solid_requires_manager()
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='Input "_input" for solid "solid_requires_manager" requires root_manager_key "not_here", but no '
-        "resource has been provided. Please include a resource definition for that key in the "
-        "resource_defs of your ModeDefinition.",
-    ):
-        execute_pipeline(basic)
-
-
 def test_resource_not_input_manager():
     @resource
     def resource_not_manager(_):
@@ -349,3 +334,24 @@ def test_resource_not_input_manager():
         "IInputManagerDefinition",
     ):
         execute_pipeline(basic)
+
+
+def test_mode_missing_input_manager():
+    @solid(input_defs=[InputDefinition("a", root_manager_key="missing_root_manager")])
+    def my_solid(_, a):
+        return a + 1
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @pipeline
+        def _my_pipeline():
+            my_solid()
+
+
+def test_mode_missing_input_manager_execute_solid():
+    @solid(input_defs=[InputDefinition("a", root_manager_key="missing_root_manager")])
+    def my_solid(_, a):
+        return a + 1
+
+    result = execute_solid(my_solid, input_values={"a": 5})
+    assert result.success

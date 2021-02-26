@@ -14,18 +14,30 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import AssetAwareEventLogStorage, EventLogStorage
+from .base import EventLogStorage, extract_asset_events_cursor
 from .migration import REINDEX_DATA_MIGRATIONS, SECONDARY_INDEX_ASSET_KEY
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
 
 class SqlEventLogStorage(EventLogStorage):
     """Base class for SQL backed event log storages.
+
+    Distinguishes between run-based connections and index connections in order to support run-level
+    sharding, while maintaining the ability to do cross-run queries
     """
 
     @abstractmethod
-    def connect(self, run_id=None):
-        """Context manager yielding a connection.
+    def run_connection(self, run_id):
+        """Context manager yielding a connection to access the event logs for a specific run.
+
+        Args:
+            run_id (Optional[str]): Enables those storages which shard based on run_id, e.g.,
+                SqliteEventLogStorage, to connect appropriately.
+        """
+
+    @abstractmethod
+    def index_connection(self):
+        """Context manager yielding a connection to access cross-run indexed tables.
 
         Args:
             run_id (Optional[str]): Enables those storages which shard based on run_id, e.g.,
@@ -38,20 +50,8 @@ class SqlEventLogStorage(EventLogStorage):
         out-of-date instance of the storage up to date.
         """
 
-    def reindex(self, print_fn=lambda _: None, force=False):
-        """Call this method to run any data migrations, reindexing to build summary tables."""
-        for migration_name, migration_fn in REINDEX_DATA_MIGRATIONS.items():
-            if self.has_secondary_index(migration_name):
-                if not force:
-                    print_fn("Skipping already reindexed summary: {}".format(migration_name))
-                    continue
-            print_fn("Starting reindex: {}".format(migration_name))
-            migration_fn()(self, print_fn)
-            self.enable_secondary_index(migration_name)
-            print_fn("Finished reindexing: {}".format(migration_name))
-
     def prepare_insert_event(self, event):
-        """ Helper method for preparing the event log SQL insertion statement.  Abstracted away to
+        """Helper method for preparing the event log SQL insertion statement.  Abstracted away to
         have a single place for the logical table representation of the event, while having a way
         for SQL backends to implement different execution implementations for `store_event`. See
         the `dagster-postgres` implementation which overrides the generic SQL implementation of
@@ -77,25 +77,28 @@ class SqlEventLogStorage(EventLogStorage):
             run_id=event.run_id,
             event=serialize_dagster_namedtuple(event),
             dagster_event_type=dagster_event_type,
-            timestamp=utc_datetime_from_timestamp(event.timestamp),
+            # Postgres requires a datetime that is in UTC but has no timezone info set
+            # in order to be stored correctly
+            timestamp=datetime.utcfromtimestamp(event.timestamp),
             step_key=step_key,
             asset_key=asset_key_str,
             partition=partition,
         )
 
-    def store_asset_key(self, conn, event):
+    def store_asset_key(self, event):
         check.inst_param(event, "event", EventRecord)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
-        try:
-            conn.execute(
-                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    asset_key=event.dagster_event.asset_key.to_string()
+        with self.index_connection() as conn:
+            try:
+                conn.execute(
+                    AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                        asset_key=event.dagster_event.asset_key.to_string()
+                    )
                 )
-            )
-        except db.exc.IntegrityError:
-            pass
+            except db.exc.IntegrityError:
+                pass
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
@@ -107,10 +110,11 @@ class SqlEventLogStorage(EventLogStorage):
         insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 
-        with self.connect(run_id) as conn:
+        with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
-            if event.is_dagster_event and event.dagster_event.asset_key:
-                self.store_asset_key(conn, event)
+
+        if event.is_dagster_event and event.dagster_event.asset_key:
+            self.store_asset_key(event)
 
     def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
         check.str_param(run_id, "run_id")
@@ -130,12 +134,15 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
 
-        with self.connect(run_id) as conn:
+        with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
 
         events = {}
         try:
-            for (record_id, json_str,) in results:
+            for (
+                record_id,
+                json_str,
+            ) in results:
                 events[record_id] = check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
@@ -177,7 +184,7 @@ class SqlEventLogStorage(EventLogStorage):
             .group_by("dagster_event_type")
         )
 
-        with self.connect(run_id) as conn:
+        with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
 
         try:
@@ -189,6 +196,8 @@ class SqlEventLogStorage(EventLogStorage):
                     counts[dagster_event_type] = n_events_of_type
                     times[dagster_event_type] = last_event_timestamp
 
+            enqueued_time = times.get(DagsterEventType.PIPELINE_ENQUEUED.value, None)
+            launch_time = times.get(DagsterEventType.PIPELINE_STARTING.value, None)
             start_time = times.get(DagsterEventType.PIPELINE_START.value, None)
             end_time = times.get(
                 DagsterEventType.PIPELINE_SUCCESS.value,
@@ -204,6 +213,8 @@ class SqlEventLogStorage(EventLogStorage):
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
+                enqueued_time=datetime_as_float(enqueued_time) if enqueued_time else None,
+                launch_time=datetime_as_float(launch_time) if launch_time else None,
                 start_time=datetime_as_float(start_time) if start_time else None,
                 end_time=datetime_as_float(end_time) if end_time else None,
             )
@@ -240,10 +251,11 @@ class SqlEventLogStorage(EventLogStorage):
             by_step_query = by_step_query.where(SqlEventLogStorageTable.c.step_key.in_(step_keys))
 
         by_step_query = by_step_query.group_by(
-            SqlEventLogStorageTable.c.step_key, SqlEventLogStorageTable.c.dagster_event_type,
+            SqlEventLogStorageTable.c.step_key,
+            SqlEventLogStorageTable.c.dagster_event_type,
         )
 
-        with self.connect(run_id) as conn:
+        with self.run_connection(run_id) as conn:
             results = conn.execute(by_step_query).fetchall()
 
         by_step_key = defaultdict(dict)
@@ -300,7 +312,7 @@ class SqlEventLogStorage(EventLogStorage):
                 SqlEventLogStorageTable.c.step_key.in_(step_keys)
             )
 
-        with self.connect(run_id) as conn:
+        with self.run_connection(run_id) as conn:
             results = conn.execute(raw_event_query).fetchall()
 
         try:
@@ -333,20 +345,45 @@ class SqlEventLogStorage(EventLogStorage):
             for step_key, value in by_step_key.items()
         ]
 
+    def reindex(self, print_fn=lambda _: None, force=False):
+        """Call this method to run any data migrations, reindexing to build summary tables."""
+        # Should be overridden by SqliteEventLogStorage and other storages that shard based on
+        # run_id
+        for migration_name, migration_fn in REINDEX_DATA_MIGRATIONS.items():
+            if self.has_secondary_index(migration_name):
+                if not force:
+                    print_fn("Skipping already reindexed summary: {}".format(migration_name))
+                    continue
+            print_fn("Starting reindex: {}".format(migration_name))
+            migration_fn()(self, print_fn)
+            self.enable_secondary_index(migration_name)
+            print_fn("Finished reindexing: {}".format(migration_name))
+
     def wipe(self):
         """Clears the event log storage."""
         # Should be overridden by SqliteEventLogStorage and other storages that shard based on
         # run_id
+
         # https://stackoverflow.com/a/54386260/324449
-        with self.connect() as conn:
+        with self.run_connection(run_id=None) as conn:
+            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+
+        with self.index_connection() as conn:
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
 
     def delete_events(self, run_id):
+        with self.run_connection(run_id) as conn:
+            self.delete_events_for_run(conn, run_id)
+
+    def delete_events_for_run(self, conn, run_id):
         check.str_param(run_id, "run_id")
 
-        delete_statement = SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-            SqlEventLogStorageTable.c.run_id == run_id
+        delete_statement = (
+            SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
+                SqlEventLogStorageTable.c.run_id == run_id
+            )
         )
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
@@ -355,34 +392,33 @@ class SqlEventLogStorage(EventLogStorage):
             .group_by(SqlEventLogStorageTable.c.asset_key)
         )
 
-        with self.connect(run_id) as conn:
-            removed_asset_keys = [
+        removed_asset_keys = [
+            AssetKey.from_db_string(row[0])
+            for row in conn.execute(removed_asset_key_query).fetchall()
+        ]
+        conn.execute(delete_statement)
+        if len(removed_asset_keys) > 0:
+            keys_to_check = []
+            keys_to_check.extend([key.to_string() for key in removed_asset_keys])
+            keys_to_check.extend([key.to_string(legacy=True) for key in removed_asset_keys])
+            remaining_asset_keys = [
                 AssetKey.from_db_string(row[0])
-                for row in conn.execute(removed_asset_key_query).fetchall()
+                for row in conn.execute(
+                    db.select([SqlEventLogStorageTable.c.asset_key])
+                    .where(SqlEventLogStorageTable.c.asset_key.in_(keys_to_check))
+                    .group_by(SqlEventLogStorageTable.c.asset_key)
+                )
             ]
-            conn.execute(delete_statement)
-            if len(removed_asset_keys) > 0:
-                keys_to_check = []
-                keys_to_check.extend([key.to_string() for key in removed_asset_keys])
-                keys_to_check.extend([key.to_string(legacy=True) for key in removed_asset_keys])
-                remaining_asset_keys = [
-                    AssetKey.from_db_string(row[0])
-                    for row in conn.execute(
-                        db.select([SqlEventLogStorageTable.c.asset_key])
-                        .where(SqlEventLogStorageTable.c.asset_key.in_(keys_to_check))
-                        .group_by(SqlEventLogStorageTable.c.asset_key)
+            to_remove = set(removed_asset_keys) - set(remaining_asset_keys)
+            if to_remove:
+                keys_to_remove = []
+                keys_to_remove.extend([key.to_string() for key in to_remove])
+                keys_to_remove.extend([key.to_string(legacy=True) for key in to_remove])
+                conn.execute(
+                    AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
+                        AssetKeyTable.c.asset_key.in_(keys_to_remove)
                     )
-                ]
-                to_remove = set(removed_asset_keys) - set(remaining_asset_keys)
-                if to_remove:
-                    keys_to_remove = []
-                    keys_to_remove.extend([key.to_string() for key in to_remove])
-                    keys_to_remove.extend([key.to_string(legacy=True) for key in to_remove])
-                    conn.execute(
-                        AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-                            AssetKeyTable.c.asset_key.in_(keys_to_remove)
-                        )
-                    )
+                )
 
     @property
     def is_persistent(self):
@@ -400,7 +436,7 @@ class SqlEventLogStorage(EventLogStorage):
                 check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
                 asset_key_str = event.dagster_event.asset_key.to_string()
 
-        with self.connect(run_id=event.run_id) as conn:
+        with self.run_connection(run_id=event.run_id) as conn:
             conn.execute(
                 SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
                 .where(SqlEventLogStorageTable.c.id == record_id)
@@ -414,11 +450,11 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def get_event_log_table_data(self, run_id, record_id):
-        """ Utility method to test representation of the record in the SQL table.  Returns all of
+        """Utility method to test representation of the record in the SQL table.  Returns all of
         the columns stored in the event log storage (as opposed to the deserialized `EventRecord`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
         extracting `step_key` for fast filtering)"""
-        with self.connect(run_id=run_id) as conn:
+        with self.run_connection(run_id=run_id) as conn:
             query = (
                 db.select([SqlEventLogStorageTable])
                 .where(SqlEventLogStorageTable.c.id == record_id)
@@ -426,7 +462,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
             return conn.execute(query).fetchone()
 
-    def has_secondary_index(self, name, run_id=None):
+    def has_secondary_index(self, name):
         """This method uses a checkpoint migration table to see if summary data has been constructed
         in a secondary index table.  Can be used to checkpoint event_log data migrations.
         """
@@ -436,19 +472,22 @@ class SqlEventLogStorage(EventLogStorage):
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)
             .limit(1)
         )
-        with self.connect(run_id) as conn:
+        with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
         return len(results) > 0
 
-    def enable_secondary_index(self, name, run_id=None):
+    def enable_secondary_index(self, name):
         """This method marks an event_log data migration as complete, to indicate that a summary
         data migration is complete.
         """
-        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-            name=name, migration_completed=datetime.now(),
+        query = (
+            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+                name=name,
+                migration_completed=datetime.now(),
+            )
         )
-        with self.connect(run_id) as conn:
+        with self.index_connection() as conn:
             try:
                 conn.execute(query)
             except db.exc.IntegrityError:
@@ -458,31 +497,21 @@ class SqlEventLogStorage(EventLogStorage):
                     .values(migration_completed=datetime.now())
                 )
 
-
-class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage):
-    @abstractmethod
-    def connect(self, run_id=None):
-        pass
-
-    @abstractmethod
-    def upgrade(self):
-        pass
-
-    def _add_cursor_limit_to_query(self, query, cursor, limit, ascending=False):
+    def _add_cursor_limit_to_query(
+        self, query, before_cursor, after_cursor, limit, ascending=False
+    ):
         """ Helper function to deal with cursor/limit pagination args """
-        try:
-            cursor = int(cursor) if cursor else None
-        except ValueError:
-            cursor = None
 
-        if cursor:
-            cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                SqlEventLogStorageTable.c.id == cursor
+        if before_cursor:
+            before_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                SqlEventLogStorageTable.c.id == before_cursor
             )
-            if ascending:
-                query = query.where(SqlEventLogStorageTable.c.id > cursor_query)
-            else:
-                query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
+            query = query.where(SqlEventLogStorageTable.c.id < before_query)
+        if after_cursor:
+            after_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                SqlEventLogStorageTable.c.id == after_cursor
+            )
+            query = query.where(SqlEventLogStorageTable.c.id > after_query)
 
         if limit:
             query = query.limit(limit)
@@ -494,7 +523,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
         return query
 
-    def has_asset_key(self, asset_key):
+    def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
         if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
             query = (
@@ -518,12 +547,15 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                 )
                 .limit(1)
             )
-        with self.connect() as conn:
+
+        with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
+
         return len(results) > 0
 
     def get_all_asset_keys(self, prefix_path=None):
         lazy_migrate = False
+
         if not prefix_path:
             if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
                 query = db.select([AssetKeyTable.c.asset_key])
@@ -570,43 +602,47 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                     .distinct()
                 )
 
-        with self.connect() as conn:
+        with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
-            if lazy_migrate:
-                # This is in place to migrate everyone to using the secondary index table for asset
-                # keys.  Performing this migration should result in a big performance boost for
-                # any subsequent asset-catalog reads.
-                self._lazy_migrate_secondary_index_asset_key(
-                    conn, [asset_key for (asset_key,) in results if asset_key]
-                )
+
+        if lazy_migrate:
+            # This is in place to migrate everyone to using the secondary index table for asset
+            # keys.  Performing this migration should result in a big performance boost for
+            # any subsequent asset-catalog reads.
+            self._lazy_migrate_secondary_index_asset_key(
+                [asset_key for (asset_key,) in results if asset_key]
+            )
         return list(
             set([AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key])
         )
 
-    def _lazy_migrate_secondary_index_asset_key(self, conn, asset_keys):
-        results = conn.execute(db.select([AssetKeyTable.c.asset_key])).fetchall()
-        existing = [asset_key for (asset_key,) in results if asset_key]
-        to_migrate = set(asset_keys) - set(existing)
-        for asset_key in to_migrate:
-            try:
-                conn.execute(
-                    AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        asset_key=AssetKey.from_db_string(asset_key).to_string()
+    def _lazy_migrate_secondary_index_asset_key(self, asset_keys):
+        with self.index_connection() as conn:
+            results = conn.execute(db.select([AssetKeyTable.c.asset_key])).fetchall()
+            existing = [asset_key for (asset_key,) in results if asset_key]
+            to_migrate = set(asset_keys) - set(existing)
+            for asset_key in to_migrate:
+                try:
+                    conn.execute(
+                        AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                            asset_key=AssetKey.from_db_string(asset_key).to_string()
+                        )
                     )
-                )
-            except db.exc.IntegrityError:
-                # asset key already present
-                pass
+                except db.exc.IntegrityError:
+                    # asset key already present
+                    pass
         self.enable_secondary_index(SECONDARY_INDEX_ASSET_KEY)
 
     def get_asset_events(
         self,
         asset_key,
         partitions=None,
-        cursor=None,
+        before_cursor=None,
+        after_cursor=None,
         limit=None,
         ascending=False,
         include_cursor=False,
+        cursor=None,  # deprecated
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.opt_list_param(partitions, "partitions", of_type=str)
@@ -619,8 +655,15 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         if partitions:
             query = query.where(SqlEventLogStorageTable.c.partition.in_(partitions))
 
-        query = self._add_cursor_limit_to_query(query, cursor, limit, ascending=ascending)
-        with self.connect() as conn:
+        before_cursor, after_cursor = extract_asset_events_cursor(
+            cursor, before_cursor, after_cursor, ascending
+        )
+
+        query = self._add_cursor_limit_to_query(
+            query, before_cursor, after_cursor, limit, ascending=ascending
+        )
+
+        with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
         events = []
@@ -654,14 +697,38 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
                 )
             )
-            .group_by(SqlEventLogStorageTable.c.run_id,)
+            .group_by(
+                SqlEventLogStorageTable.c.run_id,
+            )
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
 
-        with self.connect() as conn:
+        with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
         return [run_id for (run_id, _timestamp) in results]
+
+    def _remove_asset_key_from_event_record(self, event_record):
+        if not event_record.dagster_event.event_specific_data.materialization.asset_key:
+            return event_record
+
+        dagster_event = event_record.dagster_event
+        event_specific_data = dagster_event.event_specific_data
+        materialization = event_specific_data.materialization
+        updated_materialization = Materialization(
+            label=materialization.label,
+            description=materialization.description,
+            metadata_entries=materialization.metadata_entries,
+            asset_key=None,
+            skip_deprecation_warning=True,
+        )
+        updated_event_specific_data = event_specific_data._replace(
+            materialization=updated_materialization
+        )
+        updated_dagster_event = dagster_event._replace(
+            event_specific_data=updated_event_specific_data
+        )
+        return event_record._replace(dagster_event=updated_dagster_event)
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -680,35 +747,19 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
             )
         )
 
-        with self.connect() as conn:
+        with self.index_connection() as conn:
             conn.execute(asset_key_delete)
             results = conn.execute(event_query).fetchall()
 
+        # rather than deleting the events for the asset key, we update the records to remove
+        # the asset_key in order to preserve the event log history
         for row_id, json_str in results:
             try:
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
                 if not isinstance(event_record, EventRecord):
                     continue
 
-                assert event_record.dagster_event.event_specific_data.materialization.asset_key
-
-                dagster_event = event_record.dagster_event
-                event_specific_data = dagster_event.event_specific_data
-                materialization = event_specific_data.materialization
-                updated_materialization = Materialization(
-                    label=materialization.label,
-                    description=materialization.description,
-                    metadata_entries=materialization.metadata_entries,
-                    asset_key=None,
-                    skip_deprecation_warning=True,
-                )
-                updated_event_specific_data = event_specific_data._replace(
-                    materialization=updated_materialization
-                )
-                updated_dagster_event = dagster_event._replace(
-                    event_specific_data=updated_event_specific_data
-                )
-                updated_record = event_record._replace(dagster_event=updated_dagster_event)
+                updated_record = self._remove_asset_key_from_event_record(event_record)
 
                 # update the event_record here
                 self.update_event_log_record(row_id, updated_record)

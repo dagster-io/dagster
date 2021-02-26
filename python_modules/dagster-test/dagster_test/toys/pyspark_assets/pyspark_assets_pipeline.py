@@ -39,7 +39,10 @@ def savedir(context):
 
 
 @solid(
-    config_schema={"temperature_file": Field(String), "version_salt": Field(String),},
+    config_schema={
+        "temperature_file": Field(String),
+        "version_salt": Field(String),
+    },
     required_resource_keys={"source_data_dir", "savedir"},
 )
 def get_max_temp_per_station(context):
@@ -106,7 +109,9 @@ def combine_dfs(context, maxtemp_path, stationcons_path):
 
 @solid(
     config_schema={"version_salt": Field(String)},
-    input_defs=[InputDefinition(name="path", dagster_type=String),],
+    input_defs=[
+        InputDefinition(name="path", dagster_type=String),
+    ],
     required_resource_keys={"savedir"},
 )
 def pretty_output(context, path):
@@ -134,13 +139,27 @@ if __name__ == "__main__":
     run_config = {
         "solids": {
             "get_max_temp_per_station": {
-                "config": {"temperature_file": "temperature.csv", "version_salt": "foo",}
+                "config": {
+                    "temperature_file": "temperature.csv",
+                    "version_salt": "foo",
+                }
             },
             "get_consolidated_location": {
-                "config": {"station_file": "stations.csv", "version_salt": "foo",}
+                "config": {
+                    "station_file": "stations.csv",
+                    "version_salt": "foo",
+                }
             },
-            "combine_dfs": {"config": {"version_salt": "foo",}},
-            "pretty_output": {"config": {"version_salt": "foo",}},
+            "combine_dfs": {
+                "config": {
+                    "version_salt": "foo",
+                }
+            },
+            "pretty_output": {
+                "config": {
+                    "version_salt": "foo",
+                }
+            },
         },
         "resources": {
             "source_data_dir": {"config": {"dir": "asset_pipeline_files"}},
@@ -148,4 +167,7 @@ if __name__ == "__main__":
         },
     }
 
-    result = execute_pipeline(pyspark_assets_pipeline, run_config=run_config,)
+    result = execute_pipeline(
+        pyspark_assets_pipeline,
+        run_config=run_config,
+    )

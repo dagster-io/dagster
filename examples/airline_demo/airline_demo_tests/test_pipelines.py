@@ -9,11 +9,13 @@ from dagster.core.test_utils import instance_for_test
 from dagster.utils import load_yaml_from_globs
 
 ingest_pipeline = ReconstructablePipeline.for_module(
-    "airline_demo.pipelines", "define_airline_demo_ingest_pipeline",
+    "airline_demo.pipelines",
+    "define_airline_demo_ingest_pipeline",
 )
 
 warehouse_pipeline = ReconstructablePipeline.for_module(
-    "airline_demo.pipelines", "define_airline_demo_warehouse_pipeline",
+    "airline_demo.pipelines",
+    "define_airline_demo_warehouse_pipeline",
 )
 
 
@@ -31,7 +33,8 @@ def test_ingest_pipeline_fast(postgres, pg_hostname):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test() as instance:
             ingest_config_dict = load_yaml_from_globs(
-                config_path("test_base.yaml"), config_path("local_fast_ingest.yaml"),
+                config_path("test_base.yaml"),
+                config_path("local_fast_ingest.yaml"),
             )
             ingest_config_dict["resources"]["io_manager"] = {"config": {"base_dir": temp_dir}}
             ingest_config_dict["resources"]["pyspark_io_manager"] = {

@@ -59,7 +59,8 @@ class DagsterGrpcClient:
             "You must pass one and only one of `port` or `socket`.",
         )
         check.invariant(
-            host is not None if port else True, "Must provide a hostname",
+            host is not None if port else True,
+            "Must provide a hostname",
         )
 
         if port:
@@ -105,8 +106,8 @@ class DagsterGrpcClient:
                 "echo": res.echo,
             }
 
-    def get_server_id(self):
-        res = self._query("GetServerId", api_pb2.Empty)
+    def get_server_id(self, timeout=None):
+        res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)
         return res.server_id
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args):
@@ -209,7 +210,9 @@ class DagsterGrpcClient:
 
     def external_repository(self, external_repository_origin):
         check.inst_param(
-            external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+            external_repository_origin,
+            "external_repository_origin",
+            ExternalRepositoryOrigin,
         )
 
         res = self._query(
@@ -258,7 +261,9 @@ class DagsterGrpcClient:
 
     def external_sensor_execution(self, sensor_execution_args):
         check.inst_param(
-            sensor_execution_args, "sensor_execution_args", SensorExecutionArgs,
+            sensor_execution_args,
+            "sensor_execution_args",
+            SensorExecutionArgs,
         )
 
         res = self._query(
@@ -279,7 +284,9 @@ class DagsterGrpcClient:
 
     def cancel_execution(self, cancel_execution_request):
         check.inst_param(
-            cancel_execution_request, "cancel_execution_request", CancelExecutionRequest,
+            cancel_execution_request,
+            "cancel_execution_request",
+            CancelExecutionRequest,
         )
 
         res = self._query(
@@ -294,7 +301,9 @@ class DagsterGrpcClient:
 
     def can_cancel_execution(self, can_cancel_execution_request, timeout=None):
         check.inst_param(
-            can_cancel_execution_request, "can_cancel_execution_request", CanCancelExecutionRequest,
+            can_cancel_execution_request,
+            "can_cancel_execution_request",
+            CanCancelExecutionRequest,
         )
 
         res = self._query(
@@ -386,7 +395,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
 
 @contextmanager
 def ephemeral_grpc_api_client(
-    loadable_target_origin=None, force_port=False, max_retries=10, max_workers=1
+    loadable_target_origin=None, force_port=False, max_retries=10, max_workers=None
 ):
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.bool_param(force_port, "force_port")

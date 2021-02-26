@@ -59,7 +59,9 @@ class RuntimeMismatchErrorData(
     def __new__(cls, config_type_snap, value_rep):
         check.inst_param(config_type_snap, "config_type", ConfigTypeSnap)
         return super(RuntimeMismatchErrorData, cls).__new__(
-            cls, config_type_snap, check.str_param(value_rep, "value_rep"),
+            cls,
+            config_type_snap,
+            check.str_param(value_rep, "value_rep"),
         )
 
 
@@ -225,7 +227,8 @@ def create_missing_required_field_error(context, expected_field):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=('Missing required config entry "{expected}" {path_msg}.').format(
-            expected=expected_field, path_msg=get_friendly_path_msg(context.stack),
+            expected=expected_field,
+            path_msg=get_friendly_path_msg(context.stack),
         ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_snap=context.config_type_snap.get_field(expected_field)

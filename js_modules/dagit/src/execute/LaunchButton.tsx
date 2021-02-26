@@ -2,12 +2,10 @@ import {
   Button,
   Icon,
   IconName,
-  Intent,
   Menu,
   MenuItem,
   Popover,
   Position,
-  Spinner,
   Tooltip,
 } from '@blueprintjs/core';
 import * as React from 'react';
@@ -15,12 +13,14 @@ import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {WebsocketStatusContext} from 'src/app/WebsocketStatus';
+import {Box} from 'src/ui/Box';
+import {Spinner} from 'src/ui/Spinner';
 
 export interface LaunchButtonConfiguration {
   title: string;
   disabled: boolean;
   scope?: string;
-  onClick: () => void;
+  onClick: () => Promise<any>;
   icon?: IconName | JSX.Element | 'dagster-spinner';
   tooltip?: string | JSX.Element;
 }
@@ -37,10 +37,8 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
 
   const onConfigSelected = async (option: LaunchButtonConfiguration) => {
     setStarting(true);
-    option.onClick();
-    setTimeout(() => {
-      setStarting(false);
-    }, 300);
+    await option.onClick();
+    setStarting(false);
   };
 
   let forced: Partial<LaunchButtonConfiguration> = {};
@@ -108,7 +106,7 @@ interface LaunchButtonDropdownProps {
   primary: LaunchButtonConfiguration;
   options: LaunchButtonConfiguration[];
   disabled?: boolean;
-  tooltip?: string;
+  tooltip?: string | JSX.Element;
   icon?: IconName | undefined;
   runCount: number;
 }
@@ -229,9 +227,9 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
         disabled={disabled}
       >
         {icon === 'dagster-spinner' ? (
-          <span style={{paddingRight: 6}}>
-            <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
-          </span>
+          <Box padding={{right: 8}}>
+            <Spinner purpose="body-text" />
+          </Box>
         ) : (
           <Icon
             icon={icon}

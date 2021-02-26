@@ -14,7 +14,10 @@ def create_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_plan", **task_kwargs)
     def _execute_plan(self, execute_step_args_packed, executable_dict):
         execute_step_args = unpack_value(
-            check.dict_param(execute_step_args_packed, "execute_step_args_packed",)
+            check.dict_param(
+                execute_step_args_packed,
+                "execute_step_args_packed",
+            )
         )
         check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
 

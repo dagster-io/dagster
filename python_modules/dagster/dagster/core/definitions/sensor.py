@@ -7,6 +7,8 @@ from dagster.utils import ensure_gen
 
 from .job import JobContext, JobDefinition, JobType, RunRequest, SkipReason
 
+DEFAULT_SENSOR_DAEMON_INTERVAL = 30
+
 
 class SensorExecutionContext(JobContext):
     """Sensor execution context.
@@ -55,14 +57,28 @@ class SensorDefinition(JobDefinition):
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this sensor. (default: 'default')
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.  Practically, the time elapsed between sensor evaluations
+            will be the shortest multiple of the sensor daemon evaluation interval (set on the
+            instance in the "sensors_setting" configuration map, 30 seconds by default) that is
+            greater than or equal to this value.
+        description (Optional[str]): A human-readable description of the sensor.
     """
 
     __slots__ = [
         "_evaluation_fn",
+        "_min_interval",
     ]
 
     def __init__(
-        self, name, pipeline_name, evaluation_fn, solid_selection=None, mode=None,
+        self,
+        name,
+        pipeline_name,
+        evaluation_fn,
+        solid_selection=None,
+        mode=None,
+        minimum_interval_seconds=None,
+        description=None,
     ):
         super(SensorDefinition, self).__init__(
             name,
@@ -70,8 +86,13 @@ class SensorDefinition(JobDefinition):
             pipeline_name=pipeline_name,
             mode=mode,
             solid_selection=solid_selection,
+            description=description,
         )
+
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")
+        self._min_interval = check.opt_int_param(
+            minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
+        )
 
     def get_execution_data(self, context):
         check.inst_param(context, "context", SensorExecutionContext)
@@ -84,6 +105,10 @@ class SensorDefinition(JobDefinition):
             return check.is_list(result, of_type=(RunRequest, SkipReason))
 
         return check.is_list(result, of_type=RunRequest)
+
+    @property
+    def minimum_interval_seconds(self):
+        return self._min_interval
 
 
 def wrap_sensor_evaluation(sensor_name, result):

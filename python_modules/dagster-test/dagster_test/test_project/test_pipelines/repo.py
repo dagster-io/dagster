@@ -315,7 +315,8 @@ def define_schedules():
         return cfg
 
     @schedule(
-        pipeline_name="demo_pipeline_celery", cron_schedule="* * * * *",
+        pipeline_name="demo_pipeline_celery",
+        cron_schedule="* * * * *",
     )
     def frequent_celery(_):
         from dagster_celery_k8s.config import get_celery_engine_config
@@ -471,7 +472,9 @@ def define_hard_failer():
                 segfault()
             return 0
 
-        @solid(input_defs=[InputDefinition("n", Int)],)
+        @solid(
+            input_defs=[InputDefinition("n", Int)],
+        )
         def increment(_, n):
             return n + 1
 

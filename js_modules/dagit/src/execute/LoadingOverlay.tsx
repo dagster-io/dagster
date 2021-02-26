@@ -1,14 +1,18 @@
-import {Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
+
+import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 
 export const LoadingOverlay: React.FC<{
   isLoading: boolean;
   message: string;
 }> = ({isLoading, message}) => (
   <LoadingOverlayContainer isLoading={isLoading}>
-    <Spinner size={24} />
-    &nbsp;&nbsp;{message}
+    <Group direction="row" spacing={8} alignItems="center">
+      <Spinner purpose="body-text" />
+      <div>{message}</div>
+    </Group>
   </LoadingOverlayContainer>
 );
 

@@ -31,11 +31,6 @@ def asset_wipe_command(key, **cli_args):
         raise click.UsageError("Error, cannot use more than one of: asset key, `--all`.")
 
     with DagsterInstance.get() as instance:
-        if not instance.is_asset_aware:
-            raise click.UsageError(
-                "Error, configured Dagster instance does not have asset aware event storage."
-            )
-
         if len(key) > 0:
             asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
             prompt = (

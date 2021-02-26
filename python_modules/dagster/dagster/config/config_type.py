@@ -51,7 +51,12 @@ class ConfigType:
     """
 
     def __init__(
-        self, key, kind, given_name=None, description=None, type_params=None,
+        self,
+        key,
+        kind,
+        given_name=None,
+        description=None,
+        type_params=None,
     ):
 
         self.key = check.str_param(key, "key")
@@ -139,7 +144,9 @@ class Float(BuiltinConfigScalar):
 class Any(ConfigType):
     def __init__(self):
         super(Any, self).__init__(
-            key="Any", given_name="Any", kind=ConfigTypeKind.ANY,
+            key="Any",
+            given_name="Any",
+            kind=ConfigTypeKind.ANY,
         )
 
 
@@ -286,17 +293,19 @@ class Enum(ConfigType):
                 The name for the enum. If not present, `enum.__name__` will be used.
 
         Example:
-            .. code-block:: python
-                class Color(enum.Enum):
-                    RED = enum.auto()
-                    GREEN = enum.auto()
-                    BLUE = enum.auto()
 
-                @solid(
-                    config_schema={"color": Field(Enum.from_python_enum(Color))}
-                )
-                def select_color(context):
-                    # ...
+        .. code-block:: python
+
+            class Color(enum.Enum):
+                RED = enum.auto()
+                GREEN = enum.auto()
+                BLUE = enum.auto()
+
+            @solid(
+                config_schema={"color": Field(Enum.from_python_enum(Color))}
+            )
+            def select_color(context):
+                # ...
         """
         if name is None:
             name = enum.__name__
@@ -346,7 +355,10 @@ class ScalarUnion(ConfigType):
     """
 
     def __init__(
-        self, scalar_type, non_scalar_schema, _key=None,
+        self,
+        scalar_type,
+        non_scalar_schema,
+        _key=None,
     ):
         from .field import resolve_to_config_type
 

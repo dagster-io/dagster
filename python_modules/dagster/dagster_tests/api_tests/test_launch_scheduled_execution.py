@@ -63,28 +63,35 @@ def bad_env_fn_schedule():  # forgot context arg
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, should_execute=_throw,
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    should_execute=_throw,
 )
 def bad_should_execute_schedule(_context):
     return {}
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, should_execute=_never,
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    should_execute=_never,
 )
 def skip_schedule(_context):
     return {}
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO,
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
 )
 def wrong_config_schedule(_context):
     return {}
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Pacific",
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    execution_timezone="US/Pacific",
 )
 def pacific_time_schedule(_context):
     return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
@@ -106,7 +113,10 @@ def the_repo():
 def _default_instance():
     return instance_for_test(
         overrides={
-            "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher",}
+            "run_launcher": {
+                "module": "dagster.core.test_utils",
+                "class": "MockedRunLauncher",
+            }
         },
     )
 
@@ -135,7 +145,9 @@ def grpc_schedule_origin(schedule_name):
     with server_process.create_ephemeral_client() as api_client:
         repo_origin = ExternalRepositoryOrigin(
             GrpcServerRepositoryLocationOrigin(
-                host=api_client.host, port=api_client.port, socket=api_client.socket,
+                host=api_client.host,
+                port=api_client.port,
+                socket=api_client.socket,
             ),
             repository_name="the_repo",
         )
@@ -150,7 +162,14 @@ def sync_launch_scheduled_execution(schedule_origin, system_tz=None):
     with get_temp_file_name() as output_file:
 
         parts = (
-            [sys.executable, "-m", "dagster", "api", "launch_scheduled_execution", output_file,]
+            [
+                sys.executable,
+                "-m",
+                "dagster",
+                "api",
+                "launch_scheduled_execution",
+                output_file,
+            ]
             + xplat_shlex_split(schedule_origin.get_repo_cli_args())
             + ["--schedule_name={}".format(schedule_origin.job_name)]
             + (["--override-system-timezone={}".format(system_tz)] if system_tz else [])
@@ -172,7 +191,11 @@ def sync_launch_scheduled_execution(schedule_origin, system_tz=None):
 
 
 @pytest.mark.parametrize(
-    "schedule_origin_context", [python_schedule_origin, grpc_schedule_origin,],
+    "schedule_origin_context",
+    [
+        python_schedule_origin,
+        grpc_schedule_origin,
+    ],
 )
 def test_launch_successful_execution(schedule_origin_context):
     with _default_instance() as instance:
@@ -188,7 +211,8 @@ def test_launch_successful_execution(schedule_origin_context):
 
 
 @pytest.mark.parametrize(
-    "schedule_origin_context", [python_schedule_origin],
+    "schedule_origin_context",
+    [python_schedule_origin],
 )
 def test_launch_successful_execution_telemetry(schedule_origin_context):
     with _default_instance():
@@ -327,7 +351,9 @@ def test_grpc_server_down():
     with _default_instance() as instance:
         down_grpc_repo_origin = ExternalRepositoryOrigin(
             GrpcServerRepositoryLocationOrigin(
-                host="localhost", port=find_free_port(), socket=None,
+                host="localhost",
+                port=find_free_port(),
+                socket=None,
             ),
             repository_name="down_repo",
         )
@@ -349,7 +375,10 @@ def test_grpc_server_down():
 def test_launch_failure(schedule_origin_context):
     with instance_for_test(
         overrides={
-            "run_launcher": {"module": "dagster.core.test_utils", "class": "ExplodingRunLauncher",},
+            "run_launcher": {
+                "module": "dagster.core.test_utils",
+                "class": "ExplodingRunLauncher",
+            },
         },
     ) as instance:
         with schedule_origin_context("simple_schedule") as schedule_origin:

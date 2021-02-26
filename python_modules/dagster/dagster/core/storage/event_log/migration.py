@@ -36,10 +36,10 @@ def migrate_asset_key_data(event_log_storage, print_fn=lambda _: None):
     Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
-    from dagster.core.storage.event_log.sql_event_log import AssetAwareSqlEventLogStorage
+    from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
     from .schema import AssetKeyTable, SqlEventLogStorageTable
 
-    if not isinstance(event_log_storage, AssetAwareSqlEventLogStorage):
+    if not isinstance(event_log_storage, SqlEventLogStorage):
         return
 
     query = (
@@ -47,7 +47,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=lambda _: None):
         .where(SqlEventLogStorageTable.c.asset_key != None)
         .group_by(SqlEventLogStorageTable.c.asset_key)
     )
-    with event_log_storage.connect() as conn:
+    with event_log_storage.index_connection() as conn:
         print_fn("Querying event logs.")
         to_insert = conn.execute(query).fetchall()
         print_fn("Found {} records to index".format(len(to_insert)))

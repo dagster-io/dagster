@@ -37,7 +37,10 @@ class LoadableTargetOrigin(
         args = (
             (
                 (
-                    ["-f", self.python_file,]
+                    [
+                        "-f",
+                        self.python_file,
+                    ]
                     + (
                         ["-d", self.working_directory]
                         if self.working_directory

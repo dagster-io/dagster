@@ -1,14 +1,62 @@
 import sys
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from dagster import check
-from dagster.core.host_representation import RepositoryLocationHandle, RepositoryLocationOrigin
+from dagster.core.host_representation import RepositoryLocationOrigin
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
+class WorkspaceSnapshot(
+    namedtuple("WorkspaceSnapshot", "location_origin_dict location_error_dict")
+):
+    """
+    This class is request-scoped object that stores a reference to all the locaiton origins and errors
+    that were on a `Workspace`.
+
+    This object is needed because a workspace and handles/errors on that workspace can be updated
+    (for example, from a thread on the process context). If a request is accessing a repository location
+    at the same time the repository location was being cleaned up, we would run into errors.
+    """
+
+    def __new__(cls, location_origin_dict, _location_error_dict):
+        return super(WorkspaceSnapshot, cls).__new__(
+            cls, location_origin_dict, _location_error_dict
+        )
+
+    def is_reload_supported(self, location_name):
+        return self.location_origin_dict[location_name].is_reload_supported
+
+    @property
+    def repository_location_names(self):
+        return list(self.location_origin_dict.keys())
+
+    @property
+    def repository_location_errors(self):
+        return list(self.location_error_dict.values())
+
+    def has_repository_location_error(self, location_name):
+        check.str_param(location_name, "location_name")
+        return location_name in self.location_error_dict
+
+    def get_repository_location_error(self, location_name):
+        check.str_param(location_name, "location_name")
+        return self.location_error_dict[location_name]
+
+
 class Workspace:
-    def __init__(self, repository_location_origins):
+    def __init__(self, workspace_load_target):
+
+        from .cli_target import WorkspaceLoadTarget
+
+        self._workspace_load_target = check.opt_inst_param(
+            workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
+        )
+
+        repository_location_origins = (
+            self._workspace_load_target.create_origins() if self._workspace_load_target else []
+        )
+
         self._location_origin_dict = OrderedDict()
         check.list_param(
             repository_location_origins,
@@ -29,10 +77,17 @@ class Workspace:
             self._location_origin_dict[origin.location_name] = origin
             self._load_handle(origin.location_name)
 
+    # Can be overidden in subclasses that need different logic for loading repository
+    # locations from origins
+    def create_handle_from_origin(self, origin):
+        return origin.create_handle()
+
     def _load_handle(self, location_name):
         existing_handle = self._location_handle_dict.get(location_name)
         if existing_handle:
-            existing_handle.cleanup()
+            # We don't clean up here anymore because we want these to last while being
+            # used in other requests
+            # existing_handle.cleanup()
             del self._location_handle_dict[location_name]
 
         if self._location_error_dict.get(location_name):
@@ -40,7 +95,7 @@ class Workspace:
 
         origin = self._location_origin_dict[location_name]
         try:
-            handle = RepositoryLocationHandle.create_from_repository_location_origin(origin)
+            handle = self.create_handle_from_origin(origin)
             self._location_handle_dict[location_name] = handle
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -51,17 +106,14 @@ class Workspace:
                 )
             )
 
+    def create_snapshot(self):
+        return WorkspaceSnapshot(
+            self._location_origin_dict.copy(), self._location_error_dict.copy()
+        )
+
     @property
     def repository_location_handles(self):
         return list(self._location_handle_dict.values())
-
-    @property
-    def repository_location_names(self):
-        return list(self._location_origin_dict.keys())
-
-    @property
-    def repository_location_errors(self):
-        return list(self._location_error_dict.values())
 
     def has_repository_location_handle(self, location_name):
         check.str_param(location_name, "location_name")
@@ -75,15 +127,8 @@ class Workspace:
         check.str_param(location_name, "location_name")
         return location_name in self._location_error_dict
 
-    def get_repository_location_error(self, location_name):
-        check.str_param(location_name, "location_name")
-        return self._location_error_dict[location_name]
-
     def reload_repository_location(self, location_name):
         self._load_handle(location_name)
-
-    def is_reload_supported(self, location_name):
-        return self._location_origin_dict[location_name].is_reload_supported
 
     def __enter__(self):
         return self

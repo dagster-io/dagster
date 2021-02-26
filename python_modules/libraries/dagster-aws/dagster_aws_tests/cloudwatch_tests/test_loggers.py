@@ -125,9 +125,10 @@ def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
         },
     )
 
-    events = cloudwatch_client.get_log_events(logGroupName=log_group, logStreamName=log_stream,)[
-        "events"
-    ]
+    events = cloudwatch_client.get_log_events(
+        logGroupName=log_group,
+        logStreamName=log_stream,
+    )["events"]
 
     info_message = json.loads(events[0]["message"])
     error_message = json.loads(events[1]["message"])

@@ -87,26 +87,31 @@ def docker_service_up(docker_compose_file, service_name):
 
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name], env=env,
+                ["docker-compose", "-f", docker_compose_file, "stop", service_name],
+                env=env,
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name], env=env,
+                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
+                env=env,
             )
         except Exception:  # pylint: disable=broad-except
             pass
 
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name], env=env,
+            ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name],
+            env=env,
         )
 
         yield
 
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name], env=env,
+                ["docker-compose", "-f", docker_compose_file, "stop", service_name],
+                env=env,
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name], env=env,
+                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
+                env=env,
             )
         except Exception:  # pylint: disable=broad-except
             pass

@@ -3,6 +3,7 @@ import time
 from collections import Counter
 
 import mock
+import pytest
 import yaml
 from dagster import (
     AssetKey,
@@ -18,8 +19,8 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import DagsterEventRecord, construct_event_logger
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.storage.event_log.migration import migrate_asset_key_data
@@ -174,6 +175,7 @@ def test_delete_postgres_event_log(conn_string):
     assert event_log_storage.get_logs_for_run(result.run_id) == []
 
 
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
 def test_basic_get_logs_for_run_cursor(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -237,6 +239,7 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
     assert stats_two.steps_succeeded == 1
 
 
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
 def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -296,7 +299,7 @@ def test_listen_notify_single_run_event(conn_string):
 
         assert len(event_list) == len(events)
         # uncomment when https://github.com/dagster-io/dagster/issues/3368 is resolved with structured event
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list])
+        # assert all([isinstance(event, EventRecord) for event in event_list])
     finally:
         del event_log_storage
 
@@ -338,8 +341,8 @@ def test_listen_notify_filter_two_runs_event(conn_string):
         assert len(event_list_one) == len(events_one)
         assert len(event_list_two) == len(events_two)
         # uncomment when https://github.com/dagster-io/dagster/issues/3368 is resolved with structured event
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list_one])
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list_two])
+        # assert all([isinstance(event, EventRecord) for event in event_list_one])
+        # assert all([isinstance(event, EventRecord) for event in event_list_two])
 
     finally:
         del event_log_storage
@@ -377,7 +380,7 @@ def test_listen_notify_filter_run_event(conn_string):
 
         assert len(event_list) == len(events_two)
         # uncomment when https://github.com/dagster-io/dagster/issues/3368 is resolved with structured event
-        # assert all([isinstance(event, DagsterEventRecord) for event in event_list])
+        # assert all([isinstance(event, EventRecord) for event in event_list])
 
     finally:
         del event_log_storage
@@ -418,6 +421,39 @@ def test_load_from_config(hostname):
             assert from_url.postgres_url == from_explicit.postgres_url
 
 
+def test_correct_timezone(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    curr_time = time.time()
+
+    event = EventRecord(
+        None,
+        "Message2",
+        "debug",
+        "",
+        "foo",
+        curr_time,
+        dagster_event=DagsterEvent(
+            DagsterEventType.PIPELINE_START.value,
+            "nonce",
+            event_specific_data=EngineEventData.in_process(999),
+        ),
+    )
+
+    event_log_storage.store_event(event)
+
+    logs = event_log_storage.get_logs_for_run("foo")
+
+    assert len(logs) == 1
+
+    log = logs[0]
+
+    stats = event_log_storage.get_stats_for_run("foo")
+
+    assert int(log.timestamp) == int(stats.start_time)
+    assert int(log.timestamp) == int(curr_time)
+
+
 def test_asset_materialization(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -447,7 +483,7 @@ def test_asset_materialization(conn_string):
     events = event_log_storage.get_asset_events(asset_key)
     assert len(events) == 1
     event = events[0]
-    assert isinstance(event, DagsterEventRecord)
+    assert isinstance(event, EventRecord)
     assert event.dagster_event.event_type_value == DagsterEventType.STEP_MATERIALIZATION.value
 
 
@@ -473,7 +509,8 @@ def test_asset_events_error_parsing(conn_string):
         event_log_storage.store_event(event)
 
     with mock.patch(
-        "dagster.core.storage.event_log.sql_event_log.logging.warning", side_effect=mock_log,
+        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+        side_effect=mock_log,
     ):
         with mock.patch(
             "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",

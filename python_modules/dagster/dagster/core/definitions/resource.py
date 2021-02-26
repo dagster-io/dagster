@@ -1,9 +1,9 @@
 from collections import namedtuple
 from functools import update_wrapper
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -11,7 +11,7 @@ from ..decorator_utils import split_function_parameters, validate_decorated_fn_p
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-class ResourceDefinition(ConfigurableDefinition):
+class ResourceDefinition(AnonymousConfigurableDefinition):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -127,8 +127,10 @@ class ResourceDefinition(ConfigurableDefinition):
             [ResourceDefinition]: A resource that creates the magic methods automatically and helps
                 you mock existing resources.
         """
+        from unittest import mock
+
         return ResourceDefinition.hardcoded_resource(
-            value=seven.mock.MagicMock(), description=description
+            value=mock.MagicMock(), description=description
         )
 
     @staticmethod
@@ -139,8 +141,7 @@ class ResourceDefinition(ConfigurableDefinition):
             description=description,
         )
 
-    def copy_for_configured(self, name, description, config_schema, _):
-        check.invariant(name is None, "ResourceDefintions do not have names")
+    def copy_for_configured(self, description, config_schema, _):
         return ResourceDefinition(
             config_schema=config_schema,
             description=description or self.description,
@@ -151,7 +152,11 @@ class ResourceDefinition(ConfigurableDefinition):
 
 class _ResourceDecoratorCallable:
     def __init__(
-        self, config_schema=None, description=None, required_resource_keys=None, version=None,
+        self,
+        config_schema=None,
+        description=None,
+        required_resource_keys=None,
+        version=None,
     ):
         self.config_schema = config_schema  # checked by underlying definition
         self.description = check.opt_str_param(description, "description")

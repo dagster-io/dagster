@@ -7,6 +7,8 @@ from dagster import (
     PipelineDefinition,
     SolidInvocation,
     execute_pipeline,
+    pipeline,
+    reconstructable,
     resource,
     solid,
 )
@@ -320,3 +322,23 @@ def test_failure_hook_event():
             assert event.solid_name == "failed_solid"
         if event.event_type == DagsterEventType.HOOK_SKIPPED:
             assert event.solid_name == "a_solid"
+
+
+@solid
+def noop(_):
+    return
+
+
+@success_hook
+def noop_hook(_):
+    return
+
+
+@noop_hook
+@pipeline
+def foo():
+    noop()
+
+
+def test_pipelines_with_hooks_are_reconstructable():
+    assert reconstructable(foo)

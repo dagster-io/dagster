@@ -6,7 +6,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals, get_terminate_signal
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
 
 from .test_scheduler_run import (
     instance_with_schedules,
@@ -46,9 +46,10 @@ def test_failure_recovery_before_run_created(
     # Verify that if the scheduler crashes or is interrupted before a run is created,
     # it will create exactly one tick/run when it is re-launched
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
-        initial_datetime = pendulum.datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        ).in_tz("US/Central")
+        initial_datetime = to_timezone(
+            create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"),
+            "US/Central",
+        )
 
         frozen_datetime = initial_datetime.add()
 
@@ -96,7 +97,7 @@ def test_failure_recovery_before_run_created(
             validate_run_started(
                 instance.get_runs()[0],
                 execution_time=initial_datetime,
-                partition_time=pendulum.datetime(2019, 2, 26),
+                partition_time=create_pendulum_time(2019, 2, 26),
             )
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
@@ -133,7 +134,9 @@ def test_failure_recovery_after_run_created(
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
-        initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
         frozen_datetime = initial_datetime.add()
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         with pendulum.test(frozen_datetime):
@@ -179,7 +182,7 @@ def test_failure_recovery_after_run_created(
 
                 run = instance.get_runs()[0]
                 validate_run_started(
-                    instance.get_runs()[0], frozen_datetime, pendulum.datetime(2019, 2, 26)
+                    instance.get_runs()[0], frozen_datetime, create_pendulum_time(2019, 2, 26)
                 )
 
                 assert run.status in [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS]
@@ -199,7 +202,7 @@ def test_failure_recovery_after_run_created(
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
             validate_run_started(
-                instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
+                instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
             )
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
@@ -239,7 +242,9 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
-        initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
         frozen_datetime = initial_datetime.add()
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         with pendulum.test(frozen_datetime):
@@ -263,7 +268,7 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
 
             assert instance.get_runs_count() == 1
             validate_run_started(
-                instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
+                instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
             )
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
@@ -291,7 +296,7 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
 
             assert instance.get_runs_count() == 1
             validate_run_started(
-                instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
+                instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
             )
 
             ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
@@ -313,7 +318,9 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_recovery_between_multi_runs(external_repo_context, crash_location, crash_signal):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
-        initial_datetime = pendulum.datetime(year=2019, month=2, day=28, hour=0, minute=0, second=0)
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=28, hour=0, minute=0, second=0
+        )
         frozen_datetime = initial_datetime.add()
         external_schedule = external_repo.get_external_schedule("multi_run_schedule")
         with pendulum.test(frozen_datetime):

@@ -70,9 +70,9 @@ GET_ASSET_RUNS = """
 class TestAssetAwareEventLog(
     make_graphql_context_test_suite(
         context_variants=[
-            GraphQLContextVariant.in_memory_instance_in_process_env(),
-            GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
-            GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
+            GraphQLContextVariant.consolidated_sqlite_instance_managed_grpc_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
+            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
         ]
     )
 ):
@@ -84,6 +84,8 @@ class TestAssetAwareEventLog(
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+
+        graphql_context.instance.run_launcher.join()
 
         result = execute_dagster_graphql(
             graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": None}
@@ -105,6 +107,8 @@ class TestAssetAwareEventLog(
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+
+        graphql_context.instance.run_launcher.join()
 
         result = execute_dagster_graphql(
             graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": ["a"]}
@@ -140,6 +144,9 @@ class TestAssetAwareEventLog(
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+
+        graphql_context.instance.run_launcher.join()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION,
@@ -156,6 +163,9 @@ class TestAssetAwareEventLog(
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+
+        graphql_context.instance.run_launcher.join()
+
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_WITH_PARTITION,
@@ -181,6 +191,9 @@ class TestAssetAwareEventLog(
             variables={"executionParams": {"selector": multi_selector, "mode": "default"}},
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+
+        graphql_context.instance.run_launcher.join()
+
         multi_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
         result = execute_dagster_graphql(

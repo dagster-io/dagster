@@ -1,13 +1,15 @@
 import {gql, useApolloClient, useMutation} from '@apollo/client';
-import {Button, Icon, Intent, Spinner, Tooltip} from '@blueprintjs/core';
+import {Button, Icon, Intent, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SharedToaster} from 'src/app/DomUtils';
+import {useInvalidateConfigsForRepo} from 'src/app/LocalStorage';
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
 } from 'src/nav/types/ReloadRepositoryLocationMutation';
+import {Spinner} from 'src/ui/Spinner';
 
 type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
 type OnReload = (location: string, result: ReloadResult) => void;
@@ -21,6 +23,7 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
     variables: {location},
   });
   const [reloading, setReloading] = React.useState(false);
+  const invalidateConfigs = useInvalidateConfigsForRepo();
 
   const onClick = async (e: React.MouseEvent | KeyboardEvent) => {
     e.stopPropagation();
@@ -59,6 +62,14 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
       onReload(location, {type: 'success'});
     }
 
+    // Update run config localStorage, which may now be out of date.
+    const repositories =
+      data?.reloadRepositoryLocation.__typename === 'RepositoryLocation'
+        ? data.reloadRepositoryLocation.repositories
+        : [];
+
+    invalidateConfigs(repositories);
+
     // clears and re-fetches all the queries bound to the UI
     apollo.resetStore();
   };
@@ -87,7 +98,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
         content={'Reload metadata from this repository location.'}
       >
         <Button
-          icon={reloading ? <Spinner size={12} /> : <Icon icon="refresh" iconSize={12} />}
+          icon={reloading ? <Spinner purpose="body-text" /> : <Icon icon="refresh" iconSize={12} />}
           disabled={reloading}
           onClick={onClick}
         />
@@ -100,6 +111,17 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
   mutation ReloadRepositoryLocationMutation($location: String!) {
     reloadRepositoryLocation(repositoryLocationName: $location) {
       __typename
+      ... on RepositoryLocation {
+        id
+        repositories {
+          id
+          name
+          pipelines {
+            id
+            name
+          }
+        }
+      }
       ... on ReloadNotSupported {
         message
       }

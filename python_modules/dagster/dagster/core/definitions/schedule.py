@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pendulum
+from croniter import croniter
 from dagster import check
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
@@ -64,16 +65,16 @@ class ScheduleDefinition(JobDefinition):
             or one or more RunRequest objects.
         run_config (Optional[Dict]): The environment config that parameterizes this execution,
             as a dict.
-        run_config_fn (Callable[[ScheduleExecutionContext], [Dict]]): A function that takes a
-            ScheduleExecutionContext object and returns the environment configuration that
-            parameterizes this execution, as a dict. You may set only one of ``run_config``
-            and ``run_config_fn``.
+        run_config_fn (Optional[Callable[[ScheduleExecutionContext], [Dict]]]): A function that
+            takes a ScheduleExecutionContext object and returns the environment configuration that
+            parameterizes this execution, as a dict. You may set only one of ``run_config``,
+            ``run_config_fn``, and ``execution_fn``.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
-            key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
+            key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')
@@ -85,6 +86,7 @@ class ScheduleDefinition(JobDefinition):
             schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
+        description (Optional[str]): A human-readable description of the schedule.
     """
 
     __slots__ = [
@@ -109,6 +111,7 @@ class ScheduleDefinition(JobDefinition):
         environment_vars=None,
         execution_timezone=None,
         execution_fn=None,
+        description=None,
     ):
 
         super(ScheduleDefinition, self).__init__(
@@ -119,7 +122,13 @@ class ScheduleDefinition(JobDefinition):
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
+            description=check.opt_str_param(description, "description"),
         )
+
+        if not croniter.is_valid(cron_schedule):
+            raise DagsterInvalidDefinitionError(
+                f"Found invalid cron schedule '{cron_schedule}' for schedule '{name}''."
+            )
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
         self._environment_vars = check.opt_dict_param(
@@ -167,6 +176,11 @@ class ScheduleDefinition(JobDefinition):
                     lambda: f"Error occurred during the execution of should_execute for schedule {name}",
                 ):
                     if not should_execute(context):
+                        yield SkipReason(
+                            "should_execute function for {schedule_name} returned false.".format(
+                                schedule_name=name
+                            )
+                        )
                         return
 
                 with user_code_error_boundary(
@@ -182,7 +196,9 @@ class ScheduleDefinition(JobDefinition):
                     evaluated_tags = tags_fn(context)
 
                 yield RunRequest(
-                    run_key=None, run_config=evaluated_run_config, tags=evaluated_tags,
+                    run_key=None,
+                    run_config=evaluated_run_config,
+                    tags=evaluated_tags,
                 )
 
             self._execution_fn = _execution_fn
@@ -191,7 +207,7 @@ class ScheduleDefinition(JobDefinition):
             try:
                 # Verify that the timezone can be loaded
                 pendulum.timezone(self._execution_timezone)
-            except ValueError:
+            except Exception:
                 raise DagsterInvalidDefinitionError(
                     "Invalid execution timezone {timezone} for {schedule_name}".format(
                         schedule_name=name, timezone=self._execution_timezone

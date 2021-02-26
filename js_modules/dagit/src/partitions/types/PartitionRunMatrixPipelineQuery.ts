@@ -10,8 +10,8 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PartitionRunMatrixPipelineQuery
 // ====================================================
 
-export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError {
-  __typename: "PipelineSnapshotNotFoundError" | "PipelineNotFoundError" | "PythonError";
+export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "PipelineSnapshotNotFoundError" | "PythonError";
 }
 
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition {
@@ -70,7 +70,7 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
   solidHandles: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }
 
-export type PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot;
+export type PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineNotFoundError | PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot;
 
 export interface PartitionRunMatrixPipelineQuery {
   pipelineSnapshotOrError: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError;

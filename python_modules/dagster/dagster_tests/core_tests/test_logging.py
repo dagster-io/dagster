@@ -219,7 +219,8 @@ def test_resource_logging(capsys):
         context.resources.bar()
 
     execute_solid(
-        process, mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
+        process,
+        mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
     )
 
     captured = capsys.readouterr()

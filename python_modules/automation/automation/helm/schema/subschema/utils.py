@@ -59,7 +59,9 @@ def create_json_schema_conditionals(
 ) -> List[dict]:
     return [
         {
-            "if": {"properties": {"type": {"const": enum_type}},},
+            "if": {
+                "properties": {"type": {"const": enum_type}},
+            },
             "then": {"properties": {"config": {"required": [config_name]}}},
         }
         for (enum_type, config_name) in enum_type_to_config_name_mapping.items()

@@ -27,7 +27,10 @@ def test_github_resource_get_installations():
         assert context.resources.github
         with responses.RequestsMock() as rsps:
             rsps.add(
-                rsps.GET, "https://api.github.com/app/installations", status=200, json={},
+                rsps.GET,
+                "https://api.github.com/app/installations",
+                status=200,
+                json={},
             )
             context.resources.github.get_installations()
 
@@ -59,19 +62,30 @@ def test_github_resource_create_issue():
                 rsps.POST,
                 "https://api.github.com/app/installations/123/access_tokens",
                 status=201,
-                json={"token": "fake_token", "expires_at": "2016-07-11T22:14:10Z",},
+                json={
+                    "token": "fake_token",
+                    "expires_at": "2016-07-11T22:14:10Z",
+                },
             )
             rsps.add(
                 rsps.POST,
                 "https://api.github.com/graphql",
                 status=200,
-                json={"data": {"repository": {"id": 123}},},
+                json={
+                    "data": {"repository": {"id": 123}},
+                },
             )
             rsps.add(
-                rsps.POST, "https://api.github.com/graphql", status=200, json={},
+                rsps.POST,
+                "https://api.github.com/graphql",
+                status=200,
+                json={},
             )
             context.resources.github.create_issue(
-                repo_name="dagster", repo_owner="dagster-io", title="test", body="body",
+                repo_name="dagster",
+                repo_owner="dagster-io",
+                title="test",
+                body="body",
             )
 
     result = execute_solid(
@@ -102,13 +116,18 @@ def test_github_resource_execute():
                 rsps.POST,
                 "https://api.github.com/app/installations/123/access_tokens",
                 status=201,
-                json={"token": "fake_token", "expires_at": "2016-07-11T22:14:10Z",},
+                json={
+                    "token": "fake_token",
+                    "expires_at": "2016-07-11T22:14:10Z",
+                },
             )
             rsps.add(
                 rsps.POST,
                 "https://api.github.com/graphql",
                 status=200,
-                json={"data": {"repository": {"id": 123}},},
+                json={
+                    "data": {"repository": {"id": 123}},
+                },
             )
             context.resources.github.execute(
                 query="""
@@ -169,13 +188,18 @@ def test_github_resource_token_expiration():
             rsps.POST,
             "https://api.github.com/app/installations/123/access_tokens",
             status=201,
-            json={"token": "fake_token", "expires_at": "2016-07-11T22:14:10Z",},
+            json={
+                "token": "fake_token",
+                "expires_at": "2016-07-11T22:14:10Z",
+            },
         )
         rsps.add(
             rsps.POST,
             "https://api.github.com/graphql",
             status=200,
-            json={"data": {"repository": {"id": 123}},},
+            json={
+                "data": {"repository": {"id": 123}},
+            },
         )
         res = resource.execute(
             query="""

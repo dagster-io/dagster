@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, DagsterEventType, ObjectStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL subscription operation: PipelineRunLogsSubscription
@@ -17,6 +17,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization_assetKey {
@@ -98,6 +99,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   materialization: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization;
 }
 
@@ -121,6 +123,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   error: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_PipelineInitFailureEvent_error;
 }
 
@@ -144,6 +147,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   pipelineFailureError: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_PipelineFailureEvent_pipelineFailureError | null;
 }
 
@@ -231,6 +235,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   error: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepFailureEvent_error;
   failureMetadata: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepFailureEvent_failureMetadata | null;
 }
@@ -309,6 +314,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   inputName: string;
   typeCheck: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepInputEvent_typeCheck;
 }
@@ -387,6 +393,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   outputName: string;
   typeCheck: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepOutputEvent_typeCheck;
 }
@@ -465,6 +472,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   expectationResult: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepExpectationResultEvent_expectationResult;
 }
 
@@ -540,6 +548,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   operationResult: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ObjectStoreOperationEvent_operationResult;
 }
 
@@ -550,6 +559,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   outputName: string;
   managerKey: string;
 }
@@ -561,6 +571,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   inputName: string;
   managerKey: string;
   upstreamOutputName: string | null;
@@ -646,6 +657,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   metadataEntries: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_EngineEvent_metadataEntries[];
   engineError: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_EngineEvent_engineError | null;
   markerStart: string | null;
@@ -672,6 +684,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
+  eventType: DagsterEventType | null;
   error: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_HookErroredEvent_error;
 }
 

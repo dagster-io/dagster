@@ -1,6 +1,7 @@
+from unittest import mock
+
 import dagster
 import pytest
-from dagster.seven import mock
 from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner, DatabricksRunState
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
@@ -74,7 +75,9 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
     calls = {
         "num_calls": 0,
         "final_state": DatabricksRunState(
-            DatabricksRunLifeCycleState.Terminated, DatabricksRunResultState.Success, "Finished",
+            DatabricksRunLifeCycleState.Terminated,
+            DatabricksRunResultState.Success,
+            "Finished",
         ),
     }
 
@@ -82,9 +85,17 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
         calls["num_calls"] += 1
 
         if calls["num_calls"] == 1:
-            return DatabricksRunState(DatabricksRunLifeCycleState.Pending, None, None,)
+            return DatabricksRunState(
+                DatabricksRunLifeCycleState.Pending,
+                None,
+                None,
+            )
         elif calls["num_calls"] == 2:
-            return DatabricksRunState(DatabricksRunLifeCycleState.Running, None, None,)
+            return DatabricksRunState(
+                DatabricksRunLifeCycleState.Running,
+                None,
+                None,
+            )
         else:
             return calls["final_state"]
 
@@ -93,7 +104,9 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
 
     calls["num_calls"] = 0
     calls["final_state"] = DatabricksRunState(
-        DatabricksRunLifeCycleState.Terminated, DatabricksRunResultState.Failed, "Failed",
+        DatabricksRunLifeCycleState.Terminated,
+        DatabricksRunResultState.Failed,
+        "Failed",
     )
     with pytest.raises(DatabricksError) as exc_info:
         with mock.patch.object(runner.client, "get_run_state", new=new_get_run_state):

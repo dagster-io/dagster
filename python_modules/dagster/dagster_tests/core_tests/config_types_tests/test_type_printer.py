@@ -132,7 +132,10 @@ def test_nested_dict():
 
 def test_scalar_union():
     non_scalar_type = {"str_field": String}
-    scalar_union_type = ScalarUnion(scalar_type=int, non_scalar_schema=non_scalar_type,)
+    scalar_union_type = ScalarUnion(
+        scalar_type=int,
+        non_scalar_schema=non_scalar_type,
+    )
     assert_inner_types(scalar_union_type, String, Int, non_scalar_type)
 
 

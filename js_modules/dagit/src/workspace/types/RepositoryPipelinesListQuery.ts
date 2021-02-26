@@ -21,12 +21,26 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   status: PipelineRunStatus;
 }
 
+export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+}
+
+export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+}
+
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines {
   __typename: "Pipeline";
   id: string;
-  name: string;
   description: string | null;
+  name: string;
   runs: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs[];
+  schedules: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_schedules[];
+  sensors: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors[];
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository {

@@ -2,16 +2,16 @@ from dagster import check
 from graphql.execution.base import ResolveInfo
 
 from ..external import get_external_pipeline_or_raise
-from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
+from ..utils import ExecutionMetadata, ExecutionParams, capture_error
 from .run_lifecycle import create_valid_pipeline_run
 
 
-@capture_dauphin_error
+@capture_error
 def launch_pipeline_reexecution(graphene_info, execution_params):
     return _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
 
 
-@capture_dauphin_error
+@capture_error
 def launch_pipeline_execution(graphene_info, execution_params):
     return _launch_pipeline_execution(graphene_info, execution_params)
 
@@ -39,12 +39,13 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
 
 
 def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):
+    from ...schema.pipelines.pipeline import GraphenePipelineRun
+    from ...schema.runs import GrapheneLaunchPipelineRunSuccess
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
     check.bool_param(is_reexecuted, "is_reexecuted")
 
     run = do_launch(graphene_info, execution_params, is_reexecuted)
 
-    return graphene_info.schema.type_named("LaunchPipelineRunSuccess")(
-        run=graphene_info.schema.type_named("PipelineRun")(run)
-    )
+    return GrapheneLaunchPipelineRunSuccess(run=GraphenePipelineRun(run))

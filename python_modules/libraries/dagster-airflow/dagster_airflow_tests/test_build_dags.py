@@ -29,7 +29,12 @@ def test_build_dags(clean_airflow_home):
             "--preset",
             "passing",
         ],
-        ["--module-name", "dagster_test.toys.resources", "--pipeline-name", "resource_pipeline",],
+        [
+            "--module-name",
+            "dagster_test.toys.resources",
+            "--pipeline-name",
+            "resource_pipeline",
+        ],
         ["--module-name", "dagster_test.toys.sleepy", "--pipeline-name", "sleepy_pipeline"],
     ]
 

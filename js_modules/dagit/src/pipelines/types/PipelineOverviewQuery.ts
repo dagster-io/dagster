@@ -101,11 +101,12 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_outputDefinitions_type;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
   key: string;
   description: string | null;
 }
@@ -149,6 +150,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions {
   __typename: "OutputDefinition";
   name: string;
+  isDynamic: boolean | null;
   type: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
 }
 
@@ -253,6 +255,8 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
+  enqueuedTime: number | null;
+  launchTime: number | null;
   startTime: number | null;
   endTime: number | null;
 }

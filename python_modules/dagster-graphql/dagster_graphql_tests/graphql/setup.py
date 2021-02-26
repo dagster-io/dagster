@@ -51,7 +51,6 @@ from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
-from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
@@ -59,7 +58,6 @@ from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
-    define_in_process_context,
     define_out_of_process_context,
     infer_pipeline_selector,
     main_repo_location_name,
@@ -98,26 +96,19 @@ def define_test_out_of_process_context(instance):
         yield context
 
 
-def define_test_in_process_context(instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    return define_in_process_context(__file__, main_repo_name(), instance)
-
-
 def create_main_recon_repo():
     return ReconstructableRepository.for_file(__file__, main_repo_name())
 
 
 @contextmanager
 def get_main_external_repo():
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        location_origin_from_python_file(
-            python_file=file_relative_path(__file__, "setup.py"),
-            attribute=main_repo_name(),
-            working_directory=None,
-            location_name=main_repo_location_name(),
-        )
-    ) as handle:
-        yield RepositoryLocation.from_handle(handle).get_repository(main_repo_name())
+    with location_origin_from_python_file(
+        python_file=file_relative_path(__file__, "setup.py"),
+        attribute=main_repo_name(),
+        working_directory=None,
+        location_name=main_repo_location_name(),
+    ).create_handle() as handle:
+        yield handle.create_location().get_repository(main_repo_name())
 
 
 @lambda_solid(
@@ -672,7 +663,9 @@ def hard_failer():
             segfault()
         return 0
 
-    @solid(input_defs=[InputDefinition("n", Int)],)
+    @solid(
+        input_defs=[InputDefinition("n", Int)],
+    )
     def increment(_, n):
         return n + 1
 
@@ -959,7 +952,8 @@ def define_schedules():
         return {"intermediate_storage": {"filesystem": {}}}
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline", start_date=today_at_midnight().subtract(days=1),
+        pipeline_name="no_config_pipeline",
+        start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable
@@ -1071,11 +1065,20 @@ def define_sensors():
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
+    @sensor(pipeline_name="no_config_pipeline", mode="default", minimum_interval_seconds=60)
+    def custom_interval_sensor(_):
+        return RunRequest(
+            run_key=None,
+            run_config={"intermediate_storage": {"filesystem": {}}},
+            tags={"test": "1234"},
+        )
+
     return [
         always_no_config_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
+        custom_interval_sensor,
     ]
 
 
@@ -1106,46 +1109,57 @@ def empty_repo():
     return []
 
 
+def define_pipelines():
+    return [
+        composites_pipeline,
+        csv_hello_world_df_input,
+        csv_hello_world_two,
+        csv_hello_world_with_expectations,
+        csv_hello_world,
+        eventually_successful,
+        hard_failer,
+        hello_world_with_tags,
+        infinite_loop_pipeline,
+        materialization_pipeline,
+        more_complicated_config,
+        more_complicated_nested_config,
+        multi_asset_pipeline,
+        multi_mode_with_loggers,
+        multi_mode_with_resources,
+        naughty_programmer_pipeline,
+        no_config_chain_pipeline,
+        no_config_pipeline,
+        noop_pipeline,
+        partitioned_asset_pipeline,
+        pipeline_with_enum_config,
+        pipeline_with_expectations,
+        pipeline_with_invalid_definition_error,
+        pipeline_with_list,
+        required_resource_pipeline,
+        retry_multi_input_early_terminate_pipeline,
+        retry_multi_output_pipeline,
+        retry_resource_pipeline,
+        scalar_output_pipeline,
+        single_asset_pipeline,
+        spew_pipeline,
+        tagged_pipeline,
+        chained_failure_pipeline,
+        dynamic_pipeline,
+    ]
+
+
 @repository
 def test_repo():
-    return (
-        [
-            composites_pipeline,
-            csv_hello_world_df_input,
-            csv_hello_world_two,
-            csv_hello_world_with_expectations,
-            csv_hello_world,
-            eventually_successful,
-            hard_failer,
-            hello_world_with_tags,
-            infinite_loop_pipeline,
-            materialization_pipeline,
-            more_complicated_config,
-            more_complicated_nested_config,
-            multi_asset_pipeline,
-            multi_mode_with_loggers,
-            multi_mode_with_resources,
-            naughty_programmer_pipeline,
-            no_config_chain_pipeline,
-            no_config_pipeline,
-            noop_pipeline,
-            partitioned_asset_pipeline,
-            pipeline_with_enum_config,
-            pipeline_with_expectations,
-            pipeline_with_invalid_definition_error,
-            pipeline_with_list,
-            required_resource_pipeline,
-            retry_multi_input_early_terminate_pipeline,
-            retry_multi_output_pipeline,
-            retry_resource_pipeline,
-            scalar_output_pipeline,
-            single_asset_pipeline,
-            spew_pipeline,
-            tagged_pipeline,
-            chained_failure_pipeline,
-            dynamic_pipeline,
-        ]
-        + define_schedules()
-        + define_sensors()
-        + define_partitions()
-    )
+    return define_pipelines() + define_schedules() + define_sensors() + define_partitions()
+
+
+@repository
+def test_dict_repo():
+    return {
+        "pipelines": {pipeline.name: pipeline for pipeline in define_pipelines()},
+        "schedules": {schedule.name: schedule for schedule in define_schedules()},
+        "sensors": {sensor.name: sensor for sensor in define_sensors()},
+        "partition_sets": {
+            partition_set.name: partition_set for partition_set in define_partitions()
+        },
+    }

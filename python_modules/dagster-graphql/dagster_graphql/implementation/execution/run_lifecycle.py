@@ -1,12 +1,44 @@
+from dagster import check
 from dagster.core.events import EngineEventData, EventMetadataEntry
+from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import is_memoized_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG, RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
+from graphql.execution.base import ResolveInfo
 
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
-from ..resume_retry import compute_step_keys_to_execute
+from ..utils import ExecutionParams
+
+
+def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_params):
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.inst_param(execution_params, "execution_params", ExecutionParams)
+
+    instance = graphene_info.context.instance
+
+    if not execution_params.step_keys and is_resume_retry(execution_params):
+        # Get step keys from parent_run_id if it's a resume/retry
+        external_execution_plan = get_external_execution_plan_or_raise(
+            graphene_info=graphene_info,
+            external_pipeline=external_pipeline,
+            mode=execution_params.mode,
+            run_config=execution_params.run_config,
+            step_keys_to_execute=None,
+        )
+        return get_retry_steps_from_execution_plan(
+            instance, external_execution_plan, execution_params.execution_metadata.parent_run_id
+        )
+    else:
+        return execution_params.step_keys
+
+
+def is_resume_retry(execution_params):
+    check.inst_param(execution_params, "execution_params", ExecutionParams)
+    return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"
 
 
 def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):

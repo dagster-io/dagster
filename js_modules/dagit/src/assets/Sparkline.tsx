@@ -26,6 +26,7 @@ export const Sparkline: React.FunctionComponent<{
     ctx.resetTransform();
     ctx.scale(1, -1);
     ctx.translate(0, -height);
+
     ctx.beginPath();
     ctx.strokeStyle = Colors.BLUE3;
     ctx.lineWidth = 3;

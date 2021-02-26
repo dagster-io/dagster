@@ -34,27 +34,6 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}>
               </Wrapper>
             );
           }
-          if (assetsOrError.__typename === 'AssetsNotSupportedError') {
-            return (
-              <Wrapper>
-                <NonIdealState
-                  icon="panel-table"
-                  title="Assets"
-                  description={
-                    <p>
-                      An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>) must
-                      be configured in order to use any Asset-based features. You can configure this
-                      on your instance through <code>dagster.yaml</code>. See the{' '}
-                      <a href="https://docs.dagster.io/overview/instances/dagster-instance">
-                        instance documentation
-                      </a>{' '}
-                      for more information.
-                    </p>
-                  }
-                />
-              </Wrapper>
-            );
-          }
 
           const prefixMatchingAssets = assetsOrError.nodes.filter(
             (asset: Asset) =>
@@ -99,16 +78,18 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}>
   );
 };
 
-interface ActiveSuggestionInfo {
-  text: string;
-  idx: number;
-}
-
 const AssetSearch = ({assets}: {assets: Asset[]}) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
   const [q, setQ] = React.useState<string>('');
-  const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
+  const [highlight, setHighlight] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    setHighlight(0);
+    if (q) {
+      setOpen(true);
+    }
+  }, [q]);
 
   const selectOption = (asset: Asset) => {
     history.push(`/instance/assets/${asset.key.path.join('/')}`);
@@ -120,8 +101,8 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
     // Enter and Return confirm the currently selected suggestion or
     // confirm the freeform text you've typed if no suggestions are shown.
     if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
-      if (active) {
-        const picked = assets.find((asset) => asset.key.path.join('.') === active.text);
+      if (matching.length) {
+        const picked = matching[highlight];
         if (!picked) {
           throw new Error('Selection out of sync with suggestions');
         }
@@ -134,23 +115,18 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
 
     // Escape closes the options. The options re-open if you type another char or click.
     if (e.key === 'Escape') {
-      setActive(null);
+      setHighlight(0);
       setOpen(false);
       return;
     }
 
-    if (!open && e.key !== 'Delete' && e.key !== 'Backspace') {
-      setOpen(true);
-    }
-
-    // The up/down arrow keys shift selection in the dropdown.
-    // Note: The first down arrow press activates the first item.
-    const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
-    if (shift && assets.length > 0) {
+    const lastResult = matching.length - 1;
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
-      let idx = (active ? active.idx : -1) + shift;
-      idx = Math.max(0, Math.min(idx, assets.length - 1));
-      setActive({text: assets[idx].key.path.join('.'), idx});
+      setHighlight(highlight === 0 ? lastResult : highlight - 1);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlight(highlight === lastResult ? 0 : highlight + 1);
     }
   };
 
@@ -170,9 +146,8 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
                   e.preventDefault();
                   e.stopPropagation();
                   selectOption(asset);
-                  setActive(null);
                 }}
-                active={active ? active.idx === idx : false}
+                active={highlight === idx}
                 icon="panel-table"
                 text={
                   <div>
@@ -224,7 +199,7 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
           <AssetSearch assets={assets} />
         </div>
       )}
-      <Table striped style={{width: '100%'}}>
+      <Table>
         <thead>
           <tr>
             <th>Asset Key</th>
@@ -265,9 +240,6 @@ const ASSETS_TABLE_QUERY = gql`
   query AssetsTableQuery($prefixPath: [String!]) {
     assetsOrError(prefixPath: $prefixPath) {
       __typename
-      ... on AssetsNotSupportedError {
-        message
-      }
       ... on AssetConnection {
         nodes {
           key {

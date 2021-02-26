@@ -26,7 +26,11 @@ def test_papermill_pandas_hello_world_pipeline():
                             },
                         }
                     },
-                    "resources": {"io_manager": {"config": {"base_dir": temp_dir},},},
+                    "resources": {
+                        "io_manager": {
+                            "config": {"base_dir": temp_dir},
+                        },
+                    },
                 },
                 instance=instance,
             )

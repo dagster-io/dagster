@@ -60,5 +60,6 @@ def test_submit_run_checks_status(instance, coodinator):  # pylint: disable=rede
     with create_run(instance, run_id="foo-1", status=PipelineRunStatus.STARTED) as run:
         with pytest.raises(CheckError):
             call_submit_run(
-                coodinator, run,
+                coodinator,
+                run,
             )

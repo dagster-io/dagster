@@ -149,8 +149,7 @@ def invoke_steps_within_python_operator(
 
 
 def airflow_tags_for_ts(ts):
-    """ Converts an Airflow timestamp string to a list of tags.
-    """
+    """Converts an Airflow timestamp string to a list of tags."""
     check.opt_str_param(ts, "ts")
 
     return [

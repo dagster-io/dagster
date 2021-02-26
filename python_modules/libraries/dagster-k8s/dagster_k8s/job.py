@@ -119,7 +119,9 @@ def get_k8s_resource_requirements(tags):
 
     if not result.success:
         raise DagsterInvalidConfigError(
-            "Error in tags for {}".format(K8S_RESOURCE_REQUIREMENTS_KEY), result.errors, result,
+            "Error in tags for {}".format(K8S_RESOURCE_REQUIREMENTS_KEY),
+            result.errors,
+            result,
         )
 
     return result.value
@@ -139,7 +141,9 @@ def get_user_defined_k8s_config(tags):
 
         if not result.success:
             raise DagsterInvalidConfigError(
-                "Error in tags for {}".format(USER_DEFINED_K8S_CONFIG_KEY), result.errors, result,
+                "Error in tags for {}".format(USER_DEFINED_K8S_CONFIG_KEY),
+                result.errors,
+                result,
             )
 
         user_defined_k8s_config = result.value
@@ -242,16 +246,14 @@ class DagsterK8sJobConfig(
 
     @classmethod
     def config_type(cls):
-        """Combined config type which includes both run launcher and pipeline run config.
-        """
+        """Combined config type which includes both run launcher and pipeline run config."""
         cfg_run_launcher = DagsterK8sJobConfig.config_type_run_launcher()
         cfg_pipeline_run = DagsterK8sJobConfig.config_type_pipeline_run()
         return merge_dicts(cfg_run_launcher, cfg_pipeline_run)
 
     @classmethod
     def config_type_run_launcher(cls):
-        """Configuration intended to be set on the Dagster instance.
-        """
+        """Configuration intended to be set on the Dagster instance."""
         return {
             "instance_config_map": Field(
                 StringSource,
@@ -280,8 +282,7 @@ class DagsterK8sJobConfig(
 
     @classmethod
     def config_type_pipeline_run(cls):
-        """Configuration intended to be set at pipeline execution time.
-        """
+        """Configuration intended to be set at pipeline execution time."""
         return {
             "job_image": Field(
                 Noneable(StringSource),

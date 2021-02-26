@@ -6,9 +6,9 @@ import * as yaml from 'yaml';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
-import {filterByQuery} from 'src/app/GraphQueryImpl';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
+import {timestampToString, Timestamp} from 'src/app/time/Timestamp';
+import {TimezoneContext} from 'src/app/time/TimezoneContext';
 import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
 import {TimeElapsed} from 'src/runs/TimeElapsed';
@@ -19,7 +19,6 @@ import {RunFragment} from 'src/runs/types/RunFragment';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
 import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
 import {ExecutionParams, PipelineRunStatus} from 'src/types/globalTypes';
-import {Timestamp, TimezoneContext, timestampToString} from 'src/ui/TimeComponents';
 import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/workspace/RepositoryInformation';
 
 export function titleForRun(run: {runId: string}) {
@@ -33,7 +32,6 @@ export const RunsQueryRefetchContext = React.createContext<{
 export function handleLaunchResult(
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
-  opts: {openInNewWindow: boolean},
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
@@ -48,7 +46,7 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchPipelineRunSuccess') {
-    openRunInBrowser(obj.run, opts);
+    openRunInBrowser(obj.run);
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -69,16 +67,11 @@ export function handleLaunchResult(
 
 export function openRunInBrowser(
   run: {runId: string; pipelineName: string},
-  opts: {openInNewWindow: boolean; query?: {[key: string]: string}},
+  opts?: {query?: {[key: string]: string}},
 ) {
-  const url = `${APP_PATH_PREFIX}/instance/runs/${run.runId}?${
-    opts.query ? qs.stringify(opts.query) : ''
+  window.location.href = `${APP_PATH_PREFIX}/instance/runs/${run.runId}?${
+    opts?.query ? qs.stringify(opts.query) : ''
   }`;
-  if (opts.openInNewWindow) {
-    window.open(url, '_blank');
-  } else {
-    window.location.href = url;
-  }
 }
 
 function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {
@@ -113,8 +106,7 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunAc
 export type ReExecutionStyle =
   | {type: 'all'}
   | {type: 'from-failure'}
-  | {type: 'selection'; selection: StepSelection}
-  | {type: 'from-selected'; selection: StepSelection};
+  | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
   run: (RunFragment | RunTableRunFragment | RunActionMenuFragment) & {runConfigYaml: string};
@@ -151,21 +143,6 @@ export function getReexecutionVariables(input: {
     executionParams.executionMetadata?.tags?.push({
       key: DagsterTag.StepSelection,
       value: style.selection.query,
-    });
-  }
-  if (style.type === 'from-selected') {
-    if (!('executionPlan' in run) || !run.executionPlan) {
-      console.warn('Run execution plan must be present to launch from-selected execution');
-      return undefined;
-    }
-    const selectionAndDownstreamQuery = style.selection.keys.map((k) => `${k}*`).join(',');
-    const graph = toGraphQueryItems(run.executionPlan);
-    const graphFiltered = filterByQuery(graph, selectionAndDownstreamQuery);
-
-    executionParams.stepKeys = graphFiltered.all.map((node) => node.name);
-    executionParams.executionMetadata?.tags?.push({
-      key: DagsterTag.StepSelection,
-      value: selectionAndDownstreamQuery,
     });
   }
 
@@ -295,11 +272,22 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
     if (stats.startTime) {
       return <Timestamp unix={stats.startTime} format={useSameDayFormat ? 'h:mm A' : undefined} />;
     }
+    if (stats.launchTime) {
+      return <Timestamp unix={stats.launchTime} format={useSameDayFormat ? 'h:mm A' : undefined} />;
+    }
+    if (stats.enqueuedTime) {
+      return (
+        <Timestamp unix={stats.enqueuedTime} format={useSameDayFormat ? 'h:mm A' : undefined} />
+      );
+    }
+
     switch (status) {
       case PipelineRunStatus.FAILURE:
         return 'Failed to start';
-      case PipelineRunStatus.QUEUED:
-        return 'Queued';
+      case PipelineRunStatus.CANCELED:
+        return 'Canceled';
+      case PipelineRunStatus.CANCELING:
+        return 'Canceling…';
       default:
         return 'Starting…';
     }
@@ -329,6 +317,8 @@ export const RUN_TIME_FRAGMENT = gql`
     stats {
       ... on PipelineRunStatsSnapshot {
         id
+        enqueuedTime
+        launchTime
         startTime
         endTime
       }

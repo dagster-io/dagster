@@ -1,6 +1,5 @@
-import datetime
-import logging
 import re
+import time
 
 import pendulum
 import pytest
@@ -8,23 +7,25 @@ from click.testing import CliRunner
 from dagster.core.test_utils import instance_for_test
 from dagster.daemon.cli import run_command
 from dagster.daemon.controller import DagsterDaemonController
-from dagster.daemon.daemon import SchedulerDaemon
+from dagster.daemon.daemon import BackfillDaemon, SchedulerDaemon
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster.daemon.types import DaemonType
 
 
 def test_scheduler_instance():
     with instance_for_test(
         overrides={
-            "scheduler": {"module": "dagster.core.scheduler", "class": "DagsterDaemonScheduler",},
+            "scheduler": {
+                "module": "dagster.core.scheduler",
+                "class": "DagsterDaemonScheduler",
+            },
         }
     ) as instance:
-        controller = DagsterDaemonController(instance)
+        with DagsterDaemonController.create_from_instance(instance) as controller:
+            daemons = controller.daemons
 
-        daemons = controller.daemons
+            assert len(daemons) == 2
 
-        assert len(daemons) == 2
-        assert any(isinstance(daemon, SchedulerDaemon) for daemon in daemons)
+            assert any(isinstance(daemon, SchedulerDaemon) for daemon in daemons)
 
 
 def test_run_coordinator_instance():
@@ -36,15 +37,28 @@ def test_run_coordinator_instance():
             },
         }
     ) as instance:
-        controller = DagsterDaemonController(instance)
+        with DagsterDaemonController.create_from_instance(instance) as controller:
+            daemons = controller.daemons
 
-        daemons = controller.daemons
+            assert len(daemons) == 3
+            assert any(isinstance(daemon, QueuedRunCoordinatorDaemon) for daemon in daemons)
 
-        assert len(daemons) == 3
-        assert any(isinstance(daemon, QueuedRunCoordinatorDaemon) for daemon in daemons)
+
+def test_backfill_instance():
+    with instance_for_test(
+        overrides={
+            "backfill": {"daemon_enabled": True},
+        }
+    ) as instance:
+        with DagsterDaemonController.create_from_instance(instance) as controller:
+            daemons = controller.daemons
+
+            assert len(daemons) == 3
+            assert any(isinstance(daemon, BackfillDaemon) for daemon in daemons)
 
 
 def _scheduler_ran(caplog):
+    count = 0
     for log_tuple in caplog.record_tuples:
         logger_name, _level, text = log_tuple
 
@@ -52,19 +66,34 @@ def _scheduler_ran(caplog):
             logger_name == "SchedulerDaemon"
             and "Not checking for any runs since no schedules have been started." in text
         ):
-            return True
+            count = count + 1
 
-    return False
+    return count
 
 
 def _run_coordinator_ran(caplog):
+    count = 0
     for log_tuple in caplog.record_tuples:
         logger_name, _level, text = log_tuple
 
         if logger_name == "QueuedRunCoordinatorDaemon" and "Poll returned no queued runs." in text:
-            return True
+            count = count + 1
 
-    return False
+    return count
+
+
+def _sensor_ran(caplog):
+    count = 0
+    for log_tuple in caplog.record_tuples:
+        logger_name, _level, text = log_tuple
+
+        if (
+            logger_name == "SensorDaemon"
+            and "Not checking for any runs since no sensors have been started." in text
+        ):
+            count = count + 1
+
+    return count
 
 
 def test_ephemeral_instance():
@@ -81,7 +110,10 @@ def test_ephemeral_instance():
 def test_different_intervals(caplog):
     with instance_for_test(
         overrides={
-            "scheduler": {"module": "dagster.core.scheduler", "class": "DagsterDaemonScheduler",},
+            "scheduler": {
+                "module": "dagster.core.scheduler",
+                "class": "DagsterDaemonScheduler",
+            },
             "run_coordinator": {
                 "module": "dagster.core.run_coordinator.queued_run_coordinator",
                 "class": "QueuedRunCoordinator",
@@ -90,47 +122,47 @@ def test_different_intervals(caplog):
         }
     ) as instance:
         init_time = pendulum.now("UTC")
-        controller = DagsterDaemonController(instance)
+        with DagsterDaemonController.create_from_instance(instance):
+            while True:
+                now = pendulum.now("UTC")
+                # Wait until the run coordinator has run three times
+                # Scheduler has only run once
+                if _run_coordinator_ran(caplog) == 3:
+                    assert _scheduler_ran(caplog) == 1
+                    break
 
-        assert caplog.record_tuples == [
-            (
-                "dagster-daemon",
-                logging.INFO,
-                "instance is configured with the following daemons: ['QueuedRunCoordinatorDaemon', 'SchedulerDaemon', 'SensorDaemon']",
-            )
-        ]
+                if (now - init_time).total_seconds() > 45:
+                    raise Exception("Timed out waiting for run queue daemon to execute twice")
 
-        controller.run_iteration(init_time)
+                time.sleep(0.5)
 
-        scheduler_daemon = controller.get_daemon(DaemonType.SCHEDULER)
-        run_daemon = controller.get_daemon(DaemonType.QUEUED_RUN_COORDINATOR)
+            init_time = pendulum.now("UTC")
+            while True:
+                now = pendulum.now("UTC")
 
-        assert scheduler_daemon
-        assert scheduler_daemon.last_iteration_time == init_time
-        assert _scheduler_ran(caplog)
+                if _scheduler_ran(caplog) == 2:
+                    assert _run_coordinator_ran(caplog) > 2
+                    break
 
-        assert run_daemon
-        assert run_daemon.last_iteration_time == init_time
-        assert _run_coordinator_ran(caplog)
-        caplog.clear()
+                if (now - init_time).total_seconds() > 45:
+                    raise Exception("Timed out waiting for schedule daemon to execute twice")
 
-        next_time = init_time + datetime.timedelta(seconds=5)
-        controller.run_iteration(next_time)
+                time.sleep(0.5)
 
-        # Run coordinator does another iteration, scheduler does not
-        assert scheduler_daemon.last_iteration_time == init_time
-        assert not _scheduler_ran(caplog)
 
-        assert run_daemon.last_iteration_time == next_time
-        assert _run_coordinator_ran(caplog)
-        caplog.clear()
+def test_set_sensor_interval(caplog):
+    with instance_for_test(overrides={"sensor_settings": {"interval_seconds": 5}}) as instance:
 
-        next_time = init_time + datetime.timedelta(seconds=30)
-        controller.run_iteration(next_time)
+        init_time = pendulum.now("UTC")
+        with DagsterDaemonController.create_from_instance(instance):
+            while True:
+                now = pendulum.now("UTC")
+                # Wait until the run coordinator has run three times
+                # Scheduler has only run once
+                if _sensor_ran(caplog) == 1:
+                    break
 
-        # 30 seconds later both daemons do another iteration
-        assert scheduler_daemon.last_iteration_time == next_time
-        assert _scheduler_ran(caplog)
+                if (now - init_time).total_seconds() > 10:
+                    raise Exception("Timed out waiting for sensor daemon to execute")
 
-        assert run_daemon.last_iteration_time == next_time
-        assert _run_coordinator_ran(caplog)
+                time.sleep(0.5)

@@ -180,7 +180,8 @@ def make_simple_lakehouse():
     )
 
     return Lakehouse(
-        mode_defs=[dev_mode, prod_mode], in_memory_type_resource_keys={SparkDF: ["pyspark"]},
+        mode_defs=[dev_mode, prod_mode],
+        in_memory_type_resource_keys={SparkDF: ["pyspark"]},
     )
 
 

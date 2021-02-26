@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     AssetMaterialization,
     DagsterInstance,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     IOManagerDefinition,
     InputDefinition,
@@ -58,7 +59,8 @@ def test_io_manager_with_required_resource_keys():
         def __init__(self, prefix):
             self._prefix = prefix
 
-        def load_input(self, _context):
+        def load_input(self, context):
+            assert context.resources.foo_resource == "foo"
             return self._prefix + "bar"
 
         def handle_output(self, _context, obj):
@@ -90,11 +92,11 @@ def test_io_manager_with_required_resource_keys():
 
 
 def define_pipeline(manager, metadata_dict):
-    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_a"),)],)
+    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_a"))])
     def solid_a(_context):
         return [1, 2, 3]
 
-    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_b"),)],)
+    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_b"))])
     def solid_b(_context, _df):
         return 1
 
@@ -128,7 +130,10 @@ def test_fs_io_manager_reexecution():
         assert result.success
 
         re_result = reexecute_pipeline(
-            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b"],
+            pipeline_def,
+            result.run_id,
+            instance=instance,
+            step_selection=["solid_b"],
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events
@@ -147,18 +152,19 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
     plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
     with DagsterInstance.ephemeral() as instance:
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def, step_keys_to_execute=step_keys_to_execute,
+            pipeline_def=pipeline_def,
+            step_keys_to_execute=step_keys_to_execute,
         )
         return execute_plan(plan, instance, pipeline_run)
 
 
 def test_step_subset_with_custom_paths():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        default_io_manager = custom_path_fs_io_manager
+        default_io_manager = custom_path_fs_io_manager.configured({"base_dir": tmpdir_path})
         # pass hardcoded file path via metadata
         test_metadata_dict = {
-            "solid_a": {"path": os.path.join(tmpdir_path, "a")},
-            "solid_b": {"path": os.path.join(tmpdir_path, "b")},
+            "solid_a": {"path": "a"},
+            "solid_b": {"path": "b"},
         }
 
         pipeline_def = define_pipeline(default_io_manager, test_metadata_dict)
@@ -182,7 +188,7 @@ def test_step_subset_with_custom_paths():
             filter(lambda evt: evt.is_step_materialization, step_subset_events)
         )
         assert len(step_materialization_events) == 1
-        assert test_metadata_dict["solid_b"]["path"] == (
+        assert os.path.join(tmpdir_path, test_metadata_dict["solid_b"]["path"]) == (
             step_materialization_events[0]
             .event_specific_data.materialization.metadata_entries[0]
             .entry_data.path
@@ -235,7 +241,9 @@ def test_multi_materialization():
 
 
 def test_different_io_managers():
-    @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")],)
+    @solid(
+        output_defs=[OutputDefinition(io_manager_key="my_io_manager")],
+    )
     def solid_a(_context):
         return 1
 
@@ -286,6 +294,32 @@ def test_set_io_manager_configure_intermediate_storage():
             pass
 
         execute_pipeline(my_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})
+
+
+def test_io_manager_key_intermediate_storage():
+    called = {"called": False}
+
+    @io_manager
+    def custom_io_manager(_):
+        class CustomIOManager(IOManager):
+            def handle_output(self, _, _obj):
+                called["called"] = True
+
+            def load_input(self, _):
+                pass
+
+        return CustomIOManager()
+
+    @solid(output_defs=[OutputDefinition(io_manager_key="my_key")])
+    def solid1(_):
+        return 5
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_key": custom_io_manager})])
+    def my_pipeline():
+        solid1()
+
+    execute_pipeline(my_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})
+    assert called["called"]
 
 
 def test_fan_in():
@@ -359,9 +393,16 @@ def test_configured():
 
 def test_mem_io_manager_execution():
     mem_io_manager_instance = InMemoryIOManager()
-    output_context = OutputContext(step_key="step_key", name="output_name", pipeline_name="foo",)
+    output_context = OutputContext(
+        step_key="step_key",
+        name="output_name",
+        pipeline_name="foo",
+    )
     mem_io_manager_instance.handle_output(output_context, 1)
-    input_context = InputContext(pipeline_name="foo", upstream_output=output_context,)
+    input_context = InputContext(
+        pipeline_name="foo",
+        upstream_output=output_context,
+    )
     assert mem_io_manager_instance.load_input(input_context) == 1
 
 
@@ -429,3 +470,15 @@ def test_mem_io_managers_result_for_solid():
     assert result.success
     assert result.result_for_solid("one").output_value() == 1
     assert result.result_for_solid("add_one").output_value() == 2
+
+
+def test_mode_missing_io_manager():
+    @solid(output_defs=[OutputDefinition(io_manager_key="missing_io_manager")])
+    def my_solid(_):
+        return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @pipeline
+        def _my_pipeline():
+            my_solid()

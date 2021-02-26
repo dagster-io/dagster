@@ -123,7 +123,8 @@ def test_deploy_docker():
 
         res = requests.get(
             "http://{dagit_host}:3000/graphql?query={query_string}".format(
-                dagit_host=dagit_host, query_string=PIPELINES_OR_ERROR_QUERY,
+                dagit_host=dagit_host,
+                query_string=PIPELINES_OR_ERROR_QUERY,
             )
         ).json()
 

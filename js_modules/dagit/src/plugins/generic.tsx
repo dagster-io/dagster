@@ -1,5 +1,5 @@
 import {Button, Classes, Dialog} from '@blueprintjs/core';
-import {startCase} from 'lodash';
+import startCase from 'lodash/startCase';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from 'src/plugins';

@@ -9,7 +9,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
-    JobDefinition,
     JobType,
     PartitionSetDefinition,
     PipelineDefinition,
@@ -28,7 +27,7 @@ from dagster.utils.error import SerializableErrorInfo
 class ExternalRepositoryData(
     namedtuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas external_job_datas",
+        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas external_job_datas external_sensor_datas",
     )
 ):
     def __new__(
@@ -39,6 +38,7 @@ class ExternalRepositoryData(
         external_partition_set_datas,
         external_executable_datas=None,
         external_job_datas=None,
+        external_sensor_datas=None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -58,7 +58,14 @@ class ExternalRepositoryData(
                 external_executable_datas, "external_executable_datas"
             ),
             external_job_datas=check.opt_list_param(
-                external_job_datas, "external_job_datas", of_type=ExternalJobData,
+                external_job_datas,
+                "external_job_datas",
+                of_type=(ExternalScheduleData, ExternalSensorData, ExternalJobData),
+            ),
+            external_sensor_datas=check.opt_list_param(
+                external_sensor_datas,
+                "external_sensor_datas",
+                of_type=ExternalSensorData,
             ),
         )
 
@@ -98,14 +105,14 @@ class ExternalRepositoryData(
 
         check.failed("Could not find external partition set data named " + name)
 
-    def get_external_job_data(self, name):
+    def get_external_sensor_data(self, name):
         check.str_param(name, "name")
 
-        for external_job_data in self.external_job_datas:
-            if external_job_data.name == name:
-                return external_job_data
+        for external_sensor_data in self.external_sensor_datas:
+            if external_sensor_data.name == name:
+                return external_sensor_data
 
-        check.failed("Could not find job data named " + name)
+        check.failed("Could not find sensor data named " + name)
 
 
 @whitelist_for_serdes
@@ -166,7 +173,7 @@ class ExternalPresetData(
 class ExternalScheduleData(
     namedtuple(
         "_ExternalScheduleData",
-        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone",
+        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description",
     )
 ):
     def __new__(
@@ -179,6 +186,7 @@ class ExternalScheduleData(
         environment_vars,
         partition_set_name,
         execution_timezone,
+        description=None,
     ):
         return super(ExternalScheduleData, cls).__new__(
             cls,
@@ -190,7 +198,12 @@ class ExternalScheduleData(
             environment_vars=check.opt_dict_param(environment_vars, "environment_vars"),
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
+            description=check.opt_str_param(description, "description"),
         )
+
+    @property
+    def job_type(self):
+        return JobType.SCHEDULE
 
 
 @whitelist_for_serdes
@@ -221,16 +234,47 @@ class ExternalScheduleExecutionErrorData(
 ):
     def __new__(cls, error):
         return super(ExternalScheduleExecutionErrorData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
+@whitelist_for_serdes
+class ExternalSensorData(
+    namedtuple(
+        "_ExternalSensorData", "name pipeline_name solid_selection mode min_interval description"
+    )
+):
+    def __new__(
+        cls, name, pipeline_name, solid_selection, mode, min_interval=None, description=None
+    ):
+        return super(ExternalSensorData, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            mode=check.opt_str_param(mode, "mode"),
+            min_interval=check.opt_int_param(min_interval, "min_interval"),
+            description=check.opt_str_param(description, "description"),
+        )
+
+    @property
+    def job_type(self):
+        return JobType.SENSOR
+
+
+# DEPRECATED, see https://github.com/dagster-io/dagster/issues/3644 for removal
 @whitelist_for_serdes
 class ExternalJobData(
     namedtuple("_ExternalJobData", "name job_type pipeline_name solid_selection mode")
 ):
     def __new__(
-        cls, name, job_type, pipeline_name, solid_selection, mode,
+        cls,
+        name,
+        job_type,
+        pipeline_name,
+        solid_selection,
+        mode,
     ):
         return super(ExternalJobData, cls).__new__(
             cls,
@@ -253,7 +297,9 @@ class ExternalSensorExecutionData(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
         return super(ExternalSensorExecutionData, cls).__new__(
-            cls, run_requests=run_requests, skip_message=skip_message,
+            cls,
+            run_requests=run_requests,
+            skip_message=skip_message,
         )
 
     @staticmethod
@@ -271,7 +317,8 @@ class ExternalSensorExecutionData(
 class ExternalSensorExecutionErrorData(namedtuple("_ExternalSensorExecutionErrorData", "error")):
     def __new__(cls, error):
         return super(ExternalSensorExecutionErrorData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -289,7 +336,8 @@ class ExternalExecutionParamsData(namedtuple("_ExternalExecutionParamsData", "ru
 class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsErrorData", "error")):
     def __new__(cls, error):
         return super(ExternalExecutionParamsErrorData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -311,7 +359,8 @@ class ExternalPartitionSetData(
 class ExternalPartitionNamesData(namedtuple("_ExternalPartitionNamesData", "partition_names")):
     def __new__(cls, partition_names=None):
         return super(ExternalPartitionNamesData, cls).__new__(
-            cls, partition_names=check.opt_list_param(partition_names, "partition_names", str),
+            cls,
+            partition_names=check.opt_list_param(partition_names, "partition_names", str),
         )
 
 
@@ -329,7 +378,9 @@ class ExternalPartitionConfigData(namedtuple("_ExternalPartitionConfigData", "na
 class ExternalPartitionTagsData(namedtuple("_ExternalPartitionTagsData", "name tags")):
     def __new__(cls, name, tags=None):
         return super(ExternalPartitionTagsData, cls).__new__(
-            cls, name=check.str_param(name, "name"), tags=check.opt_dict_param(tags, "tags"),
+            cls,
+            name=check.str_param(name, "name"),
+            tags=check.opt_dict_param(tags, "tags"),
         )
 
 
@@ -365,7 +416,8 @@ class ExternalPartitionExecutionErrorData(
 ):
     def __new__(cls, error):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -386,8 +438,9 @@ def external_repository_data_from_def(repository_def):
             list(map(external_partition_set_data_from_def, repository_def.partition_set_defs)),
             key=lambda psd: psd.name,
         ),
-        external_job_datas=sorted(
-            list(map(external_job_from_def, repository_def.job_defs)), key=lambda job: job.name,
+        external_sensor_datas=sorted(
+            list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
+            key=lambda sd: sd.name,
         ),
     )
 
@@ -418,6 +471,7 @@ def external_schedule_data_from_def(schedule_def):
         if isinstance(schedule_def, PartitionScheduleDefinition)
         else None,
         execution_timezone=schedule_def.execution_timezone,
+        description=schedule_def.description,
     )
 
 
@@ -431,14 +485,14 @@ def external_partition_set_data_from_def(partition_set_def):
     )
 
 
-def external_job_from_def(job_def):
-    check.inst_param(job_def, "job_def", JobDefinition)
-    return ExternalJobData(
-        name=job_def.name,
-        job_type=job_def.job_type,
-        pipeline_name=job_def.pipeline_name,
-        solid_selection=job_def.solid_selection,
-        mode=job_def.mode,
+def external_sensor_data_from_def(sensor_def):
+    return ExternalSensorData(
+        name=sensor_def.name,
+        pipeline_name=sensor_def.pipeline_name,
+        solid_selection=sensor_def.solid_selection,
+        mode=sensor_def.mode,
+        min_interval=sensor_def.minimum_interval_seconds,
+        description=sensor_def.description,
     )
 
 

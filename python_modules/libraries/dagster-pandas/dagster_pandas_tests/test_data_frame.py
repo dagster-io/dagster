@@ -111,7 +111,8 @@ def test_dataframe_description_generation_just_type_constraint():
 
 def test_dataframe_description_generation_no_type_constraint():
     TestDataFrame = create_dagster_pandas_dataframe_type(
-        name="TestDataFrame", columns=[PandasColumn(name="foo")],
+        name="TestDataFrame",
+        columns=[PandasColumn(name="foo")],
     )
     assert TestDataFrame.description == "\n### Columns\n**foo**\n\n"
 
@@ -167,7 +168,10 @@ def test_custom_dagster_dataframe_loading_ok():
     with safe_tempfile_path() as input_csv_fp, safe_tempfile_path() as output_csv_fp:
         input_dataframe.to_csv(input_csv_fp)
         TestDataFrame = create_dagster_pandas_dataframe_type(
-            name="TestDataFrame", columns=[PandasColumn.exists("foo"),]
+            name="TestDataFrame",
+            columns=[
+                PandasColumn.exists("foo"),
+            ],
         )
 
         @solid(
@@ -184,7 +188,9 @@ def test_custom_dagster_dataframe_loading_ok():
                 "solids": {
                     "use_test_dataframe": {
                         "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
-                        "outputs": [{"result": {"csv": {"path": output_csv_fp}}},],
+                        "outputs": [
+                            {"result": {"csv": {"path": output_csv_fp}}},
+                        ],
                     }
                 }
             },
@@ -197,7 +203,13 @@ def test_custom_dagster_dataframe_loading_ok():
 
 def test_custom_dagster_dataframe_parametrizable_input():
     @dagster_type_loader(
-        Selector({"door_a": Field(str), "door_b": Field(str), "door_c": Field(str),})
+        Selector(
+            {
+                "door_a": Field(str),
+                "door_b": Field(str),
+                "door_c": Field(str),
+            }
+        )
     )
     def silly_loader(_, config):
         which_door = list(config.keys())[0]
@@ -217,7 +229,9 @@ def test_custom_dagster_dataframe_parametrizable_input():
 
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",
-        columns=[PandasColumn.exists("foo"),],
+        columns=[
+            PandasColumn.exists("foo"),
+        ],
         loader=silly_loader,
         materializer=silly_materializer,
     )

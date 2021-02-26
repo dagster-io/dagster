@@ -1,10 +1,11 @@
 import {gql, useMutation} from '@apollo/client';
-import {Button, Intent, Spinner} from '@blueprintjs/core';
+import {Button, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
 import {ReconcileSchedulerState} from 'src/schedules/types/ReconcileSchedulerState';
 import {JobType} from 'src/types/globalTypes';
+import {Spinner} from 'src/ui/Spinner';
 import {useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export const ReconcileButton = () => {
@@ -24,7 +25,7 @@ export const ReconcileButton = () => {
   >(RECONCILE_SCHEDULE_STATE_MUTATION, {refetchQueries});
 
   if (reconcileInFlight) {
-    return <Spinner />;
+    return <Spinner purpose="body-text" />;
   }
 
   return (

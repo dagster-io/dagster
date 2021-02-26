@@ -41,6 +41,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps
   __typename: "ExecutionStep";
   key: string;
   outputs: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs[];
+  kind: StepKind;
 }
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs {
@@ -101,14 +102,8 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
 
 export type RunRootQuery_pipelineRunOrError = RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError | RunRootQuery_pipelineRunOrError_PipelineRun;
 
-export interface RunRootQuery_instance {
-  __typename: "Instance";
-  assetsSupported: boolean;
-}
-
 export interface RunRootQuery {
   pipelineRunOrError: RunRootQuery_pipelineRunOrError;
-  instance: RunRootQuery_instance;
 }
 
 export interface RunRootQueryVariables {

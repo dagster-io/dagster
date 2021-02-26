@@ -1,10 +1,12 @@
 import {Colors, Button} from '@blueprintjs/core';
-import {uniq, flatMap} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {formatElapsedTime} from 'src/app/Util';
+import {Timestamp} from 'src/app/time/Timestamp';
 import {AssetNumericHistoricalData, LABEL_STEP_EXECUTION_TIME} from 'src/assets/AssetView';
 import {Sparkline} from 'src/assets/Sparkline';
 import {
@@ -20,7 +22,6 @@ import {
 } from 'src/partitions/RunMatrixUtils';
 import {MetadataEntry} from 'src/runs/MetadataEntry';
 import {titleForRun} from 'src/runs/RunUtils';
-import {Timestamp} from 'src/ui/TimeComponents';
 import {FontFamily} from 'src/ui/styles';
 
 const COL_WIDTH = 120;
@@ -57,8 +58,10 @@ export const AssetMaterializationMatrix: React.FunctionComponent<AssetMaterializ
   graphedLabels,
   setGraphedLabels,
 }) => {
-  const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredLabel, setHoveredLabel] = React.useState<string>('');
+  const {viewport, containerProps, onMoveToViewport} = useViewport({
+    initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
+  });
 
   const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / COL_WIDTH));
   const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / COL_WIDTH);

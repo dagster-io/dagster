@@ -35,7 +35,8 @@ def solid_a_b_list():
 
 def test_create_pipeline_with_bad_solids_list():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='"solids" arg to "a_pipeline" is not a list. Got',
+        DagsterInvalidDefinitionError,
+        match='"solids" arg to "a_pipeline" is not a list. Got',
     ):
         PipelineDefinition(
             name="a_pipeline", solid_defs=define_stub_solid("stub", [{"a key": "a value"}])
@@ -229,7 +230,8 @@ def test_solid_tags():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Could not JSON encode value",
+        DagsterInvalidDefinitionError,
+        match="Could not JSON encode value",
     ):
 
         @solid(tags={"bad": X()})

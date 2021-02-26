@@ -33,7 +33,8 @@ def main(step_run_ref_bucket, s3_dir_key):
     # blocked on remote communication
     events_queue = Queue()
     event_writing_thread = Thread(
-        target=event_writing_loop, kwargs=dict(events_queue=events_queue, put_events_fn=put_events),
+        target=event_writing_loop,
+        kwargs=dict(events_queue=events_queue, put_events_fn=put_events),
     )
     event_writing_thread.start()
 

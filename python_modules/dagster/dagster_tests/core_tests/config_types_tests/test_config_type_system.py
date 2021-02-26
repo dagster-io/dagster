@@ -135,7 +135,8 @@ def test_single_required_string_field_config_type():
     }
 
     with pytest.raises(
-        AssertionError, match='Missing required config entry "string_field" at the root.',
+        AssertionError,
+        match='Missing required config entry "string_field" at the root.',
     ):
         _validate(_single_required_string_config_dict(), {})
 
@@ -163,10 +164,13 @@ def test_undefined_field_error():
 
 
 def test_multiple_required_fields_passing():
-    assert _validate(
-        _multiple_required_fields_config_dict(),
-        {"field_one": "value_one", "field_two": "value_two"},
-    ) == {"field_one": "value_one", "field_two": "value_two"}
+    assert (
+        _validate(
+            _multiple_required_fields_config_dict(),
+            {"field_one": "value_one", "field_two": "value_two"},
+        )
+        == {"field_one": "value_one", "field_two": "value_two"}
+    )
 
 
 def test_multiple_required_fields_failing():
@@ -267,10 +271,13 @@ def test_permissive_multiple_required_fields_failing():
 
 
 def test_mixed_args_passing():
-    assert _validate(
-        _mixed_required_optional_string_config_dict_with_default(),
-        {"optional_arg": "value_one", "required_arg": "value_two"},
-    ) == {"optional_arg": "value_one", "required_arg": "value_two"}
+    assert (
+        _validate(
+            _mixed_required_optional_string_config_dict_with_default(),
+            {"optional_arg": "value_one", "required_arg": "value_two"},
+        )
+        == {"optional_arg": "value_one", "required_arg": "value_two"}
+    )
 
     assert _validate(
         _mixed_required_optional_string_config_dict_with_default(), {"required_arg": "value_two"}
@@ -438,7 +445,10 @@ def test_config_with_and_without_config():
 
 def test_build_optionality():
     optional_test_type = convert_potential_field(
-        {"required": {"value": String}, "optional": {"value": Field(String, is_required=False)},}
+        {
+            "required": {"value": String},
+            "optional": {"value": Field(String, is_required=False)},
+        }
     ).config_type
 
     assert optional_test_type.fields["required"].is_required
@@ -513,47 +523,61 @@ def test_solid_list_config():
 
 def test_two_list_types():
     @solid(
-        input_defs=[], config_schema={"list_one": [int], "list_two": [int]},
+        input_defs=[],
+        config_schema={"list_one": [int], "list_two": [int]},
     )
     def two_list_type(context):
         return context.solid_config
 
-    assert execute_solid(
-        two_list_type,
-        run_config={"solids": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}},
-    ).output_value() == {"list_one": [1], "list_two": [2]}
+    assert (
+        execute_solid(
+            two_list_type,
+            run_config={
+                "solids": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}
+            },
+        ).output_value()
+        == {"list_one": [1], "list_two": [2]}
+    )
 
     @solid(
-        input_defs=[], config_schema={"list_one": [Int], "list_two": [Int]},
+        input_defs=[],
+        config_schema={"list_one": [Int], "list_two": [Int]},
     )
     def two_list_type_condensed_syntax(context):
         return context.solid_config
 
-    assert execute_solid(
-        two_list_type_condensed_syntax,
-        run_config={
-            "solids": {
-                "two_list_type_condensed_syntax": {"config": {"list_one": [1], "list_two": [2]}}
-            }
-        },
-    ).output_value() == {"list_one": [1], "list_two": [2]}
+    assert (
+        execute_solid(
+            two_list_type_condensed_syntax,
+            run_config={
+                "solids": {
+                    "two_list_type_condensed_syntax": {"config": {"list_one": [1], "list_two": [2]}}
+                }
+            },
+        ).output_value()
+        == {"list_one": [1], "list_two": [2]}
+    )
 
     @solid(
-        input_defs=[], config_schema={"list_one": [int], "list_two": [int]},
+        input_defs=[],
+        config_schema={"list_one": [int], "list_two": [int]},
     )
     def two_list_type_condensed_syntax_primitives(context):
         return context.solid_config
 
-    assert execute_solid(
-        two_list_type_condensed_syntax_primitives,
-        run_config={
-            "solids": {
-                "two_list_type_condensed_syntax_primitives": {
-                    "config": {"list_one": [1], "list_two": [2]}
+    assert (
+        execute_solid(
+            two_list_type_condensed_syntax_primitives,
+            run_config={
+                "solids": {
+                    "two_list_type_condensed_syntax_primitives": {
+                        "config": {"list_one": [1], "list_two": [2]}
+                    }
                 }
-            }
-        },
-    ).output_value() == {"list_one": [1], "list_two": [2]}
+            },
+        ).output_value()
+        == {"list_one": [1], "list_two": [2]}
+    )
 
 
 def test_multilevel_default_handling():

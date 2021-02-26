@@ -26,7 +26,7 @@ class MappedInputPlaceholder:
 
 
 def _not_invoked_warning(solid, context_source, context_name):
-    check.inst_param(solid, "solid", CallableNode)
+    check.inst_param(solid, "solid", PendingNodeInvocation)
 
     warning_message = (
         "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
@@ -115,7 +115,7 @@ class InProgressCompositionContext:
         return node_name
 
     def add_pending_invocation(self, solid):
-        solid = check.opt_inst_param(solid, "solid", CallableNode)
+        solid = check.opt_inst_param(solid, "solid", PendingNodeInvocation)
         solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
@@ -134,8 +134,7 @@ class CompleteCompositionContext(
         "_CompositionContext", "name solid_defs dependencies input_mappings output_mapping_dict"
     )
 ):
-    """The processed information from capturing solid invocations during a composition function.
-    """
+    """The processed information from capturing solid invocations during a composition function."""
 
     def __new__(cls, name, source, invocations, output_mapping_dict, pending_invocations):
 
@@ -201,7 +200,7 @@ class CompleteCompositionContext(
         )
 
 
-class CallableNode:
+class PendingNodeInvocation:
     """An intermediate object in composition to allow for binding information such as
     an alias before invoking.
     """
@@ -260,12 +259,20 @@ class CallableNode:
         # then **kwargs
         for input_name, output_node in kwargs.items():
             self._process_argument_node(
-                node_name, output_node, input_name, input_bindings, "(passed by keyword)",
+                node_name,
+                output_node,
+                input_name,
+                input_bindings,
+                "(passed by keyword)",
             )
 
         # the node name is potentially reassigned for aliasing
         resolved_node_name = current_context().observe_invocation(
-            self.given_alias, self.node_def, input_bindings, self.tags, self.hook_defs,
+            self.given_alias,
+            self.node_def,
+            input_bindings,
+            self.tags,
+            self.hook_defs,
         )
 
         if len(self.node_def.output_defs) == 0:
@@ -345,7 +352,9 @@ class CallableNode:
                 "output must be unpacked by invoking map."
             )
 
-        elif isinstance(output_node, CallableNode) or isinstance(output_node, NodeDefinition):
+        elif isinstance(output_node, PendingNodeInvocation) or isinstance(
+            output_node, NodeDefinition
+        ):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received an un-invoked solid for input "
                 '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
@@ -373,11 +382,11 @@ class CallableNode:
             )
 
     def alias(self, name):
-        return CallableNode(self.node_def, name, self.tags)
+        return PendingNodeInvocation(self.node_def, name, self.tags)
 
     def tag(self, tags):
         tags = validate_tags(tags)
-        return CallableNode(
+        return PendingNodeInvocation(
             self.node_def,
             self.given_alias,
             frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
@@ -385,14 +394,13 @@ class CallableNode:
 
     def with_hooks(self, hook_defs):
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-        return CallableNode(
+        return PendingNodeInvocation(
             self.node_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
         )
 
 
 class InvokedNode(namedtuple("_InvokedNode", "node_name, node_def input_bindings tags hook_defs")):
-    """The metadata about a solid invocation saved by the current composition context.
-    """
+    """The metadata about a solid invocation saved by the current composition context."""
 
     def __new__(cls, node_name, node_def, input_bindings, tags=None, hook_defs=None):
         return super(cls, InvokedNode).__new__(
@@ -406,8 +414,7 @@ class InvokedNode(namedtuple("_InvokedNode", "node_name, node_def input_bindings
 
 
 class InvokedSolidOutputHandle:
-    """The return value for an output when invoking a solid in a composition function.
-    """
+    """The return value for an output when invoking a solid in a composition function."""
 
     def __init__(self, solid_name, output_name):
         self.solid_name = check.str_param(solid_name, "solid_name")
@@ -767,8 +774,7 @@ def do_composition(
 
 
 def _get_validated_config_mapping(name, config_schema, config_fn):
-    """Config mapping must set composite config_schema and config_fn or neither.
-    """
+    """Config mapping must set composite config_schema and config_fn or neither."""
 
     if config_fn is None and config_schema is None:
         return None

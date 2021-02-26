@@ -4,6 +4,7 @@
 import os
 import tempfile
 from threading import Thread
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -12,7 +13,6 @@ from dagster import (
     SolidExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
-    seven,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
@@ -105,7 +105,8 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
         assert len(result.solid_result_list) == 2  # fail & skip
         assert not result.result_for_solid("fails").success
         assert (
-            result.result_for_solid("fails").failure_data.error.message == "Exception: argjhgjh\n"
+            "Exception: argjhgjh\n"
+            in result.result_for_solid("fails").failure_data.error.cause.message
         )
         assert result.result_for_solid("should_never_execute").skipped
 
@@ -128,7 +129,9 @@ def test_terminate_pipeline_on_celery(rabbitmq):
 
                 try:
                     for result in execute_pipeline_iterator(
-                        pipeline=pipeline_def, run_config=run_config, instance=instance,
+                        pipeline=pipeline_def,
+                        run_config=run_config,
+                        instance=instance,
                     ):
                         # Interrupt once the first step starts
                         if (
@@ -280,7 +283,8 @@ def test_execute_eagerly_fails_pipeline_on_celery():
         assert len(result.solid_result_list) == 2
         assert not result.result_for_solid("fails").success
         assert (
-            result.result_for_solid("fails").failure_data.error.message == "Exception: argjhgjh\n"
+            "Exception: argjhgjh\n"
+            in result.result_for_solid("fails").failure_data.error.cause.message
         )
         assert result.result_for_solid("should_never_execute").skipped
 
@@ -294,7 +298,7 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 
 
 def test_engine_error():
-    with seven.mock.patch(
+    with mock.patch(
         "dagster.core.execution.context.system.SystemExecutionContextData.raise_on_error",
         return_value=True,
     ):

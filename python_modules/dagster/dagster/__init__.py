@@ -144,6 +144,7 @@ from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
+from dagster.utils.backcompat import ExperimentalWarning
 from dagster.utils.partitions import (
     create_offset_partition_selector,
     date_partition_range,
@@ -336,4 +337,6 @@ __all__ = [
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",
+    # warnings
+    "ExperimentalWarning",
 ]

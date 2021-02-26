@@ -79,7 +79,10 @@ def solid_that_gets_tags(context):
 
 
 @pipeline(
-    mode_defs=[ModeDefinition(name="tags"),], tags={"tag_key": "tag_value"},
+    mode_defs=[
+        ModeDefinition(name="tags"),
+    ],
+    tags={"tag_key": "tag_value"},
 )
 def pipeline_with_one_mode_and_tags():
     solid_that_gets_tags()
@@ -115,7 +118,9 @@ def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
 
 def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_execute_tags():
     pipeline_result = execute_pipeline(
-        pipeline_with_multi_mode_and_tags, mode="tags_1", tags={"run_tag_key": "run_tag_value"},
+        pipeline_with_multi_mode_and_tags,
+        mode="tags_1",
+        tags={"run_tag_key": "run_tag_value"},
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {

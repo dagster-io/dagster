@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
+import {RepositoryLink} from 'src/nav/RepositoryLink';
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
@@ -21,6 +22,7 @@ import {ButtonLink} from 'src/ui/ButtonLink';
 import {CountdownStatus, useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {MetadataTable} from 'src/ui/MetadataTable';
+import {PageHeader} from 'src/ui/PageHeader';
 import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Code, Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
@@ -99,99 +101,116 @@ export const ScheduleDetails: React.FC<{
   const seconds = Math.floor(timeRemaining / 1000);
 
   return (
-    <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-      <Group direction="column" spacing={12}>
-        <Group alignItems="center" direction="row" spacing={4}>
-          <Heading>{name}</Heading>
-          <Box margin={{left: 12}}>
-            <Switch
-              checked={running}
-              inline
-              large
-              disabled={toggleOffInFlight || toggleOnInFlight}
-              innerLabelChecked="on"
-              innerLabel="off"
-              onChange={onChangeSwitch}
-              style={{margin: '2px 0 0 0'}}
-            />
-          </Box>
-          {futureTicks.results.length && running ? (
-            <Group direction="row" spacing={4}>
-              <div>Next tick:</div>
-              <TimestampDisplay
-                timestamp={futureTicks.results[0].timestamp}
-                timezone={executionTimezone}
+    <Group direction="column" spacing={16}>
+      <PageHeader
+        title={
+          <Group alignItems="center" direction="row" spacing={2}>
+            <Heading>{name}</Heading>
+            <Box margin={{left: 12}}>
+              <Switch
+                checked={running}
+                inline
+                large
+                disabled={toggleOffInFlight || toggleOnInFlight}
+                innerLabelChecked="on"
+                innerLabel="off"
+                onChange={onChangeSwitch}
+                style={{margin: '4px 0 0 0'}}
               />
+            </Box>
+            {futureTicks.results.length && running ? (
+              <Group direction="row" spacing={4}>
+                <div>Next tick:</div>
+                <TimestampDisplay
+                  timestamp={futureTicks.results[0].timestamp}
+                  timezone={executionTimezone}
+                />
+              </Group>
+            ) : null}
+          </Group>
+        }
+        icon="time"
+        description={
+          <>
+            <Link to={workspacePathFromAddress(repoAddress, '/schedules')}>Schedule</Link> in{' '}
+            <RepositoryLink repoAddress={repoAddress} />
+          </>
+        }
+        right={
+          <Box margin={{top: 4}}>
+            <Group direction="column" spacing={8} alignItems="flex-end">
+              <RefreshableCountdown
+                refreshing={countdownRefreshing}
+                seconds={seconds}
+                onRefresh={onRefresh}
+              />
+              <Tooltip content={copyText}>
+                <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
+                  <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
+                </ButtonLink>
+              </Tooltip>
             </Group>
-          ) : null}
-        </Group>
-        <MetadataTable
-          rows={[
-            {
-              key: 'Latest tick',
-              value: latestTick ? (
-                <Group direction="row" spacing={8} alignItems="center">
-                  <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
-                  <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
-                </Group>
-              ) : (
-                'Schedule has never run'
-              ),
-            },
-            {
-              key: 'Pipeline',
-              value: (
-                <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
-                  {pipelineName}
-                </Link>
-              ),
-            },
-            {
-              key: 'Schedule',
-              value: cronSchedule ? (
-                <Group direction="row" spacing={8}>
-                  <span>{humanCronString(cronSchedule)}</span>
-                  <Code>({cronSchedule})</Code>
-                </Group>
-              ) : (
-                <div>&mdash;</div>
-              ),
-            },
-            executionTimezone
-              ? {
-                  key: 'Execution timezone',
-                  value: executionTimezone,
-                }
-              : null,
-            {
-              key: 'Mode',
-              value: schedule.mode,
-            },
-            {
-              key: 'Partition set',
-              value: partitionSet ? (
-                <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
-              ) : (
-                'None'
-              ),
-            },
-          ].filter(Boolean)}
-        />
-      </Group>
-      <Box margin={{top: 4}}>
-        <Group direction="column" spacing={8} alignItems="flex-end">
-          <RefreshableCountdown
-            refreshing={countdownRefreshing}
-            seconds={seconds}
-            onRefresh={onRefresh}
-          />
-          <Tooltip content={copyText}>
-            <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
-              <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
-            </ButtonLink>
-          </Tooltip>
-        </Group>
-      </Box>
-    </Box>
+          </Box>
+        }
+      />
+      <MetadataTable
+        rows={[
+          schedule.description
+            ? {
+                key: 'Description',
+                value: schedule.description,
+              }
+            : null,
+          {
+            key: 'Latest tick',
+            value: latestTick ? (
+              <Group direction="row" spacing={8} alignItems="center">
+                <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
+                <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
+              </Group>
+            ) : (
+              'Schedule has never run'
+            ),
+          },
+          {
+            key: 'Pipeline',
+            value: (
+              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
+                {pipelineName}
+              </Link>
+            ),
+          },
+          {
+            key: 'Schedule',
+            value: cronSchedule ? (
+              <Group direction="row" spacing={8}>
+                <span>{humanCronString(cronSchedule)}</span>
+                <Code>({cronSchedule})</Code>
+              </Group>
+            ) : (
+              <div>&mdash;</div>
+            ),
+          },
+          executionTimezone
+            ? {
+                key: 'Execution timezone',
+                value: executionTimezone,
+              }
+            : null,
+          {
+            key: 'Mode',
+            value: schedule.mode,
+          },
+          {
+            key: 'Partition set',
+            value: partitionSet ? (
+              <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+            ) : (
+              'None'
+            ),
+          },
+        ].filter(Boolean)}
+      />
+    </Group>
   );
 };

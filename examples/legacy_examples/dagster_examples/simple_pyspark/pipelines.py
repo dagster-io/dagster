@@ -46,7 +46,9 @@ prod_databricks_mode = ModeDefinition(
         PresetDefinition.from_pkg_resources(
             name="local",
             mode="local",
-            pkg_resource_defs=[("dagster_examples.simple_pyspark.environments", "local.yaml"),],
+            pkg_resource_defs=[
+                ("dagster_examples.simple_pyspark.environments", "local.yaml"),
+            ],
         ),
         PresetDefinition.from_pkg_resources(
             name="prod_emr",

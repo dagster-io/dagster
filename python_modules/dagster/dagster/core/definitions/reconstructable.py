@@ -31,7 +31,9 @@ class ReconstructableRepository(
     namedtuple("_ReconstructableRepository", "pointer container_image")
 ):
     def __new__(
-        cls, pointer, container_image=None,
+        cls,
+        pointer,
+        container_image=None,
     ):
         return super(ReconstructableRepository, cls).__new__(
             cls,
@@ -82,7 +84,11 @@ class ReconstructablePipeline(
     IPipeline,
 ):
     def __new__(
-        cls, repository, pipeline_name, solid_selection_str=None, solids_to_execute=None,
+        cls,
+        repository,
+        pipeline_name,
+        solid_selection_str=None,
+        solids_to_execute=None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(ReconstructablePipeline, cls).__new__(
@@ -131,7 +137,8 @@ class ReconstructablePipeline(
             )
         else:
             pipe = ReconstructablePipeline(
-                repository=self.repository, pipeline_name=self.pipeline_name,
+                repository=self.repository,
+                pipeline_name=self.pipeline_name,
             )
 
         pipe.get_definition()  # verify the subset is correct
@@ -192,9 +199,16 @@ class ReconstructablePipeline(
 
 
 @whitelist_for_serdes
-class ReconstructableSchedule(namedtuple("_ReconstructableSchedule", "repository schedule_name",)):
+class ReconstructableSchedule(
+    namedtuple(
+        "_ReconstructableSchedule",
+        "repository schedule_name",
+    )
+):
     def __new__(
-        cls, repository, schedule_name,
+        cls,
+        repository,
+        schedule_name,
     ):
         return super(ReconstructableSchedule, cls).__new__(
             cls,

@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: "test"
       POSTGRES_USER: "test"
       POSTGRES_DB: "test"
+      TZ: Asia/Singapore
     networks:
       - postgres
 

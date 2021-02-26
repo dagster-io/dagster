@@ -84,14 +84,10 @@ def main(quiet):
         "-e python_modules/libraries/lakehouse",
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
+        "-e python_modules/libraries/dagster-azure",
         #
         # https://github.com/dagster-io/dagster/issues/3488
         # "-e python_modules/libraries/dagster-airflow",
-        #
-        # https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
-        # Uncomment only when snowflake-connector-python can be installed with optional (or
-        # compatible) Azure dependencies.
-        # "-e python_modules/libraries/dagster-azure",
     ]
 
     # dagster-ge depends on a great_expectations version that does not install on Windows
@@ -105,7 +101,6 @@ def main(quiet):
             "-e python_modules/libraries/dagstermill",
             '-e "examples/legacy_examples[full]"',
             '-e "examples/airline_demo[full]"',
-            "-r docs-requirements.txt",
         ]
 
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install

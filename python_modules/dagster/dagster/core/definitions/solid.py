@@ -17,7 +17,7 @@ class SolidDefinition(NodeDefinition):
     The definition of a Solid that performs a user-defined computation.
 
     For more details on what a solid is, refer to the
-    `Solid Guide <../../learn/guides/solid/solid>`_ .
+    `Solid Overview <../../overview/solids-pipelines/solids>`_ .
 
     End users should prefer the :func:`@solid <solid>` and :func:`@lambda_solid <lambda_solid>`
     decorators. SolidDefinition is generally intended to be used by framework authors.
@@ -141,7 +141,7 @@ class SolidDefinition(NodeDefinition):
 
     def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
         return SolidDefinition(
-            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            name=name,
             input_defs=self.input_defs,
             compute_fn=self.compute_fn,
             output_defs=self.output_defs,
@@ -248,12 +248,13 @@ class CompositeSolidDefinition(GraphDefinition):
             )
 
         return CompositeSolidDefinition(
-            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            name=name,
             solid_defs=self._node_defs,
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,
             config_mapping=ConfigMapping(
-                self._config_mapping.config_fn, config_schema=config_schema,
+                self._config_mapping.config_fn,
+                config_schema=config_schema,
             ),
             dependencies=self.dependencies,
             description=description or self.description,

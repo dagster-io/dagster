@@ -1,6 +1,3 @@
-import signal
-import threading
-import warnings
 from urllib.parse import urljoin, urlparse
 
 import click
@@ -8,6 +5,7 @@ import requests
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
+from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.cli.workspace.workspace import Workspace
 from dagster.core.instance import DagsterInstance
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
@@ -17,7 +15,6 @@ from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
 
 from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from .implementation.context import DagsterGraphQLContext
 from .schema import create_schema
 from .version import __version__
 
@@ -43,7 +40,9 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
 
     query = query.strip("'\" \n\t")
 
-    context = DagsterGraphQLContext(workspace=workspace, instance=instance, version=__version__,)
+    context = WorkspaceProcessContext(
+        workspace=workspace, instance=instance, version=__version__
+    ).create_request_context()
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 
@@ -180,10 +179,7 @@ PREDEFINED_QUERIES = {
     help="A file path to store the GraphQL response to. This flag is useful when making pipeline "
     "execution queries, since pipeline execution causes logs to print to stdout and stderr.",
 )
-@click.option(
-    "--remap-sigterm", is_flag=True, default=False, help="Remap SIGTERM signal to SIGINT handler",
-)
-def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwargs):
+def ui(text, file, predefined, variables, remote, output, **kwargs):
     query = None
     if text is not None and file is None and predefined is None:
         query = text.strip("'\" \n\t")
@@ -197,18 +193,6 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
             "to select GraphQL document to execute."
         )
 
-    if remap_sigterm:
-        try:
-            signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
-        except ValueError:
-            warnings.warn(
-                (
-                    "Unexpected error attempting to manage signal handling on thread {thread_name}. "
-                    "You should not invoke this API (ui) from threads "
-                    "other than the main thread."
-                ).format(thread_name=threading.current_thread().name)
-            )
-
     if remote:
         res = execute_query_against_remote(remote, query, variables)
         print(res)  # pylint: disable=print-call
@@ -216,7 +200,11 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
         instance = DagsterInstance.get()
         with get_workspace_from_kwargs(kwargs) as workspace:
             execute_query_from_cli(
-                workspace, query, instance, variables, output,
+                workspace,
+                query,
+                instance,
+                variables,
+                output,
             )
 
 

@@ -1,12 +1,23 @@
+import sys
+
 import pendulum
 import pytest
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.runs.migration import RUN_DATA_MIGRATIONS
+from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import make_new_run_id
-from dagster.daemon.types import DaemonHeartbeat, DaemonType
+from dagster.daemon.daemon import SensorDaemon
+from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
 
 
@@ -34,6 +45,25 @@ class TestRunStorage:
     def run_storage(self, request):
         with request.param() as s:
             yield s
+
+    # Override for storages that are not allowed to delete runs
+    def can_delete_runs(self):
+        return True
+
+    @staticmethod
+    def fake_repo_target():
+        return ExternalRepositoryOrigin(
+            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                LoadableTargetOrigin(
+                    executable_path=sys.executable, module_name="fake", attribute="fake"
+                ),
+            ),
+            "fake_repo_name",
+        )
+
+    @classmethod
+    def fake_partition_set_origin(cls, partition_set_name):
+        return cls.fake_repo_target().get_partition_set_origin(partition_set_name)
 
     @staticmethod
     def build_run(
@@ -80,6 +110,9 @@ class TestRunStorage:
         assert fetched_run.pipeline_name == "some_pipeline"
 
     def test_clear(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete")
+
         assert storage
         run_id = make_new_run_id()
         storage.add_run(TestRunStorage.build_run(run_id=run_id, pipeline_name="some_pipeline"))
@@ -492,7 +525,10 @@ class TestRunStorage:
         assert {
             run.run_id
             for run in storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.STARTED]))
-        } == {two, three,}
+        } == {
+            two,
+            three,
+        }
 
         assert {
             run.run_id
@@ -555,6 +591,9 @@ class TestRunStorage:
         assert cursor_four_limit_one[0].run_id == two
 
     def test_delete(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
         assert storage
         run_id = make_new_run_id()
         storage.add_run(TestRunStorage.build_run(run_id=run_id, pipeline_name="some_pipeline"))
@@ -563,11 +602,16 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
 
     def test_delete_with_tags(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
         assert storage
         run_id = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=run_id, pipeline_name="some_pipeline", tags={run_id: run_id},
+                run_id=run_id,
+                pipeline_name="some_pipeline",
+                tags={run_id: run_id},
             )
         )
         assert len(storage.get_runs()) == 1
@@ -577,6 +621,9 @@ class TestRunStorage:
         assert run_id not in [key for key, value in storage.get_run_tags()]
 
     def test_wipe_tags(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete")
+
         run_id = "some_run_id"
         run = PipelineRun(run_id=run_id, pipeline_name="a_pipeline", tags={"foo": "bar"})
 
@@ -611,9 +658,10 @@ class TestRunStorage:
         assert storage.has_pipeline_snapshot(pipeline_snapshot_id)
         assert not storage.has_pipeline_snapshot("nope")
 
-        storage.wipe()
+        if self.can_delete_runs():
+            storage.wipe()
 
-        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+            assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
 
     def test_single_write_read_with_snapshot(self, storage):
         run_with_snapshot_id = "lkasjdflkjasdf"
@@ -641,10 +689,11 @@ class TestRunStorage:
 
         assert storage.get_run_by_id(run_with_snapshot_id) == run_with_snapshot
 
-        storage.wipe()
+        if self.can_delete_runs():
+            storage.wipe()
 
-        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
-        assert not storage.has_run(run_with_snapshot_id)
+            assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+            assert not storage.has_run(run_with_snapshot_id)
 
     def test_single_write_with_missing_snapshot(self, storage):
 
@@ -677,9 +726,11 @@ class TestRunStorage:
         assert storage.has_execution_plan_snapshot(snapshot_id)
         assert not storage.has_execution_plan_snapshot("nope")
 
-        storage.wipe()
+        if self.can_delete_runs():
 
-        assert not storage.has_execution_plan_snapshot(snapshot_id)
+            storage.wipe()
+
+            assert not storage.has_execution_plan_snapshot(snapshot_id)
 
     def test_fetch_run_filter(self, storage):
         assert storage
@@ -688,12 +739,16 @@ class TestRunStorage:
 
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=one, pipeline_name="some_pipeline", status=PipelineRunStatus.SUCCESS,
+                run_id=one,
+                pipeline_name="some_pipeline",
+                status=PipelineRunStatus.SUCCESS,
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
-                run_id=two, pipeline_name="some_pipeline", status=PipelineRunStatus.SUCCESS,
+                run_id=two,
+                pipeline_name="some_pipeline",
+                status=PipelineRunStatus.SUCCESS,
             ),
         )
 
@@ -896,35 +951,73 @@ class TestRunStorage:
         # test insert
         added_heartbeat = DaemonHeartbeat(
             timestamp=pendulum.from_timestamp(1000).float_timestamp,
-            daemon_type=DaemonType.SENSOR,
+            daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
-            error=None,
+            errors=[],
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         assert len(storage.get_daemon_heartbeats()) == 1
-        stored_heartbeat = storage.get_daemon_heartbeats()[DaemonType.SENSOR]
+        stored_heartbeat = storage.get_daemon_heartbeats()[SensorDaemon.daemon_type()]
         assert stored_heartbeat == added_heartbeat
 
         # test update
         second_added_heartbeat = DaemonHeartbeat(
             timestamp=pendulum.from_timestamp(2000).float_timestamp,
-            daemon_type=DaemonType.SENSOR,
+            daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
-            error=None,
+            errors=[],
         )
         storage.add_daemon_heartbeat(second_added_heartbeat)
         assert len(storage.get_daemon_heartbeats()) == 1
-        stored_heartbeat = storage.get_daemon_heartbeats()[DaemonType.SENSOR]
+        stored_heartbeat = storage.get_daemon_heartbeats()[SensorDaemon.daemon_type()]
         assert stored_heartbeat == second_added_heartbeat
 
     def test_wipe_heartbeats(self, storage):
         self._skip_in_memory(storage)
 
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete")
+
         added_heartbeat = DaemonHeartbeat(
             timestamp=pendulum.from_timestamp(1000).float_timestamp,
-            daemon_type=DaemonType.SENSOR,
+            daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
-            error=None,
+            errors=[],
         )
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()
+
+    def test_backfill(self, storage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        if not storage.has_bulk_actions_table():
+            pytest.skip("Storage does not support bulk actions")
+
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        one = PartitionBackfill(
+            "one",
+            origin,
+            BulkActionStatus.REQUESTED,
+            ["a", "b", "c"],
+            False,
+            None,
+            None,
+            pendulum.now().timestamp(),
+        )
+        storage.add_backfill(one)
+        assert len(storage.get_backfills()) == 1
+        assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 1
+        backfill = storage.get_backfill(one.backfill_id)
+        assert backfill == one
+
+        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        assert len(storage.get_backfills()) == 1
+        assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
+
+    def test_secondary_index(self, storage):
+        if not isinstance(storage, SqlRunStorage):
+            return
+
+        for name in RUN_DATA_MIGRATIONS.keys():
+            assert storage.has_built_index(name)

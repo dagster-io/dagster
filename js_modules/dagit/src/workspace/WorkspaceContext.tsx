@@ -5,6 +5,7 @@ import {useRouteMatch} from 'react-router-dom';
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {RepositorySelector} from 'src/types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
+import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 import {RepoAddress} from 'src/workspace/types';
@@ -223,7 +224,7 @@ const useWorkspaceState = () => {
     if (!repo) {
       return null;
     }
-    const address = {name: repo.repository.name, location: repo.repositoryLocation.name};
+    const address = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
     const path = repoAddressAsString(address);
     return {repo, address, path};
   }, [localStorageRepo, options, repoForPath]);
@@ -257,27 +258,34 @@ export const useRepositoryOptions = () => {
   return {options, loading, error};
 };
 
+// todo dish: Delete this.
 export const useActiveRepo = () => {
   const {activeRepo} = React.useContext(WorkspaceContext);
   return activeRepo;
 };
 
-export const useRepository = () => {
-  const {activeRepo} = React.useContext(WorkspaceContext);
-  return activeRepo?.repo.repository;
+export const useRepository = (repoAddress: RepoAddress) => {
+  const {options} = useRepositoryOptions();
+  return options.find(
+    (option) =>
+      option.repository.name === repoAddress.name &&
+      option.repositoryLocation.name === repoAddress.location,
+  );
 };
 
 export const useRepositorySelector = (): RepositorySelector => {
-  const repository = useRepository();
+  const active = useActiveRepo();
   return {
-    repositoryLocationName: repository?.location.name || '',
-    repositoryName: repository?.name || '',
+    repositoryLocationName: active?.repo.repository.location.name || '',
+    repositoryName: active?.repo.repository.name || '',
   };
 };
 
 export const useActivePipelineForName = (pipelineName: string) => {
-  const repository = useRepository();
-  return repository?.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
+  const active = useActiveRepo();
+  return (
+    active?.repo.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null
+  );
 };
 
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {
@@ -297,9 +305,5 @@ export const useScheduleSelector = (scheduleName: string) => {
   };
 };
 
-export const optionToRepoAddress = (option: DagsterRepoOption) => {
-  return {
-    name: option.repository.name,
-    location: option.repository.location.name,
-  };
-};
+export const optionToRepoAddress = (option: DagsterRepoOption) =>
+  buildRepoAddress(option.repository.name, option.repository.location.name);

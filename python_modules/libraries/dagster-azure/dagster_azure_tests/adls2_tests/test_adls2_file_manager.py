@@ -1,4 +1,5 @@
 import uuid
+from unittest import mock
 
 from dagster import (
     InputDefinition,
@@ -11,7 +12,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.seven import mock
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,
@@ -211,7 +211,9 @@ def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
 
     resource_config = {
         "storage_account": "some-storage-account",
-        "credential": {"key": "some-key",},
+        "credential": {
+            "key": "some-key",
+        },
         "adls2_file_system": "some-file-system",
         "adls2_prefix": "some-prefix",
     }

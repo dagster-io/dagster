@@ -40,13 +40,26 @@ module.exports = {
         'newlines-between': 'always',
       },
     ],
-    'no-restricted-imports': ['error', {patterns: ['./*', '../*']}],
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: ['./*', '../*'],
+        paths: [
+          {
+            name: '@blueprintjs/core',
+            importNames: ['Alert', 'Callout', 'Spinner'],
+            message: 'Please use components in src/ui instead.',
+          },
+        ],
+      },
+    ],
+    'react/jsx-no-target-blank': 'error',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
     '@typescript-eslint/no-unused-vars': [
       'error',
-      {argsIgnorePattern: '^_', ignoreRestSiblings: true},
+      {argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true},
     ],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

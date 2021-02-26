@@ -35,7 +35,9 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             description="Databricks host, e.g. uksouth.azuredatabricks.com",
         ),
         "databricks_token": Field(
-            StringSource, is_required=True, description="Databricks access token",
+            StringSource,
+            is_required=True,
+            description="Databricks access token",
         ),
         "secrets_to_env_variables": define_databricks_secrets_config(),
         "storage": define_databricks_storage_config(),
@@ -183,17 +185,22 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         pickle.dump(step_run_ref, step_pickle_file)
         step_pickle_file.seek(0)
         self.databricks_runner.client.put_file(
-            step_pickle_file, self._dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
+            step_pickle_file,
+            self._dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
         )
 
-        databricks_config = DatabricksConfig(storage=self.storage, secrets=self.secrets,)
+        databricks_config = DatabricksConfig(
+            storage=self.storage,
+            secrets=self.secrets,
+        )
         log.info("Uploading Databricks configuration to DBFS")
         databricks_config_file = io.BytesIO()
 
         pickle.dump(databricks_config, databricks_config_file)
         databricks_config_file.seek(0)
         self.databricks_runner.client.put_file(
-            databricks_config_file, self._dbfs_path(run_id, step_key, PICKLED_CONFIG_FILE_NAME),
+            databricks_config_file,
+            self._dbfs_path(run_id, step_key, PICKLED_CONFIG_FILE_NAME),
         )
 
     def _log_logs_from_cluster(self, log, run_id):

@@ -3,6 +3,7 @@ import pickle
 import tempfile
 
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.fs_io_manager import fs_io_manager
 
 
@@ -46,3 +47,19 @@ def test_fs_io_manager():
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
+
+
+def test_fs_io_manager_base_dir():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        instance = DagsterInstance.ephemeral(tempdir=tmpdir_path)
+        io_manager = fs_io_manager
+        pipeline_def = define_pipeline(io_manager)
+
+        result = execute_pipeline(pipeline_def, instance=instance)
+        assert result.success
+        assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
+
+        with open(
+            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"), "rb"
+        ) as read_obj:
+            assert pickle.load(read_obj) == [1, 2, 3]

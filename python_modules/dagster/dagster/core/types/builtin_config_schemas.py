@@ -57,7 +57,9 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     def _external_version_fn(val):
         from dagster.core.execution.resolve_versions import join_and_hash
 
-        return join_and_hash(str(val),)
+        return join_and_hash(
+            str(val),
+        )
 
     check.str_param(scalar_name, "scalar_name")
     check.inst_param(config_scalar_type, "config_scalar_type", ConfigType)

@@ -51,7 +51,8 @@ class ExecutionPlanSnapshot(
 class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData", "error")):
     def __new__(cls, error):
         return super(ExecutionPlanSnapshotErrorData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
@@ -106,7 +107,9 @@ class ExecutionStepOutputSnap(namedtuple("_ExecutionStepOutputSnap", "name dagst
 class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap", "key value")):
     def __new__(cls, key, value):
         return super(ExecutionPlanMetadataItemSnap, cls).__new__(
-            cls, check.str_param(key, "key"), check.str_param(value, "value"),
+            cls,
+            check.str_param(key, "key"),
+            check.str_param(value, "value"),
         )
 
 
@@ -118,7 +121,7 @@ def _snapshot_from_step_input(step_input):
         upstream_output_handles = step_input.get_step_output_handle_dependencies()
     return ExecutionStepInputSnap(
         name=step_input.name,
-        dagster_type_key=step_input.dagster_type.key,
+        dagster_type_key=step_input.dagster_type_key,
         upstream_output_handles=upstream_output_handles,
     )
 
@@ -126,7 +129,7 @@ def _snapshot_from_step_input(step_input):
 def _snapshot_from_step_output(step_output):
     check.inst_param(step_output, "step_output", StepOutput)
     return ExecutionStepOutputSnap(
-        name=step_output.name, dagster_type_key=step_output.output_def.dagster_type.key
+        name=step_output.name, dagster_type_key=step_output.dagster_type_key
     )
 
 

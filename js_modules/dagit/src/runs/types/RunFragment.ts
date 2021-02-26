@@ -37,6 +37,7 @@ export interface RunFragment_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
   outputs: RunFragment_executionPlan_steps_inputs_dependsOn_outputs[];
+  kind: StepKind;
 }
 
 export interface RunFragment_executionPlan_steps_inputs {

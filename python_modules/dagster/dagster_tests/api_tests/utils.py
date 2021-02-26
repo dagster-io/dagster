@@ -6,8 +6,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     PipelineHandle,
-    RepositoryLocation,
-    RepositoryLocationHandle,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -21,28 +19,26 @@ def get_bar_repo_repository_location_handle():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    return RepositoryLocationHandle.create_from_repository_location_origin(origin)
+    return origin.create_handle()
 
 
 @contextmanager
 def get_bar_repo_grpc_repository_location_handle():
-    with RepositoryLocationHandle.create_from_repository_location_origin(
-        ManagedGrpcPythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                attribute="bar_repo",
-                python_file=file_relative_path(__file__, "api_tests_repo.py"),
-            ),
-            location_name="bar_repo",
-        )
-    ) as handle:
+    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="bar_repo",
+            python_file=file_relative_path(__file__, "api_tests_repo.py"),
+        ),
+        location_name="bar_repo",
+    ).create_handle() as handle:
         yield handle
 
 
 @contextmanager
 def get_bar_repo_handle():
     with get_bar_repo_repository_location_handle() as location_handle:
-        yield RepositoryLocation.from_handle(location_handle).get_repository("bar_repo").handle
+        yield location_handle.create_location().get_repository("bar_repo").handle
 
 
 @contextmanager

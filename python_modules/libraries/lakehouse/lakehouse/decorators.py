@@ -146,7 +146,8 @@ def _deps_by_arg_name(input_assets, fn):
         check.invariant(
             kwarg_types.keys() == input_assets.keys(),
             "input_assets keys {kwarg_deps_keys} must match keyword args {kwargs}".format(
-                kwarg_deps_keys=input_assets.keys(), kwargs=kwarg_types.keys(),
+                kwarg_deps_keys=input_assets.keys(),
+                kwargs=kwarg_types.keys(),
             ),
         )
         return {

@@ -247,7 +247,10 @@ def _always_fails(_, _value):
     raise AlwaysFailsException("kdjfkjd")
 
 
-ThrowsExceptionType = DagsterType(name="ThrowsExceptionType", type_check_fn=_always_fails,)
+ThrowsExceptionType = DagsterType(
+    name="ThrowsExceptionType",
+    type_check_fn=_always_fails,
+)
 
 
 def _return_bad_value(_, _value):
@@ -326,7 +329,7 @@ def test_input_type_throw_arbitrary_exception():
     pipeline_result = execute_no_throw(pipe)
     assert not pipeline_result.success
     solid_result = pipeline_result.result_for_solid("take_throws")
-    assert solid_result.failure_data.error.cls_name == "AlwaysFailsException"
+    assert solid_result.failure_data.error.cause.cls_name == "AlwaysFailsException"
 
 
 def test_output_type_throw_arbitrary_exception():
@@ -344,8 +347,8 @@ def test_output_type_throw_arbitrary_exception():
     pipeline_result = execute_no_throw(pipe)
     assert not pipeline_result.success
     solid_result = pipeline_result.result_for_solid("return_one_throws")
-    assert solid_result.failure_data.error.cls_name == "AlwaysFailsException"
-    assert "kdjfkjd" in solid_result.failure_data.error.message
+    assert solid_result.failure_data.error.cause.cls_name == "AlwaysFailsException"
+    assert "kdjfkjd" in solid_result.failure_data.error.cause.message
 
 
 def define_custom_dict(name, permitted_key_names):
@@ -503,7 +506,7 @@ def test_raise_on_error_true_type_check_raises_exception():
     ]
     for event in pipeline_result.step_event_list:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
-            assert event.event_specific_data.error.cls_name == "Failure"
+            assert event.event_specific_data.error.cause.cls_name == "Failure"
 
 
 def test_raise_on_error_true_type_check_returns_true():
@@ -621,8 +624,14 @@ def test_make_usable_as_dagster_type_called_twice():
     class AType:
         pass
 
-    ADagsterType = PythonObjectDagsterType(AType, name="ADagsterType",)
-    BDagsterType = PythonObjectDagsterType(AType, name="BDagsterType",)
+    ADagsterType = PythonObjectDagsterType(
+        AType,
+        name="ADagsterType",
+    )
+    BDagsterType = PythonObjectDagsterType(
+        AType,
+        name="BDagsterType",
+    )
 
     make_python_type_usable_as_dagster_type(AType, ADagsterType)
     make_python_type_usable_as_dagster_type(AType, ADagsterType)  # should not raise an error

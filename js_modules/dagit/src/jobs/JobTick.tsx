@@ -8,7 +8,6 @@ import {
   NonIdealState,
   Classes,
   Colors,
-  Spinner,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -26,6 +25,7 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
 import {JobTickStatus, JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {Spinner} from 'src/ui/Spinner';
 
 export const TickTag: React.FunctionComponent<{
   tick: TickTagFragment;
@@ -141,8 +141,9 @@ export const RunList: React.FunctionComponent<{
   );
 
   if (loading || !data) {
-    return <Spinner />;
+    return <Spinner purpose="section" />;
   }
+
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState

@@ -3,8 +3,8 @@ import time
 from collections import defaultdict
 
 from dagster import DagsterEvent, DagsterEventType, check
-from dagster.core.events.log import DagsterEventRecord
-from dagster.core.host_representation.handle import RepositoryLocationHandle
+from dagster.core.events.log import EventRecord
+from dagster.core.host_representation import RepositoryLocationHandleManager
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
@@ -13,7 +13,6 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.daemon.daemon import DagsterDaemon
-from dagster.daemon.types import DaemonType
 from dagster.utils.backcompat import experimental
 from dagster.utils.external import external_pipeline_from_location_handle
 
@@ -75,43 +74,6 @@ class _TagConcurrencyLimitsCounter:
             self._in_progress_limit_counts[tag_value] += 1
 
 
-class _RepositoryLocationHandleManager:
-    """
-    Holds repository location handles for reuse across runs
-    """
-
-    def __init__(self):
-        self._location_handles = {}
-
-    def __enter__(self):
-        return self
-
-    def get_external_pipeline_from_run(self, pipeline_run):
-        repo_location_origin = (
-            pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin
-        )
-        origin_id = repo_location_origin.get_id()
-        if origin_id not in self._location_handles:
-            self._location_handles[
-                origin_id
-            ] = RepositoryLocationHandle.create_from_repository_location_origin(
-                repo_location_origin
-            )
-
-        return external_pipeline_from_location_handle(
-            self._location_handles[origin_id],
-            pipeline_run.external_pipeline_origin,
-            pipeline_run.solid_selection,
-        )
-
-    def cleanup(self):
-        for handle in self._location_handles.values():
-            handle.cleanup()
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        self.cleanup()
-
-
 class QueuedRunCoordinatorDaemon(DagsterDaemon):
     """
     Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
@@ -120,20 +82,35 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
     @experimental
     def __init__(
-        self, instance, interval_seconds, max_concurrent_runs, tag_concurrency_limits=None
+        self,
+        interval_seconds,
+        max_concurrent_runs,
+        tag_concurrency_limits=None,
     ):
-        super(QueuedRunCoordinatorDaemon, self).__init__(instance, interval_seconds)
+        super(QueuedRunCoordinatorDaemon, self).__init__(interval_seconds)
         self._max_concurrent_runs = check.int_param(max_concurrent_runs, "max_concurrent_runs")
         self._tag_concurrency_limits = check.opt_list_param(
-            tag_concurrency_limits, "tag_concurrency_limits"
+            tag_concurrency_limits,
+            "tag_concurrency_limits",
+        )
+
+    @staticmethod
+    def create_from_instance(instance):
+        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
+        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
+
+        return QueuedRunCoordinatorDaemon(
+            interval_seconds=instance.run_coordinator.dequeue_interval_seconds,
+            max_concurrent_runs=max_concurrent_runs,
+            tag_concurrency_limits=tag_concurrency_limits,
         )
 
     @classmethod
     def daemon_type(cls):
-        return DaemonType.QUEUED_RUN_COORDINATOR
+        return "QUEUED_RUN_COORDINATOR"
 
-    def run_iteration(self):
-        in_progress_runs = self._get_in_progress_runs()
+    def run_iteration(self, instance, daemon_shutdown_event):
+        in_progress_runs = self._get_in_progress_runs(instance)
         max_runs_to_launch = self._max_concurrent_runs - len(in_progress_runs)
 
         # Possibly under 0 if runs were launched without queuing
@@ -145,7 +122,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             )
             return
 
-        queued_runs = self._get_queued_runs()
+        queued_runs = self._get_queued_runs(instance)
 
         if not queued_runs:
             self._logger.info("Poll returned no queued runs.")
@@ -161,7 +138,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             self._tag_concurrency_limits, in_progress_runs
         )
 
-        with _RepositoryLocationHandleManager() as location_manager:
+        with RepositoryLocationHandleManager() as location_manager:
             for run in sorted_runs:
                 if num_dequeued_runs >= max_runs_to_launch:
                     break
@@ -169,7 +146,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
                 if tag_concurrency_limits_counter.is_run_blocked(run):
                     continue
 
-                self._dequeue_run(run, location_manager)
+                self._dequeue_run(instance, run, location_manager)
                 tag_concurrency_limits_counter.update_counters_with_launched_run(run)
                 num_dequeued_runs += 1
 
@@ -177,19 +154,17 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
         self._logger.info("Launched {} runs.".format(num_dequeued_runs))
 
-    def _get_queued_runs(self):
+    def _get_queued_runs(self, instance):
         queued_runs_filter = PipelineRunsFilter(statuses=[PipelineRunStatus.QUEUED])
 
         # Reversed for fifo ordering
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
-        runs = self._instance.get_runs(filters=queued_runs_filter)[::-1]
+        runs = instance.get_runs(filters=queued_runs_filter)[::-1]
         return runs
 
-    def _get_in_progress_runs(self):
+    def _get_in_progress_runs(self, instance):
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
-        return self._instance.get_runs(
-            filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)
-        )
+        return instance.get_runs(filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs):
         def get_priority(run):
@@ -202,10 +177,19 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         # sorted is stable, so fifo is maintained
         return sorted(runs, key=get_priority, reverse=True)
 
-    def _dequeue_run(self, run, location_manager):
-        external_pipeline = location_manager.get_external_pipeline_from_run(run)
+    def _dequeue_run(self, instance, run, location_manager):
+        repository_location_origin = (
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin
+        )
+
+        handle = location_manager.get_handle(repository_location_origin)
+
+        external_pipeline = external_pipeline_from_location_handle(
+            handle, run.external_pipeline_origin, run.solid_selection
+        )
+
         # double check that the run is still queued before dequeing
-        reloaded_run = self._instance.get_run_by_id(run.run_id)
+        reloaded_run = instance.get_run_by_id(run.run_id)
 
         if reloaded_run.status != PipelineRunStatus.QUEUED:
             self._logger.info(
@@ -219,7 +203,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
             pipeline_name=run.pipeline_name,
         )
-        event_record = DagsterEventRecord(
+        event_record = EventRecord(
             message="",
             user_message="",
             level=logging.INFO,
@@ -229,6 +213,6 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             timestamp=time.time(),
             dagster_event=dequeued_event,
         )
-        self._instance.handle_new_event(event_record)
+        instance.handle_new_event(event_record)
 
-        self._instance.launch_run(run.run_id, external_pipeline)
+        instance.launch_run(run.run_id, external_pipeline)

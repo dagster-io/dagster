@@ -10,8 +10,8 @@ import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: AssetQuery
 // ====================================================
 
-export interface AssetQuery_assetOrError_AssetsNotSupportedError {
-  __typename: "AssetsNotSupportedError" | "AssetNotFoundError";
+export interface AssetQuery_assetOrError_AssetNotFoundError {
+  __typename: "AssetNotFoundError";
 }
 
 export interface AssetQuery_assetOrError_Asset_key {
@@ -128,7 +128,7 @@ export interface AssetQuery_assetOrError_Asset {
   assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
 }
 
-export type AssetQuery_assetOrError = AssetQuery_assetOrError_AssetsNotSupportedError | AssetQuery_assetOrError_Asset;
+export type AssetQuery_assetOrError = AssetQuery_assetOrError_AssetNotFoundError | AssetQuery_assetOrError_Asset;
 
 export interface AssetQuery {
   assetOrError: AssetQuery_assetOrError;

@@ -14,7 +14,7 @@ class InitResourceContext(
         "InitResourceContext",
         (
             "resource_config resource_def pipeline_run log_manager resources "
-            "instance_for_backwards_compat pipeline_def_for_backwards_compat"
+            "instance pipeline_def_for_backwards_compat"
         ),
     )
 ):
@@ -41,7 +41,7 @@ class InitResourceContext(
         log_manager: Optional[DagsterLogManager] = None,
         resource_instance_dict: Optional[Dict[str, Any]] = None,
         required_resource_keys: Optional[Set[str]] = None,
-        instance_for_backwards_compat: Optional[DagsterInstance] = None,
+        instance: Optional[DagsterInstance] = None,
         pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
     ):
         check.opt_dict_param(resource_instance_dict, "resource_instance_dict")
@@ -58,10 +58,7 @@ class InitResourceContext(
             check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
             check.opt_inst_param(log_manager, "log_manager", DagsterLogManager),
             resources=scoped_resources_builder.build(required_resource_keys),
-            # The following are used internally for adapting intermediate storage defs to resources
-            instance_for_backwards_compat=check.opt_inst_param(
-                instance_for_backwards_compat, "instance_for_backwards_compat", DagsterInstance
-            ),
+            instance=check.opt_inst_param(instance, "instance", DagsterInstance),
             pipeline_def_for_backwards_compat=check.opt_inst_param(
                 pipeline_def_for_backwards_compat,
                 "pipeline_def_for_backwards_compat",
@@ -83,5 +80,5 @@ class InitResourceContext(
             resource_def=self.resource_def,
             pipeline_run=self.pipeline_run,
             log_manager=self.log_manager,
-            instance_for_backwards_compat=self.instance_for_backwards_compat,
+            instance=self.instance,
         )

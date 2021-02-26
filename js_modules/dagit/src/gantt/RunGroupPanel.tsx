@@ -12,6 +12,7 @@ import {
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from 'src/runs/RunUtils';
+import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 
@@ -71,9 +72,9 @@ export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId})
       {runs.map((g: RunGroupPanelQuery_runGroupOrError_RunGroup_runs, idx) => (
         <RunGroupRun key={g.runId} to={`/instance/runs/${g.runId}`} selected={g.runId === runId}>
           {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
-          <div>
+          <Box padding={{top: 4}}>
             <RunStatus status={g.status} />
-          </div>
+          </Box>
 
           <div
             style={{

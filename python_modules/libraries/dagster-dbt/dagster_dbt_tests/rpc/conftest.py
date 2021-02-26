@@ -22,7 +22,9 @@ RPC_ENDPOINT = "http://{hostname}:{port}/jsonrpc".format(hostname=TEST_HOSTNAME,
 def get_rpc_server_status():
     status_request_body = b'{"jsonrpc": "2.0", "method": "status", "id": 1}'
     req = request.Request(
-        RPC_ENDPOINT, data=status_request_body, headers={"Content-type": "application/json"},
+        RPC_ENDPOINT,
+        data=status_request_body,
+        headers={"Content-type": "application/json"},
     )
     resp = request.urlopen(req)
     return json.load(resp)

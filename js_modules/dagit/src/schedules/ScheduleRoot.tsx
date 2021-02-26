@@ -1,11 +1,9 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
-import {IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {ScheduleTickHistory} from 'src/jobs/TickHistory';
-import {TopNav} from 'src/nav/TopNav';
+import {JobTickHistory} from 'src/jobs/TickHistory';
 import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
@@ -20,10 +18,8 @@ import {ScrollContainer} from 'src/ui/ListComponents';
 import {Loading} from 'src/ui/Loading';
 import {Page} from 'src/ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 interface Props {
   scheduleName: string;
@@ -70,25 +66,8 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
           return null;
         }
 
-        const breadcrumbs: IBreadcrumbProps[] = [
-          {
-            icon: 'cube',
-            text: 'Workspace',
-            href: '/workspace',
-          },
-          {
-            text: repoAddressAsString(repoAddress),
-            href: workspacePathFromAddress(repoAddress),
-          },
-          {
-            text: 'Schedules',
-            href: workspacePathFromAddress(repoAddress, '/schedules'),
-          },
-        ];
-
         return (
           <ScrollContainer>
-            <TopNav breadcrumbs={breadcrumbs} />
             <Page>
               <Group direction="column" spacing={20}>
                 <SchedulerInfo
@@ -96,26 +75,24 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                   daemonHealth={instance.daemonHealth}
                   errorsOnly={true}
                 />
-                <>
-                  <ScheduleDetails
-                    repoAddress={repoAddress}
-                    schedule={scheduleOrError}
-                    countdownDuration={INTERVAL}
-                    countdownStatus={countdownStatus}
-                    onRefresh={() => onRefresh()}
-                  />
-                  <ScheduleTickHistory
-                    repoAddress={repoAddress}
-                    schedule={scheduleOrError}
-                    onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-                  />
-                  <SchedulePreviousRuns
-                    repoAddress={repoAddress}
-                    schedule={scheduleOrError}
-                    highlightedIds={selectedRunIds}
-                    runTab={runTab}
-                  />
-                </>
+                <ScheduleDetails
+                  repoAddress={repoAddress}
+                  schedule={scheduleOrError}
+                  countdownDuration={INTERVAL}
+                  countdownStatus={countdownStatus}
+                  onRefresh={() => onRefresh()}
+                />
+                <JobTickHistory
+                  repoAddress={repoAddress}
+                  jobName={scheduleOrError.name}
+                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                />
+                <SchedulePreviousRuns
+                  repoAddress={repoAddress}
+                  schedule={scheduleOrError}
+                  highlightedIds={selectedRunIds}
+                  runTab={runTab}
+                />
               </Group>
             </Page>
           </ScrollContainer>

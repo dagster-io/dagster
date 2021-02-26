@@ -27,7 +27,9 @@ def test_all_migration_scripts_samesies():
 
     for other_store in other_stores:
         match, _mismatch, _errors = cmpfiles(
-            _get_versions_path("event_log"), _get_versions_path(other_store), migration_files,
+            _get_versions_path("event_log"),
+            _get_versions_path(other_store),
+            migration_files,
         )
 
         assert set(match) == set(migration_files)

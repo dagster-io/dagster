@@ -1,5 +1,6 @@
 import uuid
 import warnings
+from functools import update_wrapper
 
 from dagster import check
 from dagster.core.definitions.solid import NodeDefinition
@@ -10,7 +11,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
-from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import str_format_set
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -189,8 +190,6 @@ class PipelineDefinition(GraphDefinition):
                 )
             seen_modes.add(mode_def.name)
 
-        self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_node_defs)
-
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         self._preset_defs = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
@@ -242,7 +241,7 @@ class PipelineDefinition(GraphDefinition):
 
         return PipelineDefinition(
             solid_defs=self._solid_defs,
-            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            name=name,
             description=description or self.description,
             dependencies=self._dependencies,
             mode_defs=self._mode_definitions,
@@ -322,15 +321,6 @@ class PipelineDefinition(GraphDefinition):
         return [mode_def.name for mode_def in self._mode_definitions]
 
     @property
-    def display_name(self):
-        """str: Display name of pipeline.
-
-        Name suitable for exception messages, logging etc. If pipeline
-        is unnamed the method will return "<<unnamed>>".
-        """
-        return self._name if self._name else "<<unnamed>>"
-
-    @property
     def tags(self):
         return self._tags
 
@@ -341,9 +331,6 @@ class PipelineDefinition(GraphDefinition):
     def dagster_type_named(self, name):
         check.str_param(name, "name")
         return self._dagster_type_dict[name]
-
-    def all_dagster_types(self):
-        return self._dagster_type_dict.values()
 
     @property
     def all_solid_defs(self):
@@ -468,7 +455,7 @@ class PipelineDefinition(GraphDefinition):
 
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
-        return PipelineDefinition(
+        pipeline_def = PipelineDefinition(
             solid_defs=self.top_level_solid_defs,
             name=self.name,
             description=self.description,
@@ -479,6 +466,10 @@ class PipelineDefinition(GraphDefinition):
             hook_defs=hook_defs.union(self.hook_defs),
             _parent_pipeline_def=self._parent_pipeline_def,
         )
+
+        update_wrapper(pipeline_def, self, updated=())
+
+        return pipeline_def
 
 
 class PipelineSubsetDefinition(PipelineDefinition):
@@ -600,6 +591,14 @@ def _validate_resource_dependencies(
                             node_def_name=node_def.name,
                             mode_name=mode_def.name,
                         )
+                    )
+
+            for output_def in node_def.output_defs:
+                if output_def.io_manager_key not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        f'IO manager "{output_def.io_manager_key}" is required by output '
+                        f'"{output_def.name}" of solid def {node_def.name}, but is not '
+                        f'provided by mode "{mode_def.name}".'
                     )
 
         _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict)
@@ -738,10 +737,11 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                                 f"the upstream output."
                             )
             else:
+                input_def = handle.input_def
                 if (
-                    not handle.input_def.dagster_type.loader
-                    and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                    and not handle.input_def.root_manager_key
+                    not input_def.dagster_type.loader
+                    and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+                    and not input_def.root_manager_key
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '
@@ -751,10 +751,24 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                         '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,
-                            input_name=handle.input_def.name,
-                            dagster_type=handle.input_def.dagster_type.display_name,
+                            input_name=input_def.name,
+                            dagster_type=input_def.dagster_type.display_name,
                         )
                     )
+
+                for mode_def in mode_definitions:
+                    # If a root manager is provided, it's always used. I.e. it has priority over
+                    # the other ways of loading unsatisified inputs - dagster type loaders and
+                    # default values.
+                    if (
+                        input_def.root_manager_key
+                        and input_def.root_manager_key not in mode_def.resource_defs
+                    ):
+                        raise DagsterInvalidDefinitionError(
+                            f'Root input manager "{input_def.root_manager_key}" is required by '
+                            f'unsatisfied input "{input_def.name}" of solid {solid.name}, but is not '
+                            f'provided by mode "{mode_def.name}".'
+                        )
 
 
 def _build_all_node_defs(node_defs):

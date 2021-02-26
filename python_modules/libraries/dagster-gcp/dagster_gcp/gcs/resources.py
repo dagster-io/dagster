@@ -10,7 +10,8 @@ GCS_CLIENT_CONFIG = {
 
 
 @resource(
-    GCS_CLIENT_CONFIG, description="This resource provides a GCS client",
+    GCS_CLIENT_CONFIG,
+    description="This resource provides a GCS client",
 )
 def gcs_resource(init_context):
     return _gcs_client_from_config(init_context.resource_config)
@@ -27,7 +28,7 @@ def gcs_resource(init_context):
 )
 def gcs_file_manager(context):
     """FileManager that provides abstract access to GCS.
-    
+
     Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
     """
     gcs_client = _gcs_client_from_config(context.resource_config)

@@ -163,7 +163,7 @@ def bar_repo():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
-        "jobs": {"sensor_foo": sensor_foo, "sensor_error": lambda: sensor_error},
+        "sensors": {"sensor_foo": sensor_foo, "sensor_error": lambda: sensor_error},
     }
 
 

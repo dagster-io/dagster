@@ -1,11 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tag, IBreadcrumbProps} from '@blueprintjs/core';
+import {Tag, Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import {Link} from 'react-router-dom';
 
-import {TopNav} from 'src/nav/TopNav';
 import {explorerPathToString, PipelineExplorerPath} from 'src/pipelines/PipelinePathUtils';
 import {SnapshotQuery} from 'src/snapshots/types/SnapshotQuery';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
+import {PageHeader} from 'src/ui/PageHeader';
+import {Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 import {useActivePipelineForName} from 'src/workspace/WorkspaceContext';
 
@@ -69,22 +72,6 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
     );
   };
 
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {text: 'Pipelines', icon: 'diagram-tree'},
-    {
-      text: explorerPath.pipelineName,
-      href: `/workspace/pipelines/${explorerPath.pipelineName}`,
-    },
-    {
-      text: (
-        <div style={{alignItems: 'center', display: 'flex', flexDirection: 'row'}}>
-          <Mono>{explorerPath.snapshotId?.slice(0, 8)}</Mono>
-          <div style={{width: '70px'}}>{tag()}</div>
-        </div>
-      ),
-    },
-  ];
-
   const tabs = [
     {
       text: 'Definition',
@@ -99,16 +86,34 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   ];
 
   return (
-    <TopNav
-      activeTab={tabs.find((tab) => tab.pathComponent === activeTab)?.text}
-      breadcrumbs={breadcrumbs}
-      tabs={tabs}
-    />
+    <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
+      <PageHeader
+        title={
+          <Group direction="row" spacing={12} alignItems="flex-end">
+            <Heading style={{fontFamily: FontFamily.monospace}}>
+              {explorerPath.snapshotId?.slice(0, 8)}
+            </Heading>
+            {tag()}
+          </Group>
+        }
+        icon="diagram-tree"
+        description={
+          <span>
+            Snapshot of{' '}
+            <Link to={`/workspace/pipelines/${explorerPath.pipelineName}`}>
+              {explorerPath.pipelineName}
+            </Link>
+          </span>
+        }
+      />
+      <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+        <Tabs large={false} selectedTabId={activeTab}>
+          {tabs.map((tab) => {
+            const {href, text, pathComponent} = tab;
+            return <Tab key={text} id={pathComponent} title={<Link to={href}>{text}</Link>} />;
+          })}
+        </Tabs>
+      </Box>
+    </Group>
   );
 };
-
-const Mono = styled.div`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  margin-right: 12px;
-`;

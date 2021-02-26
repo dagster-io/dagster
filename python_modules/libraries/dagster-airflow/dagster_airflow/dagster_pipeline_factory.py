@@ -53,7 +53,7 @@ def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
 def make_dagster_repo_from_airflow_dag_bag(
     dag_bag, repo_name, refresh_from_airflow_db=False, use_airflow_template_context=False
 ):
-    """ Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
+    """Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
 
     Usage:
         Create `make_dagster_repo.py`:
@@ -118,7 +118,7 @@ def make_dagster_repo_from_airflow_dag_bag(
 
 
 def make_dagster_repo_from_airflow_example_dags(repo_name="airflow_example_dags_repo"):
-    """ Construct a Dagster repository for Airflow's example DAGs.
+    """Construct a Dagster repository for Airflow's example DAGs.
 
     Execution of the following Airflow example DAGs is not currently supported:
             'example_external_task_marker_child',
@@ -166,7 +166,7 @@ def make_dagster_repo_from_airflow_dags_path(
     store_serialized_dags=False,
     use_airflow_template_context=False,
 ):
-    """ Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
+    """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
     ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
 

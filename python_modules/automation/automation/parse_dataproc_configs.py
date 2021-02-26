@@ -98,8 +98,7 @@ class Field:
             printer.line(")")
 
     def write(self, printer, field_wrapped=True):
-        """Use field_wrapped=False for Lists that should not be wrapped in Field()
-        """
+        """Use field_wrapped=False for Lists that should not be wrapped in Field()"""
         if not field_wrapped:
             self._print_fields(printer)
             return printer.read()

@@ -6,35 +6,31 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-def capture_dauphin_error(fn):
+def capture_error(fn):
     def _fn(*args, **kwargs):
-        from dagster_graphql.schema.errors import DauphinPythonError
+        from dagster_graphql.schema.errors import GraphenePythonError
 
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
-            return de_exception.dauphin_error
+            return de_exception.error
         except Exception:  # pylint: disable=broad-except
-            return DauphinPythonError(serializable_error_info_from_exc_info(sys.exc_info()))
+            return GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
 
     return _fn
 
 
 class UserFacingGraphQLError(Exception):
-    def __init__(self, dauphin_error):
-        self.dauphin_error = dauphin_error
+    def __init__(self, error):
+        self.error = error
         message = "[{cls}] {message}".format(
-            cls=dauphin_error.__class__.__name__,
-            message=dauphin_error.message if hasattr(dauphin_error, "message") else None,
+            cls=error.__class__.__name__,
+            message=error.message if hasattr(error, "message") else None,
         )
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-def pipeline_selector_from_graphql(context, data):
-    from dagster_graphql.implementation.context import DagsterGraphQLContext
-
-    check.inst_param(context, "context", DagsterGraphQLContext)
-
+def pipeline_selector_from_graphql(data):
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
@@ -44,7 +40,10 @@ def pipeline_selector_from_graphql(context, data):
 
 
 class ExecutionParams(
-    namedtuple("_ExecutionParams", "selector run_config mode execution_metadata step_keys",)
+    namedtuple(
+        "_ExecutionParams",
+        "selector run_config mode execution_metadata step_keys",
+    )
 ):
     def __new__(cls, selector, run_config, mode, execution_metadata, step_keys):
         check.dict_param(run_config, "run_config", key_type=str)

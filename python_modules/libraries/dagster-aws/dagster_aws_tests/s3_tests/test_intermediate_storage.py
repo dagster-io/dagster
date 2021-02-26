@@ -45,7 +45,8 @@ class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=
 
 
 LowercaseString = create_any_type(
-    "LowercaseString", serialization_strategy=UppercaseSerializationStrategy("uppercase"),
+    "LowercaseString",
+    serialization_strategy=UppercaseSerializationStrategy("uppercase"),
 )
 
 
@@ -117,13 +118,18 @@ def test_using_s3_for_subplan(mock_s3_bucket):
 
     assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["return_one"]),
+        run_config,
+        pipeline_run,
+        instance,
     ) as context:
 
         intermediates_manager = S3IntermediateStorage(
             mock_s3_bucket.name,
             run_id,
-            s3_session=context.scoped_resources_builder.build(required_resource_keys={"s3"},).s3,
+            s3_session=context.scoped_resources_builder.build(
+                required_resource_keys={"s3"},
+            ).s3,
         )
         step_output_handle = StepOutputHandle("return_one")
         assert intermediates_manager.has_intermediate(context, step_output_handle)
@@ -140,7 +146,10 @@ def test_using_s3_for_subplan(mock_s3_bucket):
 
     assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["add_one"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["add_one"]),
+        run_config,
+        pipeline_run,
+        instance,
     ) as context:
         step_output_handle = StepOutputHandle("add_one")
         assert intermediates_manager.has_intermediate(context, step_output_handle)
@@ -225,7 +234,9 @@ def test_s3_intermediate_storage_with_composite_type_storage_plugin(mock_s3_buck
                 context,
                 resolve_dagster_type(List[String]),
                 StepOutputHandle("obj_name"),
-                ["hello",],
+                [
+                    "hello",
+                ],
             )
 
 
@@ -297,11 +308,19 @@ def test_s3_pipeline_with_custom_prefix(mock_s3_bucket):
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, run_config=run_config,)
+    result = execute_pipeline(
+        pipe,
+        run_config=run_config,
+    )
     assert result.success
 
     execution_plan = create_execution_plan(pipe, run_config)
-    with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
+    with scoped_pipeline_context(
+        execution_plan,
+        run_config,
+        pipeline_run,
+        instance,
+    ) as context:
         intermediates_manager = S3IntermediateStorage(
             run_id=result.run_id,
             s3_bucket=mock_s3_bucket.name,

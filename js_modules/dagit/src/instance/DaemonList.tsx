@@ -3,13 +3,14 @@ import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {timestampToString} from 'src/app/time/Timestamp';
+import {browserTimezone} from 'src/app/time/browserTimezone';
 import {DaemonHealth} from 'src/instance/DaemonHealth';
 import {
   DaemonHealthFragment,
   DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
 } from 'src/instance/types/DaemonHealthFragment';
 import {Table} from 'src/ui/Table';
-import {browserTimezone, timestampToString} from 'src/ui/TimeComponents';
 
 interface DaemonLabelProps {
   daemon: DaemonStatus;
@@ -24,6 +25,8 @@ const DaemonLabel = (props: DaemonLabelProps) => {
       return <div>Sensors</div>;
     case 'QUEUED_RUN_COORDINATOR':
       return <div>Run queue</div>;
+    case 'BACKFILL':
+      return <div>Backfill</div>;
     default:
       throw new Error('Unknown daemon type');
   }
@@ -41,7 +44,7 @@ export const DaemonList = (props: Props) => {
   }
 
   return (
-    <Table striped style={{width: '100%'}}>
+    <Table>
       <thead>
         <tr>
           <th style={{width: '15%'}}>Daemon</th>
@@ -80,10 +83,11 @@ export const DaemonList = (props: Props) => {
 export const DAEMON_HEALTH_FRAGMENT = gql`
   fragment DaemonHealthFragment on DaemonHealth {
     allDaemonStatuses {
+      id
       daemonType
       required
       healthy
-      lastHeartbeatError {
+      lastHeartbeatErrors {
         __typename
         ...PythonErrorFragment
       }

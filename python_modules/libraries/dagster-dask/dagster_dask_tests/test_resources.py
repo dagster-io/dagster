@@ -41,22 +41,34 @@ def test_single_local_cluster():
     with instance_for_test() as instance:
         run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
         result = execute_pipeline(
-            scheduler_info_pipeline, run_config=run_config, instance=instance,
+            scheduler_info_pipeline,
+            run_config=run_config,
+            instance=instance,
         )
         _assert_scheduler_info_result(result, cluster_config)
 
 
 def test_multiple_local_cluster():
     cluster_configs = [
-        {"n_workers": 1, "threads_per_worker": 2, "dashboard_address": None,},
-        {"n_workers": 2, "threads_per_worker": 1, "dashboard_address": None,},
+        {
+            "n_workers": 1,
+            "threads_per_worker": 2,
+            "dashboard_address": None,
+        },
+        {
+            "n_workers": 2,
+            "threads_per_worker": 1,
+            "dashboard_address": None,
+        },
     ]
 
     with instance_for_test() as instance:
         for cluster_config in cluster_configs:
             run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
             result = execute_pipeline(
-                scheduler_info_pipeline, run_config=run_config, instance=instance,
+                scheduler_info_pipeline,
+                run_config=run_config,
+                instance=instance,
             )
             _assert_scheduler_info_result(result, cluster_config)
 

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorsRootQuery
@@ -108,6 +108,8 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
+  minIntervalSeconds: number;
   nextTick: SensorsRootQuery_sensorsOrError_Sensors_results_nextTick | null;
   sensorState: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState;
 }
@@ -207,25 +209,26 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_PythonError {
 
 export type SensorsRootQuery_unloadableJobStatesOrError = SensorsRootQuery_unloadableJobStatesOrError_JobStates | SensorsRootQuery_unloadableJobStatesOrError_PythonError;
 
-export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface SensorsRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  id: string;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: SensorsRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 

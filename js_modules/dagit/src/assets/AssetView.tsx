@@ -1,9 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import {Button, Tab, Tabs, ButtonGroup, Colors} from '@blueprintjs/core';
-import {uniq, flatMap} from 'lodash';
+import flatMap from 'lodash/flatMap';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {Timestamp} from 'src/app/time/Timestamp';
 import {AssetMaterializationMatrix} from 'src/assets/AssetMaterializationMatrix';
 import {AssetMaterializationTable} from 'src/assets/AssetMaterializationTable';
 import {AssetValueGraph} from 'src/assets/AssetValueGraph';
@@ -20,8 +22,7 @@ import {titleForRun} from 'src/runs/RunUtils';
 import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {MetadataTable} from 'src/ui/MetadataTable';
-import {Heading, Subheading} from 'src/ui/Text';
-import {Timestamp} from 'src/ui/TimeComponents';
+import {Subheading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
 interface AssetKey {
@@ -84,9 +85,9 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
   const latestEvent = latest && latest.materializationEvent;
 
   return (
-    <div>
-      <Group direction="column" spacing={12}>
-        <Heading>{asset.key.path[asset.key.path.length - 1]}</Heading>
+    <>
+      <Group direction="column" spacing={8}>
+        <Subheading>Details</Subheading>
         <MetadataTable
           rows={[
             latest.partition
@@ -119,7 +120,6 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
           ].filter(Boolean)}
         />
       </Group>
-
       <div style={{display: 'flex', marginTop: 20}}>
         <Subheading>Materializations over Time</Subheading>
         <div style={{flex: 1}} />
@@ -170,7 +170,6 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
                 label={label}
                 width={graphedLabels.length === 1 ? '100%' : '48%'}
                 data={graphDataByMetadataLabel[label]}
-                xAxis={xAxis}
                 xHover={xHover}
                 onHoverX={(x) => x !== xHover && setXHover(x)}
               />
@@ -184,7 +183,7 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
           )}
         </>
       )}
-    </div>
+    </>
   );
 };
 
@@ -235,6 +234,7 @@ export interface AssetNumericHistoricalData {
     maxY: number;
     minXNumeric: number;
     maxXNumeric: number;
+    xAxis: 'time' | 'partition';
     values: {
       x: number | string; // time or partition
       xNumeric: number; // time or partition index
@@ -273,7 +273,7 @@ function extractNumericData(
   );
 
   const append = (label: string, {x, y}: {x: number | string; y: number}) => {
-    series[label] = series[label] || {minX: 0, maxX: 0, minY: 0, maxY: 0, values: []};
+    series[label] = series[label] || {minX: 0, maxX: 0, minY: 0, maxY: 0, values: [], xAxis};
 
     if (xAxis === 'partition') {
       // If the xAxis is partition keys, the graph may only contain one value for each partition.

@@ -113,7 +113,9 @@ def construct_type_storage_plugin_registry(pipeline_def, intermediate_storage_de
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.inst_param(
-        intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition,
+        intermediate_storage_def,
+        "intermediate_storage_def",
+        IntermediateStorageDefinition,
     )
 
     type_plugins = []

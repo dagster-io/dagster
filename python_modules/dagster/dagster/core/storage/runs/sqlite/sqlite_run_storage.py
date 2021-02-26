@@ -69,14 +69,23 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         conn_string = create_db_conn_string(base_dir, "runs")
         engine = create_engine(conn_string, poolclass=NullPool)
         alembic_config = get_alembic_config(__file__)
+
+        should_mark_indexes = False
         with engine.connect() as connection:
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 RunStorageSqlMetadata.create_all(engine)
                 engine.execute("PRAGMA journal_mode=WAL;")
                 stamp_alembic_rev(alembic_config, connection)
+                should_mark_indexes = True
 
-        return SqliteRunStorage(conn_string, inst_data)
+        run_storage = SqliteRunStorage(conn_string, inst_data)
+
+        if should_mark_indexes:
+            # mark all secondary indexes
+            run_storage.build_missing_indexes()
+
+        return run_storage
 
     @contextmanager
     def connect(self):
@@ -84,7 +93,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         conn = engine.connect()
         try:
             with handle_schema_errors(
-                conn, get_alembic_config(__file__), msg="Sqlite run storage requires migration",
+                conn,
+                get_alembic_config(__file__),
+                msg="Sqlite run storage requires migration",
             ):
                 yield conn
         finally:
@@ -122,8 +133,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             os.unlink(path_to_old_db)
 
     def delete_run(self, run_id):
-        """ Override the default sql delete run implementation until we can get full
-        support on cascading deletes """
+        """Override the default sql delete run implementation until we can get full
+        support on cascading deletes"""
         check.str_param(run_id, "run_id")
         remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
         remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)

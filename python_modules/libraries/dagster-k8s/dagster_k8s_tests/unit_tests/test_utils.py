@@ -14,12 +14,12 @@ def test_filter_dagster_events_from_pod_logs():
             step_key = "do_something"
 {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something"}, "message": "Started execution of step \\"do_something.compute\\".", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something", "step_kind_value": "COMPUTE"}
 2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
- event_specific_data = {"intermediate_materialization": null, "step_output_handle": ["do_something", "result"], "type_check_data": [true, "result", null, []]}
+ event_specific_data = {"step_output_handle": ["do_something", "result"], "type_check_data": [true, "result", null, []]}
                  pid = 2467
                solid = "do_something"
     solid_definition = "do_something"
             step_key = "do_something"
-{"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_something"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something", "step_kind_value": "COMPUTE"}
+{"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_something"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "foo", "solid": "do_something", "solid_definition": "do_something", "step_key": "do_something"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_something", "parent": null}, "step_key": "do_something", "step_kind_value": "COMPUTE"}
 2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_SUCCESS - Finished execution of step "do_something" in 13ms.
  event_specific_data = {"duration_ms": 13.93123900000015}
                  pid = 2467
@@ -41,12 +41,12 @@ def test_filter_dagster_events_from_pod_logs():
             step_key = "do_input"
 {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "x", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "x", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input"}, "message": "Got input \\"x\\" of type \\"Any\\". (Type check passed).", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input", "step_kind_value": "COMPUTE"}
 2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
- event_specific_data = {"intermediate_materialization": null, "step_output_handle": ["do_input", "result"], "type_check_data": [true, "result", null, []]}
+ event_specific_data = {"step_output_handle": ["do_input", "result"], "type_check_data": [true, "result", null, []]}
                  pid = 2467
                solid = "do_input"
     solid_definition = "do_input"
             step_key = "do_input"
-{"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_input"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input", "step_kind_value": "COMPUTE"}
+{"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "do_input"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input", "step_kind_value": "COMPUTE"}
 2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_SUCCESS - Finished execution of step "do_input" in 13ms.
  event_specific_data = {"duration_ms": 13.923579000000075}
                  pid = 2467

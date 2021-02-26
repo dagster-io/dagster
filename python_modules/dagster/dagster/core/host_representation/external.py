@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.definitions.job import JobType
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -15,6 +16,7 @@ from .external_data import (
     ExternalPipelineData,
     ExternalRepositoryData,
     ExternalScheduleData,
+    ExternalSensorData,
 )
 from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -44,10 +46,11 @@ class ExternalRepository:
         )
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._job_map = OrderedDict(
-            (external_job_data.name, external_job_data)
-            for external_job_data in external_repository_data.external_job_datas
+        jobs_list = (
+            external_repository_data.external_schedule_datas
+            + external_repository_data.external_sensor_datas
         )
+        self._job_map = OrderedDict((job_data.name, job_data) for job_data in jobs_list)
 
     @property
     def name(self):
@@ -77,37 +80,36 @@ class ExternalRepository:
         ]
 
     def get_external_sensor(self, sensor_name):
-        job_data = self.external_repository_data.get_external_job_data(sensor_name)
-        if job_data.job_type != JobType.SENSOR:
-            check.failed("Could not find sensor named " + sensor_name)
-
-        return ExternalSensor(job_data, self._handle)
+        return ExternalSensor(
+            self.external_repository_data.get_external_sensor_data(sensor_name), self._handle
+        )
 
     def get_external_sensors(self):
         return [
-            ExternalSensor(external_job_data, self._handle)
-            for external_job_data in self.external_repository_data.external_job_datas
-            if external_job_data.job_type == JobType.SENSOR
+            ExternalSensor(external_sensor_data, self._handle)
+            for external_sensor_data in self.external_repository_data.external_sensor_datas
         ]
 
-    def get_external_jobs(self):
-        external = []
-        for external_job_data in self.external_repository_data.external_job_datas:
-            if external_job_data.job_type == JobType.SENSOR:
-                external.append(ExternalSensor(external_job_data, self._handle))
-            elif external_job_data.job_type == JobType.SCHEDULE:
-                external.append(ExternalSchedule(external_job_data, self._handle))
-        return external
+    def has_external_schedule(self, schedule_name):
+        return self.has_external_job(schedule_name, JobType.SCHEDULE)
 
-    def has_external_job(self, job_name):
-        return job_name in self._job_map
+    def has_external_sensor(self, sensor_name):
+        return self.has_external_job(sensor_name, JobType.SENSOR)
+
+    def has_external_job(self, job_name, job_type=None):
+        if job_name not in self._job_map:
+            return False
+
+        return job_type == None or self._job_map.get(job_name).job_type == job_type
 
     def get_external_job(self, job_name):
-        external_job_data = self._job_map[job_name]
+        external_job_data = self._job_map.get(job_name)
+        if not external_job_data:
+            return None
         if external_job_data.job_type == JobType.SENSOR:
-            return ExternalSensor(external_job_data, self._handle)
+            return self.get_external_sensor(external_job_data.name)
         if external_job_data.job_type == JobType.SCHEDULE:
-            return ExternalSchedule(external_job_data, self._handle)
+            return self.get_external_schedule(external_job_data.name)
         return None
 
     def get_external_partition_set(self, partition_set_name):
@@ -141,7 +143,9 @@ class ExternalRepository:
         return self.handle.get_external_origin()
 
     def get_python_origin(self):
-        return self.handle.repository_location_handle.get_repository_python_origin(self.name,)
+        return self.handle.repository_location_handle.get_repository_python_origin(
+            self.name,
+        )
 
     def get_external_origin_id(self):
         """
@@ -275,8 +279,10 @@ class ExternalPipeline(RepresentedPipeline):
         return self.get_python_origin()
 
     def get_python_origin(self):
-        repository_python_origin = self.repository_handle.repository_location_handle.get_repository_python_origin(
-            self.repository_handle.repository_name,
+        repository_python_origin = (
+            self.repository_handle.repository_location_handle.get_repository_python_origin(
+                self.repository_handle.repository_name,
+            )
         )
         return PipelinePythonOrigin(self.name, repository_python_origin)
 
@@ -419,6 +425,10 @@ class ExternalSchedule:
         return self._external_schedule_data.mode
 
     @property
+    def description(self):
+        return self._external_schedule_data.description
+
+    @property
     def partition_set_name(self):
         return self._external_schedule_data.partition_set_name
 
@@ -458,30 +468,45 @@ class ExternalSchedule:
 
 
 class ExternalSensor:
-    def __init__(self, external_job_data, handle):
-        self._external_job_data = check.inst_param(
-            external_job_data, "external_job_data", ExternalJobData,
+    def __init__(self, external_sensor_data, handle):
+        self._external_sensor_data = check.inst_param(
+            external_sensor_data, "external_sensor_data", (ExternalSensorData, ExternalJobData)
+        )  # ExternalJobData is deprecated, but supporting here for backcompat
+        check.param_invariant(
+            external_sensor_data.job_type == JobType.SENSOR, "external_sensor_data"
         )
-        check.param_invariant(external_job_data.job_type == JobType.SENSOR, "external_job_data")
         self._handle = JobHandle(
-            self._external_job_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+            self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
     @property
     def name(self):
-        return self._external_job_data.name
+        return self._external_sensor_data.name
 
     @property
     def pipeline_name(self):
-        return self._external_job_data.pipeline_name
+        return self._external_sensor_data.pipeline_name
 
     @property
     def solid_selection(self):
-        return self._external_job_data.solid_selection
+        return self._external_sensor_data.solid_selection
 
     @property
     def mode(self):
-        return self._external_job_data.mode
+        return self._external_sensor_data.mode
+
+    @property
+    def description(self):
+        return self._external_sensor_data.description
+
+    @property
+    def min_interval_seconds(self):
+        if (
+            isinstance(self._external_sensor_data, ExternalSensorData)
+            and self._external_sensor_data.min_interval
+        ):
+            return self._external_sensor_data.min_interval
+        return DEFAULT_SENSOR_DAEMON_INTERVAL
 
     def get_external_origin(self):
         return self._handle.get_external_origin()
@@ -489,10 +514,15 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_default_job_state(self):
-        from dagster.core.scheduler.job import JobState, JobStatus
+    def get_default_job_state(self, _instance):
+        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
 
-        return JobState(self.get_external_origin(), JobType.SENSOR, JobStatus.STOPPED)
+        return JobState(
+            self.get_external_origin(),
+            JobType.SENSOR,
+            JobStatus.STOPPED,
+            SensorJobData(min_interval=self.min_interval_seconds),
+        )
 
 
 class ExternalPartitionSet:

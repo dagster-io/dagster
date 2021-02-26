@@ -1,9 +1,9 @@
+from unittest import mock
+
 import pytest
 from dagster import execute_pipeline
-from dagster.seven import json, mock
-from dagster_graphql.implementation.fetch_pipelines import (
-    _get_dauphin_pipeline_snapshot_from_instance,
-)
+from dagster.seven import json
+from dagster_graphql.implementation.fetch_pipelines import _get_pipeline_snapshot_from_instance
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -82,7 +82,9 @@ def test_fetch_snapshot_or_error_by_snapshot_id_success(graphql_context, snapsho
 
 def test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        graphql_context, SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID, {"snapshotId": "notthere"},
+        graphql_context,
+        SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID,
+        {"snapshotId": "notthere"},
     )
 
     assert not result.errors
@@ -140,4 +142,4 @@ def test_temporary_error_or_deletion_after_instance_check():
     instance.get_historical_pipeline.return_value = None
 
     with pytest.raises(UserFacingGraphQLError):
-        _get_dauphin_pipeline_snapshot_from_instance(instance, "kjdkfjd")
+        _get_pipeline_snapshot_from_instance(instance, "kjdkfjd")

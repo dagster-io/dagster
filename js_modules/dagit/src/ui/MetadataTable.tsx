@@ -46,6 +46,10 @@ const StyledTable = styled.table`
   td {
     vertical-align: top;
   }
+
+  td .bp3-control {
+    margin-bottom: 0;
+  }
 `;
 
 export const MetadataKey = styled.div`

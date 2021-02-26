@@ -308,7 +308,8 @@ class ExecutionConfig(
         return super(ExecutionConfig, cls).__new__(
             cls,
             execution_engine_name=check.opt_str_param(
-                execution_engine_name, "execution_engine_name", "in_process"
+                execution_engine_name,
+                "execution_engine_name",  # "in_process"
             ),
             execution_engine_config=check.opt_dict_param(
                 execution_engine_config, "execution_engine_config", key_type=str
@@ -331,7 +332,9 @@ class IntermediateStorageConfig(
         return super(IntermediateStorageConfig, cls).__new__(
             cls,
             intermediate_storage_name=check.opt_str_param(
-                intermediate_storage_name, "intermediate_storage_name", "in_memory",
+                intermediate_storage_name,
+                "intermediate_storage_name",
+                "in_memory",
             ),
             intermediate_storage_config=check.opt_dict_param(
                 intermediate_storage_config, "intermediate_storage_config", key_type=str

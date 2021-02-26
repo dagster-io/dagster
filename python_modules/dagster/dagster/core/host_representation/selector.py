@@ -11,7 +11,11 @@ class PipelineSelector(
     """
 
     def __new__(
-        cls, location_name, repository_name, pipeline_name, solid_selection,
+        cls,
+        location_name,
+        repository_name,
+        pipeline_name,
+        solid_selection,
     ):
         return super(PipelineSelector, cls).__new__(
             cls,
@@ -112,4 +116,29 @@ class SensorSelector(namedtuple("_SensorSelector", "location_name repository_nam
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             sensor_name=graphql_data["sensorName"],
+        )
+
+
+class JobSelector(namedtuple("_JobSelector", "location_name repository_name job_name")):
+    def __new__(cls, location_name, repository_name, job_name):
+        return super(JobSelector, cls).__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            job_name=check.str_param(job_name, "job_name"),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "repositoryLocationName": self.location_name,
+            "repositoryName": self.repository_name,
+            "jobName": self.job_name,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return JobSelector(
+            location_name=graphql_data["repositoryLocationName"],
+            repository_name=graphql_data["repositoryName"],
+            job_name=graphql_data["jobName"],
         )

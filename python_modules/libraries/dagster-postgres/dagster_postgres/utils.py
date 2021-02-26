@@ -23,7 +23,7 @@ def get_conn(conn_string):
 def pg_config():
     return Selector(
         {
-            "postgres_url": str,
+            "postgres_url": StringSource,
             "postgres_db": {
                 "username": StringSource,
                 "password": StringSource,

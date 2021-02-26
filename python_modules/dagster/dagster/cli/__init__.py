@@ -9,6 +9,7 @@ from .api import api_cli
 from .asset import asset_cli
 from .debug import debug_cli
 from .instance import instance_cli
+from .new_repo import new_repo_cli
 from .pipeline import pipeline_cli
 from .run import run_cli
 from .schedule import schedule_cli
@@ -25,6 +26,7 @@ def create_dagster_cli():
         "sensor": sensor_cli,
         "asset": asset_cli,
         "debug": debug_cli,
+        "new-repo": new_repo_cli,
     }
 
     @click.group(commands=commands)

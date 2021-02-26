@@ -17,7 +17,11 @@ def get_s3_keys(bucket, prefix="", since_key=None, s3_session=None):
 
     while True:
         response = s3_session.list_objects_v2(
-            Bucket=bucket, Delimiter="", MaxKeys=MAX_KEYS, Prefix=prefix, StartAfter=cursor,
+            Bucket=bucket,
+            Delimiter="",
+            MaxKeys=MAX_KEYS,
+            Prefix=prefix,
+            StartAfter=cursor,
         )
         contents.extend(response.get("Contents", []))
         if response["KeyCount"] < MAX_KEYS:

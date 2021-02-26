@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, PipelineRunStatus, JobStatus, JobTickStatus, DaemonType } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, PipelineRunStatus, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -132,6 +132,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  description: string | null;
   partitionSet: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet | null;
   scheduleState: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState;
   futureTicks: SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks;
@@ -287,25 +288,26 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_PythonError {
 
 export type SchedulesRootQuery_unloadableJobStatesOrError = SchedulesRootQuery_unloadableJobStatesOrError_JobStates | SchedulesRootQuery_unloadableJobStatesOrError_PythonError;
 
-export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause {
+export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError {
+export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError_cause | null;
+  cause: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
 }
 
 export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
-  daemonType: DaemonType;
+  id: string;
+  daemonType: string | null;
   required: boolean;
   healthy: boolean | null;
-  lastHeartbeatError: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatError | null;
+  lastHeartbeatErrors: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];
   lastHeartbeatTime: number | null;
 }
 

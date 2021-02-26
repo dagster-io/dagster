@@ -77,10 +77,6 @@ spec:
             {{- range $envSecret := $deployment.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
-          volumeMounts:
-            - name: dagster-instance
-              mountPath: "{{ $.Values.dagsterHome }}/dagster.yaml"
-              subPath: dagster.yaml
           resources:
             {{- toYaml $deployment.resources | nindent 12 }}
         {{- if $deployment.livenessProbe }}
@@ -147,10 +143,6 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      volumes:
-        - name: dagster-instance
-          configMap:
-            name: {{ template "dagster.fullname" $ }}-instance
     {{- with $deployment.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

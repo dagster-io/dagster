@@ -5,10 +5,10 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
-from .base import AssetAwareEventLogStorage, EventLogSequence, EventLogStorage
+from .base import EventLogSequence, EventLogStorage, extract_asset_events_cursor
 
 
-class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
+class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     """
     In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
 
@@ -76,7 +76,7 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
     def is_persistent(self):
         return False
 
-    def has_asset_key(self, asset_key):
+    def has_asset_key(self, asset_key: AssetKey) -> bool:
         for records in self._logs.values():
             for record in records:
                 if (
@@ -116,41 +116,45 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         self,
         asset_key,
         partitions=None,
-        cursor=None,
+        before_cursor=None,
+        after_cursor=None,
         limit=None,
         ascending=False,
         include_cursor=False,
+        cursor=None,
     ):
         asset_events = []
         for records in self._logs.values():
             asset_events += [
                 record
                 for record in records
-                if record.is_dagster_event and record.dagster_event.asset_key == asset_key
+                if record.is_dagster_event
+                and record.dagster_event.asset_key == asset_key
+                and (not partitions or record.dagster_event.partition in partitions)
             ]
 
-        if partitions:
-            asset_events = filter(lambda x: x.dagster_event.partition in partitions, asset_events)
+        before_cursor, after_cursor = extract_asset_events_cursor(
+            cursor, before_cursor, after_cursor, ascending
+        )
 
-        asset_events = sorted(asset_events, key=lambda x: x.timestamp, reverse=not ascending)
+        events_with_ids = [
+            tuple([event_id, event])
+            for event_id, event in enumerate(asset_events)
+            if (after_cursor is None or event_id > after_cursor)
+            and (before_cursor is None or event_id < before_cursor)
+        ]
 
-        try:
-            cursor = int(cursor) if cursor else 0
-        except ValueError:
-            cursor = 0
-
-        if cursor:
-            asset_events = asset_events[cursor:]
+        events_with_ids = sorted(
+            events_with_ids, key=lambda x: x[1].timestamp, reverse=not ascending
+        )
 
         if limit:
-            asset_events = asset_events[:limit]
+            events_with_ids = events_with_ids[:limit]
 
         if include_cursor:
-            asset_events = [
-                tuple([index + cursor, event]) for index, event in enumerate(asset_events)
-            ]
+            return events_with_ids
 
-        return asset_events
+        return [event for _id, event in events_with_ids]
 
     def get_asset_run_ids(self, asset_key):
         asset_run_ids = set()
@@ -189,9 +193,3 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
                     updated_record = record._replace(dagster_event=updated_dagster_event)
                     updated_records.append(updated_record)
             self._logs[run_id] = updated_records
-
-    def has_secondary_index(self, name, run_id=None):
-        return False
-
-    def enable_secondary_index(self, name, run_id=None):
-        pass

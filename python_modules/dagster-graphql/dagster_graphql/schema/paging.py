@@ -1,6 +1,6 @@
-from dagster_graphql import dauphin
+import graphene
 
 
-class DauphinCursor(dauphin.Int, dauphin.Scalar):
+class GrapheneCursor(graphene.Int, graphene.Scalar):
     class Meta:
         name = "Cursor"

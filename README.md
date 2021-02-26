@@ -4,7 +4,7 @@
 <a href="https://badge.fury.io/py/dagster"><img src="https://badge.fury.io/py/dagster.svg"></>
 <a href="https://coveralls.io/github/dagster-io/dagster?branch=master"><img src="https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master"></a>
 <a href="https://buildkite.com/dagster/dagster"><img src="https://badge.buildkite.com/888545beab829e41e5d7303db15525a2bc3b0f0e33a72759ac.svg?branch=master"></a>
-<a href="https://docs.dagster.io/"></a>
+<a href="https://dagster-slackin.herokuapp.com/"><img src="https://dagster-slackin.herokuapp.com/badge.svg"></a>
 </p>
 
 # Dagster

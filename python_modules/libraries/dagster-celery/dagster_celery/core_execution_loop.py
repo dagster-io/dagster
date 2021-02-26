@@ -53,7 +53,8 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
     step_errors = {}
 
     with execution_plan.start(
-        retries=pipeline_context.executor.retries, sort_key_fn=priority_for_step,
+        retries=pipeline_context.executor.retries,
+        sort_key_fn=priority_for_step,
     ) as active_execution:
 
         stopping = False

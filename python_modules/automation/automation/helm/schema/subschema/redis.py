@@ -9,4 +9,4 @@ class Redis(BaseModel):
     backendDbNumber: int
 
     class Config:
-        extra = Extra.forbid
+        extra = Extra.allow

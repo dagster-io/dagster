@@ -10,8 +10,7 @@ from dagster.utils import mkdir_p
 
 
 class DagsterRepo:
-    """For manipulating a dagster cloned repo.
-    """
+    """For manipulating a dagster cloned repo."""
 
     def __init__(self):
         self.base_dir = git_repo_root()
@@ -27,8 +26,7 @@ class DagsterRepo:
         return path
 
     def build_docs(self, docs_version):
-        """Run docs build
-        """
+        """Run docs build"""
         cmd = "NODE_ENV=production VERSION={} make full_docs_build".format(docs_version)
         print("Running build:\n", cmd)
         subprocess.call(cmd, cwd=self.docs_path, shell=True)
@@ -50,8 +48,7 @@ class DagsterDocsRepo:
             subprocess.call(cmd, shell=True)
 
     def check_new_version_dir(self, docs_version):
-        """Checks dagster-docs/x.x.x version folder and ensure it doesn't already exist
-        """
+        """Checks dagster-docs/x.x.x version folder and ensure it doesn't already exist"""
         new_version_path = os.path.join(self.docs_dir, docs_version)
         if os.path.exists(new_version_path):
             print("Cannot build docs; version folder {} already exists!".format(new_version_path))

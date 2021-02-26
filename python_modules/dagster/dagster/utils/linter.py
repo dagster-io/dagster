@@ -27,6 +27,16 @@ def define_dagster_checker():
                 "daemon-thread",
                 "Cannot set daemon=True in threading.Thread constructor (py2 compat)",
             ),
+            "W0004": (
+                "calling pendulum.create or pendulum.datetime",
+                "pendulum-create",
+                "Use dagster.seven.create_pendulum_time instead of pendulum.create or pendulum.datetime",
+            ),
+            "W0005": (
+                "calling in_tz() on a pendulum datetime",
+                "pendulum-in-tz",
+                "Use dagster.seven.to_timezone instead of calling in_tz on a pendulum datetime",
+            ),
         }
         options = ()
 
@@ -76,6 +86,21 @@ def define_dagster_checker():
                 and "daemon" in [keyword.arg for keyword in node.keywords]
             ):
                 self.add_message("daemon-thread", node=node)
+            if (
+                node.callable
+                and isinstance(node.func, astroid.node_classes.Attribute)
+                and (node.func.attrname == "create" or node.func.attrname == "datetime")
+                and isinstance(node.func.expr, astroid.node_classes.Name)
+                and node.func.expr.name == "pendulum"
+            ):
+                self.add_message("pendulum-create", node=node)
+
+            if (
+                node.callable
+                and isinstance(node.func, astroid.node_classes.Attribute)
+                and (node.func.attrname == "in_tz")
+            ):
+                self.add_message("pendulum-in-tz", node=node)
 
     return DagsterChecker
 

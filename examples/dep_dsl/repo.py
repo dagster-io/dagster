@@ -9,8 +9,6 @@ from dagster import (
 )
 from dagster.utils import load_yaml_from_path
 
-# start_dep_dsl_marker_0
-
 
 @solid
 def add_one(_, num: int) -> int:
@@ -61,6 +59,3 @@ def define_dep_dsl_pipeline():
 @repository
 def define_repository():
     return {"pipelines": {"some_example": define_dep_dsl_pipeline}}
-
-
-# end_dep_dsl_marker_0

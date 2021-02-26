@@ -114,7 +114,7 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});
+                      handleLaunchResult(run.pipelineName, result);
                     }
                   }}
                 />

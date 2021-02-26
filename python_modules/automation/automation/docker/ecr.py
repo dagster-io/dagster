@@ -31,8 +31,7 @@ def get_aws_account_id():
 
 
 def get_aws_region():
-    """Can override ECR region by setting the AWS_REGION environment variable.
-    """
+    """Can override ECR region by setting the AWS_REGION environment variable."""
     return os.environ.get("AWS_REGION", DEFAULT_AWS_ECR_REGION)
 
 
@@ -42,7 +41,8 @@ def ensure_ecr_login(aws_region=DEFAULT_AWS_ECR_REGION):
     cmd = "aws ecr get-login --no-include-email --region {} | sh".format(aws_region)
 
     check.invariant(
-        subprocess.call(cmd, shell=True) == 0, "ECR login must succeed",
+        subprocess.call(cmd, shell=True) == 0,
+        "ECR login must succeed",
     )
 
 

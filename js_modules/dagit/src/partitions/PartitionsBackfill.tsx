@@ -1,16 +1,18 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {
-  Callout,
   Checkbox,
   Intent,
   NonIdealState,
   Classes,
   Colors,
-  Spinner,
   InputGroup,
+  Icon,
+  Tooltip,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import qs from 'qs';
 import * as React from 'react';
+import styled from 'styled-components';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {SharedToaster} from 'src/app/DomUtils';
@@ -32,12 +34,16 @@ import {
 import {LaunchPartitionBackfill} from 'src/partitions/types/LaunchPartitionBackfill';
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {GraphQueryInput} from 'src/ui/GraphQueryInput';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
+import {stringFromValue} from 'src/ui/TokenizingField';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -161,9 +167,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
   if (!data || loading) {
     return (
-      <div style={{width: '100%', margin: '40px auto'}}>
-        <Spinner size={40} />
-      </div>
+      <Box margin={{vertical: 32}} flex={{justifyContent: 'center'}}>
+        <Spinner purpose="section" />
+      </Box>
     );
   }
 
@@ -189,8 +195,22 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   }
 
   const onSuccess = (backfillId: string) => {
+    const filteredRunsPath = workspacePathFromAddress(
+      repoAddress,
+      `/pipelines/${pipelineName}/runs?${qs.stringify({
+        q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfillId}`}]),
+      })}`,
+    );
+
     SharedToaster.show({
-      message: `Created backfill job "${backfillId}"`,
+      message: (
+        <div>
+          Created backfill job:{' '}
+          <FilteredRunsLink target="_blank" href={filteredRunsPath}>
+            {backfillId}
+          </FilteredRunsLink>
+        </div>
+      ),
       intent: Intent.SUCCESS,
     });
     onLaunch?.(backfillId, query);
@@ -367,25 +387,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             />
           </div>
           <div style={{marginLeft: 20}}>
-            <strong style={{display: 'block', marginBottom: 4}}>Options</strong>
+            <strong style={{display: 'block', marginBottom: 6}}>Options</strong>
             <div style={{display: 'flex'}}>
               <Checkbox
-                label="Re-execute From Last Run"
-                disabled={partitionsWithLastRunSuccess.length === 0}
-                checked={options.reexecute}
-                onChange={() => {
-                  setSelected([]);
-                  setQuery('');
-                  setOptions(
-                    options.reexecute
-                      ? {...options, reexecute: false, fromFailure: false}
-                      : {...options, reexecute: true},
-                  );
-                }}
-              />
-              <div style={{width: 20}} />
-              <Checkbox
-                label="Re-execute From Failure"
                 checked={options.fromFailure}
                 disabled={partitionsWithLastRunFailure.length === 0 || !options.reexecute}
                 onChange={() => {
@@ -393,7 +397,17 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   setQuery('');
                   setOptions({...options, reexecute: true, fromFailure: !options.fromFailure});
                 }}
-              />
+              >
+                {'Re-execute From Failures '}
+                <Tooltip
+                  content={
+                    'For each partition, if the most recent run failed, launch a re-execution starting' +
+                    ' from the steps that failed.'
+                  }
+                >
+                  <Icon icon="info-sign" />
+                </Tooltip>
+              </Checkbox>
             </div>
           </div>
         </div>
@@ -466,16 +480,55 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           </GridScrollContainer>
         </div>
 
-        {usingDefaultRunLauncher && (
+        {instance.daemonBackfillEnabled && !instance.daemonHealth.daemonStatus.healthy ? (
           <div style={{marginTop: 10}}>
-            <Callout intent={Intent.WARNING}>
-              Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
-              backfills is not advised, as queueing runs is not currently supported. Check your
-              instance configuration in <code>dagster.yaml</code> to configure a run launcher more
-              appropriate for launching a large number of jobs.
-            </Callout>
+            <Alert
+              intent="warning"
+              title="The backfill daemon is not running."
+              description={
+                <div>
+                  See the{' '}
+                  <a
+                    href="https://docs.dagster.io/overview/daemon"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    dagster-daemon documentation
+                  </a>{' '}
+                  for more information on how to deploy the dagster-daemon process.
+                </div>
+              }
+            />
           </div>
-        )}
+        ) : null}
+        {usingDefaultRunLauncher && !instance.runQueuingSupported ? (
+          <div style={{marginTop: 10}}>
+            <Alert
+              intent="warning"
+              title={
+                <div>
+                  Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for
+                  launching backfills without a queued run coordinator is not advised.
+                </div>
+              }
+              description={
+                <div>
+                  Check your instance configuration in <code>dagster.yaml</code> to either configure{' '}
+                  the{' '}
+                  <a
+                    href="https://docs.dagster.io/overview/pipeline-runs/run-coordinator"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    queued run coordinator
+                  </a>{' '}
+                  or to configure a run launcher more appropriate for launching a large number of
+                  jobs.
+                </div>
+              }
+            />
+          </div>
+        ) : null}
       </div>
       <div className={Classes.DIALOG_FOOTER}>
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
@@ -619,6 +672,10 @@ const LaunchBackfillButton: React.FC<{
   );
 };
 
+const FilteredRunsLink = styled.a`
+  text-decoration: underline;
+`;
+
 const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
   query PartitionsBackfillSelectorQuery(
     $partitionSetName: String!
@@ -683,6 +740,14 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
       runLauncher {
         name
       }
+      daemonHealth {
+        daemonStatus(daemonType: "BACKFILL") {
+          id
+          healthy
+        }
+      }
+      daemonBackfillEnabled
+      runQueuingSupported
     }
   }
 `;

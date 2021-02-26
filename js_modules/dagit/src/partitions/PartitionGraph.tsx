@@ -29,7 +29,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
 
   chart = React.createRef<any>();
 
-  getDefaultOptions = () => {
+  getDefaultOptions = (): Chart.ChartOptions => {
     const {title, yLabel} = this.props;
     const titleOptions = title ? {display: true, text: title} : undefined;
     const scales = yLabel

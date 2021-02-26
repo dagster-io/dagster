@@ -7,10 +7,14 @@ import {CustomTooltipProvider} from 'src/app/CustomTooltipProvider';
 import {APP_PATH_PREFIX} from 'src/app/DomUtils';
 import {FallthroughRoot} from 'src/app/FallthroughRoot';
 import {FeatureFlagsRoot} from 'src/app/FeatureFlagsRoot';
+import {SettingsRoot} from 'src/app/SettingsRoot';
+import {TimezoneProvider} from 'src/app/time/TimezoneContext';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {InstanceRoot} from 'src/instance/InstanceRoot';
-import {LeftNav} from 'src/nav/LeftNav';
-import {TimezoneProvider} from 'src/ui/TimeComponents';
+import {LeftNavBranch} from 'src/nav/LeftNavBranch';
+import {AllSchedulesRoot} from 'src/schedules/AllSchedulesRoot';
+import {AllSensorsRoot} from 'src/sensors/AllSensorsRoot';
+import {AllPipelinesRoot} from 'src/workspace/AllPipelinesRoot';
 import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
@@ -19,12 +23,16 @@ export const AppContent = () => {
   return (
     <div style={{display: 'flex', height: '100%'}}>
       <WorkspaceProvider>
-        <LeftNav />
+        <LeftNavBranch />
         <CustomConfirmationProvider>
           <Switch>
             <Route path="/flags" component={FeatureFlagsRoot} />
             <Route path="/instance" component={InstanceRoot} />
             <Route path="/workspace" component={WorkspaceRoot} />
+            <Route path="/pipelines" component={AllPipelinesRoot} />
+            <Route path="/schedules" component={AllSchedulesRoot} />
+            <Route path="/sensors" component={AllSensorsRoot} />
+            <Route path="/settings" component={SettingsRoot} />
             <Route path="*" component={FallthroughRoot} />
           </Switch>
           <CustomTooltipProvider />

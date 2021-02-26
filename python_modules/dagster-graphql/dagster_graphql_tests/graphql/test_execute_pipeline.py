@@ -42,7 +42,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={"executionParams": {"selector": selector, "preset": "test_inline",}},
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "preset": "test_inline",
+                }
+            },
         )
 
         assert not result.errors
@@ -60,7 +65,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={"executionParams": {"selector": selector, "mode": "default",},},
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                },
+            },
         )
 
         assert not result.errors
@@ -82,7 +92,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={"executionParams": {"selector": selector, "preset": "undefined_preset",}},
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "preset": "undefined_preset",
+                }
+            },
         )
 
         assert not result.errors
@@ -101,7 +116,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={"executionParams": {"selector": subset_selector, "preset": "test_inline",}},
+            variables={
+                "executionParams": {
+                    "selector": subset_selector,
+                    "preset": "test_inline",
+                }
+            },
         )
 
         # while illegally defining selector.solid_selection
@@ -254,7 +274,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, "naughty_programmer_pipeline")
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,
-            variables={"executionParams": {"selector": selector, "mode": "default",}},
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                }
+            },
         )
 
         assert run_logs["__typename"] == "PipelineRunLogsSubscriptionSuccess"
@@ -269,9 +294,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_run_log_entry["message"] == 'Execution of step "throw_a_thing" failed.'
         assert step_run_log_entry["error"]
         assert step_run_log_entry["level"] == "ERROR"
-        assert isinstance(step_run_log_entry["error"]["stack"], list)
+        assert isinstance(step_run_log_entry["error"]["cause"]["stack"], list)
 
-        assert "bad programmer" in step_run_log_entry["error"]["stack"][-1]
+        assert "bad programmer" in step_run_log_entry["error"]["cause"]["stack"][-1]
 
     def test_subscribe_bad_run_id(self, graphql_context):
         run_id = "nope"
@@ -296,7 +321,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         result = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
-                "executionParams": {"selector": selector, "runConfigData": None, "mode": "default",}
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": None,
+                    "mode": "default",
+                }
             },
         )
         logs = result["messages"]
@@ -324,7 +353,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert has_event_of_type(logs, "PipelineSuccessEvent")
         assert not has_event_of_type(logs, "PipelineFailureEvent")
 
-        assert first_event_of_type(logs, "PipelineStartEvent")["level"] == "DEBUG"
+        start_event = first_event_of_type(logs, "PipelineStartEvent")
+        assert start_event["level"] == "DEBUG"
+        assert start_event["eventType"] == "PIPELINE_START"
 
         sum_solid_output = get_step_output_event(logs, "sum_solid")
         assert sum_solid_output["stepKey"] == "sum_solid"

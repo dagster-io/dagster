@@ -5,7 +5,7 @@ import sys
 import time
 
 from dagster.core.execution.compute_logs import mirror_stream_to_file
-from dagster.utils.interrupts import setup_windows_interrupt_support
+from dagster.utils.interrupts import setup_interrupt_handlers
 
 if __name__ == "__main__":
     stdout_filepath, stderr_filepath, opened_sentinel, interrupt_sentinel = (
@@ -14,7 +14,7 @@ if __name__ == "__main__":
         sys.argv[3],
         sys.argv[4],
     )
-    setup_windows_interrupt_support()
+    setup_interrupt_handlers()
     with open(opened_sentinel, "w") as fd:
         fd.write("opened_compute_log_subprocess")
     with mirror_stream_to_file(sys.stdout, stdout_filepath) as stdout_pids:

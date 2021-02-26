@@ -5,12 +5,12 @@ from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def hostname(conn_string):  # pylint: disable=redefined-outer-name, unused-argument
     return TestPostgresInstance.get_hostname()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def conn_string():  # pylint: disable=redefined-outer-name, unused-argument
     with TestPostgresInstance.docker_service_up_or_skip(
         file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db"

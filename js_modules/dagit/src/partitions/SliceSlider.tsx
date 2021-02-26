@@ -2,7 +2,7 @@ import {Intent, MultiSlider} from '@blueprintjs/core';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {Timestamp} from 'src/ui/TimeComponents';
+import {Timestamp} from 'src/app/time/Timestamp';
 
 export const SliceSlider: React.FunctionComponent<{
   maxUnix: number;

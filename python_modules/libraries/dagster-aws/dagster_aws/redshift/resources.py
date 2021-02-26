@@ -164,11 +164,13 @@ class RedshiftResource(_BaseRedshiftResource):
 
     @contextmanager
     def _get_conn(self):
+        conn = None
         try:
             conn = psycopg2.connect(**self.conn_args)
             yield conn
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     @contextmanager
     def _get_cursor(self, conn, cursor_factory=None):
@@ -267,10 +269,14 @@ def define_redshift_config():
             IntSource, description="Redshift port", is_required=False, default_value=5439
         ),
         "user": Field(
-            StringSource, description="Username for Redshift connection", is_required=False,
+            StringSource,
+            description="Username for Redshift connection",
+            is_required=False,
         ),
         "password": Field(
-            StringSource, description="Password for Redshift connection", is_required=False,
+            StringSource,
+            description="Password for Redshift connection",
+            is_required=False,
         ),
         "database": Field(
             StringSource,

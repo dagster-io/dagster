@@ -101,8 +101,7 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
     required_resource_keys={"s3"},
 )
 def download_from_s3_to_file(context):
-    """Download an object from S3 to a local file.
-    """
+    """Download an object from S3 to a local file."""
     (bucket, key, target_folder, skip_if_present) = (
         context.solid_config.get(k) for k in ("bucket", "key", "target_folder", "skip_if_present")
     )
@@ -116,8 +115,7 @@ def download_from_s3_to_file(context):
     input_defs=[InputDefinition("gzip_file", String)], output_defs=[OutputDefinition(List[String])]
 )
 def gunzipper(_, gzip_file):
-    """gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json
-    """
+    """gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json"""
     # TODO: take date as an input
 
     path_prefix = os.path.dirname(gzip_file)

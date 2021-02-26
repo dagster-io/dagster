@@ -1,7 +1,8 @@
+from unittest import mock
+
 import pandas as pd
 import pytest
 from dagster import execute_pipeline
-from dagster.seven import mock
 from dagster.utils import load_yaml_from_globs, script_relative_path
 from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
@@ -29,7 +30,9 @@ def connect_with_fetchall_returning(value):
 @pytest.mark.spark
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_event_pipeline(
-    snowflake_connect, events_jar, spark_home,
+    snowflake_connect,
+    events_jar,
+    spark_home,
 ):  # pylint: disable=redefined-outer-name, unused-argument
     config = load_yaml_from_globs(
         script_relative_path("../../dagster_examples/event_pipeline_demo/environments/default.yaml")

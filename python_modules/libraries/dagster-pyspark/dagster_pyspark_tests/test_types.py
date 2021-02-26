@@ -71,7 +71,11 @@ def test_dataframe_outputs(file_type, read, other):
                             {
                                 "df": {
                                     file_type: dict(
-                                        {"mode": "overwrite", "compression": "gzip",}, **options
+                                        {
+                                            "mode": "overwrite",
+                                            "compression": "gzip",
+                                        },
+                                        **options,
                                     )
                                 }
                             }
@@ -87,7 +91,9 @@ def test_dataframe_outputs(file_type, read, other):
 
 @pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
 def test_dataframe_inputs(file_type, read, other):
-    @solid(input_defs=[InputDefinition(dagster_type=DagsterPySparkDataFrame, name="input_df")],)
+    @solid(
+        input_defs=[InputDefinition(dagster_type=DagsterPySparkDataFrame, name="input_df")],
+    )
     def return_df(_, input_df):
         return input_df
 

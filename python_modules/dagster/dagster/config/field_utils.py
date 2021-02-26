@@ -98,10 +98,14 @@ class Shape(_ConfigHasFields):
     """
 
     def __new__(
-        cls, fields, description=None,
+        cls,
+        fields,
+        description=None,
     ):
         return _memoize_inst_in_field_cache(
-            cls, Shape, _define_shape_key_hash(expand_fields_dict(fields), description),
+            cls,
+            Shape,
+            _define_shape_key_hash(expand_fields_dict(fields), description),
         )
 
     def __init__(self, fields, description=None):
@@ -207,7 +211,9 @@ class Selector(_ConfigHasFields):
 
     def __new__(cls, fields, description=None):
         return _memoize_inst_in_field_cache(
-            cls, Selector, _define_selector_key(expand_fields_dict(fields), description),
+            cls,
+            Selector,
+            _define_selector_key(expand_fields_dict(fields), description),
         )
 
     def __init__(self, fields, description=None):

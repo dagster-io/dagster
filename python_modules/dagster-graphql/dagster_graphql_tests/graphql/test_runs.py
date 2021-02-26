@@ -651,14 +651,18 @@ def test_run_group():
             __file__, "get_repo_at_time_1", instance
         ) as context_at_time_1:
             result_one = execute_dagster_graphql(
-                context_at_time_1, RUN_GROUP_QUERY, variables={"runId": root_run_id},
+                context_at_time_1,
+                RUN_GROUP_QUERY,
+                variables={"runId": root_run_id},
             )
             assert result_one.data["runGroupOrError"]["__typename"] == "RunGroup"
 
             assert len(result_one.data["runGroupOrError"]["runs"]) == 4
 
             result_two = execute_dagster_graphql(
-                context_at_time_1, RUN_GROUP_QUERY, variables={"runId": runs[-1].run_id},
+                context_at_time_1,
+                RUN_GROUP_QUERY,
+                variables={"runId": runs[-1].run_id},
             )
             assert result_one.data["runGroupOrError"]["__typename"] == "RunGroup"
             assert len(result_two.data["runGroupOrError"]["runs"]) == 4
@@ -680,7 +684,9 @@ def test_run_group_not_found():
         ) as context_at_time_1:
 
             result = execute_dagster_graphql(
-                context_at_time_1, RUN_GROUP_QUERY, variables={"runId": "foo"},
+                context_at_time_1,
+                RUN_GROUP_QUERY,
+                variables={"runId": "foo"},
             )
             assert result.data
             assert result.data["runGroupOrError"]

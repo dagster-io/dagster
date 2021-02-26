@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from datetime import datetime
 
 import sqlalchemy as db
 from dagster import check
@@ -20,8 +19,7 @@ from .schema import JobTable, JobTickTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
-    """Base class for SQL backed schedule storage
-    """
+    """Base class for SQL backed schedule storage"""
 
     @abstractmethod
     def connect(self):
@@ -98,7 +96,10 @@ class SqlScheduleStorage(ScheduleStorage):
             conn.execute(
                 JobTable.update()  # pylint: disable=no-value-for-parameter
                 .where(JobTable.c.job_origin_id == job.job_origin_id)
-                .values(status=job.status.value, job_body=serialize_dagster_namedtuple(job),)
+                .values(
+                    status=job.status.value,
+                    job_body=serialize_dagster_namedtuple(job),
+                )
             )
 
     def delete_job_state(self, job_origin_id):
@@ -134,8 +135,24 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return JobTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
 
-    def get_job_ticks(self, job_origin_id):
+    def _add_filter_limit(self, query, before=None, after=None, limit=None):
+        check.opt_float_param(before, "before")
+        check.opt_float_param(after, "after")
+        check.opt_int_param(limit, "limit")
+
+        if before:
+            query = query.where(JobTickTable.c.timestamp < utc_datetime_from_timestamp(before))
+        if after:
+            query = query.where(JobTickTable.c.timestamp > utc_datetime_from_timestamp(after))
+        if limit:
+            query = query.limit(limit)
+        return query
+
+    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
         check.str_param(job_origin_id, "job_origin_id")
+        check.opt_float_param(before, "before")
+        check.opt_float_param(after, "after")
+        check.opt_int_param(limit, "limit")
 
         query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
@@ -143,6 +160,8 @@ class SqlScheduleStorage(ScheduleStorage):
             .where(JobTickTable.c.job_origin_id == job_origin_id)
             .order_by(JobTickTable.c.id.desc())
         )
+
+        query = self._add_filter_limit(query, before=before, after=after, limit=limit)
 
         rows = self.execute(query)
         return list(
@@ -154,12 +173,14 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             try:
-                tick_insert = JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    job_origin_id=job_tick_data.job_origin_id,
-                    status=job_tick_data.status.value,
-                    type=job_tick_data.job_type.value,
-                    timestamp=utc_datetime_from_timestamp(job_tick_data.timestamp),
-                    tick_body=serialize_dagster_namedtuple(job_tick_data),
+                tick_insert = (
+                    JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
+                        job_origin_id=job_tick_data.job_origin_id,
+                        status=job_tick_data.status.value,
+                        type=job_tick_data.job_type.value,
+                        timestamp=utc_datetime_from_timestamp(job_tick_data.timestamp),
+                        tick_body=serialize_dagster_namedtuple(job_tick_data),
+                    )
                 )
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
@@ -189,9 +210,9 @@ class SqlScheduleStorage(ScheduleStorage):
     def purge_job_ticks(self, job_origin_id, tick_status, before):
         check.str_param(job_origin_id, "job_origin_id")
         check.inst_param(tick_status, "tick_status", JobTickStatus)
-        check.inst_param(before, "before", datetime)
+        check.float_param(before, "before")
 
-        utc_before = utc_datetime_from_timestamp(before.timestamp())
+        utc_before = utc_datetime_from_timestamp(before)
 
         with self.connect() as conn:
             conn.execute(

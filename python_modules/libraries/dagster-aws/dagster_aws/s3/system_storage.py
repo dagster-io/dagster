@@ -20,36 +20,36 @@ from .object_store import S3ObjectStore
 def s3_intermediate_storage(init_context):
     """Persistent intermediate storage using S3 for storage.
 
-        Suitable for intermediates storage for distributed executors, so long as
-        each execution node has network connectivity and credentials for S3 and
-        the backing bucket.
+    Suitable for intermediates storage for distributed executors, so long as
+    each execution node has network connectivity and credentials for S3 and
+    the backing bucket.
 
-        Attach this storage definition, as well as the :py:data:`~dagster_aws.s3_resource` it
-        requires, to a :py:class:`~dagster.ModeDefinition` in order to make it available to your
-        pipeline:
+    Attach this storage definition, as well as the :py:data:`~dagster_aws.s3_resource` it
+    requires, to a :py:class:`~dagster.ModeDefinition` in order to make it available to your
+    pipeline:
 
-        .. code-block:: python
+    .. code-block:: python
 
-            pipeline_def = PipelineDefinition(
-                mode_defs=[
-                    ModeDefinition(
-                        resource_defs={'s3': s3_resource, ...},
-                        intermediate_storage_defs=[s3_intermediate_storage],
-                        ...
-                    ), ...
-                ], ...
-            )
+        pipeline_def = PipelineDefinition(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={'s3': s3_resource, ...},
+                    intermediate_storage_defs=[s3_intermediate_storage],
+                    ...
+                ), ...
+            ], ...
+        )
 
-        You may configure this storage as follows:
+    You may configure this storage as follows:
 
-        .. code-block:: YAML
+    .. code-block:: YAML
 
-            intermediate_storage:
-              s3:
-                config:
-                  s3_bucket: my-cool-bucket
-                  s3_prefix: good/prefix-for-files-
-        """
+        intermediate_storage:
+          s3:
+            config:
+              s3_bucket: my-cool-bucket
+              s3_prefix: good/prefix-for-files-
+    """
     s3_session = init_context.resources.s3
     s3_bucket = init_context.intermediate_storage_config["s3_bucket"]
     object_store = S3ObjectStore(s3_bucket, s3_session=s3_session)

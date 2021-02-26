@@ -50,6 +50,9 @@ spec:
           imagePullPolicy: {{ .Values.flower.image.pullPolicy }}
           image: {{ include "image.name" .Values.flower.image | quote }}
           args: ["flower"]
+          envFrom:
+            - configMapRef:
+                name: {{ template "dagster.fullname" . }}-flower-env
           env:
             - name: CELERY_BROKER_URL
               value: "{{ include "dagster.celery.broker_url" . }}"

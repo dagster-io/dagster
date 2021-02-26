@@ -70,7 +70,10 @@ class _TypedPythonTuple(DagsterType):
 
     @property
     def inner_types(self):
-        return self.dagster_types
+        inner_types = self.dagster_types
+        for t in self.dagster_types:
+            inner_types += t.inner_types
+        return inner_types
 
     @property
     def type_param_keys(self):

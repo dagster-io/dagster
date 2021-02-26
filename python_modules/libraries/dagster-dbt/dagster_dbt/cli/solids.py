@@ -454,7 +454,11 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
     output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
-        "parse-only": Field(config=bool, is_required=False, default_value=False,),
+        "parse-only": Field(
+            config=bool,
+            is_required=False,
+            default_value=False,
+        ),
         "threads": Field(
             config=Noneable(int),
             default_value=None,
