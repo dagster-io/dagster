@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 import time
 from contextlib import contextmanager
 
@@ -8,11 +9,13 @@ import pytest
 from dagster import pipeline, repository, solid
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocationHandleManager,
 )
@@ -21,6 +24,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
+from dagster.daemon.daemon import SensorDaemon
 from dagster.scheduler.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven import create_pendulum_time, to_timezone
 
@@ -632,3 +636,51 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
             assert sum(sleeps) == 65
+
+
+def _get_unloadable_sensor_origin():
+    working_directory = os.path.dirname(__file__)
+    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    return ExternalRepositoryOrigin(
+        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+    ).get_job_origin("doesnt_exist")
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_error_sensor_daemon(external_repo_context, monkeypatch):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
+    )
+
+    sleeps = []
+
+    def fake_sleep(s):
+        sleeps.append(s)
+        pendulum.set_test_now(pendulum.now().add(seconds=s))
+
+    monkeypatch.setattr(time, "sleep", fake_sleep)
+
+    with instance_with_sensors(
+        external_repo_context,
+        overrides={
+            "run_launcher": {
+                "module": "dagster.core.test_utils",
+                "class": "ExplodingRunLauncher",
+            },
+        },
+    ) as (instance, _external_repo):
+        with pendulum.test(freeze_datetime):
+            instance.add_job_state(
+                JobState(_get_unloadable_sensor_origin(), JobType.SENSOR, JobStatus.RUNNING)
+            )
+            sensor_daemon = SensorDaemon.create_from_instance(instance)
+            daemon_shutdown_event = threading.Event()
+            sensor_daemon.run_loop(
+                "my_uuid", daemon_shutdown_event, until=freeze_datetime.add(seconds=65)
+            )
+
+            heartbeats = instance.get_daemon_heartbeats()
+            heartbeat = heartbeats["SENSOR"]
+            assert heartbeat
+            assert heartbeat.errors
+            assert len(heartbeat.errors) == 1

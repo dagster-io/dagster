@@ -63,23 +63,22 @@ class DagsterDaemon:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
 
-    def run_loop(self, daemon_uuid, daemon_shutdown_event):
+    def run_loop(self, daemon_uuid, daemon_shutdown_event, until=None):
         # Each loop runs in its own thread with its own instance
         with DagsterInstance.get() as instance:
-            while not daemon_shutdown_event.is_set():
+            while not daemon_shutdown_event.is_set() and (not until or pendulum.now("UTC") < until):
                 curr_time = pendulum.now("UTC")
-
                 if (
                     not self._last_iteration_time
                     or (curr_time - self._last_iteration_time).total_seconds()
                     >= self.interval_seconds
                 ):
                     self._last_iteration_time = curr_time
-                    self._run_iteration(instance, daemon_uuid, daemon_shutdown_event)
+                    self._run_iteration(instance, daemon_uuid, daemon_shutdown_event, until)
 
                 daemon_shutdown_event.wait(0.5)
 
-    def _run_iteration(self, instance, daemon_uuid, daemon_shutdown_event):
+    def _run_iteration(self, instance, daemon_uuid, daemon_shutdown_event, until=None):
         # Build a list of any exceptions encountered during the iteration.
         # Once the iteration completes, this is copied to last_iteration_exceptions
         # which is used in the heartbeats. This guarantees that heartbeats contain the full
@@ -87,13 +86,14 @@ class DagsterDaemon:
         self._current_iteration_exceptions = []
         daemon_generator = self.run_iteration(instance, daemon_shutdown_event)
 
-        while True:
+        while not until or pendulum.now("UTC") < until:
             try:
                 result = check.opt_inst(
                     next(daemon_generator), tuple([SerializableErrorInfo, CompletedIteration])
                 )
                 if isinstance(result, CompletedIteration):
                     self._last_iteration_exceptions = self._current_iteration_exceptions
+                    self._current_iteration_exceptions = []
                 elif result:
                     self._current_iteration_exceptions.append(result)
             except StopIteration:
