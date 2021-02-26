@@ -16,19 +16,11 @@ const flexPropertiesToCSS = (flex: FlexProperties) => {
     display: ${flex.display || 'flex'};
     ${flex.alignItems ? `align-items: ${flex.alignItems};` : null}
     ${flex.basis ? `flex-basis: ${flex.basis};` : null}
-    ${flex.direction
-      ? `flex-direction: ${flex.direction};`
-      : null}
-    ${flex.justifyContent
-      ? `justify-content: ${flex.justifyContent};`
-      : null}
+    ${flex.direction ? `flex-direction: ${flex.direction};` : null}
+    ${flex.justifyContent ? `justify-content: ${flex.justifyContent};` : null}
     ${flex.grow ? `flex-grow: ${flex.grow};` : null}
-    ${flex.wrap
-      ? `flex-wrap: ${flex.wrap};`
-      : null}
-    ${flex.shrink !== null && flex.shrink !== undefined
-      ? `flex-shrink: ${flex.shrink};`
-      : null}
+    ${flex.wrap ? `flex-wrap: ${flex.wrap};` : null}
+    ${flex.shrink !== null && flex.shrink !== undefined ? `flex-shrink: ${flex.shrink};` : null}
   `;
 };
 
@@ -92,10 +84,7 @@ const borderSettingToCSS = (border: BorderSetting) => {
 export const Box = styled.div<Props>`
   ${({flex}) => (flex ? flexPropertiesToCSS(flex) : null)}
   ${({background}) => (background ? backgroundColor(background) : null)}
-  ${({margin}) =>
-    margin ? directionalSpacingToCSS('margin', margin) : null}
-  ${({padding}) =>
-    padding ? directionalSpacingToCSS('padding', padding) : null}
-  ${({border}) =>
-    border ? borderSettingToCSS(border) : null}
+  ${({margin}) => (margin ? directionalSpacingToCSS('margin', margin) : null)}
+  ${({padding}) => (padding ? directionalSpacingToCSS('padding', padding) : null)}
+  ${({border}) => (border ? borderSettingToCSS(border) : null)}
 `;

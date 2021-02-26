@@ -102,15 +102,15 @@
     "graphql-tools": "^7.0.0",
     "graphql.macro": "^1.4.2",
     "jest-environment-jsdom-sixteen": "^1.0.3",
-    "prettier": "2.1.1",
+    "prettier": "2.2.1",
     "pretty": "^2.0.0",
     "react-is": "^16.13.1",
     "react-scripts": "4.0.1",
     "react-test-renderer": "^16.11.0",
     "source-map-explorer": "^2.5.0",
     "ts-node": "9.1.1",
-    "ts-prune": "^0.8.4",
-    "typescript": "4.1.3"
+    "ts-prune": "0.8.8",
+    "typescript": "4.1.5"
   },
   "scripts": {
     "preinstall": "node src/scripts/yarnCheck.js",
