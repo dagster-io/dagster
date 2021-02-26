@@ -283,7 +283,7 @@ const MaterializationContent: React.FC<{
       <MetadataEntryLink
         to={`/instance/assets/${materialization.assetKey.path.map(encodeURIComponent).join('/')}`}
       >
-        View Asset Dashboard
+        View Asset
       </MetadataEntryLink>
       ]
     </span>
