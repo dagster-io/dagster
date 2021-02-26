@@ -2,23 +2,84 @@ import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
-  title="Asset Catalog | Dagster"
+  title="Assets Catalog | Dagster"
   description="Dagster provides a data-aware orchestration graph."
 />
 
-# Asset Catalog
+# Asset
 
-"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.  An asset might be a table in a database that solids append to, an ML model in a model store that solids overwrite, or even a slack channel that solids write messages to.
+"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.  An asset might be a table in a database that a solid appends to, an ML model in a model store that a solid overwrites, or even a slack channel that a solid writes messages to.
+
+Solid outputs often correspond to assets.  For example, a solid might be responsible for recreating a table, and one of its outputs might correspond to the contents of that table.
+
+Dagster lets you track the interactions between solids, outputs, and assets and view them in the [Dagit](/overview/dagit) Asset Catalog. E.g. you can record that "solid `my_solid` produced output `my_dataframe`, which was used to  overwrite the contents of `my_table`".  Every asset has a "key", which is a way to reference it from solids and outputs.  The act of mutating or creating an asset is called a "materialization". Dagster lets you when record events that indicate materializations have occurred and include metadata describes the asset at the time of the materialization.
+
+Assets can have "partitions", which refer to sub-pieces of the contents of the entire asset.  E.g. a table might have a partition for each day, and you might record that a particular solid execution created the table for a particular day.
+
+## The Asset Catalog
 
 The Asset Catalog is an interface inside [Dagit](/overview/dagit) that centers on assets.  Each entry in the catalog is an asset and includes:
-* Runs that mutated or created the asset
-* Metadata logged by developers about the asset
+* Runs that mutated or created the asset.
+* Metadata logged by developers about the asset.
 
-Developers place entries in the Asset Catalog by yielding <PyObject module="dagster" object="AssetMaterialization" /> events from inside their solids or [output managers](/overview/io-managers/io-managers).  The act of mutating or creating an asset is called a "materialization".  <PyObject module="dagster" object="AssetMaterialization" /> events may include arbitrary metadata that describes the asset at the time of the materialization.
+Developers place entries in the Asset Catalog by referencing assets in their pipelines. There are two general patterns for referencing assets when using Dagster:
+* Link solid outputs to assets.
+* Yield AssetMaterializations at runtime.
 
-There are two general patterns for dealing with assets when using Dagster:
-* Materialize assets from inside the body of a solid.
-* Focus solid on pure business logic, and delegate the materialization of assets to IOManagers.
+
+## Linking Solid Outputs to Assets
+
+You can link a solid output to an asset. Every time the solid runs and yields that output, the Asset Catalog entry for that asset will record a "materialization", which indicates that the asset was updated.  When you yield an <PyObject module="dagster" object="Output" /> from the solid's compute function, you can attach metadata entries that will show up on that materialization in the Asset Catalog.
+
+<!-- show a Dagit screenshot -->
+
+When you link outputs to assets, Dagster can automatically track the lineage of assets.  I.e. if output X is linked to asset A, and downstream solid S takes X as an input, then any assets linked to S's outputs will record A as a parent asset.
+
+<!-- show a diagram -->
+
+### On the solid definition
+
+The easiest way to link solid outputs to assets is with the `asset_key` argument on <PyObject module="dagster" object="OutputDefinition" />.
+
+```python
+```
+In some cases, the asset key that an output corresponds to depends on the configuration passed to the pipeline or the mode that the pipeline is executing in.  For these cases, the `asset_key` argument accepts a function that returns an <PyObject module="dagster" object="AssetKey" />.
+
+```python
+```
+
+### On the IOManager
+
+If you've defined an <PyObject module="dagster" object="IOManager" /> to handle storing your solid's outputs, the <PyObject module="dagster" object="IOManager" /> is likely responsible for knowing what asset the solid output gets written to. In this case, you can implement the `get_output_asset_key` method instead of using the `asset_key` argument on <PyObject module="dagster" object="OutputDefinition" />.
+
+```python
+```
+
+### Recording runtime metadata
+
+Any metadata attached to the <PyObject module="dagster" object="Output" /> itself will also be displayed in the Asset Catalog with the corresponding materialization.
+
+```python
+```
+
+<!-- Dagit screenshot -->
+
+
+Additionally, you can record metadata from the IOManager.
+
+### Partitioned Assets
+
+## Overriding Input Assets
+
+Assets attached to outputs are used to record asset lineage.  If an asset is linked to an output, any assets materialized by solids that depend on that output will list that asset as a parent.
+
+<!-- show a diagram -->
+
+Sometimes, it's desirable to override this behavior if you have knowledge about what assets a solid is reading from.  For example, if a solid input doesn't come from an upstream output, but does read from an asset, you might want to record that.  This is helpful for tracking asset lineage across pipelines.  If a solid reads a set of partitions that's larger than the set of partitions produced by the upstream output, e.g. for computing a rolling window, you might want to record that.
+
+## Recording Asset Materializations at Runtime
+
+If you don't know what assets your solids will generate before you run them, then you can record AssetMaterializations at run time.
 
 ## Recording Asset Materializations in Solids
 
