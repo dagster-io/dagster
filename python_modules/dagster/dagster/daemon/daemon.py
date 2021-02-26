@@ -1,6 +1,7 @@
 import logging
 import sys
 from abc import abstractclassmethod, abstractmethod
+from contextlib import AbstractContextManager
 
 import pendulum
 from dagster import DagsterInstance, check
@@ -39,7 +40,7 @@ class CompletedIteration(object):
     pass
 
 
-class DagsterDaemon:
+class DagsterDaemon(AbstractContextManager):
     def __init__(self, interval_seconds):
         self._logger = get_default_daemon_logger(type(self).__name__)
         self.interval_seconds = check.numeric_param(interval_seconds, "interval_seconds")
@@ -56,9 +57,6 @@ class DagsterDaemon:
         """
         returns: str
         """
-
-    def __enter__(self):
-        return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
