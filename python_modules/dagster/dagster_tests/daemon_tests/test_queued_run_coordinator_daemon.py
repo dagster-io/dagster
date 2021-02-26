@@ -1,7 +1,14 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster.core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster.core.code_pointer import ModuleCodePointer
+from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation.origin import (
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -26,6 +33,23 @@ def create_run(instance, **kwargs):
             pipeline_name="foo",
             **kwargs,
         )
+
+
+def create_invalid_run(instance, **kwargs):
+    create_run_for_test(
+        instance,
+        external_pipeline_origin=ExternalPipelineOrigin(
+            ExternalRepositoryOrigin(
+                InProcessRepositoryLocationOrigin(
+                    ReconstructableRepository(ModuleCodePointer("fake", "fake"))
+                ),
+                "foo",
+            ),
+            "wrong-pipeline",
+        ),
+        pipeline_name="wrong-pipeline",
+        **kwargs,
+    )
 
 
 def get_run_ids(runs_queue):
@@ -303,3 +327,30 @@ def test_location_handles_reused(instance, monkeypatch):
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run", "queued-run-2"]
     assert len(method_calls) == 1
+
+
+def test_skip_error_runs(instance):
+
+    create_invalid_run(
+        instance,
+        run_id="bad-run",
+        status=PipelineRunStatus.QUEUED,
+    )
+
+    create_run(
+        instance,
+        run_id="good-run",
+        status=PipelineRunStatus.QUEUED,
+    )
+
+    coordinator = QueuedRunCoordinatorDaemon(
+        interval_seconds=5,
+        max_concurrent_runs=10,
+    )
+    errors = [error for error in list(coordinator.run_iteration(instance, None)) if error]
+
+    assert len(errors) == 1
+    assert "ModuleNotFoundError" in errors[0].message
+
+    assert get_run_ids(instance.run_launcher.queue()) == ["good-run"]
+    assert instance.get_run_by_id("bad-run").status == PipelineRunStatus.FAILURE
