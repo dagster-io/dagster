@@ -191,6 +191,7 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
             "install",
             "--namespace",
             namespace,
+            "--debug",
             "-f",
             "-",
             "dagster",
@@ -203,8 +204,8 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
             helm_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         stdout, stderr = p.communicate(helm_config_yaml.encode("utf-8"))
-        print("Helm install completed with stdout: ", stdout)
-        print("Helm install completed with stderr: ", stderr)
+        print("Helm install completed with stdout: ", stdout.decode("utf-8"))
+        print("Helm install completed with stderr: ", stderr.decode("utf-8"))
         assert p.returncode == 0
 
         # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
