@@ -1,7 +1,6 @@
 import pytest
 from dagster.utils import file_relative_path
 from dagster.utils.test.postgres_instance import TestPostgresInstance
-from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
 
 
@@ -16,13 +15,6 @@ def conn_string():  # pylint: disable=redefined-outer-name, unused-argument
         file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db"
     ) as conn_str:
         yield conn_str
-
-
-@pytest.fixture(scope="function")
-def clean_storage(conn_string):  # pylint: disable=redefined-outer-name
-    storage = PostgresRunStorage.create_clean_storage(conn_string)
-    assert storage
-    return storage
 
 
 @pytest.fixture(scope="function")

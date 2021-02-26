@@ -4,6 +4,7 @@ import pendulum
 import pytest
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -1021,3 +1022,72 @@ class TestRunStorage:
 
         for name in RUN_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
+
+    def test_handle_run_event_pipeline_success_test(self, storage):
+        run_id = make_new_run_id()
+        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        storage.add_run(run_to_add)
+
+        dagster_pipeline_start_event = DagsterEvent(
+            message="a message",
+            event_type_value=DagsterEventType.PIPELINE_START.value,
+            pipeline_name="pipeline_name",
+            step_key=None,
+            solid_handle=None,
+            step_kind_value=None,
+            logging_tags=None,
+        )
+
+        storage.handle_run_event(run_id, dagster_pipeline_start_event)
+
+        assert storage.get_run_by_id(run_id).status == PipelineRunStatus.STARTED
+
+        storage.handle_run_event(
+            make_new_run_id(),  # diff run
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                pipeline_name="pipeline_name",
+                step_key=None,
+                solid_handle=None,
+                step_kind_value=None,
+                logging_tags=None,
+            ),
+        )
+
+        assert storage.get_run_by_id(run_id).status == PipelineRunStatus.STARTED
+
+        storage.handle_run_event(
+            run_id,  # correct run
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                pipeline_name="pipeline_name",
+                step_key=None,
+                solid_handle=None,
+                step_kind_value=None,
+                logging_tags=None,
+            ),
+        )
+
+        assert storage.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+
+    def test_add_get_run_storage(self, storage):
+        run_id = make_new_run_id()
+        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
+        added = storage.add_run(run_to_add)
+        assert added
+
+        fetched_run = storage.get_run_by_id(run_id)
+
+        assert run_to_add == fetched_run
+
+        assert storage.has_run(run_id)
+        assert not storage.has_run(make_new_run_id())
+
+        assert storage.get_runs() == [run_to_add]
+        assert storage.get_runs(PipelineRunsFilter(pipeline_name="pipeline_name")) == [run_to_add]
+        assert storage.get_runs(PipelineRunsFilter(pipeline_name="nope")) == []
+
+        storage.wipe()
+        assert storage.get_runs() == []

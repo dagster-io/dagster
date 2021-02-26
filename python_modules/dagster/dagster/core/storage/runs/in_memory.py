@@ -60,6 +60,8 @@ class InMemoryRunStorage(RunStorage):
     def handle_run_event(self, run_id, event):
         check.str_param(run_id, "run_id")
         check.inst_param(event, "event", DagsterEvent)
+        if run_id not in self._runs:
+            return
         run = self._runs[run_id]
 
         if event.event_type == DagsterEventType.PIPELINE_START:
