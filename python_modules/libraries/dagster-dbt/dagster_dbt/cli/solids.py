@@ -651,10 +651,20 @@ def dbt_cli_docs_generate(context) -> Dict:
     """This solid executes ``dbt docs generate`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("docs", "generate",),
+        command=(
+            "docs",
+            "generate",
+        ),
         flags_dict=passthrough_flags_only(
             context.solid_config,
-            ("threads", "no-version-check", "models", "exclude", "selector", "state",),
+            (
+                "threads",
+                "no-version-check",
+                "models",
+                "exclude",
+                "selector",
+                "state",
+            ),
         ),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
