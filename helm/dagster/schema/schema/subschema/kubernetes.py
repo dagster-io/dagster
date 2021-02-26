@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
@@ -7,6 +7,8 @@ from .utils import SupportedKubernetes, create_definition_ref
 
 
 class Annotations(BaseModel):
+    __root__: Dict[str, str]
+
     class Config:
         schema_extra = {
             "$ref": create_definition_ref(
@@ -35,6 +37,10 @@ class Image(BaseModel):
     tag: str
     pullPolicy: PullPolicy
 
+    @property
+    def name(self) -> str:
+        return f"{self.repository}:{self.tag}"
+
 
 class ImageWithRegistry(BaseModel):
     registry: str
@@ -53,6 +59,8 @@ class Service(BaseModel):
 
 
 class NodeSelector(BaseModel):
+    __root__: Dict[str, str]
+
     class Config:
         schema_extra = {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/nodeSelector")
@@ -60,11 +68,15 @@ class NodeSelector(BaseModel):
 
 
 class Affinity(BaseModel):
+    __root__: Dict[str, Any]
+
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Affinity")}
 
 
 class Tolerations(BaseModel):
+    __root__: List[Dict[str, Any]]
+
     class Config:
         schema_extra = {
             "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations")
@@ -72,16 +84,22 @@ class Tolerations(BaseModel):
 
 
 class PodSecurityContext(BaseModel):
+    __root__: Dict[str, Any]
+
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext")}
 
 
 class SecurityContext(BaseModel):
+    __root__: Dict[str, Any]
+
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext")}
 
 
 class Resources(BaseModel):
+    __root__: Dict[str, Any]
+
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")}
 

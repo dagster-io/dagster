@@ -19,24 +19,32 @@ def cli():
     pass
 
 
-@cli.command()
-@click.option(
-    "--command", type=click.Choice(["show", "apply"], case_sensitive=False), default="show"
-)
-def schema(command):
-    """Generates the `values.schema.json` file according to user specified pydantic models.
+@cli.group()
+def schema():
+    """Generates the `values.schema.json` file according to user specified pydantic models."""
 
-    By default, the schema is printed on the console. If the schema is as expected, use
-    `--command=apply` to save the changes on the existing `values.schema.json`.
+
+@schema.command()
+def show():
+    """
+    Displays the json schema on the console.
     """
     schema_json = HelmValues.schema_json(indent=4)
 
-    if command == "show":
-        click.echo(schema_json, nl=False)
-    elif command == "apply":
-        values_schema_path = os.path.join(git_repo_root(), "helm/dagster/values.schema.json")
-        with open(values_schema_path, "w") as f:
-            f.write(schema_json)
+    click.echo(schema_json)
+
+
+@schema.command()
+def apply():
+    """
+    Saves the json schema in the Helm `values.schema.json`.
+    """
+    schema_json = HelmValues.schema_json(indent=4)
+
+    values_schema_path = os.path.join(git_repo_root(), "helm", "dagster", "values.schema.json")
+    with open(values_schema_path, "w") as f:
+        f.write(schema_json)
+        f.write("\n")
 
 
 def main():

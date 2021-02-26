@@ -8,12 +8,7 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: user-deployments
     deployment: {{ $deployment.name }}
-  annotations:
-    {{- if hasKey $deployment "annotations" }}
-    {{- range $key, $value := $deployment.annotations }}
-    {{ $key }}: {{ $value | squote }}
-    {{- end }}
-    {{- end }}
+  annotations: {{ $deployment.annotations | toYaml | nindent 4 }}
 spec:
   replicas: {{ $deployment.replicaCount | default 1 }}
   selector:
@@ -30,19 +25,15 @@ spec:
       annotations:
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") $ | sha256sum }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") $ | sha256sum }}
-        {{- if hasKey $deployment "annotations" }}
-        {{- range $key, $value := $deployment.annotations }}
+        {{- with $deployment.annotations }}
+        {{- range $key, $value := . }}
         {{ $key }}: {{ $value | squote }}
         {{- end }}
         {{- end }}
     spec:
-    {{- with $.Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+      imagePullSecrets: {{ $.Values.imagePullSecrets | toYaml | nindent 8 }}
       serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
-      securityContext:
-        {{- toYaml $deployment.podSecurityContext | nindent 8 }}
+      securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
@@ -50,12 +41,10 @@ spec:
           command: ['sh', '-c',
             'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]
-          securityContext:
-            {{- toYaml $deployment.securityContext | nindent 12 }}
+          securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
       containers:
         - name: {{ $.Chart.Name }}
-          securityContext:
-            {{- toYaml $deployment.securityContext | nindent 12 }}
+          securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
           command: ["dagster"]
@@ -77,8 +66,7 @@ spec:
             {{- range $envSecret := $deployment.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
-          resources:
-            {{- toYaml $deployment.resources | nindent 12 }}
+          resources: {{ $deployment.resources | toYaml | nindent 12 }}
         {{- if $deployment.livenessProbe }}
           {{- if not $deployment.livenessProbe.exec }}
           livenessProbe:
@@ -105,8 +93,7 @@ spec:
               {{- toYaml $deployment.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          livenessProbe:
-            {{- toYaml $deployment.livenessProbe | nindent 12 }}
+          livenessProbe: {{ $deployment.livenessProbe | toYaml | nindent 12 }}
           {{- end }}
         {{- end }}
         {{- if $deployment.startupProbe }}
@@ -139,18 +126,9 @@ spec:
             {{- toYaml $deployment.startupProbe | nindent 12 }}
           {{- end }}
         {{- end }}
-      {{- with $deployment.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- with $deployment.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with $deployment.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+      nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
+      affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
+      tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
 ---
 {{ end }}
 {{ end }}

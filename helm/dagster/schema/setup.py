@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="dagster_helm",
+    name="dagster-helm",
     version="0.0.1",
     author="Elementl",
     author_email="hello@elementl.com",
@@ -17,7 +17,7 @@ setup(
     ],
     packages=find_packages(exclude=["schema_tests"]),
     install_requires=["click", "pydantic"],
-    extra_requires={"test": []},
+    extras_require={"test": ["kubernetes"]},
     entry_points={
         "console_scripts": [
             "dagster-helm = schema.cli:main",

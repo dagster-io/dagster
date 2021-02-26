@@ -98,7 +98,9 @@
         "Annotations": {
             "title": "Annotations",
             "type": "object",
-            "properties": {},
+            "additionalProperties": {
+                "type": "string"
+            },
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
         },
         "schema__subschema__kubernetes__Service": {
@@ -138,37 +140,37 @@
         "NodeSelector": {
             "title": "NodeSelector",
             "type": "object",
-            "properties": {},
+            "additionalProperties": {
+                "type": "string"
+            },
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector"
         },
         "Affinity": {
             "title": "Affinity",
             "type": "object",
-            "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         },
         "Tolerations": {
             "title": "Tolerations",
-            "type": "object",
-            "properties": {},
+            "type": "array",
+            "items": {
+                "type": "object"
+            },
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations"
         },
         "PodSecurityContext": {
             "title": "PodSecurityContext",
             "type": "object",
-            "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "SecurityContext": {
             "title": "SecurityContext",
             "type": "object",
-            "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "Resources": {
             "title": "Resources",
             "type": "object",
-            "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "LivenessProbe": {
@@ -286,6 +288,11 @@
                     "title": "Port",
                     "type": "integer"
                 },
+                "replicaCount": {
+                    "title": "Replicacount",
+                    "default": 1,
+                    "type": "integer"
+                },
                 "env": {
                     "title": "Env",
                     "type": "object",
@@ -307,6 +314,9 @@
                         "$ref": "#/definitions/SecretEnvSource"
                     }
                 },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
                 },
@@ -324,10 +334,6 @@
                 },
                 "resources": {
                     "$ref": "#/definitions/Resources"
-                },
-                "replicaCount": {
-                    "title": "Replicacount",
-                    "type": "integer"
                 },
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
