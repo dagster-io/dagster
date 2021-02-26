@@ -1,9 +1,14 @@
 import os
+import subprocess
 
 import click
-from automation.git import git_repo_root
 
-from .schema.values import HelmValues
+from .values import HelmValues
+
+
+def git_repo_root():
+    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
+
 
 CLI_HELP = """Tools to help generate the schema file for the Dagster Helm chart.
 """

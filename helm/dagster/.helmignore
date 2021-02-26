@@ -20,3 +20,5 @@
 .idea/
 *.tmproj
 .vscode/
+# schema cli and tests
+schema/

@@ -19,7 +19,7 @@ def helm_lint_steps() -> List[dict]:
         .build(),
         StepBuilder(":helm: :lint-roller:")
         .run(
-            "pip install -e python_modules/automation",
+            "pip install -e helm/dagster/schema",
             "dagster-helm schema --command=apply",
             "git diff --exit-code",
             "helm lint helm/dagster -f helm/dagster/values.yaml",

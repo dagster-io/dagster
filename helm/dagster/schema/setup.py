@@ -16,5 +16,11 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["schema_tests"]),
+    install_requires=["click", "pydantic"],
     extra_requires={"test": []},
+    entry_points={
+        "console_scripts": [
+            "dagster-helm = schema.cli:main",
+        ]
+    },
 )
