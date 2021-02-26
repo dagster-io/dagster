@@ -3,6 +3,7 @@
 # DAGSTER INTEGRATION IMAGE
 #
 # We use this Dockerfile to build an image for our Buildkite CI/CD pipeline.
+# Python dependencies go here - system dependencies go in buildkite-integration-base.
 #
 ####################################################################################################
 

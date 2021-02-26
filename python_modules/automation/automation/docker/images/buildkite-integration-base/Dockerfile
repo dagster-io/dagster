@@ -3,6 +3,7 @@
 # DAGSTER INTEGRATION IMAGE Base
 #
 # We use this Dockerfile to build an image for our Buildkite CI/CD pipeline.
+# System dependencies go here - Python dependencies go in buildkite-integration.
 #
 ####################################################################################################
 ARG BASE_IMAGE
@@ -80,6 +81,7 @@ RUN echo "--- \033[32m:debian: Install Debian packages\033[0m" \
     ssh \
     software-properties-common \
     unzip \
+    wget \
     xz-utils \
     yarn \
     # Confirm Java works
@@ -136,3 +138,8 @@ RUN pip install -U pip setuptools wheel \
     # This instigates some package downloads required by the airline-demo
     && python trigger_maven.py \
     && rm trigger_maven.py
+
+RUN wget http://download.redis.io/redis-stable.tar.gz \
+    && tar xvzf redis-stable.tar.gz \
+    && cd redis-stable \
+    && make install
