@@ -93,7 +93,7 @@ export const LeftNavSimple = React.memo(() => {
             </Group>
           </Group>
           <Box padding={{right: 4}}>
-            <SearchDialog />
+            <SearchDialog theme="light" />
           </Box>
         </Group>
         {items}

@@ -28,11 +28,12 @@ const iconForType = (type: SearchResultType): IconName => {
 };
 
 interface ItemProps {
-  result: Fuse.FuseResult<SearchResult>;
   isHighlight: boolean;
+  onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
+  result: Fuse.FuseResult<SearchResult>;
 }
 
-const SearchResultItem: React.FC<ItemProps> = React.memo(({result, isHighlight}) => {
+const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickResult, result}) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
 
@@ -42,9 +43,19 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({result, isHighlight})
     }
   }, [isHighlight]);
 
+  const onClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (!e.getModifierState('Meta') && !e.getModifierState('Control')) {
+        e.preventDefault();
+        onClickResult(result);
+      }
+    },
+    [onClickResult, result],
+  );
+
   return (
     <Item isHighlight={isHighlight} ref={element}>
-      <ResultLink to={item.href}>
+      <ResultLink to={item.href} onClick={onClick}>
         <Icon
           iconSize={16}
           icon={iconForType(item.type)}
@@ -61,12 +72,13 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({result, isHighlight})
 
 interface Props {
   highlight: number;
+  onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
   queryString: string;
   results: Fuse.FuseResult<SearchResult>[];
 }
 
 export const SearchResults = (props: Props) => {
-  const {highlight, queryString, results} = props;
+  const {highlight, onClickResult, queryString, results} = props;
 
   if (!results.length && queryString) {
     return <NoResults>No results</NoResults>;
@@ -75,7 +87,12 @@ export const SearchResults = (props: Props) => {
   return (
     <List hasResults={!!results.length}>
       {results.map((result, ii) => (
-        <SearchResultItem key={result.item.key} isHighlight={highlight === ii} result={result} />
+        <SearchResultItem
+          key={result.item.key}
+          isHighlight={highlight === ii}
+          result={result}
+          onClickResult={onClickResult}
+        />
       ))}
     </List>
   );
@@ -111,6 +128,7 @@ const Item = styled.li<HighlightableTextProps>`
   flex-direction: row;
   list-style: none;
   margin: 0;
+  user-select: none;
 
   &:hover {
     background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
@@ -139,4 +157,8 @@ const Label = styled.div<HighlightableTextProps>`
 const Description = styled.div<HighlightableTextProps>`
   color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : Colors.GRAY3)};
   font-size: 12px;
+  max-width: 530px;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;

@@ -1,11 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon, InputGroup} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
 import React from 'react';
-import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {JobsListQuery} from 'src/nav/types/JobsListQuery';
 import {JobStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
@@ -14,22 +12,14 @@ import {BorderSetting} from 'src/ui/types';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 
-const iincludes = (haystack: string, needle: string) =>
-  haystack.toLowerCase().includes(needle.toLowerCase());
-
 interface JobsListProps {
   selector?: string;
   repo: DagsterRepoOption;
 }
 
 export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector}) => {
-  const [focused, setFocused] = React.useState<string | null>(null);
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
-  const history = useHistory();
   const repoName = repo.repository.name;
   const repoLocation = repo.repositoryLocation.name;
-
-  const [q, setQ] = React.useState<string>('');
 
   const jobs = useQuery<JobsListQuery>(JOBS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -50,46 +40,19 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
     jobs.data?.sensorsOrError?.__typename === 'Sensors' ? jobs.data.sensorsOrError.results : [];
 
   const items = [
-    ...repoSchedules
-      .filter(({name}) => !q || iincludes(name, q))
-      .map(({name, scheduleState}) => ({
-        to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
-        label: name,
-        jobType: 'schedule',
-        status: scheduleState.status,
-      })),
-    ...repoSensors
-      .filter(({name}) => !q || iincludes(name, q))
-      .map(({name, sensorState}) => ({
-        to: workspacePath(repoName, repoLocation, `/sensors/${name}`),
-        label: name,
-        jobType: 'sensor',
-        status: sensorState?.status,
-      })),
+    ...repoSchedules.map(({name, scheduleState}) => ({
+      to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
+      label: name,
+      jobType: 'schedule',
+      status: scheduleState.status,
+    })),
+    ...repoSensors.map(({name, sensorState}) => ({
+      to: workspacePath(repoName, repoLocation, `/sensors/${name}`),
+      label: name,
+      jobType: 'sensor',
+      status: sensorState?.status,
+    })),
   ];
-
-  const onShiftFocus = (dir: 1 | -1) => {
-    const idx = items.findIndex((p) => p.label === focused);
-    if (idx === -1 && items[0]) {
-      setFocused(items[0].label);
-    } else if (items[idx + dir]) {
-      setFocused(items[idx + dir].label);
-    }
-  };
-
-  const onConfirmFocused = () => {
-    if (focused) {
-      const item = items.find((p) => p.label === focused);
-      if (item) {
-        history.push(item.to);
-        return;
-      }
-    }
-    if (items.length) {
-      history.push(items[0].to);
-      setFocused(items[0].label);
-    }
-  };
 
   if (!repoSchedules.length && !repoSensors.length) {
     return (
@@ -114,7 +77,18 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
         borderTop: `1px solid ${Colors.DARK_GRAY4}`,
       }}
     >
-      <Box padding={4} margin={8} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 8, horizontal: 12}}
+        border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
+      >
+        <ItemHeader>{'Schedules & Sensors'}</ItemHeader>
+      </Box>
+      <Box
+        padding={{vertical: 8, horizontal: 12}}
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
+      >
         <Item to={workspacePath(repoName, repoLocation, `/schedules`)}>
           <Group direction="row" spacing={8} alignItems="center">
             <Icon icon={'time'} iconSize={14} />
@@ -129,54 +103,16 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
           </Group>
         </Item>
       </Box>
-      <Header>
-        <ShortcutHandler
-          onShortcut={() => inputRef.current?.focus()}
-          shortcutFilter={(e) => e.altKey && e.keyCode === 83}
-          shortcutLabel={`⌥S then Up / Down`}
-        >
-          <InputGroup
-            type="text"
-            inputRef={(c) => (inputRef.current = c)}
-            value={q}
-            small
-            placeholder={`Search...`}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') {
-                onShiftFocus(1);
-              }
-              if (e.key === 'ArrowUp') {
-                onShiftFocus(-1);
-              }
-              if (e.key === 'Enter' || e.key === 'Return') {
-                onConfirmFocused();
-              }
-            }}
-            onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
-            style={{
-              border: `1px solid ${Colors.DARK_GRAY5}`,
-              background: Colors.DARK_GRAY4,
-            }}
-          />
-        </ShortcutHandler>
-        <div style={{width: 4}} />
-      </Header>
       <Items>
         {items.map((p) => {
-          const isFocused = p.label === focused;
           const isSelected = p.label === selector;
-          const border: BorderSetting | null =
-            isSelected || isFocused
-              ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
-              : null;
+          const border: BorderSetting | null = isSelected
+            ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
+            : null;
           const icon = p.jobType === 'schedule' ? 'time' : 'automatic-updates';
 
           return (
-            <Item
-              key={p.label}
-              className={`${isSelected ? 'selected' : ''} ${isFocused ? 'focused' : ''}`}
-              to={p.to}
-            >
+            <Item key={p.label} className={`${isSelected ? 'selected' : ''}`} to={p.to}>
               <Box
                 background={isSelected ? Colors.BLACK : null}
                 border={border}
@@ -209,12 +145,12 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
   );
 };
 
-const Header = styled.div`
-  margin: 6px 10px;
-  display: flex;
-  & .bp3-input-group {
-    flex: 1;
-  }
+const ItemHeader = styled.div`
+  font-size: 15px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: bold;
+  color: ${Colors.LIGHT_GRAY3} !important;
 `;
 
 const Label = styled.div`

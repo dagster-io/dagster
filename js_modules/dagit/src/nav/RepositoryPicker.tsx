@@ -4,6 +4,7 @@ import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
+import {Box} from 'src/ui/Box';
 import {Spinner} from 'src/ui/Spinner';
 import {RepositoryInformation} from 'src/workspace/RepositoryInformation';
 import {DagsterRepoOption, isRepositoryOptionEqual} from 'src/workspace/WorkspaceContext';
@@ -27,7 +28,9 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
     if (repo) {
       return (
         <>
-          {repo.repository.name}
+          <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}} title={repo.repository.name}>
+            {repo.repository.name}
+          </span>
           <Icon icon="caret-down" style={{opacity: 0.9, marginLeft: 3}} />
         </>
       );
@@ -61,7 +64,11 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
         </Menu>
       }
     >
-      <RepositoryPickerFlexContainer>
+      <Container
+        padding={{vertical: 8, horizontal: 12}}
+        border={{width: 1, side: 'bottom', color: Colors.DARK_GRAY4}}
+        flex={{alignItems: 'center'}}
+      >
         <div style={{flex: 1, minWidth: 0}}>
           <div
             style={{
@@ -78,25 +85,20 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
         {repo?.repositoryLocation.isReloadSupported && (
           <ReloadRepositoryLocationButton location={repo.repositoryLocation.name} />
         )}
-      </RepositoryPickerFlexContainer>
+      </Container>
     </Popover>
   );
 };
 
 const RepoTitle = styled.div`
-  overflow: hidden;
-  text-overflow: ellipsis;
   opacity: 0.9;
   display: flex;
   align-items: center;
   height: 19px;
+  padding-right: 2px;
 `;
 
-const RepositoryPickerFlexContainer = styled.div`
-  border-bottom: 1px solid ${Colors.DARK_GRAY4};
-  padding: 10px 10px;
-  display: flex;
-  align-items: center;
+const Container = styled(Box)`
   cursor: default;
   &:hover {
     background: ${Colors.BLACK};

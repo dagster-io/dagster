@@ -1,18 +1,14 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Button, ButtonGroup, Colors, Icon, InputGroup} from '@blueprintjs/core';
+import {Button, ButtonGroup, Colors, Icon} from '@blueprintjs/core';
 import React from 'react';
-import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {tabForPipelinePathComponent} from 'src/nav/PipelineNav';
 import {ContentListSolidsQuery} from 'src/nav/types/ContentListSolidsQuery';
+import {Box} from 'src/ui/Box';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
-
-const iincludes = (haystack: string, needle: string) =>
-  haystack.toLowerCase().includes(needle.toLowerCase());
 
 interface RepositoryContentListProps {
   selector?: string;
@@ -26,15 +22,10 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
   selector,
 }) => {
   const [type, setType] = React.useState<'pipelines' | 'solids'>('pipelines');
-  const [focused, setFocused] = React.useState<string | null>(null);
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
   const pipelineTab = tabForPipelinePathComponent(tab);
   const repoName = repo.repository.name;
   const repoLocation = repo.repositoryLocation.name;
 
-  const history = useHistory();
-
-  const [q, setQ] = React.useState<string>('');
   // Load solids, but only if the user clicks on the Solid option
   const [fetchSolids, solids] = useLazyQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
     fetchPolicy: 'cache-first',
@@ -61,7 +52,6 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
     type === 'pipelines'
       ? repo.repository.pipelines
           .map((pipeline) => pipeline.name)
-          .filter((p) => !q || iincludes(p, q))
           .map((p) => ({
             to: workspacePath(
               repoName,
@@ -70,82 +60,19 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
             ),
             label: p,
           }))
-      : usedSolids
-          .filter(
-            (s) =>
-              !q ||
-              iincludes(s.definition.name, q) ||
-              s.invocations.some((i) => iincludes(i.pipeline.name, q)),
-          )
-          .map(({definition}) => ({
-            to: workspacePath(repoName, repoLocation, `/solids/${definition.name}`),
-            label: definition.name,
-          }));
-
-  const onShiftFocus = (dir: 1 | -1) => {
-    const idx = items.findIndex((p) => p.label === focused);
-    if (idx === -1 && items[0]) {
-      setFocused(items[0].label);
-    } else if (items[idx + dir]) {
-      setFocused(items[idx + dir].label);
-    }
-  };
-
-  const onConfirmFocused = () => {
-    if (focused) {
-      const item = items.find((p) => p.label === focused);
-      if (item) {
-        history.push(item.to);
-        return;
-      }
-    }
-    if (items.length) {
-      history.push(items[0].to);
-      setFocused(items[0].label);
-    }
-  };
+      : usedSolids.map(({definition}) => ({
+          to: workspacePath(repoName, repoLocation, `/solids/${definition.name}`),
+          label: definition.name,
+        }));
 
   return (
-    <div
-      style={{
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        borderTop: `1px solid ${Colors.DARK_GRAY4}`,
-      }}
-    >
-      <Header>
-        <ShortcutHandler
-          onShortcut={() => inputRef.current?.focus()}
-          shortcutFilter={(e) => e.altKey && e.keyCode === 80}
-          shortcutLabel={`⌥P then Up / Down`}
-        >
-          <InputGroup
-            type="text"
-            inputRef={(c) => (inputRef.current = c)}
-            value={q}
-            small
-            placeholder={`Search ${type}...`}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') {
-                onShiftFocus(1);
-              }
-              if (e.key === 'ArrowUp') {
-                onShiftFocus(-1);
-              }
-              if (e.key === 'Enter' || e.key === 'Return') {
-                onConfirmFocused();
-              }
-            }}
-            onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
-            style={{
-              border: `1px solid ${Colors.DARK_GRAY5}`,
-              background: Colors.DARK_GRAY4,
-            }}
-          />
-        </ShortcutHandler>
-        <div style={{width: 4}} />
+    <Box flex={{direction: 'column'}} style={{minHeight: 0, flex: 1}}>
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 8, horizontal: 12}}
+        border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
+      >
+        <ItemHeader>{'Pipelines & Solids'}</ItemHeader>
         <ButtonGroup>
           <Button
             small={true}
@@ -162,32 +89,30 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
             onClick={() => setType('solids')}
           />
         </ButtonGroup>
-      </Header>
+      </Box>
       <Items>
         {items.map((p) => (
           <Item
             key={p.label}
             data-tooltip={p.label}
             data-tooltip-style={p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle}
-            className={`${p.label === selector ? 'selected' : ''} ${
-              p.label === focused ? 'focused' : ''
-            }`}
+            className={`${p.label === selector ? 'selected' : ''}`}
             to={p.to}
           >
             {p.label}
           </Item>
         ))}
       </Items>
-    </div>
+    </Box>
   );
 };
 
-const Header = styled.div`
-  margin: 6px 10px;
-  display: flex;
-  & .bp3-input-group {
-    flex: 1;
-  }
+const ItemHeader = styled.div`
+  font-size: 15px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: bold;
+  color: ${Colors.LIGHT_GRAY3} !important;
 `;
 
 const Items = styled.div`

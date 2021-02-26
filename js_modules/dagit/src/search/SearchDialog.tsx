@@ -52,7 +52,7 @@ const initialState: State = {
   highlight: 0,
 };
 
-export const SearchDialog = () => {
+export const SearchDialog: React.FC<{theme: 'dark' | 'light'}> = ({theme}) => {
   const location = useLocation();
   const history = useHistory();
   const performSearch = useRepoSearch();
@@ -75,6 +75,14 @@ export const SearchDialog = () => {
   React.useEffect(() => {
     dispatch({type: 'hide-dialog'});
   }, [location.pathname]);
+
+  const onClickResult = React.useCallback(
+    (result: Fuse.FuseResult<SearchResult>) => {
+      dispatch({type: 'hide-dialog'});
+      history.push(result.item.href);
+    },
+    [history],
+  );
 
   const highlightedResult = results[highlight] || null;
 
@@ -122,13 +130,13 @@ export const SearchDialog = () => {
         shortcutLabel="/"
         shortcutFilter={(e) => e.key === '/'}
       >
-        <SearchTrigger onClick={openSearch}>
+        <SearchTrigger onClick={openSearch} $theme={theme}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Group direction="row" alignItems="center" spacing={8}>
               <Icon icon="search" iconSize={11} color={Colors.GRAY3} style={{display: 'block'}} />
-              <div>Search…</div>
+              <Placeholder>Search…</Placeholder>
             </Group>
-            <SlashShortcut>{'/'}</SlashShortcut>
+            <SlashShortcut $theme={theme}>{'/'}</SlashShortcut>
           </Box>
         </SearchTrigger>
       </ShortcutHandler>
@@ -151,23 +159,43 @@ export const SearchDialog = () => {
               value={queryString}
             />
           </SearchBox>
-          <SearchResults highlight={highlight} queryString={queryString} results={results} />
+          <SearchResults
+            highlight={highlight}
+            queryString={queryString}
+            results={results}
+            onClickResult={onClickResult}
+          />
         </Container>
       </Overlay>
     </>
   );
 };
 
-const SearchTrigger = styled.button`
-  background-color: ${Colors.WHITE};
-  border: 1px solid ${Colors.LIGHT_GRAY1};
+SearchDialog.defaultProps = {
+  theme: 'light',
+};
+
+const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
+  background-color: ${({$theme}) => ($theme === 'light' ? Colors.WHITE : Colors.DARK_GRAY5)};
+  border: 1px solid ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY1 : Colors.GRAY1)};
   border-radius: 3px;
-  color: ${Colors.GRAY1};
-  font-size: 14px;
+  color: ${({$theme}) => ($theme === 'light' ? Colors.GRAY1 : Colors.LIGHT_GRAY3)};
+  font-size: 13px;
   font-weight: 400;
   cursor: pointer;
   padding: 4px 6px 4px 10px;
+  outline: none;
+  user-select: none;
   width: 100%;
+
+  :focus {
+    border-color: ${({$theme}) => ($theme === 'light' ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+  }
+`;
+
+const Placeholder = styled.div`
+  position: relative;
+  top: -1px;
 `;
 
 const Container = styled.div`
@@ -175,9 +203,9 @@ const Container = styled.div`
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   max-height: 60vh;
-  left: calc(50% - 200px);
+  left: calc(50% - 300px);
   overflow: hidden;
-  width: 400px;
+  width: 600px;
   top: 20vh;
 `;
 
@@ -207,10 +235,10 @@ const SearchInput = styled.input`
   }
 `;
 
-const SlashShortcut = styled.div`
-  background-color: ${Colors.LIGHT_GRAY4};
+const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
+  background-color: ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY4 : Colors.DARK_GRAY3)};
   border-radius: 3px;
-  color: ${Colors.DARK_GRAY1};
+  color: ${({$theme}) => ($theme === 'light' ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY4)};
   font-size: 10px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;

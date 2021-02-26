@@ -15,6 +15,7 @@ import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {VersionNumber} from 'src/nav/VersionNumber';
+import {SearchDialog} from 'src/search/SearchDialog';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
@@ -91,9 +92,7 @@ const LeftNavRepositorySection = () => {
       ) : null}
       {activeRepo ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          <ItemHeader>{'Pipelines & Solids:'}</ItemHeader>
           <RepositoryContentList {...match?.params} repo={activeRepo.repo} />
-          <ItemHeader>{`Schedules & Sensors:`}</ItemHeader>
           <JobsList {...match?.params} repo={activeRepo.repo} />
         </div>
       ) : null}
@@ -123,6 +122,9 @@ export const LeftNav = () => {
             </div>
           </Group>
         </LogoContainer>
+        <Box padding={{bottom: 8, horizontal: 12}}>
+          <SearchDialog theme="dark" />
+        </Box>
         <Box padding={{horizontal: 12}} margin={{bottom: 4}}>
           <div
             style={{
@@ -159,18 +161,6 @@ const LogoWebsocketStatus = styled(WebsocketStatus)`
   position: absolute;
   top: 20px;
   left: 24px;
-`;
-
-const ItemHeader = styled.div`
-  font-size: 15px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  padding: 8px 12px 8px 8px;
-  border-left: 4px solid transparent;
-  border-bottom: 1px solid transparent;
-  display: block;
-  font-weight: bold;
-  color: ${Colors.LIGHT_GRAY3} !important;
 `;
 
 const LeftNavContainer = styled.div`
