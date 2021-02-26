@@ -82,7 +82,7 @@ def test_using_logstorage():
         storage.store_event(create_event(4))
 
         attempts = 10
-        while len(watched_1) < 3 and len(watched_2) < 1 and attempts > 0:
+        while (len(watched_1) < 3 or len(watched_2) < 1) and attempts > 0:
             time.sleep(0.1)
             attempts -= 1
 

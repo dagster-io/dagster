@@ -78,9 +78,6 @@ class SqlPollingEventWatcher:
                 self._run_id_to_watcher_dict[run_id].join()
             del self._run_id_to_watcher_dict
 
-    def __del__(self):
-        self.close()
-
 
 class SqlPollingRunIdEventWatcherThread(threading.Thread):
     """subclass of Thread that watches a given run_id for new Events by polling every POLLING_CADENCE
