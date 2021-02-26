@@ -10,7 +10,6 @@ from dagster.api.snapshot_partition import (
     sync_get_external_partition_tags_grpc,
 )
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
-from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_grpc
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.execution.api import create_execution_plan
@@ -305,26 +304,19 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         self._handle = repository_location_handle
 
-        external_repositories_list = sync_get_streaming_external_repositories_grpc(
-            self._handle.client,
-            self._handle,
-        )
-
-        self.external_repositories = {repo.name: repo for repo in external_repositories_list}
-
     @property
     def is_reload_supported(self):
         return True
 
     def get_repository(self, name):
         check.str_param(name, "name")
-        return self.external_repositories[name]
+        return self.get_repositories()[name]
 
     def has_repository(self, name):
-        return name in self.external_repositories
+        return name in self.get_repositories()
 
     def get_repositories(self):
-        return self.external_repositories
+        return self._handle.external_repositories
 
     @property
     def name(self):
@@ -369,7 +361,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             ),
         )
 
-        external_repository = self.external_repositories[selector.repository_name]
+        external_repository = self.get_repository(selector.repository_name)
         pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
             self._handle.client, pipeline_handle.get_external_origin(), selector.solid_selection

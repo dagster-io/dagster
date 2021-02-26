@@ -6,6 +6,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
+from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_grpc
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.grpc_server_state_subscriber import (
@@ -121,6 +122,13 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             )
 
             self.container_image = self._reload_current_image()
+
+            external_repositories_list = sync_get_streaming_external_repositories_grpc(
+                self.client,
+                self,
+            )
+
+            self.external_repositories = {repo.name: repo for repo in external_repositories_list}
         except:
             self.cleanup()
             raise
@@ -223,13 +231,21 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
             self.heartbeat_thread.start()
 
             list_repositories_response = sync_list_repositories_grpc(self.client)
+
+            self.repository_code_pointer_dict = (
+                list_repositories_response.repository_code_pointer_dict
+            )
+            self.container_image = self.client.get_current_image().current_image
+
+            external_repositories_list = sync_get_streaming_external_repositories_grpc(
+                self.client,
+                self,
+            )
+
+            self.external_repositories = {repo.name: repo for repo in external_repositories_list}
         except:
             self.cleanup()
             raise
-
-        self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
-
-        self.container_image = self.client.get_current_image().current_image
 
     def get_repository_python_origin(self, repository_name):
         return _get_repository_python_origin(

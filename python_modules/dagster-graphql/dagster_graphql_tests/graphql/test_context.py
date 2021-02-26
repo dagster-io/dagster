@@ -1,11 +1,14 @@
 import gc
+import re
+from contextlib import ExitStack
 from unittest import mock
 
+import pytest
 from dagster import lambda_solid, pipeline, repository
 from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.host_representation.handle import ManagedGrpcPythonEnvRepositoryLocationHandle
 from dagster.core.test_utils import instance_for_test
-from dagster_graphql.test.utils import define_out_of_process_workspace
+from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 
 def get_repo():
@@ -29,6 +32,33 @@ def get_repo():
         return [pipe]
 
     return my_repo
+
+
+def test_can_reload_on_external_repository_error():
+    with instance_for_test() as instance:
+        with ExitStack() as exit_stack:
+            with mock.patch(
+                # note it where the function is *used* that needs to mocked, not
+                # where it is defined.
+                # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
+                "dagster.core.host_representation.handle.sync_get_streaming_external_repositories_grpc"
+            ) as external_repository_mock:
+                external_repository_mock.side_effect = Exception("get_external_repo_failure")
+
+                with pytest.warns(UserWarning, match=re.escape("get_external_repo_failure")):
+                    workspace = exit_stack.enter_context(
+                        define_out_of_process_workspace(__file__, "get_repo")
+                    )
+
+                assert not workspace.has_repository_location_handle(main_repo_location_name())
+                assert workspace.has_repository_location_error(main_repo_location_name())
+                process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
+                assert len(process_context.repository_locations) == 0
+
+            workspace.reload_repository_location(main_repo_location_name())
+            assert workspace.has_repository_location_handle(main_repo_location_name())
+            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
+            assert len(process_context.repository_locations) == 1
 
 
 def test_reload_on_process_context():

@@ -1,15 +1,16 @@
 from dagster import check
-from dagster.core.host_representation import (
-    ExternalRepository,
-    ExternalRepositoryData,
-    ExternalRepositoryOrigin,
-    RepositoryHandle,
-    RepositoryLocationHandle,
-)
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def sync_get_external_repositories_grpc(api_client, repository_location_handle):
+    from dagster.core.host_representation import (
+        RepositoryHandle,
+        RepositoryLocationHandle,
+        ExternalRepository,
+        ExternalRepositoryData,
+        ExternalRepositoryOrigin,
+    )
+
     check.inst_param(
         repository_location_handle, "repository_location_handle", RepositoryLocationHandle
     )
@@ -38,6 +39,13 @@ def sync_get_external_repositories_grpc(api_client, repository_location_handle):
 
 
 def sync_get_streaming_external_repositories_grpc(api_client, repository_location_handle):
+    from dagster.core.host_representation import (
+        RepositoryHandle,
+        RepositoryLocationHandle,
+        ExternalRepository,
+        ExternalRepositoryOrigin,
+    )
+
     check.inst_param(
         repository_location_handle, "repository_location_handle", RepositoryLocationHandle
     )
