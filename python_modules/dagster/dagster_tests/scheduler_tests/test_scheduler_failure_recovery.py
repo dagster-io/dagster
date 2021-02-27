@@ -1,5 +1,6 @@
 import pendulum
 import pytest
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -20,18 +21,20 @@ from .test_scheduler_run import (
 
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
-        try:
-            with pendulum.test(execution_datetime):
-                list(
-                    launch_scheduled_runs(
-                        instance,
-                        logger(),
-                        pendulum.now("UTC"),
-                        debug_crash_flags=debug_crash_flags,
+        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+            try:
+                with pendulum.test(execution_datetime):
+                    list(
+                        launch_scheduled_runs(
+                            instance,
+                            grpc_server_registry,
+                            logger(),
+                            pendulum.now("UTC"),
+                            debug_crash_flags=debug_crash_flags,
+                        )
                     )
-                )
-        finally:
-            cleanup_test_instance(instance)
+            finally:
+                cleanup_test_instance(instance)
 
 
 @pytest.mark.skipif(
@@ -45,7 +48,11 @@ def test_failure_recovery_before_run_created(
 ):
     # Verify that if the scheduler crashes or is interrupted before a run is created,
     # it will create exactly one tick/run when it is re-launched
-    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         initial_datetime = to_timezone(
             create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"),
             "US/Central",
@@ -133,7 +140,11 @@ def test_failure_recovery_after_run_created(
 ):
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
-    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         initial_datetime = create_pendulum_time(
             year=2019, month=2, day=27, hour=0, minute=0, second=0
         )
@@ -241,7 +252,11 @@ def test_failure_recovery_after_run_created(
 def test_failure_recovery_after_tick_success(external_repo_context, crash_location, crash_signal):
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
-    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         initial_datetime = create_pendulum_time(
             year=2019, month=2, day=27, hour=0, minute=0, second=0
         )
@@ -317,7 +332,11 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
 @pytest.mark.parametrize("crash_location", ["RUN_ADDED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_recovery_between_multi_runs(external_repo_context, crash_location, crash_signal):
-    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         initial_datetime = create_pendulum_time(
             year=2019, month=2, day=28, hour=0, minute=0, second=0
         )

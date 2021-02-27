@@ -56,13 +56,16 @@ class _ScheduleLaunchContext:
 _SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
-def execute_scheduler_iteration(instance, logger, max_catchup_runs):
+def execute_scheduler_iteration(instance, grpc_server_registry, logger, max_catchup_runs):
     end_datetime_utc = pendulum.now("UTC")
-    yield from launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
+    yield from launch_scheduled_runs(
+        instance, grpc_server_registry, logger, end_datetime_utc, max_catchup_runs
+    )
 
 
 def launch_scheduled_runs(
     instance,
+    grpc_server_registry,
     logger,
     end_datetime_utc,
     max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
@@ -81,7 +84,7 @@ def launch_scheduled_runs(
     schedule_names = ", ".join([schedule.job_name for schedule in schedules])
     logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
-    with RepositoryLocationHandleManager() as handle_manager:
+    with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
         for schedule_state in schedules:
             error_info = None
             try:

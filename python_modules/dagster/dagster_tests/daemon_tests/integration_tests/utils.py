@@ -18,10 +18,10 @@ def setup_instance(dagster_home, instance_config):
 
 
 @contextlib.contextmanager
-def start_daemon():
+def start_daemon(timeout=30):
     p = open_ipc_subprocess(["dagster-daemon", "run"])
     try:
         yield
     finally:
         interrupt_ipc_subprocess(p)
-        seven.wait_for_process(p)
+        seven.wait_for_process(p, timeout=timeout)

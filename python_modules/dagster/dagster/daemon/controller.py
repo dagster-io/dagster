@@ -4,6 +4,10 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 from dagster import check
+from dagster.core.host_representation.grpc_server_registry import (
+    GrpcServerRegistry,
+    ProcessGrpcServerRegistry,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.daemon import (
     DAEMON_HEARTBEAT_INTERVAL_SECONDS,
@@ -28,16 +32,19 @@ def _sorted_quoted(strings):
 
 
 @contextmanager
-def daemon_controller_from_instance(instance):
+def daemon_controller_from_instance(instance, wait_for_processes_on_exit=False):
     check.inst_param(instance, "instance", DagsterInstance)
     with ExitStack() as stack:
+        grpc_server_registry = stack.enter_context(
+            ProcessGrpcServerRegistry(wait_for_processes_on_exit=wait_for_processes_on_exit)
+        )
         daemons = [stack.enter_context(daemon) for daemon in create_daemons_from_instance(instance)]
-        with DagsterDaemonController(instance, daemons) as controller:
+        with DagsterDaemonController(instance, daemons, grpc_server_registry) as controller:
             yield controller
 
 
 class DagsterDaemonController:
-    def __init__(self, instance, daemons):
+    def __init__(self, instance, daemons, grpc_server_registry):
 
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -49,6 +56,10 @@ class DagsterDaemonController:
             daemon.daemon_type(): daemon
             for daemon in check.list_param(daemons, "daemons", of_type=DagsterDaemon)
         }
+
+        self._grpc_server_registry = check.inst_param(
+            grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
+        )
 
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
@@ -65,7 +76,7 @@ class DagsterDaemonController:
         for daemon_type, daemon in self._daemons.items():
             self._daemon_threads[daemon_type] = threading.Thread(
                 target=daemon.run_loop,
-                args=(self._daemon_uuid, self._daemon_shutdown_event),
+                args=(self._daemon_uuid, self._daemon_shutdown_event, self._grpc_server_registry),
                 name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
             )
             self._daemon_threads[daemon_type].start()

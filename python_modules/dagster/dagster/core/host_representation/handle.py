@@ -71,50 +71,91 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
     Represents a gRPC server that Dagster is not responsible for managing.
     """
 
-    def __init__(self, origin):
-        from dagster.grpc.client import DagsterGrpcClient
+    def __init__(
+        self,
+        origin,
+        host=None,
+        port=None,
+        socket=None,
+        server_id=None,
+        heartbeat=False,
+        watch_server=True,
+    ):
+        from dagster.grpc.client import DagsterGrpcClient, client_heartbeat_thread
         from dagster.grpc.server_watcher import create_grpc_watch_thread
 
-        self._origin = check.inst_param(origin, "origin", GrpcServerRepositoryLocationOrigin)
+        self._origin = check.inst_param(
+            origin,
+            "origin",
+            (GrpcServerRepositoryLocationOrigin, ManagedGrpcPythonEnvRepositoryLocationOrigin),
+        )
 
-        port = self.origin.port
-        socket = self.origin.socket
-        host = self.origin.host
+        if isinstance(self._origin, GrpcServerRepositoryLocationOrigin):
+            self._port = self.origin.port
+            self._socket = self.origin.socket
+            self._host = self.origin.host
+        else:
+            self._port = check.opt_int_param(port, "port")
+            self._socket = check.opt_str_param(socket, "socket")
+            self._host = check.str_param(host, "host")
 
         self._watch_thread_shutdown_event = None
         self._watch_thread = None
 
+        self._heartbeat_shutdown_event = None
+        self._heartbeat_thread = None
+
+        self._heartbeat = check.bool_param(heartbeat, "heartbeat")
+        self._watch_server = check.bool_param(watch_server, "watch_server")
+
+        self.server_id = None
+
         try:
-            self.client = DagsterGrpcClient(port=port, socket=socket, host=host)
+            self.client = DagsterGrpcClient(port=self._port, socket=self._socket, host=self._host)
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
-            self.server_id = sync_get_server_id(self.client)
+            self.server_id = server_id if server_id else sync_get_server_id(self.client)
             self.repository_names = set(
                 symbol.repository_name for symbol in list_repositories_response.repository_symbols
             )
 
-            self._state_subscribers = []
-            self._watch_thread_shutdown_event, self._watch_thread = create_grpc_watch_thread(
-                self.client,
-                on_updated=lambda new_server_id: self._send_state_event_to_subscribers(
-                    LocationStateChangeEvent(
-                        LocationStateChangeEventType.LOCATION_UPDATED,
-                        location_name=self.location_name,
-                        message="Server has been updated.",
-                        server_id=new_server_id,
-                    )
-                ),
-                on_error=lambda: self._send_state_event_to_subscribers(
-                    LocationStateChangeEvent(
-                        LocationStateChangeEventType.LOCATION_ERROR,
-                        location_name=self.location_name,
-                        message="Unable to reconnect to server. You can reload the server once it is "
-                        "reachable again",
-                    )
-                ),
-            )
+            if self._heartbeat:
+                self._heartbeat_shutdown_event = threading.Event()
 
-            self._watch_thread.start()
+                self._heartbeat_thread = threading.Thread(
+                    target=client_heartbeat_thread,
+                    args=(
+                        self.client,
+                        self._heartbeat_shutdown_event,
+                    ),
+                    name="grpc-client-heartbeat",
+                )
+                self._heartbeat_thread.daemon = True
+                self._heartbeat_thread.start()
+
+            if self._watch_server:
+                self._state_subscribers = []
+                self._watch_thread_shutdown_event, self._watch_thread = create_grpc_watch_thread(
+                    self.client,
+                    on_updated=lambda new_server_id: self._send_state_event_to_subscribers(
+                        LocationStateChangeEvent(
+                            LocationStateChangeEventType.LOCATION_UPDATED,
+                            location_name=self.location_name,
+                            message="Server has been updated.",
+                            server_id=new_server_id,
+                        )
+                    ),
+                    on_error=lambda: self._send_state_event_to_subscribers(
+                        LocationStateChangeEvent(
+                            LocationStateChangeEventType.LOCATION_ERROR,
+                            location_name=self.location_name,
+                            message="Unable to reconnect to server. You can reload the server once it is "
+                            "reachable again",
+                        )
+                    ),
+                )
+
+                self._watch_thread.start()
 
             self.executable_path = list_repositories_response.executable_path
             self.repository_code_pointer_dict = (
@@ -146,9 +187,17 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             subscriber.handle_event(event)
 
     def cleanup(self):
+        if self._heartbeat_shutdown_event:
+            self._heartbeat_shutdown_event.set()
+            self._heartbeat_shutdown_event = None
+
         if self._watch_thread_shutdown_event:
             self._watch_thread_shutdown_event.set()
             self._watch_thread_shutdown_event = None
+
+        if self._heartbeat_thread:
+            self._heartbeat_thread.join()
+            self._heartbeat_thread = None
 
         if self._watch_thread:
             self._watch_thread.join()
@@ -156,15 +205,15 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
 
     @property
     def port(self):
-        return self.origin.port
+        return self._port
 
     @property
     def socket(self):
-        return self.origin.socket
+        return self._socket
 
     @property
     def host(self):
-        return self.origin.host
+        return self._host
 
     @property
     def location_name(self):

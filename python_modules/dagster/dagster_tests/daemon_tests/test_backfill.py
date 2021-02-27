@@ -10,6 +10,7 @@ from dagster import pipeline, repository, solid
 from dagster.core.definitions import PartitionSetDefinition
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster.core.test_utils import instance_for_test
@@ -125,8 +126,9 @@ def repos():
 @contextmanager
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with external_repo_context() as external_repo:
-            yield (instance, external_repo)
+        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+            with external_repo_context() as external_repo:
+                yield (instance, grpc_server_registry, external_repo)
 
 
 def step_did_not_run(instance, run, step_name):
@@ -164,7 +166,11 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_simple_backfill(external_repo_context):
-    with instance_for_context(external_repo_context) as (instance, external_repo):
+    with instance_for_context(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
         external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
         instance.add_backfill(
             PartitionBackfill(
@@ -180,7 +186,11 @@ def test_simple_backfill(external_repo_context):
         )
         assert instance.get_runs_count() == 0
 
-        list(execute_backfill_iteration(instance, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                instance, grpc_server_registry, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
 
         assert instance.get_runs_count() == 3
         runs = instance.get_runs()
@@ -196,7 +206,11 @@ def test_simple_backfill(external_repo_context):
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_failure_backfill(external_repo_context):
     output_file = _failure_flag_file()
-    with instance_for_context(external_repo_context) as (instance, external_repo):
+    with instance_for_context(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
         external_partition_set = external_repo.get_external_partition_set(
             "conditionally_fail_partition_set"
         )
@@ -216,7 +230,11 @@ def test_failure_backfill(external_repo_context):
 
         try:
             touch_file(output_file)
-            list(execute_backfill_iteration(instance, get_default_daemon_logger("BackfillDaemon")))
+            list(
+                execute_backfill_iteration(
+                    instance, grpc_server_registry, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
             wait_for_all_runs_to_start(instance)
         finally:
             os.remove(output_file)
@@ -259,7 +277,11 @@ def test_failure_backfill(external_repo_context):
         )
 
         assert not os.path.isfile(_failure_flag_file())
-        list(execute_backfill_iteration(instance, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                instance, grpc_server_registry, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 6
@@ -293,7 +315,11 @@ def test_failure_backfill(external_repo_context):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_partial_backfill(external_repo_context):
-    with instance_for_context(external_repo_context) as (instance, external_repo):
+    with instance_for_context(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
         external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
 
         # create full runs, where every step is executed
@@ -310,7 +336,11 @@ def test_partial_backfill(external_repo_context):
             )
         )
         assert instance.get_runs_count() == 0
-        list(execute_backfill_iteration(instance, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                instance, grpc_server_registry, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
@@ -351,7 +381,11 @@ def test_partial_backfill(external_repo_context):
                 backfill_timestamp=pendulum.now().timestamp(),
             )
         )
-        list(execute_backfill_iteration(instance, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                instance, grpc_server_registry, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 6

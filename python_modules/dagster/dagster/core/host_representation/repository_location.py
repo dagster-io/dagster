@@ -297,8 +297,13 @@ class InProcessRepositoryLocation(RepositoryLocation):
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
         check.param_invariant(
-            isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle)
-            or isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle),
+            isinstance(
+                repository_location_handle,
+                (
+                    GrpcServerRepositoryLocationHandle,
+                    ManagedGrpcPythonEnvRepositoryLocationHandle,
+                ),
+            ),
             "repository_location_handle",
         )
 

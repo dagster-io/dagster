@@ -4,7 +4,6 @@ import pendulum
 from dagster import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
 from dagster.daemon.controller import (
-    DagsterDaemonController,
     all_daemons_healthy,
     all_daemons_live,
     daemon_controller_from_instance,
@@ -28,7 +27,9 @@ def test_healthy():
         assert not all_daemons_healthy(instance, curr_time_seconds=init_time.float_timestamp)
         assert not all_daemons_live(instance, curr_time_seconds=init_time.float_timestamp)
 
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
 
             while True:
                 now = pendulum.now("UTC")
@@ -54,7 +55,7 @@ def test_healthy():
 
 def test_healthy_with_different_daemons():
     with instance_for_test() as instance:
-        with daemon_controller_from_instance(instance):
+        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
 
             with instance_for_test(
                 overrides={
@@ -77,7 +78,7 @@ def test_thread_die_daemon(monkeypatch):
 
         iteration_ran = {"ran": False}
 
-        def run_iteration_error(_, _instance, _daemon_shutdown_event):
+        def run_iteration_error(_, _instance, _daemon_shutdown_event, _grpc_server_registry):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
             yield  # pylint: disable=unreachable
@@ -85,7 +86,9 @@ def test_thread_die_daemon(monkeypatch):
         monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
 
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             while True:
                 now = pendulum.now("UTC")
 
@@ -115,14 +118,16 @@ def test_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster.daemon.daemon import SensorDaemon
 
-        def run_iteration_error(_, _instance, _daemon_shutdown_event):
+        def run_iteration_error(_, _instance, _daemon_shutdown_event, _grpc_server_registry):
             raise DagsterInvariantViolationError("foobar")
             yield  # pylint: disable=unreachable
 
         monkeypatch.setattr(SensorDaemon, "run_iteration", run_iteration_error)
 
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             while True:
                 now = pendulum.now("UTC")
 
@@ -154,7 +159,7 @@ def test_multiple_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster.daemon.daemon import SensorDaemon
 
-        def run_iteration_error(_, _instance, _daemon_shutdown_event):
+        def run_iteration_error(_, _instance, _daemon_shutdown_event_, _grpc_server_registry):
             # ?message stack cls_name cause"
             yield SerializableErrorInfo("foobar", None, None, None)
             yield SerializableErrorInfo("bizbuz", None, None, None)
@@ -163,7 +168,9 @@ def test_multiple_error_daemon(monkeypatch):
 
         init_time = pendulum.now("UTC")
 
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             while True:
 
                 now = pendulum.now("UTC")
@@ -195,7 +202,7 @@ def test_warn_multiple_daemons(capsys):
     with instance_for_test() as instance:
         init_time = pendulum.now("UTC")
 
-        with daemon_controller_from_instance(instance):
+        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
             while True:
                 now = pendulum.now("UTC")
 
@@ -217,7 +224,7 @@ def test_warn_multiple_daemons(capsys):
         last_heartbeat_time = status.last_heartbeat.timestamp
 
         # No warning when a second controller starts up again
-        with daemon_controller_from_instance(instance):
+        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
             while True:
                 now = pendulum.now("UTC")
 
@@ -239,7 +246,7 @@ def test_warn_multiple_daemons(capsys):
             last_heartbeat_time = status.last_heartbeat.timestamp
 
             # Starting up a controller while one is running produces the warning though
-            with daemon_controller_from_instance(instance):
+            with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
                 # Wait for heartbeats while two controllers are running at once and there will
                 # be a warning
                 init_time = pendulum.now("UTC")

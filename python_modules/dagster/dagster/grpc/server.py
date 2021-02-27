@@ -995,16 +995,6 @@ def open_server_process_on_dynamic_port(
     return server_process, port
 
 
-def cleanup_server_process(server_process, timeout=3):
-    start_time = time.time()
-    while server_process.poll() is None and (time.time() - start_time) < timeout:
-        time.sleep(0.05)
-
-    if server_process.poll() is None:
-        server_process.terminate()
-        server_process.wait()
-
-
 class GrpcServerProcess:
     def __init__(
         self,

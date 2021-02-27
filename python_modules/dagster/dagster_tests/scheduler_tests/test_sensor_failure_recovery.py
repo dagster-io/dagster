@@ -2,6 +2,7 @@ import pendulum
 import pytest
 from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import RepositoryLocationHandleManager
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -17,8 +18,10 @@ from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime):
-                with RepositoryLocationHandleManager() as handle_manager:
+            with pendulum.test(execution_datetime), ProcessGrpcServerRegistry(
+                wait_for_processes_on_exit=True
+            ) as grpc_server_registry:
+                with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
                     list(
                         execute_sensor_iteration(
                             instance,
@@ -42,7 +45,11 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
         create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=1, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (instance, external_repo):
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
             instance.add_job_state(
@@ -132,7 +139,11 @@ def test_failure_after_run_created_before_run_launched(
         create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=0, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (instance, external_repo):
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
@@ -208,7 +219,11 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
         ),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (instance, external_repo):
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        _grpc_server_registry,
+        external_repo,
+    ):
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
