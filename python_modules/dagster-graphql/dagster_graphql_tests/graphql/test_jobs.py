@@ -1,4 +1,5 @@
 from dagster.core.host_representation import RepositoryLocationHandleManager
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (
@@ -32,12 +33,13 @@ query JobQuery($jobSelector: JobSelector!) {
 
 
 def _create_sensor_tick(instance):
-    with RepositoryLocationHandleManager() as handle_manager:
-        list(
-            execute_sensor_iteration(
-                instance, get_default_daemon_logger("SensorDaemon"), handle_manager
+    with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+        with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+            list(
+                execute_sensor_iteration(
+                    instance, get_default_daemon_logger("SensorDaemon"), handle_manager
+                )
             )
-        )
 
 
 class TestNextTickRepository(

@@ -14,7 +14,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import RunCoordinator
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
 from dagster.seven import create_pendulum_time, mock_pendulum_timezone
@@ -188,14 +188,20 @@ def register_managed_run_for_test(
     )
 
 
-def poll_for_finished_run(instance, run_id, timeout=20):
+def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
     total_time = 0
     interval = 0.01
 
+    filters = PipelineRunsFilter(
+        run_ids=[run_id] if run_id else None,
+        tags=run_tags,
+        statuses=[PipelineRunStatus.SUCCESS, PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED],
+    )
+
     while True:
-        run = instance.get_run_by_id(run_id)
-        if run.is_finished:
-            return run
+        runs = instance.get_runs(filters, limit=1)
+        if runs:
+            return runs[0]
         else:
             time.sleep(interval)
             total_time += interval

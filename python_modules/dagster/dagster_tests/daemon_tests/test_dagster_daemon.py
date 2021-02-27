@@ -20,7 +20,9 @@ def test_scheduler_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 2
@@ -37,7 +39,9 @@ def test_run_coordinator_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 3
@@ -50,7 +54,9 @@ def test_backfill_instance():
             "backfill": {"daemon_enabled": True},
         }
     ) as instance:
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 3
@@ -122,7 +128,7 @@ def test_different_intervals(caplog):
         }
     ) as instance:
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(instance):
+        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
             while True:
                 now = pendulum.now("UTC")
                 # Wait until the run coordinator has run three times
@@ -154,7 +160,7 @@ def test_set_sensor_interval(caplog):
     with instance_for_test(overrides={"sensor_settings": {"interval_seconds": 5}}) as instance:
 
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(instance):
+        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
             while True:
                 now = pendulum.now("UTC")
                 # Wait until the run coordinator has run three times

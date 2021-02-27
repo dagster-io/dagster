@@ -1,5 +1,4 @@
 import sys
-from contextlib import contextmanager
 
 import pytest
 from dagster import file_relative_path
@@ -22,13 +21,12 @@ def get_example_repository_location_handle():
     return origin.create_handle()
 
 
-@contextmanager
-def get_example_repo_handle():
+@pytest.fixture
+def foo_example_repo():
     with get_example_repository_location_handle() as location_handle:
-        yield location_handle.create_location().get_repository("example_repo").handle
+        yield location_handle.create_location().get_repository("example_repo")
 
 
 @pytest.fixture
-def foo_pipeline_handle():
-    with get_example_repo_handle() as repo_handle:
-        yield PipelineHandle("foo_pipeline", repo_handle)
+def foo_pipeline_handle(foo_example_repo):  # pylint: disable=redefined-outer-name
+    return PipelineHandle("foo_pipeline", foo_example_repo.handle)

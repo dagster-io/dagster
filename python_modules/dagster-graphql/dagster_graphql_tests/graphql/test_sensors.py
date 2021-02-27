@@ -1,6 +1,7 @@
 import pendulum
 from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import RepositoryLocationHandleManager
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.scheduler.job import JobState, JobStatus
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.sensor import execute_sensor_iteration
@@ -270,12 +271,13 @@ def test_sensor_next_ticks(graphql_context):
 
 
 def _create_tick(instance):
-    with RepositoryLocationHandleManager() as handle_manager:
-        list(
-            execute_sensor_iteration(
-                instance, get_default_daemon_logger("SensorDaemon"), handle_manager
+    with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+        with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+            list(
+                execute_sensor_iteration(
+                    instance, get_default_daemon_logger("SensorDaemon"), handle_manager
+                )
             )
-        )
 
 
 def test_sensor_tick_range(graphql_context):

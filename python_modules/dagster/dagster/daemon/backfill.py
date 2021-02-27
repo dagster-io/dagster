@@ -8,6 +8,7 @@ from dagster.core.execution.backfill import (
     PartitionBackfill,
     submit_backfill_runs,
 )
+from dagster.core.host_representation.handle_manager import RepositoryLocationHandleManager
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
@@ -32,7 +33,7 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
+def execute_backfill_iteration(instance, grpc_server_registry, logger, debug_crash_flags=None):
     check.inst_param(instance, "instance", DagsterInstance)
 
     if not instance.has_bulk_actions_table():
@@ -55,22 +56,24 @@ def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
         yield
         return
 
-    for backfill_job in backfill_jobs:
-        backfill_id = backfill_job.backfill_id
+    with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
 
-        if not backfill_job.last_submitted_partition_name:
-            logger.info(f"Starting backfill for {backfill_id}")
-        else:
-            logger.info(
-                f"Resuming backfill for {backfill_id} from {backfill_job.last_submitted_partition_name}"
+        for backfill_job in backfill_jobs:
+            backfill_id = backfill_job.backfill_id
+
+            if not backfill_job.last_submitted_partition_name:
+                logger.info(f"Starting backfill for {backfill_id}")
+            else:
+                logger.info(
+                    f"Resuming backfill for {backfill_id} from {backfill_job.last_submitted_partition_name}"
+                )
+
+            origin = (
+                backfill_job.partition_set_origin.external_repository_origin.repository_location_origin
             )
 
-        origin = (
-            backfill_job.partition_set_origin.external_repository_origin.repository_location_origin
-        )
-
-        try:
-            with origin.create_handle() as repo_location_handle:
+            try:
+                repo_location_handle = handle_manager.get_handle(origin)
                 repo_location = repo_location_handle.create_location()
                 has_more = True
                 while has_more:
@@ -105,14 +108,14 @@ def execute_backfill_iteration(instance, logger, debug_crash_flags=None):
                             backfill_job.with_status(BulkActionStatus.COMPLETED)
                         )
                         yield
-        except DagsterBackfillFailedError as e:
-            error_info = e.serializable_error_info
-            instance.update_backfill(
-                backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
-            )
-            if error_info:
-                logger.error(f"Backfill failed for {backfill_id}: {error_info.to_string()}")
-                yield error_info
+            except DagsterBackfillFailedError as e:
+                error_info = e.serializable_error_info
+                instance.update_backfill(
+                    backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                )
+                if error_info:
+                    logger.error(f"Backfill failed for {backfill_id}: {error_info.to_string()}")
+                    yield error_info
 
 
 def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):

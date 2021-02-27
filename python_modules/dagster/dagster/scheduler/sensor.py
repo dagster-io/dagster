@@ -116,7 +116,9 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_sensor_iteration_loop(instance, logger, daemon_shutdown_event, until=None):
+def execute_sensor_iteration_loop(
+    instance, grpc_server_registry, logger, daemon_shutdown_event, until=None
+):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -127,6 +129,7 @@ def execute_sensor_iteration_loop(instance, logger, daemon_shutdown_event, until
 
     handle_manager = None
     manager_loaded_time = None
+
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
 
     start_time = pendulum.now("UTC").timestamp()
@@ -142,7 +145,9 @@ def execute_sensor_iteration_loop(instance, logger, daemon_shutdown_event, until
                 or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
             ):
                 stack.pop_all()  # remove the previous context
-                handle_manager = stack.enter_context(RepositoryLocationHandleManager())
+                handle_manager = stack.enter_context(
+                    RepositoryLocationHandleManager(grpc_server_registry)
+                )
                 manager_loaded_time = start_time
 
             yield from execute_sensor_iteration(instance, logger, handle_manager)
