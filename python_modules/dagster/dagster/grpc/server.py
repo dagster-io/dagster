@@ -17,6 +17,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_target_def,
 )
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.instance import DagsterInstance
@@ -34,7 +35,7 @@ from dagster.serdes.ipc import (
 )
 from dagster.seven import multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from .__generated__ import api_pb2
@@ -739,6 +740,15 @@ class GrpcServerFailedToBindEvent(namedtuple("GrpcServerStartedEvent", "")):
     pass
 
 
+@whitelist_for_serdes
+class GrpcServerLoadErrorEvent(namedtuple("GrpcServerLoadErrorEvent", "error_info")):
+    def __new__(cls, error_info):
+        return super(GrpcServerLoadErrorEvent, cls).__new__(
+            cls,
+            check.inst_param(error_info, "error_info", SerializableErrorInfo),
+        )
+
+
 def server_termination_target(termination_event, server):
     termination_event.wait()
     # We could make this grace period configurable if we set it in the ShutdownServer handler
@@ -791,14 +801,24 @@ class DagsterGrpcServer:
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
         self._server_termination_event = threading.Event()
 
-        self._api_servicer = DagsterApiServer(
-            server_termination_event=self._server_termination_event,
-            loadable_target_origin=loadable_target_origin,
-            heartbeat=heartbeat,
-            heartbeat_timeout=heartbeat_timeout,
-            lazy_load_user_code=lazy_load_user_code,
-            fixed_server_id=fixed_server_id,
-        )
+        try:
+            self._api_servicer = DagsterApiServer(
+                server_termination_event=self._server_termination_event,
+                loadable_target_origin=loadable_target_origin,
+                heartbeat=heartbeat,
+                heartbeat_timeout=heartbeat_timeout,
+                lazy_load_user_code=lazy_load_user_code,
+                fixed_server_id=fixed_server_id,
+            )
+        except Exception:
+            if self._ipc_output_file:
+                with ipc_write_stream(self._ipc_output_file) as ipc_stream:
+                    ipc_stream.send(
+                        GrpcServerLoadErrorEvent(
+                            error_info=serializable_error_info_from_exc_info(sys.exc_info())
+                        )
+                    )
+            raise
 
         # Create a health check servicer
         self._health_servicer = health.HealthServicer()
@@ -894,6 +914,10 @@ def wait_for_grpc_server(server_process, ipc_output_file, timeout=15):
 
     if isinstance(event, GrpcServerFailedToBindEvent):
         raise CouldNotBindGrpcServerToAddress()
+    elif isinstance(event, GrpcServerLoadErrorEvent):
+        raise DagsterUserCodeProcessError(
+            event.error_info.to_string(), user_code_process_error_infos=[event.error_info]
+        )
     elif isinstance(event, GrpcServerStartedEvent):
         return True
     else:

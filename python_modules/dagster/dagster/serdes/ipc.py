@@ -172,7 +172,8 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 
         message = _process_line(file_pointer)
         while not isinstance(message, IPCEndMessage):
-            _poll_process(ipc_process)
+            if message == None:
+                _poll_process(ipc_process)
             yield message
             message = _process_line(file_pointer)
 

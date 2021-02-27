@@ -247,6 +247,7 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         from dagster.grpc.client import client_heartbeat_thread
         from dagster.grpc.server import GrpcServerProcess
 
+        self.grpc_server_process = None
         self.client = None
         self.heartbeat_shutdown_event = None
         self.heartbeat_thread = None
@@ -256,13 +257,12 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         )
         loadable_target_origin = origin.loadable_target_origin
 
-        self.grpc_server_process = GrpcServerProcess(
-            loadable_target_origin=loadable_target_origin,
-            heartbeat=True,
-            lazy_load_user_code=True,
-        )
-
         try:
+            self.grpc_server_process = GrpcServerProcess(
+                loadable_target_origin=loadable_target_origin,
+                heartbeat=True,
+            )
+
             self.client = self.grpc_server_process.create_ephemeral_client()
 
             self.heartbeat_shutdown_event = threading.Event()
