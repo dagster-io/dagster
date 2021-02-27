@@ -5,10 +5,10 @@ import uuid
 
 import pytest
 from dagster import seven
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.test_utils import new_cwd
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import wait_for_grpc_server
-from dagster.serdes.ipc import DagsterIPCProtocolError
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, find_free_port
 from dagster.utils.error import SerializableErrorInfo
@@ -69,8 +69,11 @@ def test_load_with_error(capfd):
     )
 
     try:
-        with pytest.raises(DagsterIPCProtocolError):
+        with pytest.raises(DagsterUserCodeProcessError):
             wait_for_grpc_server(process, ipc_output_file)
+
+        process.wait()
+
         _, err = capfd.readouterr()
         assert "No module named" in err
     finally:
@@ -146,8 +149,11 @@ def test_load_with_empty_working_directory(capfd):
             stdout=subprocess.PIPE,
         )
         try:
-            with pytest.raises(DagsterIPCProtocolError):
+            with pytest.raises(DagsterUserCodeProcessError):
                 wait_for_grpc_server(process, ipc_output_file)
+
+            process.wait()
+
             _, err = capfd.readouterr()
             assert "No module named" in err
         finally:
