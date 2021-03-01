@@ -18,6 +18,7 @@ from dagster import (
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.execution.api import create_execution_plan
 
 
 def builder(graph):
@@ -860,3 +861,17 @@ def test_warn_on_pipeline_return():
         @pipeline
         def _returns_something():
             return noop()
+
+
+def test_tags():
+    @solid(tags={"def": "1"})
+    def emit(_):
+        return 1
+
+    @pipeline
+    def tag():
+        emit.tag({"invoke": "2"})()
+
+    plan = create_execution_plan(tag)
+    step = list(plan.step_dict.values())[0]
+    assert step.tags == {"def": "1", "invoke": "2"}

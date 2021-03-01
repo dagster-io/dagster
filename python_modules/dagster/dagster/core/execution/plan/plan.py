@@ -219,7 +219,6 @@ class _PlanBuilder:
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
                 step_outputs = create_step_outputs(solid, handle, self.environment_config)
-                tags = solid.definition.tags
 
                 if has_unresolved_input:
                     step: ExecutionStepUnion = UnresolvedExecutionStep(
@@ -227,7 +226,7 @@ class _PlanBuilder:
                         pipeline_name=self.pipeline_name,
                         step_inputs=step_inputs,
                         step_outputs=step_outputs,
-                        tags=tags,
+                        tags=solid.tags,
                     )
                 else:
                     step = ExecutionStep(
@@ -235,7 +234,7 @@ class _PlanBuilder:
                         pipeline_name=self.pipeline_name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
-                        tags=tags,
+                        tags=solid.tags,
                     )
 
                 self.add_step(step)

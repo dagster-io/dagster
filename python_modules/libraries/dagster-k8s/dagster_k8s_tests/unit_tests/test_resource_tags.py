@@ -1,6 +1,7 @@
 import pytest
 from dagster import pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.execution.api import create_execution_plan
 from dagster_k8s.job import (
     K8S_RESOURCE_REQUIREMENTS_KEY,
     USER_DEFINED_K8S_CONFIG_KEY,
@@ -81,6 +82,40 @@ def test_user_defined_k8s_config_tags():
 
     user_defined_k8s_config = get_user_defined_k8s_config(no_resource_tags_solid.tags)
     assert user_defined_k8s_config == UserDefinedDagsterK8sConfig()
+
+
+def test_tags_to_plan():
+    @solid
+    def blank(_):
+        pass
+
+    @pipeline
+    def k8s_ready():
+        blank.tag(
+            {
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "container_config": {
+                        "resources": {
+                            "requests": {"cpu": "250m", "memory": "64Mi"},
+                            "limits": {"cpu": "500m", "memory": "2560Mi"},
+                        }
+                    }
+                }
+            }
+        )()
+
+    plan = create_execution_plan(k8s_ready)
+    step = list(plan.step_dict.values())[0]
+
+    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
+
+    assert user_defined_k8s_config.container_config
+    assert user_defined_k8s_config.container_config["resources"]
+    resources = user_defined_k8s_config.container_config["resources"]
+    assert resources["requests"]["cpu"] == "250m"
+    assert resources["requests"]["memory"] == "64Mi"
+    assert resources["limits"]["cpu"] == "500m"
+    assert resources["limits"]["memory"] == "2560Mi"
 
 
 def test_bad_user_defined_k8s_config_tags():
