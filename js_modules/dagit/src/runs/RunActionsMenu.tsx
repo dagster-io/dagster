@@ -144,7 +144,7 @@ export const RunActionsMenu: React.FC<{
           }
         }}
       >
-        <Button minimal={true} icon="more" />
+        <Button minimal={true} icon="more" style={{position: 'relative', top: '-6px'}} />
       </Popover>
       <TerminationDialog
         isOpen={visibleDialog === 'terminate'}

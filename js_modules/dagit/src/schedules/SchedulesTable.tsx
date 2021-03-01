@@ -18,6 +18,7 @@ import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
 import {JobRunStatus} from 'src/jobs/JobUtils';
+import {PipelineAndMode} from 'src/pipelines/PipelineAndMode';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {
   START_SCHEDULE_MUTATION,
@@ -99,7 +100,7 @@ export const SchedulesTable: React.FC<{
               </Tooltip>
             </Group>
           </th>
-          <th>Execution Params</th>
+          <th />
         </tr>
       </thead>
       <tbody>
@@ -235,9 +236,11 @@ const ScheduleRow: React.FC<{
               style={{position: 'relative', top: '-3px'}}
             />
             <span style={{fontSize: '13px'}}>
-              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
-                {pipelineName}
-              </Link>
+              <PipelineAndMode
+                pipelineName={pipelineName}
+                pipelineHref={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}
+                mode={mode}
+              />
             </span>
           </Group>
         </Group>
@@ -275,38 +278,35 @@ const ScheduleRow: React.FC<{
         <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
       </td>
       <td>
-        <Group direction="row" spacing={2} alignItems="center">
-          <div>{`Mode: ${mode}`}</div>
-          {schedule.partitionSet ? (
-            <Popover
-              content={
-                <Menu>
-                  <MenuItem
-                    text="View Partition History..."
-                    icon="multi-select"
-                    target="_blank"
-                    href={workspacePathFromAddress(
-                      repoAddress,
-                      `/pipelines/${pipelineName}/partitions`,
-                    )}
-                  />
-                  <MenuItem
-                    text="Launch Partition Backfill..."
-                    icon="add"
-                    target="_blank"
-                    href={workspacePathFromAddress(
-                      repoAddress,
-                      `/pipelines/${pipelineName}/partitions`,
-                    )}
-                  />
-                </Menu>
-              }
-              position="bottom"
-            >
-              <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
-            </Popover>
-          ) : null}
-        </Group>
+        {schedule.partitionSet ? (
+          <Popover
+            content={
+              <Menu>
+                <MenuItem
+                  text="View Partition History..."
+                  icon="multi-select"
+                  target="_blank"
+                  href={workspacePathFromAddress(
+                    repoAddress,
+                    `/pipelines/${pipelineName}/partitions`,
+                  )}
+                />
+                <MenuItem
+                  text="Launch Partition Backfill..."
+                  icon="add"
+                  target="_blank"
+                  href={workspacePathFromAddress(
+                    repoAddress,
+                    `/pipelines/${pipelineName}/partitions`,
+                  )}
+                />
+              </Menu>
+            }
+            position="bottom"
+          >
+            <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+          </Popover>
+        ) : null}
       </td>
     </tr>
   );

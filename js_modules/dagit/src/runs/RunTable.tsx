@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
+import {PipelineAndMode} from 'src/pipelines/PipelineAndMode';
 import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
@@ -148,7 +149,6 @@ export const RunTable = (props: RunTableProps) => {
           <th>Run ID</th>
           <th>Pipeline</th>
           <th style={{width: 110, minWidth: 110}}>Snapshot ID</th>
-          <th style={{width: 85}}>Mode</th>
           <th style={{width: 160}}>Timing</th>
           {props.additionalColumnHeaders}
           <th style={{width: 52}} />
@@ -226,7 +226,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Group direction="column" spacing={4}>
-          <div>{run.pipelineName}</div>
+          <PipelineAndMode pipelineName={run.pipelineName} mode={run.mode} />
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
         </Group>
       </td>
@@ -235,11 +235,6 @@ const RunRow: React.FC<{
           snapshotId={run.pipelineSnapshotId || ''}
           pipelineName={run.pipelineName}
         />
-      </td>
-      <td>
-        <div>
-          <div>{run.mode}</div>
-        </div>
       </td>
       <td>
         <RunTime run={run} />
