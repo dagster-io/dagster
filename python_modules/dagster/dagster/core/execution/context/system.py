@@ -327,10 +327,8 @@ class SystemStepExecutionContext(SystemExecutionContext):
         if (
             # this is re-execution
             self.pipeline_run.parent_run_id
-            # only part of the pipeline is being re-executed
-            and len(self.execution_plan.step_handles_to_execute) < len(self.execution_plan.steps)
             # this step is not being executed
-            and step_output_handle.step_key not in self.execution_plan.step_handles_to_execute
+            and not self.execution_plan.plan_executes_step_key(step_output_handle.step_key)
         ):
             return self.pipeline_run.parent_run_id
         else:

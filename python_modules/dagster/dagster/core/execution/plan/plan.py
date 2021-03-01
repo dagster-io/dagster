@@ -739,6 +739,12 @@ class ExecutionPlan(
                         return False
         return True
 
+    def plan_executes_step_key(self, step_key: str) -> bool:
+        """
+        Will or did this ExecutionPlan execute the step with the corresponding key
+        """
+        return step_key in self.executable_map
+
 
 def check_io_manager_intermediate_storage(
     mode_def: ModeDefinition, environment_config: EnvironmentConfig

@@ -7,6 +7,7 @@ from dagster import (
     reconstructable,
     solid,
 )
+from dagster.core.execution.api import reexecute_pipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
@@ -134,3 +135,14 @@ def test_composite_wrapping():
     result = execute_pipeline(deep)
     assert result.success
     assert result.result_for_solid("outer").output_value() == {"0": 0, "1": 1, "2": 2}
+
+
+def test_full_reexecute():
+    with instance_for_test() as instance:
+        result_1 = execute_pipeline(dynamic_pipeline, instance=instance)
+        assert result_1.success
+
+        result_2 = reexecute_pipeline(
+            dynamic_pipeline, parent_run_id=result_1.run_id, instance=instance
+        )
+        assert result_2.success
