@@ -2,8 +2,10 @@ import pytest
 from dagster import configured, execute_solid
 from dagster_dbt import (
     dbt_cli_compile,
+    dbt_cli_docs_generate,
     dbt_cli_run,
     dbt_cli_run_operation,
+    dbt_cli_seed,
     dbt_cli_snapshot,
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
@@ -106,6 +108,26 @@ class TestDbtCliSolids:
         self, dbt_seed, test_project_dir, dbt_config_dir
     ):  # pylint: disable=unused-argument
         test_solid = configured(dbt_cli_compile, name="test_solid")(
+            {"project-dir": test_project_dir, "profiles-dir": dbt_config_dir}
+        )
+
+        result = execute_solid(test_solid)
+        assert result.success
+
+    def test_dbt_cli_docs_generate(
+        self, dbt_seed, test_project_dir, dbt_config_dir
+    ):  # pylint: disable=unused-argument
+        test_solid = configured(dbt_cli_docs_generate, name="test_solid")(
+            {"project-dir": test_project_dir, "profiles-dir": dbt_config_dir}
+        )
+
+        result = execute_solid(test_solid)
+        assert result.success
+
+    def test_dbt_cli_seed(
+        self, dbt_seed, test_project_dir, dbt_config_dir
+    ):  # pylint: disable=unused-argument
+        test_solid = configured(dbt_cli_seed, name="test_solid")(
             {"project-dir": test_project_dir, "profiles-dir": dbt_config_dir}
         )
 
