@@ -90,6 +90,7 @@ def test_dynamic_full_reexecution(graphql_context):
     assert step_did_not_run(logs, "multiply_by_two[0]")
     assert step_did_not_run(logs, "multiply_by_two[1]")
     assert step_did_succeed(logs, "multiply_by_two[2]")
+    assert step_did_succeed(logs, "double_total")
 
 
 def test_dynamic_subset(graphql_context):
@@ -143,7 +144,12 @@ def test_dynamic_subset(graphql_context):
                     "parentRunId": parent_run_id,
                 },
                 # manual version of from-failure above
-                "stepKeys": ["multiply_inputs[2]", "multiply_by_two[2]"],
+                "stepKeys": [
+                    "multiply_inputs[2]",
+                    "multiply_by_two[2]",
+                    "sum_numbers",
+                    "double_total",
+                ],
             }
         },
     )
@@ -167,3 +173,4 @@ def test_dynamic_subset(graphql_context):
     assert step_did_not_run(logs, "multiply_by_two[0]")
     assert step_did_not_run(logs, "multiply_by_two[1]")
     assert step_did_succeed(logs, "multiply_by_two[2]")
+    assert step_did_succeed(logs, "double_total")

@@ -15,6 +15,7 @@ from dagster.utils.backcompat import experimental_arg_warning
 from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,
+    DynamicCollectDependencyDefinition,
     MultiDependencyDefinition,
     SolidHandle,
     SolidInvocation,
@@ -512,14 +513,24 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
 
     for solid in solids:
         for input_handle in solid.input_handles():
-            if pipeline_def.dependency_structure.has_singular_dep(input_handle):
-                output_handle = pipeline_def.dependency_structure.get_singular_dep(input_handle)
+            if pipeline_def.dependency_structure.has_direct_dep(input_handle):
+                output_handle = pipeline_def.dependency_structure.get_direct_dep(input_handle)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            elif pipeline_def.dependency_structure.has_multi_deps(input_handle):
-                output_handles = pipeline_def.dependency_structure.get_multi_deps(input_handle)
+            if pipeline_def.dependency_structure.has_dynamic_fan_in_dep(input_handle):
+                output_handle = pipeline_def.dependency_structure.get_dynamic_fan_in_dep(
+                    input_handle
+                )
+                if output_handle.solid.name in solids_to_execute:
+                    deps[_dep_key_of(solid)][
+                        input_handle.input_def.name
+                    ] = DynamicCollectDependencyDefinition(
+                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                    )
+            elif pipeline_def.dependency_structure.has_fan_in_deps(input_handle):
+                output_handles = pipeline_def.dependency_structure.get_fan_in_deps(input_handle)
                 deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
                     [
                         DependencyDefinition(

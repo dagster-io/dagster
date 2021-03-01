@@ -1,5 +1,4 @@
 import time
-from collections import defaultdict
 from typing import Callable, Dict, Iterator, List, Optional, Set, cast
 
 from dagster import check
@@ -57,9 +56,7 @@ class ActiveExecution:
         self._pending: Dict[str, Set[str]] = self._plan.get_executable_step_deps()
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
-        self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = defaultdict(
-            lambda: defaultdict(list)
-        )
+        self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = {}
 
         # steps move in to these buckets as a result of _update calls
         self._executable: List[str] = []
@@ -255,6 +252,8 @@ class ActiveExecution:
         for step in steps:
             self._in_flight.add(step.key)
             self._executable.remove(step.key)
+            self._prep_for_dynamic_outputs(step)
+
         return steps
 
     def get_steps_to_skip(self) -> List[ExecutionStep]:
@@ -452,3 +451,9 @@ class ActiveExecution:
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
             dynamic_mappings=dict(self._successful_dynamic_outputs),
         )
+
+    def _prep_for_dynamic_outputs(self, step: ExecutionStep):
+        dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
+
+        if dyn_outputs:
+            self._successful_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}

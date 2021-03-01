@@ -79,7 +79,8 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
 
 class GrapheneStepKind(graphene.Enum):
     COMPUTE = "COMPUTE"
-    UNRESOLVED = "UNRESOLVED"
+    UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED"
+    UNRESOLVED_COLLECT = "UNRESOLVED_COLLECT"
 
     class Meta:
         name = "StepKind"
@@ -88,8 +89,10 @@ class GrapheneStepKind(graphene.Enum):
     def description(self):
         if self == GrapheneStepKind.COMPUTE:
             return "This is a user-defined computation step"
-        if self == GrapheneStepKind.UNRESOLVED:
-            return "This is a computation step that has not yet been resolved"
+        if self == GrapheneStepKind.UNRESOLVED_MAPPED:
+            return "This is a mapped step that has not yet been resolved"
+        if self == GrapheneStepKind.UNRESOLVED_COLLECT:
+            return "This is a collect step that is not yet resolved"
         else:
             return None
 

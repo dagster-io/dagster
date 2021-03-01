@@ -387,7 +387,7 @@ def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name
         solid_input_handle = SolidInputHandle(target_solid, target_input)
 
         if mapping.maps_to_fan_in:
-            if not dependency_structure.has_multi_deps(solid_input_handle):
+            if not dependency_structure.has_fan_in_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
                     'In {class_name} "{name}" input mapping target '
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
@@ -395,7 +395,7 @@ def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name
                         name=name, mapping=mapping, class_name=class_name
                     )
                 )
-            inner_deps = dependency_structure.get_multi_deps(solid_input_handle)
+            inner_deps = dependency_structure.get_fan_in_deps(solid_input_handle)
             if (mapping.maps_to.fan_in_index >= len(inner_deps)) or (
                 inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
@@ -445,8 +445,8 @@ def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name
             )
 
     for input_handle in dependency_structure.input_handles():
-        if dependency_structure.has_multi_deps(input_handle):
-            for idx, dep in enumerate(dependency_structure.get_multi_deps(input_handle)):
+        if dependency_structure.has_fan_in_deps(input_handle):
+            for idx, dep in enumerate(dependency_structure.get_fan_in_deps(input_handle)):
                 if dep is MappedInputPlaceholder:
                     mapping_str = (
                         "{input_handle.solid_name}.{input_handle.input_name}.{idx}".format(

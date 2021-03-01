@@ -1,13 +1,14 @@
+from abc import abstractmethod, abstractproperty
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Set, Union
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Set, Type, Union
 
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
 from dagster.utils import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
-from .inputs import StepInput, UnresolvedStepInput
+from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
 from .outputs import StepOutput
 
 if TYPE_CHECKING:
@@ -15,20 +16,50 @@ if TYPE_CHECKING:
     from dagster.core.definitions.hook import HookDefinition
 
 
-@whitelist_for_serdes
+class StepKindSerializer(DefaultEnumSerializer):
+    @classmethod
+    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+        # old name for unresolved mapped
+        if storage_str == "UNRESOLVED":
+            value = "UNRESOLVED_MAPPED"
+        else:
+            value = storage_str
+        return super().value_from_storage_str(value, klass)
+
+
+@whitelist_for_serdes(StepKindSerializer)
 class StepKind(Enum):
     COMPUTE = "COMPUTE"
-    UNRESOLVED = "UNRESOLVED"
+    UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED"
+    UNRESOLVED_COLLECT = "UNRESOLVED_COLLECT"
 
 
-def is_executable_step(step: Union["ExecutionStep", "UnresolvedExecutionStep"]) -> bool:
+def is_executable_step(step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]) -> bool:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
         return True
-    elif isinstance(step, UnresolvedExecutionStep):
+    elif isinstance(step, UnresolvedMappedExecutionStep):
         return False
     else:
         check.failed(f"Unexpected execution step type {step}")
+
+
+class IExecutionStep:
+    @abstractproperty
+    def handle(self):
+        pass
+
+    @abstractproperty
+    def key(self):
+        pass
+
+    @abstractproperty
+    def solid_handle(self):
+        pass
+
+    @abstractmethod
+    def step_output_named(self, name: str) -> StepOutput:
+        pass
 
 
 class ExecutionStep(
@@ -42,8 +73,13 @@ class ExecutionStep(
             ("tags", Dict[str, str]),
             ("logging_tags", Dict[str, str]),
         ],
-    )
+    ),
+    IExecutionStep,
 ):
+    """
+    A fully resolved step in the execution graph.
+    """
+
     def __new__(
         cls,
         handle: Union[StepHandle, ResolvedFromDynamicStepHandle],
@@ -129,34 +165,39 @@ class ExecutionStep(
         return None
 
 
-class UnresolvedExecutionStep(
+class UnresolvedMappedExecutionStep(
     NamedTuple(
-        "_UnresolvedExecutionStep",
+        "_UnresolvedMappedExecutionStep",
         [
             ("handle", UnresolvedStepHandle),
             ("pipeline_name", str),
-            ("step_input_dict", Dict[str, Union[StepInput, UnresolvedStepInput]]),
+            ("step_input_dict", Dict[str, Union[StepInput, UnresolvedMappedStepInput]]),
             ("step_output_dict", Dict[str, StepOutput]),
             ("tags", Dict[str, str]),
         ],
-    )
+    ),
+    IExecutionStep,
 ):
+    """
+    A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys.
+    """
+
     def __new__(
         cls,
         handle: UnresolvedStepHandle,
         pipeline_name: str,
-        step_inputs: List[Union[StepInput, UnresolvedStepInput]],
+        step_inputs: List[Union[StepInput, UnresolvedMappedStepInput]],
         step_outputs: List[StepOutput],
         tags: Optional[Dict[str, str]],
     ):
-        return super(UnresolvedExecutionStep, cls).__new__(
+        return super(UnresolvedMappedExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", UnresolvedStepHandle),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             step_input_dict={
                 si.name: si
                 for si in check.list_param(
-                    step_inputs, "step_inputs", of_type=(StepInput, UnresolvedStepInput)
+                    step_inputs, "step_inputs", of_type=(StepInput, UnresolvedMappedStepInput)
                 )
             },
             step_output_dict={
@@ -176,14 +217,14 @@ class UnresolvedExecutionStep(
 
     @property
     def kind(self) -> StepKind:
-        return StepKind.UNRESOLVED
+        return StepKind.UNRESOLVED_MAPPED
 
     @property
     def step_outputs(self) -> List[StepOutput]:
         return list(self.step_output_dict.values())
 
     @property
-    def step_inputs(self) -> List[Union[StepInput, UnresolvedStepInput]]:
+    def step_inputs(self) -> List[Union[StepInput, UnresolvedMappedStepInput]]:
         return list(self.step_input_dict.values())
 
     def step_output_named(self, name: str) -> StepOutput:
@@ -197,7 +238,7 @@ class UnresolvedExecutionStep(
                 deps.update(
                     [handle.step_key for handle in inp.get_step_output_handle_dependencies()]
                 )
-            elif isinstance(inp, UnresolvedStepInput):
+            elif isinstance(inp, UnresolvedMappedStepInput):
                 deps.update(
                     [
                         handle.step_key
@@ -213,7 +254,7 @@ class UnresolvedExecutionStep(
     def resolved_by_step_key(self) -> str:
         keys = set()
         for inp in self.step_inputs:
-            if isinstance(inp, UnresolvedStepInput):
+            if isinstance(inp, UnresolvedMappedStepInput):
                 keys.add(inp.resolved_by_step_key)
 
         check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
@@ -224,7 +265,7 @@ class UnresolvedExecutionStep(
     def resolved_by_output_name(self) -> str:
         keys = set()
         for inp in self.step_inputs:
-            if isinstance(inp, UnresolvedStepInput):
+            if isinstance(inp, UnresolvedMappedStepInput):
                 keys.add(inp.resolved_by_output_name)
 
         check.invariant(
@@ -264,7 +305,137 @@ class UnresolvedExecutionStep(
         return execution_steps
 
 
-def _resolved_input(step_input: Union[StepInput, UnresolvedStepInput], map_key: str):
+def _resolved_input(step_input: Union[StepInput, UnresolvedMappedStepInput], map_key: str):
     if isinstance(step_input, StepInput):
         return step_input
     return step_input.resolve(map_key)
+
+
+class UnresolvedCollectExecutionStep(
+    NamedTuple(
+        "_UnresolvedCollectExecutionStep",
+        [
+            ("handle", StepHandle),
+            ("pipeline_name", str),
+            ("step_input_dict", Dict[str, Union[StepInput, UnresolvedCollectStepInput]]),
+            ("step_output_dict", Dict[str, StepOutput]),
+            ("tags", Dict[str, str]),
+        ],
+    ),
+    IExecutionStep,
+):
+    """
+    A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves.
+    """
+
+    def __new__(
+        cls,
+        handle: StepHandle,
+        pipeline_name: str,
+        step_inputs: List[Union[StepInput, UnresolvedCollectStepInput]],
+        step_outputs: List[StepOutput],
+        tags: Optional[Dict[str, str]],
+    ):
+        return super(UnresolvedCollectExecutionStep, cls).__new__(
+            cls,
+            handle=check.inst_param(handle, "handle", StepHandle),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            step_input_dict={
+                si.name: si
+                for si in check.list_param(
+                    step_inputs, "step_inputs", of_type=(StepInput, UnresolvedCollectStepInput)
+                )
+            },
+            step_output_dict={
+                so.name: so
+                for so in check.list_param(step_outputs, "step_outputs", of_type=StepOutput)
+            },
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
+        )
+
+    @property
+    def solid_handle(self) -> "SolidHandle":
+        return self.handle.solid_handle
+
+    @property
+    def key(self) -> str:
+        return self.handle.to_key()
+
+    @property
+    def kind(self) -> StepKind:
+        return StepKind.UNRESOLVED_COLLECT
+
+    @property
+    def step_outputs(self) -> List[StepOutput]:
+        return list(self.step_output_dict.values())
+
+    @property
+    def step_inputs(self) -> List[Union[StepInput, UnresolvedCollectStepInput]]:
+        return list(self.step_input_dict.values())
+
+    def step_output_named(self, name: str) -> StepOutput:
+        check.str_param(name, "name")
+        return self.step_output_dict[name]
+
+    def get_all_dependency_keys(self) -> Set[str]:
+        deps = set()
+        for inp in self.step_inputs:
+            if isinstance(inp, StepInput):
+                deps.update(
+                    [handle.step_key for handle in inp.get_step_output_handle_dependencies()]
+                )
+            elif isinstance(inp, UnresolvedCollectStepInput):
+                deps.update(
+                    [
+                        handle.step_key
+                        for handle in inp.get_step_output_handle_deps_with_placeholders()
+                    ]
+                )
+            else:
+                check.failed(f"Unexpected step input type {inp}")
+
+        return deps
+
+    @property
+    def resolved_by_step_key(self) -> str:
+        keys = set()
+        for inp in self.step_inputs:
+            if isinstance(inp, UnresolvedCollectStepInput):
+                keys.add(inp.resolved_by_step_key)
+
+        check.invariant(len(keys) == 1, "Pending step expects one and only one dynamic step key")
+
+        return list(keys)[0]
+
+    @property
+    def resolved_by_output_name(self) -> str:
+        keys = set()
+        for inp in self.step_inputs:
+            if isinstance(inp, UnresolvedCollectStepInput):
+                keys.add(inp.resolved_by_output_name)
+
+        check.invariant(len(keys) == 1, "Pending step expects one and only one dynamic output name")
+
+        return list(keys)[0]
+
+    def resolve(self, resolved_by_step_key: str, mappings: Dict[str, List[str]]) -> ExecutionStep:
+        check.invariant(
+            self.resolved_by_step_key == resolved_by_step_key,
+            "resolving dynamic output step key did not match",
+        )
+
+        mapped_keys = mappings[self.resolved_by_output_name]
+        resolved_inputs = []
+        for inp in self.step_inputs:
+            if isinstance(inp, StepInput):
+                resolved_inputs.append(inp)
+            else:
+                resolved_inputs.append(inp.resolve(mapped_keys))
+
+        return ExecutionStep(
+            handle=self.handle,
+            pipeline_name=self.pipeline_name,
+            step_inputs=resolved_inputs,
+            step_outputs=self.step_outputs,
+            tags=self.tags,
+        )

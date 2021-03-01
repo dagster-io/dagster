@@ -17,7 +17,7 @@ describe('toGraphQueryItems', () => {
             {
               __typename: 'ExecutionStep',
               key: 'b',
-              kind: StepKind.UNRESOLVED,
+              kind: StepKind.UNRESOLVED_MAPPED,
               inputs: [
                 {
                   __typename: 'ExecutionStepInput',
@@ -67,7 +67,7 @@ describe('toGraphQueryItems', () => {
             {
               __typename: 'ExecutionStep',
               key: 'b[?]',
-              kind: StepKind.UNRESOLVED,
+              kind: StepKind.UNRESOLVED_MAPPED,
               inputs: [
                 {
                   __typename: 'ExecutionStepInput',
@@ -94,7 +94,7 @@ describe('toGraphQueryItems', () => {
             {
               __typename: 'ExecutionStep',
               key: 'c[?]',
-              kind: StepKind.UNRESOLVED,
+              kind: StepKind.UNRESOLVED_MAPPED,
               inputs: [
                 {
                   __typename: 'ExecutionStepInput',
@@ -102,7 +102,7 @@ describe('toGraphQueryItems', () => {
                     {
                       __typename: 'ExecutionStep',
                       key: 'b[?]',
-                      kind: StepKind.UNRESOLVED,
+                      kind: StepKind.UNRESOLVED_MAPPED,
                       outputs: [
                         {
                           __typename: 'ExecutionStepOutput',

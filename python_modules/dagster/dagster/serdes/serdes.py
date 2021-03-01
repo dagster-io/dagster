@@ -110,7 +110,6 @@ class EnumSerializer(Serializer):
 
 class DefaultEnumSerializer(EnumSerializer):
     @classmethod
-    @abstractmethod
     def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
         return getattr(klass, storage_str)
 

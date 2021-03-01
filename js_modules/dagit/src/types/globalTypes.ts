@@ -124,7 +124,8 @@ export enum StepEventStatus {
 
 export enum StepKind {
   COMPUTE = "COMPUTE",
-  UNRESOLVED = "UNRESOLVED",
+  UNRESOLVED_COLLECT = "UNRESOLVED_COLLECT",
+  UNRESOLVED_MAPPED = "UNRESOLVED_MAPPED",
 }
 
 export enum TerminatePipelinePolicy {

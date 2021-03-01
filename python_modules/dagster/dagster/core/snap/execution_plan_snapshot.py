@@ -1,11 +1,20 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.execution.plan.inputs import StepInput, UnresolvedStepInput
+from dagster.core.execution.plan.inputs import (
+    StepInput,
+    UnresolvedCollectStepInput,
+    UnresolvedMappedStepInput,
+)
 from dagster.core.execution.plan.outputs import StepOutput, StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.plan.step import ExecutionStep, StepKind, UnresolvedExecutionStep
+from dagster.core.execution.plan.step import (
+    ExecutionStep,
+    StepKind,
+    UnresolvedCollectExecutionStep,
+    UnresolvedMappedExecutionStep,
+)
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -128,8 +137,10 @@ class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap",
 
 
 def _snapshot_from_step_input(step_input):
-    check.inst_param(step_input, "step_input", (StepInput, UnresolvedStepInput))
-    if isinstance(step_input, UnresolvedStepInput):
+    check.inst_param(
+        step_input, "step_input", (StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput)
+    )
+    if isinstance(step_input, (UnresolvedMappedStepInput, UnresolvedCollectStepInput)):
         upstream_output_handles = step_input.get_step_output_handle_deps_with_placeholders()
     else:
         upstream_output_handles = step_input.get_step_output_handle_dependencies()
@@ -148,7 +159,11 @@ def _snapshot_from_step_output(step_output):
 
 
 def _snapshot_from_execution_step(execution_step):
-    check.inst_param(execution_step, "execution_step", (ExecutionStep, UnresolvedExecutionStep))
+    check.inst_param(
+        execution_step,
+        "execution_step",
+        (ExecutionStep, UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep),
+    )
     return ExecutionStepSnap(
         key=execution_step.key,
         inputs=sorted(

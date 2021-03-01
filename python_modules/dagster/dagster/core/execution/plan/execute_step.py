@@ -128,7 +128,7 @@ def _step_output_error_checked_user_event_sequence(
                     )
                 )
                 yield Output(output_name=step_output_def.name, value=None)
-            else:
+            elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(
                     'Core compute for solid "{handle}" did not return an output '
                     'for non-optional output "{step_output_def.name}"'.format(

@@ -508,6 +508,14 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'dynamic_pipeline'
                         },
                         'solidHandle': {
+                            'handleID': 'double_total'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_pipeline'
+                        },
+                        'solidHandle': {
                             'handleID': 'multiply_by_two'
                         }
                     }
@@ -957,6 +965,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'sum_inputs'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'sum_numbers'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'sum_numbers'
                         }
                     }
                 ]

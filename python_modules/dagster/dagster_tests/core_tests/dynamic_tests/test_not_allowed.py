@@ -143,3 +143,38 @@ def test_direct_dep():
                 dynamic_add(item).map(echo)
 
             dynamic_solid().map(_add_echo)
+
+    @pipeline
+    def _is_fine():
+        dynamic_solid().map(dynamic_add)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="cannot be downstream of more than one dynamic output",
+    ):
+
+        @pipeline
+        def _should_fail():
+            echo(dynamic_solid().map(dynamic_add).collect())
+
+
+def test_collect_and_dep():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="cannot both collect over dynamic output",
+    ):
+
+        @pipeline
+        def _bad():
+            x = dynamic_solid()
+            x.map(lambda y: add(y, x.collect()))
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="cannot be both downstream of dynamic output",
+    ):
+
+        @pipeline
+        def _bad():
+            x = dynamic_solid()
+            x.map(lambda y: add(x.collect(), y))

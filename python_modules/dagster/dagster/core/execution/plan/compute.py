@@ -42,6 +42,7 @@ def create_step_outputs(
             name=output_def.name,
             dagster_type_key=output_def.dagster_type.key,
             is_required=output_def.is_required,
+            is_dynamic=output_def.is_dynamic,
             is_asset=output_def.is_asset,
             get_asset_key=output_def.get_asset_key,
             get_asset_partitions=output_def.get_asset_partitions,

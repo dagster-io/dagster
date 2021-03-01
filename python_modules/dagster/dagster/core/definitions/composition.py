@@ -1,5 +1,6 @@
 import warnings
 from collections import namedtuple
+from typing import NamedTuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -7,7 +8,12 @@ from dagster.utils import frozentags
 
 from .config import ConfigMapping
 from .decorators.solid import validate_solid_fn
-from .dependency import DependencyDefinition, MultiDependencyDefinition, SolidInvocation
+from .dependency import (
+    DependencyDefinition,
+    DynamicCollectDependencyDefinition,
+    MultiDependencyDefinition,
+    SolidInvocation,
+)
 from .hook import HookDefinition
 from .inference import (
     has_explicit_return_type,
@@ -183,6 +189,10 @@ class CompleteCompositionContext(
                             check.invariant("Unexpected fanned in node received")
 
                     deps[input_name] = MultiDependencyDefinition(entries)
+                elif isinstance(node, DynamicFanIn):
+                    deps[input_name] = DynamicCollectDependencyDefinition(
+                        node.solid_name, node.output_name
+                    )
                 else:
                     check.failed("Unexpected input binding - got {node}".format(node=node))
 
@@ -308,7 +318,7 @@ class PendingNodeInvocation:
 
     def _process_argument_node(self, solid_name, output_node, input_name, input_bindings, arg_desc):
 
-        if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode)):
+        if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode, DynamicFanIn)):
             input_bindings[input_name] = output_node
 
         elif isinstance(output_node, list):
@@ -352,7 +362,7 @@ class PendingNodeInvocation:
             raise DagsterInvalidDefinitionError(
                 f"In {current_context().source} {current_context().name}, received the dynamic output "
                 f"{output_node.output_name} from solid {output_node.solid_name} directly. Dynamic "
-                "output must be unpacked by invoking map."
+                "output must be unpacked by invoking map or collect."
             )
 
         elif isinstance(output_node, PendingNodeInvocation) or isinstance(
@@ -468,10 +478,20 @@ class InvokedSolidOutputHandle:
         )
 
 
+class DynamicFanIn(NamedTuple):
+    """
+    Type to signify collecting over a dynamic output, output by collect() on a
+    InvokedSolidDynamicOutputWrapper
+    """
+
+    solid_name: str
+    output_name: str
+
+
 class InvokedSolidDynamicOutputWrapper:
     """
     The return value for a dynamic output when invoking a solid in a composition function.
-    Must be unwrapped by invoking map.
+    Must be unwrapped by invoking map or collect.
     """
 
     def __init__(self, solid_name, output_name):
@@ -481,6 +501,7 @@ class InvokedSolidDynamicOutputWrapper:
     def map(self, fn):
         check.is_callable(fn)
         result = fn(InvokedSolidOutputHandle(self.solid_name, self.output_name))
+
         if isinstance(result, InvokedSolidOutputHandle):
             return InvokedSolidDynamicOutputWrapper(result.solid_name, result.output_name)
         elif isinstance(result, tuple) and all(
@@ -496,10 +517,15 @@ class InvokedSolidDynamicOutputWrapper:
             )
         elif result is None:
             return None
+        elif isinstance(result, InvokedSolidDynamicOutputWrapper):
+            return result
         else:
             check.failed(
                 f"Could not handle output from map function invoked on {self.solid_name}:{self.output_name}, received {result}"
             )
+
+    def collect(self):
+        return DynamicFanIn(self.solid_name, self.output_name)
 
     def unwrap_for_composite_mapping(self):
         return InvokedSolidOutputHandle(self.solid_name, self.output_name)

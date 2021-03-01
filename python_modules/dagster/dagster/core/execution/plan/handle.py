@@ -37,7 +37,7 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", SolidHandle)])):
 
 
 class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle", SolidHandle)])):
-    """A reference to an UnresolvedExecutionStep in an execution"""
+    """A reference to an UnresolvedMappedExecutionStep in an execution"""
 
     def __new__(cls, solid_handle: Optional[SolidHandle]):
         return super(UnresolvedStepHandle, cls).__new__(
@@ -59,7 +59,7 @@ class ResolvedFromDynamicStepHandle(
     )
 ):
     """
-    A reference to an ExecutionStep that came from resolving an UnresolvedExecutionStep
+    A reference to an ExecutionStep that came from resolving an UnresolvedMappedExecutionStep
     (and associated UnresolvedStepHandle) downstream of a dynamic output after it has
     completed successfully.
     """

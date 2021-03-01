@@ -828,8 +828,20 @@ def dynamic_pipeline():
         for i in range(3):
             yield DynamicOutput(value=i, mapping_key=str(i))
 
+    @solid
+    def sum_numbers(_, nums):
+        return sum(nums)
+
     # pylint: disable=no-member
-    emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
+    multiply_by_two.alias("double_total")(
+        sum_numbers(
+            emit()
+            .map(
+                lambda n: multiply_by_two(multiply_inputs(n, emit_ten())),
+            )
+            .collect(),
+        )
+    )
 
 
 def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):

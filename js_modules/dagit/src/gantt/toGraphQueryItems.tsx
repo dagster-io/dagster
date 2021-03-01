@@ -22,7 +22,7 @@ export const toGraphQueryItems = (
   const keyExpansionMap: {[key: string]: string[]} = {};
 
   for (const step of plan.steps) {
-    if (step.kind === StepKind.UNRESOLVED) {
+    if (step.kind === StepKind.UNRESOLVED_MAPPED) {
       const runtime = invocationsOfPlannedDynamicStep(step.key, runtimeStepKeys);
       keyExpansionMap[step.key] = runtime;
       for (const k of runtime) {
@@ -44,30 +44,45 @@ export const toGraphQueryItems = (
   for (const step of plan.steps) {
     for (const input of step.inputs) {
       const keys = keyExpansionMap[step.key] ? keyExpansionMap[step.key] : [step.key];
+
       for (const key of keys) {
         nodeTable[key].inputs.push({
           dependsOn: input.dependsOn.map((d) => ({
             solid: {
-              name: d.kind === StepKind.UNRESOLVED ? replacePlannedIndex(d.key, key) : d.key,
+              name:
+                d.kind === StepKind.UNRESOLVED_MAPPED && step.kind !== StepKind.UNRESOLVED_COLLECT
+                  ? replacePlannedIndex(d.key, key)
+                  : d.key,
             },
           })),
         });
 
         for (const upstream of input.dependsOn) {
-          const upstreamKey =
-            upstream.kind === StepKind.UNRESOLVED
-              ? replacePlannedIndex(upstream.key, key)
-              : upstream.key;
-          let output = nodeTable[upstreamKey].outputs[0];
-          if (!output) {
-            output = {
-              dependedBy: [],
-            };
-            nodeTable[upstreamKey].outputs.push(output);
+          let upstreamKeys = [];
+          if (step.kind === StepKind.UNRESOLVED_MAPPED) {
+            upstreamKeys = [
+              upstream.kind === StepKind.UNRESOLVED_MAPPED
+                ? replacePlannedIndex(upstream.key, key)
+                : upstream.key,
+            ];
+          } else if (step.kind == StepKind.UNRESOLVED_COLLECT) {
+            upstreamKeys = keyExpansionMap[upstream.key];
+          } else {
+            upstreamKeys = [upstream.key];
           }
-          output.dependedBy.push({
-            solid: {name: key},
-          });
+
+          for (const upstreamKey of upstreamKeys) {
+            let output = nodeTable[upstreamKey].outputs[0];
+            if (!output) {
+              output = {
+                dependedBy: [],
+              };
+              nodeTable[upstreamKey].outputs.push(output);
+            }
+            output.dependedBy.push({
+              solid: {name: key},
+            });
+          }
         }
       }
     }
