@@ -209,7 +209,7 @@ const StructuredMemoizedContent: React.FunctionComponent<{
     <StructuredContent>
       <LogsRowStructuredContent node={node} metadata={metadata} />
     </StructuredContent>
-    <TimestampColumn time={'timestamp' in node && node.timestamp} />
+    <TimestampColumn time={'timestamp' in node ? node.timestamp : null} />
   </Row>
 ));
 

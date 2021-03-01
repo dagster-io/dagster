@@ -1,5 +1,4 @@
 import {Colors} from '@blueprintjs/core';
-import moment from 'moment-timezone';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -118,18 +117,38 @@ const SolidColumnTooltipStyle = JSON.stringify({
 
 // Timestamp Column
 
-export const TimestampColumn = (props: {time: string | false}) => {
+export const TimestampColumn: React.FC<{time: string | null}> = React.memo((props) => {
   const widths = React.useContext(ColumnWidthsContext);
   const [timezone] = React.useContext(TimezoneContext);
+  const timeString = () => {
+    const {time} = props;
+    if (time) {
+      const timeNumber = Number(time);
+      const locale = navigator.language;
+      const main = new Date(timeNumber).toLocaleTimeString(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+      });
+      const fractionalSec = (timeNumber % 1000) / 1000;
+      return `${main}${fractionalSec
+        .toLocaleString(locale, {
+          minimumFractionDigits: 3,
+          maximumFractionDigits: 3,
+        })
+        .slice(1)}`;
+    }
+    return '';
+  };
+
   return (
     <TimestampColumnContainer style={{width: widths.timestamp}}>
-      {props.time &&
-        moment(Number(props.time))
-          .tz(timezone === 'Automatic' ? browserTimezone() : timezone)
-          .format('HH:mm:ss.SSS')}
+      {timeString()}
     </TimestampColumnContainer>
   );
-};
+});
 
 const TimestampColumnContainer = styled.div`
   flex-shrink: 0;

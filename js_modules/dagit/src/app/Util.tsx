@@ -42,7 +42,10 @@ function twoDigit(v: number) {
 
 export const formatElapsedTime = (msec: number) => {
   if (msec < 10000) {
-    return `${(msec / 1000).toFixed(3)}s`;
+    return `${(msec / 1000).toLocaleString(navigator.language, {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    })}s`;
   }
 
   const sec = Math.round(msec / 1000) % 60;
