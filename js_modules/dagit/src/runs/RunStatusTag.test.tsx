@@ -8,12 +8,12 @@ describe('RunStatusTag', () => {
   describe('Status type', () => {
     it('renders `succeeded`', () => {
       render(<RunStatusTag status={PipelineRunStatus.SUCCESS} />);
-      expect(screen.getByText(/succeeded/i)).toBeVisible();
+      expect(screen.getByText(/success/i)).toBeVisible();
     });
 
     it('renders `failed`', () => {
       render(<RunStatusTag status={PipelineRunStatus.FAILURE} />);
-      expect(screen.getByText(/failed/i)).toBeVisible();
+      expect(screen.getByText(/failure/i)).toBeVisible();
     });
 
     it('renders `started`', () => {

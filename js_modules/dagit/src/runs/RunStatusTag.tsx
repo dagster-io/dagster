@@ -20,7 +20,7 @@ export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
     case PipelineRunStatus.SUCCESS:
       return (
         <StatusTag minimal intent="success">
-          Succeeded
+          Success
         </StatusTag>
       );
     case PipelineRunStatus.STARTING:
@@ -38,7 +38,7 @@ export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
     case PipelineRunStatus.FAILURE:
       return (
         <StatusTag minimal intent="danger">
-          Failed
+          Failure
         </StatusTag>
       );
     case PipelineRunStatus.STARTED:
@@ -95,5 +95,6 @@ export const RunStatusTagWithStats = (props: Props) => {
 
 const StatusTag = styled(Tag)`
   cursor: default;
+  text-transform: uppercase;
   user-select: none;
 `;

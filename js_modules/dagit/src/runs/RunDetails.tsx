@@ -25,7 +25,7 @@ const timingStringForStatus = (status?: PipelineRunStatus) => {
     case PipelineRunStatus.NOT_STARTED:
       return 'Waiting to start…';
     case PipelineRunStatus.STARTED:
-      return 'Running…';
+      return 'Started…';
     case PipelineRunStatus.STARTING:
       return 'Starting…';
     case PipelineRunStatus.SUCCESS:

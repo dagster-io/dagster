@@ -204,7 +204,7 @@ describe('RunDetails', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /ended running…/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /ended started…/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
     });
   });
