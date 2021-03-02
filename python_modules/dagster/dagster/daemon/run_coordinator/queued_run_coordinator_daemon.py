@@ -14,7 +14,6 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.daemon.daemon import DagsterDaemon
-from dagster.utils.backcompat import experimental
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.external import external_pipeline_from_location_handle
 
@@ -82,7 +81,6 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     store and launches them.
     """
 
-    @experimental
     def __init__(
         self,
         interval_seconds,
