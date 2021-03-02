@@ -239,6 +239,31 @@ def test_load_from_grpc_server():
         validation_result = _validate_yaml_contents(valid_yaml)
 
         assert validation_result.success
+        valid_yaml = """
+    load_from:
+        - grpc_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+            ssl: true
+    """
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success
+
+        valid_yaml = """
+    load_from:
+        - grpc_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+            ssl: false
+    """
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success
 
 
 def test_load_from_grpc_server_env():

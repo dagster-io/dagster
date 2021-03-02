@@ -304,6 +304,12 @@ def grpc_server_target_click_options():
             required=False,
             help=("Host to use to connect to gRPC server, defaults to localhost"),
         ),
+        click.option(
+            "--use-ssl",
+            is_flag=True,
+            required=False,
+            help=("Use a secure channel when connecting to the gRPC server"),
+        ),
     ]
 
 

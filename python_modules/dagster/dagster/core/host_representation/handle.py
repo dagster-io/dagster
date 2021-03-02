@@ -94,10 +94,12 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             self._port = self.origin.port
             self._socket = self.origin.socket
             self._host = self.origin.host
+            self._use_ssl = bool(self.origin.use_ssl)
         else:
             self._port = check.opt_int_param(port, "port")
             self._socket = check.opt_str_param(socket, "socket")
             self._host = check.str_param(host, "host")
+            self._use_ssl = False
 
         self._watch_thread_shutdown_event = None
         self._watch_thread = None
@@ -111,7 +113,12 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         self.server_id = None
 
         try:
-            self.client = DagsterGrpcClient(port=self._port, socket=self._socket, host=self._host)
+            self.client = DagsterGrpcClient(
+                port=self._port,
+                socket=self._socket,
+                host=self._host,
+                use_ssl=self._use_ssl,
+            )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
             self.server_id = server_id if server_id else sync_get_server_id(self.client)
@@ -214,6 +221,10 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
     @property
     def host(self):
         return self._host
+
+    @property
+    def use_ssl(self):
+        return self._use_ssl
 
     @property
     def location_name(self):
@@ -334,6 +345,10 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     @property
     def socket(self):
         return self.grpc_server_process.socket
+
+    @property
+    def use_ssl(self):
+        return False
 
     def cleanup(self):
         if self.heartbeat_shutdown_event:

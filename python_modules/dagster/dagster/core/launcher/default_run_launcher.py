@@ -79,9 +79,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 GRPC_INFO_TAG: seven.json.dumps(
                     merge_dicts(
                         {"host": repository_location_handle.host},
-                        {"port": repository_location_handle.port}
-                        if repository_location_handle.port
-                        else {"socket": repository_location_handle.socket},
+                        (
+                            {"port": repository_location_handle.port}
+                            if repository_location_handle.port
+                            else {"socket": repository_location_handle.socket}
+                        ),
+                        ({"use_ssl": True} if repository_location_handle.use_ssl else {}),
                     )
                 )
             },
@@ -122,7 +125,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
 
         return DagsterGrpcClient(
-            port=grpc_info.get("port"), socket=grpc_info.get("socket"), host=grpc_info.get("host")
+            port=grpc_info.get("port"),
+            socket=grpc_info.get("socket"),
+            host=grpc_info.get("host"),
+            use_ssl=bool(grpc_info.get("use_ssl", False)),
         )
 
     def can_terminate(self, run_id):

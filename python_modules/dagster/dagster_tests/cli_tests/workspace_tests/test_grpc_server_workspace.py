@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 
+import grpc
 import pytest
 import yaml
 from dagster import seven
@@ -108,6 +109,41 @@ def test_grpc_server_env_vars():
         assert socket_origin.host == "barhost"
 
 
+def test_ssl_grpc_server_workspace():
+    server_process = GrpcServerProcess(force_port=True)
+    try:
+        with server_process.create_ephemeral_client() as client:
+
+            assert client.heartbeat(echo="Hello")
+
+            port = server_process.port
+            ssl_yaml = f"""
+    load_from:
+    - grpc_server:
+        host: localhost
+        port: {port}
+        ssl: true
+    """
+            origins = location_origins_from_config(
+                yaml.safe_load(ssl_yaml),
+                # fake out as if it were loaded by a yaml file in this directory
+                file_relative_path(__file__, "not_a_real.yaml"),
+            )
+            origin = list(origins.values())[0]
+            assert origin.use_ssl
+
+            # Actually connecting to the server will fail since it's expecting SSL
+            # and we didn't set up the server with SSL
+            try:
+                with origin.create_handle():
+                    assert False
+            except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+                pass
+
+    finally:
+        server_process.wait()
+
+
 def test_grpc_server_workspace():
     first_server_process = GrpcServerProcess(force_port=True)
     with first_server_process.create_ephemeral_client() as first_server:
@@ -166,7 +202,6 @@ load_from:
   - grpc_server:
       socket: myname
       port: 5678
-
     """
 
     with pytest.raises(CheckError, match="must supply either a socket or a port"):

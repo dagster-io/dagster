@@ -2,11 +2,12 @@ import os
 import sys
 from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
+from typing import Set
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import create_snapshot_id, whitelist_for_serdes
+from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -163,16 +164,22 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         return ManagedGrpcPythonEnvRepositoryLocationHandle(self)
 
 
-@whitelist_for_serdes
+class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"use_ssl"}  # Maintain stable origin ID for origins without use_ssl set
+
+
+@whitelist_for_serdes(serializer=GrpcServerOriginSerializer)
 class GrpcServerRepositoryLocationOrigin(
-    namedtuple("_GrpcServerRepositoryLocationOrigin", "host port socket location_name"),
+    namedtuple("_GrpcServerRepositoryLocationOrigin", "host port socket location_name use_ssl"),
     RepositoryLocationOrigin,
 ):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
     """
 
-    def __new__(cls, host, port=None, socket=None, location_name=None):
+    def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
         return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
             cls,
             check.str_param(host, "host"),
@@ -181,6 +188,7 @@ class GrpcServerRepositoryLocationOrigin(
             check.str_param(location_name, "location_name")
             if location_name
             else _assign_grpc_location_name(port, socket, host),
+            use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
 
     def get_cli_args(self):
