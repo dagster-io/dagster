@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Deque, Dict, Optional, Set, cast
 
 from dagster import check
 from dagster.core.definitions.resource import ResourceDefinition, ScopedResourcesBuilder
@@ -10,11 +11,12 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.inputs import StepInput, UnresolvedStepInput
-from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.plan.plan import ExecutionPlan, StepHandleUnion
+from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResourceConfig
 from dagster.core.utils import toposort
 from dagster.utils import EventGenerationManager, ensure_gen
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -24,22 +26,26 @@ from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
-    execution_plan,
-    environment_config,
-    pipeline_run,
-    log_manager,
-    resource_keys_to_init,
-    instance,
-    resource_instances_to_override,
+    resource_defs: Dict[str, ResourceDefinition],
+    resource_configs: Dict[str, ResourceConfig],
+    log_manager: DagsterLogManager,
+    execution_plan: Optional[ExecutionPlan],
+    pipeline_run: Optional[PipelineRun],
+    resource_keys_to_init: Optional[Set[str]],
+    instance: Optional[DagsterInstance],
+    resource_instances_to_override: Optional[Dict[str, "InitializedResource"]],
+    emit_persistent_events: Optional[bool],
 ):
     generator = resource_initialization_event_generator(
-        execution_plan,
-        environment_config,
-        pipeline_run,
-        log_manager,
-        resource_keys_to_init,
-        instance,
-        resource_instances_to_override,
+        resource_defs=resource_defs,
+        resource_configs=resource_configs,
+        log_manager=log_manager,
+        execution_plan=execution_plan,
+        pipeline_run=pipeline_run,
+        resource_keys_to_init=resource_keys_to_init,
+        instance=instance,
+        resource_instances_to_override=resource_instances_to_override,
+        emit_persistent_events=emit_persistent_events,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -80,28 +86,37 @@ def _get_dependencies(resource_name, resource_deps):
 
 
 def _core_resource_initialization_event_generator(
-    execution_plan,
-    environment_config,
-    pipeline_run,
-    resource_keys_to_init,
-    resource_log_manager,
-    resource_managers,
-    instance,
-    resource_instances_to_override,
+    resource_defs: Dict[str, ResourceDefinition],
+    resource_configs: Dict[str, ResourceConfig],
+    resource_log_manager: DagsterLogManager,
+    resource_managers: Deque[EventGenerationManager],
+    execution_plan: Optional[ExecutionPlan],
+    pipeline_run: Optional[PipelineRun],
+    resource_keys_to_init: Optional[Set[str]],
+    instance: Optional[DagsterInstance],
+    resource_instances_to_override: Optional[Dict[str, "InitializedResource"]],
+    emit_persistent_events: Optional[bool],
 ):
-    pipeline_def = execution_plan.pipeline_def
-    resource_instances = {}
-    mode_definition = pipeline_def.get_mode_definition(pipeline_run.mode)
+    if emit_persistent_events:
+        check.invariant(
+            execution_plan,
+            "If emit_persistent_events is enabled, then execution_plan must be provided",
+        )
+    resource_instances_to_override = check.opt_dict_param(
+        resource_instances_to_override, "resource_instances_to_override"
+    )
+    resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
+    resource_instances: Dict[str, "InitializedResource"] = {}
     resource_init_times = {}
     try:
-        if resource_keys_to_init:
+        if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
                 execution_plan,
                 resource_log_manager,
                 resource_keys_to_init,
             )
 
-        resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
+        resource_dependencies = _resolve_resource_dependencies(resource_defs)
 
         for level in toposort(resource_dependencies):
             for resource_name in level:
@@ -112,15 +127,13 @@ def _core_resource_initialization_event_generator(
                         resource_instances_to_override[resource_name]
                     )
                 else:
-                    resource_def = mode_definition.resource_defs[resource_name]
+                    resource_def = resource_defs[resource_name]
                 if not resource_name in resource_keys_to_init:
                     continue
 
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
-                    resource_config=environment_config.resources.get(resource_name, {}).get(
-                        "config"
-                    ),
+                    resource_config=resource_configs[resource_name].config,
                     pipeline_run=pipeline_run,
                     # Add tags with information about the resource
                     log_manager=resource_log_manager.with_tags(
@@ -130,7 +143,9 @@ def _core_resource_initialization_event_generator(
                     resource_instance_dict=resource_instances,
                     required_resource_keys=resource_def.required_resource_keys,
                     instance=instance,
-                    pipeline_def_for_backwards_compat=pipeline_def,
+                    pipeline_def_for_backwards_compat=execution_plan.pipeline_def
+                    if execution_plan
+                    else None,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -143,57 +158,71 @@ def _core_resource_initialization_event_generator(
                 resource_init_times[resource_name] = initialized_resource.duration
                 resource_managers.append(manager)
 
-        if resource_keys_to_init:
+        if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
                 execution_plan, resource_log_manager, resource_instances, resource_init_times
             )
         yield ScopedResourcesBuilder(resource_instances)
     except DagsterUserCodeExecutionError as dagster_user_error:
-        yield DagsterEvent.resource_init_failure(
-            execution_plan,
-            resource_log_manager,
-            resource_keys_to_init,
-            serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
-        )
+        # Can only end up in this state if we attempt to initialize a resource, so
+        # resource_keys_to_init cannot be empty
+        if emit_persistent_events:
+            yield DagsterEvent.resource_init_failure(
+                execution_plan,
+                resource_log_manager,
+                resource_keys_to_init,
+                serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
+            )
         raise dagster_user_error
 
 
 def resource_initialization_event_generator(
-    execution_plan,
-    environment_config,
-    pipeline_run,
-    log_manager,
-    resource_keys_to_init,
-    instance,
-    resource_instances_to_override=None,
+    resource_defs: Dict[str, ResourceDefinition],
+    resource_configs: Dict[str, ResourceConfig],
+    log_manager: DagsterLogManager,
+    execution_plan: Optional[ExecutionPlan],
+    pipeline_run: Optional[PipelineRun],
+    resource_keys_to_init: Optional[Set[str]],
+    instance: Optional[DagsterInstance],
+    resource_instances_to_override: Optional[Dict[str, "InitializedResource"]],
+    emit_persistent_events: Optional[bool],
 ):
-    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(environment_config, "environment_config", EnvironmentConfig)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
-    check.set_param(resource_keys_to_init, "resource_keys_to_init", of_type=str)
-    check.inst_param(instance, "instance", DagsterInstance)
+    resource_keys_to_init = check.opt_set_param(
+        resource_keys_to_init, "resource_keys_to_init", of_type=str
+    )
+    check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_dict_param(resource_instances_to_override, "resource_instances_to_override")
 
-    if execution_plan.step_handle_for_single_step_plans():
-        step = execution_plan.get_step(execution_plan.step_handle_for_single_step_plans())
-        resource_log_manager = log_manager.with_tags(**step.logging_tags)
+    if execution_plan and execution_plan.step_handle_for_single_step_plans():
+        step = execution_plan.get_step(
+            cast(
+                StepHandleUnion,
+                cast(ExecutionPlan, execution_plan).step_handle_for_single_step_plans(),
+            )
+        )
+        resource_log_manager = log_manager.with_tags(**cast(ExecutionStep, step).logging_tags)
     else:
         resource_log_manager = log_manager
 
     generator_closed = False
-    resource_managers = deque()
+    resource_managers: Deque[EventGenerationManager] = deque()
 
     try:
+
         yield from _core_resource_initialization_event_generator(
-            execution_plan=execution_plan,
-            environment_config=environment_config,
-            pipeline_run=pipeline_run,
-            resource_keys_to_init=resource_keys_to_init,
+            resource_defs=resource_defs,
+            resource_configs=resource_configs,
             resource_log_manager=resource_log_manager,
             resource_managers=resource_managers,
+            execution_plan=execution_plan,
+            pipeline_run=pipeline_run,
+            resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             resource_instances_to_override=resource_instances_to_override,
+            emit_persistent_events=emit_persistent_events,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
