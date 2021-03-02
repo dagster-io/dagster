@@ -46,10 +46,14 @@ def client_heartbeat_thread(client, shutdown_event):
 
 
 class DagsterGrpcClient:
-    def __init__(self, port=None, socket=None, host="localhost"):
+    def __init__(self, port=None, socket=None, host="localhost", use_ssl=False):
         self.port = check.opt_int_param(port, "port")
         self.socket = check.opt_str_param(socket, "socket")
         self.host = check.opt_str_param(host, "host")
+        self._use_ssl = check.bool_param(use_ssl, "use_ssl")
+
+        self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
+
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
             "You must pass a valid `port` on Windows: `socket` not supported.",
@@ -68,15 +72,24 @@ class DagsterGrpcClient:
         else:
             self._server_address = "unix:" + os.path.abspath(socket)
 
+    @contextmanager
+    def _channel(self):
+        with (
+            grpc.secure_channel(self._server_address, self._ssl_creds)
+            if self._use_ssl
+            else grpc.insecure_channel(self._server_address)
+        ) as channel:
+            yield channel
+
     def _query(self, method, request_type, timeout=None, **kwargs):
-        with grpc.insecure_channel(self._server_address) as channel:
+        with self._channel() as channel:
             stub = DagsterApiStub(channel)
             response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
         # TODO need error handling here
         return response
 
     def _streaming_query(self, method, request_type, **kwargs):
-        with grpc.insecure_channel(self._server_address) as channel:
+        with self._channel() as channel:
             stub = DagsterApiStub(channel)
             response_stream = getattr(stub, method)(request_type(**kwargs))
             yield from response_stream

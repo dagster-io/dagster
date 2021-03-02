@@ -100,6 +100,7 @@ WORKSPACE_CONFIG_SCHEMA = {
                             "socket": Field(StringSource, is_required=False),
                             "port": Field(IntSource, is_required=False),
                             "location_name": Field(StringSource, is_required=False),
+                            "ssl": Field(bool, is_required=False),
                         },
                     },
                 )
