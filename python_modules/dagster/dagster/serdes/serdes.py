@@ -18,7 +18,7 @@ import inspect
 from abc import abstractmethod
 from enum import Enum
 from inspect import Parameter, signature
-from typing import Any, Dict, NamedTuple, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, NamedTuple, Optional, Set, Tuple, Type, Union, cast
 
 from dagster import check, seven
 
@@ -98,20 +98,29 @@ def _whitelist_for_serdes(
 
 
 class Serializer:
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def value_from_storage_dict(storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
+    def value_from_storage_dict(cls, storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
         raise NotImplementedError()
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def value_to_storage_dict(value: NamedTuple, whitelist_map: WhitelistMap) -> Dict[str, Any]:
+    def value_to_storage_dict(
+        cls, value: NamedTuple, whitelist_map: WhitelistMap
+    ) -> Dict[str, Any]:
         raise NotImplementedError()
 
 
 class DefaultNamedTupleSerializer(Serializer):
-    @staticmethod
-    def value_from_storage_dict(storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        # Override this method to leave out certain fields from the serialized namedtuple
+        # when they are empty. This can be used to ensure that adding a new field doesn't
+        # change the serialized namedtuple.
+        return set()
+
+    @classmethod
+    def value_from_storage_dict(cls, storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
 
         # Naively implements backwards compatibility by filtering arguments that aren't present in
         # the constructor. If a property is present in the serialized object, but doesn't exist in
@@ -123,10 +132,15 @@ class DefaultNamedTupleSerializer(Serializer):
         filtered_val = {k: v for k, v in storage_dict.items() if k in args_for_class}
         return klass(**filtered_val)
 
-    @staticmethod
-    def value_to_storage_dict(value: NamedTuple, whitelist_map: WhitelistMap) -> Dict[str, Any]:
+    @classmethod
+    def value_to_storage_dict(
+        cls, value: NamedTuple, whitelist_map: WhitelistMap
+    ) -> Dict[str, Any]:
+        skip_when_empty_fields = cls.skip_when_empty()
         base_dict = {
-            key: _pack_value(value, whitelist_map) for key, value in value._asdict().items()
+            key: _pack_value(value, whitelist_map)
+            for key, value in value._asdict().items()
+            if (value is not None or key not in skip_when_empty_fields)
         }
         base_dict["__class__"] = value.__class__.__name__
         return base_dict

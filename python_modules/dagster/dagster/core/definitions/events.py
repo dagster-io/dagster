@@ -586,8 +586,8 @@ class AssetMaterialization(
 
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):
-    @staticmethod
-    def value_from_storage_dict(storage_dict, klass):
+    @classmethod
+    def value_from_storage_dict(cls, storage_dict, klass):
         # override the default `from_storage_dict` implementation in order to skip the deprecation
         # warning for historical Materialization events, loaded from event_log storage
         return Materialization(skip_deprecation_warning=True, **storage_dict)

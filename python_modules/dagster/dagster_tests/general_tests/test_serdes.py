@@ -1,5 +1,6 @@
 from collections import namedtuple
 from enum import Enum
+from typing import Set
 
 import pytest
 from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
@@ -14,8 +15,10 @@ from dagster.serdes.serdes import (
     _whitelist_for_serdes,
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
+    serialize_dagster_namedtuple,
     serialize_value,
 )
+from dagster.serdes.utils import create_snapshot_id
 
 
 def test_deserialize_value_ok():
@@ -284,8 +287,8 @@ def test_from_storage_dict():
     test_map = WhitelistMap()
 
     class CompatSerializer(DefaultNamedTupleSerializer):
-        @staticmethod
-        def value_from_storage_dict(storage_dict, klass):
+        @classmethod
+        def value_from_storage_dict(cls, storage_dict, klass):
             return DeprecatedAlphabet.legacy_load(storage_dict)
 
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=CompatSerializer)
@@ -309,12 +312,67 @@ def test_from_storage_dict():
     assert isinstance(nt, DeprecatedAlphabet)
 
 
+def test_skip_when_empty():
+    test_map = WhitelistMap()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo")):
+        def __new__(cls, foo):
+            return super(SameSnapshotTuple, cls).__new__(cls, foo)  # pylint: disable=bad-super-call
+
+    old_tuple = SameSnapshotTuple(foo="A")
+    old_serialized = serialize_dagster_namedtuple(old_tuple)
+    old_snapshot = create_snapshot_id(old_tuple)
+
+    # Without setting skip_when_empty, the ID changes
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):  # pylint: disable=function-redefined
+        def __new__(cls, foo, bar=None):
+            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
+                cls, foo, bar
+            )
+
+    new_tuple_without_serializer = SameSnapshotTuple(foo="A")
+    new_snapshot_without_serializer = create_snapshot_id(new_tuple_without_serializer)
+
+    assert new_snapshot_without_serializer != old_snapshot
+
+    # By setting a custom serializer and skip_when_empty, the snapshot stays the same
+    # as long as the new field is None
+
+    class SkipWhenEmptySerializer(DefaultNamedTupleSerializer):
+        @classmethod
+        def skip_when_empty(cls) -> Set[str]:
+            return {"bar"}
+
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=SkipWhenEmptySerializer)
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):  # pylint: disable=function-redefined
+        def __new__(cls, foo, bar=None):
+            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
+                cls, foo, bar
+            )
+
+    new_tuple = SameSnapshotTuple(foo="A")
+    new_snapshot = create_snapshot_id(new_tuple)
+
+    assert old_snapshot == new_snapshot
+
+    rehydrated_tuple = deserialize_json_to_dagster_namedtuple(old_serialized)
+    assert rehydrated_tuple.foo == "A"
+    assert rehydrated_tuple.bar is None
+
+    new_tuple_with_bar = SameSnapshotTuple(foo="A", bar="B")
+    assert new_tuple_with_bar.foo == "A"
+    assert new_tuple_with_bar.bar == "B"
+
+
 def test_to_storage_value():
     test_map = WhitelistMap()
 
     class MySerializer(DefaultNamedTupleSerializer):
-        @staticmethod
-        def value_to_storage_dict(value, whitelist_map):
+        @classmethod
+        def value_to_storage_dict(cls, value, whitelist_map):
             return DefaultNamedTupleSerializer.value_to_storage_dict(
                 SubstituteAlphabet(value.a, value.b, value.c), test_map
             )

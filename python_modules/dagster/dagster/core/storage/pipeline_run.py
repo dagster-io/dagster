@@ -86,8 +86,8 @@ class PipelineRunStatsSnapshot(
 
 
 class PipelineRunSerializer(DefaultNamedTupleSerializer):
-    @staticmethod
-    def value_from_storage_dict(storage_dict, _klass):
+    @classmethod
+    def value_from_storage_dict(cls, storage_dict, _klass):
         # called by the serdes layer, delegates to helper method with expanded kwargs
         return pipeline_run_from_storage(**storage_dict)
 
