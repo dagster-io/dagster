@@ -76,12 +76,12 @@ export const LeftNavSimple = React.memo(() => {
   return (
     <Box
       flex={{direction: 'column', justifyContent: 'space-between', shrink: 0}}
-      style={{width: '188px'}}
+      style={{width: '200px'}}
       border={{side: 'right', width: 1, color: Colors.LIGHT_GRAY3}}
     >
       <Group direction="column" spacing={16}>
         <Group direction="column" spacing={12} padding={{top: 20, horizontal: 12}}>
-          <Group direction="row" alignItems="center" spacing={8} padding={{horizontal: 4}}>
+          <Group direction="row" alignItems="center" spacing={8} padding={{horizontal: 4, top: 2}}>
             <img alt="logo" src={navBarImage} style={{display: 'block', height: 28}} />
             <Group direction="column" spacing={2} padding={{top: 2}}>
               <img
@@ -114,7 +114,7 @@ const Item = styled(Link)<ItemProps>`
   display: flex;
   flex-direction: row;
   font-weight: ${({$active}) => ($active ? 600 : 400)};
-  padding: 4px 0 4px 22px;
+  padding: 6px 0 6px 22px;
   user-select: none;
   transition: background 0.1s linear;
 

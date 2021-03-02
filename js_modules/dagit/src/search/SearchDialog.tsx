@@ -178,12 +178,12 @@ SearchDialog.defaultProps = {
 const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
   background-color: ${({$theme}) => ($theme === 'light' ? Colors.WHITE : Colors.DARK_GRAY5)};
   border: 1px solid ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY1 : Colors.GRAY1)};
-  border-radius: 3px;
+  border-radius: ${({$theme}) => ($theme === 'light' ? '5px' : '3px')};
   color: ${({$theme}) => ($theme === 'light' ? Colors.GRAY1 : Colors.LIGHT_GRAY3)};
   font-size: 13px;
   font-weight: 400;
   cursor: pointer;
-  padding: 4px 6px 4px 10px;
+  padding: ${({$theme}) => ($theme === 'light' ? '6px 6px 6px 10px' : '4px 6px 4px 10px')};
   outline: none;
   user-select: none;
   width: 100%;

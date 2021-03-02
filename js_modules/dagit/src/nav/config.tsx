@@ -44,18 +44,11 @@ export const config: NavItemConfig[][] = [
       shortcut: {code: 'KeyP'},
     },
     {
-      label: 'Solids',
-      icon: 'git-commit',
-      to: '/workspace/solids',
-      matchingPaths: ['/workspace/solids', '/workspace/:repoPath/solids/*'],
-      shortcut: {code: 'KeyS'},
-    },
-    {
       label: 'Schedules',
       icon: 'time',
       to: '/schedules',
       matchingPaths: ['/schedules', '/workspace/:repoPath/schedules/*'],
-      shortcut: {code: 'KeyC'},
+      shortcut: {code: 'KeyS'},
     },
     {
       label: 'Sensors',
