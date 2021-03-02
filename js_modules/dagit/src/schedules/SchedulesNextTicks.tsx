@@ -105,7 +105,11 @@ export const SchedulesNextTicks: React.FC<{
         {nextTicks.map(({schedule, timestamp, repoAddress}) => (
           <tr key={`${schedule.id}:${timestamp}`}>
             <td>
-              <TimestampDisplay timestamp={timestamp} timezone={schedule.executionTimezone} />
+              <TimestampDisplay
+                timestamp={timestamp}
+                timezone={schedule.executionTimezone}
+                timeFormat={{showSeconds: false, showTimezone: true}}
+              />
             </td>
             <td>
               <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
