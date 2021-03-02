@@ -12,6 +12,7 @@ from .plan.inputs import join_and_hash
 def resolve_config_version(config_value):
     """Resolve a configuration value into a hashed version.
 
+    If a None value is passed in, we return the result of an empty join_and_hash.
     If a single value is passed in, it is converted to a string, hashed, and returned as the
     version. If a dictionary of config values is passed in, each value is resolved to a version,
     concatenated with its key, joined, and hashed into a single version.
@@ -20,6 +21,8 @@ def resolve_config_version(config_value):
         config_value (Union[Any, dict]): Either a single config value or a dictionary of config
             values.
     """
+    if config_value is None:
+        return join_and_hash()
     if not isinstance(config_value, dict):
         return join_and_hash(str(config_value))
     else:

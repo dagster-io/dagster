@@ -71,6 +71,8 @@ def test_join_and_hash():
 
 
 def test_resolve_config_version():
+    assert resolve_config_version(None) == join_and_hash()
+
     assert resolve_config_version({}) == join_and_hash()
 
     assert resolve_config_version({"a": "b", "c": "d"}) == join_and_hash(
