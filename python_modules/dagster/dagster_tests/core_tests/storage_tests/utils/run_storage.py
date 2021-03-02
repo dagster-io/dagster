@@ -1071,23 +1071,3 @@ class TestRunStorage:
         )
 
         assert storage.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
-
-    def test_add_get_run_storage(self, storage):
-        run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
-        added = storage.add_run(run_to_add)
-        assert added
-
-        fetched_run = storage.get_run_by_id(run_id)
-
-        assert run_to_add == fetched_run
-
-        assert storage.has_run(run_id)
-        assert not storage.has_run(make_new_run_id())
-
-        assert storage.get_runs() == [run_to_add]
-        assert storage.get_runs(PipelineRunsFilter(pipeline_name="pipeline_name")) == [run_to_add]
-        assert storage.get_runs(PipelineRunsFilter(pipeline_name="nope")) == []
-
-        storage.wipe()
-        assert storage.get_runs() == []
