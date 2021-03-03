@@ -1,6 +1,6 @@
 ---
 name: Request a feature
-about: "It's nice to have."
+about: It's nice to have.
 title: ''
 labels: feature-request
 assignees: ''
