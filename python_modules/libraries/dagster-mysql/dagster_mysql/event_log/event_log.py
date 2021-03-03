@@ -10,6 +10,7 @@ from dagster.core.storage.event_log import (
 from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.utils.backcompat import experimental
 
 from ..utils import (
     create_mysql_connection,
@@ -43,6 +44,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     """
 
+    @experimental
     def __init__(self, mysql_url, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = check.str_param(mysql_url, "mysql_url")

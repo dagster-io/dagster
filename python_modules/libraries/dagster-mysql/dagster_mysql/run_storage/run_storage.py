@@ -5,6 +5,7 @@ from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
+from dagster.utils.backcompat import experimental
 
 from ..utils import (
     create_mysql_connection,
@@ -35,6 +36,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
+    @experimental
     def __init__(self, mysql_url, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
