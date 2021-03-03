@@ -183,8 +183,16 @@ def test_dagster_home_not_dir():
 
 
 class TestInstanceSubclass(DagsterInstance):
+    def __init__(self, *args, baz=None, **kwargs):
+        self._baz = baz
+        super().__init__(*args, **kwargs)
+
     def foo(self):
         return "bar"
+
+    @property
+    def baz(self):
+        return self._baz
 
 
 def test_instance_subclass():
@@ -203,3 +211,19 @@ def test_instance_subclass():
 
         assert subclass_instance.__class__.__name__ == "TestInstanceSubclass"
         assert subclass_instance.foo() == "bar"
+        assert subclass_instance.baz is None
+
+    with instance_for_test(
+        overrides={
+            "custom_instance_class": {
+                "module": "dagster_tests.core_tests.instance_tests.test_instance",
+                "class": "TestInstanceSubclass",
+                "config": {"baz": "quux"},
+            }
+        }
+    ) as subclass_instance:
+        assert isinstance(subclass_instance, DagsterInstance)
+
+        assert subclass_instance.__class__.__name__ == "TestInstanceSubclass"
+        assert subclass_instance.foo() == "bar"
+        assert subclass_instance.baz == "quux"

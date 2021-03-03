@@ -254,5 +254,11 @@ class InstanceRef(
             else None
         )
 
+    @property
+    def custom_instance_class_config(self):
+        return (
+            self.custom_instance_class_data.config_dict if self.custom_instance_class_data else {}
+        )
+
     def to_dict(self):
         return self._asdict()

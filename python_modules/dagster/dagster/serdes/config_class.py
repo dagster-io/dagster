@@ -36,11 +36,15 @@ class ConfigurableClassData(
             check.str_param(config_yaml, "config_yaml"),
         )
 
+    @property
+    def config_dict(self):
+        return yaml.safe_load(self.config_yaml)
+
     def info_dict(self):
         return {
             "module": self.module_name,
             "class": self.class_name,
-            "config": yaml.safe_load(self.config_yaml),
+            "config": self.config_dict,
         }
 
     def rehydrate(self):
@@ -52,37 +56,29 @@ class ConfigurableClassData(
             module = importlib.import_module(self.module_name)
         except ModuleNotFoundError:
             check.failed(
-                "Couldn't import module {module_name} when attempting to load the "
-                "configurable class {configurable_class}".format(
-                    module_name=self.module_name,
-                    configurable_class=self.module_name + "." + self.class_name,
-                )
+                f"Couldn't import module {self.module_name} when attempting to load the "
+                f"configurable class {self.module_name}.{self.class_name}"
             )
         try:
             klass = getattr(module, self.class_name)
         except AttributeError:
             check.failed(
-                "Couldn't find class {class_name} in module when attempting to load the "
-                "configurable class {configurable_class}".format(
-                    class_name=self.class_name,
-                    configurable_class=self.module_name + "." + self.class_name,
-                )
+                f"Couldn't find class {self.class_name} in module when attempting to load the "
+                f"configurable class {self.module_name}.{self.class_name}"
             )
 
         if not issubclass(klass, ConfigurableClass):
             raise check.CheckError(
                 klass,
-                "class {class_name} in module {module_name}".format(
-                    class_name=self.class_name, module_name=self.module_name
-                ),
+                f"class {self.class_name} in module {self.module_name}",
                 ConfigurableClass,
             )
 
-        config_dict = yaml.safe_load(self.config_yaml)
+        config_dict = self.config_dict
         result = process_config(resolve_to_config_type(klass.config_type()), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(
-                "Errors whilst loading configuration for {}.".format(klass.config_type()),
+                f"Errors whilst loading configuration for {klass.config_type()}.",
                 result.errors,
                 config_dict,
             )
