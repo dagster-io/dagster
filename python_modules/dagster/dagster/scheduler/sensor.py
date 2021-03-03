@@ -144,7 +144,7 @@ def execute_sensor_iteration_loop(
                 not handle_manager
                 or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
             ):
-                stack.pop_all()  # remove the previous context
+                stack.close()  # remove the previous context
                 handle_manager = stack.enter_context(
                     RepositoryLocationHandleManager(grpc_server_registry)
                 )
