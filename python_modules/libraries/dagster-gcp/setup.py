@@ -32,7 +32,7 @@ if __name__ == "__main__":
         install_requires=[
             "dagster",
             "dagster_pandas",
-            "google-api-python-client",
+            "google-api-python-client<2.0.0",
             "google-cloud-bigquery>=1.19.*",
             "google-cloud-storage",
             "oauth2client",
