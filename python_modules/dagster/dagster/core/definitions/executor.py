@@ -10,7 +10,7 @@ from dagster.core.definitions.configurable import (
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.execution.retries import Retries, get_retries_config
+from dagster.core.execution.retries import RetryMode, get_retries_config
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
@@ -176,7 +176,7 @@ def in_process_executor(init_context):
 
     return InProcessExecutor(
         # shouldn't need to .get() here - issue with defaults in config setup
-        retries=Retries.from_config(init_context.executor_config.get("retries", {"enabled": {}})),
+        retries=RetryMode.from_config(init_context.executor_config.get("retries", {"enabled": {}})),
         marker_to_close=init_context.executor_config.get("marker_to_close"),
     )
 
@@ -220,7 +220,7 @@ def multiprocess_executor(init_context):
     return MultiprocessExecutor(
         pipeline=init_context.pipeline,
         max_concurrent=init_context.executor_config["max_concurrent"],
-        retries=Retries.from_config(init_context.executor_config["retries"]),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
 

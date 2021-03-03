@@ -2,7 +2,7 @@ import mock
 from click.testing import CliRunner
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -174,11 +174,11 @@ def test_execute_step_verify_step():
             )
 
             # Check that verify succeeds for step that has hasn't been fun (case 3)
-            retries = Retries.from_config({"enabled": {}})
+            retries = RetryState()
             assert verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
             # Check that verify fails when trying to retry with no original attempt (case 3)
-            retries = Retries.from_config({"enabled": {}})
+            retries = RetryState()
             retries.mark_attempt("do_something")
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
@@ -190,7 +190,7 @@ def test_execute_step_verify_step():
                     )
                 }
 
-                retries = Retries.from_config({"enabled": {}})
+                retries = RetryState()
                 retries.mark_attempt("do_something")
                 assert not verify_step(
                     instance, run, retries, step_keys_to_execute=["do_something"]
@@ -202,5 +202,5 @@ def test_execute_step_verify_step():
             )
 
             # # Check that verify fails for step that has already run (case 1)
-            retries = Retries.from_config({"enabled": {}})
+            retries = RetryState()
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])

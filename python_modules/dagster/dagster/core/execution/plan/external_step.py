@@ -115,7 +115,7 @@ def step_context_to_step_run_ref(
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.int_param(prior_attempts_count, "prior_attempts_count")
 
-    retries = step_context.retries
+    retry_mode = step_context.retry_mode
 
     recon_pipeline = step_context.pipeline
     if package_dir:
@@ -140,7 +140,7 @@ def step_context_to_step_run_ref(
         pipeline_run=step_context.pipeline_run,
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
-        retries=retries,
+        retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
     )
@@ -157,14 +157,13 @@ def step_run_ref_to_step_context(
     execution_plan = create_execution_plan(
         pipeline, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
     ).build_subset_plan([step_run_ref.step_key])
-    retries = step_run_ref.retries.for_inner_plan()
 
     initialization_manager = PlanExecutionContextManager(
-        retries,
-        execution_plan,
-        step_run_ref.run_config,
-        step_run_ref.pipeline_run,
-        instance,
+        retry_mode=step_run_ref.retry_mode.for_inner_plan(),
+        execution_plan=execution_plan,
+        run_config=step_run_ref.run_config,
+        pipeline_run=step_run_ref.pipeline_run,
+        instance=instance,
     )
     for _ in initialization_manager.prepare_context():
         pass

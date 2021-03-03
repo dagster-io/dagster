@@ -21,7 +21,7 @@ from dagster.core.execution.plan.objects import (
     step_failure_event_from_exc_info,
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryState
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
@@ -31,9 +31,7 @@ def inner_plan_execution_iterator(
     check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-    retries = pipeline_context.retries
-
-    with execution_plan.start(retries=retries) as active_execution:
+    with execution_plan.start(retry_mode=pipeline_context.retry_mode) as active_execution:
 
         # It would be good to implement a reference tracking algorithm here to
         # garbage collect results that are no longer needed by any steps
@@ -62,7 +60,7 @@ def inner_plan_execution_iterator(
             ):
 
                 for step_event in check.generator(
-                    _dagster_event_sequence_for_step(step_context, retries)
+                    _dagster_event_sequence_for_step(step_context, active_execution.retry_state)
                 ):
                     check.inst(step_event, DagsterEvent)
                     step_event_list.append(step_event)
@@ -131,7 +129,7 @@ def _trigger_hook(
 
 
 def _dagster_event_sequence_for_step(
-    step_context: SystemStepExecutionContext, retries: Retries
+    step_context: SystemStepExecutionContext, retry_state: RetryState
 ) -> Iterator[DagsterEvent]:
     """
     Yield a sequence of dagster events for the given step with the step context.
@@ -180,10 +178,10 @@ def _dagster_event_sequence_for_step(
     """
 
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
-    check.inst_param(retries, "retries", Retries)
+    check.inst_param(retry_state, "retry_state", RetryState)
 
     try:
-        prior_attempt_count = retries.get_attempt_count(step_context.step.key)
+        prior_attempt_count = retry_state.get_attempt_count(step_context.step.key)
         if step_context.step_launcher:
             step_events = step_context.step_launcher.launch_step(step_context, prior_attempt_count)
         else:
@@ -196,7 +194,7 @@ def _dagster_event_sequence_for_step(
     except RetryRequested as retry_request:
         retry_err_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-        if retries.disabled:
+        if step_context.retry_mode.disabled:
             fail_err = SerializableErrorInfo(
                 message="RetryRequested but retries are disabled",
                 stack=retry_err_info.stack,
@@ -208,7 +206,7 @@ def _dagster_event_sequence_for_step(
                 step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
             )
         else:  # retries.enabled or retries.deferred
-            prev_attempts = retries.get_attempt_count(step_context.step.key)
+            prev_attempts = retry_state.get_attempt_count(step_context.step.key)
             if prev_attempts >= retry_request.max_retries:
                 fail_err = SerializableErrorInfo(
                     message="Exceeded max_retries of {}".format(retry_request.max_retries),

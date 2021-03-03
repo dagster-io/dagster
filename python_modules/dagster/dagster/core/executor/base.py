@@ -1,5 +1,7 @@
 import abc
 
+from dagster.core.execution.retries import RetryMode
+
 
 class Executor(abc.ABC):  # pylint: disable=no-init
     @abc.abstractmethod
@@ -16,10 +18,11 @@ class Executor(abc.ABC):  # pylint: disable=no-init
         """
 
     @abc.abstractproperty
-    def retries(self):
+    def retries(self) -> RetryMode:
         """
-        The Retries state / policy for this instance of the Executor. Executors should allow this to be
-        controlled via configuration if possible.
+        Whether retries are enabled or disabled for this instance of the executor.
 
-        Returns: Retries
+        Executors should allow this to be controlled via configuration if possible.
+
+        Returns: RetryMode
         """

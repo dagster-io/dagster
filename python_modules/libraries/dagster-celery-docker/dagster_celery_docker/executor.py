@@ -14,7 +14,7 @@ from dagster import (
 from dagster.cli.api import ExecuteStepArgs
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.events import EngineEventData
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils import merge_dicts
@@ -138,7 +138,7 @@ def celery_docker_executor(init_context):
         backend=exc_cfg.get("backend"),
         config_source=exc_cfg.get("config_source"),
         include=exc_cfg.get("include"),
-        retries=Retries.from_config(exc_cfg.get("retries")),
+        retries=RetryMode.from_config(exc_cfg.get("retries")),
         docker_config=exc_cfg.get("docker"),
     )
 
@@ -153,7 +153,7 @@ class CeleryDockerExecutor(Executor):
         include=None,
         config_source=None,
     ):
-        self._retries = check.inst_param(retries, "retries", Retries)
+        self._retries = check.inst_param(retries, "retries", RetryMode)
         self.broker = check.opt_str_param(broker, "broker", default=broker_url)
         self.backend = check.opt_str_param(backend, "backend", default=result_backend)
         self.include = check.opt_list_param(include, "include", of_type=str)
@@ -182,13 +182,14 @@ class CeleryDockerExecutor(Executor):
         }
 
 
-def _submit_task_docker(app, pipeline_context, step, queue, priority):
+def _submit_task_docker(app, pipeline_context, step, queue, priority, known_state):
     execute_step_args = ExecuteStepArgs(
         pipeline_origin=pipeline_context.pipeline.get_python_origin(),
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
-        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+        retry_mode=pipeline_context.executor.retries.for_inner_plan(),
+        known_state=known_state,
     )
 
     task = create_docker_task(app)

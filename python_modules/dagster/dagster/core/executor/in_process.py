@@ -5,7 +5,7 @@ from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.utils.timing import format_duration, time_execution_scope
 
 from .base import Executor
@@ -13,7 +13,7 @@ from .base import Executor
 
 class InProcessExecutor(Executor):
     def __init__(self, retries, marker_to_close):
-        self._retries = check.inst_param(retries, "retries", Retries)
+        self._retries = check.inst_param(retries, "retries", RetryMode)
         self.marker_to_close = check.opt_str_param(marker_to_close, "marker_to_close")
 
     @property

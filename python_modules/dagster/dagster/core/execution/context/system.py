@@ -19,7 +19,7 @@ from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantVio
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.plan.utils import build_resources_for_manager
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager
@@ -42,7 +42,7 @@ class SystemExecutionContextData(
         (
             "pipeline_run scoped_resources_builder environment_config pipeline "
             "mode_def intermediate_storage_def instance intermediate_storage "
-            "raise_on_error retries execution_plan"
+            "raise_on_error retry_mode execution_plan"
         ),
     )
 ):
@@ -62,7 +62,7 @@ class SystemExecutionContextData(
         instance: "DagsterInstance",
         intermediate_storage: "IntermediateStorage",
         raise_on_error: bool,
-        retries: Retries,
+        retry_mode: RetryMode,
         execution_plan: "ExecutionPlan",
     ):
         from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
@@ -89,7 +89,7 @@ class SystemExecutionContextData(
                 intermediate_storage, "intermediate_storage", IntermediateStorage
             ),
             raise_on_error=check.bool_param(raise_on_error, "raise_on_error"),
-            retries=check.inst_param(retries, "retries", Retries),
+            retry_mode=check.inst_param(retry_mode, "retry_mode", RetryMode),
             execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
         )
 
@@ -178,8 +178,8 @@ class SystemExecutionContext:
         return self._execution_context_data.raise_on_error
 
     @property
-    def retries(self) -> Retries:
-        return self._execution_context_data.retries
+    def retry_mode(self) -> RetryMode:
+        return self._execution_context_data.retry_mode
 
     @property
     def log(self) -> DagsterLogManager:

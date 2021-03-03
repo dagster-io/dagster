@@ -18,7 +18,7 @@ from dagster.core.errors import (
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import should_skip_step
-from dagster.core.execution.retries import Retries, RetryMode
+from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import make_new_run_id
 
@@ -48,7 +48,7 @@ def test_create_execution_plan_with_bad_inputs():
 def test_active_execution_plan():
     plan = create_execution_plan(define_diamond_pipeline())
 
-    with plan.start(retries=Retries(RetryMode.DISABLED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
@@ -100,7 +100,7 @@ def test_failing_execution_plan():
     pipeline_def = define_diamond_pipeline()
     plan = create_execution_plan(pipeline_def)
 
-    with plan.start(retries=Retries(RetryMode.DISABLED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
@@ -153,7 +153,7 @@ def test_retries_active_execution():
     pipeline_def = define_diamond_pipeline()
     plan = create_execution_plan(pipeline_def)
 
-    with plan.start(retries=Retries(RetryMode.ENABLED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.ENABLED)) as active_execution:
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
@@ -218,7 +218,7 @@ def test_retries_disabled_active_execution():
     plan = create_execution_plan(pipeline_def)
 
     with pytest.raises(check.CheckError):
-        with plan.start(retries=Retries(RetryMode.DISABLED)) as active_execution:
+        with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
@@ -236,7 +236,7 @@ def test_retries_deferred_active_execution():
     pipeline_def = define_diamond_pipeline()
     plan = create_execution_plan(pipeline_def)
 
-    with plan.start(retries=Retries(RetryMode.DEFERRED)) as active_execution:
+    with plan.start(retry_mode=(RetryMode.DEFERRED)) as active_execution:
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
@@ -305,7 +305,7 @@ def test_priorities():
     sort_key_fn = lambda step: int(step.tags.get("priority", 0)) * -1
 
     plan = create_execution_plan(priorities)
-    with plan.start(Retries(RetryMode.DISABLED), sort_key_fn) as active_execution:
+    with plan.start(RetryMode.DISABLED, sort_key_fn) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert steps[0].key == "pri_5"
         assert steps[1].key == "pri_4"
@@ -336,7 +336,7 @@ def test_incomplete_execution_plan():
         DagsterInvariantViolationError,
         match="Execution of pipeline finished without completing the execution plan.",
     ):
-        with plan.start(retries=Retries(RetryMode.DISABLED)) as active_execution:
+        with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
@@ -351,7 +351,7 @@ def test_lost_steps():
 
     # run to completion - but step was in unknown state so exception thrown
     with pytest.raises(DagsterUnknownStepStateError):
-        with plan.start(retries=Retries(RetryMode.DISABLED)) as active_execution:
+        with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1

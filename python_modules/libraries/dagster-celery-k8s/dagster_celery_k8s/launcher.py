@@ -5,7 +5,7 @@ from dagster import DagsterInvariantViolationError, EventMetadataEntry, Field, N
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -120,8 +120,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self.config_source = check.opt_dict_param(config_source, "config_source")
 
         retries = check.opt_dict_param(retries, "retries") or {"enabled": {}}
-        self.retries = Retries.from_config(retries)
-
+        self.retries = RetryMode.from_config(retries)
         super().__init__()
 
     @classmethod

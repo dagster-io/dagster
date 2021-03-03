@@ -14,7 +14,7 @@ from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_manager,
 )
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -301,7 +301,7 @@ class PipelineExecutionContextManager(ExecutionContextManager):
                 scoped_resources_builder=scoped_resources_builder,
                 intermediate_storage=intermediate_storage,
                 log_manager=log_manager,
-                retries=executor.retries,
+                retry_mode=executor.retries,
                 raise_on_error=raise_on_error,
             ),
             executor=executor,
@@ -313,15 +313,15 @@ class PipelineExecutionContextManager(ExecutionContextManager):
 class PlanExecutionContextManager(ExecutionContextManager):
     def __init__(
         self,
-        retries,
         execution_plan,
         run_config,
         pipeline_run,
         instance,
+        retry_mode,
         scoped_resources_builder_cm=None,
         raise_on_error=False,
     ):
-        self._retries = check.inst_param(retries, "retries", Retries)
+        self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         super(PlanExecutionContextManager, self).__init__(
             execution_plan=execution_plan,
             run_config=run_config,
@@ -350,7 +350,7 @@ class PlanExecutionContextManager(ExecutionContextManager):
                 scoped_resources_builder=scoped_resources_builder,
                 intermediate_storage=intermediate_storage,
                 log_manager=log_manager,
-                retries=self._retries,
+                retry_mode=self._retry_mode,
                 raise_on_error=raise_on_error,
             ),
             log_manager=log_manager,
@@ -422,7 +422,7 @@ def construct_execution_context_data(
     scoped_resources_builder,
     intermediate_storage,
     log_manager,
-    retries,
+    retry_mode,
     raise_on_error,
 ):
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
@@ -433,7 +433,7 @@ def construct_execution_context_data(
     )
     check.inst_param(intermediate_storage, "intermediate_storage", IntermediateStorage)
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
-    check.inst_param(retries, "retries", Retries)
+    check.inst_param(retry_mode, "retry_mode", RetryMode)
 
     return SystemExecutionContextData(
         pipeline=context_creation_data.pipeline,
@@ -445,7 +445,7 @@ def construct_execution_context_data(
         instance=context_creation_data.instance,
         intermediate_storage=intermediate_storage,
         raise_on_error=raise_on_error,
-        retries=retries,
+        retry_mode=retry_mode,
         execution_plan=context_creation_data.execution_plan,
     )
 

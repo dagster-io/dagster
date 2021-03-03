@@ -19,7 +19,7 @@ from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -130,7 +130,7 @@ def celery_k8s_job_executor(init_context):
     backend = run_launcher.backend or exc_cfg.get("backend")
     config_source = run_launcher.config_source or exc_cfg.get("config_source")
     include = run_launcher.include or exc_cfg.get("include")
-    retries = run_launcher.retries or Retries.from_config(exc_cfg.get("retries"))
+    retries = run_launcher.retries or RetryMode.from_config(exc_cfg.get("retries"))
 
     return CeleryK8sJobExecutor(
         broker=broker,
@@ -169,7 +169,7 @@ class CeleryK8sJobExecutor(Executor):
         else:
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
 
-        self._retries = check.inst_param(retries, "retries", Retries)
+        self._retries = check.inst_param(retries, "retries", RetryMode)
         self.broker = check.opt_str_param(broker, "broker", default=broker_url)
         self.backend = check.opt_str_param(backend, "backend", default=result_backend)
         self.include = check.opt_list_param(include, "include", of_type=str)
@@ -207,7 +207,7 @@ class CeleryK8sJobExecutor(Executor):
         }
 
 
-def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
+def _submit_task_k8s_job(app, pipeline_context, step, queue, priority, known_state):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
     execute_step_args = ExecuteStepArgs(
@@ -215,7 +215,8 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
-        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+        retry_mode=pipeline_context.executor.retries.for_inner_plan(),
+        known_state=known_state,
         should_verify_step=True,
     )
 
@@ -350,10 +351,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         # Ensure we stay below k8s name length limits
         k8s_name_key = get_k8s_job_name(execute_step_args.pipeline_run_id, step_key)
 
-        retries = Retries.from_config(execute_step_args.retries_dict)
+        retry_state = execute_step_args.known_state.get_retry_state()
 
-        if retries.get_attempt_count(step_key):
-            attempt_number = retries.get_attempt_count(step_key)
+        if retry_state.get_attempt_count(step_key):
+            attempt_number = retry_state.get_attempt_count(step_key)
             job_name = "dagster-job-%s-%d" % (k8s_name_key, attempt_number)
             pod_name = "dagster-job-%s-%d" % (k8s_name_key, attempt_number)
         else:

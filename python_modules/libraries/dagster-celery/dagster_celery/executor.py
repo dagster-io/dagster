@@ -1,6 +1,6 @@
 from dagster import Executor, Field, Noneable, Permissive, StringSource, check, executor
 from dagster.core.definitions.executor import check_cross_process_constraints
-from dagster.core.execution.retries import Retries, RetryMode, get_retries_config
+from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import pack_value
 
@@ -93,11 +93,11 @@ def celery_executor(init_context):
         backend=init_context.executor_config.get("backend"),
         config_source=init_context.executor_config.get("config_source"),
         include=init_context.executor_config.get("include"),
-        retries=Retries.from_config(init_context.executor_config["retries"]),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),
     )
 
 
-def _submit_task(app, pipeline_context, step, queue, priority):
+def _submit_task(app, pipeline_context, step, queue, priority, known_state):
     from .tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
@@ -105,7 +105,8 @@ def _submit_task(app, pipeline_context, step, queue, priority):
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
-        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+        retry_mode=pipeline_context.executor.retries.for_inner_plan(),
+        known_state=known_state,
     )
 
     task = create_task(app)
@@ -135,7 +136,7 @@ class CeleryExecutor(Executor):
         self.config_source = dict_wrapper(
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
-        self._retries = check.inst_param(retries, "retries", Retries)
+        self._retries = check.inst_param(retries, "retries", RetryMode)
 
     @property
     def retries(self):
@@ -151,7 +152,7 @@ class CeleryExecutor(Executor):
     @staticmethod
     def for_cli(broker=None, backend=None, include=None, config_source=None):
         return CeleryExecutor(
-            retries=Retries(RetryMode.DISABLED),
+            retries=RetryMode(RetryMode.DISABLED),
             broker=broker,
             backend=backend,
             include=include,

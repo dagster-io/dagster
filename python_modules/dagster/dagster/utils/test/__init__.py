@@ -79,7 +79,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
             scoped_resources_builder=scoped_resources_builder,
             intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
             log_manager=log_manager,
-            retries=executor.retries,
+            retry_mode=executor.retries,
             raise_on_error=True,
         ),
         executor=executor,

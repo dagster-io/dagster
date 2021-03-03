@@ -1,5 +1,4 @@
 import graphene
-from dagster.core.execution.retries import Retries
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
 from .pipelines.status import GraphenePipelineRunStatus
@@ -201,26 +200,6 @@ class GrapheneStepExecution(graphene.InputObjectType):
         name = "StepExecution"
 
 
-class GrapheneRetriesPreviousAttempts(graphene.InputObjectType):
-    key = graphene.String()
-    count = graphene.Int()
-
-    class Meta:
-        name = "RetriesPreviousAttempts"
-
-
-class GrapheneRetries(graphene.InputObjectType):
-    mode = graphene.Field(graphene.String)
-    retries_previous_attempts = graphene.List(GrapheneRetriesPreviousAttempts)
-
-    class Meta:
-        name = "Retries"
-
-
-def create_retries_params(retries_config):
-    return Retries.from_graphql_input(retries_config)
-
-
 class GrapheneJobSelector(graphene.InputObjectType):
     class Meta:
         name = "JobSelector"
@@ -246,9 +225,6 @@ types = [
     GraphenePipelineRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
-    GrapheneRetries,
-    GrapheneRetriesPreviousAttempts,
-    GrapheneRetriesPreviousAttempts,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
     GrapheneStepExecution,

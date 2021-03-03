@@ -2,6 +2,8 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.execution.plan.state import KnownExecutionState
+from dagster.core.execution.retries import RetryMode
 from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin
@@ -76,7 +78,8 @@ class ExecuteExternalPipelineArgs(
 class ExecuteStepArgs(
     namedtuple(
         "_ExecuteStepArgs",
-        "pipeline_origin pipeline_run_id step_keys_to_execute instance_ref retries_dict should_verify_step",
+        "pipeline_origin pipeline_run_id step_keys_to_execute instance_ref "
+        "retry_mode known_state should_verify_step",
     )
 ):
     def __new__(
@@ -85,7 +88,8 @@ class ExecuteStepArgs(
         pipeline_run_id,
         step_keys_to_execute,
         instance_ref=None,
-        retries_dict=None,
+        retry_mode=None,
+        known_state=None,
         should_verify_step=None,
     ):
         return super(ExecuteStepArgs, cls).__new__(
@@ -98,7 +102,8 @@ class ExecuteStepArgs(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
-            retries_dict=check.opt_dict_param(retries_dict, "retries_dict"),
+            retry_mode=check.opt_inst_param(retry_mode, "retry_mode", RetryMode),
+            known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             should_verify_step=check.opt_bool_param(
                 should_verify_step, "should_verify_step", False
             ),

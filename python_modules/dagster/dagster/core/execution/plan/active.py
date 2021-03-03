@@ -10,7 +10,8 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.plan.state import KnownExecutionState
+from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.utils.interrupts import pop_captured_interrupt
 
@@ -29,13 +30,16 @@ class ActiveExecution:
     def __init__(
         self,
         execution_plan: ExecutionPlan,
-        retries: Retries,
+        retry_mode: RetryMode,
+        retry_state: RetryState,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
         )
-        self._retries: Retries = check.inst_param(retries, "retries", Retries)
+        self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
+        self._retry_state = check.inst_param(retry_state, "retry_state", RetryState)
+
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
                 sort_key_fn,
@@ -352,23 +356,23 @@ class ActiveExecution:
 
     def mark_up_for_retry(self, step_key: str, at_time: Optional[float] = None) -> None:
         check.invariant(
-            not self._retries.disabled,
+            not self._retry_mode.disabled,
             "Attempted to mark {} as up for retry but retries are disabled".format(step_key),
         )
         check.opt_float_param(at_time, "at_time")
 
         # if retries are enabled - queue this back up
-        if self._retries.enabled:
+        if self._retry_mode.enabled:
             if at_time:
                 self._waiting_to_retry[step_key] = at_time
             else:
                 self._pending[step_key] = self._plan.get_executable_step_deps()[step_key]
 
-        elif self._retries.deferred:
+        elif self._retry_mode.deferred:
             # do not attempt to execute again
             self._abandoned.add(step_key)
 
-        self._retries.mark_attempt(step_key)
+        self._retry_state.mark_attempt(step_key)
 
         self._mark_complete(step_key)
 
@@ -437,4 +441,13 @@ class ActiveExecution:
             and len(self._pending_retry) == 0
             and len(self._pending_abandon) == 0
             and len(self._waiting_to_retry) == 0
+        )
+
+    @property
+    def retry_state(self):
+        return self._retry_state
+
+    def get_known_state(self):
+        return KnownExecutionState(
+            previous_retry_attempts=self._retry_state.snapshot_attempts(),
         )

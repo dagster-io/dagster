@@ -15,7 +15,7 @@ from dagster import (
 )
 from dagster.core.definitions.executor import executor
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
 
 
@@ -47,7 +47,7 @@ def test_in_process_executor_primitive_config():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=Retries.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),
             marker_to_close=None,
         )
 
@@ -65,7 +65,7 @@ def test_in_process_executor_dict_config():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=Retries.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),
             marker_to_close=None,
         )
 
@@ -83,7 +83,7 @@ def test_in_process_executor_dict_config_configured():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=Retries.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),
             marker_to_close=None,
         )
 
@@ -206,7 +206,7 @@ def test_defaulting_behavior():
         from dagster.core.executor.in_process import InProcessExecutor
 
         return InProcessExecutor(
-            retries=Retries.from_config({"enabled": {}}),
+            retries=RetryMode.from_config({"enabled": {}}),
             marker_to_close=None,
         )
 

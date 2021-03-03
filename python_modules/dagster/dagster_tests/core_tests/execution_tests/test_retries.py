@@ -19,7 +19,7 @@ from dagster import (
     solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.retries import Retries, RetryMode
+from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
 
 executors = pytest.mark.parametrize(
@@ -193,7 +193,7 @@ def test_retry_deferral():
         events = execute_plan(
             create_execution_plan(define_retry_limit_pipeline()),
             pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
-            retries=Retries(RetryMode.DEFERRED),
+            retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )
         events_by_type = defaultdict(list)

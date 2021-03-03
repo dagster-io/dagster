@@ -9,7 +9,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan_itera
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
 from dagster.seven import multiprocessing
@@ -37,7 +37,8 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         instance_ref,
         term_event,
         recon_pipeline,
-        retries,
+        retry_mode,
+        known_state,
     ):
         self.run_config = run_config
         self.pipeline_run = pipeline_run
@@ -45,7 +46,8 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         self.instance_ref = instance_ref
         self.term_event = term_event
         self.recon_pipeline = recon_pipeline
-        self.retries = retries
+        self.retry_mode = retry_mode
+        self.known_state = known_state
 
     def execute(self):
         pipeline = self.recon_pipeline
@@ -57,6 +59,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 run_config=self.run_config,
                 mode=self.pipeline_run.mode,
                 step_keys_to_execute=self.pipeline_run.step_keys_to_execute,
+                known_state=self.known_state,
             ).build_subset_plan([self.step_key])
 
             yield instance.report_engine_event(
@@ -77,7 +80,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 execution_plan,
                 self.pipeline_run,
                 run_config=self.run_config,
-                retries=self.retries.for_inner_plan(),
+                retry_mode=self.retry_mode.for_inner_plan(),
                 instance=instance,
             )
 
@@ -86,7 +89,7 @@ class MultiprocessExecutor(Executor):
     def __init__(self, pipeline, retries, max_concurrent=None):
 
         self.pipeline = check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
-        self._retries = check.inst_param(retries, "retries", Retries)
+        self._retries = check.inst_param(retries, "retries", RetryMode)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, "max_concurrent")
 
@@ -114,7 +117,7 @@ class MultiprocessExecutor(Executor):
         # garbage collect results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
-            with execution_plan.start(retries=self.retries) as active_execution:
+            with execution_plan.start(retry_mode=self.retries) as active_execution:
                 active_iters = {}
                 errors = {}
                 term_events = {}
@@ -146,7 +149,11 @@ class MultiprocessExecutor(Executor):
                             step_context = pipeline_context.for_step(step)
                             term_events[step.key] = multiprocessing.Event()
                             active_iters[step.key] = self.execute_step_out_of_process(
-                                step_context, step, errors, term_events
+                                step_context,
+                                step,
+                                errors,
+                                term_events,
+                                active_execution.get_known_state(),
                             )
 
                     # process active iterators
@@ -237,7 +244,7 @@ class MultiprocessExecutor(Executor):
             event_specific_data=EngineEventData.multiprocess(os.getpid()),
         )
 
-    def execute_step_out_of_process(self, step_context, step, errors, term_events):
+    def execute_step_out_of_process(self, step_context, step, errors, term_events, known_state):
         command = InProcessExecutorChildProcessCommand(
             run_config=step_context.run_config,
             pipeline_run=step_context.pipeline_run,
@@ -245,7 +252,8 @@ class MultiprocessExecutor(Executor):
             instance_ref=step_context.instance.get_ref(),
             term_event=term_events[step.key],
             recon_pipeline=self.pipeline,
-            retries=self.retries,
+            retry_mode=self.retries,
+            known_state=known_state,
         )
 
         yield DagsterEvent.engine_event(

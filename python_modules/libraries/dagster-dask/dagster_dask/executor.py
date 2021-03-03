@@ -7,7 +7,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.retries import Retries
+from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.utils import frozentags, iterate_with_context
 
@@ -149,7 +149,7 @@ class DaskExecutor(Executor):
 
     @property
     def retries(self):
-        return Retries.disabled_mode()
+        return RetryMode.DISABLED
 
     def execute(self, pipeline_context, execution_plan):
         check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)

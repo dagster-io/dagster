@@ -2,7 +2,6 @@ from dagster import DagsterInstance, EventMetadataEntry, check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.retries import Retries
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import serialize_dagster_namedtuple, unpack_value
 
@@ -26,7 +25,7 @@ def create_task(celery_app, **task_kwargs):
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
 
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
-        retries = Retries.from_config(execute_step_args.retries_dict)
+        retry_mode = execute_step_args.retry_mode
 
         pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
         check.invariant(
@@ -40,6 +39,7 @@ def create_task(celery_app, **task_kwargs):
             pipeline_run.run_config,
             mode=pipeline_run.mode,
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
+            known_state=execute_step_args.known_state,
         )
 
         engine_event = instance.report_engine_event(
@@ -62,7 +62,7 @@ def create_task(celery_app, **task_kwargs):
             pipeline_run=pipeline_run,
             run_config=pipeline_run.run_config,
             instance=instance,
-            retries=retries,
+            retry_mode=retry_mode,
         ):
             events.append(step_event)
 
