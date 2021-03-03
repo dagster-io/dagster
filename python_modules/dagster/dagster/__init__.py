@@ -133,7 +133,12 @@ from dagster.core.storage.system_storage import (
     io_manager_from_intermediate_storage,
     mem_intermediate_storage,
 )
-from dagster.core.types.config_schema import dagster_type_loader, dagster_type_materializer
+from dagster.core.types.config_schema import (
+    DagsterTypeLoader,
+    DagsterTypeMaterializer,
+    dagster_type_loader,
+    dagster_type_materializer,
+)
 from dagster.core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
 from dagster.core.types.decorator import (
     make_python_type_usable_as_dagster_type,
@@ -289,7 +294,9 @@ __all__ = [
     "Tuple",
     "TypeCheck",
     "dagster_type_loader",
+    "DagsterTypeLoader",
     "dagster_type_materializer",
+    "DagsterTypeMaterializer",
     # type creation
     "DagsterType",
     "PythonObjectDagsterType",

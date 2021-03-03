@@ -354,7 +354,11 @@ Making New Types
 
 .. autofunction:: dagster_type_loader
 
+.. autoclass:: DagsterTypeLoader
+
 .. autofunction:: dagster_type_materializer
+
+.. autoclass:: DagsterTypeMaterializer
 
 .. autofunction:: usable_as_dagster_type
 

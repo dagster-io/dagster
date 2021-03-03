@@ -12,6 +12,14 @@ from dagster.utils.backcompat import experimental_arg_warning
 
 
 class DagsterTypeLoader:
+    """
+    Dagster type loaders are used to load unconnected inputs of the dagster type they are attached
+    to.
+
+    The recommended way to define a type loader is with the
+    :py:func:`@dagster_type_loader <dagster_type_loader>` decorator.
+    """
+
     @property
     def schema_type(self):
         check.not_implemented(
@@ -36,6 +44,14 @@ class DagsterTypeLoader:
 
 
 class DagsterTypeMaterializer:
+    """
+    Dagster type materializers are used to materialize outputs of the dagster type they are attached
+    to.
+
+    The recommended way to define a type loader is with the
+    :py:func:`@dagster_type_materializer <dagster_type_materializer>` decorator.
+    """
+
     @property
     def schema_type(self):
         check.not_implemented(
