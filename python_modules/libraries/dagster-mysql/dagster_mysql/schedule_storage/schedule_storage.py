@@ -45,7 +45,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
-        if "schedules" not in table_names or "jobs" not in table_names:
+        if "jobs" not in table_names:
             with self.connect() as conn:
                 alembic_config = mysql_alembic_config(__file__)
                 retry_mysql_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
