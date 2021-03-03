@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Type
 
-from pydantic import Extra  # pylint: disable=E0611
+from pydantic import Extra  # pylint: disable=no-name-in-module
 
 from .config import StringSource
 from .utils import BaseModel, ConfigurableClass, create_json_schema_conditionals

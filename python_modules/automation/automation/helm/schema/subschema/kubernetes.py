@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Extra  # pylint: disable=E0611
+from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
 from .utils import SupportedKubernetes, create_definition_ref
 
@@ -31,6 +31,13 @@ class PullPolicy(str, Enum):
 
 
 class Image(BaseModel):
+    repository: str
+    tag: str
+    pullPolicy: PullPolicy
+
+
+class ImageWithRegistry(BaseModel):
+    registry: str
     repository: str
     tag: str
     pullPolicy: PullPolicy

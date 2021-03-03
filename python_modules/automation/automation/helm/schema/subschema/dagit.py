@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from pydantic import BaseModel  # pylint: disable=E0611
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
 from . import kubernetes
 

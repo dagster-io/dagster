@@ -21,7 +21,7 @@ dagit:
   replicaCount: 1
   # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: "dagster/dagster-celery-k8s"
+    repository: "docker.io/dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
 
@@ -168,7 +168,7 @@ userDeployments:
   deployments:
     - name: "k8s-example-user-code-1"
       image:
-        repository: "dagster/user-code-example"
+        repository: "docker.io/dagster/user-code-example"
         tag: latest
         # Change with caution! If you're using a fixed tag for pipeline run images, changing the
         # image pull policy to anything other than "Always" will use a cached/stale image, which is
@@ -261,7 +261,7 @@ userDeployments:
 ####################################################################################################
 pipelineRun:
   image:
-    repository: "dagster/user-code-example"
+    repository: "docker.io/dagster/user-code-example"
     tag: "latest"
     pullPolicy: Always
 
@@ -294,7 +294,7 @@ scheduler:
       # (to call `dagster api launch_scheduled_execution`) and instance yaml
       # but does not need access to user code.
       image:
-        repository: "dagster/dagster-celery-k8s"
+        repository: "docker.io/dagster/dagster-celery-k8s"
         tag: "latest"
         pullPolicy: Always
 
@@ -375,7 +375,7 @@ runLauncher:
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
       image:
-        repository: "dagster/dagster-celery-k8s"
+        repository: "docker.io/dagster/dagster-celery-k8s"
         tag: "latest"
         pullPolicy: Always
 
@@ -492,8 +492,9 @@ postgresql:
 
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
-    repository: "postgres"
-    tag: "9.6.16"
+    registry: "docker.io"
+    repository: "library/postgres"
+    tag: "9.6.21"
     pullPolicy: IfNotPresent
 
   # set this PostgreSQL hostname when using an external PostgreSQL database
@@ -517,6 +518,12 @@ postgresql:
 rabbitmq:
   enabled: false
 
+  image:
+    registry: "docker.io"
+    repository: "bitnami/rabbitmq"
+    tag: "3.8.12"
+    pullPolicy: IfNotPresent
+
   rabbitmq:
     username: test
     password: test
@@ -527,6 +534,11 @@ rabbitmq:
   # https://github.com/helm/charts/issues/17250#issuecomment-533444837
   volumePermissions:
     enabled: true
+    image:
+      registry: docker.io
+      repository: bitnami/minideb
+      tag: stretch
+      pullPolicy: IfNotPresent
 
 ####################################################################################################
 # Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
@@ -558,7 +570,7 @@ flower:
   enabled: false
 
   image:
-    repository: "mher/flower"
+    repository: "docker.io/mher/flower"
     tag: "0.9.5"
     pullPolicy: Always
 
@@ -684,7 +696,7 @@ dagsterDaemon:
   enabled: true
 
   image:
-    repository: "dagster/dagster-celery-k8s"
+    repository: "docker.io/dagster/dagster-celery-k8s"
     tag: "latest"
     pullPolicy: Always
 
@@ -754,6 +766,15 @@ dagsterDaemon:
     periodSeconds: 10
     failureThreshold: 12
     timeoutSeconds: 3
+
+####################################################################################################
+# busybox: Configuration for the busybox image used to check connections
+####################################################################################################
+busybox:
+  image:
+    repository: "docker.io/busybox"
+    tag: "1.28"
+    pullPolicy: "IfNotPresent"
 
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart

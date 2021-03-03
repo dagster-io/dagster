@@ -1,6 +1,6 @@
 from typing import Union
 
-from pydantic import BaseModel, Extra  # pylint: disable=E0611
+from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
 
 class _StringSource(BaseModel):

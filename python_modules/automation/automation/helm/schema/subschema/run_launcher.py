@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import Extra, Field  # pylint: disable=E0611
+from pydantic import Extra, Field  # pylint: disable=no-name-in-module
 
 from . import kubernetes
 from .utils import BaseModel, ConfigurableClass, create_json_schema_conditionals

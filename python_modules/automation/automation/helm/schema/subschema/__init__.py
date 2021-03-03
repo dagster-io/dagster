@@ -1,4 +1,5 @@
 from . import kubernetes
+from .busybox import Busybox
 from .compute_log_manager import ComputeLogManager
 from .daemon import Daemon
 from .dagit import Dagit

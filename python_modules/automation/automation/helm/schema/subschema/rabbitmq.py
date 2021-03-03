@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field  # pylint: disable=E0611
+from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
+
+from .kubernetes import ImageWithRegistry
 
 
 class RabbitMQConfiguration(BaseModel):
@@ -12,10 +14,12 @@ class Service(BaseModel):
 
 class VolumePermissions(BaseModel):
     enabled: bool = Field(default=True, const=True)
+    image: ImageWithRegistry
 
 
 class RabbitMQ(BaseModel):
     enabled: bool
+    image: ImageWithRegistry
     rabbitmq: RabbitMQConfiguration
     service: Service
     volumePermissions: VolumePermissions

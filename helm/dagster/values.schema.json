@@ -42,6 +42,9 @@
         },
         "dagsterDaemon": {
             "$ref": "#/definitions/Daemon"
+        },
+        "busybox": {
+            "$ref": "#/definitions/Busybox"
         }
     },
     "required": [
@@ -56,7 +59,8 @@
         "computeLogManager",
         "scheduler",
         "runLauncher",
-        "dagsterDaemon"
+        "dagsterDaemon",
+        "busybox"
     ],
     "definitions": {
         "PullPolicy": {
@@ -360,6 +364,33 @@
                 "deployments"
             ]
         },
+        "ImageWithRegistry": {
+            "title": "ImageWithRegistry",
+            "type": "object",
+            "properties": {
+                "registry": {
+                    "title": "Registry",
+                    "type": "string"
+                },
+                "repository": {
+                    "title": "Repository",
+                    "type": "string"
+                },
+                "tag": {
+                    "title": "Tag",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
+                }
+            },
+            "required": [
+                "registry",
+                "repository",
+                "tag",
+                "pullPolicy"
+            ]
+        },
         "automation__helm__schema__subschema__postgresql__Service": {
             "title": "Service",
             "type": "object",
@@ -378,7 +409,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/Image"
+                    "$ref": "#/definitions/ImageWithRegistry"
                 },
                 "enabled": {
                     "title": "Enabled",
@@ -453,8 +484,14 @@
                     "title": "Enabled",
                     "const": true,
                     "type": "boolean"
+                },
+                "image": {
+                    "$ref": "#/definitions/ImageWithRegistry"
                 }
-            }
+            },
+            "required": [
+                "image"
+            ]
         },
         "RabbitMQ": {
             "title": "RabbitMQ",
@@ -463,6 +500,9 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "image": {
+                    "$ref": "#/definitions/ImageWithRegistry"
                 },
                 "rabbitmq": {
                     "$ref": "#/definitions/RabbitMQConfiguration"
@@ -476,6 +516,7 @@
             },
             "required": [
                 "enabled",
+                "image",
                 "rabbitmq",
                 "service",
                 "volumePermissions"
@@ -1680,6 +1721,18 @@
                 "livenessProbe",
                 "startupProbe",
                 "annotations"
+            ]
+        },
+        "Busybox": {
+            "title": "Busybox",
+            "type": "object",
+            "properties": {
+                "image": {
+                    "$ref": "#/definitions/Image"
+                }
+            },
+            "required": [
+                "image"
             ]
         }
     }
