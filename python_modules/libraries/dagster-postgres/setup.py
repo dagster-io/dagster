@@ -30,9 +30,7 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["test"]),
         package_data={
             "dagster-postgres": [
-                "dagster_postgres/event_log/alembic/*",
-                "dagster_postgres/run_storage/alembic/*",
-                "dagster_postgres/schedule_storage/alembic/*",
+                "dagster_postgres/alembic/*",
             ]
         },
         include_package_data=True,
