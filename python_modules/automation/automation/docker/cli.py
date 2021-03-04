@@ -12,8 +12,7 @@ from .utils import current_time_str, execute_docker_push, execute_docker_tag
 CLI_HELP = """This CLI is used for building the various Dagster images we use in test
 """
 
-# We are waiting on our custom alias, and then this will be `public.ecr.aws/dagster`
-AWS_ECR_REGISTRY = "public.ecr.aws/f8w6w7v8"
+AWS_ECR_REGISTRY = "public.ecr.aws/dagster"
 
 
 @click.group(help=CLI_HELP)
@@ -138,7 +137,7 @@ def push_ecr(name, dagster_version):
 
     You must be authed for ECR. Run:
 
-        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/f8w6w7v8
+        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/dagster
     """
 
     check.invariant(
