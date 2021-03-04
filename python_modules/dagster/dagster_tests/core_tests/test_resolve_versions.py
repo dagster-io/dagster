@@ -450,7 +450,7 @@ def test_resource_versions():
     )
 
     assert resource_versions_by_key["test_resource"] == join_and_hash(
-        resolve_config_version({"config": {"input_str": "apple"}}), test_resource.version
+        resolve_config_version({"input_str": "apple"}), test_resource.version
     )
 
     assert resource_versions_by_key["test_resource_no_version"] == None

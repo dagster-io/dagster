@@ -144,7 +144,7 @@ class FromRootInputManager(
             dagster_type=input_def.dagster_type,
             resource_config=step_context.environment_config.resources[
                 input_def.root_manager_key
-            ].get("config", {}),
+            ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
         yield _load_input_with_input_manager(loader, load_input_context)
@@ -198,9 +198,7 @@ class FromStepOutput(
 
     def get_load_context(self, step_context: "SystemStepExecutionContext") -> "InputContext":
         io_manager_key = step_context.execution_plan.get_manager_key(self.step_output_handle)
-        resource_config = step_context.environment_config.resources[io_manager_key].get(
-            "config", {}
-        )
+        resource_config = step_context.environment_config.resources[io_manager_key].config
         resources = build_resources_for_manager(io_manager_key, step_context)
 
         input_def = self.get_input_def(step_context.pipeline_def)

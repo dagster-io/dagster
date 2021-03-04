@@ -19,7 +19,6 @@ from dagster.core.execution.resources_init import (
 )
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.utils import make_new_run_id
 
 
 def test_generator_exit():
@@ -96,8 +95,18 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
+    resource_defs = execution_plan.pipeline_def.get_mode_definition(environment_config.mode)
+
     generator = resource_initialization_event_generator(
-        execution_plan, environment_config, pipeline_run, log_manager, {"a"}, instance
+        resource_defs=resource_defs,
+        resource_configs=environment_config.resources,
+        log_manager=log_manager,
+        execution_plan=execution_plan,
+        pipeline_run=pipeline_run,
+        resource_keys_to_init={"a"},
+        instance=instance,
+        resource_instances_to_override=None,
+        emit_persistent_events=True,
     )
     next(generator)
     generator.close()

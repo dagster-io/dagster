@@ -689,7 +689,7 @@ def get_output_context(
     output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
 
     io_manager_key = output_def.io_manager_key
-    resource_config = environment_config.resources[io_manager_key].get("config", {})
+    resource_config = environment_config.resources[io_manager_key].config
 
     resources = build_resources_for_manager(io_manager_key, step_context) if step_context else None
 
