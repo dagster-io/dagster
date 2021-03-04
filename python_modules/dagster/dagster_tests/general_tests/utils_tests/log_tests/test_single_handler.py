@@ -27,14 +27,7 @@ def test_log_level_filtering():
     )
 
     loggers = [
-        logger_def.logger_fn(
-            InitLoggerContext(
-                {},
-                logger_def,
-                pipeline_def=PipelineDefinition([]),
-                run_id="",
-            )
-        )
+        logger_def.logger_fn(InitLoggerContext({}, PipelineDefinition([]), logger_def, ""))
         for logger_def in [debug_logger_def, critical_logger_def]
     ]
 

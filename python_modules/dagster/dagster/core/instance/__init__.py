@@ -630,7 +630,7 @@ class DagsterInstance:
                 )
 
             subsetted_execution_plan = resolve_memoized_execution_plan(
-                full_execution_plan, run_config
+                full_execution_plan
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
             step_keys_to_execute = subsetted_execution_plan.step_keys_to_execute
         else:

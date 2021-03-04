@@ -171,11 +171,7 @@ def test_colored_console_logger_with_integer_log_level():
         pass
 
     colored_console_logger.logger_fn(
-        InitLoggerContext(
-            {"name": "dagster", "log_level": 4},
-            colored_console_logger,
-            pipeline_def=pipe,
-        )
+        InitLoggerContext({"name": "dagster", "log_level": 4}, pipe, colored_console_logger, "")
     )
 
 

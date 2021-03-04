@@ -208,19 +208,14 @@ class ExecutionContextManager(ABC):
             )
 
             log_manager = create_log_manager(context_creation_data)
-            resource_defs = execution_plan.pipeline_def.get_mode_definition(
-                context_creation_data.environment_config.mode
-            ).resource_defs
             resources_manager = scoped_resources_builder_cm(
-                resource_defs=resource_defs,
-                resource_configs=context_creation_data.environment_config.resources,
-                log_manager=log_manager,
-                execution_plan=execution_plan,
-                pipeline_run=context_creation_data.pipeline_run,
-                resource_keys_to_init=context_creation_data.resource_keys_to_init,
-                instance=instance,
-                resource_instances_to_override=resource_instances_to_override,
-                emit_persistent_events=True,
+                execution_plan,
+                context_creation_data.environment_config,
+                context_creation_data.pipeline_run,
+                log_manager,
+                context_creation_data.resource_keys_to_init,
+                instance,
+                resource_instances_to_override,
             )
             yield from resources_manager.generate_setup_events()
             scoped_resources_builder = check.inst(
@@ -518,9 +513,9 @@ def create_log_manager(context_creation_data):
                 logger_def.logger_fn(
                     InitLoggerContext(
                         environment_config.loggers.get(logger_key, {}).get("config"),
+                        pipeline_def,
                         logger_def,
-                        pipeline_def=pipeline_def,
-                        run_id=pipeline_run.run_id,
+                        pipeline_run.run_id,
                     )
                 )
             )
@@ -529,12 +524,7 @@ def create_log_manager(context_creation_data):
         for (logger_def, logger_config) in default_system_loggers():
             loggers.append(
                 logger_def.logger_fn(
-                    InitLoggerContext(
-                        logger_config,
-                        logger_def,
-                        pipeline_def=pipeline_def,
-                        run_id=pipeline_run.run_id,
-                    )
+                    InitLoggerContext(logger_config, pipeline_def, logger_def, pipeline_run.run_id)
                 )
             )
 
@@ -564,12 +554,7 @@ def _create_context_free_log_manager(instance, pipeline_run, pipeline_def):
     for (logger_def, logger_config) in default_system_loggers():
         loggers += [
             logger_def.logger_fn(
-                InitLoggerContext(
-                    logger_config,
-                    logger_def,
-                    pipeline_def=pipeline_def,
-                    run_id=pipeline_run.run_id,
-                )
+                InitLoggerContext(logger_config, pipeline_def, logger_def, pipeline_run.run_id)
             )
         ]
 

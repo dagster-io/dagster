@@ -3,6 +3,7 @@ import hashlib
 import pytest
 from dagster import (
     Bool,
+    DagsterInstance,
     Field,
     Float,
     Int,
@@ -27,7 +28,6 @@ from dagster.core.execution.resolve_versions import (
     resolve_memoized_execution_plan,
     resolve_resource_versions,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
@@ -214,7 +214,7 @@ def test_resolve_memoized_execution_plan_no_stored_results():
     versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryIOManager())
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
-    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan, {})
+    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
 
     assert set(memoized_execution_plan.step_keys_to_execute) == {
         "versioned_solid_no_input",
@@ -234,7 +234,7 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
-    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan, {})
+    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
 
     assert memoized_execution_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
 
@@ -262,7 +262,7 @@ def test_resolve_memoized_execution_plan_partial_versioning():
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
-    assert resolve_memoized_execution_plan(speculative_execution_plan, {}).step_keys_to_execute == [
+    assert resolve_memoized_execution_plan(speculative_execution_plan).step_keys_to_execute == [
         "solid_takes_input"
     ]
 
@@ -450,7 +450,7 @@ def test_resource_versions():
     )
 
     assert resource_versions_by_key["test_resource"] == join_and_hash(
-        resolve_config_version({"input_str": "apple"}), test_resource.version
+        resolve_config_version({"config": {"input_str": "apple"}}), test_resource.version
     )
 
     assert resource_versions_by_key["test_resource_no_version"] == None

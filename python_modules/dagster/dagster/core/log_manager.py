@@ -116,7 +116,7 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags lo
     def __new__(cls, run_id, logging_tags, loggers):
         return super(DagsterLogManager, cls).__new__(
             cls,
-            run_id=check.opt_str_param(run_id, "run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             logging_tags=check.dict_param(
                 logging_tags, "logging_tags", key_type=str, value_type=str
             ),

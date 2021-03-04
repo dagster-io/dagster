@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Optional
+from typing import Any
 
 from dagster import check
 from dagster.core.definitions.logger import LoggerDefinition
@@ -27,14 +27,14 @@ class InitLoggerContext(
     def __new__(
         cls,
         logger_config: Any,
+        pipeline_def: PipelineDefinition,
         logger_def: LoggerDefinition,
-        pipeline_def: Optional[PipelineDefinition] = None,
-        run_id: Optional[str] = None,
+        run_id: str,
     ):
         return super(InitLoggerContext, cls).__new__(
             cls,
             logger_config,
-            check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
+            check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
             check.inst_param(logger_def, "logger_def", LoggerDefinition),
-            check.opt_str_param(run_id, "run_id"),
+            check.str_param(run_id, "run_id"),
         )

@@ -4,7 +4,6 @@ from dagster.core.definitions.intermediate_storage import IntermediateStorageDef
 from dagster.core.definitions.intermediate_storage import (
     intermediate_storage as intermediate_storage_fn,
 )
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.storage.type_storage import (
     TypeStoragePluginRegistry,
@@ -138,11 +137,6 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
 
     @io_manager
     def _io_manager(init_context):
-        if not init_context.pipeline_run:
-            raise DagsterInvariantViolationError(
-                "Attempted to construct intermediate storage outside of execution context. "
-                "Intermediate storage can only be constructed within the context of an execution."
-            )
         pipeline_run = init_context.pipeline_run
         instance = init_context.instance
         pipeline_def = init_context.pipeline_def_for_backwards_compat
