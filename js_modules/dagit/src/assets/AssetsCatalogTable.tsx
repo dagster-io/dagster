@@ -1,9 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Popover,
+  Button,
   Menu,
   MenuItem,
   Icon,
+  Popover,
   InputGroup as BlueprintInputGroup,
   NonIdealState,
 } from '@blueprintjs/core';
@@ -14,9 +15,11 @@ import styled from 'styled-components';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {featureEnabled, FeatureFlag} from 'src/app/Util';
+import {AssetWipeDialog} from 'src/assets/AssetWipeDialog';
 import {
   AssetsTableQuery,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes,
+  AssetsTableQuery_assetsOrError_AssetConnection_nodes_key,
 } from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {Box} from 'src/ui/Box';
@@ -24,6 +27,7 @@ import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
+type AssetKey = AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
 
 export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}> = ({
   prefixPath,
@@ -266,6 +270,10 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
 
 const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: string[]}) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
+  const [toWipe, setToWipe] = React.useState<AssetKey | undefined>();
+  const removeAsset = () => {
+    setToWipe(undefined);
+  };
   const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
 
   if (!isFlattened) {
@@ -279,34 +287,33 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
 
     const pathKeys = Object.keys(pathMap).sort();
     return (
-      <div>
-        <Table>
-          <thead>
-            <tr>
-              <th>Asset Key</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pathKeys.map((pathKey: string, idx: number) => {
-              const linkUrl = `/instance/assets/${
-                currentPath.length
-                  ? currentPath.map(encodeURIComponent).join('/') +
-                    `/${encodeURIComponent(pathKey)}`
-                  : encodeURIComponent(pathKey)
-              }`;
-              const isAsset =
-                pathMap[pathKey].key.path.join('/') === [...currentPath, pathKey].join('/');
-              return (
-                <tr key={idx}>
-                  <td>
-                    <Link to={linkUrl}>{isAsset ? pathKey : `${pathKey}/`}</Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
+      <Table>
+        <thead>
+          <tr>
+            <th>Asset Key</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pathKeys.map((pathKey: string) => {
+            const linkUrl = `/instance/assets/${
+              currentPath.length
+                ? currentPath.map(encodeURIComponent).join('/') + `/${encodeURIComponent(pathKey)}`
+                : encodeURIComponent(pathKey)
+            }`;
+            const assetKeyString = pathMap[pathKey].key.path.join('/');
+            const pathString = [...currentPath, pathKey].join('/');
+            return (
+              <tr key={pathString}>
+                <td>
+                  <Link to={linkUrl}>
+                    {assetKeyString === pathString ? pathKey : `${pathKey}/`}
+                  </Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
     );
   }
 
@@ -323,11 +330,12 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
   });
 
   return (
-    <div>
+    <>
       <Table>
         <thead>
           <tr>
             <th>Asset Key</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -350,12 +358,35 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
                     </Box>
                   </Link>
                 </td>
+                <td>
+                  <Popover
+                    content={
+                      <Menu>
+                        <MenuItem
+                          text="Wipe asset..."
+                          icon="trash"
+                          target="_blank"
+                          onClick={() => setToWipe(asset.key)}
+                        />
+                      </Menu>
+                    }
+                    position="bottom"
+                  >
+                    <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+                  </Popover>
+                </td>
               </tr>
             );
           })}
         </tbody>
       </Table>
-    </div>
+      <AssetWipeDialog
+        assetKey={toWipe}
+        onClose={() => setToWipe(undefined)}
+        onComplete={removeAsset}
+        requery={(_) => [{query: ASSETS_TABLE_QUERY}]}
+      />
+    </>
   );
 };
 
