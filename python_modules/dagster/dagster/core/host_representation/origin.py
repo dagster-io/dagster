@@ -6,6 +6,7 @@ from typing import Set
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
 
@@ -78,6 +79,31 @@ class RepositoryLocationOrigin(ABC):
     @abstractproperty
     def location_name(self):
         pass
+
+
+@whitelist_for_serdes
+class RegisteredRepositoryLocationOrigin(
+    namedtuple("RegisteredRepositoryLocationOrigin", "location_name"), RepositoryLocationOrigin
+):
+    """Identifies a repository location of a handle managed using metadata stored outside of the
+    origin - can only be loaded in an environment that is managing repository locations using
+    its own mapping from location name to repository location metadata.
+    """
+
+    def __new__(cls, location_name):
+        return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
+
+    def get_cli_args(self):
+        raise NotImplementedError
+
+    def get_display_metadata(self):
+        return {}
+
+    def create_handle(self):
+        raise DagsterInvariantViolationError(
+            "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
+            "repository location."
+        )
 
 
 @whitelist_for_serdes
