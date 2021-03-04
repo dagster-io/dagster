@@ -1,8 +1,8 @@
 from dagster import repository
 
-from .pipelines import my_pipeline
-from .schedules import my_hourly_schedule
-from .sensors import my_sensor
+from {{ repo_name }}.pipelines.my_pipeline import my_pipeline
+from {{ repo_name }}.schedules.my_hourly_schedule import my_hourly_schedule
+from {{ repo_name }}.sensors.my_sensor import my_sensor
 
 
 @repository

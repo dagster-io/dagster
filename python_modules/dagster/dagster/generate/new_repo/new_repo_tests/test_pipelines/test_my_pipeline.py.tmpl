@@ -1,5 +1,5 @@
 from dagster import execute_pipeline
-from {{ repo_name }}.pipelines import my_pipeline
+from {{ repo_name }}.pipelines.my_pipeline import my_pipeline
 
 
 def test_my_pipeline():

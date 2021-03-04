@@ -1,6 +1,6 @@
 from dagster import execute_solid
-from {{ repo_name }}.pipelines import MODE_TEST
-from {{ repo_name }}.solids import hello
+from {{ repo_name }}.pipelines.my_pipeline import MODE_TEST
+from {{ repo_name }}.solids.hello import hello
 
 
 def test_hello():
