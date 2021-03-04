@@ -142,13 +142,15 @@ const SensorRow: React.FC<{
       </td>
       <td>
         <Group direction="column" spacing={4}>
-          <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
+          <span style={{fontWeight: 500}}>
+            <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
+          </span>
           <Group direction="row" spacing={4} alignItems="center">
             <Icon
               icon="diagram-tree"
               color={Colors.GRAY2}
-              iconSize={12}
-              style={{position: 'relative', top: '-2px'}}
+              iconSize={9}
+              style={{position: 'relative', top: '-3px'}}
             />
             <span style={{fontSize: '13px'}}>
               <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
