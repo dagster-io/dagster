@@ -20,7 +20,7 @@ export const TimestampDisplay = (props: Props) => {
   const locale = navigator.language;
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Group direction="row" spacing={8} alignItems="center" wrap="wrap">
       <TabularNums>
         {timestampToString({
           timestamp: {unix: timestamp},

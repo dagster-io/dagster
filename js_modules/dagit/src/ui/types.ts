@@ -33,6 +33,7 @@ export type JustifyContent =
   | 'stretch';
 
 export type FlexDirection = 'row' | 'row-reverse' | 'column' | 'column-reverse';
+export type FlexWrap = 'nowrap' | 'wrap' | 'wrap-reverse';
 export type FlexProperties = {
   alignItems?: AlignItems;
   basis?: string;
@@ -41,7 +42,7 @@ export type FlexProperties = {
   grow?: number;
   justifyContent?: JustifyContent;
   shrink?: number;
-  wrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
+  wrap?: FlexWrap;
 };
 
 export type BorderSide = 'top' | 'right' | 'bottom' | 'left' | 'horizontal' | 'vertical' | 'all';

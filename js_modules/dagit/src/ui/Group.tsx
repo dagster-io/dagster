@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {Box} from 'src/ui/Box';
-import {AlignItems, DirectionalSpacing, FlexProperties, Spacing} from 'src/ui/types';
+import {AlignItems, DirectionalSpacing, FlexProperties, FlexWrap, Spacing} from 'src/ui/types';
 
 type Direction = 'row' | 'column';
 
@@ -13,14 +13,14 @@ interface Props {
   margin?: DirectionalSpacing;
   padding?: DirectionalSpacing;
   spacing: Spacing;
+  wrap?: FlexWrap;
 }
 
 const flexDirection = (direction: Direction) => (direction === 'row' ? 'row' : 'column');
-const childMargin = (direction: Direction, spacing: Spacing) =>
-  direction === 'row' ? {left: spacing} : {top: spacing};
+const childMargin = (direction: Direction, spacing: Spacing) => ({left: spacing, top: spacing});
 
 export const Group: React.FC<Props> = (props) => {
-  const {alignItems, children, direction, spacing, ...rest} = props;
+  const {alignItems, children, direction, spacing, wrap, ...rest} = props;
   const wrappedChildren = React.Children.map(children, (child) => {
     const margin = childMargin(direction, spacing);
     return (
@@ -36,6 +36,10 @@ export const Group: React.FC<Props> = (props) => {
 
   if (alignItems) {
     flex.alignItems = alignItems;
+  }
+
+  if (wrap) {
+    flex.wrap = wrap;
   }
 
   return (
@@ -57,19 +61,15 @@ const GroupChild = styled(({empty, ...rest}) => <Box {...rest} />)<GroupChildPro
 `;
 
 type InnerProps = {
-  direction: Direction;
   spacing: Spacing;
 };
 
 const marginAdjustment = (props: InnerProps) => {
-  const {direction, spacing} = props;
-  return direction === 'row'
-    ? css`
-        margin-left: -${spacing}px;
-      `
-    : css`
-        margin-top: -${spacing}px;
-      `;
+  const {spacing} = props;
+  return css`
+    margin-left: -${spacing}px;
+    margin-top: -${spacing}px;
+  `;
 };
 
 const Outer = styled(Box)`

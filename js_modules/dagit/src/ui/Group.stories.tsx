@@ -7,7 +7,7 @@ import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Body, Code, Heading, Subheading} from 'src/ui/Text';
-import {AlignItems, Spacing} from 'src/ui/types';
+import {AlignItems, FlexWrap, Spacing} from 'src/ui/types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -126,6 +126,28 @@ export const PointerEventsTest = () => {
         <Subheading>Subheading</Subheading>
       </Group>
     </div>
+  );
+};
+
+export const Wrap = () => {
+  const wraps: FlexWrap[] = ['wrap', 'nowrap'];
+  return (
+    <Group spacing={12} direction="column">
+      {wraps.map((wrap) => (
+        <Box background={Colors.LIGHT_GRAY4} padding={12} key={wrap} style={{width: '400px'}}>
+          <Group direction="row" spacing={8} wrap={wrap}>
+            <ExampleText>
+              <strong>{wrap}</strong>
+            </ExampleText>
+            <ExampleText>China</ExampleText>
+            <ExampleText>France</ExampleText>
+            <ExampleText>Russia</ExampleText>
+            <ExampleText>United Kingdom</ExampleText>
+            <ExampleText>United States</ExampleText>
+          </Group>
+        </Box>
+      ))}
+    </Group>
   );
 };
 
