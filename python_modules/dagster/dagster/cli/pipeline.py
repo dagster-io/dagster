@@ -263,7 +263,7 @@ def execute_list_versions_command(instance, kwargs):
         pipeline.get_definition(), run_config=run_config, mode=mode
     )
     step_output_versions = execution_plan.resolve_step_output_versions()
-    memoized_plan = resolve_memoized_execution_plan(execution_plan)
+    memoized_plan = resolve_memoized_execution_plan(execution_plan, run_config)
     # the step keys that we need to execute are those which do not have their inputs populated.
     step_keys_not_stored = set(memoized_plan.step_keys_to_execute)
     table = []

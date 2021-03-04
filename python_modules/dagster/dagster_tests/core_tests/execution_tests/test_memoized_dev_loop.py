@@ -32,7 +32,7 @@ def get_ephemeral_instance(temp_dir):
 
 def get_step_keys_to_execute(pipeline, run_config, mode):
     memoized_execution_plan = resolve_memoized_execution_plan(
-        create_execution_plan(pipeline, run_config=run_config, mode=mode)
+        create_execution_plan(pipeline, run_config=run_config, mode=mode), run_config
     )
     return memoized_execution_plan.step_keys_to_execute
 
