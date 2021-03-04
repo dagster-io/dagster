@@ -324,7 +324,7 @@ def _evaluate_sensor(
             )
         except Exception:  # pylint: disable=broad-except
             context.logger.error(
-                "Run {run_id} created successfully but failed to launch.".format(run_id=run.run_id)
+                f"Run {run.run_id} created successfully but failed to launch: {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
             )
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")

@@ -1299,14 +1299,15 @@ def test_launch_failure(external_repo_context, capfd):
 
             captured = capfd.readouterr()
             assert (
-                captured.out
-                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+                """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
 2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
-2019-02-26 18:00:00 - SchedulerDaemon - ERROR - Run {run_id} created successfully but failed to launch.
-""".format(
+2019-02-26 18:00:00 - SchedulerDaemon - ERROR - Run {run_id} created successfully but failed to launch:""".format(
                     run_id=instance.get_runs()[0].run_id
                 )
+                in captured.out
             )
+
+            assert "The entire purpose of this is to throw on launch" in captured.out
 
 
 def test_partitionless_schedule(capfd):
