@@ -40,6 +40,7 @@ class SqlPollingEventWatcher:
         # INVARIANT: dict_lock protects _run_id_to_watcher_dict
         self._dict_lock: threading.Lock = threading.Lock()
         self._run_id_to_watcher_dict: MutableMapping[str, SqlPollingRunIdEventWatcherThread] = {}
+        self._disposed = False
 
     def has_run_id(self, run_id: str) -> bool:
         run_id = check.str_param(run_id, "run_id")
@@ -69,14 +70,19 @@ class SqlPollingEventWatcher:
                 if self._run_id_to_watcher_dict[run_id].should_thread_exit.is_set():
                     del self._run_id_to_watcher_dict[run_id]
 
+    def __del__(self):
+        self.close()
+
     def close(self):
-        with self._dict_lock:
-            for watcher_thread in self._run_id_to_watcher_dict.values():
-                if not watcher_thread.should_thread_exit.is_set():
-                    watcher_thread.should_thread_exit.set()
-            for run_id in self._run_id_to_watcher_dict:
-                self._run_id_to_watcher_dict[run_id].join()
-            del self._run_id_to_watcher_dict
+        if not self._disposed:
+            self._disposed = True
+            with self._dict_lock:
+                for watcher_thread in self._run_id_to_watcher_dict.values():
+                    if not watcher_thread.should_thread_exit.is_set():
+                        watcher_thread.should_thread_exit.set()
+                for run_id in self._run_id_to_watcher_dict:
+                    self._run_id_to_watcher_dict[run_id].join()
+                del self._run_id_to_watcher_dict
 
 
 class SqlPollingRunIdEventWatcherThread(threading.Thread):
