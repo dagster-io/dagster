@@ -1,5 +1,110 @@
 # Changelog
 
+## 0.10.8
+
+**Community Contributions**
+
+* [dagster-dbt] The dbt commands `seed` and `docs generate` are now available as solids in the
+  library `dagster-dbt`. (thanks [@dehume-drizly](https://github.com/dehume-drizly)!)
+
+**New**
+
+* Dagit now has a global search feature in the left navigation, allowing you to jump quickly to
+  pipelines, schedules, and sensors across your workspace. You can trigger search by clicking the
+  search input or with the / keyboard shortcut.
+* Timestamps in Dagit have been updated to be more consistent throughout the app, and are now
+  localized based on your browser’s settings.
+* Adding `SQLPollingEventWatcher` for alternatives to filesystem or DB-specific listen/notify
+  functionality
+* We have added the `BoolSource` config type (similar to the `StringSource` type). The config value for
+  this type can be a boolean literal or a pointer to an environment variable that is set to a boolean
+  value.
+* The `QueuedRunCoordinator` daemon is now more resilient to errors while dequeuing runs. Previously
+  runs which could not launch would block the queue. They will now be marked as failed and removed
+  from the queue.
+* When deploying your own gRPC server for your pipelines, you can now specify that connecting to that
+  server should use a secure SSL connection. For example, the following `workspace.yaml` file specifies
+  that a secure connection should be used:
+
+  ```yaml
+  load_from:
+    - grpc_server:
+        host: localhost
+        port: 4266
+        location_name: 'my_grpc_server'
+        ssl: true
+  ```
+
+* The `dagster-daemon` process uses fewer resources and spins up fewer subprocesses to load pipeline
+  information. Previously, the scheduler, sensor, and run queue daemon each spun up their own process
+  for this–now they share a single process.
+
+**Integrations**
+
+* [Helm] - All images used in our Helm chart are now fully qualified, including a registry name.
+  If you are encountering rate limits when attempting to pull images from DockerHub, you can now
+  edit the Helm chart to pull from a registry of your choice.
+* [Helm] - We now officially use Helm 3 to manage our Dagster Helm chart.
+* [ECR] - We are now publishing the `dagster-k8s`, `dagster-celery-k8s`, `user-code-example`, and
+  `k8s-dagit-example` images to a public ECR registry in addition to DockerHub. If you are
+  encountering rate limits when attempting to pull images from DockerHub, you should now be able to
+  pull these images from public.ecr.aws/dagster.
+* [dagster-spark] - The `dagster-spark` config schemas now support loading values for all fields via
+  environment variables.
+
+**Bugfixes**
+
+* Fixed a bug in the helm chart that would cause a Redis Kubernetes pod to be created even when an
+  external Redis is configured. Now, the Redis Kubernetes pod is only created when `redis.internal`
+  is set to `True` in helm chart.
+* Fixed an issue where the `dagster-daemon` process sometimes left dangling subprocesses running
+  during sensor execution, causing excess resource usage.
+* Fixed an issue where Dagster sometimes left hanging threads running after pipeline execution.
+* Fixed an issue where the sensor daemon would mistakenly mark itself as in an unhealthy state even
+  after recovering from an error.
+* Tags applied to solid invocations using the `tag` method on solid invocations (as opposed to solid
+  definitions) are now correctly propagated during execution. They were previously being ignored.
+
+**Experimental**
+
+* MySQL (via dagster-mysql) is now supported as a backend for event log, run, & schedule storages.
+  Add the following to your dagster.yaml to use MySQL for storage:
+
+  ```yaml
+  run_storage:
+    module: dagster_mysql.run_storage
+    class: MySQLRunStorage
+    config:
+      mysql_db:
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { database }
+        port: { port }
+
+  event_log_storage:
+    module: dagster_mysql.event_log
+    class: MySQLEventLogStorage
+    config:
+      mysql_db:
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { db_name }
+        port: { port }
+
+  schedule_storage:
+    module: dagster_mysql.schedule_storage
+    class: MySQLScheduleStorage
+    config:
+      mysql_db:
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { db_name }
+        port: { port }
+  ```
+
 ## 0.10.7
 
 **New**
