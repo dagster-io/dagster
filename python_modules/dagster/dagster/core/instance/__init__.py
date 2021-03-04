@@ -488,19 +488,22 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
-    def upgrade(self, print_fn=lambda _: None):
+    def upgrade(self, print_fn=None):
         from dagster.core.storage.migration.utils import upgrading_instance
 
         with upgrading_instance(self):
 
-            print_fn("Updating run storage...")
+            if print_fn:
+                print_fn("Updating run storage...")
             self._run_storage.upgrade()
-            self._run_storage.build_missing_indexes()
+            self._run_storage.build_missing_indexes(print_fn=print_fn)
 
-            print_fn("Updating event storage...")
+            if print_fn:
+                print_fn("Updating event storage...")
             self._event_storage.upgrade()
 
-            print_fn("Updating schedule storage...")
+            if print_fn:
+                print_fn("Updating schedule storage...")
             self._schedule_storage.upgrade()
 
     def optimize_for_dagit(self, statement_timeout):

@@ -245,9 +245,7 @@ class RunStorage(ABC):
         """Remove a run from storage"""
 
     @abstractmethod
-    def build_missing_indexes(
-        self, print_fn: Callable = lambda _: None, force_rebuild_all: bool = False
-    ):
+    def build_missing_indexes(self, print_fn: Callable = None, force_rebuild_all: bool = False):
         """Call this method to run any data migrations"""
 
     def dispose(self):

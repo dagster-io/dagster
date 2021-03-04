@@ -585,15 +585,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     # Tracking data migrations over secondary indexes
 
-    def build_missing_indexes(self, print_fn=lambda _: None, force_rebuild_all=False):
+    def build_missing_indexes(self, print_fn=None, force_rebuild_all=False):
         for migration_name, migration_fn in RUN_DATA_MIGRATIONS.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
                     continue
-            print_fn(f"Starting data migration: {migration_name}")
+            if print_fn:
+                print_fn(f"Starting data migration: {migration_name}")
             migration_fn()(self, print_fn)
             self.mark_index_built(migration_name)
-            print_fn(f"Finished data migration: {migration_name}")
+            if print_fn:
+                print_fn(f"Finished data migration: {migration_name}")
 
     def has_built_index(self, migration_name):
         query = (

@@ -31,7 +31,7 @@ def migrate_event_log_data(instance=None):
             event_log_storage.update_event_log_record(record_id, event)
 
 
-def migrate_asset_key_data(event_log_storage, print_fn=lambda _: None):
+def migrate_asset_key_data(event_log_storage, print_fn=None):
     """
     Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
@@ -48,10 +48,14 @@ def migrate_asset_key_data(event_log_storage, print_fn=lambda _: None):
         .group_by(SqlEventLogStorageTable.c.asset_key)
     )
     with event_log_storage.index_connection() as conn:
-        print_fn("Querying event logs.")
+        if print_fn:
+            print_fn("Querying event logs.")
         to_insert = conn.execute(query).fetchall()
-        print_fn("Found {} records to index".format(len(to_insert)))
-        for (asset_key,) in tqdm(to_insert):
+        if print_fn:
+            print_fn("Found {} records to index".format(len(to_insert)))
+            to_insert = tqdm(to_insert)
+
+        for (asset_key,) in to_insert:
             try:
                 conn.execute(
                     AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter

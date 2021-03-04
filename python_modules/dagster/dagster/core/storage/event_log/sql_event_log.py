@@ -345,19 +345,22 @@ class SqlEventLogStorage(EventLogStorage):
             for step_key, value in by_step_key.items()
         ]
 
-    def reindex(self, print_fn=lambda _: None, force=False):
+    def reindex(self, print_fn=None, force=False):
         """Call this method to run any data migrations, reindexing to build summary tables."""
         # Should be overridden by SqliteEventLogStorage and other storages that shard based on
         # run_id
         for migration_name, migration_fn in REINDEX_DATA_MIGRATIONS.items():
             if self.has_secondary_index(migration_name):
                 if not force:
-                    print_fn("Skipping already reindexed summary: {}".format(migration_name))
+                    if print_fn:
+                        print_fn("Skipping already reindexed summary: {}".format(migration_name))
                     continue
-            print_fn("Starting reindex: {}".format(migration_name))
+            if print_fn:
+                print_fn("Starting reindex: {}".format(migration_name))
             migration_fn()(self, print_fn)
             self.enable_secondary_index(migration_name)
-            print_fn("Finished reindexing: {}".format(migration_name))
+            if print_fn:
+                print_fn("Finished reindexing: {}".format(migration_name))
 
     def wipe(self):
         """Clears the event log storage."""
