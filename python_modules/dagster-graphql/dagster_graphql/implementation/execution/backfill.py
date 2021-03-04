@@ -10,6 +10,8 @@ from dagster.core.utils import make_new_backfill_id
 
 from ..utils import capture_error
 
+BACKFILL_CHUNK_SIZE = 25
+
 
 @capture_error
 def create_and_launch_partition_backfill(graphene_info, backfill_params):
@@ -65,11 +67,18 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         graphene_info.context.instance.add_backfill(backfill)
         return GraphenePartitionBackfillSuccess(backfill_id=backfill_id)
     else:
-        submitted_run_ids = list(
-            run_id
-            for run_id in submit_backfill_runs(graphene_info.context.instance, location, backfill)
-            if run_id != None
-        )
+        to_submit = [name for name in partition_names]
+        submitted_run_ids = []
+        while to_submit:
+            chunk = to_submit[:BACKFILL_CHUNK_SIZE]
+            to_submit = to_submit[BACKFILL_CHUNK_SIZE:]
+            submitted_run_ids.extend(
+                run_id
+                for run_id in submit_backfill_runs(
+                    graphene_info.context.instance, location, backfill, partition_names=chunk
+                )
+                if run_id != None
+            )
         return GraphenePartitionBackfillSuccess(
             backfill_id=backfill_id, launched_run_ids=submitted_run_ids
         )

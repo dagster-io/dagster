@@ -1,4 +1,5 @@
 import os
+import string
 
 from dagster.seven import get_system_temp_directory
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
@@ -63,6 +64,27 @@ class TestPartitionBackfillSynchronous(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
         assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
+
+    def test_launch_chunked_backfill(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "alpha_partition",
+                    },
+                    "partitionNames": list(string.ascii_lowercase),
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 26
 
     def test_launch_partial_backfill(self, graphql_context):
         # execute a full pipeline, without the failure environment variable

@@ -2,6 +2,7 @@ import csv
 import datetime
 import logging
 import os
+import string
 import time
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -1036,7 +1037,14 @@ def define_partitions():
         run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
-    return [integer_set, enum_set, chained_partition_set]
+    alphabet_partition_set = PartitionSetDefinition(
+        name="alpha_partition",
+        pipeline_name="no_config_pipeline",
+        partition_fn=lambda: list(string.ascii_lowercase),
+        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
+    )
+
+    return [integer_set, enum_set, chained_partition_set, alphabet_partition_set]
 
 
 def define_sensors():
