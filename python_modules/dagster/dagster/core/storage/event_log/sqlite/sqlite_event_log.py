@@ -64,9 +64,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._base_dir = os.path.abspath(check.str_param(base_dir, "base_dir"))
         mkdir_p(self._base_dir)
 
+        self._obs = None
+
         self._watchers = defaultdict(dict)
-        self._obs = Observer()
-        self._obs.start()
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
         # Used to ensure that each run ID attempts to initialize its DB the first time it connects,
@@ -262,6 +262,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._delete_mirrored_events_for_asset_key(asset_key)
 
     def watch(self, run_id, start_cursor, callback):
+        if not self._obs:
+            self._obs = Observer()
+            self._obs.start()
+
         watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, start_cursor)
         self._watchers[run_id][callback] = (
             watchdog,
@@ -273,6 +277,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event_handler, watch = self._watchers[run_id][handler]
             self._obs.remove_handler_for_watch(event_handler, watch)
             del self._watchers[run_id][handler]
+
+    def dispose(self):
+        if self._obs:
+            self._obs.stop()
+            self._obs.join(timeout=15)
 
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):

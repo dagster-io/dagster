@@ -98,18 +98,16 @@ def test_thread_die_daemon(monkeypatch):
 
                 if iteration_ran["ran"] and status.healthy:
                     try:
-                        controller.check_daemons()  # Should throw since the sensor thread is interrupted
+                        controller.check_daemons()  # Should eventually throw since the sensor thread is interrupted
                     except Exception as e:  # pylint: disable=broad-except
                         assert (
                             "Stopping dagster-daemon process since the following threads are no longer sending heartbeats: ['SENSOR']"
                             in str(e)
                         )
                         break
-                    else:
-                        raise Exception("check_daemons should fail if a thread has died")
 
-                if (now - init_time).total_seconds() > 10:
-                    raise Exception("timed out waiting for heartbeat error")
+                if (now - init_time).total_seconds() > 20:
+                    raise Exception("timed out waiting for check_daemons to fail")
 
                 time.sleep(0.5)
 

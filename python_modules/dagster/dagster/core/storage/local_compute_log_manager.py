@@ -132,8 +132,7 @@ class LocalComputeLogSubscriptionManager:
         self._manager = manager
         self._subscriptions = defaultdict(list)
         self._watchers = {}
-        self._observer = PollingObserver(WATCHDOG_POLLING_TIMEOUT)
-        self._observer.start()
+        self._observer = None
 
     def _key(self, run_id, key):
         return "{}:{}".format(run_id, key)
@@ -161,6 +160,10 @@ class LocalComputeLogSubscriptionManager:
         complete_paths = [self._manager.complete_artifact_path(run_id, key)]
         directory = os.path.dirname(self._manager.get_local_path(run_id, key, ComputeIOType.STDERR))
 
+        if not self._observer:
+            self._observer = PollingObserver(WATCHDOG_POLLING_TIMEOUT)
+            self._observer.start()
+
         ensure_dir(directory)
         self._watchers[key] = self._observer.schedule(
             LocalComputeLogFilesystemEventHandler(self, run_id, key, update_paths, complete_paths),
@@ -179,7 +182,9 @@ class LocalComputeLogSubscriptionManager:
         del self._watchers[key]
 
     def dispose(self):
-        self._observer.stop()
+        if self._observer:
+            self._observer.stop()
+            self._observer.join(15)
 
 
 class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
