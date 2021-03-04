@@ -20,6 +20,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     def __init__(self, *args, **kwargs):
         super(SqlitePollingEventLogStorage, self).__init__(*args, **kwargs)
         self._watcher = SqlPollingEventWatcher(self)
+        self._disposed = False
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -35,6 +36,14 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
         self._watcher.unwatch_run(run_id, handler)
+
+    def __del__(self):
+        self.dispose()
+
+    def dispose(self):
+        if not self._disposed:
+            self._disposed = True
+            self._watcher.close()
 
 
 RUN_ID = "foo"
