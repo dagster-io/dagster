@@ -252,7 +252,6 @@ class DagsterInstance:
         run_coordinator=None,
         run_launcher=None,
         settings=None,
-        skip_validation_checks=False,
         ref=None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -284,8 +283,6 @@ class DagsterInstance:
         )
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
-            if not skip_validation_checks:
-                self._schedule_storage.validate_stored_schedules(self.scheduler_class)
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.register_instance(self)
@@ -364,10 +361,6 @@ class DagsterInstance:
             return DagsterInstance.ephemeral(fallback_storage)
 
     @staticmethod
-    def get_for_migration():
-        return DagsterInstance.from_config(_dagster_home(), skip_validation_checks=True)
-
-    @staticmethod
     def local_temp(tempdir=None, overrides=None):
         warnings.warn(
             "To create a local DagsterInstance for a test, use the instance_for_test "
@@ -381,13 +374,14 @@ class DagsterInstance:
 
     @staticmethod
     def from_config(
-        config_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, skip_validation_checks=False
+        config_dir,
+        config_filename=DAGSTER_CONFIG_YAML_FILENAME,
     ):
         instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
-        return DagsterInstance.from_ref(instance_ref, skip_validation_checks=skip_validation_checks)
+        return DagsterInstance.from_ref(instance_ref)
 
     @staticmethod
-    def from_ref(instance_ref, skip_validation_checks=False):
+    def from_ref(instance_ref):
         check.inst_param(instance_ref, "instance_ref", InstanceRef)
 
         # DagsterInstance doesn't implement ConfigurableClass, but we may still sometimes want to
@@ -409,7 +403,6 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
-            skip_validation_checks=skip_validation_checks,
             ref=instance_ref,
             **kwargs,
         )
@@ -572,10 +565,11 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
 
     def optimize_for_dagit(self, statement_timeout):
+        if self._schedule_storage:
+            self._schedule_storage.validate_stored_schedules(self.scheduler_class)
+            self._schedule_storage.optimize_for_dagit(statement_timeout=statement_timeout)
         self._run_storage.optimize_for_dagit(statement_timeout=statement_timeout)
         self._event_storage.optimize_for_dagit(statement_timeout=statement_timeout)
-        if self._schedule_storage:
-            self._schedule_storage.optimize_for_dagit(statement_timeout=statement_timeout)
 
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")

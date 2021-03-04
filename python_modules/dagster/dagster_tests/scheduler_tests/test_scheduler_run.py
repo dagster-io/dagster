@@ -1625,7 +1625,8 @@ def test_run_with_hanging_cron_schedules():
                         "class": "DagsterDaemonScheduler",
                     },
                 },
-            ):
+            ) as instance:
+                instance.optimize_for_dagit(statement_timeout=500)
                 pass
 
         with instance_for_test_tempdir(

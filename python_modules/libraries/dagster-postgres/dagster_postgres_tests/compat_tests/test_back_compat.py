@@ -46,7 +46,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        instance = DagsterInstance.from_config(tempdir, skip_validation_checks=True)
+        instance = DagsterInstance.from_config(tempdir)
 
         @solid
         def noop_solid(_):
@@ -118,7 +118,7 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        instance = DagsterInstance.from_config(tempdir, skip_validation_checks=True)
+        instance = DagsterInstance.from_config(tempdir)
 
         @solid
         def asset_solid(_):
@@ -172,7 +172,7 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        instance = DagsterInstance.from_config(tempdir, skip_validation_checks=True)
+        instance = DagsterInstance.from_config(tempdir)
 
         @solid
         def simple_solid(_):
@@ -227,9 +227,9 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
 
         with pytest.raises(DagsterInstanceMigrationRequired):
             with DagsterInstance.from_config(tempdir) as instance:
-                pass
+                instance.optimize_for_dagit(statement_timeout=500)
 
-        with DagsterInstance.from_config(tempdir, skip_validation_checks=True) as instance:
+        with DagsterInstance.from_config(tempdir) as instance:
             instance.upgrade()
 
         with DagsterInstance.from_config(tempdir) as upgraded_instance:

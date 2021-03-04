@@ -43,7 +43,7 @@ def migrate_command():
 
     click.echo("$DAGSTER_HOME: {}\n".format(home))
 
-    with DagsterInstance.get_for_migration() as instance:
+    with DagsterInstance.get() as instance:
         instance.upgrade(click.echo)
 
         click.echo(instance.info_str())
