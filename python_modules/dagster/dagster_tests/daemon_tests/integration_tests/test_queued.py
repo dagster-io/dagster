@@ -1,4 +1,3 @@
-import pytest
 from dagster.core.host_representation import PipelineHandle
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
@@ -27,7 +26,6 @@ def assert_events_in_order(logs, expected_events):
     assert filtered_logged_events == expected_events
 
 
-@pytest.mark.skip("Flaky, see https://github.com/dagster-io/dagster/issues/3771")
 def test_queue_from_schedule_and_sensor(tmpdir, foo_example_repo):
     dagster_home_path = tmpdir.strpath
     with setup_instance(
