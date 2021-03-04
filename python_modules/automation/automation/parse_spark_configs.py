@@ -18,12 +18,12 @@ WHITESPACE_REGEX = r"\s+"
 
 
 class ConfigType(Enum):
-    STRING = "String"
-    INT = "Int"
+    STRING = "StringSource"
+    INT = "IntSource"
     FLOAT = "Float"
     BOOL = "Bool"
-    MEMORY = "String"  # TODO: We should handle memory field types
-    TIME = "String"  # TODO: We should handle time field types
+    MEMORY = "StringSource"  # TODO: We should handle memory field types
+    TIME = "StringSource"  # TODO: We should handle time field types
 
 
 CONFIG_TYPES = {
@@ -251,7 +251,7 @@ def extract(spark_docs_markdown_text):
 def serialize(result):
     with IndentingBufferPrinter() as printer:
         printer.write_header()
-        printer.line("from dagster import Bool, Field, Float, Int, Permissive, String")
+        printer.line("from dagster import Bool, Field, Float, IntSource, Permissive, StringSource")
         printer.blank_line()
         printer.blank_line()
         printer.line("# pylint: disable=line-too-long")
