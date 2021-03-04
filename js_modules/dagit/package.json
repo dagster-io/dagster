@@ -6,6 +6,7 @@
     "@apollo/client": "^3.2.5",
     "@blueprintjs/core": "^3.23.0",
     "@blueprintjs/icons": "^3.13.0",
+    "@blueprintjs/popover2": "0.3.0",
     "@blueprintjs/select": "^3.11.2",
     "@blueprintjs/table": "^3.8.3",
     "@types/chart.js": "^2.9.24",
