@@ -63,8 +63,9 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
               <Link to="/instance/runs">Run</Link> of{' '}
               {run?.pipeline.name && snapshotID ? (
                 <span>
+                  <Link to={`/workspace/pipelines/${run.pipeline.name}`}>{run.pipeline.name}</Link>
+                  {' @ '}
                   <Link to={`/instance/snapshots/${run.pipeline.name}@${snapshotID}`}>
-                    {run.pipeline.name}@
                     <span style={{fontFamily: FontFamily.monospace}}>{snapshotID.slice(0, 8)}</span>
                   </Link>
                 </span>
