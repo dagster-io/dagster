@@ -82,6 +82,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._initdb(engine)
             self.reindex()
 
+        super().__init__()
+
     def upgrade(self):
         all_run_ids = self.get_all_run_ids()
         print(  # pylint: disable=print-call

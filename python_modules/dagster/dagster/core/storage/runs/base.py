@@ -2,12 +2,13 @@ from abc import ABC, abstractmethod
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from dagster.core.events import DagsterEvent
+from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.daemon.types import DaemonHeartbeat
 
 
-class RunStorage(ABC):
+class RunStorage(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement

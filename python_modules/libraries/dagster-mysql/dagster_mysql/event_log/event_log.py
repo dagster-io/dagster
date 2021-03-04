@@ -70,6 +70,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             # mark all secondary indexes to be used
             self.reindex()
 
+        super().__init__()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719

@@ -1,15 +1,9 @@
 from abc import ABC, abstractmethod
 
+from dagster.core.instance import MayHaveInstanceWeakref
 
-class RunLauncher(ABC):
-    def initialize(self, instance):
-        """
-        Perform any initialization that depends on the surrounding DagsterInstance.
 
-        Args:
-            instance (DagsterInstance): The instance in which the run has been created.
-        """
-
+class RunLauncher(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def launch_run(self, instance, run, external_pipeline):
         """Launch a run.

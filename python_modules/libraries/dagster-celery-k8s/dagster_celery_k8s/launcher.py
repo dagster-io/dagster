@@ -1,5 +1,4 @@
 import sys
-import weakref
 
 import kubernetes
 from dagster import DagsterInvariantViolationError, EventMetadataEntry, Field, Noneable, check
@@ -122,7 +121,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         retries = check.opt_dict_param(retries, "retries") or {"enabled": {}}
         self.retries = Retries.from_config(retries)
-        self._instance_ref = None
+
+        super().__init__()
 
     @classmethod
     def config_type(cls):
@@ -148,15 +148,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def inst_data(self):
         return self._inst_data
-
-    @property
-    def _instance(self):
-        return self._instance_ref() if self._instance_ref else None
-
-    def initialize(self, instance):
-        check.inst_param(instance, "instance", DagsterInstance)
-        # Store a weakref to avoid a circular reference / enable GC
-        self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
         check.inst_param(instance, "instance", DagsterInstance)

@@ -51,6 +51,8 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 retry_mysql_creation_fn(lambda: ScheduleStorageSqlMetadata.create_all(conn))
                 stamp_alembic_rev(alembic_config, conn)
 
+        super().__init__()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719

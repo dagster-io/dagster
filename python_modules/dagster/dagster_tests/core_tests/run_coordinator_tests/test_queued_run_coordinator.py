@@ -23,7 +23,7 @@ def instance():
 @pytest.fixture()
 def coordinator(instance):  # pylint: disable=redefined-outer-name
     run_coordinator = QueuedRunCoordinator()
-    run_coordinator.initialize(instance)
+    run_coordinator.register_instance(instance)
     yield run_coordinator
 
 

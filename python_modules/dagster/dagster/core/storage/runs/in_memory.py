@@ -29,6 +29,8 @@ class InMemoryRunStorage(RunStorage):
                     payload.pipeline_run.execution_plan_snapshot_id
                 ] = payload.execution_plan_snapshot
 
+        super().__init__()
+
     # separate method so it can be reused in wipe
     def _init_storage(self):
         self._runs = OrderedDict()

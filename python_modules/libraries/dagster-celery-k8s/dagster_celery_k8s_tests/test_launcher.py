@@ -164,7 +164,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
     # Launch the run in a fake Dagster instance.
     with instance_for_test() as instance:
-        celery_k8s_run_launcher.initialize(instance)
+        celery_k8s_run_launcher.register_instance(instance)
         pipeline_name = "demo_pipeline"
         run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
         run = create_run_for_test(

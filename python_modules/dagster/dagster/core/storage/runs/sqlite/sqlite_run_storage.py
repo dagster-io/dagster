@@ -50,6 +50,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         self._conn_string = conn_string
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
+        super().__init__()
+
     @property
     def inst_data(self):
         return self._inst_data

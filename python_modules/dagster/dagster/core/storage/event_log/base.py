@@ -10,6 +10,7 @@ from dagster.core.execution.stats import (
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
+from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 
 
@@ -17,7 +18,7 @@ class EventLogSequence(pyrsistent.CheckedPVector):
     __type__ = EventRecord
 
 
-class EventLogStorage(ABC):
+class EventLogStorage(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing structured event logs from pipeline runs.
 
     Note that event log storages using SQL databases as backing stores should implement

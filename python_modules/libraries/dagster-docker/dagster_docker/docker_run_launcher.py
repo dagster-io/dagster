@@ -1,11 +1,9 @@
 import json
 import os
-import weakref
 
 import docker
 from dagster import Field, StringSource, check
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import DagsterInstance
 from dagster.core.launcher.base import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteRunArgs
@@ -27,12 +25,13 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         launched container at creation time."""
 
     def __init__(self, inst_data=None, image=None, registry=None, env_vars=None, network=None):
-        self._instance_weakref = None
         self._inst_data = inst_data
         self._image = image
         self._registry = registry
         self._env_vars = env_vars
         self._network = network
+
+        super().__init__()
 
     @property
     def inst_data(self):
@@ -70,16 +69,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     @staticmethod
     def from_config_value(inst_data, config_value):
         return DockerRunLauncher(inst_data=inst_data, **config_value)
-
-    @property
-    def _instance(self):
-        return self._instance_weakref() if self._instance_weakref else None
-
-    def initialize(self, instance):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.invariant(self._instance is None, "Must only call initialize once")
-        # Store a weakref to avoid a circular reference / enable GC
-        self._instance_weakref = weakref.ref(instance)
 
     def _get_client(self):
         client = docker.client.from_env()

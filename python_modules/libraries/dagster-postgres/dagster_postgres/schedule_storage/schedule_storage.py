@@ -54,6 +54,8 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(alembic_config, conn)
 
+        super().__init__()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout
         self._engine = create_engine(

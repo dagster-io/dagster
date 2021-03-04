@@ -1,5 +1,4 @@
 import time
-import weakref
 
 import grpc
 from dagster import check, seven
@@ -9,7 +8,6 @@ from dagster.core.host_representation.handle import (
     GrpcServerRepositoryLocationHandle,
     ManagedGrpcPythonEnvRepositoryLocationHandle,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
@@ -33,11 +31,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
     def __init__(self, inst_data=None):
-        self._instance_weakref = None
         self._inst_data = inst_data
 
         # Used for test cleanup purposes only
         self._run_id_to_repository_location_handle_cache = {}
+
+        super().__init__()
 
     @property
     def inst_data(self):
@@ -50,16 +49,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     @staticmethod
     def from_config_value(inst_data, config_value):
         return DefaultRunLauncher(inst_data=inst_data)
-
-    @property
-    def _instance(self):
-        return self._instance_weakref() if self._instance_weakref else None
-
-    def initialize(self, instance):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.invariant(self._instance is None, "Must only call initialize once")
-        # Store a weakref to avoid a circular reference / enable GC
-        self._instance_weakref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)

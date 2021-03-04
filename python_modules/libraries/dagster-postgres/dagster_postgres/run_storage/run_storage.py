@@ -61,6 +61,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             # mark all secondary indexes as built
             self.build_missing_indexes()
 
+        super().__init__()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection and set statement_timeout
         self._engine = create_engine(

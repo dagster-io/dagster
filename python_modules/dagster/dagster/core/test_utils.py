@@ -258,6 +258,8 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None):
         self._inst_data = inst_data
 
+        super().__init__()
+
     @property
     def inst_data(self):
         return self._inst_data
@@ -287,6 +289,8 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None):
         self._inst_data = inst_data
         self._queue = []
+
+        super().__init__()
 
     def launch_run(self, instance, run, external_pipeline):
         check.inst_param(instance, "instance", DagsterInstance)
@@ -324,6 +328,8 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
     def __init__(self, inst_data=None):
         self._inst_data = inst_data
         self._queue = []
+
+        super().__init__()
 
     def submit_run(self, pipeline_run, external_pipeline):
         check.inst_param(pipeline_run, "run", PipelineRun)

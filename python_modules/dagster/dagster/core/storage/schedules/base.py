@@ -3,10 +3,11 @@ from typing import Iterable, Type
 
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterScheduleWipeRequired
+from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.scheduler.job import JobState, JobStatus, JobTick, JobTickData, JobTickStatus
 
 
-class ScheduleStorage(abc.ABC):
+class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     """Abstract class for managing persistance of scheduler artifacts"""
 
     @abc.abstractmethod

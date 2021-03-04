@@ -1,15 +1,9 @@
 from abc import ABC, abstractmethod
 
+from dagster.core.instance import MayHaveInstanceWeakref
 
-class RunCoordinator(ABC):
-    def initialize(self, instance):
-        """
-        Perform any initialization that depends on the surrounding DagsterInstance.
 
-        Args:
-            instance (DagsterInstance): The instance in which the coordinator has been created
-        """
-
+class RunCoordinator(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def submit_run(self, pipeline_run, external_pipeline):
         """

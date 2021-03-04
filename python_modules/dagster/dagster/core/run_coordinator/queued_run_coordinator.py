@@ -1,8 +1,7 @@
 import logging
 import time
-import weakref
 
-from dagster import DagsterEvent, DagsterEventType, DagsterInstance, String, check
+from dagster import DagsterEvent, DagsterEventType, String, check
 from dagster.config import Field
 from dagster.config.config_type import Array, Noneable
 from dagster.config.field_utils import Shape
@@ -28,7 +27,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         inst_data=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        self._instance_ref = None
         self.max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
         )
@@ -39,6 +37,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         self.dequeue_interval_seconds = check.opt_int_param(
             dequeue_interval_seconds, "dequeue_interval_seconds", 5
         )
+
+        super().__init__()
 
     @property
     def inst_data(self):
@@ -73,15 +73,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             tag_concurrency_limits=config_value.get("tag_concurrency_limits"),
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
         )
-
-    def initialize(self, instance):
-        check.inst_param(instance, "instance", DagsterInstance)
-        # Store a weakref to avoid a circular reference / enable GC
-        self._instance_ref = weakref.ref(instance)
-
-    @property
-    def _instance(self):
-        return self._instance_ref() if self._instance_ref else None
 
     def submit_run(self, pipeline_run, external_pipeline):
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)

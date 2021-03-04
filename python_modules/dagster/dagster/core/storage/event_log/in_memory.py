@@ -23,6 +23,8 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             for payload in preload:
                 self._logs[payload.pipeline_run.run_id] = EventLogSequence(payload.event_list)
 
+        super().__init__()
+
     @property
     def inst_data(self):
         return self._inst_data

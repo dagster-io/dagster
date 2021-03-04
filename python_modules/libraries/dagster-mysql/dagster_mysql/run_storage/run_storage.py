@@ -58,6 +58,8 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
                 stamp_alembic_rev(alembic_config, conn)
             self.build_missing_indexes()
 
+        super().__init__()
+
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719

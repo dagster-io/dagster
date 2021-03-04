@@ -1,9 +1,11 @@
+import inspect
 import logging
 import os
 import sys
 import tempfile
 import time
 import warnings
+import weakref
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
@@ -158,6 +160,35 @@ class InstanceType(Enum):
     EPHEMERAL = "EPHEMERAL"
 
 
+class MayHaveInstanceWeakref:
+    """Mixin for classes that can have a weakref back to a Dagster instance."""
+
+    def __init__(self):
+        self._instance_weakref: weakref.ref = None
+
+    @property
+    def _instance(self):
+        return (
+            self._instance_weakref()
+            # Backcompat with custom subclasses that don't call super().__init__()
+            # in their own __init__ implementations
+            if (hasattr(self, "_instance_weakref") and self._instance_weakref is not None)
+            else None
+        )
+
+    def register_instance(self, instance):
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.invariant(
+            # Backcompat with custom subclasses that don't call super().__init__()
+            # in their own __init__ implementations
+            (not hasattr(self, "_instance_weakref") or self._instance_weakref is None),
+            "Must only call initialize once",
+        )
+
+        # Store a weakref to avoid a circular reference / enable GC
+        self._instance_weakref = weakref.ref(instance)
+
+
 class DagsterInstance:
     """Core abstraction for managing Dagster's access to storage and other resources.
 
@@ -238,22 +269,53 @@ class DagsterInstance:
             local_artifact_storage, "local_artifact_storage", LocalArtifactStorage
         )
         self._event_storage = check.inst_param(event_storage, "event_storage", EventLogStorage)
+        self._event_storage.register_instance(self)
+
         self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
+        self._run_storage.register_instance(self)
+
         self._compute_log_manager = check.inst_param(
             compute_log_manager, "compute_log_manager", ComputeLogManager
         )
+        self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
+
         self._schedule_storage = check.opt_inst_param(
             schedule_storage, "schedule_storage", ScheduleStorage
         )
-        self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
-
-        if self._schedule_storage and not skip_validation_checks:
-            self._schedule_storage.validate_stored_schedules(self.scheduler_class)
+        if self._schedule_storage:
+            self._schedule_storage.register_instance(self)
+            if not skip_validation_checks:
+                self._schedule_storage.validate_stored_schedules(self.scheduler_class)
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
-        self._run_coordinator.initialize(self)
+        self._run_coordinator.register_instance(self)
+        if hasattr(self._run_coordinator, "initialize") and inspect.ismethod(
+            getattr(self._run_coordinator, "initialize")
+        ):
+            warnings.warn(
+                "The initialize method on RunCoordinator has been deprecated as of 0.11.0 and will "
+                "no longer be called during DagsterInstance init. Instead, the DagsterInstance "
+                "will be made automatically available on any run coordinator associated with a "
+                "DagsterInstance. In test, you may need to call RunCoordinator.register_instance() "
+                "(mixed in from MayHaveInstanceWeakref). If you need to make use of the instance "
+                "to set up your custom RunCoordinator, you should override "
+                "RunCoordintor.register_instance(). This warning will be removed in 0.12.0."
+            )
+
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
-        self._run_launcher.initialize(self)
+        self._run_launcher.register_instance(self)
+        if hasattr(self._run_launcher, "initialize") and inspect.ismethod(
+            getattr(self._run_launcher, "initialize")
+        ):
+            warnings.warn(
+                "The initialize method on RunLauncher has been deprecated as of 0.11.0 and will "
+                "no longer be called during DagsterInstance init. Instead, the DagsterInstance "
+                "will be made automatically available on any run launcher associated with a "
+                "DagsterInstance. In test, you may need to call RunLauncher.register_instance() "
+                "(mixed in from MayHaveInstanceWeakref). If you need to make use of the instance "
+                "to set up your custom RunLauncher, you should override "
+                "RunLauncher.register_instance(). This warning will be removed in 0.12.0."
+            )
 
         self._settings = check.opt_dict_param(settings, "settings")
 
