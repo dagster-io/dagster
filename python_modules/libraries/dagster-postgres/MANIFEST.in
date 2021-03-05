@@ -1,4 +1,2 @@
 include LICENSE
-graft dagster_postgres/event_log/alembic
-graft dagster_postgres/run_storage/alembic
-graft dagster_postgres/schedule_storage/alembic
+graft dagster_postgres/alembic
