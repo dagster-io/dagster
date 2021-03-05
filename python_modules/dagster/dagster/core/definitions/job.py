@@ -14,28 +14,6 @@ class JobType(Enum):
     SENSOR = "SENSOR"
 
 
-class JobContext:
-    """Context for generating the execution parameters for an JobDefinition at runtime.
-
-    An instance of this class is made available as the first argument to the JobDefinition
-    functions: run_config_fn, tags_fn
-
-    Attributes:
-        instance (DagsterInstance): The instance configured to launch the job
-    """
-
-    __slots__ = ["_instance"]
-
-    def __init__(self, instance):
-        from dagster.core.instance import DagsterInstance
-
-        self._instance = check.inst_param(instance, "instance", DagsterInstance)
-
-    @property
-    def instance(self):
-        return self._instance
-
-
 @whitelist_for_serdes
 class SkipReason(namedtuple("_SkipReason", "skip_message")):
     """

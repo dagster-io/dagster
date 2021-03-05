@@ -5,12 +5,12 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.utils import ensure_gen
 
-from .job import JobContext, JobDefinition, JobType, RunRequest, SkipReason
+from .job import JobDefinition, JobType, RunRequest, SkipReason
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
-class SensorExecutionContext(JobContext):
+class SensorExecutionContext:
     """Sensor execution context.
 
     An instance of this class is made available as the first argument to the evaluation function
@@ -22,16 +22,18 @@ class SensorExecutionContext(JobContext):
         last_run_key (str): The run key of the RunRequest most recently created by this sensor.
     """
 
-    __slots__ = ["_last_completion_time", "_last_run_key"]
+    __slots__ = ["_instance", "_last_completion_time", "_last_run_key"]
 
     def __init__(self, instance, last_completion_time, last_run_key):
-        super(SensorExecutionContext, self).__init__(
-            check.inst_param(instance, "instance", DagsterInstance),
-        )
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._last_completion_time = check.opt_float_param(
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
+
+    @property
+    def instance(self):
+        return self._instance
 
     @property
     def last_completion_time(self):

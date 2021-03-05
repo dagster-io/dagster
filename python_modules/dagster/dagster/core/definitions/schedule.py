@@ -13,12 +13,12 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.utils import ensure_gen, merge_dicts
 
-from .job import JobContext, JobDefinition, JobType, RunRequest, SkipReason
+from .job import JobDefinition, JobType, RunRequest, SkipReason
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
 
 
-class ScheduleExecutionContext(JobContext):
+class ScheduleExecutionContext:
     """Schedule-specific execution context.
 
     An instance of this class is made available as the first argument to various ScheduleDefinition
@@ -34,15 +34,17 @@ class ScheduleExecutionContext(JobContext):
             DagsterDaemonScheduler.
     """
 
-    __slots__ = ["_scheduled_execution_time"]
+    __slots__ = ["_instance", "_scheduled_execution_time"]
 
     def __init__(self, instance, scheduled_execution_time):
-        super(ScheduleExecutionContext, self).__init__(
-            check.inst_param(instance, "instance", DagsterInstance)
-        )
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
+
+    @property
+    def instance(self):
+        return self._instance
 
     @property
     def scheduled_execution_time(self):
