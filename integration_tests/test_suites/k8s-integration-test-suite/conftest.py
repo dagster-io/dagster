@@ -12,6 +12,7 @@ from dagster_k8s_test_infra.cluster import (
     dagster_instance_for_k8s_run_launcher,
     dagster_instance_with_k8s_scheduler,
     define_cluster_provider_fixture,
+    helm_postgres_url_for_k8s_run_launcher,
 )
 from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME, helm_namespace_for_k8s_run_launcher
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
@@ -71,7 +72,7 @@ def restore_k8s_cron_tab(
     kube_api.delete_collection_namespaced_cron_job(namespace=helm_namespace_for_k8s_run_launcher)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def run_launcher(
     cluster_provider, helm_namespace_for_k8s_run_launcher
 ):  # pylint: disable=redefined-outer-name,unused-argument

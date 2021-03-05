@@ -17,6 +17,9 @@ from dagster_k8s_test_infra.cluster import (  # isort:skip
     dagster_instance_for_user_deployments,
     dagster_instance_for_daemon,
     define_cluster_provider_fixture,
+    helm_postgres_url,
+    helm_postgres_url_for_user_deployments,
+    helm_postgres_url_for_daemon,
 )
 
 cluster_provider = define_cluster_provider_fixture()
@@ -42,7 +45,7 @@ def dagster_docker_image():
     return docker_image
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def run_launcher(cluster_provider):  # pylint: disable=redefined-outer-name,unused-argument
     return CeleryK8sRunLauncher(
         instance_config_map="dagster-instance",

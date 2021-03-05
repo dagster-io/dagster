@@ -122,7 +122,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._batch_api = k8s_client_batch_api or kubernetes.client.BatchV1Api()
         self._core_api = k8s_client_core_api or kubernetes.client.CoreV1Api()
 
-        self.job_config = None
+        self._job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
         self._dagster_home = check.str_param(dagster_home, "dagster_home")
         self._image_pull_policy = check.str_param(image_pull_policy, "image_pull_policy")
@@ -163,11 +163,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def _get_static_job_config(self):
-        if self.job_config:
-            return self.job_config
+    def get_static_job_config(self):
+        if self._job_config:
+            return self._job_config
         else:
-            self.job_config = DagsterK8sJobConfig(
+            self._job_config = DagsterK8sJobConfig(
                 job_image=check.str_param(self._job_image, "job_image"),
                 dagster_home=check.str_param(self._dagster_home, "dagster_home"),
                 image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
@@ -188,7 +188,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 ),
                 env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
             )
-            return self.job_config
+            return self._job_config
 
     def _get_grpc_job_config(self, job_image):
         return DagsterK8sJobConfig(
@@ -226,7 +226,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_config = (
             self._get_grpc_job_config(repository_origin.container_image)
             if repository_origin.container_image
-            else self._get_static_job_config()
+            else self.get_static_job_config()
         )
 
         input_json = serialize_dagster_namedtuple(

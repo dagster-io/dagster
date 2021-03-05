@@ -21,6 +21,29 @@ from dagster_test.test_project import (
     get_test_project_external_pipeline,
 )
 
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+
+
+ENV_FROM = (
+    """env_from:
+        - config_map_ref:
+            name: dagster-pipeline-env
+        - config_map_ref:
+            name: test-env-configmap
+        - secret_ref:
+            name: test-env-secret"""
+    if IS_BUILDKITE
+    else """env_from:
+        - config_map_ref:
+            name: dagster-pipeline-env
+        - config_map_ref:
+            name: test-env-configmap
+        - config_map_ref:
+            name: test-aws-env-configmap
+        - secret_ref:
+            name: test-env-secret"""
+)
+
 EXPECTED_JOB_SPEC = """
 api_version: batch/v1
 kind: Job
@@ -57,13 +80,7 @@ spec:
             secret_key_ref:
               key: postgresql-password
               name: dagster-postgresql-secret
-        env_from:
-        - config_map_ref:
-            name: dagster-pipeline-env
-        - config_map_ref:
-            name: test-env-configmap
-        - secret_ref:
-            name: test-env-secret
+        {env_from}
         image: {job_image}
         image_pull_policy: {image_pull_policy}
         name: dagster-run-{run_id}{resources}
@@ -121,13 +138,7 @@ spec:
             secret_key_ref:
               key: postgresql-password
               name: dagster-postgresql-secret
-        env_from:
-        - config_map_ref:
-            name: dagster-pipeline-env
-        - config_map_ref:
-            name: test-env-configmap
-        - secret_ref:
-            name: test-env-secret
+        {env_from}
         image: {job_image}
         image_pull_policy: {image_pull_policy}
         name: dagster-run-{run_id}{resources}
@@ -157,7 +168,7 @@ def test_valid_job_format(run_launcher):
     job_name = "dagster-run-%s" % run.run_id
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
-        job_config=run_launcher.job_config,
+        job_config=run_launcher.get_static_job_config(),
         args=["dagster", "api", "execute_run"],
         job_name=job_name,
         pod_name=pod_name,
@@ -172,6 +183,7 @@ def test_valid_job_format(run_launcher):
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
             resources="",
+            env_from=ENV_FROM,
         ).strip()
     )
 
@@ -197,7 +209,7 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
     job_name = "dagster-run-%s" % run.run_id
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
-        job_config=run_launcher.job_config,
+        job_config=run_launcher.get_static_job_config(),
         args=["dagster", "api", "execute_run"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
@@ -212,6 +224,7 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
             job_image=docker_image,
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
+            env_from=ENV_FROM,
             resources="""
         resources:
           limits:
@@ -272,7 +285,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     job_name = "dagster-run-%s" % run.run_id
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
-        job_config=run_launcher.job_config,
+        job_config=run_launcher.get_static_job_config(),
         args=["dagster", "api", "execute_run"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
@@ -288,6 +301,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
             labels="spotinst.io/restrict-scale-down: 'true'",
+            env_from=ENV_FROM,
             resources="""
         resources:
           limits:
