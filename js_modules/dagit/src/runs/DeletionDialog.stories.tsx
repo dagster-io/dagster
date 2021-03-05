@@ -32,8 +32,7 @@ Success.args = {
   onTerminateInstead: () => {
     console.log('Terminate instead!');
   },
-  selectedIDs: ids,
-  terminatableIDs: [ids[0]],
+  selectedRuns: ids.reduce((accum, id) => ({...accum, [id]: true}), {}),
   mocks: {
     Mutation: () => ({
       deletePipelineRun: () => ({
@@ -52,8 +51,7 @@ WithError.args = {
   onTerminateInstead: () => {
     console.log('Terminate instead!');
   },
-  selectedIDs: ids,
-  terminatableIDs: [ids[0]],
+  selectedRuns: ids.reduce((accum, id) => ({...accum, [id]: true}), {}),
   mocks: {
     Mutation: () => ({
       deletePipelineRun: (args: {runId: string}) => {

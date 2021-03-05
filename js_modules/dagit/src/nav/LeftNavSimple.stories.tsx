@@ -11,6 +11,7 @@ import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {Heading} from 'src/ui/Text';
+import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 
 const BodyReset = createGlobalStyle`
   body {
@@ -39,53 +40,55 @@ const REPO_TWO = `${faker.random.word()}@${faker.random.words(2)}`.toLowerCase()
 
 export const Default = () => (
   <ApolloTestProvider>
-    <BodyReset />
-    <div style={{height: '100%', display: 'flex', flexDirection: 'row'}}>
-      <LeftNavSimple />
-      <div style={{flexGrow: 1, overflowY: 'auto'}}>
-        <Box padding={{vertical: 20, horizontal: 24}}>
-          <Group direction="column" spacing={16}>
-            <Heading>Pipelines</Heading>
-            <input
-              type="text"
-              placeholder="Filter…"
-              style={{
-                border: `1px solid ${Colors.LIGHT_GRAY1}`,
-                borderRadius: '2px',
-                padding: '8px',
-                width: '500px',
-              }}
-            />
-            <Table>
-              <thead>
-                <tr>
-                  <th style={{width: '30%'}}>Pipeline</th>
-                  <th style={{width: '40%'}}>Repository</th>
-                  <th>Recent runs</th>
-                </tr>
-              </thead>
-              <tbody>
-                {PIPELINES.map((pipeline) => (
-                  <tr key={pipeline}>
-                    <td>
-                      <Link to={`/pipelines/${pipeline}`}>{pipeline}</Link>
-                    </td>
-                    <td>{Math.random() > 0.3 ? REPO_ONE : REPO_TWO}</td>
-                    <td>
-                      <Group direction="row" spacing={4} alignItems="center">
-                        {new Array(5).fill(null).map((_, ii) => (
-                          <Dot key={ii} $value={Math.random()} />
-                        ))}
-                      </Group>
-                    </td>
+    <WorkspaceProvider>
+      <BodyReset />
+      <div style={{height: '100%', display: 'flex', flexDirection: 'row'}}>
+        <LeftNavSimple />
+        <div style={{flexGrow: 1, overflowY: 'auto'}}>
+          <Box padding={{vertical: 20, horizontal: 24}}>
+            <Group direction="column" spacing={16}>
+              <Heading>Pipelines</Heading>
+              <input
+                type="text"
+                placeholder="Filter…"
+                style={{
+                  border: `1px solid ${Colors.LIGHT_GRAY1}`,
+                  borderRadius: '2px',
+                  padding: '8px',
+                  width: '500px',
+                }}
+              />
+              <Table>
+                <thead>
+                  <tr>
+                    <th style={{width: '30%'}}>Pipeline</th>
+                    <th style={{width: '40%'}}>Repository</th>
+                    <th>Recent runs</th>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Group>
-        </Box>
+                </thead>
+                <tbody>
+                  {PIPELINES.map((pipeline) => (
+                    <tr key={pipeline}>
+                      <td>
+                        <Link to={`/pipelines/${pipeline}`}>{pipeline}</Link>
+                      </td>
+                      <td>{Math.random() > 0.3 ? REPO_ONE : REPO_TWO}</td>
+                      <td>
+                        <Group direction="row" spacing={4} alignItems="center">
+                          {new Array(5).fill(null).map((_, ii) => (
+                            <Dot key={ii} $value={Math.random()} />
+                          ))}
+                        </Group>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Group>
+          </Box>
+        </div>
       </div>
-    </div>
+    </WorkspaceProvider>
   </ApolloTestProvider>
 );
 
