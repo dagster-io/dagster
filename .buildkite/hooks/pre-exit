@@ -56,3 +56,10 @@ docker-compose rm -f
 docker-compose -f docker-compose-multi.yml stop
 docker-compose -f docker-compose-multi.yml rm -f
 popd
+
+pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/
+docker-compose stop
+docker-compose rm -f
+docker-compose -f docker-compose-multi.yml stop
+docker-compose -f docker-compose-multi.yml rm -f
+popd
