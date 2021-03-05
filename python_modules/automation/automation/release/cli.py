@@ -248,7 +248,7 @@ def helm(helm_repo, ver, dry_run):
         "package",
         "dagster",
         "--dependency-update",
-        "-destination",
+        "--destination",
         helm_repo,
         "--app-version",
         ver,
