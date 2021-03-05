@@ -95,7 +95,9 @@ export const PartitionProgress = (props: Props) => {
 
   const {numQueued, numInProgress, numSucceeded, numFailed, numTotalRuns} = counts;
   const numFinished = numSucceeded + numFailed;
-  const unscheduled = (results.numTotal || 0) - (results.numRequested || 0);
+  const unscheduled = results.isPersisted
+    ? (results.numTotal || 0) - (results.numRequested || 0)
+    : 0;
   const skipped = results.isPersisted ? (results.numRequested || 0) - numTotalRuns : 0;
   const numTotal = results.isPersisted ? results.numTotal || 0 : numTotalRuns;
 
