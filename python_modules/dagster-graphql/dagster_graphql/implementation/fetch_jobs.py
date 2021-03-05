@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.definitions.job import JobType
-from dagster.core.host_representation import ExternalSchedule, ExternalSensor, JobSelector
+from dagster.core.host_representation import JobSelector
 from dagster.core.scheduler.job import JobStatus
 
 from .utils import capture_error
@@ -40,12 +40,21 @@ def get_job_state_or_error(graphene_info, selector):
     location = graphene_info.context.get_repository_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
-    external_job = repository.get_external_job(selector.job_name)
-
-    if not external_job or not isinstance(external_job, (ExternalSensor, ExternalSchedule)):
+    if repository.has_external_sensor(selector.job_name):
+        external_sensor = repository.get_external_sensor(selector.job_name)
+        job_state = graphene_info.context.instance.get_job_state(
+            external_sensor.get_external_origin_id()
+        )
+        if not job_state:
+            job_state = external_sensor.get_default_job_state(graphene_info.context.instance)
+    elif repository.has_external_schedule(selector.job_name):
+        external_schedule = repository.get_external_schedule(selector.job_name)
+        job_state = graphene_info.context.instance.get_job_state(
+            external_schedule.get_external_origin_id()
+        )
+        if not job_state:
+            job_state = external_schedule.get_default_job_state(graphene_info.context.instance)
+    else:
         check.failed(f"Could not find a definition for {selector.job_name}")
 
-    job_state = graphene_info.context.instance.get_job_state(external_job.get_external_origin_id())
-    if not job_state:
-        job_state = external_job.get_default_job_state(graphene_info.context.instance)
     return GrapheneJobState(job_state=job_state)

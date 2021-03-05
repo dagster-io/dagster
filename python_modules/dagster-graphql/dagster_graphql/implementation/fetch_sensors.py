@@ -1,11 +1,6 @@
 from dagster import check
 from dagster.core.definitions.job import JobType
-from dagster.core.host_representation import (
-    ExternalSensor,
-    PipelineSelector,
-    RepositorySelector,
-    SensorSelector,
-)
+from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.job import JobState, JobStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
@@ -40,12 +35,11 @@ def get_sensor_or_error(graphene_info, selector):
     location = graphene_info.context.get_repository_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
-    external_job = repository.get_external_job(selector.sensor_name)
-
-    if not external_job or not isinstance(external_job, ExternalSensor):
+    if not repository.has_external_sensor(selector.sensor_name):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
+    external_sensor = repository.get_external_sensor(selector.sensor_name)
 
-    return GrapheneSensor(graphene_info, external_job)
+    return GrapheneSensor(graphene_info, external_sensor)
 
 
 @capture_error
@@ -58,9 +52,9 @@ def start_sensor(graphene_info, sensor_selector):
 
     location = graphene_info.context.get_repository_location(sensor_selector.location_name)
     repository = location.get_repository(sensor_selector.repository_name)
-    external_sensor = repository.get_external_job(sensor_selector.sensor_name)
-    if not isinstance(external_sensor, ExternalSensor):
+    if not repository.has_external_sensor(sensor_selector.sensor_name):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
+    external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
     graphene_info.context.instance.start_sensor(external_sensor)
     return GrapheneSensor(graphene_info, external_sensor)
 
@@ -143,7 +137,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
         return None
 
     repository = repository_location.get_repository(repository_origin.repository_name)
-    external_sensor = repository.get_external_job(sensor_state.name)
+    external_sensor = repository.get_external_sensor(sensor_state.name)
 
     if sensor_state.status != JobStatus.RUNNING:
         return None

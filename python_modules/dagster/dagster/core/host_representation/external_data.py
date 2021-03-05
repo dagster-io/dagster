@@ -9,7 +9,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
-    JobType,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -27,7 +26,7 @@ from dagster.utils.error import SerializableErrorInfo
 class ExternalRepositoryData(
     namedtuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas external_job_datas external_sensor_datas",
+        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_sensor_datas",
     )
 ):
     def __new__(
@@ -36,8 +35,6 @@ class ExternalRepositoryData(
         external_pipeline_datas,
         external_schedule_datas,
         external_partition_set_datas,
-        external_executable_datas=None,
-        external_job_datas=None,
         external_sensor_datas=None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
@@ -53,14 +50,6 @@ class ExternalRepositoryData(
                 external_partition_set_datas,
                 "external_partition_set_datas",
                 of_type=ExternalPartitionSetData,
-            ),
-            external_executable_datas=check.opt_list_param(
-                external_executable_datas, "external_executable_datas"
-            ),
-            external_job_datas=check.opt_list_param(
-                external_job_datas,
-                "external_job_datas",
-                of_type=(ExternalScheduleData, ExternalSensorData, ExternalJobData),
             ),
             external_sensor_datas=check.opt_list_param(
                 external_sensor_datas,
@@ -201,10 +190,6 @@ class ExternalScheduleData(
             description=check.opt_str_param(description, "description"),
         )
 
-    @property
-    def job_type(self):
-        return JobType.SCHEDULE
-
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionData(
@@ -256,33 +241,6 @@ class ExternalSensorData(
             mode=check.opt_str_param(mode, "mode"),
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
-        )
-
-    @property
-    def job_type(self):
-        return JobType.SENSOR
-
-
-# DEPRECATED, see https://github.com/dagster-io/dagster/issues/3644 for removal
-@whitelist_for_serdes
-class ExternalJobData(
-    namedtuple("_ExternalJobData", "name job_type pipeline_name solid_selection mode")
-):
-    def __new__(
-        cls,
-        name,
-        job_type,
-        pipeline_name,
-        solid_selection,
-        mode,
-    ):
-        return super(ExternalJobData, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            job_type=check.inst_param(job_type, "job_type", JobType),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
-            mode=check.opt_str_param(mode, "mode"),
         )
 
 

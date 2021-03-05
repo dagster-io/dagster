@@ -11,7 +11,6 @@ from dagster.core.utils import toposort
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
-    ExternalJobData,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
@@ -91,26 +90,10 @@ class ExternalRepository:
         ]
 
     def has_external_schedule(self, schedule_name):
-        return self.has_external_job(schedule_name, JobType.SCHEDULE)
+        return isinstance(self._job_map.get(schedule_name), ExternalScheduleData)
 
     def has_external_sensor(self, sensor_name):
-        return self.has_external_job(sensor_name, JobType.SENSOR)
-
-    def has_external_job(self, job_name, job_type=None):
-        if job_name not in self._job_map:
-            return False
-
-        return job_type == None or self._job_map.get(job_name).job_type == job_type
-
-    def get_external_job(self, job_name):
-        external_job_data = self._job_map.get(job_name)
-        if not external_job_data:
-            return None
-        if external_job_data.job_type == JobType.SENSOR:
-            return self.get_external_sensor(external_job_data.name)
-        if external_job_data.job_type == JobType.SCHEDULE:
-            return self.get_external_schedule(external_job_data.name)
-        return None
+        return isinstance(self._job_map.get(sensor_name), ExternalSensorData)
 
     def get_external_partition_set(self, partition_set_name):
         return ExternalPartitionSet(
@@ -470,10 +453,7 @@ class ExternalSchedule:
 class ExternalSensor:
     def __init__(self, external_sensor_data, handle):
         self._external_sensor_data = check.inst_param(
-            external_sensor_data, "external_sensor_data", (ExternalSensorData, ExternalJobData)
-        )  # ExternalJobData is deprecated, but supporting here for backcompat
-        check.param_invariant(
-            external_sensor_data.job_type == JobType.SENSOR, "external_sensor_data"
+            external_sensor_data, "external_sensor_data", ExternalSensorData
         )
         self._handle = JobHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)

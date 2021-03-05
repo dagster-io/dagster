@@ -160,7 +160,7 @@ class GrapheneFutureJobTick(graphene.ObjectType):
             return None
 
         repository = repository_location.get_repository(repository_origin.repository_name)
-        external_schedule = repository.get_external_job(self._job_state.name)
+        external_schedule = repository.get_external_schedule(self._job_state.name)
         timezone_str = external_schedule.execution_timezone
         if not timezone_str:
             timezone_str = pendulum.now().timezone.name

@@ -194,7 +194,7 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
                 )
 
             external_repo = repo_location.get_repository(repo_name)
-            if not external_repo.has_external_job(job_state.job_name):
+            if not external_repo.has_external_sensor(job_state.job_name):
                 raise DagsterSensorDaemonError(
                     f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
                     "sensor no longer exists, you can turn it off in the Dagit UI.",
