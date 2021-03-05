@@ -150,7 +150,7 @@ def resolve_step_output_versions_helper(execution_plan):
 
 
 @experimental
-def resolve_memoized_execution_plan(execution_plan, run_config):
+def resolve_memoized_execution_plan(execution_plan, run_config, instance):
     """
     Returns:
         ExecutionPlan: Execution plan configured to only run unmemoized steps.
@@ -174,6 +174,7 @@ def resolve_memoized_execution_plan(execution_plan, run_config):
             # depends on.
             with build_resources(
                 resource_defs=mode_def.resource_defs,
+                instance=instance,
                 run_config=run_config.get("resources", {}),
             ) as scoped_resources:
 

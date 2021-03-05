@@ -214,12 +214,15 @@ def test_resolve_memoized_execution_plan_no_stored_results():
     versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryIOManager())
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
-    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan, {})
+    with DagsterInstance.ephemeral() as dagster_instance:
+        memoized_execution_plan = resolve_memoized_execution_plan(
+            speculative_execution_plan, {}, dagster_instance
+        )
 
-    assert set(memoized_execution_plan.step_keys_to_execute) == {
-        "versioned_solid_no_input",
-        "versioned_solid_takes_input",
-    }
+        assert set(memoized_execution_plan.step_keys_to_execute) == {
+            "versioned_solid_no_input",
+            "versioned_solid_takes_input",
+        }
 
 
 def test_resolve_memoized_execution_plan_yes_stored_results():
@@ -234,18 +237,24 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
-    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan, {})
+    with DagsterInstance.ephemeral() as dagster_instance:
 
-    assert memoized_execution_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
+        memoized_execution_plan = resolve_memoized_execution_plan(
+            speculative_execution_plan, {}, dagster_instance
+        )
 
-    expected_handle = StepOutputHandle(step_key="versioned_solid_no_input", output_name="result")
+        assert memoized_execution_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
 
-    assert (
-        memoized_execution_plan.get_step_by_key("versioned_solid_takes_input")
-        .step_input_dict["intput"]
-        .source.step_output_handle
-        == expected_handle
-    )
+        expected_handle = StepOutputHandle(
+            step_key="versioned_solid_no_input", output_name="result"
+        )
+
+        assert (
+            memoized_execution_plan.get_step_by_key("versioned_solid_takes_input")
+            .step_input_dict["intput"]
+            .source.step_output_handle
+            == expected_handle
+        )
 
 
 def test_resolve_memoized_execution_plan_partial_versioning():
@@ -262,9 +271,11 @@ def test_resolve_memoized_execution_plan_partial_versioning():
         (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
     ] = 4
 
-    assert resolve_memoized_execution_plan(speculative_execution_plan, {}).step_keys_to_execute == [
-        "solid_takes_input"
-    ]
+    with DagsterInstance.ephemeral() as instance:
+
+        assert resolve_memoized_execution_plan(
+            speculative_execution_plan, {}, instance
+        ).step_keys_to_execute == ["solid_takes_input"]
 
 
 def _get_ext_version(config_value):

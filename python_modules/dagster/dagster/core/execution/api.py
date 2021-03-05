@@ -191,7 +191,9 @@ def execute_run(
     )
 
     if is_memoized_run(pipeline_run.tags):
-        execution_plan = resolve_memoized_execution_plan(execution_plan, pipeline_run.run_config)
+        execution_plan = resolve_memoized_execution_plan(
+            execution_plan, pipeline_run.run_config, instance
+        )
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
