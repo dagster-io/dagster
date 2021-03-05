@@ -13,6 +13,7 @@ from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
@@ -86,7 +87,7 @@ class RepositoryLocation(ABC):
 
     @abstractmethod
     def get_external_execution_plan(
-        self, external_pipeline, run_config, mode, step_keys_to_execute
+        self, external_pipeline, run_config, mode, step_keys_to_execute, known_state
     ):
         pass
 
@@ -194,12 +195,18 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_execution_plan(
-        self, external_pipeline, run_config, mode, step_keys_to_execute
+        self,
+        external_pipeline,
+        run_config,
+        mode,
+        step_keys_to_execute,
+        known_state,
     ):
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
@@ -212,6 +219,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
                     run_config=run_config,
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
+                    known_state=known_state,
                 ),
                 external_pipeline.identifying_pipeline_snapshot_id,
             ),
@@ -333,12 +341,18 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return self._handle
 
     def get_external_execution_plan(
-        self, external_pipeline, run_config, mode, step_keys_to_execute
+        self,
+        external_pipeline,
+        run_config,
+        mode,
+        step_keys_to_execute,
+        known_state,
     ):
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self._handle.client,
@@ -348,6 +362,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
         )
 
         if isinstance(execution_plan_snapshot_or_error, ExecutionPlanSnapshotErrorData):

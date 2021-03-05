@@ -622,6 +622,7 @@ def _launch_run(
             run_config,
             external_schedule.mode,
             step_keys_to_execute=None,
+            known_state=None,
         )
         execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
     except DagsterSubprocessError as e:

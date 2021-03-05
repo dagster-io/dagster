@@ -163,6 +163,7 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
             mode=mode,
             run_config=run_config,
             step_keys_to_execute=None,
+            known_state=None,
         )
     )
 

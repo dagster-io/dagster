@@ -404,6 +404,7 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         run_request.run_config,
         external_sensor.mode,
         step_keys_to_execute=None,
+        known_state=None,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 

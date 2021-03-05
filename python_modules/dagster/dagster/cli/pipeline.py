@@ -500,6 +500,7 @@ def _create_external_pipeline_run(
         run_config,
         pipeline_mode,
         step_keys_to_execute=None,
+        known_state=None,
     )
     if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
         raise DagsterLaunchFailedError(

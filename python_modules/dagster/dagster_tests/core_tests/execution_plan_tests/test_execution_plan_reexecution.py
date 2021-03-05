@@ -199,7 +199,7 @@ def test_pipeline_step_key_subset_execution():
 
     with pytest.raises(
         DagsterExecutionStepNotFoundError,
-        match="Can not build subset plan from unknown step: nope",
+        match="Step selection refers to unknown step: nope",
     ):
         reexecute_pipeline(
             pipeline_def,

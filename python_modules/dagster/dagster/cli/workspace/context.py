@@ -91,7 +91,12 @@ class WorkspaceRequestContext(
         )
 
     def get_external_execution_plan(
-        self, external_pipeline, run_config, mode, step_keys_to_execute
+        self,
+        external_pipeline,
+        run_config,
+        mode,
+        step_keys_to_execute,
+        known_state,
     ):
         return self.repository_locations_dict[
             external_pipeline.handle.location_name
@@ -100,6 +105,7 @@ class WorkspaceRequestContext(
             run_config=run_config,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
         )
 
     def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):

@@ -1,6 +1,6 @@
 import pytest
 from dagster import InputDefinition, lambda_solid, pipeline
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
@@ -192,8 +192,8 @@ def test_parse_step_selection_multi():
     }
 
     with pytest.raises(
-        DagsterInvalidSubsetError,
-        match="No qualified steps to execute found for step_selection",
+        DagsterExecutionStepNotFoundError,
+        match="Step selection refers to unknown step: a",
     ):
         parse_step_selection(step_deps, ["*add_nums", "a"])
 

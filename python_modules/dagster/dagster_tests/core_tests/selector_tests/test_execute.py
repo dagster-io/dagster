@@ -180,7 +180,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
 
     with pytest.raises(
         DagsterExecutionStepNotFoundError,
-        match="Can not build subset plan from unknown step: a",
+        match="Step selection refers to unknown step: a",
     ):
         reexecute_pipeline(
             foo_pipeline,
@@ -188,6 +188,18 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
             run_config=run_config,
             instance=instance,
             step_selection=["a", "*add_nums"],
+        )
+
+    with pytest.raises(
+        DagsterExecutionStepNotFoundError,
+        match="Step selection refers to unknown steps: a, b",
+    ):
+        reexecute_pipeline(
+            foo_pipeline,
+            parent_run_id=pipeline_result_full.run_id,
+            run_config=run_config,
+            instance=instance,
+            step_selection=["a+", "*b"],
         )
 
 

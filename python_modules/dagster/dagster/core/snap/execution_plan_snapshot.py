@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.execution.plan.inputs import StepInput, UnresolvedStepInput
 from dagster.core.execution.plan.outputs import StepOutput, StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import ExecutionStep, StepKind, UnresolvedExecutionStep
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -18,12 +19,20 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot):
 class ExecutionPlanSnapshot(
     namedtuple(
         "_ExecutionPlanSnapshot",
-        "steps artifacts_persisted pipeline_snapshot_id step_keys_to_execute",
+        "steps artifacts_persisted pipeline_snapshot_id step_keys_to_execute initial_known_state",
     )
 ):
     # serdes log
     # added step_keys_to_execute
-    def __new__(cls, steps, artifacts_persisted, pipeline_snapshot_id, step_keys_to_execute=None):
+    # added initial_known_state
+    def __new__(
+        cls,
+        steps,
+        artifacts_persisted,
+        pipeline_snapshot_id,
+        step_keys_to_execute=None,
+        initial_known_state=None,
+    ):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
             steps=check.list_param(steps, "steps", of_type=ExecutionStepSnap),
@@ -31,6 +40,11 @@ class ExecutionPlanSnapshot(
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             step_keys_to_execute=check.opt_list_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
+            ),
+            initial_known_state=check.opt_inst_param(
+                initial_known_state,
+                "initial_known_state",
+                KnownExecutionState,
             ),
         )
 
@@ -169,4 +183,5 @@ def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
         artifacts_persisted=execution_plan.artifacts_persisted,
         pipeline_snapshot_id=pipeline_snapshot_id,
         step_keys_to_execute=execution_plan.step_keys_to_execute,
+        initial_known_state=execution_plan.known_state,
     )

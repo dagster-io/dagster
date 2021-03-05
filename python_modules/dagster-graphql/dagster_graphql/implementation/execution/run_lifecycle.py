@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.core.events import EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import is_memoized_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -28,12 +29,20 @@ def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_par
             mode=execution_params.mode,
             run_config=execution_params.run_config,
             step_keys_to_execute=None,
+            known_state=None,
         )
         return get_retry_steps_from_execution_plan(
             instance, external_execution_plan, execution_params.execution_metadata.parent_run_id
         )
     else:
-        return execution_params.step_keys
+        known_state = None
+        if execution_params.execution_metadata.parent_run_id:
+            known_state = KnownExecutionState.for_reexecution(
+                instance.all_logs(execution_params.execution_metadata.parent_run_id),
+                execution_params.step_keys,
+            )
+
+        return execution_params.step_keys, known_state
 
 
 def is_resume_retry(execution_params):
@@ -44,7 +53,7 @@ def is_resume_retry(execution_params):
 def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.run_config)
 
-    step_keys_to_execute = compute_step_keys_to_execute(
+    step_keys_to_execute, known_state = compute_step_keys_to_execute(
         graphene_info, external_pipeline, execution_params
     )
 
@@ -54,6 +63,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         mode=execution_params.mode,
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
+        known_state=known_state,
     )
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 

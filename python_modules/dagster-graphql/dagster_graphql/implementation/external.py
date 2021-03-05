@@ -121,13 +121,19 @@ def ensure_valid_step_keys(full_external_execution_plan, step_keys):
 
 
 def get_external_execution_plan_or_raise(
-    graphene_info, external_pipeline, mode, run_config, step_keys_to_execute
+    graphene_info,
+    external_pipeline,
+    mode,
+    run_config,
+    step_keys_to_execute,
+    known_state,
 ):
     full_external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config=run_config,
         mode=mode,
         step_keys_to_execute=None,
+        known_state=None,
     )
 
     if not step_keys_to_execute:
@@ -140,6 +146,7 @@ def get_external_execution_plan_or_raise(
         run_config=run_config,
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
+        known_state=known_state,
     )
 
 

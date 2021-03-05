@@ -3,7 +3,7 @@ import sys
 from collections import defaultdict
 
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
 MAX_NUM = sys.maxsize
@@ -232,6 +232,14 @@ def parse_step_selection(step_deps, step_selection):
     graph = {"upstream": step_deps, "downstream": downstream_deps}
     steps_set = set()
 
+    step_keys = parse_items_from_selection(step_selection)
+    invalid_keys = [key for key in step_keys if key not in step_deps]
+    if invalid_keys:
+        raise DagsterExecutionStepNotFoundError(
+            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}: {', '.join(invalid_keys)}",
+            step_keys=invalid_keys,
+        )
+
     # loop over clauses
     for clause in step_selection:
         subset = clause_to_subset(graph, clause)
@@ -239,7 +247,7 @@ def parse_step_selection(step_deps, step_selection):
             raise DagsterInvalidSubsetError(
                 "No qualified steps to execute found for step_selection={requested}".format(
                     requested=step_selection
-                )
+                ),
             )
         steps_set.update(subset)
 

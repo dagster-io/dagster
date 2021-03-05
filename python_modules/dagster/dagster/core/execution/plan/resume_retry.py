@@ -1,8 +1,10 @@
 from collections import defaultdict
+from typing import Dict, List, Optional, Tuple
 
 from dagster import check
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.plan.handle import StepHandle, UnresolvedStepHandle
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance
@@ -26,13 +28,15 @@ def _in_tracking_dict(handle, tracking):
         return handle.to_key() in tracking
 
 
-def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id):
+def get_retry_steps_from_execution_plan(
+    instance, execution_plan, parent_run_id
+) -> Tuple[List[str], Optional[KnownExecutionState]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(execution_plan, "execution_plan", ExternalExecutionPlan)
     check.opt_str_param(parent_run_id, "parent_run_id")
 
     if not parent_run_id:
-        return execution_plan.step_keys_in_plan
+        return execution_plan.step_keys_in_plan, None
 
     parent_run = instance.get_run_by_id(parent_run_id)
     parent_run_logs = instance.all_logs(parent_run_id)
@@ -40,11 +44,11 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
     # keep track of steps with dicts that point:
     # * step_key -> set(step_handle) in the normal case
     # * unresolved_step_key -> set(resolved_step_handle, ...) for dynamic outputs
-    all_steps_in_parent_run_logs = defaultdict(set)
-    failed_steps_in_parent_run_logs = defaultdict(set)
-    successful_steps_in_parent_run_logs = defaultdict(set)
-    interrupted_steps_in_parent_run_logs = defaultdict(set)
-    skipped_steps_in_parent_run_logs = defaultdict(set)
+    all_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
+    failed_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
+    successful_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
+    interrupted_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
+    skipped_steps_in_parent_run_logs: Dict[str, set] = defaultdict(set)
 
     for record in parent_run_logs:
         if record.dagster_event and record.dagster_event.step_handle:
@@ -111,4 +115,8 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
                 else:
                     to_retry[step_key].add(step_handle)
 
-    return [step_handle.to_key() for step_set in to_retry.values() for step_handle in step_set]
+    steps_to_retry = [
+        step_handle.to_key() for step_set in to_retry.values() for step_handle in step_set
+    ]
+
+    return steps_to_retry, KnownExecutionState.for_reexecution(parent_run_logs, steps_to_retry)

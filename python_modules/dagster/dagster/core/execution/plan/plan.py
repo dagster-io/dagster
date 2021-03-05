@@ -33,7 +33,6 @@ from dagster.core.execution.plan.handle import (
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.resolve_versions import (
     resolve_step_output_versions_helper,
     resolve_step_versions_helper,
@@ -59,6 +58,7 @@ from .inputs import (
     UnresolvedStepInput,
 )
 from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
+from .state import KnownExecutionState
 from .step import ExecutionStep, UnresolvedExecutionStep
 
 if TYPE_CHECKING:
@@ -454,6 +454,15 @@ class ExecutionPlan(
                     )
                 resolvable_map[step.resolved_by_step_key].append(step.handle)
 
+        if known_state:
+            _update_from_resolved_dynamic_outputs(
+                step_dict,
+                executable_map,
+                resolvable_map,
+                step_handles_to_execute,
+                known_state.dynamic_mappings,
+            )
+
         return super(ExecutionPlan, cls).__new__(
             cls,
             pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
@@ -576,30 +585,13 @@ class ExecutionPlan(
         check.str_param(resolved_by_step_key, "resolved_by_step_key")
         check.dict_param(mappings, "mappings", key_type=str, value_type=list)
 
-        resolved_steps = []
-        for unresolved_step_handle in self.resolvable_map[resolved_by_step_key]:
-            # don't resolve steps we are not executing
-            if unresolved_step_handle in self.step_handles_to_execute:
-                unresolved_step = cast(
-                    UnresolvedExecutionStep,
-                    self.step_dict[unresolved_step_handle],
-                )
-                resolved_steps += unresolved_step.resolve(resolved_by_step_key, mappings)
-
-        # update internal structures
-        for step in resolved_steps:
-            self.step_dict[step.handle] = step
-            self.executable_map[step.key] = step.handle
-
-        executable_keys = set(self.executable_map.keys())
-        resolved_step_deps = {}
-        for step in resolved_steps:
-            # respect the plans step_handles_to_execute by intersecting against the executable keys
-            resolved_step_deps[step.key] = step.get_execution_dependency_keys().intersection(
-                executable_keys
-            )
-
-        return resolved_step_deps
+        return _update_from_resolved_dynamic_outputs(
+            self.step_dict,
+            self.executable_map,
+            self.resolvable_map,
+            self.step_handles_to_execute,
+            {resolved_by_step_key: mappings},
+        )
 
     def build_subset_plan(self, step_keys_to_execute: List[str]) -> "ExecutionPlan":
         check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
@@ -607,25 +599,7 @@ class ExecutionPlan(
 
         bad_keys = []
         for handle in step_handles_to_execute:
-            if handle in self.step_dict:
-                pass  # no further processing required
-            elif (
-                isinstance(handle, ResolvedFromDynamicStepHandle)
-                and handle.unresolved_form in self.step_dict
-            ):
-                unresolved_step = cast(
-                    UnresolvedExecutionStep, self.step_dict[handle.unresolved_form]
-                )
-                # self.step_dict updated as side effect
-                self.resolve(
-                    unresolved_step.resolved_by_step_key,
-                    {unresolved_step.resolved_by_output_name: [handle.mapping_key]},
-                )
-                check.invariant(
-                    handle in self.step_dict,
-                    f"Handle did not resolve as expected, not found in step dict {handle}",
-                )
-            else:
+            if handle not in self.step_dict:
                 bad_keys.append(handle.to_key())
 
         if bad_keys:
@@ -700,6 +674,7 @@ class ExecutionPlan(
         check.inst_param(environment_config, "environment_config", EnvironmentConfig)
         check.opt_str_param(mode, "mode")
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
         plan_builder = _PlanBuilder(
             pipeline,
@@ -758,6 +733,40 @@ class ExecutionPlan(
         Will or did this ExecutionPlan execute the step with the corresponding key
         """
         return step_key in self.executable_map
+
+
+def _update_from_resolved_dynamic_outputs(
+    step_dict: Dict[StepHandleUnion, ExecutionStepUnion],
+    executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
+    resolvable_map: Dict[str, List[UnresolvedStepHandle]],
+    step_handles_to_execute: List[StepHandleUnion],
+    dynamic_mappings: Dict[str, Dict[str, List[str]]],
+) -> Dict[str, Set[str]]:
+    resolved_steps = []
+    for resolved_by_step_key, mappings in dynamic_mappings.items():
+        for unresolved_step_handle in resolvable_map[resolved_by_step_key]:
+            # don't resolve steps we are not executing
+            if unresolved_step_handle in step_handles_to_execute:
+                unresolved_step = cast(
+                    UnresolvedExecutionStep,
+                    step_dict[unresolved_step_handle],
+                )
+                resolved_steps += unresolved_step.resolve(resolved_by_step_key, mappings)
+
+    # update internal structures
+    for step in resolved_steps:
+        step_dict[step.handle] = step
+        executable_map[step.key] = step.handle
+
+    executable_keys = set(executable_map.keys())
+    resolved_step_deps = {}
+    for step in resolved_steps:
+        # respect the plans step_handles_to_execute by intersecting against the executable keys
+        resolved_step_deps[step.key] = step.get_execution_dependency_keys().intersection(
+            executable_keys
+        )
+
+    return resolved_step_deps
 
 
 def check_io_manager_intermediate_storage(

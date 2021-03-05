@@ -4,6 +4,7 @@ from enum import Enum
 from dagster import check
 from dagster.core.errors import DagsterBackfillFailedError
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalPartitionSet,
     ExternalPipeline,
@@ -180,6 +181,7 @@ def create_backfill_run(
         partition_data.run_config,
         external_partition_set.mode,
         step_keys_to_execute=None,
+        known_state=None,
     )
 
     tags = merge_dicts(
@@ -193,6 +195,7 @@ def create_backfill_run(
         step_keys_to_execute = None
         parent_run_id = None
         root_run_id = None
+        known_state = None
 
     elif backfill_job.from_failure:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
@@ -202,7 +205,7 @@ def create_backfill_run(
         parent_run_id = last_run.run_id
         root_run_id = last_run.root_run_id or last_run.run_id
         tags = merge_dicts(tags, {RESUME_RETRY_TAG: "true"})
-        step_keys_to_execute = get_retry_steps_from_execution_plan(
+        step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
             instance, full_external_execution_plan, parent_run_id
         )
     elif backfill_job.reexecution_steps:
@@ -210,6 +213,10 @@ def create_backfill_run(
         parent_run_id = last_run.run_id if last_run else None
         root_run_id = (last_run.root_run_id or last_run.run_id) if last_run else None
         step_keys_to_execute = backfill_job.reexecution_steps
+        known_state = KnownExecutionState.for_reexecution(
+            instance.all_logs(parent_run_id),
+            step_keys_to_execute,
+        )
 
     if step_keys_to_execute:
         external_execution_plan = repo_location.get_external_execution_plan(
@@ -217,6 +224,7 @@ def create_backfill_run(
             partition_data.run_config,
             external_partition_set.mode,
             step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
         )
     else:
         external_execution_plan = full_external_execution_plan

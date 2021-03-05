@@ -11,10 +11,11 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance, is_memoized_run
-from dagster.core.selector import parse_items_from_selection, parse_step_selection
+from dagster.core.selector import parse_step_selection
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
@@ -95,11 +96,18 @@ def execute_run_iterator(
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
                 pipeline_run.solids_to_execute
             )
+
+    known_state = None
+    if pipeline_run.parent_run_id and pipeline_run.step_keys_to_execute:
+        plan_snap = instance.get_execution_plan_snapshot(pipeline_run.execution_plan_snapshot_id)
+        known_state = plan_snap.initial_known_state
+
     execution_plan = create_execution_plan(
         pipeline,
         run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
+        known_state=known_state,
     )
 
     return iter(
@@ -183,11 +191,17 @@ def execute_run(
                 pipeline_run.solids_to_execute
             )
 
+    known_state = None
+    if pipeline_run.parent_run_id and pipeline_run.step_keys_to_execute:
+        plan_snap = instance.get_execution_plan_snapshot(pipeline_run.execution_plan_snapshot_id)
+        known_state = plan_snap.initial_known_state
+
     execution_plan = create_execution_plan(
         pipeline,
         run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
+        known_state=known_state,
     )
 
     if is_memoized_run(pipeline_run.tags):
@@ -490,21 +504,22 @@ def reexecute_pipeline(
             ),
         )
 
-        # resolve step selection DSL queries using parent execution plan snapshot
+        step_keys_to_execute: Optional[List[str]] = None
+        execution_plan: Optional[ExecutionPlan] = None
+        # resolve step selection DSL queries using parent execution information
         if step_selection:
-            full_plan = create_execution_plan(pipeline, parent_pipeline_run.run_config, mode)
-            step_keys = parse_items_from_selection(step_selection)
-            # resolve execution plan with any resolved dynamic step keys
-            resolved_plan = full_plan.build_subset_plan(step_keys)
-            # parse selection using all step deps
-            step_keys_to_execute = parse_step_selection(
-                resolved_plan.get_all_step_deps(), step_selection
+            step_keys_to_execute, execution_plan = _resolve_reexecute_step_selection(
+                execute_instance,
+                pipeline,
+                mode,
+                run_config,
+                parent_pipeline_run,
+                step_selection,
             )
-        else:
-            step_keys_to_execute = None
 
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(),
+            execution_plan=execution_plan,
             run_config=run_config,
             mode=mode,
             tags=tags,
@@ -516,7 +531,12 @@ def reexecute_pipeline(
             parent_run_id=parent_pipeline_run.run_id,
         )
 
-        return execute_run(pipeline, pipeline_run, execute_instance, raise_on_error=raise_on_error)
+        return execute_run(
+            pipeline,
+            pipeline_run,
+            execute_instance,
+            raise_on_error=raise_on_error,
+        )
 
 
 def reexecute_pipeline_iterator(
@@ -588,20 +608,23 @@ def reexecute_pipeline_iterator(
             ),
         )
 
-        # resolve step selection DSL queries using parent execution plan snapshot
+        step_keys_to_execute: Optional[List[str]] = None
+        execution_plan: Optional[ExecutionPlan] = None
+        # resolve step selection DSL queries using parent execution information
         if step_selection:
-            parent_execution_plan_snapshot = execute_instance.get_execution_plan_snapshot(
-                parent_pipeline_run.execution_plan_snapshot_id
+            step_keys_to_execute, execution_plan = _resolve_reexecute_step_selection(
+                execute_instance,
+                pipeline,
+                mode,
+                run_config,
+                parent_pipeline_run,
+                step_selection,
             )
-            step_keys_to_execute = parse_step_selection(
-                parent_execution_plan_snapshot.step_deps, step_selection
-            )
-        else:
-            step_keys_to_execute = None
 
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(),
             run_config=run_config,
+            execution_plan=execution_plan,
             mode=mode,
             tags=tags,
             solid_selection=parent_pipeline_run.solid_selection,
@@ -685,7 +708,7 @@ def create_execution_plan(
     run_config: Optional[dict] = None,
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
-    known_state=None,
+    known_state: KnownExecutionState = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
@@ -921,3 +944,28 @@ def _check_execute_pipeline_args(
         pipeline.solids_to_execute,
         solid_selection,
     )
+
+
+def _resolve_reexecute_step_selection(
+    instance: DagsterInstance,
+    pipeline: IPipeline,
+    mode: Optional[str],
+    run_config: Optional[dict],
+    parent_pipeline_run: PipelineRun,
+    step_selection: List[str],
+) -> Tuple[List[str], ExecutionPlan]:
+    parent_logs = instance.all_logs(parent_pipeline_run.run_id)
+    parent_plan = create_execution_plan(
+        pipeline,
+        parent_pipeline_run.run_config,
+        mode,
+        known_state=KnownExecutionState.derive_from_logs(parent_logs),
+    )
+    step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
+    execution_plan = create_execution_plan(
+        pipeline,
+        run_config,
+        mode,
+        known_state=KnownExecutionState.for_reexecution(parent_logs, step_keys_to_execute),
+    )
+    return step_keys_to_execute, execution_plan

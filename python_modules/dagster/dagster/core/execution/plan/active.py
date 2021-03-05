@@ -450,4 +450,5 @@ class ActiveExecution:
     def get_known_state(self):
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
+            dynamic_mappings=dict(self._successful_dynamic_outputs),
         )
