@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.8.post0
+
+**Bugfixes**
+
+- Fixed an issue where postgres databases were unable to initialize the Dagster schema or migrate to a newer version of the Dagster schema. (Thanks [@wingyplus](https://github.com/wingyplus) for submitting the fix!)
+
 ## 0.10.8
 
 **Community Contributions**
