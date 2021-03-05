@@ -4,11 +4,11 @@ from typing import Any, Callable, Optional, Union
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from ..job import JobDefinition
 from ..partition import PartitionSetDefinition
 from ..pipeline import PipelineDefinition
 from ..repository import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryData, RepositoryDefinition
 from ..schedule import ScheduleDefinition
+from ..sensor import SensorDefinition
 
 
 class _Repository:
@@ -42,21 +42,20 @@ class _Repository:
                     isinstance(definition, PipelineDefinition)
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
-                    or isinstance(definition, JobDefinition)
+                    or isinstance(definition, SensorDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
+                bad_definitions_str = ", ".join(
+                    [
+                        "value of type {type_} at index {i}".format(type_=type_, i=i)
+                        for i, type_ in bad_definitions
+                    ]
+                )
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type PipelineDefinition, PartitionSetDefinition, "
-                    "ScheduleDefinition, or JobDefinition. Got {bad_definitions_formatted}.".format(
-                        bad_definitions_formatted=", ".join(
-                            [
-                                "value of type {type_} at index {i}".format(type_=type_, i=i)
-                                for i, type_ in bad_definitions
-                            ]
-                        )
-                    )
+                    f"ScheduleDefinition, or SensorDefinition. Got {bad_definitions_str}."
                 )
             repository_data = RepositoryData.from_list(repository_definitions)
 

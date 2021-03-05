@@ -13,7 +13,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.utils import ensure_gen, merge_dicts
 
-from .job import JobDefinition, JobType, RunRequest, SkipReason
+from .job import JobType, RunRequest, SkipReason
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
 
@@ -51,7 +51,7 @@ class ScheduleExecutionContext:
         return self._scheduled_execution_time
 
 
-class ScheduleDefinition(JobDefinition):
+class ScheduleDefinition:
     """Define a schedule that targets a pipeline
 
     Args:
@@ -92,6 +92,13 @@ class ScheduleDefinition(JobDefinition):
     """
 
     __slots__ = [
+        "_name",
+        "_pipeline_name",
+        "_tags_fn",
+        "_run_config_fn",
+        "_mode",
+        "_solid_selection",
+        "_description",
         "_cron_schedule",
         "_environment_vars",
         "_execution_fn",
@@ -116,21 +123,18 @@ class ScheduleDefinition(JobDefinition):
         description=None,
     ):
 
-        super(ScheduleDefinition, self).__init__(
-            check_valid_name(name),
-            job_type=JobType.SCHEDULE,
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-            solid_selection=check.opt_nullable_list_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
-            description=check.opt_str_param(description, "description"),
-        )
-
         if not croniter.is_valid(cron_schedule):
             raise DagsterInvalidDefinitionError(
                 f"Found invalid cron schedule '{cron_schedule}' for schedule '{name}''."
             )
+
+        self._name = check_valid_name(name)
+        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
+        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+        self._solid_selection = check.opt_nullable_list_param(
+            solid_selection, "solid_selection", of_type=str
+        )
+        self._description = check.opt_str_param(description, "description")
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
         self._environment_vars = check.opt_dict_param(
@@ -215,6 +219,30 @@ class ScheduleDefinition(JobDefinition):
                         schedule_name=name, timezone=self._execution_timezone
                     )
                 )
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
+
+    @property
+    def job_type(self):
+        return JobType.SCHEDULE
+
+    @property
+    def solid_selection(self):
+        return self._solid_selection
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def cron_schedule(self):

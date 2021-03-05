@@ -55,7 +55,7 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
-from .job import JobDefinition, JobType, RunRequest, SkipReason
+from .job import JobType, RunRequest, SkipReason
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping

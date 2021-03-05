@@ -4,9 +4,6 @@ from enum import Enum
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
 
-from .mode import DEFAULT_MODE_NAME
-from .utils import check_valid_name
-
 
 @whitelist_for_serdes
 class JobType(Enum):
@@ -55,69 +52,3 @@ class RunRequest(namedtuple("_RunRequest", "run_key run_config tags")):
             run_config=check.opt_dict_param(run_config, "run_config"),
             tags=check.opt_dict_param(tags, "tags"),
         )
-
-
-class JobDefinition:
-    """Defines a job, which describes a series of runs for a particular pipeline.  These runs are
-    grouped by job_name, using tags.
-
-    Args:
-        name (str): The name of this job.
-        pipeline_name (str): The name of the pipeline to execute.
-        mode (Optional[str]): The mode to apply when executing this pipeline. (default: 'default')
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute. e.g. ``['*some_solid+', 'other_solid']``
-    """
-
-    __slots__ = [
-        "_name",
-        "_job_type",
-        "_pipeline_name",
-        "_tags_fn",
-        "_run_config_fn",
-        "_mode",
-        "_solid_selection",
-        "_description",
-    ]
-
-    def __init__(
-        self,
-        name,
-        job_type,
-        pipeline_name,
-        mode="default",
-        solid_selection=None,
-        description=None,
-    ):
-        self._name = check_valid_name(name)
-        self._job_type = check.inst_param(job_type, "job_type", JobType)
-        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
-        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
-        self._solid_selection = check.opt_nullable_list_param(
-            solid_selection, "solid_selection", of_type=str
-        )
-        self._description = check.opt_str_param(description, "description")
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def pipeline_name(self):
-        return self._pipeline_name
-
-    @property
-    def job_type(self):
-        return self._job_type
-
-    @property
-    def solid_selection(self):
-        return self._solid_selection
-
-    @property
-    def mode(self):
-        return self._mode
-
-    @property
-    def description(self):
-        return self._description

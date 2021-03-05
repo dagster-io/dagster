@@ -5,7 +5,9 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.utils import ensure_gen
 
-from .job import JobDefinition, JobType, RunRequest, SkipReason
+from .job import JobType, RunRequest, SkipReason
+from .mode import DEFAULT_MODE_NAME
+from .utils import check_valid_name
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
@@ -44,8 +46,8 @@ class SensorExecutionContext:
         return self._last_run_key
 
 
-class SensorDefinition(JobDefinition):
-    """Define a sensor that initiates a set of job runs
+class SensorDefinition:
+    """Define a sensor that initiates a set of runs based on some external state
 
     Args:
         name (str): The name of the sensor to create.
@@ -68,6 +70,13 @@ class SensorDefinition(JobDefinition):
     """
 
     __slots__ = [
+        "_name",
+        "_pipeline_name",
+        "_tags_fn",
+        "_run_config_fn",
+        "_mode",
+        "_solid_selection",
+        "_description",
         "_evaluation_fn",
         "_min_interval",
     ]
@@ -82,19 +91,42 @@ class SensorDefinition(JobDefinition):
         minimum_interval_seconds=None,
         description=None,
     ):
-        super(SensorDefinition, self).__init__(
-            name,
-            job_type=JobType.SENSOR,
-            pipeline_name=pipeline_name,
-            mode=mode,
-            solid_selection=solid_selection,
-            description=description,
-        )
 
+        self._name = check_valid_name(name)
+        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
+        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+        self._solid_selection = check.opt_nullable_list_param(
+            solid_selection, "solid_selection", of_type=str
+        )
+        self._description = check.opt_str_param(description, "description")
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
+
+    @property
+    def job_type(self):
+        return JobType.SENSOR
+
+    @property
+    def solid_selection(self):
+        return self._solid_selection
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @property
+    def description(self):
+        return self._description
 
     def get_execution_data(self, context):
         check.inst_param(context, "context", SensorExecutionContext)

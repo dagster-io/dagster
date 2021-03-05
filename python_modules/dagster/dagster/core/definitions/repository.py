@@ -2,7 +2,6 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
-from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -145,7 +144,7 @@ class RepositoryData:
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-            sensors (Dict[str, Union[JobDefinition, Callable[[], SensorDefinition]]]):
+            sensors (Dict[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
 
         """
@@ -262,32 +261,32 @@ class RepositoryData:
                         "{partition_set_name}".format(partition_set_name=definition.name)
                     )
                 partition_sets[definition.name] = definition
-            if isinstance(definition, JobDefinition):
+            elif isinstance(definition, SensorDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
                 jobs[definition.name] = definition
+                sensors[definition.name] = definition
+            elif isinstance(definition, ScheduleDefinition):
+                if definition.name in jobs:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate definition found for {definition.name}"
+                    )
+                jobs[definition.name] = definition
+                schedules[definition.name] = definition
 
-                if isinstance(definition, SensorDefinition):
-                    sensors[definition.name] = definition
-
-                if isinstance(definition, ScheduleDefinition):
-                    schedules[definition.name] = definition
-
-                    if isinstance(definition, PartitionScheduleDefinition):
-                        partition_set_def = definition.get_partition_set()
-                        if (
-                            partition_set_def.name in partition_sets
-                            and partition_set_def != partition_sets[partition_set_def.name]
-                        ):
-                            raise DagsterInvalidDefinitionError(
-                                "Duplicate partition set definition found for partition set "
-                                "{partition_set_name}".format(
-                                    partition_set_name=partition_set_def.name
-                                )
-                            )
-                        partition_sets[partition_set_def.name] = partition_set_def
+                if isinstance(definition, PartitionScheduleDefinition):
+                    partition_set_def = definition.get_partition_set()
+                    if (
+                        partition_set_def.name in partition_sets
+                        and partition_set_def != partition_sets[partition_set_def.name]
+                    ):
+                        raise DagsterInvalidDefinitionError(
+                            "Duplicate partition set definition found for partition set "
+                            "{partition_set_name}".format(partition_set_name=partition_set_def.name)
+                        )
+                    partition_sets[partition_set_def.name] = partition_set_def
 
         return RepositoryData(
             pipelines=pipelines,
