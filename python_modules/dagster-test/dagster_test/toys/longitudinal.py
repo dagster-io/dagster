@@ -4,142 +4,17 @@ from datetime import datetime
 from random import random
 
 from dagster import (
-    Array,
-    AssetKey,
     AssetMaterialization,
     EventMetadataEntry,
-    Field,
-    Output,
-    Permissive,
+    InputDefinition,
+    ModeDefinition,
+    Nothing,
+    OutputDefinition,
+    fs_io_manager,
     pipeline,
     solid,
 )
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
-
-
-def _base_config():
-    return {
-        "error_rate": Field(float, is_required=False, default_value=0.0),
-        "sleep": Field(float, is_required=False, default_value=0.5),
-        "materialization_key_list": Field(Array(str), is_required=False),
-        "materialization_key": Field(str, is_required=False),
-        "materialization_text": Field(str, is_required=False),
-        "materialization_url": Field(str, is_required=False),
-        "materialization_path": Field(str, is_required=False),
-        "materialization_json": Field(Permissive(), is_required=False),
-        "materialization_value": Field(float, is_required=False),
-        "partition": Field(str, is_required=False),
-    }
-
-
-def _base_compute(context):
-    time.sleep(context.solid_config["sleep"])
-
-    if random() < context.solid_config["error_rate"]:
-        raise Exception("blah")
-
-    asset_key = None
-    if context.solid_config.get("materialization_key_list") is not None:
-        asset_key = AssetKey(context.solid_config.get("materialization_key_list"))
-    elif context.solid_config.get("materialization_key") is not None:
-        asset_key = AssetKey(context.solid_config.get("materialization_key"))
-
-    if asset_key:
-        metadata_entries = []
-        if context.solid_config.get("materialization_text") is not None:
-            metadata_entries.append(
-                EventMetadataEntry.text(
-                    context.solid_config.get("materialization_text"),
-                    context.solid.name,
-                )
-            )
-
-        if context.solid_config.get("materialization_url") is not None:
-            metadata_entries.append(
-                EventMetadataEntry.url(
-                    context.solid_config.get("materialization_url"),
-                    context.solid.name,
-                )
-            )
-
-        if context.solid_config.get("materialization_path") is not None:
-            metadata_entries.append(
-                EventMetadataEntry.path(
-                    context.solid_config.get("materialization_path"),
-                    context.solid.name,
-                )
-            )
-
-        if context.solid_config.get("materialization_json") is not None:
-            metadata_entries.append(
-                EventMetadataEntry.json(
-                    context.solid_config.get("materialization_json"),
-                    context.solid.name,
-                )
-            )
-
-        if context.solid_config.get("materialization_value") is not None:
-            metadata_entries = [
-                EventMetadataEntry.float(
-                    context.solid_config.get("materialization_value"),
-                    context.solid.name,
-                )
-            ]
-
-        if len(metadata_entries) == 0:
-            metadata_entries = None
-
-        yield AssetMaterialization(
-            asset_key=asset_key,
-            metadata_entries=metadata_entries,
-            partition=context.solid_config.get("partition"),
-        )
-
-    yield Output(1)
-
-
-@solid(config_schema=_base_config())
-def base_no_input(context):
-    for event in _base_compute(context):
-        yield event
-
-
-@solid(config_schema=_base_config())
-def base_one_input(context, _):
-    for event in _base_compute(context):
-        yield event
-
-
-@solid(config_schema=_base_config())
-def base_two_inputs(context, _a, _b):
-    for event in _base_compute(context):
-        yield event
-
-
-@pipeline(
-    description=(
-        "Demo pipeline that simulates growth of execution-time and data-throughput of a data pipeline "
-        "following a sigmoidal curve"
-    )
-)
-def longitudinal_pipeline():
-    ingest_costs = base_no_input.alias("ingest_costs")
-    persist_costs = base_one_input.alias("persist_costs")
-    ingest_traffic = base_no_input.alias("ingest_traffic")
-    persist_traffic = base_one_input.alias("persist_traffic")
-    build_model = base_two_inputs.alias("build_model")
-    train_model = base_one_input.alias("train_model")
-    persist_model = base_one_input.alias("persist_model")
-    build_cost_dashboard = base_one_input.alias("build_cost_dashboard")
-    build_traffic_dashboard = base_one_input.alias("build_traffic_dashboard")
-
-    cost_data = persist_costs(ingest_costs())
-    traffic_data = persist_traffic(ingest_traffic())
-    persist_model(train_model(build_model(cost_data, traffic_data)))
-
-    build_cost_dashboard(cost_data)
-    build_traffic_dashboard(traffic_data)
-
 
 TRAFFIC_CONSTANTS = {
     0: 1,
@@ -163,87 +38,123 @@ def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
 
-def longitudinal_config(partition):
-    partition_date = datetime.strptime(partition.name, DEFAULT_DATE_FORMAT)
+def growth_rate(partition_date):
     weeks_since_init = (partition_date - INITIAL_DATE).days / 7
-    growth_rate = sigmoid(weeks_since_init - 4)  # make some sort of S-curve
-    cost_data_size = 3000 + 1000 * math.log(10000 * growth_rate, 10)
-    traffic_data_size = TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate
+    return sigmoid(weeks_since_init - 4)  # make some sort of S-curve
 
-    return {
-        "intermediate_storage": {"filesystem": {}},
-        "solids": {
-            "ingest_costs": {
-                "config": {
-                    "error_rate": random() * 0.15,  # ingestion is slightly error prone
-                    "sleep": SLEEP_INGEST * cost_data_size,  # sleep dependent on data size
-                    "partition": partition.name,
-                }
-            },
-            "persist_costs": {
-                "config": {
-                    "error_rate": random() * 0.01,  # ingestion is slightly error prone
-                    "sleep": SLEEP_PERSIST * cost_data_size,  # sleep dependent on data size
-                    "materialization_key": "cost_db_table",
-                    "materialization_value": cost_data_size,
-                    "partition": partition.name,
-                }
-            },
-            "ingest_traffic": {
-                "config": {
-                    "error_rate": random() * 0.15,  # ingestion is slightly error prone
-                    "sleep": SLEEP_INGEST * traffic_data_size,  # sleep dependent on data size
-                    "partition": partition.name,
-                }
-            },
-            "persist_traffic": {
-                "config": {
-                    "error_rate": random() * 0.01,  # ingestion is slightly error prone
-                    "sleep": SLEEP_PERSIST * traffic_data_size,
-                    "materialization_key": "traffic_db_table",
-                    "materialization_value": traffic_data_size,
-                    "partition": partition.name,
-                }
-            },
-            "build_cost_dashboard": {
-                "config": {
-                    "materialization_key_list": ["dashboards", "cost_dashboard"],
-                    "materialization_url": "http://docs.dagster.io/cost",
-                    "partition": partition.name,
-                }
-            },
-            "build_traffic_dashboard": {
-                "config": {
-                    "materialization_key_list": ["dashboards", "traffic_dashboard"],
-                    "materialization_url": "http://docs.dagster.io/traffic",
-                    "partition": partition.name,
-                }
-            },
-            "build_model": {
-                "config": {
-                    "sleep": SLEEP_BUILD
-                    * traffic_data_size
-                    * cost_data_size,  # sleep dependent on data size
-                    "partition": partition.name,
-                }
-            },
-            "train_model": {
-                "config": {
-                    "sleep": SLEEP_TRAIN
-                    * traffic_data_size
-                    * cost_data_size,  # sleep dependent on data size
-                    "partition": partition.name,
-                }
-            },
-            "persist_model": {
-                "config": {
-                    "materialization_key": "model",
-                    "materialization_json": {
-                        "traffic": traffic_data_size,
-                        "cost": cost_data_size,
-                    },
-                    "partition": partition.name,
-                }
-            },
-        },
-    }
+
+def traffic_data_size(partition_date):
+    return TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate(partition_date)
+
+
+def cost_data_size(partition_date):
+    return 3000 + 1000 * math.log(10000 * growth_rate(partition_date), 10)
+
+
+def combined_data_size(partition_date):
+    return traffic_data_size(partition_date) * cost_data_size(partition_date)
+
+
+def make_solid(
+    name,
+    asset_key=None,
+    error_rate=None,
+    data_size_fn=None,
+    materialization_metadata_entries=None,
+    sleep_factor=None,
+    has_input=False,
+):
+    @solid(
+        name=name,
+        config_schema={"partition": str},
+        input_defs=[InputDefinition("the_input", dagster_type=Nothing)] if has_input else [],
+        output_defs=[OutputDefinition(Nothing)],
+    )
+    def made_solid(context):
+        partition_date = datetime.strptime(context.solid_config["partition"], DEFAULT_DATE_FORMAT)
+        if data_size_fn:
+            data_size = data_size_fn(partition_date)
+            sleep_time = sleep_factor * data_size
+
+            time.sleep(sleep_time)
+
+        if error_rate and random() < error_rate:
+            raise Exception("blah")
+
+        if asset_key:
+            metadata_entries = materialization_metadata_entries or []
+            if data_size_fn:
+                metadata_entries.append(EventMetadataEntry.float(data_size, "Data size (bytes)"))
+
+            if len(metadata_entries) == 0:
+                metadata_entries = None
+
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                metadata_entries=metadata_entries,
+                partition=context.solid_config.get("partition"),
+            )
+
+    return made_solid
+
+
+@pipeline(
+    description=(
+        "Demo pipeline that simulates growth of execution-time and data-throughput of a data pipeline "
+        "following a sigmoidal curve"
+    ),
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
+)
+def longitudinal_pipeline():
+    ingest_costs = make_solid(
+        "ingest_costs", error_rate=0.15, sleep_factor=SLEEP_INGEST, data_size_fn=cost_data_size
+    )
+    persist_costs = make_solid(
+        "persist_costs",
+        asset_key="cost_db_table",
+        has_input=True,
+        error_rate=0.01,
+        sleep_factor=SLEEP_PERSIST,
+        data_size_fn=cost_data_size,
+    )
+    ingest_traffic = make_solid(
+        "ingest_traffic", error_rate=0.1, sleep_factor=SLEEP_INGEST, data_size_fn=traffic_data_size
+    )
+    persist_traffic = make_solid(
+        "persist_traffic",
+        asset_key="traffic_db_table",
+        has_input=True,
+        sleep_factor=SLEEP_PERSIST,
+        data_size_fn=traffic_data_size,
+        error_rate=0.01,
+    )
+    build_model = make_solid(
+        "build_model", has_input=True, sleep_factor=SLEEP_BUILD, data_size_fn=combined_data_size
+    )
+    train_model = make_solid(
+        "train_model", has_input=True, sleep_factor=SLEEP_TRAIN, data_size_fn=combined_data_size
+    )
+    persist_model = make_solid("persist_model", asset_key="traffic_cost_model", has_input=True)
+    build_cost_dashboard = make_solid(
+        "build_cost_dashboard",
+        asset_key=["dashboards", "cost_dashboard"],
+        has_input=True,
+        materialization_metadata_entries=[
+            EventMetadataEntry.url("http://docs.dagster.io/cost", "Documentation URL")
+        ],
+    )
+    build_traffic_dashboard = make_solid(
+        "build_traffic_dashboard",
+        asset_key=["dashboards", "traffic_dashboard"],
+        has_input=True,
+        materialization_metadata_entries=[
+            EventMetadataEntry.url("http://docs.dagster.io/traffic", "Documentation URL")
+        ],
+    )
+
+    cost_data = persist_costs(ingest_costs())
+    traffic_data = persist_traffic(ingest_traffic())
+    persist_model(train_model(build_model([cost_data, traffic_data])))
+
+    build_cost_dashboard(cost_data)
+    build_traffic_dashboard(traffic_data)

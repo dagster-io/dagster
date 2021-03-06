@@ -116,9 +116,17 @@ def materialization_schedule():
 
 
 def longitudinal_schedule():
-    from .longitudinal import longitudinal_config
+    from .longitudinal import longitudinal_pipeline
 
     schedule_name = "longitudinal_demo"
+
+    def longitudinal_config(partition):
+        return {
+            "solids": {
+                solid.name: {"config": {"partition": partition.name}}
+                for solid in longitudinal_pipeline.solids
+            }
+        }
 
     partition_set = PartitionSetDefinition(
         name="ingest_and_train",
