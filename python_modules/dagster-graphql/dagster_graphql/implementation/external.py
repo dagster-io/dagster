@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.cli.workspace.context import WorkspaceRequestContext
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -178,24 +179,28 @@ def fetch_repository(graphene_info, repository_selector):
 
 
 @capture_error
-def fetch_repository_locations(graphene_info):
+def fetch_repository_locations(workspace_request_context):
     from ..schema.external import (
         GrapheneRepositoryLocation,
         GrapheneRepositoryLocationConnection,
         GrapheneRepositoryLocationLoadFailure,
     )
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(
+        workspace_request_context, "workspace_request_context", WorkspaceRequestContext
+    )
 
     nodes = []
 
-    for location_name in graphene_info.context.repository_location_names:
+    for location_name in workspace_request_context.repository_location_names:
         node = (
-            GrapheneRepositoryLocation(graphene_info.context.get_repository_location(location_name))
-            if graphene_info.context.has_repository_location(location_name)
+            GrapheneRepositoryLocation(
+                workspace_request_context.get_repository_location(location_name)
+            )
+            if workspace_request_context.has_repository_location(location_name)
             else GrapheneRepositoryLocationLoadFailure(
                 location_name,
-                graphene_info.context.get_repository_location_error(location_name),
+                workspace_request_context.get_repository_location_error(location_name),
             )
         )
         nodes.append(node)

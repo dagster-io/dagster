@@ -985,6 +985,7 @@ type Mutation {
   terminatePipelineExecution(runId: String!, terminatePolicy: TerminatePipelinePolicy): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+  reloadWorkspace: ReloadWorkspaceMutationResult!
   launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
 }
 
@@ -1083,6 +1084,8 @@ type ReloadNotSupported implements Error {
 type RepositoryLocationNotFound implements Error {
   message: String!
 }
+
+union ReloadWorkspaceMutationResult = RepositoryLocationConnection | PythonError
 
 union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
@@ -1605,6 +1608,10 @@ type LaunchPipelineReexecutionMutation {
 
 type ReloadRepositoryLocationMutation {
   Output: ReloadRepositoryLocationMutationResult!
+}
+
+type ReloadWorkspaceMutation {
+  Output: ReloadWorkspaceMutationResult!
 }
 
 type TerminatePipelineExecutionMutation {

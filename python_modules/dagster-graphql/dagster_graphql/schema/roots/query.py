@@ -221,7 +221,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_repositoryLocationsOrError(self, graphene_info):
-        return fetch_repository_locations(graphene_info)
+        return fetch_repository_locations(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")

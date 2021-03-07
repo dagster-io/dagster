@@ -52,7 +52,9 @@ class Workspace:
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
         )
+        self._load_workspace()
 
+    def _load_workspace(self):
         repository_location_origins = (
             self._workspace_load_target.create_origins() if self._workspace_load_target else []
         )
@@ -130,9 +132,17 @@ class Workspace:
     def reload_repository_location(self, location_name):
         self._load_handle(location_name)
 
+    def _cleanup(self):
+        for handle in self.repository_location_handles:
+            handle.cleanup()
+
+    def reload_workspace(self):
+        for handle in self.repository_location_handles:
+            handle.cleanup()
+        self._load_workspace()
+
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        for handle in self.repository_location_handles:
-            handle.cleanup()
+        self._cleanup()

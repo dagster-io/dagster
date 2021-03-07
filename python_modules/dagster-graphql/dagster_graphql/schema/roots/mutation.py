@@ -7,7 +7,10 @@ from ...implementation.execution import (
     launch_pipeline_reexecution,
     terminate_pipeline_execution,
 )
-from ...implementation.external import get_full_external_pipeline_or_raise
+from ...implementation.external import (
+    fetch_repository_locations,
+    get_full_external_pipeline_or_raise,
+)
 from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -24,7 +27,11 @@ from ..errors import (
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
 )
-from ..external import GrapheneRepositoryLocation, GrapheneRepositoryLocationLoadFailure
+from ..external import (
+    GrapheneRepositoryLocation,
+    GrapheneRepositoryLocationConnection,
+    GrapheneRepositoryLocationLoadFailure,
+)
 from ..inputs import GrapheneExecutionParams, GraphenePartitionBackfillParams
 from ..pipelines.pipeline import GraphenePipelineRun
 from ..runs import GrapheneLaunchPipelineExecutionResult, GrapheneLaunchPipelineReexecutionResult
@@ -306,6 +313,26 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
             )
 
 
+class GrapheneReloadWorkspaceMutationResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneRepositoryLocationConnection,
+            GraphenePythonError,
+        )
+        name = "ReloadWorkspaceMutationResult"
+
+
+class GrapheneReloadWorkspaceMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneReloadWorkspaceMutationResult)
+
+    class Meta:
+        name = "ReloadWorkspaceMutation"
+
+    def mutate(self, graphene_info, **_kwargs):
+        new_context = graphene_info.context.reload_workspace()
+        return fetch_repository_locations(new_context)
+
+
 class GrapheneMutation(graphene.ObjectType):
     launch_pipeline_execution = GrapheneLaunchPipelineExecutionMutation.Field()
     launch_pipeline_reexecution = GrapheneLaunchPipelineReexecutionMutation.Field()
@@ -317,6 +344,7 @@ class GrapheneMutation(graphene.ObjectType):
     terminate_pipeline_execution = GrapheneTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
     reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
+    reload_workspace = GrapheneReloadWorkspaceMutation.Field()
     launch_partition_backfill = GrapheneLaunchPartitionBackfillMutation.Field()
 
     class Meta:

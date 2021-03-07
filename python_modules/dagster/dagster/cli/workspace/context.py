@@ -70,6 +70,10 @@ class WorkspaceRequestContext(
         updated_process_context = self.process_context.reload_repository_location(name)
         return updated_process_context.create_request_context()
 
+    def reload_workspace(self):
+        self.process_context.reload_workspace()
+        return self.process_context.create_request_context()
+
     def has_external_pipeline(self, selector):
         check.inst_param(selector, "selector", PipelineSelector)
         if selector.location_name in self.repository_locations_dict:
@@ -151,13 +155,18 @@ class WorkspaceProcessContext:
 
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._workspace = workspace
-        self._repository_locations = {}
 
         self._location_state_events = Subject()
         self._location_state_subscriber = LocationStateSubscriber(
             self._location_state_events_handler
         )
 
+        self.version = version
+
+        self._load_repository_locations()
+
+    def _load_repository_locations(self):
+        self._repository_locations = {}
         for handle in self._workspace.repository_location_handles:
             check.invariant(
                 self._repository_locations.get(handle.location_name) is None,
@@ -168,8 +177,6 @@ class WorkspaceProcessContext:
 
             handle.add_state_subscriber(self._location_state_subscriber)
             self._repository_locations[handle.location_name] = handle.create_location()
-
-        self.version = version
 
     def create_request_context(self):
         return WorkspaceRequestContext(
@@ -224,3 +231,7 @@ class WorkspaceProcessContext:
             del self._repository_locations[name]
 
         return self
+
+    def reload_workspace(self):
+        self._workspace.reload_workspace()
+        self._load_repository_locations()
