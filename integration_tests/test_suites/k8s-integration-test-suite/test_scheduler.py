@@ -88,7 +88,7 @@ def get_test_external_repo():
             attribute="test_repository",
         ),
         location_name="test_location",
-    ).create_handle() as handle:
+    ).create_test_handle() as handle:
         yield handle.create_location().get_repository("test_repository")
 
 

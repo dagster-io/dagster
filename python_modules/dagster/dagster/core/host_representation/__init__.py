@@ -36,7 +36,6 @@ from .external_data import (
 from .handle import (
     GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
     PipelineHandle,
     RepositoryHandle,
     RepositoryLocationHandle,

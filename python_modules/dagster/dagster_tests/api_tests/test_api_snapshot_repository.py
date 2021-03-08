@@ -57,7 +57,7 @@ def get_giant_repo_grpc_repository_location_handle():
             module_name="dagster_tests.api_tests.test_api_snapshot_repository",
         ),
         location_name="giant_repo_location",
-    ).create_handle() as handle:
+    ).create_test_handle() as handle:
         yield handle
 
 

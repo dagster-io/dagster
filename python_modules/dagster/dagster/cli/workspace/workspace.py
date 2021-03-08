@@ -1,9 +1,14 @@
 import sys
 import warnings
 from collections import OrderedDict, namedtuple
+from contextlib import ExitStack
 
 from dagster import check
-from dagster.core.host_representation import RepositoryLocationOrigin
+from dagster.core.host_representation import (
+    GrpcServerRepositoryLocationHandle,
+    RepositoryLocationOrigin,
+)
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -46,11 +51,15 @@ class WorkspaceSnapshot(
 
 class Workspace:
     def __init__(self, workspace_load_target):
-
         from .cli_target import WorkspaceLoadTarget
+
+        self._stack = ExitStack()
 
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
+        )
+        self._grpc_server_registry = self._stack.enter_context(
+            ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30)
         )
         self._load_workspace()
 
@@ -82,14 +91,25 @@ class Workspace:
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
     def create_handle_from_origin(self, origin):
-        return origin.create_handle()
+        if not self._grpc_server_registry.supports_origin(origin):  # pylint: disable=no-member
+            return origin.create_handle()
+        else:
+            endpoint = self._grpc_server_registry.reload_grpc_endpoint(  # pylint: disable=no-member
+                origin
+            )
+            return GrpcServerRepositoryLocationHandle(
+                origin=origin,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                heartbeat=True,
+                watch_server=False,
+                grpc_server_registry=self._grpc_server_registry,
+            )
 
     def _load_handle(self, location_name):
-        existing_handle = self._location_handle_dict.get(location_name)
-        if existing_handle:
-            # We don't clean up here anymore because we want these to last while being
-            # used in other requests
-            # existing_handle.cleanup()
+        if self._location_handle_dict.get(location_name):
             del self._location_handle_dict[location_name]
 
         if self._location_error_dict.get(location_name):
@@ -132,10 +152,6 @@ class Workspace:
     def reload_repository_location(self, location_name):
         self._load_handle(location_name)
 
-    def _cleanup(self):
-        for handle in self.repository_location_handles:
-            handle.cleanup()
-
     def reload_workspace(self):
         for handle in self.repository_location_handles:
             handle.cleanup()
@@ -145,4 +161,6 @@ class Workspace:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self._cleanup()
+        for handle in self.repository_location_handles:
+            handle.cleanup()
+        self._stack.close()

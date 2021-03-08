@@ -19,7 +19,6 @@ from dagster.core.host_representation import (
     ExternalPipeline,
     GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
     PipelineHandle,
     RepositoryHandle,
 )
@@ -304,18 +303,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
-        check.param_invariant(
-            isinstance(
-                repository_location_handle,
-                (
-                    GrpcServerRepositoryLocationHandle,
-                    ManagedGrpcPythonEnvRepositoryLocationHandle,
-                ),
-            ),
+        self._handle = check.inst_param(
+            repository_location_handle,
             "repository_location_handle",
+            GrpcServerRepositoryLocationHandle,
         )
-
-        self._handle = repository_location_handle
         self.external_repositories = self._handle.create_external_repositories()
 
     @property

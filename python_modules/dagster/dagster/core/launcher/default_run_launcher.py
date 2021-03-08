@@ -4,10 +4,8 @@ import grpc
 from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.host_representation.handle import (
-    GrpcServerRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-)
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
@@ -20,11 +18,6 @@ from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
 
 from .base import RunLauncher
-
-GRPC_REPOSITORY_LOCATION_HANDLE_TYPES = (
-    GrpcServerRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-)
 
 
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
@@ -41,7 +34,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         self._run_ids = set()
 
-        self._processes_to_wait_for = []
+        self._handles_to_wait_for = []
 
         super().__init__()
 
@@ -67,7 +60,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         check.inst(
             repository_location_handle,
-            GRPC_REPOSITORY_LOCATION_HANDLE_TYPES,
+            GrpcServerRepositoryLocationHandle,
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
@@ -105,10 +98,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         self._run_ids.add(run.run_id)
 
-        if self._wait_for_processes and isinstance(
-            repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
-        ):
-            self._processes_to_wait_for.append(repository_location_handle.grpc_server_process)
+        if self._wait_for_processes:
+            self._handles_to_wait_for.append(repository_location_handle)
 
         return run
 
@@ -208,5 +199,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not self._wait_for_processes:
             return
 
-        for process in self._processes_to_wait_for:
-            process.wait()
+        for handle in self._handles_to_wait_for:
+            if isinstance(handle, GrpcServerRepositoryLocationHandle) and isinstance(
+                handle.grpc_server_registry, ProcessGrpcServerRegistry
+            ):
+                handle.grpc_server_registry.wait_for_processes()

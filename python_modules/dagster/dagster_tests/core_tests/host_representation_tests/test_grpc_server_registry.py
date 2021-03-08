@@ -46,7 +46,7 @@ def test_process_server_registry():
     )
 
     with ProcessGrpcServerRegistry(
-        wait_for_processes_on_exit=True, cleanup_interval=5, heartbeat_interval=10
+        wait_for_processes_on_exit=True, reload_interval=5, heartbeat_ttl=10
     ) as registry:
 
         with RepositoryLocationHandleManager(registry) as handle_manager:
@@ -125,7 +125,7 @@ def test_registry_multithreading():
     )
 
     with ProcessGrpcServerRegistry(
-        wait_for_processes_on_exit=True, cleanup_interval=300, heartbeat_interval=600
+        wait_for_processes_on_exit=True, reload_interval=300, heartbeat_ttl=600
     ) as registry:
 
         endpoint = registry.get_grpc_endpoint(origin)

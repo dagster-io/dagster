@@ -44,6 +44,7 @@ def example_repo():
     return [foo_pipeline, always_run_schedule, always_on_sensor]
 
 
+@contextmanager
 def get_example_repository_location_handle():
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
@@ -53,7 +54,8 @@ def get_example_repository_location_handle():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    return origin.create_handle()
+    with origin.create_test_handle() as handle:
+        yield handle
 
 
 @contextmanager
@@ -68,7 +70,14 @@ def test_no_memory_leaks():
             "run_coordinator": {
                 "module": "dagster.core.run_coordinator",
                 "class": "QueuedRunCoordinator",
-            }
+            },
+            "run_launcher": {
+                "class": "DefaultRunLauncher",
+                "module": "dagster.core.launcher.default_run_launcher",
+                "config": {
+                    "wait_for_processes": False,
+                },
+            },
         }
     ) as instance, get_example_repo() as repo:
 
@@ -78,7 +87,9 @@ def test_no_memory_leaks():
         instance.start_schedule_and_update_storage_state(external_schedule)
         instance.start_sensor(external_sensor)
 
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             start_time = time.time()
 
             growth = objgraph.growth(

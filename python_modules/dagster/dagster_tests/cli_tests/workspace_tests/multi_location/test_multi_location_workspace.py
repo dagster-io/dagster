@@ -5,7 +5,7 @@ import pytest
 import yaml
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths, location_origins_from_config
-from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationHandle
+from dagster.core.host_representation import GrpcServerRepositoryLocationHandle
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils import file_relative_path
 
@@ -220,7 +220,8 @@ def test_grpc_multi_location_workspace(config_source):
     )
     with ExitStack() as stack:
         repository_location_handles = {
-            name: stack.enter_context(origin.create_handle()) for name, origin in origins.items()
+            name: stack.enter_context(origin.create_test_handle())
+            for name, origin in origins.items()
         }
 
         assert len(repository_location_handles) == 6
@@ -228,27 +229,23 @@ def test_grpc_multi_location_workspace(config_source):
         assert "loaded_from_module" in repository_location_handles
 
         loaded_from_file_handle = repository_location_handles.get("loaded_from_file")
-        assert isinstance(loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
+        assert isinstance(loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
         assert loaded_from_file_handle.repository_names == {"hello_world_repository"}
 
         loaded_from_module_handle = repository_location_handles.get("loaded_from_module")
-        assert isinstance(loaded_from_module_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
+        assert isinstance(loaded_from_module_handle, GrpcServerRepositoryLocationHandle)
 
         assert loaded_from_module_handle.repository_names == {"hello_world_repository"}
 
         named_loaded_from_file_handle = repository_location_handles.get("named_loaded_from_file")
         assert named_loaded_from_file_handle.repository_names == {"hello_world_repository_name"}
-        assert isinstance(
-            named_loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
-        )
+        assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
 
         named_loaded_from_module_handle = repository_location_handles.get(
             "named_loaded_from_module"
         )
         assert named_loaded_from_module_handle.repository_names == {"hello_world_repository_name"}
-        assert isinstance(
-            named_loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
-        )
+        assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
 
         named_loaded_from_module_attribute_handle = repository_location_handles.get(
             "named_loaded_from_module_attribute"
@@ -257,7 +254,7 @@ def test_grpc_multi_location_workspace(config_source):
             "hello_world_repository_name"
         }
         assert isinstance(
-            named_loaded_from_module_attribute_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
+            named_loaded_from_module_attribute_handle, GrpcServerRepositoryLocationHandle
         )
 
         named_loaded_from_file_attribute_handle = repository_location_handles.get(
@@ -267,5 +264,5 @@ def test_grpc_multi_location_workspace(config_source):
             "hello_world_repository_name"
         }
         assert isinstance(
-            named_loaded_from_file_attribute_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
+            named_loaded_from_file_attribute_handle, GrpcServerRepositoryLocationHandle
         )

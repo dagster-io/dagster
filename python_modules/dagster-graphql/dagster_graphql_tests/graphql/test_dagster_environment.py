@@ -13,6 +13,6 @@ def test_dagster_out_of_process_location():
             python_file=file_relative_path(__file__, "setup.py"),
             attribute="test_repo",
         ),
-    ).create_handle() as handle:
+    ).create_test_handle() as handle:
         env = handle.create_location()
         assert env.get_repository("test_repo")

@@ -52,6 +52,7 @@ class RepositoryLocationHandleManager:
                     host=endpoint.host,
                     heartbeat=True,
                     watch_server=False,
+                    grpc_server_registry=self._grpc_server_registry,
                 )
             )
 

@@ -2,6 +2,7 @@ import os
 import sys
 from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
+from contextlib import contextmanager
 from typing import Set
 
 from dagster import check
@@ -72,12 +73,12 @@ class RepositoryLocationOrigin(ABC):
     def get_id(self):
         return create_snapshot_id(self)
 
-    @abstractmethod
-    def create_handle(self):
-        pass
-
     @abstractproperty
     def location_name(self):
+        pass
+
+    @abstractmethod
+    def create_handle(self):
         pass
 
 
@@ -102,7 +103,7 @@ class RegisteredRepositoryLocationOrigin(
     def create_handle(self):
         raise DagsterInvariantViolationError(
             "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
-            "repository location."
+            "repository location on its own."
         )
 
 
@@ -183,11 +184,20 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         return {key: value for key, value in metadata.items() if value is not None}
 
     def create_handle(self):
-        from dagster.core.host_representation.handle import (
-            ManagedGrpcPythonEnvRepositoryLocationHandle,
+        raise DagsterInvariantViolationError(
+            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a RepositoryLocationHandleManager"
+            " in order to create a handle."
         )
 
-        return ManagedGrpcPythonEnvRepositoryLocationHandle(self)
+    @contextmanager
+    def create_test_handle(self):
+        from .handle_manager import RepositoryLocationHandleManager
+        from .grpc_server_registry import ProcessGrpcServerRegistry
+
+        with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
+            with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+                with handle_manager.get_handle(self) as handle:
+                    yield handle
 
 
 class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
