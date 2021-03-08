@@ -72,6 +72,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
 
   const onSelectPartitionSet = (partitionSet: PartitionSet) => {
     onSaveSession({
+      mode: partitionSet.mode,
       base: {
         partitionsSetName: partitionSet.name,
         partitionName: null,
