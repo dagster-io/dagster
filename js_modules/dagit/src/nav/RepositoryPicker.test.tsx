@@ -27,7 +27,14 @@ describe('RepositoryPicker', () => {
 
   const Test: React.FC = () => {
     const {loading, options} = useRepositoryOptions();
-    return <RepositoryPicker loading={loading} options={options} repo={options[0]} />;
+    return (
+      <RepositoryPicker
+        loading={loading}
+        options={options}
+        selected={options}
+        toggleRepo={() => {}}
+      />
+    );
   };
 
   const Wrapper: React.FC<{mocks: any}> = (props) => {

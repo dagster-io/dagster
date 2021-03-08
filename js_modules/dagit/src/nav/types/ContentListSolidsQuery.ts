@@ -14,6 +14,12 @@ export interface ContentListSolidsQuery_repositoryOrError_PythonError {
   __typename: "PythonError" | "RepositoryNotFoundError";
 }
 
+export interface ContentListSolidsQuery_repositoryOrError_Repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
 export interface ContentListSolidsQuery_repositoryOrError_Repository_usedSolids_definition {
   __typename: "SolidDefinition" | "CompositeSolidDefinition";
   name: string;
@@ -39,6 +45,8 @@ export interface ContentListSolidsQuery_repositoryOrError_Repository_usedSolids 
 export interface ContentListSolidsQuery_repositoryOrError_Repository {
   __typename: "Repository";
   id: string;
+  name: string;
+  location: ContentListSolidsQuery_repositoryOrError_Repository_location;
   usedSolids: ContentListSolidsQuery_repositoryOrError_Repository_usedSolids[];
 }
 

@@ -1,31 +1,29 @@
 import {Colors, Icon, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import React from 'react';
-import {useHistory} from 'react-router';
-import styled from 'styled-components/macro';
+import {useHistory} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
 import {Box} from 'src/ui/Box';
 import {Spinner} from 'src/ui/Spinner';
 import {RepositoryInformation} from 'src/workspace/RepositoryInformation';
-import {DagsterRepoOption, isRepositoryOptionEqual} from 'src/workspace/WorkspaceContext';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
 
 interface RepositoryPickerProps {
   loading: boolean;
   options: DagsterRepoOption[];
-  repo: DagsterRepoOption | null;
+  selected: DagsterRepoOption[];
+  toggleRepo: (option: DagsterRepoOption) => void;
 }
 
-export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo, options}) => {
+export const RepositoryPicker: React.FC<RepositoryPickerProps> = (props) => {
   const history = useHistory();
+  const {loading, options, selected, toggleRepo} = props;
   const [open, setOpen] = React.useState(false);
 
-  const selectOption = (repo: DagsterRepoOption) => {
-    history.push(workspacePath(repo.repository.name, repo.repositoryLocation.name));
-  };
-
   const titleContents = () => {
-    if (repo) {
+    if (selected.length) {
+      const repo = selected[0];
       return (
         <>
           <span style={{overflow: 'hidden', textOverflow: 'ellipsis'}} title={repo.repository.name}>
@@ -46,8 +44,9 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
   return (
     <Popover
       fill={true}
-      isOpen={open}
+      isOpen={open && options.length > 0}
       onInteraction={setOpen}
+      canEscapeKeyClose
       minimal
       position="bottom-left"
       content={
@@ -55,8 +54,13 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
           {options.map((option, idx) => (
             <MenuItem
               key={idx}
-              onClick={() => selectOption(option)}
-              active={repo ? isRepositoryOptionEqual(repo, option) : false}
+              onClick={() => {
+                toggleRepo(option);
+                history.push(
+                  `/workspace/${option.repository.name}@${option.repositoryLocation.name}`,
+                );
+              }}
+              active={selected.includes(option)}
               icon="git-repo"
               text={<RepositoryInformation repository={option.repository} />}
             />
@@ -82,9 +86,11 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo
           </div>
           <RepoTitle>{titleContents()}</RepoTitle>
         </div>
-        {repo?.repositoryLocation.isReloadSupported && (
-          <ReloadRepositoryLocationButton location={repo.repositoryLocation.name} />
-        )}
+        <ReloadRepositoryLocationButton
+          locations={selected
+            .filter((option) => option.repositoryLocation.isReloadSupported)
+            .map((option) => option.repositoryLocation.name)}
+        />
       </Container>
     </Popover>
   );

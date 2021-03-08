@@ -1,8 +1,11 @@
-import {gql, QueryResult, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
+import {
+  RunsSearchSpaceQuery,
+  RunsSearchSpaceQuery_pipelineRunTags,
+} from 'src/runs/types/RunsSearchSpaceQuery';
 import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
 import {
   SuggestionProvider,
@@ -11,7 +14,9 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
 } from 'src/ui/TokenizingField';
-import {useActiveRepo, useRepositorySelector} from 'src/workspace/WorkspaceContext';
+import {DagsterRepoOption, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
+
+type PipelineRunTags = RunsSearchSpaceQuery_pipelineRunTags[];
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';
 
@@ -90,14 +95,13 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
 }
 
 function searchSuggestionsForRuns(
-  result?: QueryResult<RunsSearchSpaceQuery>,
+  repositoryOptions: DagsterRepoOption[],
+  pipelineRunTags?: PipelineRunTags,
   enabledFilters?: RunFilterTokenType[],
 ): SuggestionProvider[] {
-  const tags = result?.data?.pipelineRunTags || [];
-  const pipelineNames =
-    result?.data?.repositoryOrError?.__typename === 'Repository'
-      ? result.data.repositoryOrError.pipelines.map((n) => n.name)
-      : [];
+  const pipelineNames = repositoryOptions.reduce((accum, option) => {
+    return [...accum, ...option.repository.pipelines.map((p) => p.name)];
+  }, []);
 
   const suggestions: {token: RunFilterTokenType; values: () => string[]}[] = [
     {
@@ -116,7 +120,7 @@ function searchSuggestionsForRuns(
       token: 'tag',
       values: () => {
         const all: string[] = [];
-        [...tags]
+        [...(pipelineRunTags || [])]
           .sort((a, b) => a.key.localeCompare(b.key))
           .forEach((t) => t.values.forEach((v) => all.push(`${t.key}=${v}`)));
         return all;
@@ -148,16 +152,11 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   onChange,
   enabledFilters,
 }) => {
-  const activeRepo = useActiveRepo();
-  const repositorySelector = useRepositorySelector();
-  const suggestions = searchSuggestionsForRuns(
-    useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
-      fetchPolicy: 'cache-and-network',
-      skip: !activeRepo,
-      variables: activeRepo ? {repositorySelector} : {},
-    }),
-    enabledFilters,
-  );
+  const {options} = useRepositoryOptions();
+  const {data} = useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
+  const suggestions = searchSuggestionsForRuns(options, data?.pipelineRunTags, enabledFilters);
 
   const search = tokenizedValuesFromString(stringFromValue(tokens), suggestions);
 
@@ -196,16 +195,7 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
 };
 
 const RUNS_SEARCH_SPACE_QUERY = gql`
-  query RunsSearchSpaceQuery($repositorySelector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      ... on Repository {
-        id
-        pipelines {
-          id
-          name
-        }
-      }
-    }
+  query RunsSearchSpaceQuery {
     pipelineRunTags {
       key
       values

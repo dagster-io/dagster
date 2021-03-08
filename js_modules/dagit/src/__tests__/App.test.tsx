@@ -23,6 +23,7 @@ describe('App', () => {
       environmentPath: () => 'what then',
       id: () => 'my_location',
       name: () => 'my_location',
+      repositories: () => new MockList(1),
     }),
     RepositoryLocationConnection: () => ({
       nodes: () => new MockList(1),
@@ -34,14 +35,24 @@ describe('App', () => {
     RepositoryLocationLoadFailure: () => ({
       id: () => 'failed',
     }),
+    RepositoryOrigin: () => ({
+      repositoryName: () => 'my_repository',
+      repositoryLocationName: () => 'my_location',
+    }),
     RepositoryLocationOrLoadFailure: () => ({
       __typename: 'RepositoryLocation',
     }),
     SchedulesOrError: () => ({
       __typename: 'Schedules',
     }),
+    Schedules: () => ({
+      results: () => new MockList(1),
+    }),
     SensorsOrError: () => ({
       __typename: 'Sensors',
+    }),
+    Sensors: () => ({
+      results: () => new MockList(1),
     }),
     SolidDefinition: () => ({
       configField: null,

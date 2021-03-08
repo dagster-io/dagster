@@ -3,8 +3,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useActiveRepo} from 'src/workspace/WorkspaceContext';
-
 interface ITypeWithTooltipProps {
   type: {
     name: string | null;
@@ -14,11 +12,10 @@ interface ITypeWithTooltipProps {
 }
 
 export const TypeWithTooltip = (props: ITypeWithTooltipProps) => {
-  const activeRepo = useActiveRepo();
   const {name, displayName} = props.type;
 
   // TODO: link to most inner type
-  if (name && activeRepo) {
+  if (name) {
     return (
       <Link to={{search: `?typeExplorer=${displayName}`}}>
         <TypeName>{displayName}</TypeName>

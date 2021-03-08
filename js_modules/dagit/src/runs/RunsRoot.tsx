@@ -95,7 +95,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
 
   return (
-    <Page>
+    <Page style={{height: '100%'}}>
       <Group direction="column" spacing={8}>
         <PageHeader title={<Heading>Runs</Heading>} />
         <Box

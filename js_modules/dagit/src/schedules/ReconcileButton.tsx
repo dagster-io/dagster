@@ -6,10 +6,11 @@ import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
 import {ReconcileSchedulerState} from 'src/schedules/types/ReconcileSchedulerState';
 import {JobType} from 'src/types/globalTypes';
 import {Spinner} from 'src/ui/Spinner';
-import {useRepositorySelector} from 'src/workspace/WorkspaceContext';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
-export const ReconcileButton = () => {
-  const repositorySelector = useRepositorySelector();
+export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+  const repositorySelector = repoAddressToSelector(repoAddress);
   const refetchQueries = [
     {
       query: SCHEDULES_ROOT_QUERY,

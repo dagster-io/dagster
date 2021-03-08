@@ -1,60 +1,93 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import {Colors, Icon} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {JobsListQuery} from 'src/nav/types/JobsListQuery';
-import {JobStatus} from 'src/types/globalTypes';
+import {JobStatus, JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {BorderSetting} from 'src/ui/types';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 
+type Item = {
+  to: string;
+  label: string;
+  jobType: JobType;
+  status: JobStatus;
+};
+
 interface JobsListProps {
   selector?: string;
-  repo: DagsterRepoOption;
+  repos: DagsterRepoOption[];
 }
 
-export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector}) => {
-  const repoName = repo.repository.name;
-  const repoLocation = repo.repositoryLocation.name;
+export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, selector}) => {
+  const client = useApolloClient();
+  const [jobs, setJobs] = React.useState<{schedules: Item[]; sensors: Item[]}>(() => ({
+    schedules: [],
+    sensors: [],
+  }));
 
-  const jobs = useQuery<JobsListQuery>(JOBS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      repositorySelector: {
-        repositoryLocationName: repo.repositoryLocation.name,
-        repositoryName: repo.repository.name,
-      },
-    },
-  });
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      const promises = repos.map((repo) =>
+        client.query<JobsListQuery>({
+          query: JOBS_LIST_QUERY,
+          variables: {
+            repositorySelector: {
+              repositoryLocationName: repo.repositoryLocation.name,
+              repositoryName: repo.repository.name,
+            },
+          },
+        }),
+      );
 
-  const repoSchedules =
-    jobs.data?.schedulesOrError?.__typename === 'Schedules'
-      ? jobs.data.schedulesOrError.results
-      : [];
+      const results = await Promise.all(promises);
+      const schedules: Item[] = [];
+      const sensors: Item[] = [];
 
-  const repoSensors =
-    jobs.data?.sensorsOrError?.__typename === 'Sensors' ? jobs.data.sensorsOrError.results : [];
+      results.forEach((result) => {
+        const {schedulesOrError, sensorsOrError} = result?.data;
+        if (schedulesOrError.__typename === 'Schedules') {
+          schedulesOrError.results.forEach(({name, scheduleState}) =>
+            schedules.push({
+              to: workspacePath(
+                scheduleState.repositoryOrigin.repositoryName,
+                scheduleState.repositoryOrigin.repositoryLocationName,
+                `/schedules/${name}`,
+              ),
+              label: name,
+              jobType: JobType.SCHEDULE,
+              status: scheduleState.status,
+            }),
+          );
+        }
+        if (sensorsOrError.__typename === 'Sensors') {
+          sensorsOrError.results.forEach(({name, sensorState}) =>
+            sensors.push({
+              to: workspacePath(
+                sensorState.repositoryOrigin.repositoryName,
+                sensorState.repositoryOrigin.repositoryLocationName,
+                `/sensors/${name}`,
+              ),
+              label: name,
+              jobType: JobType.SENSOR,
+              status: sensorState.status,
+            }),
+          );
+        }
+      });
 
-  const items = [
-    ...repoSchedules.map(({name, scheduleState}) => ({
-      to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
-      label: name,
-      jobType: 'schedule',
-      status: scheduleState.status,
-    })),
-    ...repoSensors.map(({name, sensorState}) => ({
-      to: workspacePath(repoName, repoLocation, `/sensors/${name}`),
-      label: name,
-      jobType: 'sensor',
-      status: sensorState?.status,
-    })),
-  ];
+      setJobs({schedules, sensors});
+    };
 
-  if (!repoSchedules.length && !repoSensors.length) {
+    fetchJobs();
+  }, [client, repos]);
+
+  if (!jobs.schedules.length && !jobs.sensors.length) {
     return (
       <div style={{flex: 1}}>
         <Box
@@ -67,6 +100,8 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
       </div>
     );
   }
+
+  const items = [...jobs.schedules, ...jobs.sensors];
 
   return (
     <div
@@ -89,16 +124,16 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
         flex={{justifyContent: 'space-between', alignItems: 'center'}}
         border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
       >
-        <Item to={workspacePath(repoName, repoLocation, `/schedules`)}>
+        <Item to="/instance/schedules">
           <Group direction="row" spacing={8} alignItems="center">
-            <Icon icon={'time'} iconSize={14} />
+            <Icon icon="time" iconSize={14} />
             <div>All schedules</div>
           </Group>
         </Item>
         <Box border={{width: 1, side: 'left', color: Colors.DARK_GRAY4}}>&nbsp;</Box>
-        <Item to={workspacePath(repoName, repoLocation, `/sensors`)}>
+        <Item to="/instance/sensors">
           <Group direction="row" spacing={8} alignItems="center">
-            <Icon icon={'automatic-updates'} iconSize={14} />
+            <Icon icon="automatic-updates" iconSize={14} />
             <div>All sensors</div>
           </Group>
         </Item>
@@ -109,10 +144,10 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
           const border: BorderSetting | null = isSelected
             ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
             : null;
-          const icon = p.jobType === 'schedule' ? 'time' : 'automatic-updates';
+          const icon = p.jobType === JobType.SCHEDULE ? 'time' : 'automatic-updates';
 
           return (
-            <Item key={p.label} className={`${isSelected ? 'selected' : ''}`} to={p.to}>
+            <Item key={p.to} className={`${isSelected ? 'selected' : ''}`} to={p.to}>
               <Box
                 background={isSelected ? Colors.BLACK : null}
                 border={border}
@@ -241,6 +276,11 @@ const JOBS_LIST_QUERY = gql`
           name
           scheduleState {
             id
+            repositoryOrigin {
+              id
+              repositoryName
+              repositoryLocationName
+            }
             status
           }
         }
@@ -253,6 +293,11 @@ const JOBS_LIST_QUERY = gql`
           name
           sensorState {
             id
+            repositoryOrigin {
+              id
+              repositoryName
+              repositoryLocationName
+            }
             status
           }
         }

@@ -36,15 +36,21 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
     );
   }
 
-  const {loading, activeRepo} = workspaceState;
+  const {loading} = workspaceState;
 
   if (loading) {
     return <div />;
   }
 
+  const matchingRepo = workspaceState.allRepos.find(
+    (repo) =>
+      repo.repository.name === addressForPath.name &&
+      repo.repositoryLocation.name === addressForPath.location,
+  );
+
   // If we don't have any active repositories, or if our active repo does not match
   // the repo path in the URL, it means we aren't able to load this repo.
-  if (!activeRepo || activeRepo.path !== repoPath) {
+  if (!matchingRepo) {
     return (
       <NonIdealState
         icon="cube"

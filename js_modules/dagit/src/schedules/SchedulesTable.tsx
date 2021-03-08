@@ -112,7 +112,11 @@ export const SchedulesTable: React.FC<{
   );
 };
 
-const errorDisplay = (status: JobStatus, runningScheduleCount: number) => {
+const errorDisplay = (
+  status: JobStatus,
+  runningScheduleCount: number,
+  repoAddress: RepoAddress,
+) => {
   if (status === JobStatus.STOPPED && runningScheduleCount === 0) {
     return null;
   } else if (status === JobStatus.RUNNING && runningScheduleCount === 1) {
@@ -153,7 +157,8 @@ const errorDisplay = (status: JobStatus, runningScheduleCount: number) => {
         </ul>
 
         <p>
-          To resolve, click <ReconcileButton /> or run <Code>dagster schedule up</Code>
+          To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
+          <Code>dagster schedule up</Code>
         </p>
       </div>
     </Popover>
@@ -221,7 +226,7 @@ const ScheduleRow: React.FC<{
           innerLabel="off"
           onChange={onStatusChange}
         />
-        {errorDisplay(status, runningScheduleCount)}
+        {errorDisplay(status, runningScheduleCount, repoAddress)}
       </td>
       <td>
         <Group direction="column" spacing={4}>

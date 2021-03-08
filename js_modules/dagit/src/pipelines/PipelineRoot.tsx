@@ -73,7 +73,12 @@ export const PipelineRoot: React.FC<Props> = (props) => {
           )}
         />
         {/* Capture solid subpath in a regex match */}
-        <Route path="/workspace/:repoPath/pipelines/(/?.*)" component={PipelineExplorerRegexRoot} />
+        <Route
+          path="/workspace/:repoPath/pipelines/(/?.*)"
+          render={(props: RouteComponentProps) => (
+            <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
+          )}
+        />
       </Switch>
     </div>
   );

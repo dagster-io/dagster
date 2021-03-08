@@ -3,11 +3,9 @@ import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {RepositorySelector} from 'src/types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
 import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
-import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
+import {findRepoContainingPipeline} from 'src/workspace/findRepoContainingPipeline';
 import {RepoAddress} from 'src/workspace/types';
 import {
   RootRepositoriesQuery,
@@ -27,19 +25,11 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
-export const LAST_REPO_KEY = 'dagit.last-repo';
-
 type WorkspaceState = {
   error: RepositoryError | null;
   loading: boolean;
   locations: RepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
-  activeRepo: null | {
-    repo: DagsterRepoOption;
-    address: RepoAddress;
-    path: string;
-  };
-  repoPath: string | null;
   refetch: () => Promise<ApolloQueryResult<RootRepositoriesQuery>>;
 };
 
@@ -116,44 +106,11 @@ export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const getRepositoryOptionHash = (a: DagsterRepoOption) =>
+export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
 export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOption) =>
   getRepositoryOptionHash(a) === getRepositoryOptionHash(b);
-
-/**
- * useLocalStorageState vends `[repo, setRepo]` and internally mirrors the current
- * selection into localStorage so that the default selection in new browser windows
- * is the repo currently active in your session.
- */
-const useLocalStorageState = (options: DagsterRepoOption[]) => {
-  const [repoKey, setRepoKey] = React.useState<string | null>(() =>
-    window.localStorage.getItem(LAST_REPO_KEY),
-  );
-
-  const setRepo = (next: DagsterRepoOption) => {
-    const key = getRepositoryOptionHash(next);
-    window.localStorage.setItem(LAST_REPO_KEY, key);
-    setRepoKey(key);
-  };
-
-  // If the selection is null or the selected repository cannot be found in the set,
-  // coerce the selection to the last used repo or [0].
-  React.useEffect(() => {
-    if (
-      options.length &&
-      (!repoKey || !options.some((o) => getRepositoryOptionHash(o) === repoKey))
-    ) {
-      const lastKey = window.localStorage.getItem(LAST_REPO_KEY);
-      const last = lastKey && options.find((o) => getRepositoryOptionHash(o) === lastKey);
-      setRepoKey(getRepositoryOptionHash(last || options[0]));
-    }
-  }, [repoKey, options]);
-
-  const repoForKey = options.find((o) => getRepositoryOptionHash(o) === repoKey) || null;
-  return [repoForKey, setRepo] as [typeof repoForKey, typeof setRepo];
-};
 
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
@@ -196,53 +153,12 @@ const useWorkspaceState = () => {
     return {error: null, options};
   }, [data]);
 
-  const [localStorageRepo, setLocalStorageRepo] = useLocalStorageState(options);
-
-  const repoAddress = React.useMemo(() => (repoPath ? repoAddressFromPath(repoPath) : null), [
-    repoPath,
-  ]);
-
-  // If a repo is identified in the current route and that repo has been loaded,
-  // that's our `repoForPath`. It takes priority as the "active" repo.
-  const repoForPath = React.useMemo(() => {
-    if (options && !loading && !error && repoAddress) {
-      const {name, location} = repoAddress;
-      return (
-        options.find(
-          (option) =>
-            option.repository.name === name && option.repositoryLocation.name === location,
-        ) || null
-      );
-    }
-    return null;
-  }, [error, loading, options, repoAddress]);
-
-  // If there is no `repoForPath`, fall back to the local storage state, typically as set by the
-  // left nav. If that doesn't exist either, just default to the first available repo.
-  const activeRepo = React.useMemo(() => {
-    const repo = repoForPath || localStorageRepo || options[0] || null;
-    if (!repo) {
-      return null;
-    }
-    const address = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
-    const path = repoAddressAsString(address);
-    return {repo, address, path};
-  }, [localStorageRepo, options, repoForPath]);
-
-  // Update local storage with the latest active repo.
-  React.useEffect(() => {
-    if (activeRepo?.repo && activeRepo.repo !== localStorageRepo) {
-      setLocalStorageRepo(activeRepo.repo);
-    }
-  }, [activeRepo, localStorageRepo, setLocalStorageRepo]);
-
   return {
     refetch,
     loading,
     error,
     locations,
     allRepos: options,
-    activeRepo,
     repoPath,
   };
 };
@@ -258,12 +174,6 @@ export const useRepositoryOptions = () => {
   return {options, loading, error};
 };
 
-// todo dish: Delete this.
-export const useActiveRepo = () => {
-  const {activeRepo} = React.useContext(WorkspaceContext);
-  return activeRepo;
-};
-
 export const useRepository = (repoAddress: RepoAddress) => {
   const {options} = useRepositoryOptions();
   return options.find(
@@ -273,35 +183,29 @@ export const useRepository = (repoAddress: RepoAddress) => {
   );
 };
 
-export const useRepositorySelector = (): RepositorySelector => {
-  const active = useActiveRepo();
-  return {
-    repositoryLocationName: active?.repo.repository.location.name || '',
-    repositoryName: active?.repo.repository.name || '',
-  };
-};
-
-export const useActivePipelineForName = (pipelineName: string) => {
-  const active = useActiveRepo();
-  return (
-    active?.repo.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null
-  );
+export const useActivePipelineForName = (pipelineName: string, snapshotId?: string) => {
+  const {options} = useRepositoryOptions();
+  const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
+  if (reposWithMatch.length) {
+    const match = reposWithMatch[0];
+    return match.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
+  }
+  return null;
 };
 
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {
-  const repositorySelector = useRepositorySelector();
+  const {options} = useRepositoryOptions();
+  const reposWithMatch = findRepoContainingPipeline(options, pipelineName);
+  const first = reposWithMatch[0] || null;
+  const repositorySelector = {
+    repositoryName: first?.repository.name || '',
+    repositoryLocationName: first?.repositoryLocation.name || '',
+  };
+
   return {
     ...repositorySelector,
     pipelineName,
     solidSelection,
-  };
-};
-
-export const useScheduleSelector = (scheduleName: string) => {
-  const repositorySelector = useRepositorySelector();
-  return {
-    ...repositorySelector,
-    scheduleName,
   };
 };
 

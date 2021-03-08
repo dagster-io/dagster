@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import {Button, ButtonGroup, Colors, Icon} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -13,57 +13,83 @@ import {workspacePath} from 'src/workspace/workspacePath';
 interface RepositoryContentListProps {
   selector?: string;
   tab?: string;
-  repo: DagsterRepoOption;
+  repos: DagsterRepoOption[];
 }
 
-export const RepositoryContentList: React.FunctionComponent<RepositoryContentListProps> = ({
+export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
   tab,
-  repo,
+  repos,
   selector,
 }) => {
+  const client = useApolloClient();
   const [type, setType] = React.useState<'pipelines' | 'solids'>('pipelines');
-  const pipelineTab = tabForPipelinePathComponent(tab);
-  const repoName = repo.repository.name;
-  const repoLocation = repo.repositoryLocation.name;
+  const [selectedSolids, setSelectedSolids] = React.useState(() => []);
 
-  // Load solids, but only if the user clicks on the Solid option
-  const [fetchSolids, solids] = useLazyQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
-    fetchPolicy: 'cache-first',
-    variables: {
-      repositorySelector: {
-        repositoryLocationName: repo.repositoryLocation.name,
-        repositoryName: repo.repository.name,
-      },
-    },
-  });
+  const pipelineTab = tabForPipelinePathComponent(tab);
 
   React.useEffect(() => {
-    if (type === 'solids') {
-      fetchSolids();
+    if (type !== 'solids') {
+      return;
     }
-  }, [type, fetchSolids]);
 
-  const usedSolids =
-    solids.data?.repositoryOrError?.__typename === 'Repository'
-      ? solids.data.repositoryOrError.usedSolids
-      : [];
+    const fetchSolids = async () => {
+      const promises = repos.map((repo) =>
+        client.query<ContentListSolidsQuery>({
+          query: CONTENT_LIST_SOLIDS_QUERY,
+          variables: {
+            repositorySelector: {
+              repositoryLocationName: repo.repositoryLocation.name,
+              repositoryName: repo.repository.name,
+            },
+          },
+        }),
+      );
 
-  const items =
-    type === 'pipelines'
-      ? repo.repository.pipelines
-          .map((pipeline) => pipeline.name)
-          .map((p) => ({
-            to: workspacePath(
-              repoName,
-              repoLocation,
-              `/pipelines/${p}/${tab === 'partitions' ? 'overview' : pipelineTab.pathComponent}`,
-            ),
-            label: p,
-          }))
-      : usedSolids.map(({definition}) => ({
-          to: workspacePath(repoName, repoLocation, `/solids/${definition.name}`),
-          label: definition.name,
-        }));
+      const results = await Promise.all(promises);
+      const allSolids = Array.prototype.concat.apply(
+        [],
+        results.map((result) => {
+          if (result.data.repositoryOrError.__typename === 'Repository') {
+            const name = result.data.repositoryOrError.name;
+            const location = result.data.repositoryOrError.location.name;
+            const solids = result.data.repositoryOrError.usedSolids;
+            return solids.map((solid) => ({
+              to: workspacePath(name, location, `/solids/${solid.definition.name}`),
+              label: solid.definition.name,
+            }));
+          }
+          return [];
+        }),
+      );
+
+      setSelectedSolids(allSolids);
+    };
+
+    fetchSolids();
+  }, [client, repos, type]);
+
+  const selectedPipelines = React.useMemo(() => {
+    return repos
+      .reduce(
+        (accum, repo) => [
+          ...accum,
+          ...repo.repository.pipelines
+            .map((pipeline) => pipeline.name)
+            .map((p) => ({
+              to: workspacePath(
+                repo.repository.name,
+                repo.repositoryLocation.name,
+                `/pipelines/${p}/${tab === 'partitions' ? 'overview' : pipelineTab.pathComponent}`,
+              ),
+              label: p,
+            })),
+        ],
+        [],
+      )
+      .sort((a, b) => a.label.toLocaleLowerCase().localeCompare(b.label.toLocaleLowerCase()));
+  }, [pipelineTab.pathComponent, repos, tab]);
+
+  const items = type === 'pipelines' ? selectedPipelines : selectedSolids;
 
   return (
     <Box flex={{direction: 'column'}} style={{minHeight: 0, flex: 1}}>
@@ -195,6 +221,11 @@ const CONTENT_LIST_SOLIDS_QUERY = gql`
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         id
+        name
+        location {
+          id
+          name
+        }
         usedSolids {
           __typename
           definition {

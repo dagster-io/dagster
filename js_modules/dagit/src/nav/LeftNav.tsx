@@ -1,4 +1,3 @@
-import {ApolloConsumer} from '@apollo/client';
 import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {useHistory} from 'react-router';
@@ -11,55 +10,11 @@ import {DarkTimezonePicker} from 'src/app/time/DarkTimezonePicker';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
 import {InstanceWarningIcon} from 'src/nav/InstanceWarningIcon';
-import {JobsList} from 'src/nav/JobsList';
-import {RepositoryContentList} from 'src/nav/RepositoryContentList';
-import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
-import {RepositoryPicker} from 'src/nav/RepositoryPicker';
+import {LeftNavRepositorySection} from 'src/nav/LeftNavRepositorySection';
 import {VersionNumber} from 'src/nav/VersionNumber';
 import {SearchDialog} from 'src/search/SearchDialog';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-
-const LeftNavRepositorySection = () => {
-  const match = useRouteMatch<
-    | {repoPath: string; selector: string; tab: string; rootTab: undefined}
-    | {selector: undefined; tab: undefined; rootTab: string}
-  >([
-    '/workspace/:repoPath/pipelines/:selector/:tab?',
-    '/workspace/:repoPath/solids/:selector',
-    '/workspace/:repoPath/schedules/:selector',
-    '/:rootTab?',
-  ]);
-
-  const {activeRepo, allRepos, loading} = React.useContext(WorkspaceContext);
-
-  return (
-    <div
-      className="bp3-dark"
-      style={{
-        background: `rgba(0,0,0,0.3)`,
-        color: Colors.WHITE,
-        display: 'flex',
-        flex: 1,
-        overflow: 'none',
-        flexDirection: 'column',
-        minHeight: 0,
-      }}
-    >
-      <RepositoryPicker loading={loading} options={allRepos} repo={activeRepo?.repo || null} />
-      <ApolloConsumer>
-        {(client) => <RepositoryLocationStateObserver client={client} />}
-      </ApolloConsumer>
-      {activeRepo ? (
-        <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          <RepositoryContentList {...match?.params} repo={activeRepo.repo} />
-          <JobsList {...match?.params} repo={activeRepo.repo} />
-        </div>
-      ) : null}
-    </div>
-  );
-};
 
 export const LeftNav = () => {
   const history = useHistory();

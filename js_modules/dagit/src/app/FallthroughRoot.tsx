@@ -3,7 +3,7 @@ import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {workspacePath} from 'src/workspace/workspacePath';
 
 const InstanceRedirect = (props: RouteComponentProps<any>) => {
   const {location} = props;
@@ -17,13 +17,14 @@ export const FallthroughRoot = () => {
       <Route path={['/runs/(.*)?', '/assets/(.*)?', '/scheduler']} component={InstanceRedirect} />
       <WorkspaceContext.Consumer>
         {(context) => {
-          if (context?.activeRepo?.repo.repository.pipelines.length) {
-            const repoAddress = context.activeRepo.address;
+          const firstRepo = context.allRepos[0] || null;
+          if (firstRepo?.repository.pipelines.length) {
             return (
               <Redirect
-                to={workspacePathFromAddress(
-                  repoAddress,
-                  `/pipelines/${context?.activeRepo?.repo.repository.pipelines[0].name}/`,
+                to={workspacePath(
+                  firstRepo.repository.name,
+                  firstRepo.repositoryLocation.name,
+                  `/pipelines/${firstRepo.repository.pipelines[0].name}/`,
                 )}
               />
             );

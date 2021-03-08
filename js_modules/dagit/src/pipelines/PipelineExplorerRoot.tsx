@@ -23,7 +23,8 @@ import {
 } from 'src/pipelines/types/PipelineExplorerRootQuery';
 import {PipelineExplorerSolidHandleFragment} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
 import {Loading} from 'src/ui/Loading';
-import {useActiveRepo, usePipelineSelector} from 'src/workspace/WorkspaceContext';
+import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
+import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 function explodeComposite(
@@ -127,10 +128,12 @@ function explodeCompositesInHandleGraph(handles: PipelineExplorerSolidHandleFrag
   return results;
 }
 
-export const PipelineExplorerRegexRoot: React.FC<RouteComponentProps> = (props) => {
+export const PipelineExplorerRegexRoot: React.FC<
+  RouteComponentProps & {repoAddress: RepoAddress}
+> = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
   useDocumentTitle(`Pipeline: ${explorerPath.pipelineName}`);
-  return <PipelineExplorerRoot explorerPath={explorerPath} />;
+  return <PipelineExplorerRoot explorerPath={explorerPath} repoAddress={props.repoAddress} />;
 };
 
 export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (props) => {
@@ -140,10 +143,12 @@ export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (prop
   return <PipelineExplorerRoot explorerPath={explorerPath} />;
 };
 
-const PipelineExplorerRoot: React.FC<{explorerPath: PipelineExplorerPath}> = (props) => {
+const PipelineExplorerRoot: React.FC<{
+  explorerPath: PipelineExplorerPath;
+  repoAddress?: RepoAddress;
+}> = (props) => {
   const history = useHistory();
-  const activeRepo = useActiveRepo();
-  const {explorerPath} = props;
+  const {explorerPath, repoAddress} = props;
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,
   });
@@ -151,7 +156,11 @@ const PipelineExplorerRoot: React.FC<{explorerPath: PipelineExplorerPath}> = (pr
   const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
   return (
-    <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
+    <ExplorerSnapshotResolver
+      explorerPath={explorerPath}
+      options={options}
+      repoAddress={repoAddress}
+    >
       {(result) => {
         if (result.__typename === 'NonIdealState') {
           return <NonIdealState {...result} />;
@@ -171,15 +180,13 @@ const PipelineExplorerRoot: React.FC<{explorerPath: PipelineExplorerPath}> = (pr
         const invalidParent =
           parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
 
-        if (activeRepo && (invalidSelection || invalidParent)) {
+        if (invalidSelection || invalidParent) {
           const n = {...explorerPath};
           n.pathSolids = n.pathSolids.slice(0, n.pathSolids.length - 1);
+          const path = `/pipelines/${explorerPathToString(n)}`;
           return (
             <Redirect
-              to={workspacePathFromAddress(
-                activeRepo.address,
-                `/pipelines/${explorerPathToString(n)}`,
-              )}
+              to={repoAddress ? workspacePathFromAddress(repoAddress, path) : `/workspace${path}`}
             />
           );
         }
@@ -191,7 +198,7 @@ const PipelineExplorerRoot: React.FC<{explorerPath: PipelineExplorerPath}> = (pr
             explorerPath={explorerPath}
             history={history}
             pipeline={result}
-            repoAddress={activeRepo?.address}
+            repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
             selectedHandle={selectedHandle}
@@ -246,6 +253,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
 interface ResolverProps {
   explorerPath: PipelineExplorerPath;
   options: PipelineExplorerOptions;
+  repoAddress?: RepoAddress;
   children: (
     result:
       | {
@@ -279,6 +287,7 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
       },
     },
   );
+
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
       {({pipelineSnapshotOrError}) => {

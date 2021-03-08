@@ -14,9 +14,17 @@ export interface JobsListQuery_schedulesOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError" | "PythonError";
 }
 
+export interface JobsListQuery_schedulesOrError_Schedules_results_scheduleState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface JobsListQuery_schedulesOrError_Schedules_results_scheduleState {
   __typename: "JobState";
   id: string;
+  repositoryOrigin: JobsListQuery_schedulesOrError_Schedules_results_scheduleState_repositoryOrigin;
   status: JobStatus;
 }
 
@@ -38,9 +46,17 @@ export interface JobsListQuery_sensorsOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError" | "PythonError";
 }
 
+export interface JobsListQuery_sensorsOrError_Sensors_results_sensorState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface JobsListQuery_sensorsOrError_Sensors_results_sensorState {
   __typename: "JobState";
   id: string;
+  repositoryOrigin: JobsListQuery_sensorsOrError_Sensors_results_sensorState_repositoryOrigin;
   status: JobStatus;
 }
 
