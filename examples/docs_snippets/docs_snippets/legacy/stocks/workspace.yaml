@@ -1,4 +1,0 @@
-load_from:
-  - python_module:
-      module_name: dagster_examples.stocks.repository
-      attribute: define_repo

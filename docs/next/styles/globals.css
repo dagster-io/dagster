@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scroll-margin-top {
+    scroll-margin-top: 90px;
+  }
+}
+
+dd,
+dt,
+div.section {
+  scroll-margin-top: 90px;
+}
+
+a.headerlink {
+  @apply ml-4 text-gray-300 hover:text-blue-400;
+}
+
+dl.class,
+dl.data,
+dl.attribute,
+dl.method,
+dl.exception,
+dl.function {
+  @apply bg-gray-100 px-4 py-2 rounded-md;
+}
+
+.section h2 {
+  @apply mt-0;
+}

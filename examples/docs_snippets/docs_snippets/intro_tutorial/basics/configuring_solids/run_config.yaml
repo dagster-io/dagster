@@ -1,0 +1,4 @@
+solids:
+  read_csv:
+    config:
+      csv_name: "cereal.csv"

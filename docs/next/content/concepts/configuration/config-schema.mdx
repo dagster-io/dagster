@@ -1,0 +1,86 @@
+---
+title: Config Schema | Dagster
+description: Dagster includes a system for defining the schema that configuration values must abide by.
+---
+
+# Config Schema
+
+Dagster includes a system for defining the schema that configuration values must abide by.
+
+## Relevant APIs
+
+| Name                                                 | Description                   |
+| ---------------------------------------------------- | ----------------------------- |
+| <PyObject module="dagster" object="ConfigSchema"  /> | Description of the API method |
+
+## Overview
+
+While the example above uses simple scalar config values, the config system supports structured types allowing for
+complex configuration. These are [documented in the API section with examples](/\_apidocs/config).
+
+Notable entries include:
+
+- <PyObject module="dagster" object="Field" /> - the basic building block
+- <PyObject module="dagster" object="Shape" /> - for well defined dictionaries
+- <PyObject module="dagster" object="Permissive" /> - for allowing untyped dictionaries
+- <PyObject module="dagster" object="Selector" /> - to allow choosing one of N
+- <PyObject module="dagster" object="StringSource" /> - to allow loading from environment
+- <PyObject module="dagster" object="Enum" /> - for choosing from a well defined
+  set of values
+
+---
+
+## Specifying Config Schema
+
+The most common objects to specify <PyObject module="dagster" object="ConfigSchema" /> for
+are <PyObject module="dagster" object="SolidDefinition" /> and <PyObject module="dagster" object="ResourceDefinition" />.
+
+The following simple example shows how **config_schema** can be used on a solid to control its behavior:
+
+```python file=/concepts/configuration/example.py
+from dagster import Field, execute_pipeline, pipeline, solid
+
+
+@solid(
+    config_schema={
+        # can just use the expected type as short hand
+        "iterations": int,
+        # otherwise use Field for optionality, defaults, and descriptions
+        "word": Field(str, is_required=False, default_value="hello"),
+    }
+)
+def config_example_solid(context):
+    for _ in range(context.solid_config["iterations"]):
+        context.log.info(context.solid_config["word"])
+
+
+@pipeline
+def config_example_pipeline():
+    config_example_solid()
+
+
+def run_bad_example():
+    # This run will fail to start since there is required config not provided
+    return execute_pipeline(config_example_pipeline, run_config={})
+
+
+def run_other_bad_example():
+    # This will also fail to start since iterations is the wrong type
+    execute_pipeline(
+        config_example_pipeline,
+        run_config={"solids": {"config_example_solid": {"config": {"iterations": "banana"}}}},
+    )
+
+
+def run_good_example():
+    return execute_pipeline(
+        config_example_pipeline,
+        run_config={"solids": {"config_example_solid": {"config": {"iterations": 1}}}},
+    )
+```
+
+## Examples
+
+<div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+  TODO convert example code from _apidocs/config#dagster.Field to docs_snippet
+</div>

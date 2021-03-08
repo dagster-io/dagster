@@ -1,62 +1,48 @@
 import csv
 import os
 
-from dagster import DagsterType, execute_pipeline, pipeline, solid
+from dagster import (
+    DagsterType,
+    InputDefinition,
+    OutputDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 # start_custom_types_2_marker_0
-def less_simple_data_frame_type_check(_, value):
-    if not isinstance(value, list):
-        return False
-
-    fields = [field for field in value[0].keys()]
-
-    for i in range(len(value)):
-        row = value[i]
-        if not isinstance(row, dict):
-            return False
-        row_fields = [field for field in row.keys()]
-        if fields != row_fields:
-            return False
-
-    return True
+def is_list_of_dicts(_, value):
+    return isinstance(value, list) and all(
+        isinstance(element, dict) for element in value
+    )
 
 
-LessSimpleDataFrame = DagsterType(
-    name="LessSimpleDataFrame",
-    description="A more sophisticated data frame that type checks its structure.",
-    type_check_fn=less_simple_data_frame_type_check,
+SimpleDataFrame = DagsterType(
+    name="SimpleDataFrame",
+    type_check_fn=is_list_of_dicts,
+    description="A naive representation of a data frame, e.g., as returned by csv.DictReader.",
 )
 # end_custom_types_2_marker_0
 
-
 # start_custom_types_2_marker_1
-@solid
-def bad_read_csv(context, csv_path: str) -> LessSimpleDataFrame:
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+def bad_read_csv(context):
+    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
-    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    context.log.info(f"Read {len(lines)} lines")
     return ["not_a_dict"]
 
 
 # end_custom_types_2_marker_1
 
 
-@solid
-def sort_by_calories(context, cereals: LessSimpleDataFrame):
+@solid(input_defs=[InputDefinition("cereals", SimpleDataFrame)])
+def sort_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
-    context.log.info(
-        "Least caloric cereal: {least_caloric}".format(
-            least_caloric=sorted_cereals[0]["name"]
-        )
-    )
-    context.log.info(
-        "Most caloric cereal: {most_caloric}".format(
-            most_caloric=sorted_cereals[-1]["name"]
-        )
-    )
+    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
 
 @pipeline

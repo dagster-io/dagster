@@ -34,26 +34,8 @@ def sort_by_protein(_, cereals):
 
 @solid
 def display_results(context, calorie_results, protein_results):
-    context.log.info(
-        "Least caloric cereal: {least_caloric}".format(
-            least_caloric=calorie_results[0]
-        )
-    )
-    context.log.info(
-        "Most caloric cereal: {most_caloric}".format(
-            most_caloric=calorie_results[-1]
-        )
-    )
-    context.log.info(
-        "Least protein-rich cereal: {least_protein}".format(
-            least_protein=protein_results[0]
-        )
-    )
-    context.log.info(
-        "Most protein-rich cereal: {most_protein}".format(
-            most_protein=protein_results[-1]
-        )
-    )
+    context.log.info(f"Most caloric cereal: {calorie_results[-1]}")
+    context.log.info(f"Most protein-rich cereal: {protein_results[-1]}")
 
 
 @pipeline

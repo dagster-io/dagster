@@ -1,0 +1,142 @@
+# Main Concepts
+
+Dagster is a data orchestrator. The framework lets you define pipelines (DAGs) in terms of the data flow between reusable, logical components called solids. These pipelines can be developed and iterated on locally and run anywhere.
+
+```python
+@solid
+def my_age(context):
+  return 1
+
+@solid
+def my_name(context):
+  return "Dagster"
+
+@solid
+def greet(context, age, name):
+  context.log.info("Hello " + name + " (age)")
+
+@pipeline
+def my_pipeline(context):
+  greet(my_age(), my_name())
+```
+
+## How to use the Main Concepts section
+
+Each page in this section contains an:
+
+- Overview: description of the concept
+- Relevant APIs: Index of top level Dagster APIs that are relevant to the concept
+- Examples: Easy to copy code snippets for the concept
+- Patterns: A list of advanced patterns to use and anti-patterns to avoid with the concept
+
+## Sections
+
+<LinkGrid>
+  <LinkGridItem
+    title="Solids and Pipelines"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Pipeline Runs"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user"]}
+  >
+    By executing a pipeline, you create a pipeline run. This section describes
+    how to configure pipelines and launch pipeline runs.
+  </LinkGridItem>
+  <LinkGridItem
+    title="Modes"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Resources"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user", "data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Configuration System"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="IO Management"
+    href="/concepts/solids-pipelines/solids"
+    tags={["data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Assets"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user", "data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Repositories and Workspaces"
+    href="/concepts/solids-pipelines/solids"
+    tags={["data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Logging"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user", "data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Partitions and Schedules"
+    href="/concepts/solids-pipelines/solids"
+    tags={["user"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Run Launchers and Executors"
+    href="/concepts/solids-pipelines/solids"
+    tags={["data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+  <LinkGridItem
+    title="Dagster Instance"
+    href="/concepts/solids-pipelines/solids"
+    tags={["data platform"]}
+  >
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines
+  </LinkGridItem>
+</LinkGrid>

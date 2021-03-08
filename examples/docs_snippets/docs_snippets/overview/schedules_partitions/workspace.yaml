@@ -1,2 +1,0 @@
-load_from:
-  - python_module: docs_snippets.overview.schedules_partitions.repo

@@ -1,0 +1,81 @@
+---
+title: Run Config | Dagster
+description: Dagster includes a system for defining the schema that configuration values must abide by.
+---
+
+# Run Config
+
+Dagster includes a system for defining the schema that configuration values must abide by.
+
+## Overview
+
+Several dimensions of pipeline execution can be determined at execution time through configuration.
+We call this set of chosen values **run config**. The run config is passed as a dictionary in the
+python api or as a yaml document when using `dagit` or the CLI. The following top level keys in the
+run config allow you to configure different aspects:
+
+- **execution**: Determine and configure the <PyObject module="dagster" object="Executor" /> to be
+  used to control execution of the pipeline.
+
+- **loggers** : Determine and configure the <PyObject module="dagster" object="LoggerDefinition" />
+  to be used when logging.
+
+- **solids** : Configure solids that belong to the pipeline. In addition to providing values for
+  solid specific configuration, inputs may also be configured here, when dependencies on upstream
+  solids outputs have not been set in the pipeline.
+
+- **resources** : Configure resources that belong to the pipeline that have defined configuration
+  schema.
+
+You can find detailed information in [Run Config Schema](/\_apidocs/execution#run-config-schema).
+
+---
+
+## Examples
+
+### Configuring execution on per-pipeline-run basis
+
+```yaml file=/concepts/pipeline_runs/run_config_execution.yaml
+# ==================================================================================================
+# Execution
+# ==================================================================================================
+# Configure whether to use single-process or multi-process execution, or use custom executors like
+# Celery. Custom executors can be defined with the @executor decorator.
+#
+# **NOTE**: setting executors globally on the Dagster instance is not currently supported!
+#
+# Currently available executors:
+# - in_process (default)
+# - multiprocess
+# - celery (provided by dagster_celery)
+# - celery-k8s (provided by dagster_celery)
+# - dask (provided by dagster_dask)
+execution:
+  multiprocess:
+    config:
+      # Note that max_concurrent: 0 is equivalent to multiprocessing.cpu_count() - see:
+      # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
+      max_concurrent: 4
+```
+
+### Configuring logging on per-pipeline-run basis
+
+```yaml file=/concepts/pipeline_runs/run_config_loggers.yaml
+# ==================================================================================================
+# Loggers
+# ==================================================================================================
+# The loggers key in pipeline run config is used to set up customized loggers. Custom loggers can be
+# defined with the @logger decorator.
+#
+# **NOTE**: setting custom loggers globally on the Dagster instance is not currently supported!
+#
+# Currently available loggers:
+# - colored_console_logger (default)
+# - json_console_logger
+# - cloudwatch_logger (provided by dagster_azure.cloudwatch)
+# - papertrail_logger (provided by dagster_papertrail)
+loggers:
+  console:
+    config:
+      log_level: DEBUG
+```

@@ -1,41 +1,46 @@
 import csv
 import os
 
-from dagster import DagsterType, execute_pipeline, pipeline, solid
+from dagster import (
+    DagsterType,
+    InputDefinition,
+    OutputDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
+
 
 # start_custom_types_marker_0
+def is_list_of_dicts(_, value):
+    return isinstance(value, list) and all(
+        isinstance(element, dict) for element in value
+    )
+
+
 SimpleDataFrame = DagsterType(
     name="SimpleDataFrame",
-    type_check_fn=lambda _, value: isinstance(value, list),
+    type_check_fn=is_list_of_dicts,
     description="A naive representation of a data frame, e.g., as returned by csv.DictReader.",
 )
 # end_custom_types_marker_0
 
 
 # start_custom_types_marker_1
-@solid
-def read_csv(context, csv_path: str) -> SimpleDataFrame:
+@solid(output_defs=[OutputDefinition(SimpleDataFrame)])
+def read_csv(context, csv_path: str):
     csv_path = os.path.join(os.path.dirname(__file__), csv_path)
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
-    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    context.log.info(f"Read {len(lines)} lines")
     return lines
 
 
-@solid
-def sort_by_calories(context, cereals: SimpleDataFrame):
+@solid(input_defs=[InputDefinition("cereals", SimpleDataFrame)])
+def sort_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
-    context.log.info(
-        "Least caloric cereal: {least_caloric}".format(
-            least_caloric=sorted_cereals[0]["name"]
-        )
-    )
-    context.log.info(
-        "Most caloric cereal: {most_caloric}".format(
-            most_caloric=sorted_cereals[-1]["name"]
-        )
-    )
+    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
 
 # end_custom_types_marker_1
