@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
 import {RepositoryLink} from 'src/nav/RepositoryLink';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
@@ -182,9 +183,19 @@ export const ScheduleDetails: React.FC<{
           {
             key: 'Pipeline',
             value: (
-              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
-                {pipelineName}
-              </Link>
+              <PipelineReference
+                pipelineName={pipelineName}
+                pipelineHrefContext={repoAddress}
+                mode={schedule.mode}
+              />
+            ),
+          },
+          {
+            key: 'Partition Set',
+            value: partitionSet ? (
+              <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+            ) : (
+              'None'
             ),
           },
           {
@@ -204,18 +215,6 @@ export const ScheduleDetails: React.FC<{
                 value: executionTimezone,
               }
             : null,
-          {
-            key: 'Mode',
-            value: schedule.mode,
-          },
-          {
-            key: 'Partition set',
-            value: partitionSet ? (
-              <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
-            ) : (
-              'None'
-            ),
-          },
         ].filter(Boolean)}
       />
     </Group>

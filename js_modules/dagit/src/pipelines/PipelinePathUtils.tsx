@@ -45,8 +45,8 @@ export const PipelineSnapshotLink: React.FunctionComponent<{
   })}`;
 
   return (
-    <div style={{fontFamily: FontFamily.monospace}}>
+    <span style={{fontFamily: FontFamily.monospace}}>
       <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
-    </div>
+    </span>
   );
 };

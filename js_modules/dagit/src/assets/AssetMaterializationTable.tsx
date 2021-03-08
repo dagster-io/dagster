@@ -3,7 +3,7 @@ import {Link} from 'react-router-dom';
 
 import {Timestamp} from 'src/app/time/Timestamp';
 import {AssetQuery_assetOrError_Asset_assetMaterializations} from 'src/assets/types/AssetQuery';
-import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {titleForRun} from 'src/runs/RunUtils';
@@ -19,9 +19,9 @@ export const AssetMaterializationTable: React.FunctionComponent<{
       <thead>
         <tr>
           <th style={{paddingLeft: 0}}>Materialization Metadata</th>
-          {isPartitioned && <th style={{width: 100}}>Partition</th>}
-          <th style={{width: 150}}>Timestamp</th>
-          <th style={{width: 150, maxWidth: 250}}>Pipeline</th>
+          {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
+          <th style={{minWidth: 150}}>Timestamp</th>
+          <th style={{minWidth: 150}}>Pipeline</th>
           <th style={{width: 200}}>Run</th>
         </tr>
       </thead>
@@ -67,10 +67,11 @@ const AssetMaterializationRow: React.FunctionComponent<{
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </td>
       <td>
-        {run.pipelineName}
-        <PipelineSnapshotLink
-          snapshotId={run.pipelineSnapshotId || ''}
+        <PipelineReference
           pipelineName={run.pipelineName}
+          pipelineHrefContext="repo-unknown"
+          snapshotId={run.pipelineSnapshotId}
+          mode={run.mode}
         />
       </td>
       <td>

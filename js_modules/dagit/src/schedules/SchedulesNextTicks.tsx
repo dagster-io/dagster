@@ -18,7 +18,7 @@ import styled from 'styled-components/macro';
 
 import {copyValue} from 'src/app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {PipelineAndMode} from 'src/pipelines/PipelineAndMode';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {RunTags} from 'src/runs/RunTags';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {RepositorySchedulesFragment} from 'src/schedules/types/RepositorySchedulesFragment';
@@ -118,12 +118,9 @@ export const SchedulesNextTicks: React.FC<{
               </Link>
             </td>
             <td>
-              <PipelineAndMode
+              <PipelineReference
                 pipelineName={schedule.pipelineName}
-                pipelineHref={workspacePathFromAddress(
-                  repoAddress,
-                  `/pipelines/${schedule.pipelineName}/`,
-                )}
+                pipelineHrefContext={repoAddress}
                 mode={schedule.mode}
               />
             </td>

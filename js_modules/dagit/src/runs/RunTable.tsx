@@ -5,8 +5,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {PipelineAndMode} from 'src/pipelines/PipelineAndMode';
 import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {canceledStatuses, queuedStatuses} from 'src/runs/RunStatuses';
@@ -226,7 +226,11 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Group direction="column" spacing={4}>
-          <PipelineAndMode pipelineName={run.pipelineName} mode={run.mode} />
+          <PipelineReference
+            mode={run.mode}
+            pipelineName={run.pipelineName}
+            pipelineHrefContext="no-link"
+          />
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
         </Group>
       </td>

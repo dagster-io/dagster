@@ -17,6 +17,7 @@ import {
 } from 'src/assets/types/AssetQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from 'src/runs/MetadataEntry';
 import {titleForRun} from 'src/runs/RunUtils';
 import {Group} from 'src/ui/Group';
@@ -83,6 +84,8 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
 
   const latest = asset.assetMaterializations[0];
   const latestEvent = latest && latest.materializationEvent;
+  const latestRun =
+    latest && latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : null;
 
   return (
     <>
@@ -90,6 +93,32 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
         <Subheading>Details</Subheading>
         <MetadataTable
           rows={[
+            {
+              key: 'Latest pipeline',
+              value: latestRun ? (
+                <PipelineReference
+                  pipelineName={latestRun.pipelineName}
+                  pipelineHrefContext="repo-unknown"
+                  snapshotId={latestRun.pipelineSnapshotId}
+                  mode={latestRun.mode}
+                />
+              ) : (
+                'No materialization events'
+              ),
+            },
+            {
+              key: 'Latest run',
+              value: latestRun ? (
+                <Link
+                  style={{fontFamily: FontFamily.monospace}}
+                  to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
+                >
+                  {titleForRun({runId: latestEvent.runId})}
+                </Link>
+              ) : (
+                'No materialization events'
+              ),
+            },
             latest.partition
               ? {
                   key: 'Latest partition',
@@ -97,18 +126,9 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
                 }
               : undefined,
             {
-              key: 'Latest run',
-              value: latest ? (
-                <>
-                  <Link
-                    style={{fontFamily: FontFamily.monospace}}
-                    to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
-                  >
-                    {titleForRun({runId: latestEvent.runId})}
-                  </Link>
-                  <span> at </span>
-                  <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
-                </>
+              key: 'Latest timestamp',
+              value: latestEvent ? (
+                <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
               ) : (
                 'No materialization events'
               ),
@@ -200,6 +220,7 @@ const ASSET_QUERY = gql`
             ... on PipelineRun {
               id
               runId
+              mode
               status
               pipelineName
               pipelineSnapshotId

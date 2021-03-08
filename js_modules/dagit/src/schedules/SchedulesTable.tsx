@@ -18,7 +18,7 @@ import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
 import {JobRunStatus} from 'src/jobs/JobUtils';
-import {PipelineAndMode} from 'src/pipelines/PipelineAndMode';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {
   START_SCHEDULE_MUTATION,
@@ -61,8 +61,8 @@ export const SchedulesTable: React.FC<{
       <thead>
         <tr>
           <th style={{width: '60px'}}></th>
-          <th style={{width: '300px'}}>Schedule Name</th>
-          <th style={{width: '150px'}}>Schedule</th>
+          <th style={{minWidth: '300px'}}>Schedule Name</th>
+          <th style={{minWidth: '150px'}}>Schedule</th>
           <th style={{width: '200px'}}>Next Tick</th>
           <th style={{width: '120px'}}>
             <Group direction="row" spacing={8} alignItems="center">
@@ -228,7 +228,7 @@ const ScheduleRow: React.FC<{
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
           </span>
-          <Group direction="row" spacing={4} alignItems="center">
+          <Group direction="row" spacing={4} alignItems="flex-start">
             <Icon
               icon="diagram-tree"
               color={Colors.GRAY2}
@@ -236,9 +236,9 @@ const ScheduleRow: React.FC<{
               style={{position: 'relative', top: '-3px'}}
             />
             <span style={{fontSize: '13px'}}>
-              <PipelineAndMode
+              <PipelineReference
                 pipelineName={pipelineName}
-                pipelineHref={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}
+                pipelineHrefContext={repoAddress}
                 mode={mode}
               />
             </span>

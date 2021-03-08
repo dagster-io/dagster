@@ -6,6 +6,7 @@ import {RouteComponentProps} from 'react-router';
 import {Link} from 'react-router-dom';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {Run} from 'src/runs/Run';
 import {RunConfigDialog, RunDetails} from 'src/runs/RunDetails';
 import {RunFragments} from 'src/runs/RunFragments';
@@ -61,14 +62,13 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
           description={
             <>
               <Link to="/instance/runs">Run</Link> of{' '}
-              {run?.pipeline.name && snapshotID ? (
-                <span>
-                  <Link to={`/workspace/pipelines/${run.pipeline.name}`}>{run.pipeline.name}</Link>
-                  {' @ '}
-                  <Link to={`/instance/snapshots/${run.pipeline.name}@${snapshotID}`}>
-                    <span style={{fontFamily: FontFamily.monospace}}>{snapshotID.slice(0, 8)}</span>
-                  </Link>
-                </span>
+              {run ? (
+                <PipelineReference
+                  pipelineName={run?.pipeline.name}
+                  pipelineHrefContext={'repo-unknown'}
+                  snapshotId={snapshotID}
+                  mode={run?.mode}
+                />
               ) : (
                 <span>…</span>
               )}

@@ -6,7 +6,7 @@ import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
 import {JobRunStatus} from 'src/jobs/JobUtils';
-import {PipelineAndMode} from 'src/pipelines/PipelineAndMode';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {humanizeSensorInterval} from 'src/sensors/SensorDetails';
 import {
   displaySensorMutationErrors,
@@ -120,7 +120,7 @@ const SensorRow: React.FC<{
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
-          <Group direction="row" spacing={4} alignItems="center">
+          <Group direction="row" spacing={4} alignItems="flex-start">
             <Icon
               icon="diagram-tree"
               color={Colors.GRAY2}
@@ -128,9 +128,9 @@ const SensorRow: React.FC<{
               style={{position: 'relative', top: '-3px'}}
             />
             <span style={{fontSize: '13px'}}>
-              <PipelineAndMode
+              <PipelineReference
                 pipelineName={pipelineName}
-                pipelineHref={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}
+                pipelineHrefContext={repoAddress}
                 mode={mode}
               />
             </span>

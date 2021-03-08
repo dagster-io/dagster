@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/jobs/JobTick';
 import {RepositoryLink} from 'src/nav/RepositoryLink';
+import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {
   displaySensorMutationErrors,
@@ -158,14 +159,12 @@ export const SensorDetails: React.FC<{
           {
             key: 'Pipeline',
             value: (
-              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
-                {pipelineName}
-              </Link>
+              <PipelineReference
+                pipelineName={pipelineName}
+                pipelineHrefContext={repoAddress}
+                mode={sensor.mode}
+              />
             ),
-          },
-          {
-            key: 'Mode',
-            value: sensor.mode,
           },
           {
             key: 'Frequency',

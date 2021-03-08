@@ -27,6 +27,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
   __typename: "PipelineRun";
   id: string;
   runId: string;
+  mode: string;
   status: PipelineRunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
