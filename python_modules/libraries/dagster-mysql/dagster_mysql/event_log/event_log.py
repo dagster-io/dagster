@@ -102,7 +102,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         inst.wipe()
         return inst
 
-    def store_asset_key(self, event):
+    def store_asset(self, event):
         check.inst_param(event, "event", EventRecord)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return

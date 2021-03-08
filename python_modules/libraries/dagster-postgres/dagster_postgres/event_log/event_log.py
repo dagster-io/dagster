@@ -137,9 +137,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
 
         if event.is_dagster_event and event.dagster_event.asset_key:
-            self.store_asset_key(event)
+            self.store_asset(event)
 
-    def store_asset_key(self, event):
+    def store_asset(self, event):
         check.inst_param(event, "event", EventRecord)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return

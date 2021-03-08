@@ -85,7 +85,7 @@ class SqlEventLogStorage(EventLogStorage):
             partition=partition,
         )
 
-    def store_asset_key(self, event):
+    def store_asset(self, event):
         check.inst_param(event, "event", EventRecord)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
@@ -114,7 +114,7 @@ class SqlEventLogStorage(EventLogStorage):
             conn.execute(insert_event_statement)
 
         if event.is_dagster_event and event.dagster_event.asset_key:
-            self.store_asset_key(event)
+            self.store_asset(event)
 
     def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
         check.str_param(run_id, "run_id")

@@ -225,7 +225,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            self.store_asset_key(event)
+            self.store_asset(event)
 
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:

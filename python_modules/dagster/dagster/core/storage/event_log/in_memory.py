@@ -52,6 +52,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventRecord)
         run_id = event.run_id
         self._logs[run_id] = self._logs[run_id].append(event)
+
         for handler in self._handlers[run_id]:
             handler(event)
 
