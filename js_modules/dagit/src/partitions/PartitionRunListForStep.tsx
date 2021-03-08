@@ -80,7 +80,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
                 {runId: run.runId, pipelineName: props.pipelineName},
                 {
                   query: {
-                    steps: props.stepName,
+                    selection: props.stepName,
                     logs: `step:${props.stepName}`,
                   },
                 },

@@ -53,7 +53,8 @@ export const MetadataEntries: React.FC<{
 
 export const MetadataEntry: React.FC<{
   entry: MetadataEntryFragment;
-}> = ({entry}) => {
+  expandSmallValues?: boolean;
+}> = ({entry, expandSmallValues}) => {
   switch (entry.__typename) {
     case 'EventPathMetadataEntry':
       return (
@@ -75,7 +76,11 @@ export const MetadataEntry: React.FC<{
       );
 
     case 'EventJsonMetadataEntry':
-      return (
+      return expandSmallValues && entry.jsonString.length < 1000 ? (
+        <div style={{whiteSpace: 'pre-wrap'}}>
+          {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
+        </div>
+      ) : (
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.jsonString}
@@ -103,7 +108,9 @@ export const MetadataEntry: React.FC<{
     case 'EventTextMetadataEntry':
       return <>{entry.text}</>;
     case 'EventMarkdownMetadataEntry':
-      return (
+      return expandSmallValues && entry.mdStr.length < 1000 ? (
+        <ReactMarkdown source={entry.mdStr} />
+      ) : (
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.mdStr}

@@ -1,7 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Tab, Tabs, ButtonGroup, Colors} from '@blueprintjs/core';
+import {Button, Tab, Tabs, ButtonGroup, Colors, Icon} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
+import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -94,27 +95,49 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
         <MetadataTable
           rows={[
             {
-              key: 'Latest pipeline',
+              key: 'Latest materialization from',
               value: latestRun ? (
-                <PipelineReference
-                  pipelineName={latestRun.pipelineName}
-                  pipelineHrefContext="repo-unknown"
-                  snapshotId={latestRun.pipelineSnapshotId}
-                  mode={latestRun.mode}
-                />
-              ) : (
-                'No materialization events'
-              ),
-            },
-            {
-              key: 'Latest run',
-              value: latestRun ? (
-                <Link
-                  style={{fontFamily: FontFamily.monospace}}
-                  to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
-                >
-                  {titleForRun({runId: latestEvent.runId})}
-                </Link>
+                <div>
+                  <div>
+                    {'Run '}
+                    <Link
+                      style={{fontFamily: FontFamily.monospace}}
+                      to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
+                    >
+                      {titleForRun({runId: latestEvent.runId})}
+                    </Link>
+                  </div>
+                  <div style={{paddingLeft: 10, paddingTop: 4}}>
+                    <Icon
+                      icon="diagram-tree"
+                      color={Colors.GRAY2}
+                      iconSize={12}
+                      style={{position: 'relative', top: -2, paddingRight: 5}}
+                    />
+                    <PipelineReference
+                      pipelineName={latestRun.pipelineName}
+                      pipelineHrefContext="repo-unknown"
+                      snapshotId={latestRun.pipelineSnapshotId}
+                      mode={latestRun.mode}
+                    />
+                  </div>
+                  <div style={{paddingLeft: 10, paddingTop: 4}}>
+                    <Icon
+                      icon="git-commit"
+                      color={Colors.GRAY2}
+                      iconSize={12}
+                      style={{position: 'relative', top: -2, paddingRight: 5}}
+                    />
+                    <Link
+                      to={`/instance/runs/${latestRun.runId}?${qs.stringify({
+                        selection: latest.materializationEvent.stepKey,
+                        logs: `step:${latest.materializationEvent.stepKey}`,
+                      })}`}
+                    >
+                      {latest.materializationEvent.stepKey}
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 'No materialization events'
               ),
@@ -135,7 +158,7 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
             },
             ...latestEvent?.materialization.metadataEntries.map((entry) => ({
               key: entry.label,
-              value: <MetadataEntry entry={entry} />,
+              value: <MetadataEntry entry={entry} expandSmallValues={true} />,
             })),
           ].filter(Boolean)}
         />
@@ -296,12 +319,12 @@ function extractNumericData(
 
     if (xAxis === 'partition') {
       // If the xAxis is partition keys, the graph may only contain one value for each partition.
-      // If the existing sample for the partition was null, replace it. Otherwise take the max.
-      // (We need some sort of approach, might as well make it deterministic.)
+      // If the existing sample for the partition was null, replace it. Otherwise take the
+      // most recent value.
       const existingForPartition = series[label].values.find((v) => v.x === x);
       if (existingForPartition) {
         if (!isNaN(y)) {
-          existingForPartition.y = existingForPartition.y ? Math.max(existingForPartition.y, y) : y;
+          existingForPartition.y = y;
         }
         return;
       }
