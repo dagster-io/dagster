@@ -70,6 +70,11 @@ const TABS = [
     range: 1,
   },
   {
+    id: '1d',
+    label: '1 day',
+    range: 1,
+  },
+  {
     id: '7d',
     label: '7 days',
     range: 7,
@@ -111,7 +116,7 @@ export const JobTickHistory = ({
   >();
   React.useEffect(() => {
     if (!showRecent && selectedTab === 'recent') {
-      setSelectedTab('7d');
+      setSelectedTab('1d');
     }
   }, [selectedTab, showRecent]);
   const selectedRange = TABS.find((x) => x.id === selectedTab)?.range;
