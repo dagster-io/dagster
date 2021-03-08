@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Colors, Divider, NonIdealState, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
@@ -19,6 +19,7 @@ import {
   useQueryPersistedRunFilters,
 } from 'src/runs/RunsFilter';
 import {CountFragment} from 'src/runs/types/CountFragment';
+import {QueueDaemonStatusQuery} from 'src/runs/types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
@@ -198,10 +199,13 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           />
         )}
         {selectedTab === 'queued' ? (
-          <Alert
-            intent="info"
-            title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
-          />
+          <Group direction="column" spacing={8}>
+            <Alert
+              intent="info"
+              title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+            />
+            <QueueDaemonAlert />
+          </Group>
         ) : null}
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>
@@ -283,6 +287,40 @@ const RUNS_ROOT_QUERY = gql`
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
+`;
+
+const QueueDaemonAlert = () => {
+  const {data} = useQuery<QueueDaemonStatusQuery>(QUEUE_DAEMON_STATUS_QUERY);
+  const status = data?.instance.daemonHealth.daemonStatus;
+  if (status?.required && !status?.healthy) {
+    return (
+      <Alert
+        intent="warning"
+        title="The queued run coordinator is not healthy."
+        description={
+          <div>
+            View <Link to="/instance/health">Instance status</Link> for details.
+          </div>
+        }
+      />
+    );
+  }
+  return null;
+};
+
+const QUEUE_DAEMON_STATUS_QUERY = gql`
+  query QueueDaemonStatusQuery {
+    instance {
+      daemonHealth {
+        daemonStatus(daemonType: "QUEUED_RUN_COORDINATOR") {
+          id
+          daemonType
+          healthy
+          required
+        }
+      }
+    }
+  }
 `;
 
 const TabButton = styled(ButtonLink)`
