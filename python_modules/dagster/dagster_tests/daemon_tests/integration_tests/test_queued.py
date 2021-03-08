@@ -2,7 +2,7 @@ from dagster.core.host_representation import PipelineHandle
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster.utils import merge_dicts
-from dagster.utils.external import external_pipeline_from_run
+from dagster.utils.external import external_test_pipeline_from_run
 
 from .utils import setup_instance, start_daemon
 
@@ -47,7 +47,7 @@ def test_queue_from_schedule_and_sensor(tmpdir, foo_example_repo):
 
         with start_daemon(timeout=90):
             run = create_run(instance, foo_pipeline_handle)
-            with external_pipeline_from_run(run) as external_pipeline:
+            with external_test_pipeline_from_run(run) as external_pipeline:
                 instance.submit_run(run.run_id, external_pipeline)
 
                 runs = [
@@ -89,7 +89,7 @@ def test_queued_runs(tmpdir, foo_pipeline_handle):
     ) as instance:
         with start_daemon():
             run = create_run(instance, foo_pipeline_handle)
-            with external_pipeline_from_run(run) as external_pipeline:
+            with external_test_pipeline_from_run(run) as external_pipeline:
                 instance.submit_run(run.run_id, external_pipeline)
 
                 poll_for_finished_run(instance, run.run_id)

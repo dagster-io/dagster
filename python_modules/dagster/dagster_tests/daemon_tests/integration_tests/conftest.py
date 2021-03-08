@@ -1,4 +1,5 @@
 import sys
+from contextlib import contextmanager
 
 import pytest
 from dagster import file_relative_path
@@ -9,6 +10,7 @@ from dagster.core.host_representation import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
+@contextmanager
 def get_example_repository_location_handle():
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
@@ -18,7 +20,8 @@ def get_example_repository_location_handle():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    return origin.create_handle()
+    with origin.create_test_handle() as handle:
+        yield handle
 
 
 @pytest.fixture

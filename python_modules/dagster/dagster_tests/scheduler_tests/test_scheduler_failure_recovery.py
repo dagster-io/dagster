@@ -21,8 +21,8 @@ from .test_scheduler_run import (
 
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
-        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
-            try:
+        try:
+            with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
                 with pendulum.test(execution_datetime):
                     list(
                         launch_scheduled_runs(
@@ -33,8 +33,8 @@ def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, 
                             debug_crash_flags=debug_crash_flags,
                         )
                     )
-            finally:
-                cleanup_test_instance(instance)
+        finally:
+            cleanup_test_instance(instance)
 
 
 @pytest.mark.skipif(

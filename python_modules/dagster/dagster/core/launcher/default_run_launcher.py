@@ -4,10 +4,8 @@ import grpc
 from dagster import check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.host_representation.handle import (
-    GrpcServerRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-)
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
@@ -20,11 +18,6 @@ from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
 
 from .base import RunLauncher
-
-GRPC_REPOSITORY_LOCATION_HANDLE_TYPES = (
-    GrpcServerRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-)
 
 
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
@@ -58,7 +51,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         check.inst(
             repository_location_handle,
-            GRPC_REPOSITORY_LOCATION_HANDLE_TYPES,
+            GrpcServerRepositoryLocationHandle,
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
@@ -200,11 +193,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         DagsterInstance.
         """
         for repository_location_handle in self._run_id_to_repository_location_handle_cache.values():
-            if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
-                check.invariant(
-                    repository_location_handle.is_cleaned_up,
-                    "ManagedGrpcPythonRepositoryLocationHandle was not cleaned up "
-                    "before test teardown. This may indicate that the handle is not "
-                    "being used as a contextmanager.",
-                )
-                repository_location_handle.grpc_server_process.wait()
+            if isinstance(
+                repository_location_handle.grpc_server_registry, ProcessGrpcServerRegistry
+            ):
+                repository_location_handle.grpc_server_registry.wait_for_processes()

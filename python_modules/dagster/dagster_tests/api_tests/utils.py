@@ -10,6 +10,7 @@ from dagster.core.host_representation import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
+@contextmanager
 def get_bar_repo_repository_location_handle():
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
@@ -19,7 +20,8 @@ def get_bar_repo_repository_location_handle():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    return origin.create_handle()
+    with origin.create_test_handle() as handle:
+        yield handle
 
 
 @contextmanager
@@ -31,7 +33,7 @@ def get_bar_repo_grpc_repository_location_handle():
             python_file=file_relative_path(__file__, "api_tests_repo.py"),
         ),
         location_name="bar_repo",
-    ).create_handle() as handle:
+    ).create_test_handle() as handle:
         yield handle
 
 

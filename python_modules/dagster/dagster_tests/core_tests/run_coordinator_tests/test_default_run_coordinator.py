@@ -6,7 +6,7 @@ from dagster.core.run_coordinator.default_run_coordinator import DefaultRunCoord
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.utils import merge_dicts
-from dagster.utils.external import external_pipeline_from_run
+from dagster.utils.external import external_test_pipeline_from_run
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
@@ -27,7 +27,7 @@ def coodinator(instance):  # pylint: disable=redefined-outer-name
 
 
 def call_submit_run(coodinator, run):  # pylint: disable=redefined-outer-name
-    with external_pipeline_from_run(run) as external:
+    with external_test_pipeline_from_run(run) as external:
         return coodinator.submit_run(run, external)
 
 

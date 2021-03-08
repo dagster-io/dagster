@@ -1,9 +1,12 @@
 import sys
 import warnings
 from collections import OrderedDict, namedtuple
+from contextlib import ExitStack
 
 from dagster import check
 from dagster.core.host_representation import RepositoryLocationOrigin
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.host_representation.handle_manager import RepositoryLocationHandleManager
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -46,11 +49,19 @@ class WorkspaceSnapshot(
 
 class Workspace:
     def __init__(self, workspace_load_target):
+        self._stack = ExitStack()
 
         from .cli_target import WorkspaceLoadTarget
 
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
+        )
+
+        self._grpc_server_registry = self._stack.enter_context(
+            ProcessGrpcServerRegistry(cleanup_interval=0, heartbeat_interval=30)
+        )
+        self._handle_manager = self._stack.enter_context(
+            RepositoryLocationHandleManager(self._grpc_server_registry)
         )
 
         repository_location_origins = (
@@ -80,14 +91,10 @@ class Workspace:
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
     def create_handle_from_origin(self, origin):
-        return origin.create_handle()
+        return self._handle_manager.reload_handle(origin, cleanup_existing_handle=False)
 
     def _load_handle(self, location_name):
-        existing_handle = self._location_handle_dict.get(location_name)
-        if existing_handle:
-            # We don't clean up here anymore because we want these to last while being
-            # used in other requests
-            # existing_handle.cleanup()
+        if self._location_handle_dict.get(location_name):
             del self._location_handle_dict[location_name]
 
         if self._location_error_dict.get(location_name):
@@ -134,5 +141,4 @@ class Workspace:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        for handle in self.repository_location_handles:
-            handle.cleanup()
+        self._stack.close()

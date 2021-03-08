@@ -325,9 +325,20 @@ def test_location_handles_reused(instance, monkeypatch, grpc_server_registry):
         server_id=None,
         heartbeat=False,
         watch_server=True,
+        grpc_server_registry=None,
     ):
         method_calls.append(origin)
-        return original_method(self, origin, host, port, socket, server_id, heartbeat, watch_server)
+        return original_method(
+            self,
+            origin,
+            host,
+            port,
+            socket,
+            server_id,
+            heartbeat,
+            watch_server,
+            grpc_server_registry,
+        )
 
     monkeypatch.setattr(
         GrpcServerRepositoryLocationHandle,

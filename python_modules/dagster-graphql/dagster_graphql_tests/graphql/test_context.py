@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 from dagster import lambda_solid, pipeline, repository
 from dagster.cli.workspace.context import WorkspaceProcessContext
-from dagster.core.host_representation.handle import ManagedGrpcPythonEnvRepositoryLocationHandle
+from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
 from dagster.core.test_utils import instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
@@ -162,7 +162,7 @@ def test_reload_on_request_context_2():
 
 
 def test_handle_cleaup_by_workspace_context_exit():
-    with mock.patch.object(ManagedGrpcPythonEnvRepositoryLocationHandle, "cleanup") as mock_method:
+    with mock.patch.object(GrpcServerRepositoryLocationHandle, "cleanup") as mock_method:
         with define_out_of_process_workspace(__file__, "get_repo") as _:
             pass
 

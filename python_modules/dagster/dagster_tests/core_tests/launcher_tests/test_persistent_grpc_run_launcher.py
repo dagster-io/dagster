@@ -72,14 +72,15 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
 
 def test_terminate_after_shutdown():
     with instance_for_test() as instance:
-        with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 attribute="nope",
                 python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
             ),
             location_name="nope",
-        ).create_handle() as repository_location_handle:
+        )
+        with origin.create_test_handle() as repository_location_handle:
             repository_location = GrpcServerRepositoryLocation(repository_location_handle)
 
             external_pipeline = repository_location.get_repository(
@@ -95,7 +96,9 @@ def test_terminate_after_shutdown():
             poll_for_step_start(instance, pipeline_run.run_id)
 
             # Tell the server to shut down once executions finish
-            repository_location_handle.client.cleanup_server()
+            repository_location_handle.grpc_server_registry.get_grpc_endpoint(
+                origin
+            ).create_client().shutdown_server()
 
             # Trying to start another run fails
             doomed_to_fail_external_pipeline = repository_location.get_repository(

@@ -169,7 +169,7 @@ def test_external_diamond_toposort():
         python_file=__file__,
         attribute="create_diamond_pipeline",
         working_directory=None,
-    ).create_handle() as handle:
+    ).create_test_handle() as handle:
         repo_location = handle.create_location()
         external_repo = next(iter(repo_location.get_repositories().values()))
         external_pipeline = next(iter(external_repo.get_all_external_pipelines()))

@@ -3,7 +3,7 @@ from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
 from dagster.utils.error import SerializableErrorInfo
@@ -43,8 +43,10 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     def __init__(self, location):
         self._location = check.inst_param(location, "location", RepositoryLocation)
         environment_path = (
-            location.location_handle.executable_path
-            if isinstance(location.location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
+            location.location_handle.origin.loadable_target_origin.executable_path
+            if isinstance(
+                location.location_handle.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin
+            )
             else None
         )
 

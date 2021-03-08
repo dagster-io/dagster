@@ -21,6 +21,23 @@ class RepositoryLocationHandleManager:
     def __enter__(self):
         return self
 
+    def reload_handle(self, repository_location_origin, cleanup_existing_handle=True):
+        check.inst_param(
+            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+        )
+        origin_id = repository_location_origin.get_id()
+        existing_handle = self._location_handles.get(origin_id)
+
+        if existing_handle:
+            if cleanup_existing_handle:
+                existing_handle.cleanup()
+            del self._location_handles[origin_id]
+
+        if self._grpc_server_registry.supports_origin(repository_location_origin):
+            self._grpc_server_registry.reload_grpc_endpoint(repository_location_origin)
+
+        return self.get_handle(repository_location_origin)
+
     def get_handle(self, repository_location_origin):
         check.inst_param(
             repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
@@ -52,6 +69,7 @@ class RepositoryLocationHandleManager:
                     host=endpoint.host,
                     heartbeat=True,
                     watch_server=False,
+                    grpc_server_registry=self._grpc_server_registry,
                 )
             )
 
