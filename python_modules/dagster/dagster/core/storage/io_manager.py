@@ -64,6 +64,20 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
+    @staticmethod
+    def hardcoded_io_manager(value, description=None):
+        """A helper function that creates an ``IOManagerDefinition`` with a hardcoded IOManager.
+
+        Args:
+            value (Any): A hardcoded IO Manager which helps mock the definition.
+            description ([Optional[str]]): The description of the IO Manager. Defaults to None.
+
+        Returns:
+            [IOManagerDefinition]: A hardcoded resource.
+        """
+        check.inst_param(value, "value", IOManager)
+        return IOManagerDefinition(resource_fn=lambda _init_context: value, description=description)
+
 
 class IOManager(InputManager, OutputManager):
     """

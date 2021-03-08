@@ -482,3 +482,25 @@ def test_mode_missing_io_manager():
         @pipeline
         def _my_pipeline():
             my_solid()
+
+
+def test_hardcoded_io_manager():
+    @solid
+    def basic_solid(_):
+        return 5
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(InMemoryIOManager())
+                }
+            )
+        ]
+    )
+    def basic_pipeline():
+        basic_solid()
+
+    result = execute_pipeline(basic_pipeline)
+    assert result.success
+    assert result.output_for_solid("basic_solid") == 5
