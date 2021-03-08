@@ -45,10 +45,11 @@ describe('LeftNav', () => {
   };
 
   describe('Repo location errors', () => {
-    it('shows no errors when there are none', async () => {
+    it('does not show warning icon when no errors', async () => {
       render(<Test mocks={defaultMocks} />);
       await waitFor(() => {
-        expect(screen.queryByText(/an error occurred while loading a repository/i)).toBeNull();
+        expect(screen.getByRole('link', {name: /status/i})).toBeVisible();
+        expect(screen.queryByRole('link', {name: /status warnings found/i})).toBeNull();
       });
     });
 
@@ -62,8 +63,7 @@ describe('LeftNav', () => {
 
       render(<Test mocks={mocks} />);
       await waitFor(() => {
-        expect(screen.getByText(/an error occurred while loading a repository/i)).toBeVisible();
-        expect(screen.getByRole('link', {name: /view details/i})).toBeVisible();
+        expect(screen.getByRole('link', {name: /status warnings found/i})).toBeVisible();
       });
     });
   });

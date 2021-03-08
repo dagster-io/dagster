@@ -10,6 +10,7 @@ import {WebsocketStatus} from 'src/app/WebsocketStatus';
 import {DarkTimezonePicker} from 'src/app/time/DarkTimezonePicker';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
+import {InstanceWarningIcon} from 'src/nav/InstanceWarningIcon';
 import {JobsList} from 'src/nav/JobsList';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
@@ -18,31 +19,7 @@ import {VersionNumber} from 'src/nav/VersionNumber';
 import {SearchDialog} from 'src/search/SearchDialog';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
-import {Caption} from 'src/ui/Text';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-
-const KEYCODE_FOR_1 = 49;
-
-const INSTANCE_TABS = [
-  {
-    to: `/instance/runs`,
-    tab: `runs`,
-    icon: <Icon icon="history" iconSize={16} />,
-    label: 'Runs',
-  },
-  {
-    to: `/instance/assets`,
-    tab: `assets`,
-    icon: <Icon icon="panel-table" iconSize={16} />,
-    label: 'Assets',
-  },
-  {
-    to: `/instance`,
-    tab: `instance-status`,
-    icon: <Icon icon="dashboard" iconSize={16} />,
-    label: 'Status',
-  },
-];
 
 const LeftNavRepositorySection = () => {
   const match = useRouteMatch<
@@ -55,9 +32,7 @@ const LeftNavRepositorySection = () => {
     '/:rootTab?',
   ]);
 
-  const {activeRepo, allRepos, loading, locations} = React.useContext(WorkspaceContext);
-
-  const anyErrors = locations.some((node) => node.__typename === 'RepositoryLocationLoadFailure');
+  const {activeRepo, allRepos, loading} = React.useContext(WorkspaceContext);
 
   return (
     <div
@@ -76,20 +51,6 @@ const LeftNavRepositorySection = () => {
       <ApolloConsumer>
         {(client) => <RepositoryLocationStateObserver client={client} />}
       </ApolloConsumer>
-      {anyErrors ? (
-        <Group
-          background={Colors.GOLD5}
-          padding={{vertical: 8, horizontal: 12}}
-          direction="row"
-          spacing={8}
-        >
-          <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
-          <Caption color={Colors.DARK_GRAY3}>
-            An error occurred while loading a repository.{' '}
-            <DetailLink to="/instance/health#repository-locations">View details</DetailLink>
-          </Caption>
-        </Group>
-      ) : null}
       {activeRepo ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
           <RepositoryContentList {...match?.params} repo={activeRepo.repo} />
@@ -102,6 +63,15 @@ const LeftNavRepositorySection = () => {
 
 export const LeftNav = () => {
   const history = useHistory();
+  const runsMatch = useRouteMatch('/instance/runs');
+  const assetsMatch = useRouteMatch('/instance/assets');
+  const statusMatch = useRouteMatch([
+    '/instance/health',
+    '/instance/schedules',
+    '/instance/sensors',
+    '/instance/config',
+  ]);
+
   return (
     <LeftNavContainer>
       <Box padding={{vertical: 8}}>
@@ -137,19 +107,39 @@ export const LeftNav = () => {
             Instance
           </div>
         </Box>
-        {INSTANCE_TABS.map((t, i) => (
-          <ShortcutHandler
-            key={t.tab}
-            onShortcut={() => history.push(t.to)}
-            shortcutLabel={`⌥${i + 1}`}
-            shortcutFilter={(e) => e.keyCode === KEYCODE_FOR_1 + i && e.altKey}
-          >
-            <Tab to={t.to}>
-              {t.icon}
-              <TabLabel>{t.label}</TabLabel>
-            </Tab>
-          </ShortcutHandler>
-        ))}
+        <ShortcutHandler
+          onShortcut={() => history.push('/instance/runs')}
+          shortcutLabel={`⌥1`}
+          shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
+        >
+          <Tab to="/instance/runs" className={!!runsMatch ? 'selected' : ''}>
+            <Icon icon="history" iconSize={16} />
+            <TabLabel>Runs</TabLabel>
+          </Tab>
+        </ShortcutHandler>
+        <ShortcutHandler
+          onShortcut={() => history.push('/instance/assets')}
+          shortcutLabel={`⌥2`}
+          shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
+        >
+          <Tab to="/instance/assets" className={!!assetsMatch ? 'selected' : ''}>
+            <Icon icon="panel-table" iconSize={16} />
+            <TabLabel>Assets</TabLabel>
+          </Tab>
+        </ShortcutHandler>
+        <ShortcutHandler
+          onShortcut={() => history.push('/instance')}
+          shortcutLabel={`⌥3`}
+          shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
+        >
+          <Tab to="/instance" className={!!statusMatch ? 'selected' : ''}>
+            <Icon icon="dashboard" iconSize={16} />
+            <TabLabel>Status</TabLabel>
+            <Box margin={{left: 8}}>
+              <InstanceWarningIcon />
+            </Box>
+          </Tab>
+        </ShortcutHandler>
       </Box>
       <LeftNavRepositorySection />
       <DarkTimezonePicker />
@@ -210,16 +200,5 @@ const LogoContainer = styled.div`
     img {
       filter: brightness(110%);
     }
-  }
-`;
-
-const DetailLink = styled(Link)`
-  color: ${Colors.DARK_GRAY3};
-  text-decoration: underline;
-
-  && :hover,
-  :active,
-  :visited {
-    color: ${Colors.DARK_GRAY1};
   }
 `;

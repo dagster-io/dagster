@@ -74,15 +74,17 @@ describe('App', () => {
       </ApolloTestProvider>,
     );
 
-    const instanceHeader = await screen.findByText('Instance');
-    expect(instanceHeader).toBeVisible();
+    await waitFor(() => {
+      const instanceHeader = screen.getByText(/instance/i);
+      expect(instanceHeader).toBeVisible();
 
-    const [runsLink] = screen.getAllByText('Runs');
-    expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
-    expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
-    expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
+      const [runsLink] = screen.getAllByText('Runs');
+      expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
+      expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
+      expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
 
-    expect(screen.getByText('my_repository')).toBeVisible();
+      expect(screen.getByText('my_repository')).toBeVisible();
+    });
   });
 
   describe('Routes', () => {

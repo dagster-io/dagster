@@ -43,7 +43,7 @@ export const InstanceWarningIcon = React.memo(() => {
     );
     return (
       <WarningTooltip content={content} position="right">
-        <Icon icon="warning-sign" iconSize={12} color={Colors.GOLD3} title="Warnings found" />
+        <Icon icon="warning-sign" iconSize={14} color={Colors.GOLD4} title="Warnings found" />
       </WarningTooltip>
     );
   }
