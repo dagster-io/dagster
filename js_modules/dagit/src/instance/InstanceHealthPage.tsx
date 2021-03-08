@@ -6,6 +6,7 @@ import {DaemonList} from 'src/instance/DaemonList';
 import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
 import {Group} from 'src/ui/Group';
 import {Subheading} from 'src/ui/Text';
+import {ReloadAllButton} from 'src/workspace/ReloadAllButton';
 import {RepositoryLocationsList} from 'src/workspace/RepositoryLocationsList';
 
 interface Props {
@@ -26,7 +27,10 @@ export const InstanceHealthPage = (props: Props) => {
   return (
     <Group direction="column" spacing={32}>
       <Group direction="column" spacing={16}>
-        <Subheading id="repository-locations">Repository locations</Subheading>
+        <Group direction="row" spacing={12} alignItems="center">
+          <Subheading id="repository-locations">Workspace</Subheading>
+          <ReloadAllButton />
+        </Group>
         <RepositoryLocationsList />
       </Group>
       <Group direction="column" spacing={16}>
