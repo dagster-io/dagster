@@ -28,7 +28,7 @@ def instance():
 
 @pytest.fixture()
 def grpc_server_registry(instance):  # pylint: disable=unused-argument
-    with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as registry:
+    with ProcessGrpcServerRegistry() as registry:
         yield registry
 
 

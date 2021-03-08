@@ -32,12 +32,10 @@ def _sorted_quoted(strings):
 
 
 @contextmanager
-def daemon_controller_from_instance(instance, wait_for_processes_on_exit=False):
+def daemon_controller_from_instance(instance):
     check.inst_param(instance, "instance", DagsterInstance)
     with ExitStack() as stack:
-        grpc_server_registry = stack.enter_context(
-            ProcessGrpcServerRegistry(wait_for_processes_on_exit=wait_for_processes_on_exit)
-        )
+        grpc_server_registry = stack.enter_context(ProcessGrpcServerRegistry())
         daemons = [stack.enter_context(daemon) for daemon in create_daemons_from_instance(instance)]
         with DagsterDaemonController(instance, daemons, grpc_server_registry) as controller:
             yield controller

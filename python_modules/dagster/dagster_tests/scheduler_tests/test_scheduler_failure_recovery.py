@@ -22,7 +22,7 @@ from .test_scheduler_run import (
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+            with ProcessGrpcServerRegistry() as grpc_server_registry:
                 with pendulum.test(execution_datetime):
                     list(
                         launch_scheduled_runs(
