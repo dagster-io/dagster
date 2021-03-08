@@ -22,9 +22,9 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), ProcessGrpcServerRegistry(
-                wait_for_processes_on_exit=True
-            ) as grpc_server_registry:
+            with pendulum.test(
+                execution_datetime
+            ), ProcessGrpcServerRegistry() as grpc_server_registry:
                 list(
                     execute_backfill_iteration(
                         instance,

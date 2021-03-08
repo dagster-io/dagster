@@ -36,7 +36,6 @@ def _can_connect(origin, endpoint):
 
 
 def test_process_server_registry():
-
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -45,10 +44,7 @@ def test_process_server_registry():
         ),
     )
 
-    with ProcessGrpcServerRegistry(
-        wait_for_processes_on_exit=True, reload_interval=5, heartbeat_ttl=10
-    ) as registry:
-
+    with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
         with RepositoryLocationManager(registry) as location_manager:
             endpoint_one = registry.get_grpc_endpoint(origin)
             location_one = location_manager.get_location(origin)
@@ -104,8 +100,7 @@ def test_process_server_registry():
                 assert _can_connect(origin, endpoint_four)
                 break
 
-    # Once we leave the ProcessGrpcServerRegistry context, all processes should be cleaned up
-    # (if wait_for_processes_on_exit was set)
+    registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_three)
     assert not _can_connect(origin, endpoint_four)
 
@@ -124,10 +119,7 @@ def test_registry_multithreading():
         ),
     )
 
-    with ProcessGrpcServerRegistry(
-        wait_for_processes_on_exit=True, reload_interval=300, heartbeat_ttl=600
-    ) as registry:
-
+    with ProcessGrpcServerRegistry(reload_interval=300, heartbeat_ttl=600) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
 
         threads = []
@@ -149,4 +141,5 @@ def test_registry_multithreading():
 
         assert _can_connect(origin, endpoint)
 
+    registry.wait_for_processes()
     assert not _can_connect(origin, endpoint)

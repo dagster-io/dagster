@@ -34,13 +34,19 @@ def _sorted_quoted(strings):
 @contextmanager
 def daemon_controller_from_instance(instance, wait_for_processes_on_exit=False):
     check.inst_param(instance, "instance", DagsterInstance)
-    with ExitStack() as stack:
-        grpc_server_registry = stack.enter_context(
-            ProcessGrpcServerRegistry(wait_for_processes_on_exit=wait_for_processes_on_exit)
-        )
-        daemons = [stack.enter_context(daemon) for daemon in create_daemons_from_instance(instance)]
-        with DagsterDaemonController(instance, daemons, grpc_server_registry) as controller:
-            yield controller
+    grpc_server_registry = None
+
+    try:
+        with ExitStack() as stack:
+            grpc_server_registry = stack.enter_context(ProcessGrpcServerRegistry())
+            daemons = [
+                stack.enter_context(daemon) for daemon in create_daemons_from_instance(instance)
+            ]
+            with DagsterDaemonController(instance, daemons, grpc_server_registry) as controller:
+                yield controller
+    finally:
+        if wait_for_processes_on_exit and grpc_server_registry:
+            grpc_server_registry.wait_for_processes()  # pylint: disable=no-member
 
 
 class DagsterDaemonController:

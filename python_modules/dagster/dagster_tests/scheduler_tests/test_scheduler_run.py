@@ -350,7 +350,7 @@ def logger():
 @contextmanager
 def instance_with_schedules(external_repo_context, overrides=None):
     with schedule_instance(overrides) as instance:
-        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+        with ProcessGrpcServerRegistry() as grpc_server_registry:
             with external_repo_context() as external_repo:
                 yield (instance, grpc_server_registry, external_repo)
 
@@ -1156,9 +1156,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
 
 
 def test_bad_load_repository_location(capfd):
-    with schedule_instance() as instance, ProcessGrpcServerRegistry(
-        wait_for_processes_on_exit=True
-    ) as grpc_server_registry:
+    with schedule_instance() as instance, ProcessGrpcServerRegistry() as grpc_server_registry:
         fake_origin = _get_unloadable_schedule_origin()
         initial_datetime = create_pendulum_time(
             year=2019,

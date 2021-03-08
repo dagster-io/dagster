@@ -18,9 +18,9 @@ from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), ProcessGrpcServerRegistry(
-                wait_for_processes_on_exit=True
-            ) as grpc_server_registry:
+            with pendulum.test(
+                execution_datetime
+            ), ProcessGrpcServerRegistry() as grpc_server_registry:
                 with RepositoryLocationManager(grpc_server_registry) as location_manager:
                     list(
                         execute_sensor_iteration(

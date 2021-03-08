@@ -20,9 +20,7 @@ def test_scheduler_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(
-            instance, wait_for_processes_on_exit=True
-        ) as controller:
+        with daemon_controller_from_instance(instance) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 3
@@ -39,9 +37,7 @@ def test_run_coordinator_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(
-            instance, wait_for_processes_on_exit=True
-        ) as controller:
+        with daemon_controller_from_instance(instance) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 4
@@ -113,7 +109,7 @@ def test_different_intervals(caplog):
         }
     ) as instance:
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
+        with daemon_controller_from_instance(instance):
             while True:
                 now = pendulum.now("UTC")
                 # Wait until the run coordinator has run three times

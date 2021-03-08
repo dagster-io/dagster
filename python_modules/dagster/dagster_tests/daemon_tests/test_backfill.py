@@ -167,7 +167,7 @@ def repos():
 @contextmanager
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+        with ProcessGrpcServerRegistry() as grpc_server_registry:
             with external_repo_context() as external_repo:
                 yield (instance, grpc_server_registry, external_repo)
 

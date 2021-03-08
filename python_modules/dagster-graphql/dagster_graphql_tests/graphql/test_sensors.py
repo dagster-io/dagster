@@ -271,7 +271,7 @@ def test_sensor_next_ticks(graphql_context):
 
 
 def _create_tick(instance):
-    with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
+    with ProcessGrpcServerRegistry() as grpc_server_registry:
         with RepositoryLocationManager(grpc_server_registry) as location_manager:
             list(
                 execute_sensor_iteration(
