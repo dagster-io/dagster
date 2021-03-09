@@ -7,54 +7,53 @@ description: IO Managers determine how to store solid outputs and load solid inp
 
 IO Managers are user-provided objects that store solid outputs and load them as inputs to downstream solids.
 
-<div className="w-full h-48 bg-gray-50 flex items-center justify-center">
-  TODO diagram: a pipeline, several solids, io managers between solids and point
-  to storage.
-</div>
+<p align="center">
+  <img src="/images/concepts/io-managers-main-diagram.png" />
+</p>
+
+<!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
 
 ## Relevant APIs
 
-| Name                                                                        | Description                                          |
-| --------------------------------------------------------------------------- | ---------------------------------------------------- |
-| <PyObject module="dagster" object="io_manager" displayText="@io_manager" /> | The decorated function used to define an IO manager. |
-| <PyObject module="dagster" object="IOManager" />                            | Base class for user-provided IO managers.            |
+| Name                                                        | Description                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------- |
+| <PyObject module="dagster" object="io_manager" decorator /> | A decorator used to define IO managers.              |
+| <PyObject module="dagster" object="IOManager" />            | Base class for user-provided IO managers.            |
 
 ## Overview
 
-Dagster solids have [inputs and outputs](/concepts/solids-pipelines/solids#inputs-and-outputs).
-When a solid produces an output, what happens to it? When a solid needs an input, how is it loaded?
+Dagster solids have [inputs and outputs](/concepts/solids-pipelines/solids#inputs-and-outputs). When
+a solid returns an output and a downstream solid takes that output as an input, where does the data
+live in between? <PyObject module="dagster" object="IOManager" pluralize /> let the user decide.
 
-There are different ways you can use inputs and outputs in Dagster:
-
-- **Solid outputs are connected to downstream inputs**: in this case, <PyObject module="dagster" object="IOManager" />s
-  let you decide how solid outputs are stored and loaded in downstream solids.
-- **Solid inputs are unconnected**: <PyObject module="dagster" object="DagsterTypeLoader" />s
-  and <PyObject module="dagster" object="RootInputManager" />s (experimental) let you decide how
-  inputs at the beginning of a pipeline are loaded. More information can be found
-  in [Unconnected Inputs](/concepts/io-management/unconnected-inputs).
-
-These APIs make it easy separate code that's responsible for logical data transformation from code
+The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code
 that's responsible for reading and writing the results. Solids can focus on business logic, while IO
 managers handle I/O. This separation makes it easier to test the business logic and run it in
 different environments.
 
-This page will focus on cases where solid outputs are connected to downstream inputs.
+Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview
+covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and <PyObject module="dagster" object="RootInputManager" pluralize /> (experimental), which let you decide how
+inputs at the beginning of a pipeline are loaded.
 
 ### Outputs and downstream inputs
 
-<PyObject module="dagster" object="IOManager" />s are user-provided objects that
+<PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects that
 are responsible for storing the output of a solid and loading it as input to
 downstream solids. For example, an IO Manager might store and load objects from
-files on a filesystem. Each solid output can have its own IOManager, or multiple
+files on a filesystem.
+
+Each solid output can have its own IOManager, or multiple
 solid outputs can share an IOManager. The IOManager that's used for handling a
 particular solid output is automatically used for loading it in downstream
 solids.
 
-I.e. an IOManager handles the teal boxes:
+This diagram shows a pipeline with two IO managers, each of which is shared across a few inputs
+and outputs.  The green inputs and outputs use the green IO manager, and the yellow inputs and
+outputs use the yellow IO manager.
 
-<p align="center">
-  <img src="/images/concepts/io-managers.png" />
-</p>
+<img src="/images/concepts/two-io-managers.png" />
+
+<!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
 
 The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in
 memory, but this only works for the single process executor. Dagster provides out-of-the-box
@@ -68,28 +67,6 @@ different IOManagers for the same solid outputs in different situations. For exa
 an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 
 ---
-
-## Defining an IO manager
-
-Beside the out-of-the-box IO Managers, you can also define IO Managers on your own.
-
-To define an IO manager, use the <PyObject module="dagster" object="io_manager" displayText="@io_manager" /> decorator.
-
-```python
-class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
-        write_csv("some/path")
-
-    def load_input(self, context):
-        return read_csv("some/path")
-
-@io_manager
-def my_io_manager(init_context):
-    return MyIOManager()
-```
-
-You can find more information about customizing an IO manager in
-the [Example](#providing-a-custom-io-manager) section below.
 
 ## Using an IO manager
 
@@ -159,13 +136,45 @@ def my_pipeline():
     solid2(solid1())
 ```
 
-## Examples
-
-### Providing a custom IO manager
+## Defining an IO manager
 
 If you have specific requirements for where and how your outputs should be stored and retrieved, you
-can define your own IOManager. For example, if your solids produce Pandas DataFrames that populate
-tables in a data warehouse, you might write the following:
+can define your own IOManager. This boils down to implementing two functions: one that stores outputs
+and one that loads inputs.
+
+To define an IO manager, use the <PyObject module="dagster" object="io_manager" displayText="@io_manager" /> decorator.
+
+```python
+class MyIOManager(IOManager):
+    def handle_output(self, context, obj):
+        write_csv("some/path")
+
+    def load_input(self, context):
+        return read_csv("some/path")
+
+@io_manager
+def my_io_manager(init_context):
+    return MyIOManager()
+```
+
+The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to
+the <PyObject module="dagster" object="resource" /> decorator. It yields
+an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass
+of <PyObject module="dagster" object="ResourceDefinition" /> that will produce
+an <PyObject module="dagster" object="IOManager" />.
+
+The provided `context` argument for `handle_output` is
+an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for
+`load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation
+lists all the fields that are available on these objects.
+
+## Examples
+
+### A custom IO manager that stores Pandas DataFrames in tables
+
+If your solids produce Pandas DataFrames that populate tables in a data warehouse, you might write
+something like the following. This IO manager uses the name assigned to the output as the name of
+the table to write the output to.
 
 ```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster import IOManager, ModeDefinition, io_manager, pipeline
@@ -192,17 +201,6 @@ def df_table_io_manager(_):
 def my_pipeline():
     solid2(solid1())
 ```
-
-The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to
-the <PyObject module="dagster" object="resource" /> decorator. It yields
-an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass
-of <PyObject module="dagster" object="ResourceDefinition" /> that will produce
-an <PyObject module="dagster" object="IOManager" />.
-
-The provided `context` argument for `handle_output` is
-an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for
-`load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation
-lists all the fields that are available on these objects.
 
 ### Providing per-output config to an IO manager
 
@@ -296,8 +294,41 @@ def my_io_manager(_):
     return MyIOManager()
 ```
 
-## Testing an IO Manager
+## Testing an IO manager
 
-<div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-  TODO
-</div>
+The easiest way to test an IO manager is to construct an <PyObject module="dagster" object="OutputContext" />
+or <PyObject module="dagster" object="InputContext" /> and pass it to the `handle_output` or
+`load_input` method of the IO manager.
+
+Here's an example for a simple IO manager that stores outputs in an in-memory dictionary
+that's keyed on the step and name of the output.
+
+```python file=/concepts/io_management/test_io_manager.py
+from dagster import IOManager, InputContext, OutputContext
+
+
+class MyIOManager(IOManager):
+    def __init__(self):
+        self.storage_dict = {}
+
+    def handle_output(self, context, obj):
+        self.storage_dict[(context.step_key, context.name)] = obj
+
+    def load_input(self, context):
+        return self.storage_dict[(context.upstream_output.step_key, context.upstream_output.name)]
+
+
+def test_my_io_manager_handle_output():
+    my_io_manager = MyIOManager()
+    context = OutputContext(name="abc", step_key="123")
+    my_io_manager.handle_output(context, 5)
+    assert my_io_manager.storage_dict[("123", "abc")] == 5
+
+
+def test_my_io_manager_load_input():
+    my_io_manager = MyIOManager()
+    my_io_manager.storage_dict[("123", "abc")] = 5
+
+    context = InputContext(upstream_output=OutputContext(name="abc", step_key="123"))
+    assert my_io_manager.load_input(context) == 5
+```
