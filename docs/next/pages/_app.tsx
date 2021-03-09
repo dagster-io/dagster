@@ -1,6 +1,9 @@
 import "../styles/globals.css";
 import "../styles/prism.css";
 
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import * as gtag from "../util/gtag";
 import type { AppProps } from "next/app";
 import { DefaultSeo } from "next-seo";
 import Layout from "../layouts/MainLayout";
@@ -37,11 +40,23 @@ const DEFAULT_SEO = {
 };
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
   const { asPath } = useVersion();
+
   const getLayout =
     // @ts-ignore
     Component.getLayout || ((page) => <Layout children={page} />);
   const canonicalUrl = `${BASE_URL}${asPath}`;
+
+  useEffect(() => {
+    const handleRouteChange = (url) => {
+      gtag.pageview(url);
+    };
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events]);
 
   return (
     <>
