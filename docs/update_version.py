@@ -23,7 +23,7 @@ def write_json(filename, data):
 @click.option("--version", required=True, help="Version to release")
 @click.option("--overwrite", is_flag=True, help="Overwrite an existing version")
 def main(version, overwrite):
-    content_directory = file_relative_path(__file__, "next/content")
+    content_directory = file_relative_path(__file__, "./content")
     versioned_content_directory = file_relative_path(__file__, "next/.versioned_content")
 
     # Create version
@@ -39,7 +39,7 @@ def main(version, overwrite):
             "Are you sure you want to overwrite version {}? This is a dangerous action, make sure "
             "that the docs haven't drifted from the version that you are attempting to overwrite. "
             "It is okay if there is an error in old docs, it can be fixed in future releases.\n\n"
-            "Enter the versld;fkjasion number to continue "
+            "Enter the version number to continue "
         )
 
         if value == version:
@@ -61,14 +61,20 @@ def main(version, overwrite):
     for (root, _, files) in os.walk(versioned_content_directory):
         for filename in files:
             if filename == "_navigation.json":
-                version = root.split("/")[-1]
+                curr_version = root.split("/")[-1]
                 data = read_json(os.path.join(root, filename))
-                versioned_navigation[version] = data
+                versioned_navigation[curr_version] = data
 
     write_json(
         os.path.join(versioned_content_directory, "_versioned_navigation.json"),
         versioned_navigation,
     )
+
+    # Update versions file
+    versions = read_json(os.path.join(versioned_content_directory, "_versions.json"))
+    if version not in versions:
+        versions.append(version)
+    write_json(os.path.join(versioned_content_directory, "_versions.json"), versions)
 
 
 if __name__ == "__main__":

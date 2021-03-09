@@ -1,9 +1,9 @@
-const ALL_VERSIONS = ["master"];
-const defaultVersion = "master";
+import { useEffect, useState } from "react";
 
-import React, { useEffect, useState } from "react";
-
+import ALL_VERSIONS from "../.versioned_content/_versions.json";
 import { useRouter } from "next/router";
+
+const defaultVersion = "master";
 
 export function normalizeVersionPath(
   asPath: string,

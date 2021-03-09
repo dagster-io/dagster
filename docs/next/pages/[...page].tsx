@@ -224,7 +224,7 @@ export default function MdxPage(props: Props) {
 
 const basePathForVersion = (version: string) => {
   if (version === "master") {
-    return path.resolve("content");
+    return path.resolve("../content");
   }
 
   return path.resolve(".versioned_content", version);
@@ -317,7 +317,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const pathToMdxFile = path.join(basePath, "/", asPath + ".mdx");
   const githubLink = new URL(
     path.join(
-      "dagster-io/dagster/tree/0110-docs/docs/next/content",
+      "dagster-io/dagster/tree/master/docs/content",
       "/",
       asPath + ".mdx"
     ),

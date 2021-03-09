@@ -4,19 +4,27 @@ This folder contains the code for the Dagster documentation site at https://docs
 
 ## Getting Started
 
-First, run the development server in the `next/` directory:
+To install the dependencies required to run the docs, run the following in the `/docs` directory:
 
-```bash
-npm run dev
-# or
-yarn dev
+```
+make docs_dev_install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then, run the developer server in the same `/docs` directory:
 
-Note: if it's your first time building the site locally or you want to re-build it, you will need to run `yarn` beforehand. 
+```
+make dev
+```
 
-----
+Open http://localhost:3000 with your browser to see the result.
+
+All content is in the `/content` folder.
+
+**_Try it out_**
+
+Open http://localhost:3000/concepts/solids-pipelines/solids in your browser, and the file `/content/concepts/solid-pipelines/solids.mdx` in your editor. Try editing the file and see your changes be reflected live in the browser.
+
+---
 
 ## Writing Documentation
 
@@ -57,15 +65,14 @@ To include snippets from the code base, you can provide additional properties to
 
 Using markers:
 
-    ```python file=/overview/solids_pipelines/solid_definition.py startafter=start_solid_definition_marker_0 endbefore=end_solid_definition_marker_0
+    ```python file=/concepts/solids_pipelines/solid_definition.py startafter=start_solid_definition_marker_0 endbefore=end_solid_definition_marker_0
     ```
 
 **Render:**
 
 Run `yarn snapshot` to actually get the snipets to render. . This will replace the body of the code block with the code you referenced.
 
-**Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `yarn snapshot` once you update the underlying code to see the changes in the doc site. *This behavior is different from previous versions of the site.*
-
+**Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `yarn snapshot` once you update the underlying code to see the changes in the doc site. _This behavior is different from previous versions of the site._
 
 **Properties:**
 
@@ -73,9 +80,9 @@ Run `yarn snapshot` to actually get the snipets to render. . This will replace t
 - **`startafter`** and **`endbefore`**: Use this property to specify a code snippet in between to makers. You will need to include the markers in the source file as comments.
 - **`lines`**: (This is highly discouraged) Use this property to specify a range of lines to include in the code snippet. You can also pass multiple ranges separated by commas.
 
-    For example:
+  For example:
 
-        ```python file=/overview/solids_pipelines/solid_definition.py lines=1-10,12
+        ```python file=/concepts/solids_pipelines/solid_definition.py lines=1-10,12
         ```
 
 - **`trim=true`**: Sometimes, our Python formatter `black` gets in the way and adds some spacing before the end of your snippet and the `endbefore` marker comment. Use trim to get rid of any extra newlines.
@@ -95,7 +102,7 @@ Here are the available components we built to use in MDX:
 - Warning
 - CodeReferenceLink
 
-See more details in in the `/components/MDXComponents` file.
+See more details in the `/components/MDXComponents` file.
 
 **PyObject Component**
 
@@ -112,4 +119,4 @@ By default, we just display the object name. To override, use the `displayText` 
 
 ### Navigation
 
-If you are adding a new page or want to update the navigation in the sidebar, update the `docs/next/content/_navigation.json` file.
+If you are adding a new page or want to update the navigation in the sidebar, update the `docs/content/_navigation.json` file.

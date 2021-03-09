@@ -10,7 +10,7 @@ import { parse as yaml } from "yaml";
 
 // Main
 (async () => {
-  const stream = fg.stream(["./content/**/*.mdx"]);
+  const stream = fg.stream(["../content/**/*.mdx"]);
 
   let stats: Stats = { totalSnapshots: 0, updatedSnapshots: [] };
   const setStats = (newStats: Stats) => {
