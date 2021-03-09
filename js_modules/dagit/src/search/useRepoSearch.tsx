@@ -32,7 +32,7 @@ const repositoryDataToSearchResults = (data?: SearchBootstrapQuery) => {
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
-        const {name, pipelines, schedules, sensors} = repo;
+        const {name, partitionSets, pipelines, schedules, sensors} = repo;
         const {name: locationName} = repoLocation;
         const repoAddress = `${name}@${locationName}`;
 
@@ -60,7 +60,19 @@ const repositoryDataToSearchResults = (data?: SearchBootstrapQuery) => {
           type: SearchResultType.Sensor,
         }));
 
-        return [...inner, ...allPipelines, ...allSchedules, ...allSensors];
+        const allPartitionSets = partitionSets.map((partitionSet) => ({
+          key: `${repoAddress}-${partitionSet.name}`,
+          label: partitionSet.name,
+          description: manyRepos ? `Partition set in ${repoAddress}` : 'Partition set',
+          href: workspacePath(
+            name,
+            locationName,
+            `/pipelines/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
+          ),
+          type: SearchResultType.PartitionSet,
+        }));
+
+        return [...inner, ...allPipelines, ...allSchedules, ...allSensors, ...allPartitionSets];
       }, []),
     ];
   }, []);
@@ -110,6 +122,7 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                 partitionSets {
                   id
                   name
+                  pipelineName
                 }
               }
             }

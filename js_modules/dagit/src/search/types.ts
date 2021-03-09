@@ -1,6 +1,7 @@
 export enum SearchResultType {
   Asset,
   Page,
+  PartitionSet,
   Pipeline,
   Repository,
   Run,

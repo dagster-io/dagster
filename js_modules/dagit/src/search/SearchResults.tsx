@@ -10,6 +10,8 @@ const iconForType = (type: SearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
       return 'th';
+    case SearchResultType.PartitionSet:
+      return 'time';
     case SearchResultType.Pipeline:
       return 'diagram-tree';
     case SearchResultType.Repository:

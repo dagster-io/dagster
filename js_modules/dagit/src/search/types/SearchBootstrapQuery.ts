@@ -38,6 +38,7 @@ export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocat
   __typename: "PartitionSet";
   id: string;
   name: string;
+  pipelineName: string;
 }
 
 export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories {
