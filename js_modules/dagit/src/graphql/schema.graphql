@@ -414,6 +414,7 @@ type Asset {
   key: AssetKey!
   assetMaterializations(partitions: [String], cursor: String, limit: Int): [AssetMaterialization!]!
   runs(cursor: String, limit: Int): [PipelineRun!]!
+  tags: [AssetTag!]!
 }
 
 type AssetMaterialization {
@@ -492,6 +493,11 @@ union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError | PythonError
 type PipelineRunNotFoundError implements Error {
   message: String!
   runId: String!
+}
+
+type AssetTag {
+  key: String!
+  value: String!
 }
 
 type Schedule {

@@ -13,7 +13,13 @@ def get_assets(graphene_info, prefix_path):
     instance = graphene_info.context.instance
 
     asset_keys = instance.all_asset_keys(prefix_path=prefix_path)
-    return GrapheneAssetConnection(nodes=[GrapheneAsset(key=asset_key) for asset_key in asset_keys])
+    asset_tags_by_key = instance.all_asset_tags()
+    return GrapheneAssetConnection(
+        nodes=[
+            GrapheneAsset(key=asset_key, tags=asset_tags_by_key.get(asset_key, {}))
+            for asset_key in asset_keys
+        ]
+    )
 
 
 def get_asset(graphene_info, asset_key):
@@ -26,7 +32,8 @@ def get_asset(graphene_info, asset_key):
     if not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
-    return GrapheneAsset(key=asset_key)
+    tags = instance.get_asset_tags(asset_key)
+    return GrapheneAsset(key=asset_key, tags=tags)
 
 
 def get_asset_events(graphene_info, asset_key, partitions=None, cursor=None, limit=None):

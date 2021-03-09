@@ -38,7 +38,7 @@ from ..solids import (
     build_solid_handles,
     build_solids,
 )
-from ..tags import GraphenePipelineTag
+from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
@@ -87,9 +87,15 @@ class GrapheneAsset(graphene.ObjectType):
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
+    tags = non_null_list(GrapheneAssetTag)
 
     class Meta:
         name = "Asset"
+
+    def __init__(self, key, tags=None):
+        super().__init__(key=key)
+        check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        self._tags = tags
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ...implementation.fetch_assets import get_asset_events
@@ -133,6 +139,20 @@ class GrapheneAsset(graphene.ObjectType):
                 filters=PipelineRunsFilter(run_ids=run_ids)
             )
         ]
+
+    def resolve_tags(self, graphene_info):
+        from ...implementation.fetch_assets import get_asset_events
+
+        if self._tags is not None:
+            tags = self._tags
+        else:
+            events = get_asset_events(graphene_info, self.key, limit=1)
+            tags = (
+                events[0].dagster_event.step_materialization_data.materialization.tags or {}
+                if events
+                else {}
+            )
+        return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
 class GraphenePipelineRun(graphene.ObjectType):

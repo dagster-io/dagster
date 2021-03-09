@@ -205,6 +205,12 @@ def solid_partitioned_asset(_):
     yield Output(1)
 
 
+@solid
+def tag_asset_solid(_):
+    yield AssetMaterialization(asset_key="a", tags={"foo": "FOO"})
+    yield Output(1)
+
+
 @pipeline
 def single_asset_pipeline():
     solid_asset_a()
@@ -218,6 +224,11 @@ def multi_asset_pipeline():
 @pipeline
 def partitioned_asset_pipeline():
     solid_partitioned_asset()
+
+
+@pipeline
+def asset_tag_pipeline():
+    tag_asset_solid()
 
 
 @pipeline
@@ -1119,6 +1130,7 @@ def empty_repo():
 
 def define_pipelines():
     return [
+        asset_tag_pipeline,
         composites_pipeline,
         csv_hello_world_df_input,
         csv_hello_world_two,

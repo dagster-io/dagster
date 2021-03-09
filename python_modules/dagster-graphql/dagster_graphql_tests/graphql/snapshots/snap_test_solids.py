@@ -1036,6 +1036,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'tag_asset_solid'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'asset_tag_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'tag_asset_solid'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'takes_an_enum'
                 },
                 'invocations': [

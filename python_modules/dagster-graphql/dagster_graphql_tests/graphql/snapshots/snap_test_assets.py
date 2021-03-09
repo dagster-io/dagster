@@ -6,6 +6,66 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['TestAssetAwareEventLog.test_asset_tags[asset_aware_instance_in_process_env] 1'] = {
+    'assetOrError': {
+        'assetMaterializations': [
+            {
+                'materializationEvent': {
+                    'materialization': {
+                        'label': 'a'
+                    }
+                }
+            }
+        ],
+        'tags': [
+            {
+                'key': 'foo',
+                'value': 'FOO'
+            }
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_asset_tags[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetOrError': {
+        'assetMaterializations': [
+            {
+                'materializationEvent': {
+                    'materialization': {
+                        'label': 'a'
+                    }
+                }
+            }
+        ],
+        'tags': [
+            {
+                'key': 'foo',
+                'value': 'FOO'
+            }
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_asset_tags[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetOrError': {
+        'assetMaterializations': [
+            {
+                'materializationEvent': {
+                    'materialization': {
+                        'label': 'a'
+                    }
+                }
+            }
+        ],
+        'tags': [
+            {
+                'key': 'foo',
+                'value': 'FOO'
+            }
+        ]
+    }
+}
+
 snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[asset_aware_instance_in_process_env] 1'] = {
     'assetOrError': {
         'assetMaterializations': [
@@ -16,6 +76,24 @@ snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[asset_aware
                     }
                 }
             }
+        ],
+        'tags': [
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetOrError': {
+        'assetMaterializations': [
+            {
+                'materializationEvent': {
+                    'materialization': {
+                        'label': 'a'
+                    }
+                }
+            }
+        ],
+        'tags': [
         ]
     }
 }
@@ -30,11 +108,19 @@ snapshots['TestAssetAwareEventLog.test_get_asset_key_materialization[sqlite_with
                     }
                 }
             }
+        ],
+        'tags': [
         ]
     }
 }
 
 snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[asset_aware_instance_in_process_env] 1'] = {
+    'assetOrError': {
+        '__typename': 'AssetNotFoundError'
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
     'assetOrError': {
         '__typename': 'AssetNotFoundError'
     }
@@ -47,6 +133,35 @@ snapshots['TestAssetAwareEventLog.test_get_asset_key_not_found[sqlite_with_defau
 }
 
 snapshots['TestAssetAwareEventLog.test_get_asset_keys[asset_aware_instance_in_process_env] 1'] = {
+    'assetsOrError': {
+        '__typename': 'AssetConnection',
+        'nodes': [
+            {
+                'key': {
+                    'path': [
+                        'a'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'b'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'c'
+                    ]
+                }
+            }
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_asset_keys[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
     'assetsOrError': {
         '__typename': 'AssetConnection',
         'nodes': [
@@ -119,6 +234,21 @@ snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization
     }
 }
 
+snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetOrError': {
+        'assetMaterializations': [
+            {
+                'materializationEvent': {
+                    'materialization': {
+                        'label': 'a'
+                    }
+                },
+                'partition': 'partition_1'
+            }
+        ]
+    }
+}
+
 snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
     'assetOrError': {
         'assetMaterializations': [
@@ -135,6 +265,21 @@ snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization
 }
 
 snapshots['TestAssetAwareEventLog.test_get_prefixed_asset_keys[asset_aware_instance_in_process_env] 1'] = {
+    'assetsOrError': {
+        '__typename': 'AssetConnection',
+        'nodes': [
+            {
+                'key': {
+                    'path': [
+                        'a'
+                    ]
+                }
+            }
+        ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_get_prefixed_asset_keys[postgres_with_default_run_launcher_managed_grpc_env] 1'] = {
     'assetsOrError': {
         '__typename': 'AssetConnection',
         'nodes': [

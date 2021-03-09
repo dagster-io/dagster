@@ -30,6 +30,10 @@ GET_ASSET_MATERIALIZATION = """
                         }
                     }
                 }
+                tags {
+                    key
+                    value
+                }
             }
             ... on AssetNotFoundError {
                 __typename
@@ -185,3 +189,13 @@ class TestAssetAwareEventLog(
 
         asset_keys = graphql_context.instance.all_asset_keys()
         assert AssetKey("a") not in asset_keys
+
+    def test_asset_tags(self, graphql_context, snapshot):
+        _create_run(graphql_context, "asset_tag_pipeline")
+        result = execute_dagster_graphql(
+            graphql_context, GET_ASSET_MATERIALIZATION, variables={"assetKey": {"path": ["a"]}}
+        )
+        assert result.data
+        assert result.data["assetOrError"]
+        assert result.data["assetOrError"]["tags"]
+        snapshot.assert_match(result.data)

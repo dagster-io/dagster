@@ -1049,6 +1049,13 @@ class DagsterInstance:
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
 
+    def all_asset_tags(self):
+        return self._event_storage.all_asset_tags()
+
+    def get_asset_tags(self, asset_key):
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        return self._event_storage.get_asset_tags(asset_key)
+
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
