@@ -16,18 +16,22 @@ import styled from 'styled-components';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {featureEnabled, FeatureFlag} from 'src/app/Util';
 import {AssetWipeDialog} from 'src/assets/AssetWipeDialog';
+import {AssetsFilter, filterAssets} from 'src/assets/AssetsFilter';
 import {
   AssetsTableQuery,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes_key,
+  AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags,
 } from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {Box} from 'src/ui/Box';
 import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
+import {Tag} from 'src/ui/Tag';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 type AssetKey = AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
+type AssetTag = AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags;
 
 export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}> = ({
   prefixPath,
@@ -55,7 +59,10 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}
                   prefixPath.every((part: string, i: number) => part === asset.key.path[i]),
               )
             : assetsOrError.nodes;
-          const matching = assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
+          const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
+          const matching = isFlattened
+            ? filterAssets(assets, q)
+            : assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
 
           if (!assets.length) {
             return (
@@ -88,12 +95,12 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}
 
           return (
             <Wrapper>
-              {featureEnabled(FeatureFlag.DirectoryAssetCatalog) ? (
-                <AssetSearch assets={allAssets} />
+              {isFlattened ? (
+                <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
               ) : (
-                <AssetFilter assets={assets} query={q} onSetQuery={setQ} />
+                <AssetSearch assets={allAssets} />
               )}
-              <AssetsTable assets={matching} currentPath={prefixPath || []} />
+              <AssetsTable assets={matching} currentPath={prefixPath || []} setQuery={setQ} />
             </Wrapper>
           );
         }}
@@ -108,68 +115,6 @@ const matches = (haystack: string, needle: string) =>
     .split(' ')
     .filter((x) => x)
     .every((word) => haystack.toLowerCase().includes(word));
-
-const AssetFilter = ({
-  assets,
-  query,
-  onSetQuery,
-}: {
-  assets: Asset[];
-  query: string | undefined;
-  onSetQuery: (query: string) => void;
-}) => {
-  const [highlight, setHighlight] = React.useState<number>(0);
-  const history = useHistory();
-  const matching = assets.filter((asset) => !query || matches(asset.key.path.join('/'), query));
-
-  const selectOption = (asset: Asset) => {
-    history.push(`/instance/assets/${asset.key.path.map(encodeURIComponent).join('/')}`);
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<any>) => {
-    // Enter and Return confirm the currently selected suggestion or
-    // confirm the freeform text you've typed if no suggestions are shown.
-    if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
-      if (matching.length) {
-        const picked = matching[highlight];
-        if (!picked) {
-          throw new Error('Selection out of sync with suggestions');
-        }
-        selectOption(picked);
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      return;
-    }
-
-    // Escape closes the options. The options re-open if you type another char or click.
-    if (e.key === 'Escape') {
-      setHighlight(0);
-      return;
-    }
-
-    const lastResult = matching.length - 1;
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setHighlight(highlight === 0 ? lastResult : highlight - 1);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setHighlight(highlight === lastResult ? 0 : highlight + 1);
-    }
-  };
-
-  return (
-    <InputGroup
-      type="text"
-      value={query}
-      width={300}
-      fill={false}
-      placeholder={`Filter asset_keys...`}
-      onChange={(e: React.ChangeEvent<any>) => onSetQuery(e.target.value)}
-      onKeyDown={onKeyDown}
-    />
-  );
-};
 
 const AssetSearch = ({assets}: {assets: Asset[]}) => {
   const history = useHistory();
@@ -268,9 +213,27 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   );
 };
 
-const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: string[]}) => {
+const AssetsTable = ({
+  assets,
+  currentPath,
+  setQuery,
+}: {
+  assets: Asset[];
+  currentPath: string[];
+  setQuery: (q: string) => void;
+}) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
   const [toWipe, setToWipe] = React.useState<AssetKey | undefined>();
+  const sorted = React.useMemo(
+    () =>
+      [...assets].sort((a, b) =>
+        a.key.path
+          .join('/')
+          .toLocaleLowerCase()
+          .localeCompare(b.key.path.join('/').toLocaleLowerCase()),
+      ),
+    [assets],
+  );
   const removeAsset = () => {
     setToWipe(undefined);
   };
@@ -317,24 +280,17 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
     );
   }
 
-  const sorted = assets.sort((a, b) => {
-    const astr = a.key.path.join('/');
-    const bstr = b.key.path.join('/');
-    if (astr < bstr) {
-      return -1;
-    }
-    if (bstr < astr) {
-      return 1;
-    }
-    return 0;
-  });
+  const onClick = (tag: AssetTag) => {
+    setQuery(`tag:${tag.key}=${tag.value}`);
+  };
 
   return (
-    <>
+    <Box margin={{top: 20}}>
       <Table>
         <thead>
           <tr>
             <th>Asset Key</th>
+            <th>Tags</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -357,6 +313,15 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
                         ])}
                     </Box>
                   </Link>
+                </td>
+                <td>
+                  {asset.tags.length ? (
+                    <Box flex={{direction: 'row', wrap: 'wrap'}}>
+                      {asset.tags.map((tag, idx) => (
+                        <Tag tag={tag} key={idx} onClick={() => onClick(tag)} />
+                      ))}
+                    </Box>
+                  ) : null}
                 </td>
                 <td>
                   <Popover
@@ -386,7 +351,7 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
         onComplete={removeAsset}
         requery={(_) => [{query: ASSETS_TABLE_QUERY}]}
       />
-    </>
+    </Box>
   );
 };
 
@@ -408,6 +373,10 @@ const ASSETS_TABLE_QUERY = gql`
         nodes {
           key {
             path
+          }
+          tags {
+            key
+            value
           }
         }
       }

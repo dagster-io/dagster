@@ -13,9 +13,16 @@ export interface AssetsTableQuery_assetsOrError_AssetConnection_nodes_key {
   path: string[];
 }
 
+export interface AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags {
+  __typename: "AssetTag";
+  key: string;
+  value: string;
+}
+
 export interface AssetsTableQuery_assetsOrError_AssetConnection_nodes {
   __typename: "Asset";
   key: AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
+  tags: AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags[];
 }
 
 export interface AssetsTableQuery_assetsOrError_AssetConnection {
