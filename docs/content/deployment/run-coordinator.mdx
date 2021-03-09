@@ -41,11 +41,9 @@ You can place limits on the number of runs that can be in progress at a single t
 
 If any limit would be exceeded by launching a run, then the run will stay queued.
 
-For example:
+For example, you can add the following to your dagster.yaml:
 
 ```yaml
-# dagster.yaml
----
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
