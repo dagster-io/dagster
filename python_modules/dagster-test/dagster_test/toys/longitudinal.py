@@ -43,16 +43,16 @@ def growth_rate(partition_date):
     return sigmoid(weeks_since_init - 4)  # make some sort of S-curve
 
 
-def traffic_data_size(partition_date):
+def users_data_size(partition_date):
     return TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate(partition_date)
 
 
-def cost_data_size(partition_date):
+def video_views_data_size(partition_date):
     return 3000 + 1000 * math.log(10000 * growth_rate(partition_date), 10)
 
 
 def combined_data_size(partition_date):
-    return traffic_data_size(partition_date) * cost_data_size(partition_date)
+    return users_data_size(partition_date) * video_views_data_size(partition_date)
 
 
 def make_solid(
@@ -100,61 +100,50 @@ def make_solid(
 
 @pipeline(
     description=(
-        "Demo pipeline that simulates growth of execution-time and data-throughput of a data pipeline "
-        "following a sigmoidal curve"
+        "Demo pipeline that simulates updating tables of users and video views and training a "
+        "video recommendation model. The growth of execution-time and data-throughput follows"
+        "a sigmoidal curve."
     ),
     mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
 )
 def longitudinal_pipeline():
-    ingest_costs = make_solid(
-        "ingest_costs", error_rate=0.15, sleep_factor=SLEEP_INGEST, data_size_fn=cost_data_size
+    ingest_raw_video_views = make_solid(
+        "ingest_raw_video_views",
+        asset_key="raw_video_views",
+        error_rate=0.15,
+        sleep_factor=SLEEP_INGEST,
+        data_size_fn=video_views_data_size,
     )
-    persist_costs = make_solid(
-        "persist_costs",
-        asset_key="cost_db_table",
+    update_video_views_table = make_solid(
+        "update_video_views_table",
+        asset_key="video_views",
         has_input=True,
         error_rate=0.01,
         sleep_factor=SLEEP_PERSIST,
-        data_size_fn=cost_data_size,
+        data_size_fn=video_views_data_size,
     )
-    ingest_traffic = make_solid(
-        "ingest_traffic", error_rate=0.1, sleep_factor=SLEEP_INGEST, data_size_fn=traffic_data_size
+    ingest_raw_users = make_solid(
+        "ingest_raw_users",
+        "raw_users",
+        error_rate=0.1,
+        sleep_factor=SLEEP_INGEST,
+        data_size_fn=users_data_size,
     )
-    persist_traffic = make_solid(
-        "persist_traffic",
-        asset_key="traffic_db_table",
+    update_users_table = make_solid(
+        "update_users_table",
+        asset_key="users",
         has_input=True,
         sleep_factor=SLEEP_PERSIST,
-        data_size_fn=traffic_data_size,
+        data_size_fn=users_data_size,
         error_rate=0.01,
     )
-    build_model = make_solid(
-        "build_model", has_input=True, sleep_factor=SLEEP_BUILD, data_size_fn=combined_data_size
-    )
-    train_model = make_solid(
-        "train_model", has_input=True, sleep_factor=SLEEP_TRAIN, data_size_fn=combined_data_size
-    )
-    persist_model = make_solid("persist_model", asset_key="traffic_cost_model", has_input=True)
-    build_cost_dashboard = make_solid(
-        "build_cost_dashboard",
-        asset_key=["dashboards", "cost_dashboard"],
+    train_video_recommender_model = make_solid(
+        "train_video_recommender_model",
         has_input=True,
-        materialization_metadata_entries=[
-            EventMetadataEntry.url("http://docs.dagster.io/cost", "Documentation URL")
-        ],
-    )
-    build_traffic_dashboard = make_solid(
-        "build_traffic_dashboard",
-        asset_key=["dashboards", "traffic_dashboard"],
-        has_input=True,
-        materialization_metadata_entries=[
-            EventMetadataEntry.url("http://docs.dagster.io/traffic", "Documentation URL")
-        ],
+        sleep_factor=SLEEP_TRAIN,
+        data_size_fn=combined_data_size,
     )
 
-    cost_data = persist_costs(ingest_costs())
-    traffic_data = persist_traffic(ingest_traffic())
-    persist_model(train_model(build_model([cost_data, traffic_data])))
-
-    build_cost_dashboard(cost_data)
-    build_traffic_dashboard(traffic_data)
+    video_views = update_video_views_table(ingest_raw_video_views())
+    users = update_users_table(ingest_raw_users())
+    train_video_recommender_model([video_views, users])
