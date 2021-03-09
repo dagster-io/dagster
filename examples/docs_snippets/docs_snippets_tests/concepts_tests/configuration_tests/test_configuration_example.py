@@ -1,8 +1,11 @@
 import pytest
+import yaml
 from dagster import DagsterInvalidConfigError, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster.utils import file_relative_path
 from docs_snippets.concepts.configuration.config_map_example import unsigned_s3_session
 from docs_snippets.concepts.configuration.configured_example import (
     east_unsigned_s3_session,
+    s3_session,
     west_signed_s3_session,
     west_unsigned_s3_session,
 )
@@ -40,6 +43,17 @@ def test_configured_example():
     execute_pipeline_with_resource_def(east_unsigned_s3_session)
     execute_pipeline_with_resource_def(west_unsigned_s3_session)
     execute_pipeline_with_resource_def(west_signed_s3_session)
+
+
+def test_configured_example_yaml():
+    with open(
+        file_relative_path(
+            __file__, "../../../docs_snippets/concepts/configuration/configured_example.yaml"
+        ),
+        "r",
+    ) as fd:
+        run_config = yaml.safe_load(fd.read())
+    execute_pipeline_with_resource_def(s3_session, run_config)
 
 
 def test_config_map_example():

@@ -1,4 +1,4 @@
-from dagster import Field, InputDefinition, Int, List, configured, execute_pipeline, pipeline, solid
+from dagster import Field, InputDefinition, Int, List, configured, pipeline, solid
 
 
 # start_configured_named
@@ -8,39 +8,23 @@ from dagster import Field, InputDefinition, Int, List, configured, execute_pipel
     },
     input_defs=[InputDefinition("xs", List[Int])],
 )
-def variance(context, xs):
-    n = len(xs)
-    mean = sum(xs) / n
-    summed = sum((mean - x) ** 2 for x in xs)
-    result = summed / (n - 1) if context.solid_config["is_sample"] else summed / n
-    return result ** (1 / 2)
+def get_dataset(context, xs):
+    if context.solid_config["is_sample"]:
+        return xs[:5]
+    else:
+        return xs
 
 
 # If we want to use the same solid configured in multiple ways in the same pipeline,
 # we have to specify unique names when configuring them:
-sample_variance = configured(variance, name="sample_variance")({"is_sample": True})
-population_variance = configured(variance, name="population_variance")({"is_sample": False})
+sample_dataset = configured(get_dataset, name="sample_dataset")({"is_sample": True})
+full_dataset = configured(get_dataset, name="full_dataset")({"is_sample": False})
 
 
 @pipeline
-def stats_pipeline():
-    sample_variance()
-    population_variance()
+def dataset_pipeline():
+    sample_dataset()
+    full_dataset()
 
 
 # end_configured_named
-
-
-def run_pipeline():
-    result = execute_pipeline(
-        stats_pipeline,
-        {
-            "solids": {
-                "sample_variance": {"inputs": {"xs": [4, 8, 15, 16, 23, 42]}},
-                "population_variance": {
-                    "inputs": {"xs": [33, 30, 27, 29, 32, 30, 27, 28, 30, 30, 30, 31]}
-                },
-            }
-        },
-    )
-    return result

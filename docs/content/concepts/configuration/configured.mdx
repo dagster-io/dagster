@@ -1,11 +1,11 @@
 ---
 title: Configured API | Dagster
-description: The Configured API offers a way to configure a Dagster entity at runtime.
+description: The Configured API offers a way to configure a Dagster entity at definition time.
 ---
 
 # Configured API
 
-The `configured` API offers a way to configure a Dagster entity at runtime.
+The `configured` API offers a way to configure a Dagster entity at definition time.
 
 ## Relevant APIs
 
@@ -16,8 +16,27 @@ The `configured` API offers a way to configure a Dagster entity at runtime.
 
 ## Overview
 
-In many cases, the option to configure an entity at runtime is more distracting than helpful, and
-it's preferable to supply the entity's configuration at definition time.
+Before we introduce the `configured` API, to configure a Dagster entity, for example the resource
+`s3_session`:
+
+```python file=/concepts/configuration/configured_example.py startafter=start_solid_marker endbefore=end_solid_marker
+@resource(config_schema={"region": str, "use_unsigned_session": bool})
+def s3_session(_init_context):
+    """Connect to S3"""
+```
+
+you will need to specify the configurations at runtime via a run config like:
+
+```python file=/concepts/configuration/configured_example.yaml
+resources:
+  key:
+    config:
+      region: us-east-1
+      use_unsigned_session: False
+```
+
+However, in many cases, the option to configure an entity at runtime is more distracting than helpful,
+and it's preferable to supply the entity's configuration at definition time.
 
 The `configured` API offers a way to do this. When invoked on a Dagster entity, it returns an
 interchangeable object with the given configuration "baked in". It is available with the following
@@ -40,14 +59,6 @@ There are different ways to invoke `configured` on an entity.
 You can invoke the `configured` as a method on a given entity.
 
 ```python file=/concepts/configuration/configured_example.py startafter=start_configured_marker endbefore=end_configured_marker
-from dagster import configured, resource
-
-
-@resource(config_schema={"region": str, "use_unsigned_session": bool})
-def s3_session(_init_context):
-    """Connect to S3"""
-
-
 east_unsigned_s3_session = s3_session.configured(
     {"region": "us-east-1", "use_unsigned_session": False}
 )
@@ -55,7 +66,7 @@ east_unsigned_s3_session = s3_session.configured(
 
 ### As a Decorator
 
-We also provides a `configured` decorator that makes it easy to create a function-configured version
+We also provide a `configured` decorator that makes it easy to create a function-configured version
 of an object. You can find more information in the <PyObject module="dagster" object="configured" decorator />
 API reference.
 
@@ -67,8 +78,8 @@ def west_unsigned_s3_session(_init_context):
 
 ### As a Standalone API
 
-If the config that will be supplied to the object is constant, you may alternatively invoke this and
-call the result with a dict of config values to be curried. You can find more information in
+If the config to supply to the object is constant, you may alternatively invoke this and call the
+result with a dict of config values to be curried. You can find more information in
 the <PyObject module="dagster" object="configured" decorator /> API reference.
 
 ```python file=/concepts/configuration/configured_example.py startafter=start_configured_method_marker endbefore=end_configured_method_marker
@@ -81,9 +92,9 @@ west_signed_s3_session = configured(s3_session)(
 
 ### Partially filling the configuration
 
-In other cases, it's useful to partially fill out configuration at definition time and leave other
-configuration for runtime. For these cases, `configured` can be used as a decorator, accepting a
-function that translates from runtime config to config that satisfies the entity's config schema.
+In other cases, it's useful to partially fill out the configuration at definition time and leave
+other configurations for runtime. For these cases, `configured` can be used as a decorator, accepting
+a function that translates from runtime config to config that satisfies the entity's config schema.
 It returns an entity with the "outer" config schema as its schema.
 
 ```python file=/concepts/configuration/config_map_example.py
@@ -102,8 +113,8 @@ def unsigned_s3_session(config):
 
 ### Specifying solid configuration
 
-The `configured` API can be used with any definition type in the same way. To configure a solid, for
-example, simply invoke `configured` on the solid definition:
+You can use the `configured` API with any definition type in the same way. For example, to configure
+a solid, you can simply invoke `configured` on the solid definition:
 
 ```python file=/concepts/configuration/configured_solid_example.py
 from dagster import Field, configured, solid
@@ -148,22 +159,21 @@ pipeline.
     },
     input_defs=[InputDefinition("xs", List[Int])],
 )
-def variance(context, xs):
-    n = len(xs)
-    mean = sum(xs) / n
-    summed = sum((mean - x) ** 2 for x in xs)
-    result = summed / (n - 1) if context.solid_config["is_sample"] else summed / n
-    return result ** (1 / 2)
+def get_dataset(context, xs):
+    if context.solid_config["is_sample"]:
+        return xs[:5]
+    else:
+        return xs
 
 
 # If we want to use the same solid configured in multiple ways in the same pipeline,
 # we have to specify unique names when configuring them:
-sample_variance = configured(variance, name="sample_variance")({"is_sample": True})
-population_variance = configured(variance, name="population_variance")({"is_sample": False})
+sample_dataset = configured(get_dataset, name="sample_dataset")({"is_sample": True})
+full_dataset = configured(get_dataset, name="full_dataset")({"is_sample": False})
 
 
 @pipeline
-def stats_pipeline():
-    sample_variance()
-    population_variance()
+def dataset_pipeline():
+    sample_dataset()
+    full_dataset()
 ```

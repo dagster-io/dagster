@@ -1,10 +1,23 @@
-from docs_snippets.concepts.configuration.configured_named_solid_example import run_pipeline
+from dagster import execute_pipeline
+from docs_snippets.concepts.configuration.configured_named_solid_example import dataset_pipeline
 
 
-def test_stats_pipeline():
-    result = run_pipeline()
-    sample_variance = result.result_for_solid("sample_variance").output_value()
-    population_variance = result.result_for_solid("population_variance").output_value()
+def test_pipeline():
 
-    assert round(sample_variance) == round(13.490737563232)
-    assert round(population_variance) == round(1.7380544678845)
+    result = execute_pipeline(
+        dataset_pipeline,
+        {
+            "solids": {
+                "sample_dataset": {"inputs": {"xs": [4, 8, 15, 16, 23, 42]}},
+                "full_dataset": {
+                    "inputs": {"xs": [33, 30, 27, 29, 32, 30, 27, 28, 30, 30, 30, 31]}
+                },
+            }
+        },
+    )
+
+    sample_dataset = result.result_for_solid("sample_dataset").output_value()
+    full_dataset = result.result_for_solid("full_dataset").output_value()
+
+    assert len(sample_dataset) == 5
+    assert len(full_dataset) == 12
