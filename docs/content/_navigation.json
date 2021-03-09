@@ -117,43 +117,29 @@
             "path": "/concepts/solids-pipelines/solid-hooks"
           },
           {
+            "title": "Executing Pipelines",
+            "path": "/concepts/solids-pipelines/executing"
+          },
+          {
             "title": "Testing Solids and Pipelines",
             "path": "/concepts/solids-pipelines/testing"
           }
         ]
       },
       {
-        "title": "Pipeline Runs",
-        "children": [
-          {
-            "title": "Run Config",
-            "path": "/concepts/pipeline-runs/run-config"
-          },
-          {
-            "title": "Creating Pipeline Runs",
-            "path": "/concepts/pipeline-runs/creating-pipeline-runs"
-          }
-        ]
-      },
-      {
-        "title": "Modes",
+        "title": "Modes & Resources",
         "children": [
           {
             "title": "Mode Definitions",
-            "path": "/concepts/modes/mode-definition"
-          }
-        ]
-      },
-      {
-        "title": "Resources",
-        "children": [
-          {
-            "title": "Resource Definitions",
-            "path": "/concepts/resources/resource-definition"
+            "path": "/concepts/modes-resources/mode-definition"
           },
           {
-            "title": "Testing Resources",
-            "path": "/overview/resources/testing-resources"
+            "title": "Resource Definitions",
+            "path": "/concepts/modes-resources/resource-definition"
+          },
+          {
+            "title": "Testing Modes and Resources",
+            "path": "/concepts/modes-resources/testing"
           }
         ]
       },
@@ -167,10 +153,6 @@
           {
             "title": "Configured API",
             "path": "/concepts/configuration/configured"
-          },
-          {
-            "title": "Presets",
-            "path": "/concepts/configuration/presets"
           }
         ]
       },
@@ -220,11 +202,10 @@
       },
       {
         "title": "Logging",
-        "childPath": true,
         "children": [
           {
             "title": "Loggers",
-            "path": "/concepts/logging/logging"
+            "path": "/concepts/logging/loggers"
           }
         ]
       },
