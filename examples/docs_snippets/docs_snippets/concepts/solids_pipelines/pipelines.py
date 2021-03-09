@@ -33,6 +33,32 @@ def one_plus_one_pipeline():
 
 # end_pipeline_example_marker
 
+# start_multiple_usage_pipeline
+@pipeline
+def multiple_usage_pipeline():
+    add_one(add_one(return_one()))
+
+
+# end_multiple_usage_pipeline
+
+# start_alias_pipeline
+@pipeline
+def alias_pipeline():
+    add_one.alias("second_addition")(add_one(return_one()))
+
+
+# end_alias_pipeline
+
+
+# start_tag_pipeline
+@pipeline
+def tag_pipeline():
+    add_one.tag({"my_tag": "my_value"})(add_one(return_one()))
+
+
+# end_tag_pipeline
+
+
 # start_pipeline_definition_marker
 one_plus_one_pipeline_def = PipelineDefinition(
     name="one_plus_one_pipeline",

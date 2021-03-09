@@ -270,6 +270,14 @@ const PlaceholderImage = () => {
   );
 };
 
+const Experimental = () => {
+  return (
+    <span className="inline-flex items-center px-3 py-0.5 rounded-full align-baseline text-sm font-medium bg-blue-100 text-blue-800">
+      Experimental
+    </span>
+  );
+};
+
 export default {
   PyObject,
   Link,
@@ -282,4 +290,5 @@ export default {
   InstanceDiagramBox,
   TODO,
   PlaceholderImage,
+  Experimental,
 };

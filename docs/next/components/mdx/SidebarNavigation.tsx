@@ -73,10 +73,10 @@ const renderItems = (items, activeId, depth) => {
     <ol>
       {items.map((item) => {
         return (
-          <li key={item.url} className="mt-3">
+          <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
             <a
               href={item.url}
-              className={cx(MARGINS[depth], "font-semibold text-sm pl-2", {
+              className={cx("font-semibold text-sm", {
                 "text-gray-800 dark:text-gray-100 underline bg-blue-50 dark:bg-blue-900":
                   activeId === item.url.slice(1),
                 "text-gray-500 dark:text-gray-300":

@@ -1,8 +1,13 @@
+---
+title: Pipelines | Dagster
+description: A pipeline is a set of solids with explicit data dependencies on each other, creating a directed acyclic graph, or DAG.
+---
+
 # Pipeline
 
-A pipeline is a set of solids which have data dependencies on each other to create a directed acyclic graph, or DAG.
+A pipeline is a set of solids with explicit data dependencies on each other, creating a directed acyclic graph, or DAG.
 
-<img src="/images/pipelines.png" />
+![Pipeline Diagram](/images/pipelines.png)
 
 ## Relevant APIs
 
@@ -14,7 +19,7 @@ A pipeline is a set of solids which have data dependencies on each other to crea
 
 ## Overview
 
-Solids are linked together into pipelines by defining the dependencies between their inputs and outputs. An important difference between Dagster and other workflow systems is that in Dagster, dependencies are expressed as data dependencies, not how or when they execute.
+Solids are linked together into pipelines by defining the dependencies between their inputs and outputs. An important difference between Dagster and other workflow systems is that in Dagster, solids dependencies are expressed as data dependencies instead of just the order solids should execute in.
 
 This difference enables Dagster to support richer modeling of dependencies. Instead of merely ensuring that the order of execution is correct, dependencies in Dagster provide a variety of compile and run-time checks.
 
@@ -26,9 +31,9 @@ Dependencies are expressed in Pipelines using Dagster's function invocation DSL.
 
 To define a pipeline, use the <PyObject object="pipeline" decorator /> decorator.
 
-Within the body of the decorated function, we use function calls to indicate the dependency structure between the solids making up the pipeline.
+Within the decorated function body, we use function calls to indicate the dependency structure between the solids making up the pipeline.
 
-In this example, the `add_one` depends on `return_one`. The output from `return_one` is passed to `add_one`
+In this example, the `add_one` solid depends on the `return_one` solid's output. Because this data dependency exists, the `return_one` solid executes after `add_one` runs successfully and emits the required output.
 
 ```python file=/concepts/solids_pipelines/pipelines.py startafter=start_pipeline_example_marker endbefore=end_pipeline_example_marker
 @solid
@@ -44,6 +49,38 @@ def add_one(context, number):
 @pipeline
 def one_plus_one_pipeline():
     add_one(return_one())
+```
+
+### Aliases and Tags
+
+### Solid aliases
+
+You can use the same solid definition multiple times in the same pipeline.
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_multiple_usage_pipeline endbefore=end_multiple_usage_pipeline
+@pipeline
+def multiple_usage_pipeline():
+    add_one(add_one(return_one()))
+```
+
+To differentiate between the two invocations of `add_one` Dagster automatically aliases the solid names to be `add_one` and `add_one_2`.
+
+You can also manually define the alias by using the `.alias` method on the solid invocation.
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_alias_pipeline endbefore=end_alias_pipeline
+@pipeline
+def alias_pipeline():
+    add_one.alias("second_addition")(add_one(return_one()))
+```
+
+### Solid Tags
+
+Similar to aliases, you can also define solid tags on a solid invocation.
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_tag_pipeline endbefore=end_tag_pipeline
+@pipeline
+def tag_pipeline():
+    add_one.tag({"my_tag": "my_value"})(add_one(return_one()))
 ```
 
 ## Pipeline configuration
@@ -65,7 +102,7 @@ def my_modes_pipeline():
 
 ### Pipeline Tags
 
-Pipelines can specify a set of tags that will be set on the resulting pipeline runs.
+Pipelines can specify a set of tags that are also automatically set on the resulting pipeline runs.
 
 ```python file=/concepts/solids_pipelines/pipelines.py startafter=start_tags_pipeline endbefore=end_tags_pipeline
 @pipeline(tags={"my_tag": "my_value"})
@@ -73,15 +110,17 @@ def my_tags_pipeline():
     my_solid()
 ```
 
+This pipeline defines a `my_tag` tag. Any pipeline runs created using this pipeline will also have the same tag.
+
 ## Examples
 
-There are many DAG structures you might want to represent in your pipelines. This section covers a few basic patterns you can use to build more complex pipelines.
+There are many DAG structures can represent using pipelines. This section covers a few basic patterns you can use to build more complex pipelines.
 
 ### Linear Dependencies
 
-<img src="/images/concepts/pipelines/linear.png" />
-
 The simplest pipeline structure is the linear pipeline. We return one output from the root solid, and pass along data through single inputs and outputs.
+
+![Linear Pipeline](/images/concepts/pipelines/linear.png)
 
 ```python file=/concepts/solids_pipelines/linear_pipeline.py startafter=start_marker endbefore=end_marker
 from dagster import InputDefinition, pipeline, solid
@@ -104,7 +143,7 @@ def linear_pipeline():
 
 ### Multiple Inputs and Outputs
 
-<img src="/images/concepts/pipelines/branch.png" />
+![Branching Pipeline](/images/concepts/pipelines/branch.png)
 
 A single output can be passed to multiple inputs on downstream solids. In this example, the output from the first solid is passed to two different solids. The outputs of those solids are combined and passed to the final solid.
 
@@ -188,15 +227,41 @@ def branching_pipeline():
     branch_2_solid(branch_2)
 ```
 
-### List Inputs
+### Fixed Fan-in Pipeline
 
-TODO
+If you have a fixed set of solids that all return the same output type, you can collect all the outputs into a list and pass them into a single downstream solid.
 
-### Dynamic fan-out \[Experimental]
+The downstream solid executes only if all of the outputs were successfully created by the upstream solids.
 
-In most cases, the structure of a pipeline is pre-determined before execution. Dagster now has experimental support for creating pipelines where the final structure is not determined until runtime. This is useful for map/reduce pipeline pipeline structures, where you want to excute a set of solids for each result of another solid.
+```python file=/concepts/solids_pipelines/fan_in_pipeline.py startafter=start_marker endbefore=end_marker
+from dagster import InputDefinition, List, OutputDefinition, pipeline, solid
 
-In this example we have a solid files_in_directory that defines a <PyObject object="DynamicOutputDefinition"/>. This dynamic output will cause the downstream dependencies to be cloned for each <PyObject object="DynamicOutput"/> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject object="DynamicOutput"/>.
+
+@solid(output_defs=[OutputDefinition(int)])
+def return_one(_):
+    return 1
+
+
+@solid(input_defs=[InputDefinition("nums", List[int])], output_defs=[OutputDefinition(int)])
+def sum_fan_in(_, nums):
+    return sum(nums)
+
+
+@pipeline
+def fan_in_pipeline():
+    fan_outs = []
+    for i in range(0, 10):
+        fan_outs.append(return_one.alias("return_one_{}".format(i))())
+    sum_fan_in(fan_outs)
+```
+
+In this example, we have 10 solids that all output the number `1`. The `sum_fan_in` solid takes all of these outputs as a list and sums them.
+
+### Dynamic fan-out <Experimental/>
+
+In most cases, the structure of a pipeline is pre-determined before execution. Dagster now has experimental support for creating pipelines where the final structure is not determined until run-time. This is useful for map/reduce pipeline structures, where you want to execute a set of solids for each result of another solid.
+
+In this example we have a solid `files_in_directory` that defines a <PyObject object="DynamicOutputDefinition" module="dagster.experimental"/>. This dynamic output will cause the downstream dependencies to be cloned for each <PyObject object="DynamicOutput"  module="dagster.experimental"/> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject object="DynamicOutput"  module="dagster.experimental"/>.
 
 ```python file=/concepts/solids_pipelines/dynamic_pipeline/dynamic_pipeline.py startafter=start_marker endbefore=end_marker
 import os
@@ -236,11 +301,11 @@ def process_directory():
 
 <img src="/images/concepts/pipelines/linear.png" />
 
-Dependencies in Dagster are primarily _data dependencies_. This means an input of a solid depends on the output of an upstream solid. This means that the former solid can only start executing once the upstream solid has successfully emmited the required output.
+Dependencies in Dagster are primarily _data dependencies_. Using data dependencies means each input of a solid depends on the output of an upstream solid.
 
-If a solid doesn't depend on an output produced by another solid, it theoretically shouldn't ever need to ordered to execute after it. However, there are cases where explicit ordering is required, and it doesn't always make sense to pass data through inputs and outputs to model the dependency. A prime example of this is when passing data through an extermal system.
+If you have a solid, say `Solid A`, that does not depend on any outputs of another solid, say `Solid B`, there theoretically shouldn't be a reason for `Solid A` to run after `Solid B`. In most cases, these two solids should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
 
-In this situation, we can use the <PyObject object="Nothing"/> Dagster type to model the dependency. We specify that we are passing "nothing" via Dagster between the solids, but still using an explicit input/output dependency. Dagster will therefore execute the solids in order.
+If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream solid. This type specifies that you are passing "nothing" via Dagster between the solids, while still uses inputs and outputs to model the dependency between the two solids.
 
 ```python file=/concepts/solids_pipelines/order_based_dependency_pipeline.py startafter=start_marker endbefore=end_marker
 from dagster import InputDefinition, Nothing, pipeline, solid
@@ -261,7 +326,11 @@ def nothing_dependency_pipeline():
     create_table_2(create_table_1())
 ```
 
-Note that in most cases, it actually is possible to pass some data dependency. In the example below, even though we can't pass the data in the table between the two solids, we could pass a pointer to the table between the solids.
+In this example, `create_table_1` returns an output of type <PyObject object="Nothing"/>, and `create_table_2` has an input of type `Nothing`. This lets us connect them in the pipeline definition so that `create_table_2` executes only after `create_table_1` successfully executes.
+
+Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the solids, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
+
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storages, check out [IOManagers](/concepts/io-management/io-managers).
 
 ## Patterns
 
@@ -269,7 +338,7 @@ Note that in most cases, it actually is possible to pass some data dependency. I
 
 You may run into a situation where you need to programmatically construct the dependency graph for a pipeline. In that case, you can directly define the <PyObject module="dagster" object="PipelineDefinition"/> object.
 
-To construct a PipelineDefinition, you need to pass the constructor a pipeline name, list of solid definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each solid’s inputs on the outputs of other solids in the pipeline. Keys of the top level dict are either the string names of solids in the pipeline or, in the case of aliased solids, SolidInvocations. Values of the top level dict are themselves dicts, which map input names belonging to the solid or aliased solid to DependencyDefinitions.
+To construct a PipelineDefinition, you need to pass the constructor a pipeline name, a list of solid definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each solid’s inputs on the outputs of other solids in the pipeline. The top-level keys of the dependency dictionary are the string names of solids. If you are using solid aliases be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject object="DependencyDefinition"/>.
 
 ```python file=/concepts/solids_pipelines/pipelines.py startafter=start_pipeline_definition_marker endbefore=end_pipeline_definition_marker
 one_plus_one_pipeline_def = PipelineDefinition(

@@ -100,6 +100,7 @@ Here are the available components we built to use in MDX:
 - LinkGrid
 - LinkGridItem
 - Warning
+- Experimental
 - CodeReferenceLink
 
 See more details in the `/components/MDXComponents` file.
