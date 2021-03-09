@@ -15,6 +15,10 @@ const DEFAULT_SEO = {
   twitter: {
     site: "@dagsterio",
     cardType: "summary_large_image",
+    images: {
+      url: "/assets/shared/dagster-og-share.png",
+      alt: "Dagster Docs",
+    },
   },
   openGraph: {
     url: BASE_URL,
