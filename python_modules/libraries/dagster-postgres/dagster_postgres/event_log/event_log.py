@@ -241,7 +241,7 @@ def watcher_thread(
 
                 with dict_lock:
                     for callback_with_cursor in handlers:
-                        if index >= callback_with_cursor.start_cursor:
+                        if callback_with_cursor.start_cursor < index:
                             callback_with_cursor.callback(dagster_event)
     except psycopg2.OperationalError:
         pass
@@ -275,7 +275,7 @@ class PostgresEventWatcher:
             self._watcher_thread.start()
 
         with self._dict_lock:
-            self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor, callback))
+            self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor + 1, callback))
 
     def unwatch_run(self, run_id: str, handler: Callable[[EventRecord], None]):
         check.str_param(run_id, "run_id")

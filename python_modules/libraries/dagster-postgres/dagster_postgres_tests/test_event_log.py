@@ -26,7 +26,6 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             SqlEventLogStorageTable.drop(conn)
             AssetKeyTable.drop(conn)
 
-    @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3744")
     def test_event_log_storage_two_watchers(self, storage):
         run_id = "foo"
         watched_1 = []
@@ -77,14 +76,6 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
 
         assert [int(evt.message) for evt in watched_1] == [2, 3, 4]
         assert [int(evt.message) for evt in watched_2] == [4, 5]
-
-    @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3744")
-    def test_event_watcher_single_run_event(self, storage):
-        pass
-
-    @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3744")
-    def test_event_watcher_filter_two_runs_event(self, storage):
-        pass
 
     def test_load_from_config(self, hostname):
         url_cfg = """
