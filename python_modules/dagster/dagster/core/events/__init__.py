@@ -6,13 +6,14 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import (
+    AssetKey,
     AssetMaterialization,
     EventMetadataEntry,
     ExpectationResult,
     Materialization,
     SolidHandle,
 )
-from dagster.core.definitions.events import ObjectStoreOperationType
+from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster.core.execution.context.system import (
     HookContext,
     SystemExecutionContext,
@@ -605,14 +606,15 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def step_materialization(step_context, materialization):
+    def step_materialization(step_context, materialization, asset_lineage=None):
         check.inst_param(
             materialization, "materialization", (AssetMaterialization, Materialization)
         )
+        check.opt_list_param(asset_lineage, "asset_lineage", AssetLineageInfo)
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_MATERIALIZATION,
             step_context=step_context,
-            event_specific_data=StepMaterializationData(materialization),
+            event_specific_data=StepMaterializationData(materialization, asset_lineage),
             message=materialization.description
             if materialization.description
             else "Materialized value{label_clause}.".format(
@@ -877,7 +879,13 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def handled_output(step_context, output_name, manager_key, message_override=None):
+    def handled_output(
+        step_context,
+        output_name,
+        manager_key,
+        message_override=None,
+        metadata_entries=None,
+    ):
         check.str_param(output_name, "output_name")
         check.str_param(manager_key, "manager_key")
         message = f'Handled output "{output_name}" using output manager "{manager_key}"'
@@ -887,6 +895,7 @@ class DagsterEvent(
             event_specific_data=HandledOutputData(
                 output_name=output_name,
                 manager_key=manager_key,
+                metadata_entries=metadata_entries if metadata_entries else [],
             ),
             message=message_override or message,
         )
@@ -1017,8 +1026,15 @@ def get_step_output_event(events, step_key, output_name="result"):
 
 
 @whitelist_for_serdes
-class StepMaterializationData(namedtuple("_StepMaterializationData", "materialization")):
-    pass
+class StepMaterializationData(
+    namedtuple("_StepMaterializationData", "materialization asset_lineage")
+):
+    def __new__(cls, materialization, asset_lineage=None):
+        return super(StepMaterializationData, cls).__new__(
+            cls,
+            materialization=materialization,
+            asset_lineage=check.opt_list_param(asset_lineage, "asset_lineage", AssetLineageInfo),
+        )
 
 
 @whitelist_for_serdes
@@ -1140,12 +1156,17 @@ class HookErroredData(namedtuple("_HookErroredData", "error")):
 
 
 @whitelist_for_serdes
-class HandledOutputData(namedtuple("_HandledOutputData", "output_name manager_key")):
-    def __new__(cls, output_name, manager_key):
+class HandledOutputData(
+    namedtuple("_HandledOutputData", "output_name manager_key metadata_entries")
+):
+    def __new__(cls, output_name, manager_key, metadata_entries=None):
         return super(HandledOutputData, cls).__new__(
             cls,
             output_name=check.str_param(output_name, "output_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", EventMetadataEntry
+            ),
         )
 
 
@@ -1211,7 +1232,7 @@ def _handle_back_compat(event_type_value, event_specific_data):
             return (
                 DagsterEventType.HANDLED_OUTPUT.value,
                 HandledOutputData(
-                    event_specific_data.output_name, event_specific_data.asset_store_key
+                    event_specific_data.output_name, event_specific_data.asset_store_key, []
                 ),
             )
     else:

@@ -1,17 +1,24 @@
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Optional, Set, Union
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions import (
+    AssetKey,
     AssetMaterialization,
     ExpectationResult,
     Failure,
     Materialization,
     Output,
+    OutputDefinition,
     RetryRequested,
     TypeCheck,
 )
-from dagster.core.definitions.events import DynamicOutput
+from dagster.core.definitions.events import (
+    AssetLineageInfo,
+    DynamicOutput,
+    EventMetadataEntry,
+    PartitionMetadataEntry,
+)
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
     DagsterExecutionStepExecutionError,
@@ -23,15 +30,21 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import SystemStepExecutionContext, TypeCheckContext
+from dagster.core.execution.context.system import (
+    OutputContext,
+    SystemStepExecutionContext,
+    TypeCheckContext,
+)
 from dagster.core.execution.plan.compute import execute_core_compute
 from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
+from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context
+from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
@@ -229,6 +242,9 @@ def _type_check_output(
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
             version=version,
+            metadata_entries=[
+                entry for entry in output.metadata_entries if isinstance(entry, EventMetadataEntry)
+            ],
         ),
     )
 
@@ -260,6 +276,7 @@ def core_dagster_event_sequence_for_step(
         yield DagsterEvent.step_start_event(step_context)
 
     inputs = {}
+    input_lineage = []
 
     for step_input in step_context.step.step_inputs:
         input_def = step_input.source.get_input_def(step_context.pipeline_def)
@@ -267,6 +284,8 @@ def core_dagster_event_sequence_for_step(
 
         if dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
+
+        input_lineage.extend(step_input.source.get_asset_lineage(step_context))
 
         for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
             if isinstance(event_or_input_value, DagsterEvent):
@@ -281,6 +300,7 @@ def core_dagster_event_sequence_for_step(
         ):
             yield evt
 
+    input_lineage = _dedup_asset_lineage(input_lineage)
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
             _user_event_sequence_for_step_compute_fn(step_context, inputs)
@@ -293,10 +313,12 @@ def core_dagster_event_sequence_for_step(
         ):
 
             if isinstance(user_event, (Output, DynamicOutput)):
-                for evt in _type_check_and_store_output(step_context, user_event):
+                for evt in _type_check_and_store_output(step_context, user_event, input_lineage):
                     yield evt
+            # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
+            # to do something with these in the above path eventually
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
-                yield DagsterEvent.step_materialization(step_context, user_event)
+                yield DagsterEvent.step_materialization(step_context, user_event, input_lineage)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
@@ -312,11 +334,14 @@ def core_dagster_event_sequence_for_step(
 
 
 def _type_check_and_store_output(
-    step_context: SystemStepExecutionContext, output: Union[DynamicOutput, Output]
+    step_context: SystemStepExecutionContext,
+    output: Union[DynamicOutput, Output],
+    input_lineage: List[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
 
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
+    check.list_param(input_lineage, "input_lineage", AssetLineageInfo)
 
     mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
@@ -338,44 +363,111 @@ def _type_check_and_store_output(
     for output_event in _type_check_output(step_context, step_output_handle, output, version):
         yield output_event
 
-    for evt in _store_output(step_context, step_output_handle, output):
+    for evt in _store_output(step_context, step_output_handle, output, input_lineage):
         yield evt
 
     for evt in _create_type_materializations(step_context, output.output_name, output.value):
         yield evt
 
 
-def _materializations_to_events(
-    step_context: SystemStepExecutionContext,
-    step_output_handle: StepOutputHandle,
-    materializations: Iterator[AssetMaterialization],
-) -> Iterator[DagsterEvent]:
-    if materializations is not None:
-        for materialization in ensure_gen(materializations):
-            if not isinstance(materialization, AssetMaterialization):
-                raise DagsterInvariantViolationError(
-                    (
-                        "IO manager on output {output_name} has returned "
-                        "value {value} of type {python_type}. The return type can only be "
-                        "AssetMaterialization."
-                    ).format(
-                        output_name=step_output_handle.output_name,
-                        value=repr(materialization),
-                        python_type=type(materialization).__name__,
-                    )
-                )
+def _asset_key_and_partitions_for_output(
+    output_context: OutputContext,
+    output_def: OutputDefinition,
+    output_manager: IOManager,
+) -> Tuple[Optional[AssetKey], Set[str]]:
 
-            yield DagsterEvent.step_materialization(step_context, materialization)
+    manager_asset_key = output_manager.get_output_asset_key(output_context)
+
+    if output_def.is_asset:
+        if manager_asset_key is not None:
+            raise DagsterInvariantViolationError(
+                f'Both the OutputDefinition and the IOManager of output "{output_def.name}" on '
+                f'solid "{output_context.solid_def.name}" associate it with an asset. Either remove '
+                "the asset_key parameter on the OutputDefinition or use an IOManager that does not "
+                "specify an AssetKey in its get_output_asset_key() function."
+            )
+        return (
+            output_def.get_asset_key(output_context),
+            output_def.get_asset_partitions(output_context) or set(),
+        )
+    elif manager_asset_key:
+        return manager_asset_key, output_manager.get_output_asset_partitions(output_context)
+
+    return None, set()
+
+
+def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
+    information. Duplicates can occur naturally when calculating transitive dependencies from solids
+    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
+    inherit all dependencies from all of the solid Inputs).
+    """
+    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
+
+    for lineage_info in asset_lineage:
+        if not lineage_info.partitions:
+            key_partition_mapping[lineage_info.asset_key] |= set()
+        for partition in lineage_info.partitions:
+            key_partition_mapping[lineage_info.asset_key].add(partition)
+    return [
+        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
+        for asset_key, partitions in key_partition_mapping.items()
+    ]
+
+
+def _get_output_asset_materializations(
+    asset_key: AssetKey,
+    asset_partitions: Set[str],
+    output: Union[Output, DynamicOutput],
+    output_def: OutputDefinition,
+    io_manager_metadata_entries: List[Union[EventMetadataEntry, PartitionMetadataEntry]],
+) -> Iterator[AssetMaterialization]:
+
+    all_metadata = output.metadata_entries + io_manager_metadata_entries
+
+    if asset_partitions:
+        metadata_mapping: Dict[str, List[str]] = {partition: [] for partition in asset_partitions}
+        for entry in all_metadata:
+            # if you target a given entry at a partition, only apply it to the requested partition
+            # otherwise, apply it to all partitions
+            if isinstance(entry, PartitionMetadataEntry):
+                if entry.partition not in asset_partitions:
+                    raise DagsterInvariantViolationError(
+                        f"Output {output_def.name} associated a metadata entry ({entry}) with the partition "
+                        f"`{entry.partition}`, which is not one of the declared partition mappings ({asset_partitions})."
+                    )
+                metadata_mapping[entry.partition].append(entry.entry)
+            else:
+                for partition in metadata_mapping.keys():
+                    metadata_mapping[partition].append(entry)
+
+        for partition in asset_partitions:
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                partition=partition,
+                metadata_entries=metadata_mapping[partition],
+            )
+    else:
+        for entry in all_metadata:
+            if isinstance(entry, PartitionMetadataEntry):
+                raise DagsterInvariantViolationError(
+                    f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
+                    "is not associated with any specific partitions."
+                )
+        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
 
 def _store_output(
     step_context: SystemStepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
+    input_lineage: List[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
+
     output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
+
     with user_code_error_boundary(
         DagsterExecutionHandleOutputError,
         control_flow_exceptions=[Failure, RetryRequested],
@@ -386,10 +478,42 @@ def _store_output(
         step_key=step_context.step.key,
         output_name=output_context.name,
     ):
-        materializations = output_manager.handle_output(output_context, output.value)
+        handle_output_res = output_manager.handle_output(output_context, output.value)
 
-    for evt in _materializations_to_events(step_context, step_output_handle, materializations):
-        yield evt
+    manager_materializations = []
+    manager_metadata_entries = []
+    if handle_output_res is not None:
+        for elt in ensure_gen(handle_output_res):
+            if isinstance(elt, AssetMaterialization):
+                manager_materializations.append(elt)
+            elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
+                experimental_functionality_warning(
+                    "Yielding metadata from an IOManager's handle_output() function"
+                )
+                manager_metadata_entries.append(elt)
+            else:
+                raise DagsterInvariantViolationError(
+                    f"IO manager on output {output_def.name} has returned "
+                    f"value {elt} of type {type(elt).__name__}. The return type can only be "
+                    "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
+                )
+
+    # do not alter explicitly created AssetMaterializations
+    for materialization in manager_materializations:
+        yield DagsterEvent.step_materialization(step_context, materialization, input_lineage)
+
+    asset_key, partitions = _asset_key_and_partitions_for_output(
+        output_context, output_def, output_manager
+    )
+    if asset_key:
+        for materialization in _get_output_asset_materializations(
+            asset_key,
+            partitions,
+            output,
+            output_def,
+            manager_metadata_entries,
+        ):
+            yield DagsterEvent.step_materialization(step_context, materialization, input_lineage)
 
     yield DagsterEvent.handled_output(
         step_context,
@@ -398,6 +522,9 @@ def _store_output(
         message_override=f'Handled input "{step_output_handle.output_name}" using intermediate storage'
         if isinstance(output_manager, IntermediateStorageAdapter)
         else None,
+        metadata_entries=[
+            entry for entry in manager_metadata_entries if isinstance(entry, EventMetadataEntry)
+        ],
     )
 
 

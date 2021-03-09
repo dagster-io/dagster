@@ -1,7 +1,12 @@
-from typing import NamedTuple, Optional, Union
+from typing import Callable, List, NamedTuple, Optional, Union
 
 from dagster import check
-from dagster.core.definitions import AssetMaterialization, Materialization, SolidHandle
+from dagster.core.definitions import (
+    AssetMaterialization,
+    EventMetadataEntry,
+    Materialization,
+    SolidHandle,
+)
 from dagster.serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
@@ -16,6 +21,9 @@ class StepOutput(
             ("name", str),
             ("dagster_type_key", str),
             ("is_required", bool),
+            ("is_asset", bool),
+            ("get_asset_key", Optional[Callable]),
+            ("get_asset_partitions", Optional[Callable]),
             ("should_materialize", Optional[bool]),
         ],
     )
@@ -28,6 +36,9 @@ class StepOutput(
         name: str,
         dagster_type_key: str,
         is_required: bool,
+        is_asset: bool = False,
+        get_asset_key: Optional[Callable] = None,
+        get_asset_partitions: Optional[Callable] = None,
         should_materialize: Optional[bool] = None,
     ):
         return super(StepOutput, cls).__new__(
@@ -36,6 +47,11 @@ class StepOutput(
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             is_required=check.bool_param(is_required, "is_required"),
+            is_asset=check.bool_param(is_asset, "is_asset"),
+            get_asset_key=check.opt_callable_param(get_asset_key, "get_asset_key"),
+            get_asset_partitions=check.opt_callable_param(
+                get_asset_partitions, "get_asset_partitions"
+            ),
             should_materialize=check.opt_bool_param(should_materialize, "should_materialize"),
         )
 
@@ -48,6 +64,7 @@ class StepOutputData(
             ("step_output_handle", "StepOutputHandle"),
             ("type_check_data", Optional[TypeCheckData]),
             ("version", Optional[str]),
+            ("metadata_entries", Optional[List[EventMetadataEntry]]),
         ],
     )
 ):
@@ -58,6 +75,7 @@ class StepOutputData(
         step_output_handle: "StepOutputHandle",
         type_check_data: Optional[TypeCheckData] = None,
         version: Optional[str] = None,
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
         # graveyard
         # pylint: disable=unused-argument
         intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
@@ -69,6 +87,9 @@ class StepOutputData(
             ),
             type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
             version=check.opt_str_param(version, "version"),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", EventMetadataEntry
+            ),
         )
 
     @property

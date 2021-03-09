@@ -183,6 +183,10 @@ class DagsterType:
         return _RUNTIME_MAP[builtin_enum]
 
     @property
+    def metadata_entries(self):
+        return []
+
+    @property
     def display_name(self):
         """Asserted in __init__ to be not None, overridden in many subclasses"""
         return self._name

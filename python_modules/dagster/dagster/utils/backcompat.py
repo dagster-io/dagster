@@ -138,6 +138,16 @@ def experimental_arg_warning(arg_name, fn_name, stacklevel=3):
     )
 
 
+def experimental_functionality_warning(desc, stacklevel=3):
+    """Utility for warning that a particular functionality is experimental"""
+    warnings.warn(
+        f"{desc} is currently experimental functionality. It may break in future versions, even "
+        f"between dot releases. {EXPERIMENTAL_WARNING_HELP}",
+        ExperimentalWarning,
+        stacklevel=stacklevel,
+    )
+
+
 def experimental(fn):
     """
     Spews an "experimental" warning whenever the given callable is called. If the argument is a

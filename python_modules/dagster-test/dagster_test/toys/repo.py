@@ -1,4 +1,5 @@
 from dagster import repository
+from dagster_test.toys.asset_lineage import asset_lineage_partition_set, asset_lineage_pipeline
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.dynamic import dynamic_pipeline
@@ -36,6 +37,8 @@ def toys_repository():
             branch_pipeline,
             unreliable_pipeline,
             dynamic_pipeline,
+            asset_lineage_pipeline,
+            asset_lineage_partition_set,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

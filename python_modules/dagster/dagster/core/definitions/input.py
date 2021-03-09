@@ -1,6 +1,8 @@
 from collections import namedtuple
+from typing import Optional, Set
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
@@ -62,6 +64,12 @@ class InputDefinition:
             :py:class:`RootInputManager` used for loading this input when it is not connected to an
             upstream output.
         metadata (Optional[Dict[str, Any]]): (Experimental) A dict of metadata for the input.
+        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+            (or function that produces an AssetKey from the InputContext) which should be associated
+            with this InputDefinition. Used for tracking lineage information through Dagster.
+        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
+            set of partitions of the given asset_key (or a function that produces this list of
+            partitions from the InputContext) which should be associated with this InputDefinition.
     """
 
     def __init__(
@@ -72,8 +80,9 @@ class InputDefinition:
         default_value=_NoValueSentinel,
         root_manager_key=None,
         metadata=None,
+        asset_key=None,
+        asset_partitions=None,
     ):
-        ""
         self._name = check_valid_name(name)
 
         self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
@@ -83,14 +92,38 @@ class InputDefinition:
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
 
         if root_manager_key:
-            experimental_arg_warning("root_manager_key", "InputDefinition")
+            experimental_arg_warning("root_manager_key", "InputDefinition.__init__")
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
         if metadata:
-            experimental_arg_warning("metadata", "InputDefinition")
+            experimental_arg_warning("metadata", "InputDefinition.__init__")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+
+        if asset_key:
+            experimental_arg_warning("asset_key", "InputDefinition.__init__")
+
+        self._is_asset = asset_key is not None
+
+        if callable(asset_key):
+            self._asset_key_fn = asset_key
+        else:
+            asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
+            self._asset_key_fn = lambda _: asset_key
+
+        if asset_partitions:
+            experimental_arg_warning("asset_partitions", "InputDefinition.__init__")
+            check.param_invariant(
+                asset_key is not None,
+                "asset_partitions",
+                'Cannot specify "asset_partitions" argument without also specifying "asset_key"',
+            )
+        if callable(asset_partitions):
+            self._asset_partitions_fn = asset_partitions
+        else:
+            asset_partitions = check.opt_set_param(asset_partitions, "asset_partitions", str)
+            self._asset_partitions_fn = lambda _: asset_partitions
 
     @property
     def name(self):
@@ -120,6 +153,30 @@ class InputDefinition:
     @property
     def metadata(self):
         return self._metadata
+
+    @property
+    def is_asset(self):
+        return self._is_asset
+
+    def get_asset_key(self, context) -> Optional[AssetKey]:
+        """Get the AssetKey associated with this InputDefinition for the given
+        :py:class:`InputContext` (if any).
+
+        Args:
+            context (InputContext): The InputContext that this OutputDefinition is being evaluated
+                in
+        """
+        return self._asset_key_fn(context)
+
+    def get_asset_partitions(self, context) -> Optional[Set[str]]:
+        """Get the set of partitions that this solid will read from this InputDefinition for the given
+        :py:class:`InputContext` (if any).
+
+        Args:
+            context (InputContext): The InputContext that this InputDefinition is being evaluated
+                in
+        """
+        return self._asset_partitions_fn(context)
 
     def mapping_to(self, solid_name, input_name, fan_in_index=None):
         """Create an input mapping to an input of a child solid.

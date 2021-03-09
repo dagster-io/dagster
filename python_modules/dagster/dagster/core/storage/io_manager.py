@@ -1,11 +1,13 @@
 from abc import abstractmethod
 from functools import update_wrapper
+from typing import Optional, Set
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.storage.input_manager import InputManager
 from dagster.core.storage.output_manager import IOutputManagerDefinition, OutputManager
@@ -93,6 +95,44 @@ class IOManager(InputManager, OutputManager):
             context (OutputContext): The context of the step output that produces this object.
             obj (Any): The object, returned by the solid, to be stored.
         """
+
+    def get_output_asset_key(self, _context) -> Optional[AssetKey]:
+        """User-defined method that associates outputs handled by this IOManager with a particular
+        AssetKey.
+
+        Args:
+            context (OutputContext): The context of the step output that produces this object.
+        """
+        return None
+
+    def get_output_asset_partitions(self, _context) -> Set[str]:
+        """User-defined method that associates outputs handled by this IOManager with a set of
+        partitions of an AssetKey.
+
+        Args:
+            context (OutputContext): The context of the step output that produces this object.
+        """
+        return set()
+
+    def get_input_asset_key(self, context) -> Optional[AssetKey]:
+        """User-defined method that associates inputs loaded by this IOManager with a particular
+        AssetKey.
+
+        Args:
+            context (InputContext): The input context, which describes the input that's being loaded
+                and the upstream output that's being loaded from.
+        """
+        return self.get_output_asset_key(context.upstream_output)
+
+    def get_input_asset_partitions(self, context) -> Set[str]:
+        """User-defined method that associates inputs loaded by this IOManager with a set of
+        partitions of an AssetKey.
+
+        Args:
+            context (InputContext): The input context, which describes the input that's being loaded
+                and the upstream output that's being loaded from.
+        """
+        return self.get_output_asset_partitions(context.upstream_output)
 
 
 def io_manager(
