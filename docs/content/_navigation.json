@@ -17,7 +17,7 @@
           },
           {
             "title": "Create a New Project",
-            "path": "/getting-started/init"
+            "path": "/getting-started/create-new-project"
           },
           {
             "title": "Telemetry",
@@ -230,7 +230,6 @@
           }
         ]
       },
-
       {
         "title": "Run Launchers & Executors",
         "children": [
@@ -295,7 +294,6 @@
       }
     ]
   },
-
   {
     "title": "Deployment",
     "icon": "Cloud",
