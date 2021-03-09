@@ -119,6 +119,10 @@ function MDXRenderer({ data }: { data: MDXData }) {
       <NextSeo
         title={frontMatter.title}
         description={frontMatter.description}
+        openGraph={{
+          title: frontMatter.title,
+          description: frontMatter.description,
+        }}
       />
       <div
         className="flex-1 min-w-0 relative z-0 focus:outline-none pt-8"
