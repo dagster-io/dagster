@@ -1,0 +1,99 @@
+---
+title: Solid Events | Dagster
+description: A solid can yield a stream of events within its `compute_fn` to communicate with the Dagster framework. This page describes all the events.
+---
+
+# Solid Events
+
+A solid can yield a stream of events within its `compute_fn` to communicate with the Dagster framework. This page describes all the events.
+
+## Relevant APIs
+
+| Name                                       | Description                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| <PyObject object="Output"  />              | Dagster event used to yield an output from a solid               |
+| <PyObject object="AssetMaterialization" /> | Dagster event indicating that a solid has materialized an asset. |
+| <PyObject object="ExpectationResult" />    | TODO                                                             |
+| <PyObject object="TypeCheck"  />           | TODO                                                             |
+| <PyObject object="Failure"  />             | TODO                                                             |
+
+## Overview
+
+Solids yield a stream of structured events. These events are used primary used to drive pipeline execution using the <PyObject object="Output"/> event, but there are several other events useful for monitoring assets, indicating failures, and performing data and type checks.
+
+## Event Metadata
+
+<TODO />
+
+## Outputs
+
+To return an output from a solid, simply yield an <PyObject object="Output"/> event:
+
+```python
+@solid
+def my_yield_solid(context):
+    yield Output(1)
+```
+
+Many solids yield only one output, like the example above. Returning a single value from a solid's `compute_fn` is equivalent to yielding a single <PyObject object="Output"/> event with the default output name "result". For example:
+
+```python
+@solid
+def return_solid(context):
+    return 1
+```
+
+Is equivalent to
+
+```python
+@solid
+def yield_solid(context):
+    yield Output(1, "result")
+```
+
+## Asset Materializations
+
+<TODO />
+
+## Expectation Results
+
+Solids can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can yield an <PyObject object="ExpectationResult" /> event in our solid.
+
+```python
+@solid
+def my_expectation_solid(context, df):
+    do_some_transform(df)
+    yield ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
+    yield Output(df)
+```
+
+### Attaching Metadata to Expectations Results
+
+Like many other event types in Dagster, there are a variety of types of metadata that can be associated with an expectation result event, all through the <PyObject object="EventMetadataEntry"/> class. Each expectation event optionally takes a list of metadata entries that are then displayed in the event log.
+
+This example shows metadata entries of different types attached to the same expectation result:
+
+```python
+@solid
+def my_metadata_expectation_solid(context, df):
+    do_some_transform(df)
+    yield ExpectationResult(
+        success=len(df) > 0,
+        description="ensure dataframe has rows",
+        metadata_entries=[
+            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
+            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
+            EventMetadataEntry.float(1.0 * len(df), "row count"),
+            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
+        ],
+    )
+    yield Output(df)
+```
+
+## Type Checks
+
+<TODO />
+
+## Failure
+
+<TODO />

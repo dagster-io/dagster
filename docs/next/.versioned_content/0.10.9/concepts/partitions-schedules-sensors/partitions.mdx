@@ -1,0 +1,206 @@
+---
+title: Partitions | Dagster
+description:
+  Dagster provides the Partition Set abstraction for pipelines where each run deals with a subset of
+  config data.
+---
+
+# Partitions
+
+Dagster provides the _Partition Set_ abstraction for pipelines where each run deals with a subset of
+config data.
+
+## Relevant APIs
+
+| Name                                         | Description                          |
+| -------------------------------------------- | ------------------------------------ |
+| <PyObject object="PartitionSetDefinition" /> | The class to define a partition set. |
+
+## Overview
+
+Users define a set of logical "partitions", usually time windows, along with a scheme for building
+pipeline config from a partition name. With this, they can kick off a pipeline run or set of
+pipeline runs by simply selecting a partition or set of partitions.
+
+Partitions have two main uses:
+
+- [Schedules](/concepts/partitions-schedules-sensors/schedules): you can schedule pipeline to run on a
+  per partition basis. For example, you can config the date as a partition and schedule pipeline runs
+  on a daily basis.
+- [Backfills](/concepts/partitions-schedules-sensors/backfill): you can execute pipelines per partition
+  all at once. A common use case is to backfill a set of partitions where the historical data need
+  to be reprocessed.
+
+---
+
+## Defining a Partition
+
+For example, here's a pipeline that computes some data for a given date.
+
+```python file=/concepts/partitions_schedules_sensors/pipeline.py startafter=start_pipeline_marker_1 endbefore=end_pipeline_marker_1
+@solid(config_schema={"date": str})
+def process_data_for_date(context):
+    date = context.solid_config["date"]
+    context.log.info(f"processing data for {date}")
+
+
+@solid
+def post_slack_message(context):
+    context.log.info("posting slack message")
+
+
+@pipeline
+def my_data_pipeline():
+    process_data_for_date()
+    post_slack_message()
+```
+
+The solid `process_data_for_date` takes, as config, a string `date`. This piece of config will
+define which date to compute data for. For example, if we wanted to compute for May 5th, 2020,
+we would execute the pipeline with the following config:
+
+```python file=/concepts/partitions_schedules_sensors/config.yaml
+solids:
+  process_data_for_date:
+    config:
+      date: "2020-05-05"
+```
+
+We can define a <PyObject module="dagster" object="PartitionSetDefinition"/> that defines the full set of
+partitions and how to define the run config for a given partition.
+
+```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_def endbefore=end_def
+def get_date_partitions():
+    """Every day in the month of May, 2020"""
+    return [Partition(f"2020-05-{str(day).zfill(2)}") for day in range(1, 32)]
+
+
+def run_config_for_date_partition(partition):
+    date = partition.value
+    return {"solids": {"process_data_for_date": {"config": {"date": date}}}}
+
+
+date_partition_set = PartitionSetDefinition(
+    name="date_partition_set",
+    pipeline_name="my_data_pipeline",
+    partition_fn=get_date_partitions,
+    run_config_fn_for_partition=run_config_for_date_partition,
+)
+```
+
+## Launching Partitions
+
+### Launching Partitioned Runs from the Partitions Tab
+
+In Dagit, you can view runs by partition in the Partitions tab of a Pipeline page.
+
+In the "Run Matrix", each column corresponds to one of the partitions in the partition set. Each row corresponds to one
+of the steps in the pipeline.
+
+<!-- This was generated with:
+    * `dagit -f repo.py` inside docs_snippet/concepts/partitions_schedules_sensors/ directory
+    * Navigating to the partitions page for `my_data_pipeline`
+-->
+
+<img src="/images/concepts/partitions-schedules-sensors/partitions-page.png" />
+
+<!-- ![Partitions Tab](/images/concepts/partitions-schedules-sensors/partitions-page.png) -->
+
+You can click on individual boxes to see the history of runs for that step and partition.
+
+<!-- ![Partition Step Modal](/images/concepts/partitions-schedules-sensors/partition-step-modal.png) -->
+
+<img src="/images/concepts/partitions-schedules-sensors/partitions-step-modal.png" />
+
+### Launching Partitioned Runs from the Playground
+
+You can view and use partitions in the Dagit playground view for a pipeline. In the top bar, you can
+select from the list of all available partition sets, then choose a specific partition.
+Within the config editor, the config for the selected partition will be populated.
+
+In the screenshot below, we select the `date_partition_set` and the `2020-05-01` partition, and we can see that
+the correct run config for the partition has been populated in the editor.
+
+<!-- ![Partitions in Dagit Playground](/images/concepts/partitions-schedules-sensors/partitions-playground.png) -->
+
+<img src="/images/concepts/partitions-schedules-sensors/partitions-playground.png" />
+
+## Testing a Partition Set
+
+<div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+  TODO
+</div>
+
+<!-- ## Examples
+
+### First example
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+```
+
+### Second example
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+```
+
+### Third example
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+```
+
+### Fourth example
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+```
+
+## Patterns
+
+### <Check/> First Pattern
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+```
+
+### <Check/> Second Pattern
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+```
+
+### <Cross/> Anti-pattern
+
+Some supporting text for the example
+
+```python
+
+    ...
+
+``` -->

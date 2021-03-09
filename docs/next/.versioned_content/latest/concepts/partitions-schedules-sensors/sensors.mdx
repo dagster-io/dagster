@@ -1,0 +1,116 @@
+---
+title: Schedules | Dagster
+description: Sensors allow you to instigate runs when some external state changes.
+---
+
+# Sensors
+
+Sensors allow you to instigate runs when some external state changes.
+
+<PlaceholderImage />
+
+## Relevant APIs
+
+| Name                                    | Description                                                                                                                                                                                                     |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="sensor" decorator />  | The decorator used to define a sensor. The decorated function is called the `execution_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                      |
+| <PyObject object="SensorDefinition"  /> | Base class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  /> |
+
+## Overview
+
+Sensors are definitions in Dagster that allow you to automatically instigate runs based on some external state change. For example, you could:
+
+- Launch a run whenever a file file appears in an s3 bucket
+- Launch a run whenever a specific asset is materialized by another pipeline
+- Launch a run whenever an external system is down
+
+Sensors have several important properties:
+
+- Each sensor targets a specific pipeline
+- A sensors defines an evlauation function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. A run will be launched for each run request.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
+- A sensor optionally defines tags, a mode, and a solid selection for the targeted pipeline.
+
+---
+
+## Defining a sensor
+
+To define a sensor, use the <PyObject object="sensor" decorator /> decorator. The decorated function is called the `execution_fn` and must have `context` as the first argument. The context is a <PyObject object="SensorExecutionContext" />
+
+Given the following pipeline that logs a filename that is specified in the configuration in the `process_file` solid:
+
+```python
+@solid(config_schema={"filename": str})
+def process_file(context):
+    filename = context.solid_config["filename"]
+    context.log.info(filename)
+
+
+@pipeline
+def log_file_pipeline():
+    process_file()
+```
+
+We can write a sensor that watches for new files in a directory and requests a run for each new file in the directory.
+
+```python
+@sensor(pipeline_name="log_file_pipeline")
+def my_directory_sensor(_context):
+    for filename in os.listdir(MY_DIRECTORY):
+        filepath = os.path.join(MY_DIRECTORY, filename)
+        if os.path.isfile(filepath):
+            yield RunRequest(
+                run_key=filename,
+                run_config={"solids": {"process_file": {"config": {"filename": filename}}}},
+            )
+```
+
+### Idempotence using run keys
+
+In the above example, we use the run_key parameter to enforce idempotence for each filename. Dagster will ensure that only one run is created for each unique run_key value for a given sensor. In the example, even though the full directory contents are requested on every sensor evaluation, only new files will actually instigate new runs due to the run key.
+
+Run keys enable a sensor evaluation function to declaratively describe what runs should exist, rather than keeping track of cursors or timestamps. However, the last_run_key and last_completion_time attributes on the <PyObject object="SensorExecutionContext"/> that's passed into the sensor evaluation function can also be used to keep track of timestamps and cursors.
+
+## Testing sensors
+
+<TODO />
+
+### Monitoring sensors in Dagit
+
+<TODO />
+
+## Examples
+
+### Asset sensor
+
+<TODO />
+
+### S3 file sensor
+
+<TODO />
+
+### Pipeline run sensor
+
+<TODO />
+
+### Pipeline failure sensor
+
+<TODO />
+
+### Sensor with custom evaluation interval
+
+By default, sensors are configured to run roughly every 30 seconds, but they can be configured to run at a different interval by setting the minimum_interval_seconds parameter on the sensor decorator. The minimum interval specified on the sensor definition guarantees that the sensor will not be evaluated more frequently than that interval.
+
+For example, here are two sensors that are defined with two different intervals:
+
+```python
+@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=30)
+def sensor_A(_context):
+    yield RunRequest(run_key=None, run_config={})
+
+
+@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=45)
+def sensor_B(_context):
+    yield RunRequest(run_key=None, run_config={})
+```
