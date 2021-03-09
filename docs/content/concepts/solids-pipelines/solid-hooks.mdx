@@ -156,3 +156,13 @@ if __name__ == "__main__":
         run_config = yaml.safe_load(fd.read())
     result = execute_pipeline(notif_all, run_config=run_config, mode="prod")
 ```
+
+### <Cross/> Pipeline-level hooks
+
+Dagster currently does not have pipeline-scoped hooks. When you add a hook decorator to a pipeline, the hook is attached to every solid in the pipeline individually. The hook does not track pipeline-scoped events and only tracks solid-level success or failure events.
+
+You may find the need for something like pipeline-level hooks. For example, you may want to run some code for every pipeline success or failure.
+
+Even though Dagster does not have first-class pipeline-level hooks, you can use <PyObject object="sensor" decorator/> to achieve the same functionality. The sensor can monitor pipeline events at the instance level and perform an arbitrary action (such as send an alert or even instigate a new pipeline run).
+
+You can find an example of the sensor at [Pipeline failure sensor](/concepts/partitions-schedules-sensors/sensors#pipeline-failure-sensor) on the [Sensors](/concepts/partitions-schedules-sensors/sensors) page.

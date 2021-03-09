@@ -1,5 +1,5 @@
 ---
-title: Schedules | Dagster
+title: Sensors | Dagster
 description: Sensors allow you to instigate runs when some external state changes.
 ---
 
@@ -90,13 +90,51 @@ Run keys enable a sensor evaluation function to declaratively describe what runs
 
 <TODO />
 
-### Pipeline run sensor
+### Cross-DAG sensor
 
 <TODO />
 
 ### Pipeline failure sensor
 
-<TODO />
+If you want to act on pipeline failures, e.g., you need to send an alert to a monitoring service on pipeline failure. You can write a sensor that monitors Dagster's runs table and launches a specialized "alert" pipeline for each failed run.
+
+In this example, you can write an "alert" pipeline which will send a slack message when it runs:
+
+```python file=/concepts/partitions_schedules_sensors/sensor_alert.py startafter=start_alert_pipeline_marker endbefore=end_alert_pipeline_marker
+@solid(required_resource_keys={"slack"})
+def slack_message_on_failure_solid(context):
+    message = f"Solid {context.solid.name} failed"
+    context.resources.slack.chat.post_message(channel="#foo", text=message)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(name="test", resource_defs={"slack": ResourceDefinition.mock_resource()}),
+        ModeDefinition(name="prod", resource_defs={"slack": slack_resource}),
+    ]
+)
+def failure_alert_pipeline():
+    slack_message_on_failure_solid()
+```
+
+Then, you can define a sensor that fetches the failed runs from the runs table via `context.instance`, and instigates a `failure_alert_pipeline` run for every failed run. Note that we use the failed run's id as the `run_key` to prevent sending an alert twice for the same pipeline run.
+
+```python file=/concepts/partitions_schedules_sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
+@sensor(pipeline_name="failure_alert_pipeline", mode="prod")
+def pipeline_failure_sensor(context):
+    runs = context.instance.get_runs(
+        filters=PipelineRunsFilter(
+            pipeline_name="your_pipeline_name",
+            statuses=[PipelineRunStatus.FAILURE],
+        ),
+    )
+    for run in runs:
+        # Use the id of the failed run as run_key to avoid duplicate alerts.
+        yield RunRequest(run_key=str(run.run_id))
+```
+
+If you would like to set up success or failure handling policies on solids, you can find more
+information on the [Solid Hooks](/solids-pipelines/solid-hooks) page.
 
 ### Sensor with custom evaluation interval
 
