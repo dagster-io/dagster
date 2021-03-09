@@ -519,7 +519,7 @@ class OutputContext(
         cls,
         step_key: str,
         name: str,
-        pipeline_name: str,
+        pipeline_name: Optional[str] = None,
         run_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         mapping_key: Optional[str] = None,
@@ -538,7 +538,7 @@ class OutputContext(
             cls,
             step_key=check.str_param(step_key, "step_key"),
             name=check.str_param(name, "name"),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             run_id=check.opt_str_param(run_id, "run_id"),
             metadata=check.opt_dict_param(metadata, "metadata"),
             mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
@@ -589,7 +589,7 @@ class InputContext(
 
     Attributes:
         name (Optional[str]): The name of the input that we're loading.
-        pipeline_name (str): The name of the pipeline.
+        pipeline_name (Optional[str]): The name of the pipeline.
         solid_def (Optional[SolidDefinition]): The definition of the solid that's loading the input.
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
@@ -607,7 +607,7 @@ class InputContext(
 
     def __new__(
         cls,
-        pipeline_name: str,
+        pipeline_name: Optional[str] = None,
         # This will be None when called from calling SolidExecutionResult.output_value
         name: Optional[str] = None,
         solid_def: Optional[SolidDefinition] = None,
