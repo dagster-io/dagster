@@ -25,11 +25,17 @@ However, there are several other types of events that might be useful to emit, w
 
 ## Events
 
-Yielding events from within the body of a solid is a useful way of communicating with the Dagster framework. The most critical event to the functionality of Dagster is the <PyObject object="Output"/> event, which allows output data to be passed on from one solid to the next.
+Yielding events from within the body of a solid is a useful way of communicating with the Dagster framework. The most critical event to the functionality of Dagster is the <PyObject object="Output"/> event, which allows output data to be passed on from one solid to the next. However, sometimes you will want to
 
 ### Event Metadata
 
-Oftentimes, it may be useful to attach a set of structured metadata to an event.
+Oftentimes, it may be useful to attach some arbitrary information to an event that is not captured by its basic parameters. Through the <PyObject object="EventMetadataEntry"/> object, we provide a consistent interface for specifying this metadata on a variety of events. Depending on the type of the data, these entries will be rendered in Dagit in a more useful format than a simple unstructured string.
+
+Both AssetMaterialization and ExpectationResult events accept a `metadata_entries` parameter, which is simply a list of these objects.
+
+We provide support for a wide variety of potentially useful metadata types, including simple datatypes (EventMetadataEntry.float, EventMetadataEntry.int, EventMetadataEntry.text), as well as more complex information such as markdown and json (EventMetadataEntry.md, EventMetadataEntry.json).
+
+Check out the API Docs for EventMetadataEntry here for a complete list.
 
 ### Outputs
 
