@@ -13,7 +13,7 @@ def docs_steps() -> List[dict]:
         # To fix this, run 'make snapshots' in the /docs directory to update the snapshots.
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         StepBuilder("docs code snapshots")
-        .run("pushd docs; make snapshot", "git diff --exit-code")
+        .run("pushd docs; make docs_dev_install; make snapshot", "git diff --exit-code")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         # TODO: Yuhan to fix

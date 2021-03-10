@@ -70,9 +70,9 @@ Using markers:
 
 **Render:**
 
-Run `yarn snapshot` to actually get the snipets to render. . This will replace the body of the code block with the code you referenced.
+Run `make snapshot` to actually get the snipets to render. . This will replace the body of the code block with the code you referenced.
 
-**Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `yarn snapshot` once you update the underlying code to see the changes in the doc site. _This behavior is different from previous versions of the site._
+**Important**: to change the value of a literal include, you must change the referenced code, not the code inside the code block. Run `make snapshot` once you update the underlying code to see the changes in the doc site. _This behavior is different from previous versions of the site._
 
 **Properties:**
 
