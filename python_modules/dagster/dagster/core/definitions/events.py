@@ -7,7 +7,7 @@ from enum import Enum
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster.utils.backcompat import experimental_arg_warning, experimental_class_warning
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -150,7 +150,7 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
     Args:
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
-        entry_data (Union[(Union[TextMetadataEntryData, UrlMetadataEntryData, PathMetadataEntryData, JsonMetadataEntryData, MarkdownMetadataEntryData, FloatMetadataEntryData, IntMetadataEntryData]):
+        entry_data (Union[TextMetadataEntryData, UrlMetadataEntryData, PathMetadataEntryData, JsonMetadataEntryData, MarkdownMetadataEntryData, FloatMetadataEntryData, IntMetadataEntryData]):
             Typed metadata entry data. The different types allow for customized display in tools
             like dagit.
     """
@@ -485,6 +485,7 @@ class PartitionMetadataEntry(namedtuple("_PartitionMetadataEntry", "partition en
     """
 
     def __new__(cls, partition: str, entry: EventMetadataEntry):
+        experimental_class_warning("PartitionMetadataEntry")
         return super(PartitionMetadataEntry, cls).__new__(
             cls,
             check.str_param(partition, "partition"),
