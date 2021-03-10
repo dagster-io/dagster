@@ -28,7 +28,14 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "dagster-pandas", "pandas", "requests", "attrs"],
+        install_requires=[
+            "dagster",
+            "dagster-pandas",
+            "pandas",
+            "requests",
+            "attrs",
+            "agate < 1.6.2",
+        ],
         extras_require={"test": ["dbt>=0.17.0"]},
         zip_safe=False,
     )
