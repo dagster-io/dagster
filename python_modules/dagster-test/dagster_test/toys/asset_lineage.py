@@ -44,7 +44,6 @@ def run_config_for_date_partition(partition):
             },
             "top_10_comments": {"outputs": {"result": {"partitions": [date]}}},
             "top_10_reviews": {"outputs": {"result": {"partitions": [date]}}},
-            "top_10_actions": {"outputs": {"result": {"partitions": [date]}}},
         }
     }
 
@@ -80,7 +79,7 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
         return AssetKey(
             [
                 "my_database",
-                context.metadata["table"],
+                context.metadata["table_name"],
             ]
         )
 
@@ -95,7 +94,7 @@ def my_db_io_manager(_):
 
 @solid(
     output_defs=[
-        OutputDefinition(io_manager_key="my_db_io_manager"),
+        OutputDefinition(io_manager_key="my_db_io_manager", metadata={"table_name": "raw_actions"}),
     ],
 )
 def download_data(_):
@@ -118,8 +117,12 @@ def download_data(_):
 
 @solid(
     output_defs=[
-        OutputDefinition(name="reviews", io_manager_key="my_db_io_manager"),
-        OutputDefinition(name="comments", io_manager_key="my_db_io_manager"),
+        OutputDefinition(
+            name="reviews", io_manager_key="my_db_io_manager", metadata={"table_name": "reviews"}
+        ),
+        OutputDefinition(
+            name="comments", io_manager_key="my_db_io_manager", metadata={"table_name": "comments"}
+        ),
     ]
 )
 def split_action_types(_, df):
@@ -136,12 +139,13 @@ def split_action_types(_, df):
 
 def best_n_actions(n, table_name):
     @solid(
+        name=f"top_{n}_{table_name}",
         output_defs=[
             OutputDefinition(
                 io_manager_key="my_db_io_manager",
                 metadata={"table_name": table_name},
             )
-        ]
+        ],
     )
     def _best_n_actions(_, df):
         df = df.nlargest(n, "score")

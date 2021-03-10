@@ -6,6 +6,7 @@ from dagster import (
     execute_pipeline,
 )
 from dagster.utils.temp_file import get_temp_dir
+from dagster_test.toys.asset_lineage import asset_lineage_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.dynamic import dynamic_pipeline
 from dagster_test.toys.error_monster import error_monster
@@ -179,3 +180,22 @@ def test_composition_pipeline():
     assert result.success
 
     assert result.output_for_solid("div_four") == 7.0 / 4.0
+
+
+def test_asset_lineage_pipeline():
+    assert execute_pipeline(
+        asset_lineage_pipeline,
+        run_config={
+            "solids": {
+                "download_data": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
+                "split_action_types": {
+                    "outputs": {
+                        "comments": {"partitions": ["2020-01-01"]},
+                        "reviews": {"partitions": ["2020-01-01"]},
+                    }
+                },
+                "top_10_comments": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
+                "top_10_reviews": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
+            }
+        },
+    ).success
