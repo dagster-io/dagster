@@ -26,7 +26,6 @@ except ImportError:
     from great_expectations.core.util import convert_to_json_serializable
 
 
-
 @resource(config_schema={"ge_root_dir": Noneable(StringSource)})
 def ge_data_context(context):
     if context.resource_config["ge_root_dir"] is None:
