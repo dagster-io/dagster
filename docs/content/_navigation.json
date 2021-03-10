@@ -231,12 +231,8 @@
         ]
       },
       {
-        "title": "Run Launchers & Executors",
+        "title": "Executors",
         "children": [
-          {
-            "title": "Run Launcher",
-            "path": "/concepts/run-launcher-executors/run-launcher"
-          },
           {
             "title": "Executors",
             "path": "/concepts/run-launcher-executors/executor"
@@ -303,6 +299,10 @@
         "title": "Dagster Deployments",
         "children": [
           {
+            "title": "Overview",
+            "path": "/deployment/overview"
+          },
+          {
             "title": "Dagster Instance",
             "path": "/deployment/dagster-instance"
           },
@@ -311,8 +311,20 @@
             "path": "/deployment/dagster-daemon"
           },
           {
-            "title": "Run Concurrency",
-            "path": "/deployment/run-concurrency"
+            "title": "Dagster Storage",
+            "path": "/deployment/dagster-storage"
+          },
+          {
+            "title": "Executor",
+            "path": "/deployment/executor"
+          },
+          {
+            "title": "Run Launcher",
+            "path": "/deployment/run-launcher"
+          },
+          {
+            "title": "Run Coordinator",
+            "path": "/deployment/run-coordinator"
           }
         ]
       },
