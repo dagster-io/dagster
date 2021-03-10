@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from datetime import datetime
 
 import pendulum
@@ -9,6 +10,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.core.instance.ref import InstanceRef
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.utils import ensure_gen, merge_dicts
@@ -26,7 +28,7 @@ class ScheduleExecutionContext:
     and ``should_execute``.
 
     Attributes:
-        instance (DagsterInstance): The instance configured to run the schedule
+        instance_ref (InstanceRef): The serialized instance configured to run the schedule
         scheduled_execution_time (datetime):
             The time in which the execution was scheduled to happen. May differ slightly
             from both the actual execution time and the time at which the run config is computed.
@@ -34,17 +36,18 @@ class ScheduleExecutionContext:
             DagsterDaemonScheduler.
     """
 
-    __slots__ = ["_instance", "_scheduled_execution_time"]
+    __slots__ = ["_instance_ref", "_scheduled_execution_time"]
 
-    def __init__(self, instance, scheduled_execution_time):
-        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+    def __init__(self, instance_ref, scheduled_execution_time):
+        self._instance_ref = check.inst_param(instance_ref, "instance_ref", InstanceRef)
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
 
-    @property
-    def instance(self):
-        return self._instance
+    @contextmanager
+    def get_instance(self):
+        with DagsterInstance.from_ref(self._instance_ref) as instance:
+            yield instance
 
     @property
     def scheduled_execution_time(self):

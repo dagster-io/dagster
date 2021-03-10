@@ -23,23 +23,22 @@ def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
 def backfilling_partition_selector(
     context: ScheduleExecutionContext, partition_set_def: PartitionSetDefinition, retry_failed=False
 ):
-    status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
-    runs_by_partition = _fetch_runs_by_partition(
-        context.instance, partition_set_def, status_filters
-    )
+    with context.get_instance() as instance:
+        status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
+        runs_by_partition = _fetch_runs_by_partition(instance, partition_set_def, status_filters)
 
-    selected = None
-    for partition in partition_set_def.get_partitions():
-        runs = runs_by_partition[partition.name]
+        selected = None
+        for partition in partition_set_def.get_partitions():
+            runs = runs_by_partition[partition.name]
 
-        selected = partition
+            selected = partition
 
-        # break when we find the first empty partition
-        if len(runs) == 0:
-            break
+            # break when we find the first empty partition
+            if len(runs) == 0:
+                break
 
-    # may return an already satisfied final partition - bank on should_execute to prevent firing in schedule
-    return selected
+        # may return an already satisfied final partition - bank on should_execute to prevent firing in schedule
+        return selected
 
 
 def _toys_tz_info():
@@ -49,22 +48,23 @@ def _toys_tz_info():
 
 
 def backfill_should_execute(context, partition_set_def, retry_failed=False):
-    status_filters = (
-        [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS] if retry_failed else None
-    )
-    runs_by_partition = _fetch_runs_by_partition(
-        context.instance, partition_set_def, status_filters
-    )
-    for runs in runs_by_partition.values():
-        for run in runs:
-            # if any active runs - don't start a new one
-            if run.status == PipelineRunStatus.STARTED:
-                return False  # would be nice to return a reason here
+    with context.get_instance() as instance:
+        status_filters = (
+            [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS] if retry_failed else None
+        )
+        runs_by_partition = _fetch_runs_by_partition(instance, partition_set_def, status_filters)
+        for runs in runs_by_partition.values():
+            for run in runs:
+                # if any active runs - don't start a new one
+                if run.status == PipelineRunStatus.STARTED:
+                    return False  # would be nice to return a reason here
 
-    available_partitions = set([partition.name for partition in partition_set_def.get_partitions()])
-    satisfied_partitions = set(runs_by_partition.keys())
-    is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
-    return is_remaining_partitions
+        available_partitions = set(
+            [partition.name for partition in partition_set_def.get_partitions()]
+        )
+        satisfied_partitions = set(runs_by_partition.keys())
+        is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
+        return is_remaining_partitions
 
 
 def backfill_test_schedule():

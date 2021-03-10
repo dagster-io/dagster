@@ -34,14 +34,6 @@ spec:
       imagePullSecrets: {{ $.Values.imagePullSecrets | toYaml | nindent 8 }}
       serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
-      initContainers:
-        - name: check-db-ready
-          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
-          imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
-          command: ['sh', '-c',
-            'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
-            ]
-          securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
       containers:
         - name: {{ $.Chart.Name }}
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
@@ -50,11 +42,6 @@ spec:
           command: ["dagster"]
           args: ["api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           env:
-            - name: DAGSTER_PG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ template "dagster.fullname" $ }}-postgresql-secret"
-                  key: postgresql-password
             - name: DAGSTER_CURRENT_IMAGE
               value: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
           envFrom:

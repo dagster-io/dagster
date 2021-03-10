@@ -189,9 +189,6 @@ def assert_user_deployment_template(
 
         # Assert security context
         if deployment_values.securityContext:
-            template_init_container_security_context = t.api_client.sanitize_for_serialization(
-                template.spec.template.spec.init_containers[0].security_context
-            )
             template_container_security_context = t.api_client.sanitize_for_serialization(
                 template.spec.template.spec.containers[0].security_context
             )
@@ -199,7 +196,6 @@ def assert_user_deployment_template(
                 deployment_values.securityContext.json(exclude_none=True)
             )
 
-            assert template_init_container_security_context == security_context_values
             assert template_container_security_context == security_context_values
 
         # Assert resources

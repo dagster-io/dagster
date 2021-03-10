@@ -42,17 +42,19 @@ def last_empty_partition(context, partition_set_def):
     partition_set_def = check.inst_param(
         partition_set_def, "partition_set_def", PartitionSetDefinition
     )
-    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
-    if not partitions:
-        return None
-    selected = None
-    for partition in reversed(partitions):
-        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
-        matching = context.instance.get_runs(filters)
-        if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
-            selected = partition
-            break
-    return selected
+
+    with context.get_instance() as instance:
+        partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
+        if not partitions:
+            return None
+        selected = None
+        for partition in reversed(partitions):
+            filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
+            matching = instance.get_runs(filters)
+            if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
+                selected = partition
+                break
+        return selected
 
 
 def first_partition(context, partition_set_def=None):

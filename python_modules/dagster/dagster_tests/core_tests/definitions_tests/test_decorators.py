@@ -330,11 +330,11 @@ def test_scheduler():
         return {}
 
     with instance_for_test() as instance:
-        context_without_time = ScheduleExecutionContext(instance, None)
+        context_without_time = ScheduleExecutionContext(instance.get_ref(), None)
 
         execution_time = datetime(year=2019, month=2, day=27)
 
-        context_with_time = ScheduleExecutionContext(instance, execution_time)
+        context_with_time = ScheduleExecutionContext(instance.get_ref(), execution_time)
 
         execution_data = echo_time_schedule.get_execution_data(context_without_time)
         assert len(execution_data) == 1
@@ -457,7 +457,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
     with instance_for_test() as instance:
         with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
 
-            context_without_time = ScheduleExecutionContext(instance, None)
+            context_without_time = ScheduleExecutionContext(instance.get_ref(), None)
 
             start_date = datetime(year=2019, month=1, day=1)
 
@@ -492,7 +492,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
                 year=2018, month=12, day=30, hour=3, minute=25, tz="US/Central"
             )
             context_with_invalid_time = ScheduleExecutionContext(
-                instance, execution_time_with_invalid_partition
+                instance.get_ref(), execution_time_with_invalid_partition
             )
 
             execution_data = hourly_foo_schedule.get_execution_data(context_with_invalid_time)
@@ -509,7 +509,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
             valid_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_time)
 
             execution_data = hourly_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -551,7 +551,7 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
             valid_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_time)
 
             execution_data = hourly_central_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -600,7 +600,7 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
             valid_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_time)
 
             execution_data = hourly_schedule_for_current_hour.get_execution_data(
                 context_with_valid_time
@@ -628,7 +628,7 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
             valid_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_time)
 
             execution_data = hourly_schedule_for_two_hours_ago.get_execution_data(
                 context_with_valid_time
@@ -645,7 +645,7 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
 def test_partitions_for_daily_schedule_decorators_without_timezone():
     with instance_for_test() as instance:
         with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
-            context_without_time = ScheduleExecutionContext(instance, None)
+            context_without_time = ScheduleExecutionContext(instance.get_ref(), None)
 
             start_date = datetime(year=2019, month=1, day=1)
 
@@ -668,7 +668,7 @@ def test_partitions_for_daily_schedule_decorators_without_timezone():
             valid_daily_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_daily_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_daily_time)
 
             execution_data = daily_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -701,7 +701,7 @@ def test_partitions_for_daily_schedule_decorators_without_timezone():
             valid_daily_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_daily_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_daily_time)
 
             execution_data = daily_same_day_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -740,7 +740,7 @@ def test_partitions_for_daily_schedule_decorators_with_timezone():
             valid_daily_time = create_pendulum_time(
                 year=2019, month=1, day=27, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_daily_time)
+            context_with_valid_time = ScheduleExecutionContext(instance.get_ref(), valid_daily_time)
 
             execution_data = daily_central_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -755,7 +755,7 @@ def test_partitions_for_daily_schedule_decorators_with_timezone():
 def test_partitions_for_weekly_schedule_decorators_without_timezone():
     with instance_for_test() as instance:
         with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
-            context_without_time = ScheduleExecutionContext(instance, None)
+            context_without_time = ScheduleExecutionContext(instance.get_ref(), None)
 
             start_date = datetime(year=2019, month=1, day=1)
 
@@ -771,7 +771,9 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone():
             valid_weekly_time = create_pendulum_time(
                 year=2019, month=1, day=30, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_weekly_time)
+            context_with_valid_time = ScheduleExecutionContext(
+                instance.get_ref(), valid_weekly_time
+            )
 
             execution_data = weekly_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -814,7 +816,9 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone():
             valid_weekly_time = create_pendulum_time(
                 year=2019, month=1, day=30, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_weekly_time)
+            context_with_valid_time = ScheduleExecutionContext(
+                instance.get_ref(), valid_weekly_time
+            )
 
             execution_data = weekly_foo_same_week_schedule.get_execution_data(
                 context_with_valid_time
@@ -849,7 +853,9 @@ def test_partitions_for_weekly_schedule_decorators_with_timezone():
             valid_weekly_time = create_pendulum_time(
                 year=2019, month=1, day=30, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_weekly_time)
+            context_with_valid_time = ScheduleExecutionContext(
+                instance.get_ref(), valid_weekly_time
+            )
 
             execution_data = weekly_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -872,7 +878,7 @@ def test_partitions_for_weekly_schedule_decorators_with_timezone():
 def test_partitions_for_monthly_schedule_decorators_without_timezone():
     with instance_for_test() as instance:
         with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
-            context_without_time = ScheduleExecutionContext(instance, None)
+            context_without_time = ScheduleExecutionContext(instance.get_ref(), None)
 
             start_date = datetime(year=2019, month=1, day=1)
 
@@ -888,7 +894,9 @@ def test_partitions_for_monthly_schedule_decorators_without_timezone():
             valid_monthly_time = create_pendulum_time(
                 year=2019, month=2, day=3, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_monthly_time)
+            context_with_valid_time = ScheduleExecutionContext(
+                instance.get_ref(), valid_monthly_time
+            )
 
             execution_data = monthly_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
@@ -931,7 +939,9 @@ def test_partitions_for_monthly_schedule_decorators_without_timezone():
             valid_monthly_time = create_pendulum_time(
                 year=2019, month=2, day=3, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_monthly_time)
+            context_with_valid_time = ScheduleExecutionContext(
+                instance.get_ref(), valid_monthly_time
+            )
 
             execution_data = monthly_foo_schedule_same_month.get_execution_data(
                 context_with_valid_time
@@ -965,7 +975,9 @@ def test_partitions_for_monthly_schedule_decorators_with_timezone():
             valid_monthly_time = create_pendulum_time(
                 year=2019, month=2, day=3, hour=9, minute=30, tz="US/Central"
             )
-            context_with_valid_time = ScheduleExecutionContext(instance, valid_monthly_time)
+            context_with_valid_time = ScheduleExecutionContext(
+                instance.get_ref(), valid_monthly_time
+            )
 
             execution_data = monthly_foo_schedule.get_execution_data(context_with_valid_time)
             assert len(execution_data) == 1
