@@ -74,6 +74,25 @@ class TestDbtCliSolids:
         result = execute_solid(test_solid)
         assert result.success
 
+    def test_dbt_cli_snapshot_with_extra_config(
+        self,
+        dbt_seed,
+        test_project_dir,
+        dbt_config_dir,
+    ):  # pylint: disable=unused-argument
+        test_solid = configured(dbt_cli_snapshot, name="test_solid")(
+            {
+                "project-dir": test_project_dir,
+                "profiles-dir": dbt_config_dir,
+                "threads": 1,
+                "select": ["sort_by_calories+"],
+                "exclude": ["least_caloric"],
+            },
+        )
+
+        result = execute_solid(test_solid)
+        assert result.success
+
     def test_dbt_cli_run_operation(
         self, dbt_seed, test_project_dir, dbt_config_dir
     ):  # pylint: disable=unused-argument

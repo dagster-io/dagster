@@ -307,11 +307,11 @@ def dbt_cli_test(context) -> DbtCliOutput:
                 "profiles.yml."
             ),
         ),
-        "models": Field(
+        "select": Field(
             config=Noneable([str]),
             default_value=None,
             is_required=False,
-            description="The dbt models to run.",
+            description="The dbt models to include.",
         ),
         "exclude": Field(
             config=Noneable([str]),
@@ -337,7 +337,7 @@ def dbt_cli_snapshot(context) -> Dict:
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
         command=("snapshot",),
-        flags_dict=passthrough_flags_only(context.solid_config, ("threads", "models", "exclude")),
+        flags_dict=passthrough_flags_only(context.solid_config, ("threads", "select", "exclude")),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
