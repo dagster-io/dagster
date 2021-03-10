@@ -15,7 +15,7 @@ def test_basic_resource():
             resource_defs={"basic_resource": basic_resource},
             instance=dagster_instance,
         ) as resources:
-            assert resources.resource_instance_dict["basic_resource"] == "foo"
+            assert resources.basic_resource == "foo"
 
 
 def test_resource_with_config():
@@ -33,10 +33,7 @@ def test_resource_with_config():
             instance=dagster_instance,
             run_config={"basic_resource": {"config": {"plant": "maple tree"}}},
         ) as resources:
-            assert (
-                resources.resource_instance_dict["basic_resource"]
-                == "plant: maple tree, animal: dog"
-            )
+            assert resources.basic_resource == "plant: maple tree, animal: dog"
 
 
 def test_resource_with_dependencies():
@@ -54,8 +51,8 @@ def test_resource_with_dependencies():
             instance=dagster_instance,
             run_config={"no_deps": {"config": {"animal": "dog"}}},
         ) as resources:
-            assert resources.resource_instance_dict["no_deps"] == "dog"
-            assert resources.resource_instance_dict["has_deps"] == "dog is an animal."
+            assert resources.no_deps == "dog"
+            assert resources.has_deps == "dog is an animal."
 
 
 def test_error_in_resource_initialization():

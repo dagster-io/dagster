@@ -176,9 +176,9 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance):
                 resource_defs=mode_def.resource_defs,
                 instance=instance,
                 run_config=run_config.get("resources", {}),
-            ) as scoped_resources:
+            ) as resources:
 
-                io_manager = scoped_resources.resource_instance_dict[io_manager_key]
+                io_manager = getattr(resources, io_manager_key)
                 context = get_output_context(
                     execution_plan, environment_config, step_output_handle, None
                 )

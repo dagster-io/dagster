@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, NamedTuple, Optional
 
 from dagster import check
 from dagster.config.validate import process_config
@@ -52,7 +52,7 @@ def build_resources(
     instance: DagsterInstance,
     run_config: Optional[Dict[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
-) -> Generator[ScopedResourcesBuilder, None, None]:
+) -> Generator[NamedTuple, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
     This API allows for using resources in an independent context. Resources will be initialized
@@ -92,6 +92,6 @@ def build_resources(
     try:
         list(resources_manager.generate_setup_events())
         resources = check.inst(resources_manager.get_object(), ScopedResourcesBuilder)
-        yield resources
+        yield resources.build(set(resources.resource_instance_dict.keys()))
     finally:
         list(resources_manager.generate_teardown_events())
