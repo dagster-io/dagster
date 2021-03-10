@@ -21,13 +21,11 @@ While a solid is being executed, it can communicate with the Dagster framework e
 
 Solids yield a stream of structured events, consisting of several different types.
 
-The most critical event to the functionality of Dagster is the <PyObject object="Output"/> event, which allows output data to be passed on from one solid to the next.
-
 However, there are several other types of events that might be useful to emit, which provide functionality for describing assets, indicating failures, and performing data/type checks.
 
 ## Events
 
-Events are yielded.
+Yielding events from within the body of a solid is a useful way of communicating with the Dagster framework. The most critical event to the functionality of Dagster is the <PyObject object="Output"/> event, which allows output data to be passed on from one solid to the next.
 
 ### Event Metadata
 
