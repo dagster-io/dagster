@@ -5,13 +5,18 @@ from dagster import Bool, check
 from dagster.config import Field, Permissive
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
+from dagster.serdes import class_from_code_pointer
 from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
 
-def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None):
+def dagster_instance_config(
+    base_dir,
+    config_filename=DAGSTER_CONFIG_YAML_FILENAME,
+    overrides=None,
+):
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_dict_param(overrides, "overrides")
@@ -30,18 +35,49 @@ def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENA
         )
 
     dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path), overrides)
-    dagster_config = validate_config(dagster_instance_config_schema(), dagster_config_dict)
+
+    if "custom_instance_class" in dagster_config_dict:
+        custom_instance_class_data = dagster_config_dict["custom_instance_class"]
+
+        validate_custom_config = validate_config(
+            configurable_class_schema(),
+            custom_instance_class_data,
+        )
+        if not validate_custom_config.success:
+            raise DagsterInvalidConfigError(
+                "Errors whilst loading dagster custom class config at {}".format(config_filename),
+                validate_custom_config.errors,
+                custom_instance_class_data,
+            )
+
+        custom_instance_class = class_from_code_pointer(
+            custom_instance_class_data["module"], custom_instance_class_data["class"]
+        )
+
+        schema = merge_dicts(
+            dagster_instance_config_schema(), custom_instance_class.config_schema()
+        )
+    else:
+        custom_instance_class = None
+        schema = dagster_instance_config_schema()
+
+    dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
             "Errors whilst loading dagster instance config at {}.".format(config_filename),
             dagster_config.errors,
             dagster_config_dict,
         )
-    return dagster_config.value
+
+    return (dagster_config.value, custom_instance_class)
 
 
 def config_field_for_configurable_class():
-    return Field({"module": str, "class": str, "config": Field(Permissive())}, is_required=False)
+    return Field(configurable_class_schema(), is_required=False)
+
+
+def configurable_class_schema():
+    return {"module": str, "class": str, "config": Field(Permissive())}
 
 
 def dagster_instance_config_schema():

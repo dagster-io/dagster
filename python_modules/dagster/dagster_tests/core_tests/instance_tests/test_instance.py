@@ -2,7 +2,8 @@ import re
 
 import pytest
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.config import Field
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, _dagster_home
 from dagster.core.snap import (
@@ -183,16 +184,21 @@ def test_dagster_home_not_dir():
 
 
 class TestInstanceSubclass(DagsterInstance):
-    def __init__(self, *args, baz=None, **kwargs):
+    def __init__(self, *args, foo=None, baz=None, **kwargs):
+        self._foo = foo
         self._baz = baz
         super().__init__(*args, **kwargs)
 
     def foo(self):
-        return "bar"
+        return self._foo
 
     @property
     def baz(self):
         return self._baz
+
+    @classmethod
+    def config_schema(cls):
+        return {"foo": Field(str, is_required=True), "baz": Field(str, is_required=False)}
 
 
 def test_instance_subclass():
@@ -201,7 +207,8 @@ def test_instance_subclass():
             "custom_instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
                 "class": "TestInstanceSubclass",
-            }
+            },
+            "foo": "bar",
         }
     ) as subclass_instance:
         assert isinstance(subclass_instance, DagsterInstance)
@@ -218,8 +225,9 @@ def test_instance_subclass():
             "custom_instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
                 "class": "TestInstanceSubclass",
-                "config": {"baz": "quux"},
-            }
+            },
+            "foo": "bar",
+            "baz": "quux",
         }
     ) as subclass_instance:
         assert isinstance(subclass_instance, DagsterInstance)
@@ -227,3 +235,17 @@ def test_instance_subclass():
         assert subclass_instance.__class__.__name__ == "TestInstanceSubclass"
         assert subclass_instance.foo() == "bar"
         assert subclass_instance.baz == "quux"
+
+    # omitting foo leads to a config schema validation error
+
+    with pytest.raises(DagsterInvalidConfigError):
+        with instance_for_test(
+            overrides={
+                "custom_instance_class": {
+                    "module": "dagster_tests.core_tests.instance_tests.test_instance",
+                    "class": "TestInstanceSubclass",
+                },
+                "baz": "quux",
+            }
+        ) as subclass_instance:
+            pass

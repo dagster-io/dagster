@@ -24,14 +24,20 @@ def _schedule_directory(base):
     return os.path.join(base, "schedules")
 
 
+def configurable_class_data(config_field):
+    return ConfigurableClassData(
+        config_field["module"],
+        config_field["class"],
+        yaml.dump(config_field.get("config") or {}, default_flow_style=False),
+    )
+
+
 def configurable_class_data_or_default(config_value, field_name, default):
-    if config_value.get(field_name):
-        return ConfigurableClassData(
-            config_value[field_name]["module"],
-            config_value[field_name]["class"],
-            yaml.dump(config_value[field_name].get("config") or {}, default_flow_style=False),
-        )
-    return default
+    return (
+        configurable_class_data(config_value[field_name])
+        if config_value.get(field_name)
+        else default
+    )
 
 
 @whitelist_for_serdes
@@ -98,7 +104,7 @@ class InstanceRef(
     @staticmethod
     def from_dir(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None):
         overrides = check.opt_dict_param(overrides, "overrides")
-        config_value = dagster_instance_config(
+        config_value, custom_instance_class = dagster_instance_config(
             base_dir, config_filename=config_filename, overrides=overrides
         )
 
@@ -183,9 +189,18 @@ class InstanceRef(
         settings_keys = {"telemetry", "sensor_settings", "backfill"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
-        custom_instance_class_data = configurable_class_data_or_default(
-            config_value, "custom_instance_class", None
-        )
+        if custom_instance_class:
+            config_keys = set(custom_instance_class.config_schema().keys())
+            custom_instance_class_config = {
+                key: val for key, val in config_value.items() if key in config_keys
+            }
+            custom_instance_class_data = ConfigurableClassData(
+                config_value["custom_instance_class"]["module"],
+                config_value["custom_instance_class"]["class"],
+                yaml.dump(custom_instance_class_config, default_flow_style=False),
+            )
+        else:
+            custom_instance_class_data = None
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
