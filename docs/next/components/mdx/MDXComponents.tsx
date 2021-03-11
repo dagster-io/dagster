@@ -279,6 +279,11 @@ const Experimental = () => {
 };
 
 export default {
+  img: ({ children, ...props }) => (
+    <div className="mx-auto">
+      <img {...(props as any)} />
+    </div>
+  ),
   PyObject,
   Link,
   Check,
