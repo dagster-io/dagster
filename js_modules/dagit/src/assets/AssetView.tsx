@@ -143,18 +143,16 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
       <div style={{display: 'flex', marginTop: 20}}>
         <Subheading>Materializations over Time</Subheading>
         <div style={{flex: 1}} />
-        <ButtonGroup>
-          <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
-            By Timestamp
-          </Button>
-          <Button
-            active={xAxis === 'partition'}
-            onClick={() => setXAxis('partition')}
-            disabled={!isPartitioned}
-          >
-            By Partition
-          </Button>
-        </ButtonGroup>
+        {isPartitioned ? (
+          <ButtonGroup>
+            <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
+              By Timestamp
+            </Button>
+            <Button active={xAxis === 'partition'} onClick={() => setXAxis('partition')}>
+              By Partition
+            </Button>
+          </ButtonGroup>
+        ) : null}
       </div>
 
       <Tabs

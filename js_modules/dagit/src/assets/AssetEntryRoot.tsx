@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Breadcrumbs, IBreadcrumbProps, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Colors, Breadcrumbs, IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
@@ -59,19 +58,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     <Page>
       <Group direction="column" spacing={20}>
         <PageHeader
-          title={
-            <Box flex={{alignItems: 'center'}}>
-              {currentPath
-                .map<React.ReactNode>((p, i) => <Heading key={i}>{p}</Heading>)
-                .reduce((prev, curr, i) => [
-                  prev,
-                  <Box key={`separator_${i}`} padding={4}>
-                    <Icon icon={IconNames.CHEVRON_RIGHT} iconSize={18} />
-                  </Box>,
-                  curr,
-                ])}
-            </Box>
-          }
+          title={<Heading>{currentPath[currentPath.length - 1]}</Heading>}
           icon="th"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
