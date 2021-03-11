@@ -39,7 +39,7 @@ spec:
           image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c',
-            'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
+            'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }} -U {{ $.Values.postgresql.postgresqlUsername }}; do echo waiting for database; sleep 2; done;',
             ]
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
       containers:
