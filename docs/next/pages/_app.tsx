@@ -50,9 +50,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     const handleRouteChange = (url) => {
-      if (process.env.NODE_ENV === "production") {
-        gtag.pageview(url);
-      }
+      gtag.pageview(url);
     };
     router.events.on("routeChangeComplete", handleRouteChange);
     return () => {
