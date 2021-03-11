@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next-remote-watch ../content",
+    "dev": "PORT=3001 next-remote-watch ../content",
     "build": "next build",
     "start": "next start",
     "snapshot": "ts-node -O '{\"module\": \"commonjs\"}' scripts/snapshot.ts",
