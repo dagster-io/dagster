@@ -1,10 +1,11 @@
 import os
 import sys
 import time
+from collections import namedtuple
 from contextlib import ExitStack
 
 import pendulum
-from dagster import check
+from dagster import check, seven
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import (
@@ -31,6 +32,10 @@ MIN_INTERVAL_LOOP_TIME = 5
 
 class DagsterSensorDaemonError(DagsterError):
     """Error when running the SensorDaemon"""
+
+
+class SkippedSensorRun(namedtuple("SkippedSensorRun", "run_key existing_run")):
+    """Placeholder for runs that are skipped during the run_key idempotence check"""
 
 
 class SensorLaunchContext:
@@ -168,11 +173,6 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
     if not sensor_jobs:
         logger.info("Not checking for any runs since no sensors have been started.")
         return
-    logger.info(
-        "Checking for new runs for the following sensors: {sensor_names}".format(
-            sensor_names=", ".join([job.job_name for job in sensor_jobs]),
-        )
-    )
 
     for job_state in sensor_jobs:
         sensor_debug_crash_flags = (
@@ -257,6 +257,7 @@ def _evaluate_sensor(
     job_state,
     sensor_debug_crash_flags=None,
 ):
+    context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(
         instance,
         external_repo.handle,
@@ -266,10 +267,7 @@ def _evaluate_sensor(
     )
     if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
         context.logger.error(
-            "Failed to resolve sensor for {sensor_name} : {error_info}".format(
-                sensor_name=external_sensor.name,
-                error_info=sensor_runtime_data.error.to_string(),
-            )
+            f"Failed to resolve sensor for {external_sensor.name} : {sensor_runtime_data.error.to_string()}"
         )
         context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
         return
@@ -301,13 +299,14 @@ def _evaluate_sensor(
         external_repo.handle,
     )
 
+    skipped_runs = []
     for run_request in sensor_runtime_data.run_requests:
         run = _get_or_create_sensor_run(
             context, instance, repo_location, external_sensor, external_pipeline, run_request
         )
 
-        if not run:
-            # we already found and resolved a run
+        if isinstance(run, SkippedSensorRun):
+            skipped_runs.append(run)
             continue
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
@@ -324,12 +323,21 @@ def _evaluate_sensor(
             )
         except Exception:  # pylint: disable=broad-except
             context.logger.error(
-                f"Run {run.run_id} created successfully but failed to launch: {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
+                f"Run {run.run_id} created successfully but failed to launch: "
+                f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
             )
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
         context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+
+    if skipped_runs:
+        run_keys = [skipped.run_key for skipped in skipped_runs]
+        skipped_count = len(skipped_runs)
+        context.logger.info(
+            f"Skipping {skipped_count} {'run' if skipped_count == 1 else 'runs'} for sensor "
+            f"{external_sensor.name} already completed with run keys: {seven.json.dumps(run_keys)}"
+        )
 
     if context.run_count:
         context.update_state(JobTickStatus.SUCCESS)
@@ -375,13 +383,7 @@ def _get_or_create_sensor_run(
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed before the tick could be put
             # into a SUCCESS state
-
-            context.logger.info(
-                f"Run {run.run_id} already completed with the run key "
-                f"`{run_request.run_key}` for {external_sensor.name}"
-            )
-
-            return None
+            return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
         else:
             context.logger.info(
                 f"Run {run.run_id} already created with the run key "

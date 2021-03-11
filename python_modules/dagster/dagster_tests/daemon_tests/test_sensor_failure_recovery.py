@@ -9,7 +9,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
 from dagster.daemon import get_default_daemon_logger
-from dagster.scheduler.sensor import execute_sensor_iteration
+from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
 
 from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_start
@@ -67,12 +67,6 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             assert len(ticks) == 1
             assert ticks[0].status == JobTickStatus.SKIPPED
             captured = capfd.readouterr()
-            assert (
-                captured.out.replace("\r\n", "\n")
-                == """2019-02-27 18:00:01 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
-2019-02-27 18:00:01 - SensorDaemon - INFO - Sensor returned false for simple_sensor, skipping
-"""
-            )
 
             # create a starting tick, but crash
             debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
@@ -86,11 +80,6 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             assert launch_process.exitcode != 0
 
             captured = capfd.readouterr()
-            assert (
-                captured.out.replace("\r\n", "\n")
-                == """2019-02-27 18:00:32 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
-"""
-            )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
@@ -115,7 +104,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             captured = capfd.readouterr()
             assert (
                 captured.out.replace("\r\n", "\n")
-                == f"""2019-02-27 18:01:03 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
+                == f"""2019-02-27 18:01:03 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
 2019-02-27 18:01:03 - SensorDaemon - INFO - Launching run for simple_sensor
 2019-02-27 18:01:03 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor
 """
@@ -268,7 +257,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
             captured = capfd.readouterr()
 
             assert (
-                f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"
+                'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
                 in captured.out
             )
 

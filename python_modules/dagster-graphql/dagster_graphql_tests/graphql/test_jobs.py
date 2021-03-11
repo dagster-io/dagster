@@ -1,7 +1,7 @@
 from dagster.core.host_representation import RepositoryLocationHandleManager
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.daemon import get_default_daemon_logger
-from dagster.scheduler.sensor import execute_sensor_iteration
+from dagster.daemon.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_job_selector,

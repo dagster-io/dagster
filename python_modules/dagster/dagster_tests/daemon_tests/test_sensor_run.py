@@ -26,7 +26,7 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.daemon import SensorDaemon
-from dagster.scheduler.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven import create_pendulum_time, to_timezone
 
 
@@ -217,7 +217,7 @@ def test_simple_sensor(external_repo_context, capfd):
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-27 17:59:59 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
+                == """2019-02-27 17:59:59 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
 2019-02-27 17:59:59 - SensorDaemon - INFO - Sensor returned false for simple_sensor, skipping
 """
             )
@@ -247,7 +247,7 @@ def test_simple_sensor(external_repo_context, capfd):
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-27 18:00:29 - SensorDaemon - INFO - Checking for new runs for the following sensors: simple_sensor
+                == """2019-02-27 18:00:29 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
 2019-02-27 18:00:29 - SensorDaemon - INFO - Launching run for simple_sensor
 2019-02-27 18:00:29 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor
 """.format(
@@ -548,7 +548,7 @@ def test_launch_once(external_repo_context, capfd):
             )
             captured = capfd.readouterr()
             assert (
-                f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"
+                'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
                 in captured.out
             )
 
