@@ -16,6 +16,15 @@ def docs_steps() -> List[dict]:
         .run("pushd docs; make docs_dev_install; make snapshot", "git diff --exit-code")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
+        # Make sure the docs site can build end-to-end.
+        StepBuilder("docs next build")
+        .run(
+            "pushd docs/next",
+            "yarn",
+            "yarn build",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
         # TODO: Yuhan to fix
         # StepBuilder("docs sphinx json build")
         # .run(
