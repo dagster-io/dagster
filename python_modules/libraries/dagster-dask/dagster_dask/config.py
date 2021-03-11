@@ -1,8 +1,5 @@
-from dagster import Bool, Int, String
-from dagster import Field, Permissive, Selector, Shape
-from dagster import check
+from dagster import Bool, Field, Int, Permissive, Selector, Shape, String, check
 from dask.distributed import Client
-
 
 # Map of the possible Dask cluster types and their associated classes.
 # Users must install the modules associated with the cluster types they
@@ -84,7 +81,6 @@ DaskConfigSchema = {
         description="Dask distributed client options.",
         is_required=False,
     ),
-
     # The cluster config fields consist of a cluster type keys and permissive dicts of key-values
     # that will be passed in to the corresponding cluster class. Only a single cluster type may be
     # specified at a time.
