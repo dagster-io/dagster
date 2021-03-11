@@ -262,10 +262,10 @@ const TODO = () => {
   );
 };
 
-const PlaceholderImage = () => {
+const PlaceholderImage = ({ caption = "Placeholder Image" }) => {
   return (
     <div className="h-48 w-full bg-gray-100 flex justify-center items-center rounded-lg">
-      <span className="font-bold">Placeholder Image</span>
+      <span className="font-bold">{caption}</span>
     </div>
   );
 };
