@@ -13,7 +13,6 @@ from dagster.utils import frozentags, iterate_with_context
 
 from .config import DaskConfigSchema, create_from_config
 
-
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 
