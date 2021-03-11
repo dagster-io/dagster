@@ -1,5 +1,7 @@
 from dagster import Bool, Int, String
 from dagster import Field, Permissive, Selector, Shape
+from dagster import check
+from dask.distributed import Client
 
 
 # Map of the possible Dask cluster types and their associated classes.
@@ -23,6 +25,7 @@ DaskClusterTypes = {
         "fargate": ("AWS ECS on Fargate", "dask_cloudprovider", "FargateCluster"),
     }.items()
 }
+
 
 # Common config schema for specifying a Dask client and/or cluster.
 DaskConfigSchema = {
@@ -108,3 +111,47 @@ DaskConfigSchema = {
         is_required=False,
     ),
 }
+
+
+def create_from_config(config):
+    """Create Dask Client and Cluster objects based on the provided config, which may be
+    an executor_config or resource_config.
+    """
+
+    cluster_config = check.opt_nullable_dict_param(config.get("cluster"), "cluster")
+    client_config = check.opt_dict_param(config.get("client"), "client")
+
+    # Construct a cluster object.
+    if cluster_config:
+        # Unpack the cluster type and init options. The cluster_config should consist
+        # of a single dict member because the `cluster` field is defined as a selector.
+        cluster_type, cluster_opts = next(iter(cluster_config.items()))
+
+        # Deprecated option for specifying an existing cluster by its scheduler address.
+        if cluster_type == "existing":
+            client_config["address"] = cluster_opts["address"]
+
+        # Get the module and class information from DaskClusterTypes, and instantiate
+        # the cluster object.
+        else:
+            cluster_meta = DaskClusterType.get(cluster_type, None)
+            if not cluster_meta:
+                raise ValueError(f'Unknown cluster type "{cluster_type}".')
+
+            # Dynamically import the cluster module and get the cluster class.
+            from importlib import import_module
+
+            cluster_module = import_module(cluster_meta["module"])
+            cluster_class = getattr(cluster_module, cluster_meta["class"])
+
+            cluster = cluster_class(**cluster_opts)
+            client_config["address"] = cluster
+    else:
+        cluster = None
+
+    # Construct a client object. If a cluster was created above, set the cluster object
+    # as the `address` parameter. If no address or cluster object is provided, Dask
+    # will implicitly create a LocalCluster object.
+    client = Client(**client_config)
+
+    return client, cluster
