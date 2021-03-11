@@ -2,13 +2,13 @@
 title: Partitions | Dagster
 description:
   Dagster provides the Partition Set abstraction for pipelines where each run deals with a subset of
-  config data.
+  data.
 ---
 
 # Partitions
 
 Dagster provides the _Partition Set_ abstraction for pipelines where each run deals with a subset of
-config data.
+data.
 
 ## Relevant APIs
 
@@ -18,24 +18,24 @@ config data.
 
 ## Overview
 
-Users define a set of logical "partitions", usually time windows, along with a scheme for building
-pipeline config from a partition name. With this, they can kick off a pipeline run or set of
-pipeline runs by simply selecting a partition or set of partitions.
+Partition sets let you define a set of logical "partitions", usually time windows, along with a scheme for building
+pipeline run config for a partition. Having defined a partition set, you can kick off a pipeline run or set of
+pipeline runs by simply selecting partitions in the set.
 
 Partitions have two main uses:
 
-- [Schedules](/concepts/partitions-schedules-sensors/schedules): you can schedule pipeline to run on a
-  per partition basis. For example, you can config the date as a partition and schedule pipeline runs
-  on a daily basis.
-- [Backfills](/concepts/partitions-schedules-sensors/backfill): you can execute pipelines per partition
-  all at once. A common use case is to backfill a set of partitions where the historical data need
-  to be reprocessed.
+- Partitioned [Schedules](/concepts/partitions-schedules-sensors/schedules): You can construct a schedule
+  that targets a single partition for each run it launches. For example, a pipeline might run each day and
+  process the data that arrived during the previous day.
+- [Backfills](/concepts/partitions-schedules-sensors/backfill): You can launch a set of pipeline runs
+  all at once, each run targeting one of the partitions in the set. For example, after making a code change,
+  you might want to re-run your pipeline on every date that it has run on in the past.
 
 ---
 
-## Defining a Partition
+## Defining a Partition Set
 
-For example, here's a pipeline that computes some data for a given date.
+Here's a pipeline that computes some data for a given date.
 
 ```python file=/concepts/partitions_schedules_sensors/pipeline.py startafter=start_pipeline_marker_1 endbefore=end_pipeline_marker_1
 @solid(config_schema={"date": str})
@@ -66,7 +66,7 @@ solids:
       date: "2020-05-05"
 ```
 
-We can define a <PyObject module="dagster" object="PartitionSetDefinition"/> that defines the full set of
+You can define a <PyObject module="dagster" object="PartitionSetDefinition"/> that defines the full set of
 partitions and how to define the run config for a given partition.
 
 ```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_def endbefore=end_def
@@ -88,9 +88,9 @@ date_partition_set = PartitionSetDefinition(
 )
 ```
 
-## Launching Partitions
+## Partitions in Dagit
 
-### Launching Partitioned Runs from the Partitions Tab
+### The Partitions Tab
 
 In Dagit, you can view runs by partition in the Partitions tab of a Pipeline page.
 
@@ -124,7 +124,3 @@ the correct run config for the partition has been populated in the editor.
 <!-- ![Partitions in Dagit Playground](/images/concepts/partitions-schedules-sensors/partitions-playground.png) -->
 
 <img src="/images/concepts/partitions-schedules-sensors/partitions-playground.png" />
-
-## Testing a Partition Set
-
-<TODO />
