@@ -38,9 +38,7 @@ spec:
         - name: check-db-ready
           image: {{ include "image.name" .Values.postgresql.image | quote }}
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
-          command: ['sh', '-c',
-            'until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
-            ]
+          command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
             {{- toYaml .Values.dagit.securityContext | nindent 12 }}
         {{- if .Values.userDeployments.enabled }}

@@ -71,6 +71,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+{{- define "dagster.postgresql.pgisready" -}}
+until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }} -U {{ .Values.postgresql.postgresqlUsername }}; do echo waiting for database; sleep 2; done;
+{{- end -}}
+
 {{/*
 Create chart name and version as used by the chart label.
 */}}

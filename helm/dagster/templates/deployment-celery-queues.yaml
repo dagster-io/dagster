@@ -42,9 +42,7 @@ spec:
         - name: check-db-ready
           image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
-          command: ['sh', '-c',
-            'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
-            ]
+          command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" $ | squote }}]
           securityContext:
             {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
       containers:
