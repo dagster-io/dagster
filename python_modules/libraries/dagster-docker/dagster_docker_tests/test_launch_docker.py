@@ -10,6 +10,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import poll_for_finished_run, poll_for_step_start
 from dagster.utils.test.postgres_instance import postgres_instance_for_test
 from dagster.utils.yaml_utils import merge_yamls
+from dagster_docker.docker_run_launcher import DOCKER_IMAGE_TAG
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -79,7 +80,11 @@ def test_launch_docker_image_on_pipeline_config():
 
         poll_for_finished_run(instance, run.run_id, timeout=60)
 
-        assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+        run = instance.get_run_by_id(run.run_id)
+
+        assert run.status == PipelineRunStatus.SUCCESS
+
+        assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):

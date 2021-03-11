@@ -10,7 +10,8 @@ from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
 from docker_image import reference
 
-DOCKER_CONTAINER_ID_TAG = "docker_container_id"
+DOCKER_CONTAINER_ID_TAG = "docker/container_id"
+DOCKER_IMAGE_TAG = "docker/image"
 
 
 class DockerRunLauncher(RunLauncher, ConfigurableClass):
@@ -148,7 +149,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         self._instance.add_run_tags(
             run.run_id,
-            {DOCKER_CONTAINER_ID_TAG: container.id},
+            {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},
         )
 
         container.start()
