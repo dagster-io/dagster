@@ -11,7 +11,8 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.utils import frozentags, iterate_with_context
 
-from .config import DaskConfigSchema
+from .config import DaskConfigSchema, create_from_config
+
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
@@ -60,8 +61,13 @@ def dask_executor(init_context):
 
     """
     check_cross_process_constraints(init_context)
-    ((cluster_type, cluster_configuration),) = init_context.executor_config["cluster"].items()
-    return DaskExecutor(cluster_type, cluster_configuration)
+    dask_config = {
+        k: init_context.executor_config.get(k, None)
+        for k in DaskConfigSchema.keys()
+        if k in init_context.executor_config
+    }
+
+    return DaskExecutor(dask_config)
 
 
 def query_on_dask_worker(
@@ -100,11 +106,8 @@ def get_dask_resource_requirements(tags):
 
 
 class DaskExecutor(Executor):
-    def __init__(self, cluster_type, cluster_configuration):
-        self.cluster_type = check.opt_str_param(cluster_type, "cluster_type", default="local")
-        self.cluster_configuration = check.opt_dict_param(
-            cluster_configuration, "cluster_configuration"
-        )
+    def __init__(self, dask_config):
+        self.dask_config = dask_config
 
     @property
     def retries(self):
@@ -130,56 +133,9 @@ class DaskExecutor(Executor):
 
         instance = pipeline_context.instance
 
-        cluster_type = self.cluster_type
-        if cluster_type == "existing":
-            # address passed directly to Client() below to connect to existing Scheduler
-            cluster = self.cluster_configuration["address"]
-        elif cluster_type == "local":
-            from dask.distributed import LocalCluster
+        client, cluster = create_from_config(self.dask_config)
 
-            cluster = LocalCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "yarn":
-            from dask_yarn import YarnCluster
-
-            cluster = YarnCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "ssh":
-            from dask.distributed import SSHCluster
-
-            cluster = SSHCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "pbs":
-            from dask_jobqueue import PBSCluster
-
-            cluster = PBSCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "moab":
-            from dask_jobqueue import MoabCluster
-
-            cluster = MoabCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "sge":
-            from dask_jobqueue import SGECluster
-
-            cluster = SGECluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "lsf":
-            from dask_jobqueue import LSFCluster
-
-            cluster = LSFCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "slurm":
-            from dask_jobqueue import SLURMCluster
-
-            cluster = SLURMCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "oar":
-            from dask_jobqueue import OARCluster
-
-            cluster = OARCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == "kube":
-            from dask_kubernetes import KubeCluster
-
-            cluster = KubeCluster(**self.build_dict(pipeline_name))
-        else:
-            raise ValueError(
-                f"Must be providing one of the following ('existing', 'local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
-            )
-
-        with dask.distributed.Client(cluster) as client:
+        with client:
             execution_futures = []
             execution_futures_dict = {}
 
