@@ -1,6 +1,6 @@
 import dask
 import dask.distributed
-from dagster import Executor, Field, Permissive, Selector, StringSource, check, seven
+from dagster import Executor, check, seven
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent
@@ -11,56 +11,15 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.utils import frozentags, iterate_with_context
 
+from .config import DaskConfigSchema
+
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 
 
 @executor(
     name="dask",
-    config_schema={
-        "cluster": Field(
-            Selector(
-                {
-                    "existing": Field(
-                        {"address": StringSource},
-                        description="Connect to an existing scheduler.",
-                    ),
-                    "local": Field(
-                        Permissive(), is_required=False, description="Local cluster configuration."
-                    ),
-                    "yarn": Field(
-                        Permissive(), is_required=False, description="YARN cluster configuration."
-                    ),
-                    "ssh": Field(
-                        Permissive(), is_required=False, description="SSH cluster configuration."
-                    ),
-                    "pbs": Field(
-                        Permissive(), is_required=False, description="PBS cluster configuration."
-                    ),
-                    "moab": Field(
-                        Permissive(), is_required=False, description="Moab cluster configuration."
-                    ),
-                    "sge": Field(
-                        Permissive(), is_required=False, description="SGE cluster configuration."
-                    ),
-                    "lsf": Field(
-                        Permissive(), is_required=False, description="LSF cluster configuration."
-                    ),
-                    "slurm": Field(
-                        Permissive(), is_required=False, description="SLURM cluster configuration."
-                    ),
-                    "oar": Field(
-                        Permissive(), is_required=False, description="OAR cluster configuration."
-                    ),
-                    "kube": Field(
-                        Permissive(),
-                        is_required=False,
-                        description="Kubernetes cluster configuration.",
-                    ),
-                }
-            )
-        )
-    },
+    config_schema=DaskConfigSchema,
 )
 def dask_executor(init_context):
     """Dask-based executor.
