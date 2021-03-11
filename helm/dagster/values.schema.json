@@ -1,5 +1,5 @@
 {
-    "title": "HelmValues",
+    "title": "DagsterHelmValues",
     "description": "Schema for Helm values.",
     "type": "object",
     "properties": {
@@ -103,7 +103,7 @@
             },
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
         },
-        "schema__subschema__kubernetes__Service": {
+        "schema__charts__utils__kubernetes__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -197,7 +197,7 @@
                     "$ref": "#/definitions/Image"
                 },
                 "service": {
-                    "$ref": "#/definitions/schema__subschema__kubernetes__Service"
+                    "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
                 "env": {
                     "title": "Env",
@@ -402,7 +402,7 @@
                 "pullPolicy"
             ]
         },
-        "schema__subschema__postgresql__Service": {
+        "schema__charts__dagster__subschema__postgresql__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -443,7 +443,7 @@
                     "type": "string"
                 },
                 "service": {
-                    "$ref": "#/definitions/schema__subschema__postgresql__Service"
+                    "$ref": "#/definitions/schema__charts__dagster__subschema__postgresql__Service"
                 }
             },
             "required": [
@@ -474,7 +474,7 @@
                 "password"
             ]
         },
-        "schema__subschema__rabbitmq__Service": {
+        "schema__charts__dagster__subschema__rabbitmq__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -519,7 +519,7 @@
                     "$ref": "#/definitions/RabbitMQConfiguration"
                 },
                 "service": {
-                    "$ref": "#/definitions/schema__subschema__rabbitmq__Service"
+                    "$ref": "#/definitions/schema__charts__dagster__subschema__rabbitmq__Service"
                 },
                 "volumePermissions": {
                     "$ref": "#/definitions/VolumePermissions"
@@ -575,7 +575,7 @@
                     "type": "boolean"
                 },
                 "service": {
-                    "$ref": "#/definitions/schema__subschema__kubernetes__Service"
+                    "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"

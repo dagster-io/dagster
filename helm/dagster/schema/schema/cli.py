@@ -3,7 +3,8 @@ import subprocess
 
 import click
 
-from .values import HelmValues
+from .charts.dagster.values import DagsterHelmValues
+from .charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 
 
 def git_repo_root():
@@ -29,9 +30,13 @@ def show():
     """
     Displays the json schema on the console.
     """
-    schema_json = HelmValues.schema_json(indent=4)
 
-    click.echo(schema_json)
+    click.echo("--- Dagster Helm Values ---")
+    click.echo(DagsterHelmValues.schema_json(indent=4))
+
+    click.echo("\n\n")
+    click.echo("--- Dagster User Deployment Helm Values ---")
+    click.echo(DagsterUserDeploymentsHelmValues.schema_json(indent=4))
 
 
 @schema.command()
@@ -39,12 +44,25 @@ def apply():
     """
     Saves the json schema in the Helm `values.schema.json`.
     """
-    schema_json = HelmValues.schema_json(indent=4)
+    helm_values_path_tuples = {
+        (DagsterHelmValues, os.path.join(git_repo_root(), "helm", "dagster", "values.schema.json")),
+        (
+            DagsterUserDeploymentsHelmValues,
+            os.path.join(
+                git_repo_root(),
+                "helm",
+                "dagster",
+                "charts",
+                "dagster-user-deployments",
+                "values.schema.json",
+            ),
+        ),
+    }
 
-    values_schema_path = os.path.join(git_repo_root(), "helm", "dagster", "values.schema.json")
-    with open(values_schema_path, "w") as f:
-        f.write(schema_json)
-        f.write("\n")
+    for helm_values, path in helm_values_path_tuples:
+        with open(path, "w") as f:
+            f.write(helm_values.schema_json(indent=4))
+            f.write("\n")
 
 
 def main():

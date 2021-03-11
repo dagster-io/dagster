@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 
 import yaml
 from kubernetes.client.api_client import ApiClient
-from schema.values import HelmValues
+from schema.charts.dagster.values import DagsterHelmValues
 
 
 def git_repo_root():
@@ -22,7 +22,7 @@ class HelmTemplate:
     name: str = "RELEASE-NAME"
     api_client: ApiClient = ApiClient()
 
-    def render(self, values: HelmValues) -> List[Any]:
+    def render(self, values: DagsterHelmValues) -> List[Any]:
         with NamedTemporaryFile() as tmp_file:
             values_json = json.loads(values.json(exclude_none=True, by_alias=True))
             pprint(values_json)

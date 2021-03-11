@@ -1,13 +1,22 @@
-from typing import Optional
+from typing import Dict, List
 
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
-from . import kubernetes
+from ...utils import kubernetes
 
 
-class Flower(BaseModel):
+class QueuedRunCoordinator(BaseModel):
     enabled: bool
-    service: kubernetes.Service
+    config: dict
+
+
+class Daemon(BaseModel):
+    enabled: bool
+    image: kubernetes.Image
+    queuedRunCoordinator: QueuedRunCoordinator
+    env: Dict[str, str]
+    envConfigMaps: List[kubernetes.ConfigMapEnvSource]
+    envSecrets: List[kubernetes.SecretEnvSource]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
@@ -16,4 +25,4 @@ class Flower(BaseModel):
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
-    annotations: Optional[kubernetes.Annotations]
+    annotations: kubernetes.Annotations

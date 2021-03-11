@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
-from . import kubernetes
-from .utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
+from ...utils import kubernetes
+from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class SchedulerType(str, Enum):

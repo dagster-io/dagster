@@ -4,9 +4,12 @@ from typing import List
 
 import pytest
 from kubernetes.client import models
-from schema.subschema import kubernetes
-from schema.subschema.user_deployments import UserDeployment, UserDeployments
-from schema.values import HelmValues
+from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster_user_deployments.subschema.user_deployments import (
+    UserDeployment,
+    UserDeployments,
+)
+from schema.charts.utils import kubernetes
 
 from .helm_template import HelmTemplate
 
@@ -83,9 +86,9 @@ def create_complex_user_deployment(name: str) -> UserDeployment:
 
 
 @pytest.fixture(name="single_user_deployment_values")
-def helm_values_single_user_deployment() -> HelmValues:
-    return HelmValues.construct(
-        userDeployments=UserDeployments(
+def helm_values_single_user_deployment() -> DagsterHelmValues:
+    return DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
             enabled=True,
             enableSubchart=True,
             deployments=[create_simple_user_deployment("simple-deployment-one")],
@@ -94,9 +97,9 @@ def helm_values_single_user_deployment() -> HelmValues:
 
 
 @pytest.fixture(name="single_complex_user_deployment_values")
-def helm_values_single_complex_user_deployment() -> HelmValues:
-    return HelmValues.construct(
-        userDeployments=UserDeployments(
+def helm_values_single_complex_user_deployment() -> DagsterHelmValues:
+    return DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
             enabled=True,
             enableSubchart=True,
             deployments=[create_complex_user_deployment("complex-deployment-one")],
@@ -105,9 +108,9 @@ def helm_values_single_complex_user_deployment() -> HelmValues:
 
 
 @pytest.fixture(name="multi_user_deployment_values")
-def helm_values_multi_user_deployment() -> HelmValues:
-    return HelmValues.construct(
-        userDeployments=UserDeployments(
+def helm_values_multi_user_deployment() -> DagsterHelmValues:
+    return DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
             enabled=True,
             enableSubchart=True,
             deployments=[
@@ -119,9 +122,9 @@ def helm_values_multi_user_deployment() -> HelmValues:
 
 
 @pytest.fixture(name="multi_complex_user_deployment_values")
-def helm_values_multi_complex_user_deployment() -> HelmValues:
-    return HelmValues.construct(
-        userDeployments=UserDeployments(
+def helm_values_multi_complex_user_deployment() -> DagsterHelmValues:
+    return DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
             enabled=True,
             enableSubchart=True,
             deployments=[
@@ -134,9 +137,9 @@ def helm_values_multi_complex_user_deployment() -> HelmValues:
 
 
 def assert_user_deployment_template(
-    t: HelmTemplate, templates: List[models.V1Deployment], values: HelmValues
+    t: HelmTemplate, templates: List[models.V1Deployment], values: DagsterHelmValues
 ):
-    for template, deployment_values in zip(templates, values.userDeployments.deployments):
+    for template, deployment_values in zip(templates, values.dagsterUserDeployments.deployments):
         # Assert simple stuff
         assert template.metadata.labels["deployment"] == deployment_values.name
         assert len(template.spec.template.spec.containers) == 1
@@ -249,7 +252,7 @@ def test_deployments_do_not_render(
     user_deployments: UserDeployments, template: HelmTemplate, capsys
 ):
     with pytest.raises(subprocess.CalledProcessError):
-        values = HelmValues.construct(userDeployments=user_deployments)
+        values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
         template.render(values)
 
         _, err = capsys.readouterr()
@@ -257,7 +260,7 @@ def test_deployments_do_not_render(
 
 
 def test_single_deployment_render(
-    template: HelmTemplate, single_user_deployment_values: HelmValues
+    template: HelmTemplate, single_user_deployment_values: DagsterHelmValues
 ):
     user_deployments = template.render(single_user_deployment_values)
 
@@ -266,7 +269,9 @@ def test_single_deployment_render(
     assert_user_deployment_template(template, user_deployments, single_user_deployment_values)
 
 
-def test_multi_deployment_render(template: HelmTemplate, multi_user_deployment_values: HelmValues):
+def test_multi_deployment_render(
+    template: HelmTemplate, multi_user_deployment_values: DagsterHelmValues
+):
     user_deployments = template.render(multi_user_deployment_values)
 
     assert len(user_deployments) == 2
@@ -275,7 +280,7 @@ def test_multi_deployment_render(template: HelmTemplate, multi_user_deployment_v
 
 
 def test_single_complex_deployment_render(
-    template: HelmTemplate, single_complex_user_deployment_values: HelmValues
+    template: HelmTemplate, single_complex_user_deployment_values: DagsterHelmValues
 ):
     user_deployments = template.render(single_complex_user_deployment_values)
 
@@ -287,7 +292,7 @@ def test_single_complex_deployment_render(
 
 
 def test_multi_complex_deployment_render(
-    template: HelmTemplate, multi_complex_user_deployment_values: HelmValues
+    template: HelmTemplate, multi_complex_user_deployment_values: DagsterHelmValues
 ):
     user_deployments = template.render(multi_complex_user_deployment_values)
 
@@ -315,7 +320,7 @@ def test_chart_does_not_render(
     user_deployments: UserDeployments, full_template: HelmTemplate, capsys
 ):
     with pytest.raises(subprocess.CalledProcessError):
-        values = HelmValues.construct(userDeployments=user_deployments)
+        values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
         full_template.render(values)
 
         _, err = capsys.readouterr()
@@ -351,7 +356,7 @@ def test_chart_does_not_render(
     ],
 )
 def test_chart_does_render(user_deployments: UserDeployments, full_template: HelmTemplate):
-    values = HelmValues.construct(userDeployments=user_deployments)
+    values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
     templates = full_template.render(values)
 
     assert templates

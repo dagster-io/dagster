@@ -1,0 +1,201 @@
+{
+    "title": "DagsterUserDeploymentsHelmValues",
+    "type": "object",
+    "properties": {
+        "deployments": {
+            "title": "Deployments",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/UserDeployment"
+            }
+        }
+    },
+    "required": [
+        "deployments"
+    ],
+    "definitions": {
+        "PullPolicy": {
+            "title": "PullPolicy",
+            "description": "An enumeration.",
+            "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+            ],
+            "type": "string"
+        },
+        "Image": {
+            "title": "Image",
+            "type": "object",
+            "properties": {
+                "repository": {
+                    "title": "Repository",
+                    "type": "string"
+                },
+                "tag": {
+                    "title": "Tag",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
+                }
+            },
+            "required": [
+                "repository",
+                "tag",
+                "pullPolicy"
+            ]
+        },
+        "ConfigMapEnvSource": {
+            "title": "ConfigMapEnvSource",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
+        },
+        "SecretEnvSource": {
+            "title": "SecretEnvSource",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretEnvSource"
+        },
+        "Annotations": {
+            "title": "Annotations",
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            },
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+        },
+        "NodeSelector": {
+            "title": "NodeSelector",
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            },
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector"
+        },
+        "Affinity": {
+            "title": "Affinity",
+            "type": "object",
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
+        },
+        "Tolerations": {
+            "title": "Tolerations",
+            "type": "array",
+            "items": {
+                "type": "object"
+            },
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations"
+        },
+        "PodSecurityContext": {
+            "title": "PodSecurityContext",
+            "type": "object",
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
+        "SecurityContext": {
+            "title": "SecurityContext",
+            "type": "object",
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+        },
+        "Resources": {
+            "title": "Resources",
+            "type": "object",
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "LivenessProbe": {
+            "title": "LivenessProbe",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
+        "StartupProbe": {
+            "title": "StartupProbe",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
+        "UserDeployment": {
+            "title": "UserDeployment",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "dagsterApiGrpcArgs": {
+                    "title": "Dagsterapigrpcargs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                },
+                "replicaCount": {
+                    "title": "Replicacount",
+                    "default": 1,
+                    "type": "integer"
+                },
+                "env": {
+                    "title": "Env",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "envConfigMaps": {
+                    "title": "Envconfigmaps",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigMapEnvSource"
+                    }
+                },
+                "envSecrets": {
+                    "title": "Envsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretEnvSource"
+                    }
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "affinity": {
+                    "$ref": "#/definitions/Affinity"
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/SecurityContext"
+                },
+                "resources": {
+                    "$ref": "#/definitions/Resources"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/LivenessProbe"
+                },
+                "startupProbe": {
+                    "$ref": "#/definitions/StartupProbe"
+                }
+            },
+            "required": [
+                "name",
+                "image",
+                "dagsterApiGrpcArgs",
+                "port"
+            ]
+        }
+    }
+}

@@ -2,7 +2,7 @@ from typing import List, Union
 
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
-from . import kubernetes
+from ...utils import kubernetes
 
 
 # Enforce as HTTPIngressPath: see https://github.com/dagster-io/dagster/issues/3184
