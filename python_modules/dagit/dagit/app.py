@@ -137,13 +137,12 @@ def download_dump_view(context):
     return view
 
 
-def instantiate_app_with_views(context, app_path_prefix):
+def instantiate_app_with_views(context, schema, app_path_prefix):
     app = Flask(
         "dagster-ui",
         static_url_path=app_path_prefix,
         static_folder=os.path.join(os.path.dirname(__file__), "./webapp/build"),
     )
-    schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
     # Websocket routes
@@ -247,4 +246,6 @@ def create_app_from_workspace(workspace, instance, path_prefix=""):
 
     log_workspace_stats(instance, context)
 
-    return instantiate_app_with_views(context, path_prefix)
+    schema = create_schema()
+
+    return instantiate_app_with_views(context, schema, path_prefix)
