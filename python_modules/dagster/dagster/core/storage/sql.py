@@ -165,18 +165,5 @@ def add_precision_to_mysql_timestamps(_element, _compiler, **_kw):
     return f"TIMESTAMP({MYSQL_DATE_PRECISION})"
 
 
-# db.Text + UNIQUE => VARCHAR(512) for MySQL
-# db.Text => TEXT for MySQL
-# Should stop being used after the 0.11.0 release (although it might be helpful for future migration issues)
-
-UNIQUE_VARCHAR_LEN: int = 512
-
-
-@compiles(db.Text, "mysql")
-def compiles_text_mysql(element, compiler, **kw):
-    column = kw["type_expression"]
-    if column.unique or column.foreign_keys:
-        column.type.length = UNIQUE_VARCHAR_LEN
-        return compiler.visit_string(element, **kw)
-    else:
-        return compiler.visit_text(element, **kw)
+class MySQLCompatabilityTypes:
+    UniqueText = db.String(512)

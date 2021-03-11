@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from ..sql import get_current_timestamp
+from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
 RunStorageSqlMetadata = db.MetaData()
 
@@ -29,7 +29,7 @@ SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     RunStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
-    db.Column("name", db.Text, unique=True),
+    db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )

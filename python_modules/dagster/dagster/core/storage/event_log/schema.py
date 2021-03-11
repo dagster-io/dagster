@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from ..sql import get_current_timestamp
+from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
 SqlEventLogStorageMetadata = db.MetaData()
 
@@ -21,7 +21,7 @@ SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     SqlEventLogStorageMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
-    db.Column("name", db.Text, unique=True),
+    db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )
@@ -30,7 +30,7 @@ AssetKeyTable = db.Table(
     "asset_keys",
     SqlEventLogStorageMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
-    db.Column("asset_key", db.Text, unique=True),
+    db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("last_materialization", db.Text),
     db.Column("last_run_id", db.String(255)),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
