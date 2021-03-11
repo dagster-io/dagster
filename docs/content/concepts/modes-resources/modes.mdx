@@ -5,7 +5,7 @@ description: TODO
 
 # Pipeline Modes
 
-Modes (along with [Resources](/concepts/resources)) provide a way to control the behavior of multiple solids at pipeline execution time.
+Modes (along with [Resources](/concepts/modes-resources/resources)) provide a way to control the behavior of multiple solids at pipeline execution time.
 
 ## Relevant APIs
 
@@ -19,9 +19,9 @@ For those familiar with dependency injection, modes and resources offer a simila
 
 Each pipeline can be defined with multiple modes, but each pipeline run uses exactly one mode. Each mode exposes:
 
-- A set of [Resources](/TODO)
-- A [Logger](/TODO)
-- An [Executor](/TODO)
+- A set of [Resources](/concepts/modes-resources/resources)
+- A [Logger](/concepts/logging/loggers)
+- An [Executor](/concepts/executors/executors)
 
 A typical usage for modes is to vary pipeline behavior between different deployment environments. For example, you might define a `local_dev` mode for running pipelines on a laptop against synthetic data and a “prod” mode for running pipelines against production data in the cloud.
 

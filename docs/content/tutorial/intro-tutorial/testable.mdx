@@ -15,7 +15,7 @@ to write unit tests for Dagster pipelines and solids.
 
 ## Testing Solids and Pipelines
 
-Let's go back to our first solid and pipeline in [`hello_cereal.py`](/tutorial/execute#executing-our-first-pipeline)
+Let's go back to our first solid and pipeline in [`hello_cereal.py`](/tutorial/intro-tutorial/single-solid-pipeline#executing-our-first-pipeline)
 and ensure they're working as expected by writing some tests. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />
 to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" />
 to test our solid in isolation.
@@ -54,8 +54,7 @@ admit this kind of API, which is intended to enable local tests like this.
 
 Dagster is written to make testing easy in a domain where it has historically been very difficult.
 Throughout the rest of this tutorial, we'll explore the writing of unit tests for each piece of the
-framework as we learn about it. You can learn more about Testing in Dagster by reading [Testing
-Example](/examples/pipeline_unittesting).
+framework as we learn about it. You can learn more about Testing in Dagster by reading the [Testing](/concepts/solids-pipelines/testing) page.
 
 <br />
 

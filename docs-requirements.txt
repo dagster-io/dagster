@@ -19,7 +19,7 @@ sphinx-autobuild==0.7.1
 -e ./python_modules/libraries/dagster-ge
 -e ./python_modules/libraries/dagster-github
 -e ./python_modules/libraries/dagster-k8s
--e ./python_modules/libraries/dagster-pagerduty
+-e ./python_modules/libraries/dagster-k8s
 -e ./python_modules/libraries/dagster-pandas
 -e ./python_modules/libraries/dagster-papertrail
 -e ./python_modules/libraries/dagster-postgres

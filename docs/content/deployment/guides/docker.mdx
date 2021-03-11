@@ -33,7 +33,7 @@ ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
 ```
 
 You'll also need to include a `dagster.yaml` file in the same directory as the Dockerfile to
-configure the [Dagster instance](/overview/instances/dagster-instance) that Dagit will use:
+configure the [Dagster instance](/deployment/dagster-instance) that Dagit will use:
 
 ```yaml file=/deploying/docker/dagster.yaml
 run_storage:
@@ -115,11 +115,19 @@ Dagit servers expose a health check endpoint at `/dagit_info`, which returns a J
 ## Multi-container Docker deployment
 
 More advanced dagster deployments will require deploying more than one container.
-For example, if you are using [dagster-daemon](/overview/daemon) to run schedules and sensors or manage a queue of runs,
+For example, if you are using [dagster-daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs,
 you'll likely want a separate container running the `dagster-daemon` service. Dagster also supports
 a deployment setup where pipeline code can be updated and deployed separately in its own container,
 without needing to redeploy the other dagster services.
 
 A complete working example of this architecture using docker-compose can be found in
-[this example](/examples/deploy_docker), which includes a dagit container, a dagster-daemon
+[this example](#example) below, which includes a dagit container, a dagster-daemon
 container, and one or more containers with user pipeline code.
+
+## Example
+
+<CodeReferenceLink filePath="examples/deploy_docker" />
+
+This example demonstrates a Dagster deployment that includes a Dagit container for loading and launching pipelines, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a postgres container for persistent storage, and a container with user pipeline code. The Dagster instance uses DockerRunLauncher to launch each run in its own container.
+
+To start the deployment, run `docker-compose` up.

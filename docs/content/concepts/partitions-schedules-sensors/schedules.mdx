@@ -195,7 +195,7 @@ When you click on your schedule name in the left-hand nav in Dagit, you'll be ta
 
 ### Step 3: Is the schedule interval configured correctly, but it still isn't creating any runs?
 
-It's possible that the `dagster-daemon` process that submits runs for your schedule is not working correctly. If you haven't set up `dagster-daemon` yet, check the [Deploying Dagster](/deploying) section to find the steps to do so.
+It's possible that the `dagster-daemon` process that submits runs for your schedule is not working correctly. If you haven't set up `dagster-daemon` yet, check the [Deploying Dagster](/deployment) section to find the steps to do so.
 
 First, check that the daemon is running. Click on "Status" in the left nav in Dagit, and examine the "Scheduler" row under the "Daemon statuses" section. The daemon process periodically sends out a heartbeat from the scheduler, so if the scheduler daemon is listed as "Not running", that indicates that there's a problem with your daemon deployment. If the daemon ran into an error that caused it to throw an exception, that error will often appear in this UI as well.
 

@@ -61,7 +61,7 @@ IOManagers that pickle objects and save them. These are <PyObject module="dagste
 , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/>
 , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
-IOManagers are [resources](/concepts/resources/resource-definition), which means users can supply
+IOManagers are [resources](/concepts/modes-resources/resources), which means users can supply
 different IOManagers for the same solid outputs in different situations. For example, you might use
 an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 

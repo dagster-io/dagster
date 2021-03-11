@@ -56,9 +56,9 @@ def my_solid(context):
 
 ### Solid Configuration
 
-All definitions in dagster expose a `config_schema`, making them configurable and parameterizable. The configuration system is explained in detail on [Config Schema](/concepts/config-schema).
+All definitions in dagster expose a `config_schema`, making them configurable and parameterizable. The configuration system is explained in detail on [Config Schema](/concepts/configuration/config-schema).
 
-Solid definitions can specify a `config_schema` for the solid's configuration. The configuration is accessible through the [solid context](/#solid-context) at runtime. Therefore, solid configuration can be used to specify solid behavior at runtime, making solids more flexible and reusable.
+Solid definitions can specify a `config_schema` for the solid's configuration. The configuration is accessible through the [solid context](#solid-context) at runtime. Therefore, solid configuration can be used to specify solid behavior at runtime, making solids more flexible and reusable.
 
 For example, we can define a solid where the API endpoint it queries is define through it's configuration:
 

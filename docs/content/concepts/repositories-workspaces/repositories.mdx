@@ -27,8 +27,8 @@ as the Dagster CLI or Dagit, can target to load the definitions.
 Repositories are convenient ways to organize your pipelines and other definitions. Each repository:
 
 - Includes various definitions: [Pipelines](/concepts/solids-pipelines/pipelines),
-  [Schedules](/concepts/partitions-schedules/schedules), [Sensors](/concepts/partitions-schedules/sensors),
-  and [Partition Sets](/concepts/partitions-schedules/partitions).
+  [Schedules](/concepts/partitions-schedules-sensors/schedules), [Sensors](/concepts/partitions-schedules-sensors/sensors),
+  and [Partition Sets](/concepts/partitions-schedules-sensors/partitions).
 - Is loaded into its own "user" process distinct from the Dagster "host" framework process, and communicates over an IPC mechanism.
 - Can be sourced from an isolated Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 

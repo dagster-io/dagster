@@ -17,8 +17,8 @@ This is the approach we use to deploy Dagster pipelines to Airflow
 package).
 
 We don't recommend deploying Dagster pipelines to Airflow in greenfield installations. (We recommend
-the built-in [scheduler and partition system](/tutorial/advanced_scheduling) for scheduling
-pipelines, and the [Celery-based executor](/deploying/celery) for large-scale deployments.) But
+the built-in [scheduler and partition system](/tutorial/advanced-tutorial/scheduling) for scheduling
+pipelines, and the [Celery-based executor](/deployment/custom-infra/celery) for large-scale deployments.) But
 if you have a large existing Airflow install, this integration will allow you to follow an
 incremental adoption path.
 
@@ -219,16 +219,16 @@ looks for DAG definitions.
 
 When you fire up the Airflow UI, you should see the new DAG:
 
-![intro_airflow_one.png](/assets/images/deploying/intro_airflow_one.png)
+![intro_airflow_one.png](/images/deploying/intro_airflow_one.png)
 
 Kick off a run manually, and you'll be able to use the ordinary views
 of the pipeline's progress:
 
-![intro_airflow_dag_view.png](/assets/images/deploying/intro_airflow_dag_view.png)
+![intro_airflow_dag_view.png](/images/deploying/intro_airflow_dag_view.png)
 
 And logs will be available in the Airflow log viewer:
 
-![intro_airflow_logs_view.png](/assets/images/deploying/intro_airflow_logs_view.png)
+![intro_airflow_logs_view.png](/images/deploying/intro_airflow_logs_view.png)
 
 ### Running Containerized
 

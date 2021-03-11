@@ -29,8 +29,8 @@ _0.0.0.0:3000_.
 
 ## Running dagster-daemon
 
-If you're using [schedules](/overview/schedules-sensors/schedules) or sensors, or want to set limits on the number of runs that can be executed at once,
-you'll want to also run a [dagster-daemon service](/overview/daemon) as part of your deployment. To run this service locally, run the following command:
+If you're using [schedules](/concepts/partitions-schedules-sensors/schedules) or sensors, or want to set limits on the number of runs that can be executed at once,
+you'll want to also run a [dagster-daemon service](/deployment/dagster-daemon) as part of your deployment. To run this service locally, run the following command:
 
 ```shell
 pip install dagster
@@ -42,8 +42,8 @@ The `dagster-daemon` process will periodically check your instance for any new r
 be launched from your run queue or triggered by your running schedules or sensors.
 If you're running `dagster-daemon` in a different environment than dagit, it must also have access to your
 `dagster.yaml` file and be able to access the components defined on your instance,
-and also be able to load the [repositories](/overview/repositories-workspaces/repositories) defined in your
-[workspace](/overview/repositories-workspaces/workspaces).
+and also be able to load the [repositories](/concepts/repositories-workspaces/repositories) defined in your
+[workspace](/concepts/repositories-workspaces/workspaces).
 
 You can check the status of your `dagster-daemon` process in Dagit by navigating to the Instance tab
 in the navigation bar on the left-hand side of the screen. A deployment can have multiple instances of dagit running at once, but should only include a single

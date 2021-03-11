@@ -84,7 +84,7 @@ userDeployments:
 ```
 
 The `dagsterApiGrpcArgs` field expects a list of arguments for `dagster api grpc` which is run upon Deployment creation and
-starts the gRPC server. To find the applicable arguments, [read here](/overview/repositories-workspaces/workspaces#running-your-own-grpc-server).
+starts the gRPC server. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
 **Step 5:** Install on Kubernetes cluster
 
@@ -233,7 +233,7 @@ Each of these steps is visible in Dagit.
 #### Daemon
 
 The daemon periodically checks the Runs table in PostgreSQL for Pipeline Runs in that are ready to be launched.
-The daemon also runs the [dagster-native scheduler](/overview/daemon), which has exactly-once guarantees.
+The daemon also runs the [dagster-native scheduler](/deployment/dagster-daemon), which has exactly-once guarantees.
 
 The Daemon launches the run via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, creating a Run Worker
 [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the
@@ -270,7 +270,7 @@ after noting their status.
 A User Code Deployment runs a gRPC server and responds to Dagit's requests for
 information (such as: "List all of the pipelines in each repository" or "What is the dependency structure of pipeline X?").
 The user-provided image for the User Code Deployment must contain a
-[repository definition](/overview/repositories-workspaces/repositories)
+[repository definition](/concepts/repositories-workspaces/repositories)
 and all of the packages needed to execute pipelines / schedules / sensors / etc within the repository.
 
 Users can have multiple User Code Deployments. A common pattern is for each User Code Deployment to correspond to a different repository.
@@ -281,14 +281,14 @@ After updating, if there is an error with any repository, an error is surfaced f
 
 ## Advanced Deployment
 
-In this section, we build off of the [Default Deployment](/deploying/kubernetes#default-deployment) and add more sophisticated features.
+In this section, we build off of the [Default Deployment](/deployment/guides/kubernetes#default-deployment) and add more sophisticated features.
 
 ### Advanced Quickstart
 
-The following steps set up the [advanced architecture](/deploying/kubernetes#advanced-architecture). This example requires a Kubernetes cluster and a persistent file store (we use S3
-in the example). Read about [GCP documentation here](/deploying/gcp).
+The following steps set up the [advanced architecture](/deployment/guides/kubernetes#advanced-architecture). This example requires a Kubernetes cluster and a persistent file store (we use S3
+in the example). Read about [GCP documentation here](/deployment/guides/gcp).
 
-**Step 1-4:** [Follow Step 1-4 in the Default Quickstart](/deploying/kubernetes#default-quickstart)
+**Step 1-4:** [Follow Step 1-4 in the Default Quickstart](/deployment/guides/kubernetes#default-quickstart)
 
 **Step 5:** Configure Persistent Object Storage
 
@@ -510,11 +510,11 @@ The Celery workers poll for new Celery tasks and execute each task in order of r
 consists of launching an ephemeral Step Job (Kubernetes Job) to execute that step.
 
 Using Celery requires configuring the <PyObject
-module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" /> ([See Configuration](/deploying/kubernetes#advanced-configuration)).
+module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" /> ([See Configuration](/deployment/guides/kubernetes#advanced-configuration)).
 
 #### Daemon
 
-The Daemon supports sensors, run queues, and schedules. See [Daemon overview](/overview/daemon) for more information.
+The Daemon supports sensors, run queues, and schedules. See [Daemon overview](/deployment/dagster-daemon) for more information.
 
 The Daemon launches the run via the <PyObject
 module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, creating a Run Worker
@@ -523,11 +523,11 @@ image specified used in the User Code Deployment.
 
 #### Dagit
 
-Building off the [prior description](/deploying/kubernetes#dagit), but instead, it is configured with the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
+Building off the [prior description](/deployment/guides/kubernetes#dagit), but instead, it is configured with the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
 
 #### Database
 
-Same as the [prior description](/deploying/kubernetes#database).
+Same as the [prior description](/deployment/guides/kubernetes#database).
 
 #### Flower <i>(Optional)</i>
 
@@ -536,7 +536,7 @@ and workers.
 
 #### Run Worker
 
-Building off the [prior description](/deploying/kubernetes#run-worker), the main difference in this deployment is
+Building off the [prior description](/deployment/guides/kubernetes#run-worker), the main difference in this deployment is
 that the Run Worker submits steps that are ready to be executed to the corresponding Celery queue (instead of executing
 the step itself). As before, the Run Worker is responsible for traversing the execution plan.
 
@@ -547,7 +547,7 @@ polls for the Step Job completion.
 
 #### User Code Deployment
 
-Same as the [prior description](/deploying/kubernetes#user-code-deployment).
+Same as the [prior description](/deployment/guides/kubernetes#user-code-deployment).
 
 ### Advanced Configuration
 
@@ -556,15 +556,15 @@ substrates are used. If you have questions, please reach out to us on [Slack](ht
 
 #### Run Launcher
 
-The [Run Launcher](/overview/pipeline-runs/run-launcher) is responsible for allocating the computational resources for run execution.
+The [Run Launcher](/deployment/run-launcher) is responsible for allocating the computational resources for run execution.
 
 <PyObject module="dagster_k8s" object="K8sRunLauncher" /> \[Default]:
 
-The `K8sRunLauncher` is used in the [Default Deployment](/deploying/kubernetes#default-deployment) example. It creates a new Kubernetes Job per pipeline run.
+The `K8sRunLauncher` is used in the [Default Deployment](/deployment/guides/kubernetes#default-deployment) example. It creates a new Kubernetes Job per pipeline run.
 
 <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />:
 
-The `CeleryK8sRunLauncher` is used in the [Advanced Deployment](/deploying/kubernetes#advanced-deployment) example. It creates a new Kubernetes Job per step
+The `CeleryK8sRunLauncher` is used in the [Advanced Deployment](/deployment/guides/kubernetes#advanced-deployment) example. It creates a new Kubernetes Job per step
 for step-level isolation and handling concurrency limits on a per-step basis.
 
 #### Executor
@@ -576,16 +576,16 @@ the <PyObject module="dagster_celery" object="celery_executor" />, the <PyObject
 or a custom Executor.
 
 With the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, user must use the <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
-As seen in the [Advanced Deployment](/deploying/kubernetes#advanced-deployment) example, this creates a Celery task for each Step, allowing for step-level isolation and concurrency control.
+As seen in the [Advanced Deployment](/deployment/guides/kubernetes#advanced-deployment) example, this creates a Celery task for each Step, allowing for step-level isolation and concurrency control.
 
 #### Scheduler
 
 Schedule names are generated by hashing the schedule properties, so different repositories can contain schedules with the same
 schedule name.
 
-Daemon scheduler \[Default]: Uses [dagster-native scheduler](/overview/daemon). The daemon is also responsible for running sensors,
-and managing the queue of runs. This is used in both the [Default Deployment](/deploying/kubernetes#default-deployment) and
-[Advanced Deployment](/deploying/kubernetes#advanced-deployment) examples and is our recommended approach.
+Daemon scheduler \[Default]: Uses [dagster-native scheduler](/deployment/dagster-daemon). The daemon is also responsible for running sensors,
+and managing the queue of runs. This is used in both the [Default Deployment](/deployment/guides/kubernetes#default-deployment) and
+[Advanced Deployment](/deployment/guides/kubernetes#advanced-deployment) examples and is our recommended approach.
 
 K8s CronJob scheduler \[Deprecated]: Uses [Kubernetes CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) directly.
 In order to enable the <PyObject module="dagster_k8s" object="K8sScheduler" />, set `scheduler.type` to `K8sScheduler` in the `values.yaml`.
@@ -718,7 +718,7 @@ is None, check that the User Code Deployment is up and running.
 
 Overview of the [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) generated by the Helm chart.
 
-- `dagster-instance`: Defines the [Instance YAML](/overview/instances/dagster-instance) for all
+- `dagster-instance`: Defines the [Instance YAML](/deployment/dagster-instance) for all
   nodes in the system. Configures Dagster storages to use PostgreSQL, schedules to use cron, and
   sets the run launcher as <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />
   to launch pipeline runs as Kubernetes

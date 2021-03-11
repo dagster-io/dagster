@@ -9,11 +9,11 @@ description: Executing your first pipeline - with a single solid.
 
 ## Solids and Pipelines
 
-Dagster's core abstractions are **[solids](/overview/solids-pipelines/solids)** and
-**[pipelines](/overview/solids-pipelines/pipelines)**.
+Dagster's core abstractions are **[solids](/concepts/solids-pipelines/solids)** and
+**[pipelines](/concepts/solids-pipelines/pipelines)**.
 
-**[Solids](/overview/solids-pipelines/solids)** are individual units of computation that we wire
-together to form **[pipelines](/overview/solids-pipelines/pipelines)**. By default, all solids in a
+**[Solids](/concepts/solids-pipelines/solids)** are individual units of computation that we wire
+together to form **[pipelines](/concepts/solids-pipelines/pipelines)**. By default, all solids in a
 pipeline execute in the same process. In production environments, Dagster is usually configured
 so that each solid executes in its own process.
 

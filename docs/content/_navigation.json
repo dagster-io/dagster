@@ -131,11 +131,11 @@
         "children": [
           {
             "title": "Mode Definitions",
-            "path": "/concepts/modes-resources/mode-definition"
+            "path": "/concepts/modes-resources/modes"
           },
           {
             "title": "Resource Definitions",
-            "path": "/concepts/modes-resources/resource-definition"
+            "path": "/concepts/modes-resources/resources"
           },
           {
             "title": "Testing Modes and Resources",
@@ -235,7 +235,7 @@
         "children": [
           {
             "title": "Executors",
-            "path": "/concepts/run-launcher-executors/executor"
+            "path": "/concepts/executors/executors"
           }
         ]
       }
@@ -250,12 +250,8 @@
         "title": "Best Practice Guides",
         "children": [
           {
-            "title": "Setting Up Repositories and Workspaces",
-            "path": "/best-practices/repositories-workspaces"
-          },
-          {
-            "title": "Customizing IO Management",
-            "path": "/best-practices/io-management"
+            "title": "Versioning and Memoization (Experimental)",
+            "path": "/guides/dagster/memoization"
           }
         ]
       },
@@ -264,27 +260,15 @@
         "children": [
           {
             "title": "Dagster with dbt",
-            "path": "/integrations/dbt"
-          },
-          {
-            "title": "Dagster with Spark",
-            "path": "/integrations/spark"
-          },
-          {
-            "title": "Dagster with S3",
-            "path": "/integrations/s3"
-          },
-          {
-            "title": "Dagster with GCS",
-            "path": "/integrations/gcs"
+            "path": "/guides/integrations/template"
           },
           {
             "title": "Dagster with Pandas",
-            "path": "/integrations/pandas"
+            "path": "/guides/integrations/template"
           },
           {
             "title": "Dagster with Jupyter/Papermill",
-            "path": "/integrations/dagstermill"
+            "path": "/guides/integrations/template"
           }
         ]
       }
@@ -313,10 +297,6 @@
           {
             "title": "Dagster Storage",
             "path": "/deployment/dagster-storage"
-          },
-          {
-            "title": "Executor",
-            "path": "/deployment/executor"
           },
           {
             "title": "Run Launcher",

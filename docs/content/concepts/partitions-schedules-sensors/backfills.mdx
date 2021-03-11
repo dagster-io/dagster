@@ -39,7 +39,7 @@ backfill over.
 <img src="/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png" />
 
 You can click the button on the bottom right to submit the runs. What happens when you hit this
-button depends on your [Run Coordinator](/concepts/run-launchers-executors/run-coordinator).
+button depends on your [Run Coordinator](/deployment/run-coordinator).
 With the default run coordinator, the modal will exit after all runs have been launched. With the
 queued run coordinator, the modal will exit after all runs have been queued.
 
@@ -92,7 +92,7 @@ load_from:
   - python_file: repo.py
 ```
 
-_See details in [Repositories](/concepts/repositories) and [Workspaces](/concepts/workspaces) if you_
+_See details in [Repositories](/concepts/repositories-workspaces/repositories) and [Workspaces](/concepts/repositories-workspaces/workspaces) if you_
 _are not familiar with these Dagster concepts._
 
 Now we can run the command `dagster pipeline backfill` to execute the backfill. To run all partitions,

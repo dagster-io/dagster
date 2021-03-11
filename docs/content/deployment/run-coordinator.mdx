@@ -1,10 +1,10 @@
 # Run Coordinators
 
-In production Dagster deployments, there are often many runs being launched at once. The _run coordinator_ lets you control the policy that Dagster uses to manage the set of runs in your deployment. When you submit a run from Dagit or the Dagster command line, it is first sent to the run coordinator, which applies any limits or prioritization policies before eventually sending it to the [run launcher](/overview/pipeline-runs/run-launcher) to be launched.
+In production Dagster deployments, there are often many runs being launched at once. The _run coordinator_ lets you control the policy that Dagster uses to manage the set of runs in your deployment. When you submit a run from Dagit or the Dagster command line, it is first sent to the run coordinator, which applies any limits or prioritization policies before eventually sending it to the [run launcher](/deployment/run-launcher) to be launched.
 
 ## Configuring your Run Coordinator
 
-The following run coordinators can be configured on your [Dagster instance](/overview/instances/dagster-instance):
+The following run coordinators can be configured on your [Dagster instance](/deployment/dagster-instance):
 
 ### DefaultRunCoordinator
 
@@ -12,7 +12,7 @@ The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinato
 
 ### QueuedRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> sends runs to the [Dagster Daemon](/overview/daemon) via a queue. The daemon pulls from the queue, and calls `launch_run` on the submitted runs. Using this run coordinator enables instance-level [limits on run concurrency](/overview/pipeline-runs/limiting-run-concurrency), as well as custom run prioritization rules.
+The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> sends runs to the [Dagster Daemon](/deployment/dagster-daemon) via a queue. The daemon pulls from the queue, and calls `launch_run` on the submitted runs. Using this run coordinator enables instance-level [limits on run concurrency](#limiting-run-concurrency), as well as custom run prioritization rules.
 
 ## Limiting Run Concurrency
 
@@ -24,8 +24,8 @@ Dagster offers several options for limiting the number of concurrent pipeline ru
 
 ### Setup
 
-Concurrency limits are supported by the [QueuedRunCoordinator](/overview/pipeline-runs/run-coordinator), which uses the [Dagster Daemon](/overview/daemon) to coordinate which runs execute.
-To use this run coordinator, configure it on your [Dagster instance](/overview/instances/dagster-instance) and include the daemon as part of your Dagster deployment.
+Concurrency limits are supported by the [QueuedRunCoordinator](/deployment/run-coordinator), which uses the [Dagster Daemon](/deployment/dagster-daemon) to coordinate which runs execute.
+To use this run coordinator, configure it on your [Dagster instance](/deployment/dagster-instance) and include the daemon as part of your Dagster deployment.
 
 ### Usage
 
@@ -90,15 +90,15 @@ Thus the launch order will be A → C → B.
 
 ## Troubleshooting queued runs
 
-Below are some possible issues that you can run into with limiting run concurrency using the [QueuedRunCoordinator](/overview/pipeline-runs/run-coordinator#queuedruncoordinator).
+Below are some possible issues that you can run into with limiting run concurrency using the [QueuedRunCoordinator](/deployment/run-coordinator#queuedruncoordinator).
 
 ### Runs skip the QUEUED status, going straight to STARTED
 
-This likely means that you are not using the [QueuedRunCoordinator](/overview/pipeline-runs/run-coordinator#queuedruncoordinator), which is responsible for run queuing. You can check the run coordinator on your instance in Dagit by going to `Status` -> `Configuration`.
+This likely means that you are not using the [QueuedRunCoordinator](/deployment/run-coordinator#queuedruncoordinator), which is responsible for run queuing. You can check the run coordinator on your instance in Dagit by going to `Status` -> `Configuration`.
 
 ### Runs are not being dequeued
 
-If your runs stay in the `QUEUED` status, the issue is likely either that the [Dagster Daemon](/overview/daemon) is not deployed on your instance, or that the queue configuration is blocking your runs.
+If your runs stay in the `QUEUED` status, the issue is likely either that the [Dagster Daemon](/deployment/dagster-daemon) is not deployed on your instance, or that the queue configuration is blocking your runs.
 
 #### Step 1: Check that the Dagster Daemon is running on your instance
 
@@ -106,11 +106,11 @@ In Dagit, go to `Status` -> `HEALTH`, and check that the `Run queue` is healthy.
 
 ##### Is the Daemon running at all?
 
-Run queuing depends on the Daemon. See the [Daemon Overview](/overview/daemon) for how to set it up on your instance.
+Run queuing depends on the Daemon. See the [Daemon Overview](/deployment/dagster-daemon) for how to set it up on your instance.
 
 ##### Is the Daemon accessing the same storages as the Dagit process?
 
-If you have started a Daemon process, you should make sure that the Daemon is accessing the same storages as the Dagit process, meaning both processes should be using the same `dagster.yaml`. Locally, this means both processes should have the same `DAGSTER_HOME` environment variable set. See the [Dagster Instance](/overview/instances/dagster-instance) docs for more information.
+If you have started a Daemon process, you should make sure that the Daemon is accessing the same storages as the Dagit process, meaning both processes should be using the same `dagster.yaml`. Locally, this means both processes should have the same `DAGSTER_HOME` environment variable set. See the [Dagster Instance](/deployment/dagster-instance) docs for more information.
 
 #### Step 2: Check your queue configuration
 
