@@ -7,18 +7,18 @@ description: IO Managers determine how to store solid outputs and load solid inp
 
 IO Managers are user-provided objects that store solid outputs and load them as inputs to downstream solids.
 
-<p align="center">
-  <img src="/images/concepts/io-managers-main-diagram.png" />
-</p>
+<img class="mx-auto" src="/images/io-managers.png" />
 
-<!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
+<!-- TODO: center images -->
+
+<!-- ![IO Manager Diagram](/images/io-managers.png) -->
 
 ## Relevant APIs
 
-| Name                                                        | Description                                          |
-| ----------------------------------------------------------- | ---------------------------------------------------- |
-| <PyObject module="dagster" object="io_manager" decorator /> | A decorator used to define IO managers.              |
-| <PyObject module="dagster" object="IOManager" />            | Base class for user-provided IO managers.            |
+| Name                                                        | Description                               |
+| ----------------------------------------------------------- | ----------------------------------------- |
+| <PyObject module="dagster" object="io_manager" decorator /> | A decorator used to define IO managers.   |
+| <PyObject module="dagster" object="IOManager" />            | Base class for user-provided IO managers. |
 
 ## Overview
 
@@ -37,23 +37,22 @@ inputs at the beginning of a pipeline are loaded.
 
 ### Outputs and downstream inputs
 
-<PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects that
-are responsible for storing the output of a solid and loading it as input to
-downstream solids. For example, an IO Manager might store and load objects from
-files on a filesystem.
+<PyObject module="dagster" object="IOManager" pluralize /> are user-provided objects
+that are responsible for storing the output of a solid and loading it as input to
+downstream solids. For example, an IO Manager might store and load objects from files
+on a filesystem.
 
 Each solid output can have its own IOManager, or multiple
 solid outputs can share an IOManager. The IOManager that's used for handling a
 particular solid output is automatically used for loading it in downstream
 solids.
 
-This diagram shows a pipeline with two IO managers, each of which is shared across a few inputs
-and outputs.  The green inputs and outputs use the green IO manager, and the yellow inputs and
-outputs use the yellow IO manager.
-
-<img src="/images/concepts/two-io-managers.png" />
+<img class="mx-auto" src="/images/concepts/two-io-managers.png" />
 
 <!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
+
+This diagram shows a pipeline with two IO managers, each of which is shared across a few inputs
+and outputs.
 
 The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in
 memory, but this only works for the single process executor. Dagster provides out-of-the-box
