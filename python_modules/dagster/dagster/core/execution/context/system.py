@@ -657,7 +657,7 @@ def get_output_context(
     execution_plan: "ExecutionPlan",
     environment_config: EnvironmentConfig,
     step_output_handle: StepOutputHandle,
-    run_id: str,
+    run_id: Optional[str] = None,
     log_manager: Optional[DagsterLogManager] = None,
     step_context: Optional[SystemStepExecutionContext] = None,
 ) -> OutputContext:

@@ -15,7 +15,7 @@ from dagster.core.system_config.objects import ResourceConfig, config_map_resour
 from dagster.loggers import default_system_loggers
 
 
-def _initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:
+def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:
     # initialize default colored console logger
     loggers = []
     for logger_def, logger_config in default_system_loggers():
@@ -52,6 +52,7 @@ def build_resources(
     instance: DagsterInstance,
     run_config: Optional[Dict[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
+    log_manager: Optional[DagsterLogManager] = None,
 ) -> Generator[NamedTuple, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
@@ -71,17 +72,20 @@ def build_resources(
             initialization and teardown. If the provided resources require either the `pipeline_run`
             or `run_id` attributes of the provided context during resource initialization and/or
             teardown, this must be provided, or initialization will fail.
+        log_manager (Optional[DagsterLogManager]): Log Manager to use during resource
+            initialization. Defaults to system log manager.
     """
     resource_defs = check.dict_param(
         resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
     instance = check.inst_param(instance, "instance", DagsterInstance)
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
+    log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
     mapped_resource_config = _get_mapped_resource_config(resource_defs, run_config)
     resources_manager = resource_initialization_manager(
         resource_defs=resource_defs,
         resource_configs=mapped_resource_config,
-        log_manager=_initialize_console_manager(pipeline_run),
+        log_manager=log_manager if log_manager else initialize_console_manager(pipeline_run),
         execution_plan=None,
         pipeline_run=pipeline_run,
         resource_keys_to_init=set(resource_defs.keys()),

@@ -1,17 +1,20 @@
 from tempfile import TemporaryDirectory
 
-from dagster import Any, seven
+from dagster import Any
+from dagster.core.execution.build_resources import initialize_console_manager
 from dagster.core.execution.context.system import InputContext, OutputContext
 from dagster.core.storage.memoizable_io_manager import VersionedPickledObjectFilesystemIOManager
 
 
 def test_versioned_pickled_object_filesystem_io_manager():
+    console_manager = initialize_console_manager(None)
     with TemporaryDirectory() as temp_dir:
         store = VersionedPickledObjectFilesystemIOManager(temp_dir)
         context = OutputContext(
             step_key="foo",
             name="bar",
             mapping_key=None,
+            log_manager=console_manager,
             metadata={},
             pipeline_name="fake",
             solid_def=None,
@@ -21,11 +24,19 @@ def test_versioned_pickled_object_filesystem_io_manager():
         )
         store.handle_output(context, "cat")
         assert store.has_output(context)
-        assert store.load_input(InputContext(upstream_output=context, pipeline_name="abc")) == "cat"
+        assert (
+            store.load_input(
+                InputContext(
+                    upstream_output=context, pipeline_name="abc", log_manager=console_manager
+                )
+            )
+            == "cat"
+        )
         context_diff_version = OutputContext(
             step_key="foo",
             name="bar",
             mapping_key=None,
+            log_manager=console_manager,
             metadata={},
             pipeline_name="fake",
             solid_def=None,

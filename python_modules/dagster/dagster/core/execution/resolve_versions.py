@@ -155,11 +155,13 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance):
     Returns:
         ExecutionPlan: Execution plan configured to only run unmemoized steps.
     """
-    from .build_resources import build_resources
+    from .build_resources import build_resources, initialize_console_manager
 
     environment_config = execution_plan.environment_config
 
     step_keys_to_execute = set()
+
+    log_manager = initialize_console_manager(None)
 
     for step in execution_plan.steps:
         for output_name in step.step_output_dict.keys():
@@ -176,11 +178,15 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance):
                 resource_defs=mode_def.resource_defs,
                 instance=instance,
                 run_config=run_config.get("resources", {}),
+                log_manager=log_manager,
             ) as resources:
 
                 io_manager = getattr(resources, io_manager_key)
                 context = get_output_context(
-                    execution_plan, environment_config, step_output_handle, None
+                    execution_plan,
+                    environment_config,
+                    step_output_handle,
+                    log_manager=log_manager,
                 )
                 if not io_manager.has_output(context):
                     step_keys_to_execute.add(step_output_handle.step_key)

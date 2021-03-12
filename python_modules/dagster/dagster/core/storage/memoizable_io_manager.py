@@ -51,6 +51,8 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
 
         filepath = self._get_path(context)
 
+        context.log.debug(f"Writing file at: {filepath}")
+
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
 
@@ -62,6 +64,8 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
 
         filepath = self._get_path(context.upstream_output)
 
+        context.log.debug(f"Loading file from: {filepath}")
+
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
 
@@ -69,6 +73,8 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         """Returns true if data object exists with the associated version, False otherwise."""
 
         filepath = self._get_path(context)
+
+        context.log.debug(f"Checking for file at: {filepath}")
 
         return os.path.exists(filepath) and not os.path.isdir(filepath)
 
