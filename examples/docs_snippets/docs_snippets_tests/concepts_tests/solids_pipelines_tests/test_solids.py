@@ -27,7 +27,7 @@ def generate_stub_input_values(solid):
     return input_values
 
 
-def test_solids_compile_and_excute():
+def test_solids_compile_and_execute():
     solids = [
         my_solid,
         my_input_example_solid,
