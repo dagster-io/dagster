@@ -108,7 +108,7 @@ def test_modified_docker_operator_bad_command(dagster_docker_image):
             instance_ref=instance.get_ref(),
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
-        with pytest.raises(AirflowException, match="'StatusCode': 2"):
+        with pytest.raises(AirflowException, match="Usage: dagster-graphql"):
             operator.execute({})
 
 

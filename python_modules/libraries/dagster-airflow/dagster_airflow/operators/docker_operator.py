@@ -183,9 +183,12 @@ class DagsterDockerOperator(DockerOperator):
 
             result = self.cli.wait(self.container["Id"])
             if result["StatusCode"] != 0:
+                full_logs = self.cli.logs(container=self.container["Id"], stdout=True, stderr=True)
+
                 raise AirflowException(
                     "docker container failed with result: {result} and logs: {logs}".format(
-                        result=repr(result), logs="\n".join(res)
+                        result=repr(result),
+                        logs=full_logs,
                     )
                 )
 
