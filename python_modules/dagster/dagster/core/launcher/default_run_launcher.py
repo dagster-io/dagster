@@ -34,7 +34,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = inst_data
 
         # Used for test cleanup purposes only
-        self._run_id_to_repository_location_handle_cache = {}
+        self._run_id_to_managed_grpc_pid = {}
 
         super().__init__()
 
@@ -94,7 +94,13 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 )
             )
 
-        self._run_id_to_repository_location_handle_cache[run.run_id] = repository_location_handle
+        pid_to_wait_for = (
+            repository_location_handle.grpc_server_process.pid
+            if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
+            else 0
+        )
+
+        self._run_id_to_managed_grpc_pid[run.run_id] = pid_to_wait_for
 
         return run
 
@@ -169,7 +175,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         while True:
             active_run_ids = [
                 run_id
-                for run_id in self._run_id_to_repository_location_handle_cache.keys()
+                for run_id in self._run_id_to_managed_grpc_pid.keys()
                 if (
                     self._instance.get_run_by_id(run_id)
                     and not self._instance.get_run_by_id(run_id).is_finished
@@ -199,12 +205,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         to shut them down before we can safely remove the temporary directory created for the
         DagsterInstance.
         """
-        for repository_location_handle in self._run_id_to_repository_location_handle_cache.values():
-            if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
-                check.invariant(
-                    repository_location_handle.is_cleaned_up,
-                    "ManagedGrpcPythonRepositoryLocationHandle was not cleaned up "
-                    "before test teardown. This may indicate that the handle is not "
-                    "being used as a contextmanager.",
-                )
-                repository_location_handle.grpc_server_process.wait()
+        for pid in set(self._run_id_to_managed_grpc_pid.values()):
+            if pid > 0:
+                seven.wait_for_pid(pid)

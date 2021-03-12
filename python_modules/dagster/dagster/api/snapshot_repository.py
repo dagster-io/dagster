@@ -2,12 +2,9 @@ from dagster import check
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
-def sync_get_external_repositories_grpc(api_client, repository_location_handle):
+def sync_get_streaming_external_repositories_data_grpc(api_client, repository_location_handle):
     from dagster.core.host_representation import (
-        RepositoryHandle,
         RepositoryLocationHandle,
-        ExternalRepository,
-        ExternalRepositoryData,
         ExternalRepositoryOrigin,
     )
 
@@ -15,42 +12,7 @@ def sync_get_external_repositories_grpc(api_client, repository_location_handle):
         repository_location_handle, "repository_location_handle", RepositoryLocationHandle
     )
 
-    repos = []
-    for repository_name in repository_location_handle.repository_names:
-        external_repository_data = check.inst(
-            api_client.external_repository(
-                external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location_handle.origin,
-                    repository_name,
-                )
-            ),
-            ExternalRepositoryData,
-        )
-        repos.append(
-            ExternalRepository(
-                external_repository_data,
-                RepositoryHandle(
-                    repository_name=external_repository_data.name,
-                    repository_location_handle=repository_location_handle,
-                ),
-            )
-        )
-    return repos
-
-
-def sync_get_streaming_external_repositories_grpc(api_client, repository_location_handle):
-    from dagster.core.host_representation import (
-        RepositoryHandle,
-        RepositoryLocationHandle,
-        ExternalRepository,
-        ExternalRepositoryOrigin,
-    )
-
-    check.inst_param(
-        repository_location_handle, "repository_location_handle", RepositoryLocationHandle
-    )
-
-    repos = []
+    repo_datas = {}
     for repository_name in repository_location_handle.repository_names:
         external_repository_chunks = list(
             api_client.streaming_external_repository(
@@ -70,13 +32,5 @@ def sync_get_streaming_external_repositories_grpc(api_client, repository_locatio
             )
         )
 
-        repos.append(
-            ExternalRepository(
-                external_repository_data,
-                RepositoryHandle(
-                    repository_name=external_repository_data.name,
-                    repository_location_handle=repository_location_handle,
-                ),
-            )
-        )
-    return repos
+        repo_datas[repository_name] = external_repository_data
+    return repo_datas

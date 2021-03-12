@@ -6,7 +6,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
-from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_grpc
+from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.grpc_server_state_subscriber import (
@@ -108,6 +108,7 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         self._watch_server = check.bool_param(watch_server, "watch_server")
 
         self.server_id = None
+        self._external_repositories_data = None
 
         try:
             self.client = DagsterGrpcClient(
@@ -168,12 +169,10 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
 
             self.container_image = self._reload_current_image()
 
-            external_repositories_list = sync_get_streaming_external_repositories_grpc(
+            self._external_repositories_data = sync_get_streaming_external_repositories_data_grpc(
                 self.client,
                 self,
             )
-
-            self.external_repositories = {repo.name: repo for repo in external_repositories_list}
         except:
             self.cleanup()
             raise
@@ -246,6 +245,20 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
 
         return GrpcServerRepositoryLocation(self)
 
+    def create_external_repositories(self):
+        from dagster.core.host_representation.external import ExternalRepository
+
+        return {
+            repo_name: ExternalRepository(
+                repo_data,
+                RepositoryHandle(
+                    repository_name=repo_name,
+                    repository_location_handle=self,
+                ),
+            )
+            for repo_name, repo_data in self._external_repositories_data.items()
+        }
+
 
 class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     """
@@ -265,6 +278,8 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
             origin, "origin", ManagedGrpcPythonEnvRepositoryLocationOrigin
         )
         loadable_target_origin = origin.loadable_target_origin
+
+        self._external_repositories_data = None
 
         try:
             self.grpc_server_process = GrpcServerProcess(
@@ -294,15 +309,27 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
             )
             self.container_image = self.client.get_current_image().current_image
 
-            external_repositories_list = sync_get_streaming_external_repositories_grpc(
+            self._external_repositories_data = sync_get_streaming_external_repositories_data_grpc(
                 self.client,
                 self,
             )
-
-            self.external_repositories = {repo.name: repo for repo in external_repositories_list}
         except:
             self.cleanup()
             raise
+
+    def create_external_repositories(self):
+        from dagster.core.host_representation.external import ExternalRepository
+
+        return {
+            repo_name: ExternalRepository(
+                repo_data,
+                RepositoryHandle(
+                    repository_name=repo_name,
+                    repository_location_handle=self,
+                ),
+            )
+            for repo_name, repo_data in self._external_repositories_data.items()
+        }
 
     def get_repository_python_origin(self, repository_name):
         return _get_repository_python_origin(

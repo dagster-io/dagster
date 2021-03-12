@@ -74,6 +74,23 @@ def get_args(callable_):
     ]
 
 
+def wait_for_pid(pid, timeout=30):
+    if IS_WINDOWS:
+        os.waitpid(pid, 0)
+        return
+
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            if os.waitpid(pid, os.WNOHANG) != (0, 0):
+                return
+        except OSError:
+            return
+        time.sleep(1)
+
+    raise Exception(f"Timed out waiting for process {pid}")
+
+
 def wait_for_process(process, timeout=30):
     # Using Popen.communicate instead of Popen.wait since the latter
     # can deadlock, see https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait
