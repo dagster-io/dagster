@@ -1,1 +1,42 @@
 # Deployment Overview
+
+This page covers general information about deploying Dagster. For guides on specific platforms, see Deployment Guides.
+
+## Architecture
+
+<!-- https://excalidraw.com/#json=5658696109522944,ERmjYMIxiHh7AJLbuIPoTg -->
+
+![dagster-deployment.png](/images/deploying/dagster-deployment.png)
+
+This diagram shows a generic Dagster deployment. Its components are described below.
+
+### Long-running services
+
+| Service                                                             | Description                                                                                                                                                 | Required                                                                                                           |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [Dagit](/concepts/dagit/dagit)                                      | Dagit serves the user interface and responds to GraphQL queries. It can have 1 or more replicas.                                                            | Yes                                                                                                                |
+| [Dagster Daemon](/deployment/dagster-daemon)                        | The Dagster Daemon opperates schedules, sensors, and run queuing. Currently replicas are not supported.                                                     | Required for schedules, sensors, and run queuing                                                                   |
+| [User Repositories](/concepts/repositories-workspaces/repositories) | User Repository Deployments serve metadata about user pipelines. Deployments can have many repository servers, and each server can have 1 or more replicas. | Recommended. Otherwise Dagit and the Daemon must have access to user code, which they will call in a local process |
+
+### Configuring Dagster Deployments
+
+| Config                                                    | Location                        | Description                                                                                                                                    |
+| --------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Dagster Instance](/deployment/dagster-instance)          | dagster.yaml                    | The Dagster Instance holds all of the system configuration for a deployment- where to store metadata about runs, how to launch runs, and more. |
+| [Workspace](/concepts/repositories-workspaces/workspaces) | workspace.yaml                  | The Workspace defines the User Repositories that Dagit loads user code from.                                                                   |
+| Pipeline Run Config                                       | In code or the Dagit Playground | Run config is supplied at pipeline launch time, and specifies things like how to execute solids and where to store outputs.                    |
+
+Note that on some deployments, you will not work with this configuration directly. For example, with Kubernetes the Instance and Workspace will be generated based on your Helm values.
+
+### Pipeline Execution
+
+Pipeline execution flows through several parts of the system. The components in the table below handle execution in the order they are listed. The table describes runs instigated in Dagit. Note that runs are also instigated by schedules and sensors, in which case the first step is called by the Daemon rather than Dagit.
+
+| Component                                      | Description                                                                                                                                                                                                                                                 | Configured by |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| [Run Coordinator](/deployment/run-coordinator) | The Run Coordinator is a class invoked by the Dagit process when runs are launched from the UI. This class can be configured to pass runs to the Daemon via a queue.                                                                                        | Instance      |
+| [Run Launcher](/deployment/run-launcher)       | The Run Launcher is a class invoked by the Daemon when it receives a run from the queue. This class initializes a new run worker to handle execution. Depending on the launcher, this could mean spinning up a new process, container, Kubernetes pod, etc. | Instance      |
+| Run Worker                                     | The Run Worker is a process which traverses a pipeine's DAG and uses the Executor to call out to user's solids.                                                                                                                                             | N/A           |
+| Executor                                       | The Executor is a class invoked by the Run Worker for running user solids. Depending on the Executor, solids may be run in local processes, Kubernetes pods, etc.                                                                                           | Run Config    |
+
+In a deployment without the Daemon, Dagit will call the Run Launcher directly, skipping the run queue.
