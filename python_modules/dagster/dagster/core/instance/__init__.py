@@ -17,6 +17,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.errors import (
     DagsterInvariantViolationError,
+    DagsterNoStepsToExecuteException,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
@@ -692,6 +693,11 @@ class DagsterInstance:
                 full_execution_plan, run_config, self
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
             step_keys_to_execute = subsetted_execution_plan.step_keys_to_execute
+            if not step_keys_to_execute:
+                raise DagsterNoStepsToExecuteException(
+                    "No steps found to execute. "
+                    "This is because every step in the plan has already been memoized."
+                )
         else:
             subsetted_execution_plan = (
                 full_execution_plan.build_subset_plan(step_keys_to_execute)
