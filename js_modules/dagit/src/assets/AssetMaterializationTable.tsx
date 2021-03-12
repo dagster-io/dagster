@@ -2,24 +2,28 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from 'src/app/time/Timestamp';
+import {AssetLineageInfoElement} from 'src/assets/AssetLineageInfoElement';
 import {AssetQuery_assetOrError_Asset_assetMaterializations} from 'src/assets/types/AssetQuery';
 import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {titleForRun} from 'src/runs/RunUtils';
+import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 
 export const AssetMaterializationTable: React.FunctionComponent<{
   isPartitioned: boolean;
+  hasLineage: boolean;
   materializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
-}> = ({isPartitioned, materializations}) => {
+}> = ({isPartitioned, hasLineage, materializations}) => {
   return (
     <Table>
       <thead>
         <tr>
           <th style={{paddingLeft: 0}}>Materialization Metadata</th>
           {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
+          {hasLineage && <th style={{minWidth: 100}}>Parent Assets</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
           <th style={{minWidth: 150}}>Pipeline</th>
           <th style={{width: 200}}>Run</th>
@@ -30,6 +34,7 @@ export const AssetMaterializationTable: React.FunctionComponent<{
           <AssetMaterializationRow
             key={m.materializationEvent.timestamp}
             isPartitioned={isPartitioned}
+            hasLineage={hasLineage}
             assetMaterialization={m}
           />
         ))}
@@ -41,7 +46,8 @@ export const AssetMaterializationTable: React.FunctionComponent<{
 const AssetMaterializationRow: React.FunctionComponent<{
   assetMaterialization: AssetQuery_assetOrError_Asset_assetMaterializations;
   isPartitioned: boolean;
-}> = ({assetMaterialization, isPartitioned}) => {
+  hasLineage: boolean;
+}> = ({assetMaterialization, isPartitioned, hasLineage}) => {
   const run =
     assetMaterialization.runOrError.__typename === 'PipelineRun'
       ? assetMaterialization.runOrError
@@ -49,7 +55,7 @@ const AssetMaterializationRow: React.FunctionComponent<{
   if (!run) {
     return <span />;
   }
-  const {materialization, timestamp} = assetMaterialization.materializationEvent;
+  const {materialization, assetLineage, timestamp} = assetMaterialization.materializationEvent;
   const metadataEntries = materialization.metadataEntries;
 
   return (
@@ -63,6 +69,19 @@ const AssetMaterializationRow: React.FunctionComponent<{
         ) : null}
       </td>
       {isPartitioned && <td>{assetMaterialization.partition}</td>}
+      {hasLineage && (
+        <td>
+          {
+            <Group direction={'column'} spacing={0}>
+              {assetLineage.map((lineage_info) => (
+                <>
+                  <AssetLineageInfoElement lineage_info={lineage_info} />
+                </>
+              ))}
+            </Group>
+          }
+        </td>
+      )}
       <td>
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </td>

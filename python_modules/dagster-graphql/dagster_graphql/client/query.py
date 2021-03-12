@@ -98,6 +98,9 @@ fragment stepEventFragment on StepEvent {
         ...metadataEntryFragment
       }
     }
+    metadataEntries {
+      ...metadataEntryFragment
+    }
   }
 
   ... on ExecutionStepUpForRetryEvent {

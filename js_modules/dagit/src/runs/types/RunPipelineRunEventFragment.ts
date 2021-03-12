@@ -381,6 +381,65 @@ export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck 
   metadataEntries: RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries[];
 }
 
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry {
+  __typename: "EventPythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventFloatMetadataEntry {
+  __typename: "EventFloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry {
+  __typename: "EventIntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number;
+}
+
+export type RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries = RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPathMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventJsonMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventUrlMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventTextMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventMarkdownMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventFloatMetadataEntry | RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry;
+
 export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent {
   __typename: "ExecutionStepOutputEvent";
   message: string;
@@ -390,6 +449,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent {
   eventType: DagsterEventType | null;
   outputName: string;
   typeCheck: RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck;
+  metadataEntries: RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries[];
 }
 
 export interface RunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
@@ -544,6 +604,65 @@ export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent {
   operationResult: RunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult;
 }
 
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry {
+  __typename: "EventPythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventFloatMetadataEntry {
+  __typename: "EventFloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number;
+}
+
+export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry {
+  __typename: "EventIntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number;
+}
+
+export type RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries = RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventPathMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventJsonMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventUrlMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventTextMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventMarkdownMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventFloatMetadataEntry | RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry;
+
 export interface RunPipelineRunEventFragment_HandledOutputEvent {
   __typename: "HandledOutputEvent";
   message: string;
@@ -553,6 +672,7 @@ export interface RunPipelineRunEventFragment_HandledOutputEvent {
   eventType: DagsterEventType | null;
   outputName: string;
   managerKey: string;
+  metadataEntries: RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries[];
 }
 
 export interface RunPipelineRunEventFragment_LoadedInputEvent {

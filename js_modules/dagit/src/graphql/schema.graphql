@@ -438,6 +438,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   eventType: DagsterEventType
   materialization: Materialization!
   stepStats: PipelineRunStepStats!
+  assetLineage: [AssetLineageInfo!]!
 }
 
 interface MessageEvent {
@@ -491,6 +492,11 @@ enum DagsterEventType {
 interface StepEvent {
   stepKey: String
   solidHandleID: String
+}
+
+type AssetLineageInfo {
+  assetKey: AssetKey!
+  partitions: [String!]!
 }
 
 union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError | PythonError
@@ -1203,7 +1209,7 @@ type TypeCheck implements DisplayableEvent {
   success: Boolean!
 }
 
-type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
+type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1211,6 +1217,9 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
   outputName: String!
   typeCheck: TypeCheck!
 }
@@ -1382,7 +1391,7 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   pipelineName: String!
 }
 
-type HandledOutputEvent implements MessageEvent & StepEvent {
+type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1390,6 +1399,9 @@ type HandledOutputEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
   outputName: String!
   managerKey: String!
 }

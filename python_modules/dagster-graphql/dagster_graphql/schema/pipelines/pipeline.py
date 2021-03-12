@@ -64,6 +64,7 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
     def resolve_materializationEvent(self, _graphene_info):
         return GrapheneStepMaterializationEvent(
             materialization=self._event.dagster_event.step_materialization_data.materialization,
+            assetLineage=self._event.dagster_event.step_materialization_data.asset_lineage,
             **construct_basic_params(self._event),
         )
 

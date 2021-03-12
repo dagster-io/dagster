@@ -107,6 +107,17 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializa
   metadataEntries: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries[];
 }
 
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage {
+  __typename: "AssetLineageInfo";
+  assetKey: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage_assetKey;
+  partitions: string[];
+}
+
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent {
   __typename: "StepMaterializationEvent";
   runId: string;
@@ -114,6 +125,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializa
   stepKey: string | null;
   stepStats: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_stepStats;
   materialization: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization;
+  assetLineage: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[];
 }
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations {

@@ -44,6 +44,7 @@ def run_config_for_date_partition(partition):
             },
             "top_10_comments": {"outputs": {"result": {"partitions": [date]}}},
             "top_10_reviews": {"outputs": {"result": {"partitions": [date]}}},
+            "daily_top_action": {"outputs": {"result": {"partitions": [date]}}},
         }
     }
 
@@ -137,13 +138,13 @@ def split_action_types(_, df):
     yield Output(comments_df, "comments", metadata_entries=metadata_for_actions(comments_df))
 
 
-def best_n_actions(n, table_name):
+def best_n_actions(n, action_type):
     @solid(
-        name=f"top_{n}_{table_name}",
+        name=f"top_{n}_{action_type}",
         output_defs=[
             OutputDefinition(
                 io_manager_key="my_db_io_manager",
-                metadata={"table_name": table_name},
+                metadata={"table_name": f"best_{action_type}"},
             )
         ],
     )
@@ -163,13 +164,20 @@ top_10_reviews = best_n_actions(10, "reviews")
 top_10_comments = best_n_actions(10, "comments")
 
 
-@solid
-def combine_dfs(_, df1, df2):
-    return pd.concat([df1, df2])
+@solid(
+    output_defs=[
+        OutputDefinition(
+            io_manager_key="my_db_io_manager",
+            metadata={"table_name": "daily_best_action"},
+        )
+    ]
+)
+def daily_top_action(_, df1, df2):
+    df = pd.concat([df1, df2]).nlargest(1, "score")
+    return Output(df, metadata_entries=[EventMetadataEntry.md(df.to_markdown(), "data")])
 
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})])
 def asset_lineage_pipeline():
     reviews, comments = split_action_types(download_data())
-    top_10_reviews(reviews)
-    top_10_comments(comments)
+    daily_top_action(top_10_reviews(reviews), top_10_comments(comments))

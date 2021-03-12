@@ -8,3 +8,11 @@ class GrapheneAssetKey(graphene.ObjectType):
 
     class Meta:
         name = "AssetKey"
+
+
+class GrapheneAssetLineageInfo(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    partitions = non_null_list(graphene.String)
+
+    class Meta:
+        name = "AssetLineageInfo"

@@ -152,11 +152,17 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneExecutionStepOutputEvent(
             output_name=output_data.output_name,
             type_check=output_data.type_check_data,
+            metadataEntries=_to_metadata_entries(output_data.metadata_entries),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
         materialization = dagster_event.step_materialization_data.materialization
-        return GrapheneStepMaterializationEvent(materialization=materialization, **basic_params)
+        asset_lineage = dagster_event.step_materialization_data.asset_lineage
+        return GrapheneStepMaterializationEvent(
+            materialization=materialization,
+            assetLineage=asset_lineage,
+            **basic_params,
+        )
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result
         return GrapheneStepExpectationResultEvent(
@@ -203,6 +209,9 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneHandledOutputEvent(
             output_name=dagster_event.event_specific_data.output_name,
             manager_key=dagster_event.event_specific_data.manager_key,
+            metadataEntries=_to_metadata_entries(
+                dagster_event.event_specific_data.metadata_entries
+            ),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.LOADED_INPUT:
