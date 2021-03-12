@@ -1,11 +1,11 @@
 ---
 title: Sensors | Dagster
-description: Sensors allow you to instigate runs when some external state changes.
+description: Sensors allow you to instigate runs based on any external state change.
 ---
 
 # Sensors
 
-Sensors allow you to instigate runs when some external state changes.
+Sensors allow you to instigate runs based on any external state change.
 
 <PlaceholderImage />
 
@@ -13,34 +13,39 @@ Sensors allow you to instigate runs when some external state changes.
 
 | Name                                    | Description                                                                                                                                                                                                     |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="sensor" decorator />  | The decorator used to define a sensor. The decorated function is called the `execution_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                      |
+| <PyObject object="sensor" decorator />  | The decorator used to define a sensor. The decorated function is called the `evaluation_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                     |
+| <PyObject object="RunRequest" />        | The sensor evaluation function can yield one or more run requests. Each run request creates a pipeline run.                                                                                                     |
+| <PyObject object="SkipReason" />        | If a sensor evalauation doesn't yield any run requests, it can instead yield a skip reason to log why the evalation was skipped or why there were no events to be processed.                                    |
 | <PyObject object="SensorDefinition"  /> | Base class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  /> |
 
 ## Overview
 
-Sensors are definitions in Dagster that allow you to automatically instigate runs based on some external state change. For example, you could:
+Sensors are definitions in Dagster that allow you to instigate runs based on some external state change automatically. For example, you can:
 
-- Launch a run whenever a file file appears in an s3 bucket
-- Launch a run whenever a specific asset is materialized by another pipeline
+- Launch a run whenever a file appears in an s3 bucket
+- Launch a run whenever another pipeline materializes a specific asset
 - Launch a run whenever an external system is down
 
 Sensors have several important properties:
 
 - Each sensor targets a specific pipeline
-- A sensors defines an evlauation function that returns either:
-  - One or more <PyObject object="RunRequest"/> objects. A run will be launched for each run request.
-  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
 - A sensor optionally defines tags, a mode, and a solid selection for the targeted pipeline.
+- A sensor defines an evaluation function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
 
----
+The [Dagster Daemon](/deployment/dagster-daemon) runs each sensor evaluation function on a tight loop. If you are using sensors, make sure to follow the instructions on the [DagsterDaemon](/deployment/dagster-daemon) page to run your sensors.
 
 ## Defining a sensor
 
 To define a sensor, use the <PyObject object="sensor" decorator /> decorator. The decorated function is called the `execution_fn` and must have `context` as the first argument. The context is a <PyObject object="SensorExecutionContext" />
 
-Given the following pipeline that logs a filename that is specified in the configuration in the `process_file` solid:
+Let's say you have a pipeline that logs a filename that is specified in the solid configuration of the `process_file` solid:
 
-```python
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_pipeline_marker endbefore=end_sensor_pipeline_marker
+from dagster import solid, pipeline
+
+
 @solid(config_schema={"filename": str})
 def process_file(context):
     filename = context.solid_config["filename"]
@@ -52,9 +57,13 @@ def log_file_pipeline():
     process_file()
 ```
 
-We can write a sensor that watches for new files in a directory and requests a run for each new file in the directory.
+You can write a sensor that watches for new files in a specific directory and `yields` a `RunRequest` for each new file in the directory. By default, this sensor every 30 seconds.
 
-```python
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_directory_sensor_marker endbefore=end_directory_sensor_marker
+import os
+from dagster import sensor, RunRequest
+
+
 @sensor(pipeline_name="log_file_pipeline")
 def my_directory_sensor(_context):
     for filename in os.listdir(MY_DIRECTORY):
@@ -66,27 +75,101 @@ def my_directory_sensor(_context):
             )
 ```
 
+This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyObject object="RunRequest"/> for each file.
+
+## Idempotence and Cursors
+
+When instigating runs based on external events, you usually want to run exactly one pipeline run for each event. There are two ways to define your sensors to avoid creating duplicate runs for your events: using `run_key` and using a cursor.
+
 ### Idempotence using run keys
 
-In the above example, we use the run_key parameter to enforce idempotence for each filename. Dagster will ensure that only one run is created for each unique run_key value for a given sensor. In the example, even though the full directory contents are requested on every sensor evaluation, only new files will actually instigate new runs due to the run key.
+In the example sensor above, the <PyObject object="RunRequest"/> is constructed with a `run_key`.
 
-Run keys enable a sensor evaluation function to declaratively describe what runs should exist, rather than keeping track of cursors or timestamps. However, the last_run_key and last_completion_time attributes on the <PyObject object="SensorExecutionContext"/> that's passed into the sensor evaluation function can also be used to keep track of timestamps and cursors.
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_run_request_marker endbefore=end_run_request_marker
+yield RunRequest(
+        run_key=filename,
+        run_config={"solids": {"process_file": {"config": {"filename": filename}}}},
+    )
+```
+
+Dagster guarantees that for a given sensor, at most one run is created for each <PyObject object="RunRequest"/> with a unique `run_key`. If a sensor yields a new run request with a previously used `run_key`, Dagster skips processing the new run request.
+
+In the example, a <PyObject object="RunRequest"/> is requested for each file during _every_ sensor evaluation. Therefore, for a given sensor evaluation, there already exists a `RunRequest` with a `run_key` for any file that existed during the previous sensor evaluation. Dagster skips processing duplicate run requests, so Dagster launches runs for only the files added since the last sensor evaluation. The result is exactly one run per file.
+
+Run keys allow you to write sensor evaluation functions that declaratively describe what pipeline runs should exist, and helps you avoid the need for more complex logic that manages state. However, when dealing with high-volume external events, some state-tracking optimizations might be necessary.
+
+### Sensor optimizations using cursors
+
+When writing a sensor that deals with high-volume events, it might not be feasible to `yield` a <PyObject object="RunRequest"/> during every sensor evaluation. For example, you may have an `s3` storage bucket that contains thousands of files.
+
+When writing a sensor for such event sources, you can maintain a cursor to limit yielding run requests for previously processed events. The sensor API can maintain two types of cursors:
+
+- `last_completion_time`: A cursor that returns the .... of the last run requested by the previous sensor evaluation.
+- `last_run_key`: A cursor that returns the run key of the last run requested by the previous sensor evaluation.
+
+A <PyObject object="SensorExecutionContext"/> is passed to the sensor evalation function and contains both of these cursors.
+
+<!-- TODO: Example -->
+
+<TODO />
+
+## Evaluation Interval
+
+By default, the Dagster Daemon runs a sensor 30 seconds after the previous sensor evaluation finishes executing. You can configure the interval using the `minimum_interval_seconds` argument on the <PyObject object="sensor" decorator/> decorator.
+
+It's important to note that this interval represents a minimum interval _between_ runs of the sensor and not the exact frequency the sensor runs. If you have a sensor that takes 2 minutes to complete, but the `minimum_interval_seconds` is 5 seconds, the fastest Dagster Daemon will run the sensor is every 2 minutes and 5 seconds. The `minimum_interval_seconds` only guarantees that the sensor is not evaluated more frequently than the given interval.
+
+For example, here are two sensors that specify two different minimum intervals:
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_interval_sensors_maker endbefore=end_interval_sensors_maker
+@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=30)
+def sensor_A(_context):
+    yield RunRequest(run_key=None, run_config={})
+
+
+@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=45)
+def sensor_B(_context):
+    yield RunRequest(run_key=None, run_config={})
+```
+
+These sensor definitions are short, so they run in less than a second. Therefore, you can expect these sensors to run consistently around every 30 and 45 seconds, respectively.
+
+## Skipping sensor evaluations
+
+<TODO />
 
 ## Testing sensors
 
 <TODO />
 
-### Monitoring sensors in Dagit
+## Monitoring sensors in Dagit
 
-<TODO />
+<!--
+    These images were generated by running
+
+    ```
+    cd dagster/examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/
+    dagit -f sensors.py
+    ```
+ -->
+
+You can monitor and operate sesors in Dagit. There are multiple views that help with observing sensor evaluations, skip reasons, and errors.
+
+To view the sensors page, click the "All sensors" in the left-hand navigation pane. Here you can turn sensors on and off using the toggle.
+
+![All Sensors](/images/concepts/partitions-schedules-sensors/sensors/all-sensors.png)
+
+If you click on any sensor, you can monitor all sensor evaluations and runs created:
+
+![Sensor A](/images/concepts/partitions-schedules-sensors/sensors/sensor-A.png)
+
+If your sensor throws an error or yields a skip reason, the sensor timeline view will display more information about the errors and skips:
+
+![My Directory Sensor](/images/concepts/partitions-schedules-sensors/sensors/my-directory-sensor.png)
 
 ## Examples
 
 ### Asset sensor
-
-<TODO />
-
-### S3 file sensor
 
 <TODO />
 
@@ -98,9 +181,9 @@ Run keys enable a sensor evaluation function to declaratively describe what runs
 
 If you want to act on pipeline failures, e.g., you need to send an alert to a monitoring service on pipeline failure. You can write a sensor that monitors Dagster's runs table and launches a specialized "alert" pipeline for each failed run.
 
-In this example, you can write an "alert" pipeline which will send a slack message when it runs:
+For example, you can write an "alert" pipeline that sends a slack message when it runs. Note that the pipeline depends on a `slack` resource:
 
-```python file=/concepts/partitions_schedules_sensors/sensor_alert.py startafter=start_alert_pipeline_marker endbefore=end_alert_pipeline_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_pipeline_marker endbefore=end_alert_pipeline_marker
 @solid(required_resource_keys={"slack"})
 def slack_message_on_failure_solid(context):
     message = f"Solid {context.solid.name} failed"
@@ -119,7 +202,7 @@ def failure_alert_pipeline():
 
 Then, you can define a sensor that fetches the failed runs from the runs table via `context.instance`, and instigates a `failure_alert_pipeline` run for every failed run. Note that we use the failed run's id as the `run_key` to prevent sending an alert twice for the same pipeline run.
 
-```python file=/concepts/partitions_schedules_sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
 @sensor(pipeline_name="failure_alert_pipeline", mode="prod")
 def pipeline_failure_sensor(context):
     runs = context.instance.get_runs(
@@ -133,22 +216,4 @@ def pipeline_failure_sensor(context):
         yield RunRequest(run_key=str(run.run_id))
 ```
 
-If you would like to set up success or failure handling policies on solids, you can find more
-information on the [Solid Hooks](/concepts/solids-pipelines/solid-hooks) page.
-
-### Sensor with custom evaluation interval
-
-By default, sensors are configured to run roughly every 30 seconds, but they can be configured to run at a different interval by setting the minimum_interval_seconds parameter on the sensor decorator. The minimum interval specified on the sensor definition guarantees that the sensor will not be evaluated more frequently than that interval.
-
-For example, here are two sensors that are defined with two different intervals:
-
-```python
-@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=30)
-def sensor_A(_context):
-    yield RunRequest(run_key=None, run_config={})
-
-
-@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=45)
-def sensor_B(_context):
-    yield RunRequest(run_key=None, run_config={})
-```
+If you would like to set up success or failure handling policies on solids, you can find more information on the [Solid Hooks](/concepts/solids-pipelines/solid-hooks) page.
