@@ -221,13 +221,10 @@ class TestRunVariantTermination(
             graphql_context.instance.run_launcher.terminate = old_terminate
 
             # Clean up the run process on the gRPC server
-            handles = (
-                graphql_context.instance.run_launcher._run_id_to_repository_location_handle_cache.values()  # pylint: disable=protected-access
+            repository_location_handle = graphql_context.repository_locations[0].location_handle
+            repository_location_handle.client.cancel_execution(
+                CancelExecutionRequest(run_id=run_id)
             )
-            for repository_location_handle in handles:
-                repository_location_handle.client.cancel_execution(
-                    CancelExecutionRequest(run_id=run_id)
-                )
 
     def test_run_finished(self, graphql_context):
         instance = graphql_context.instance

@@ -48,14 +48,17 @@ def integration_steps():
 
     for integration_suite in integration_suites:
         tox_env_suffixes = None
+        upload_coverage = False
         if integration_suite == os.path.join(
             "integration_tests", "test_suites", "k8s-integration-test-suite"
         ):
             tox_env_suffixes = ["-default", "-markscheduler"]
+            upload_coverage = True
         elif integration_suite == os.path.join(
             "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
         ):
             tox_env_suffixes = ["-default", "-markusercodedeployment", "-markdaemon"]
+            upload_coverage = True
 
         tests += ModuleBuildSpec(
             integration_suite,
@@ -67,7 +70,7 @@ def integration_steps():
                 "BUILDKITE_SECRETS_BUCKET",
                 "GOOGLE_APPLICATION_CREDENTIALS",
             ],
-            upload_coverage=True,
+            upload_coverage=upload_coverage,
             extra_cmds_fn=integration_suite_extra_cmds_fn,
             depends_on_fn=test_image_depends_fn,
             tox_env_suffixes=tox_env_suffixes,

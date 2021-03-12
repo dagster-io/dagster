@@ -1077,6 +1077,10 @@ class GrpcServerProcess:
         if self.server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
 
+    @property
+    def pid(self):
+        return self.server_process.pid
+
     def wait(self, timeout=30):
         if self.server_process.poll() is None:
             seven.wait_for_process(self.server_process, timeout=timeout)

@@ -5,9 +5,7 @@ from dagster import file_relative_path, repository
 from dagster.cli.workspace.load import location_origins_from_yaml_paths
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation import (
-    ExternalRepository,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryHandle,
     external_repository_data_from_def,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -159,7 +157,7 @@ class TestReloadRepositoriesOutOfProcess(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster.core.host_representation.handle.sync_get_streaming_external_repositories_grpc"
+                "dagster.core.host_representation.handle.sync_get_streaming_external_repositories_data_grpc"
             ) as external_repository_mock:
 
                 @repository
@@ -168,14 +166,7 @@ class TestReloadRepositoriesOutOfProcess(
 
                 new_repo_data = external_repository_data_from_def(new_repo)
 
-                external_repository_mock.return_value = [
-                    ExternalRepository(
-                        new_repo_data,
-                        RepositoryHandle(
-                            "new_repo", graphql_context.repository_locations[0].location_handle
-                        ),
-                    )
-                ]
+                external_repository_mock.return_value = {"new_repo": new_repo_data}
 
                 cli_command_mock.return_value = ListRepositoriesResponse(
                     repository_symbols=[],
