@@ -9,7 +9,6 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import str_format_set
@@ -722,11 +721,7 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                     for source_output_handle in dependency_structure.get_deps_list(handle):
                         output_manager_key = source_output_handle.output_def.io_manager_key
                         output_manager_def = mode_def.resource_defs[output_manager_key]
-                        # TODO: remove the IOutputManagerDefinition check when asset store
-                        # API is removed.
-                        if isinstance(
-                            output_manager_def, IOutputManagerDefinition
-                        ) and not isinstance(output_manager_def, IInputManagerDefinition):
+                        if not isinstance(output_manager_def, IInputManagerDefinition):
                             raise DagsterInvalidDefinitionError(
                                 f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
                                 f'connected to output "{source_output_handle.output_def.name}" '

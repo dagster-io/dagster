@@ -60,7 +60,7 @@ def test_intermediate_storage_deprecation_warning():
     with pytest.warns(
         UserWarning,
         match=re.escape(
-            "Intermediate Storages are deprecated in 0.10.0 and will be removed in 0.11.0."
+            "Intermediate Storages are deprecated in 0.10.0 and will be removed in a future release."
         ),
     ):
         execute_pipeline(foo, run_config={"intermediate_storage": {"filesystem": {}}})

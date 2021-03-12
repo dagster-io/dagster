@@ -331,7 +331,7 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
     solid_def = execution_plan.pipeline_def.get_solid(execution_step.solid_handle).definition
     resource_keys = resource_keys.union(solid_def.required_resource_keys)
 
-    # add input type, input loader, and input asset store resource keys
+    # add input type, input loader, and input io manager resource keys
     for step_input in execution_step.step_inputs:
         input_def = step_input.source.get_input_def(execution_plan.pipeline_def)
 
@@ -355,7 +355,7 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
             if source_manager_key:
                 resource_keys = resource_keys.union([source_manager_key])
 
-    # add output type, output materializer, and output asset store resource keys
+    # add output type, output materializer, and output io manager resource keys
     for step_output in execution_step.step_outputs:
 
         # Load the output type

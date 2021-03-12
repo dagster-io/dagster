@@ -43,7 +43,7 @@ class IntermediateStorageAdapter(IOManager):
             intermediate_storage, "intermediate_storage", IntermediateStorage
         )
         warnings.warn(
-            "Intermediate Storages are deprecated in 0.10.0 and will be removed in 0.11.0. "
+            "Intermediate Storages are deprecated in 0.10.0 and will be removed in a future release. "
             "Use IO Managers instead, which gives you better control over how inputs and "
             "outputs are handled and loaded."
         )

@@ -28,9 +28,9 @@ def validate_reexecution_memoization(pipeline_context, execution_plan):
         return
 
     raise DagsterInvariantViolationError(
-        "Cannot perform reexecution with in-memory asset stores.\n"
+        "Cannot perform reexecution with in-memory io managers.\n"
         "You may have configured non persistent intermediate storage `{}` for reexecution. "
-        "Intermediate Storage is deprecated in 0.10.0 and will be removed in 0.11.0.".format(
+        "Intermediate Storage is deprecated in 0.10.0 and will be removed in a future release.".format(
             pipeline_context.intermediate_storage.__class__.__name__
         )
     )

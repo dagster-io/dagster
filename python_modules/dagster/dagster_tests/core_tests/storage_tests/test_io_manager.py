@@ -172,7 +172,7 @@ def test_step_subset_with_custom_paths():
         for evt in events:
             assert not evt.is_failure
 
-        # when a path is provided via asset store, it's able to run step subset using an execution
+        # when a path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
         step_subset_events = execute_pipeline_with_steps(
