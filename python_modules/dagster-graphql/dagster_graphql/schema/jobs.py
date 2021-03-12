@@ -163,7 +163,7 @@ class GrapheneFutureJobTick(graphene.ObjectType):
         external_schedule = repository.get_external_schedule(self._job_state.name)
         timezone_str = external_schedule.execution_timezone
         if not timezone_str:
-            timezone_str = pendulum.now().timezone.name
+            timezone_str = "UTC"
 
         next_tick_datetime = next(external_schedule.execution_time_iterator(self._timestamp))
         schedule_time = to_timezone(pendulum.instance(next_tick_datetime), timezone_str)

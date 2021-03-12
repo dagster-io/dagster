@@ -41,7 +41,7 @@ def schedule_partition_range(
 
     def get_schedule_range_partitions(current_time=None):
         check.opt_inst_param(current_time, "current_time", datetime.datetime)
-        tz = timezone if timezone else pendulum.now().timezone.name
+        tz = timezone if timezone else "UTC"
         _start = (
             to_timezone(start, tz)
             if isinstance(start, PendulumDateTime)
@@ -129,7 +129,7 @@ def date_partition_range(
 
     def get_date_range_partitions(current_time=None):
         check.opt_inst_param(current_time, "current_time", datetime.datetime)
-        tz = timezone if timezone else pendulum.now().timezone.name
+        tz = timezone if timezone else "UTC"
         _start = (
             to_timezone(start, tz)
             if isinstance(start, PendulumDateTime)

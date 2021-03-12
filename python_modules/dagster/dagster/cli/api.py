@@ -539,23 +539,25 @@ def launch_scheduled_execution(output_file, schedule_name, override_system_timez
 
                         external_schedule = external_repo.get_external_schedule(schedule_name)
 
-                        # Validate that either the schedule has no timezone or it matches
-                        # the system timezone
-                        schedule_timezone = external_schedule.execution_timezone
-                        if schedule_timezone:
-                            system_timezone = pendulum.now().timezone.name
+                        # Validate that the schedule's timezone matches the system timezone
+                        schedule_timezone = (
+                            external_schedule.execution_timezone
+                            if external_schedule.execution_timezone
+                            else "UTC"
+                        )
+                        system_timezone = pendulum.now().timezone.name
 
-                            if system_timezone != external_schedule.execution_timezone:
-                                raise DagsterInvariantViolationError(
-                                    "Schedule {schedule_name} is set to execute in {schedule_timezone}, "
-                                    "but this scheduler can only run in the system timezone, "
-                                    "{system_timezone}. Use DagsterDaemonScheduler if you want to be able "
-                                    "to execute schedules in arbitrary timezones.".format(
-                                        schedule_name=external_schedule.name,
-                                        schedule_timezone=schedule_timezone,
-                                        system_timezone=system_timezone,
-                                    ),
-                                )
+                        if system_timezone != schedule_timezone:
+                            raise DagsterInvariantViolationError(
+                                "Schedule {schedule_name} is set to execute in {schedule_timezone}, "
+                                "but this scheduler can only run in the system timezone, "
+                                "{system_timezone}. Use DagsterDaemonScheduler if you want to be able "
+                                "to execute schedules in arbitrary timezones.".format(
+                                    schedule_name=external_schedule.name,
+                                    schedule_timezone=schedule_timezone,
+                                    system_timezone=system_timezone,
+                                ),
+                            )
 
                         _launch_scheduled_executions(
                             instance, repo_location, external_repo, external_schedule, tick_context

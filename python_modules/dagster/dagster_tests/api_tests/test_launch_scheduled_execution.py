@@ -52,12 +52,16 @@ def the_pipeline():
     the_solid()
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
+@daily_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Eastern"
+)
 def simple_schedule(_context):
     return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
+@daily_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Eastern"
+)
 def bad_env_fn_schedule():  # forgot context arg
     return {}
 
@@ -66,6 +70,7 @@ def bad_env_fn_schedule():  # forgot context arg
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_throw,
+    execution_timezone="US/Eastern",
 )
 def bad_should_execute_schedule(_context):
     return {}
@@ -75,14 +80,14 @@ def bad_should_execute_schedule(_context):
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_never,
+    execution_timezone="US/Eastern",
 )
 def skip_schedule(_context):
     return {}
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Eastern"
 )
 def wrong_config_schedule(_context):
     return {}
@@ -97,6 +102,14 @@ def pacific_time_schedule(_context):
     return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
 
 
+@daily_schedule(
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+)
+def no_timezone_schedule(_context):
+    return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
+
+
 @repository
 def the_repo():
     return [
@@ -107,6 +120,7 @@ def the_repo():
         skip_schedule,
         wrong_config_schedule,
         pacific_time_schedule,
+        no_timezone_schedule,
     ]
 
 
@@ -200,7 +214,7 @@ def sync_launch_scheduled_execution(schedule_origin, system_tz=None):
 def test_launch_successful_execution(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("simple_schedule") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
             assert isinstance(result, ScheduledExecutionSuccess)
 
             run = instance.get_run_by_id(result.run_id)
@@ -217,7 +231,7 @@ def test_launch_successful_execution(schedule_origin_context):
 def test_launch_successful_execution_telemetry(schedule_origin_context):
     with _default_instance():
         with schedule_origin_context("simple_schedule") as schedule_origin:
-            sync_launch_scheduled_execution(schedule_origin)
+            sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
 
             event_log_path = "{logs_dir}/event.log".format(
                 logs_dir=get_dir_from_dagster_home("logs")
@@ -237,7 +251,7 @@ def test_launch_successful_execution_telemetry(schedule_origin_context):
 def test_bad_env_fn(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("bad_env_fn_schedule") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
 
             assert isinstance(result, ScheduledExecutionFailed)
             assert (
@@ -259,7 +273,7 @@ def test_bad_env_fn(schedule_origin_context):
 def test_bad_should_execute(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("bad_should_execute_schedule") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
             assert isinstance(result, ScheduledExecutionFailed)
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
@@ -280,7 +294,7 @@ def test_bad_should_execute(schedule_origin_context):
 def test_skip(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("skip_schedule") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
 
             assert isinstance(result, ScheduledExecutionSkipped)
 
@@ -292,7 +306,7 @@ def test_skip(schedule_origin_context):
 def test_wrong_config(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("wrong_config_schedule") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
 
             assert isinstance(result, ScheduledExecutionFailed)
             assert "DagsterInvalidConfigError" in result.errors[0].to_string()
@@ -326,7 +340,7 @@ def test_bad_load():
 
         schedule_origin = repo_origin.get_job_origin("also_doesnt_exist")
 
-        result = sync_launch_scheduled_execution(schedule_origin)
+        result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
         assert isinstance(result, ScheduledExecutionFailed)
         assert "doesnt_exist not found at module scope in file" in result.errors[0].to_string()
 
@@ -338,7 +352,7 @@ def test_bad_load():
 def test_bad_load_grpc():
     with _default_instance() as instance:
         with grpc_schedule_origin("doesnt_exist") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
             assert isinstance(result, ScheduledExecutionFailed)
             assert "Could not find schedule named doesnt_exist" in result.errors[0].to_string()
 
@@ -361,7 +375,7 @@ def test_grpc_server_down():
         down_grpc_schedule_origin = down_grpc_repo_origin.get_job_origin("down_schedule")
 
         instance = DagsterInstance.get()
-        result = sync_launch_scheduled_execution(down_grpc_schedule_origin)
+        result = sync_launch_scheduled_execution(down_grpc_schedule_origin, "US/Eastern")
 
         assert isinstance(result, ScheduledExecutionFailed)
         assert "failed to connect to all addresses" in result.errors[0].to_string()
@@ -382,7 +396,7 @@ def test_launch_failure(schedule_origin_context):
         },
     ) as instance:
         with schedule_origin_context("simple_schedule") as schedule_origin:
-            result = sync_launch_scheduled_execution(schedule_origin)
+            result = sync_launch_scheduled_execution(schedule_origin, "US/Eastern")
             assert isinstance(result, ScheduledExecutionFailed)
 
             assert "NotImplementedError" in result.errors[0]
@@ -396,7 +410,7 @@ def test_launch_failure(schedule_origin_context):
             assert ticks[0].status == JobTickStatus.SUCCESS
 
 
-@pytest.mark.parametrize("schedule_origin_context", [grpc_schedule_origin])
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
 def test_launch_schedule_with_timezone(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("pacific_time_schedule") as schedule_origin:
@@ -410,6 +424,27 @@ def test_launch_schedule_with_timezone(schedule_origin_context):
 
             # and succeeds if it does
             result = sync_launch_scheduled_execution(schedule_origin, system_tz="US/Pacific")
+            assert isinstance(result, ScheduledExecutionSuccess)
+            run = instance.get_run_by_id(result.run_id)
+            assert run is not None
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.SUCCESS
+
+
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
+def test_launch_schedule_without_timezone(schedule_origin_context):
+    with _default_instance() as instance:
+        with schedule_origin_context("no_timezone_schedule") as schedule_origin:
+            # Launch fails if system timezone isn't UTC
+            result = sync_launch_scheduled_execution(schedule_origin, system_tz="US/Eastern")
+            assert isinstance(result, ScheduledExecutionFailed)
+            assert (
+                "Schedule no_timezone_schedule is set to execute in UTC, but this scheduler can only run in the system timezone, US/Eastern"
+                in result.errors[0].to_string()
+            )
+
+            # and succeeds if it is
+            result = sync_launch_scheduled_execution(schedule_origin, system_tz="UTC")
             assert isinstance(result, ScheduledExecutionSuccess)
             run = instance.get_run_by_id(result.run_id)
             assert run is not None

@@ -154,11 +154,10 @@ def launch_scheduled_runs_for_schedule(
 
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
-        timezone_str = pendulum.now().timezone.name
+        timezone_str = "UTC"
         logger.warn(
-            f"Using the system timezone, {timezone_str}, for {external_schedule.name} as it did not specify "
-            "an execution_timezone in its definition. Specifying an execution_timezone "
-            "on all schedules will be required in the dagster 0.11.0 release."
+            f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
+            "an execution_timezone in its definition."
         )
 
     tick_times = []

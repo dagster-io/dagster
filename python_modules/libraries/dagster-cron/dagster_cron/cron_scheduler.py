@@ -8,6 +8,7 @@ from crontab import CronTab
 from dagster import DagsterInstance, check, utils
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler import DagsterSchedulerError, Scheduler
+from dagster.core.test_utils import get_mocked_system_timezone
 from dagster.serdes import ConfigurableClass
 
 
@@ -203,6 +204,8 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         # Environment information needed for execution
         dagster_home = os.getenv("DAGSTER_HOME")
 
+        override_system_timezone = get_mocked_system_timezone()
+
         script_contents = """
             #!/bin/bash
             export DAGSTER_HOME={dagster_home}
@@ -211,11 +214,16 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
             export RUN_DATE=$(date "+%Y%m%dT%H%M%S")
 
-            {python_exe} -m dagster api launch_scheduled_execution --schedule_name {schedule_name} {repo_cli_args} "{result_file}"
+            {python_exe} -m dagster api launch_scheduled_execution --schedule_name {schedule_name} {repo_cli_args} {override_timezone_args} "{result_file}"
         """.format(
             python_exe=sys.executable,
             schedule_name=external_schedule.name,
             repo_cli_args=local_target.get_repo_cli_args(),
+            override_timezone_args=(
+                f"--override-system-timezone={override_system_timezone}"
+                if override_system_timezone
+                else ""
+            ),
             result_file=schedule_log_file_path,
             dagster_home=dagster_home,
             env_vars="\n".join(

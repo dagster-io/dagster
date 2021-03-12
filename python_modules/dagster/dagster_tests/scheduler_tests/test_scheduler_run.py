@@ -589,7 +589,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
             )
             schedule_origin = external_schedule.get_external_origin()
             initial_datetime = create_pendulum_time(
-                year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="US/Eastern"
+                year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"
             )
 
             with pendulum.test(initial_datetime):
@@ -611,14 +611,11 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                 captured = capfd.readouterr()
 
                 assert (
-                    "Using the system timezone, US/Eastern, for daily_schedule_without_timezone as it did not specify an execution_timezone in its definition. "
-                    "Specifying an execution_timezone on all schedules will be required in the dagster 0.11.0 release."
-                    in captured.out
+                    "Using UTC as the timezone for daily_schedule_without_timezone as "
+                    "it did not specify an execution_timezone in its definition." in captured.out
                 )
 
-                expected_datetime = to_timezone(
-                    create_pendulum_time(year=2019, month=2, day=27, tz="US/Eastern"), "UTC"
-                )
+                expected_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
 
                 validate_tick(
                     ticks[0],
@@ -632,7 +629,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                 validate_run_started(
                     instance.get_runs()[0],
                     execution_time=expected_datetime,
-                    partition_time=create_pendulum_time(2019, 2, 26, tz="US/Eastern"),
+                    partition_time=create_pendulum_time(2019, 2, 26, tz="UTC"),
                 )
 
                 # Verify idempotence
@@ -1627,7 +1624,6 @@ def test_run_with_hanging_cron_schedules():
                 },
             ) as instance:
                 instance.optimize_for_dagit(statement_timeout=500)
-                pass
 
         with instance_for_test_tempdir(
             temp_dir,

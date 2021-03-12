@@ -25,7 +25,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import environ, mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster_cron import SystemCronScheduler
@@ -88,6 +88,7 @@ schedules_dict = {
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
         run_config={"intermediate_storage": {"filesystem": None}},
+        execution_timezone="US/Eastern",
     ),
     "default_config_pipeline_every_min_schedule": ScheduleDefinition(
         name="default_config_pipeline_every_min_schedule",
@@ -449,25 +450,28 @@ def test_script_execution(
             f.write(yaml.dump(config))
 
         instance = DagsterInstance.get()
-        with get_test_external_repo() as external_repo:
-            instance.start_schedule_and_update_storage_state(
-                external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
-            )
+        with mock_system_timezone("US/Eastern"):
+            with get_test_external_repo() as external_repo:
+                instance.start_schedule_and_update_storage_state(
+                    external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
+                )
 
-            schedule_origin_id = external_repo.get_external_schedule(
-                "no_config_pipeline_every_min_schedule"
-            ).get_external_origin_id()
-            script = (
-                instance.scheduler._get_bash_script_file_path(  # pylint: disable=protected-access
+                schedule_origin_id = external_repo.get_external_schedule(
+                    "no_config_pipeline_every_min_schedule"
+                ).get_external_origin_id()
+                script = instance.scheduler._get_bash_script_file_path(  # pylint: disable=protected-access
                     instance, schedule_origin_id
                 )
-            )
 
-            subprocess.check_output([script], shell=True, env={"DAGSTER_HOME": tempdir})
+                subprocess.check_output(
+                    [script],
+                    shell=True,
+                    env={"DAGSTER_HOME": tempdir},
+                )
 
-            runs = instance.get_runs()
-            assert len(runs) == 1
-            assert runs[0].status == PipelineRunStatus.SUCCESS
+                runs = instance.get_runs()
+                assert len(runs) == 1
+                assert runs[0].status == PipelineRunStatus.SUCCESS
 
 
 def test_start_schedule_fails(

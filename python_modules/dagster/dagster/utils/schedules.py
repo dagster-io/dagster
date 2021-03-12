@@ -10,7 +10,7 @@ def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_t
     check.float_param(start_timestamp, "start_timestamp")
     check.str_param(cron_schedule, "cron_schedule")
     check.opt_str_param(execution_timezone, "execution_timezone")
-    timezone_str = execution_timezone if execution_timezone else pendulum.now().timezone.name
+    timezone_str = execution_timezone if execution_timezone else "UTC"
 
     start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
 

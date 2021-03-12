@@ -52,6 +52,7 @@ schedules_dict = {
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
         run_config={"storage": {"filesystem": None}},
+        execution_timezone="US/Eastern",
     ),
     "default_config_pipeline_every_min_schedule": ScheduleDefinition(
         name="default_config_pipeline_every_min_schedule",
@@ -434,7 +435,7 @@ def test_script_execution(
                 )
                 container = cron_job.spec.job_template.spec.template.spec.containers[0]
                 args = container.args
-                cli_cmd = [sys.executable, "-m"] + args
+                cli_cmd = [sys.executable, "-m"] + args + ["--override-system-timezone=US/Eastern"]
 
                 p = subprocess.Popen(
                     cli_cmd,

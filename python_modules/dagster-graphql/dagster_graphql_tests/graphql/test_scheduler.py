@@ -270,7 +270,7 @@ def test_get_single_schedule_definition(graphql_context):
 
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
     assert result.data["scheduleOrError"]["partitionSet"]
-    assert result.data["scheduleOrError"]["executionTimezone"] == pendulum.now().timezone.name
+    assert result.data["scheduleOrError"]["executionTimezone"] == "UTC"
 
     future_ticks = result.data["scheduleOrError"]["futureTicks"]
     assert future_ticks
