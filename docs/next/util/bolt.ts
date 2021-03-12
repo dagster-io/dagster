@@ -18,6 +18,7 @@ const repliesAsString = async (
   });
   const { messages } = replies;
 
+  // @ts-ignore
   const messageText = messages.map(
     (message) => `${message.user}: ${message.text}`
   );
