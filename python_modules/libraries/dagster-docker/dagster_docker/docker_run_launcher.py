@@ -107,7 +107,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             ExecuteRunArgs(
                 pipeline_origin=external_pipeline.get_python_origin(),
                 pipeline_run_id=run.run_id,
-                instance_ref=_instance.get_ref(),
+                instance_ref=self._instance.get_ref(),
             )
         )
 
