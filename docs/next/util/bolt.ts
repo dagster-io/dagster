@@ -5,7 +5,13 @@ import { createGithubIssue } from "./github/github";
 import { promises as fs } from "fs";
 import path from "path";
 
-const TRIGGER = "docs issue";
+const DOCS_TRIGGER = "docs";
+const ISSUE_TRIGGER = "issue";
+
+const issueTemplates = {
+  [DOCS_TRIGGER]: "docs-issue-template.md",
+  [ISSUE_TRIGGER]: "issue-template.md",
+};
 
 const repliesAsString = async (
   client: WebClient,
@@ -44,10 +50,16 @@ export default function (receiver) {
   });
 
   app.event("app_mention", async ({ event, message, say, client }) => {
-    if (event.text.includes(TRIGGER)) {
+    if (
+      event.text.includes(DOCS_TRIGGER) ||
+      event.text.includes(ISSUE_TRIGGER)
+    ) {
+      const trigger = event.text.includes(DOCS_TRIGGER)
+        ? DOCS_TRIGGER
+        : ISSUE_TRIGGER;
       const { channel, thread_ts } = await getContextFromEvent(event);
       const message = event.text.substring(
-        event.text.indexOf(TRIGGER) + TRIGGER.length + 1
+        event.text.indexOf(trigger) + trigger.length + 1
       );
       const repliesString = await repliesAsString(client, channel, thread_ts);
       const { permalink } = await client.chat.getPermalink({
@@ -56,8 +68,11 @@ export default function (receiver) {
       });
 
       const template = (
-        await fs.readFile(path.resolve("util", "github", "issue-template.md"))
+        await fs.readFile(
+          path.resolve("util", "github", issueTemplates[trigger])
+        )
       ).toString();
+
       const values = {
         message,
         permalink,
