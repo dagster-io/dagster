@@ -12,18 +12,19 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterExecutionStepNotFoundError
-from dagster.core.execution.api import reexecute_pipeline
+from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.test_utils import instance_for_test
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
-@solid
+@solid(tags={"third": "3"})
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@solid
+@solid(tags={"second": "2"})
 def multiply_inputs(context, y, ten):
     context.log.info("multiply_inputs is returning " + str(y * ten))
     return y * ten
@@ -45,6 +46,7 @@ def echo(_, x: int) -> int:
         "range": Field(int, is_required=False, default_value=3),
         "fail": Field(bool, is_required=False, default_value=False),
     },
+    tags={"first": "1"},
 )
 def emit(context):
     if context.solid_config["fail"]:
@@ -179,6 +181,24 @@ def test_composite_wrapping():
     result = execute_pipeline(deep)
     assert result.success
     assert result.result_for_solid("outer").output_value() == {"0": 0, "1": 1, "2": 2}
+
+
+def test_tags():
+    known_state = KnownExecutionState(
+        {},
+        {
+            emit.name: {"result": ["0", "1", "2"]},
+        },
+    )
+    plan = create_execution_plan(dynamic_pipeline, known_state=known_state)
+
+    assert plan.get_step_by_key(emit.name).tags == {"first": "1"}
+
+    for mapping_key in range(3):
+        assert plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]").tags == {
+            "second": "2"
+        }
+        assert plan.get_step_by_key(f"{multiply_by_two.name}[{mapping_key}]").tags == {"third": "3"}
 
 
 def test_full_reexecute():
