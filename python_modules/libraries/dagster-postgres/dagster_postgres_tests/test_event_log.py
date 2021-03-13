@@ -47,12 +47,12 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
 
         attempts = 10
         while (len(watched_1) < 3 or len(watched_2) < 1) and attempts > 0:
-            time.sleep(0.1)
+            time.sleep(0.5)
             attempts -= 1
-
-        assert len(storage.get_logs_for_run(run_id)) == 4
         assert len(watched_1) == 3
         assert len(watched_2) == 1
+
+        assert len(storage.get_logs_for_run(run_id)) == 4
 
         storage.end_watch(run_id, watched_1.append)
         time.sleep(0.3)  # this value scientifically selected from a range of attractive values
@@ -60,13 +60,14 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
 
         attempts = 10
         while len(watched_2) < 2 and attempts > 0:
-            time.sleep(0.1)
+            time.sleep(0.5)
             attempts -= 1
+        assert len(watched_1) == 3
+        assert len(watched_2) == 2
+
         storage.end_watch(run_id, watched_2.append)
 
         assert len(storage.get_logs_for_run(run_id)) == 5
-        assert len(watched_1) == 3
-        assert len(watched_2) == 2
 
         storage.delete_events(run_id)
 

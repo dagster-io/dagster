@@ -308,11 +308,11 @@ class TestEventLogStorage:
 
         attempts = 10
         while len(watched) < 3 and attempts > 0:
-            time.sleep(0.20)
+            time.sleep(0.5)
             attempts -= 1
+        assert len(watched) == 3
 
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 4
-        assert len(watched) == 3
 
         storage.end_watch(DEFAULT_RUN_ID, watcher)
         time.sleep(0.3)  # this value scientifically selected from a range of attractive values
