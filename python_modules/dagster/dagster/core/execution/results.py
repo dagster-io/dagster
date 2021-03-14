@@ -38,7 +38,7 @@ class GraphExecutionResult:
     @property
     def success(self):
         """bool: Whether all steps in the execution were successful."""
-        return all([not event.is_failure for event in self.event_list])
+        return all(not event.is_failure for event in self.event_list)
 
     @property
     def step_event_list(self):
@@ -434,10 +434,8 @@ class SolidExecutionResult:
     def skipped(self):
         """bool: Whether solid execution was skipped."""
         return all(
-            [
-                step_event.event_type == DagsterEventType.STEP_SKIPPED
+            step_event.event_type == DagsterEventType.STEP_SKIPPED
                 for step_event in self.compute_step_events
-            ]
         )
 
     @property

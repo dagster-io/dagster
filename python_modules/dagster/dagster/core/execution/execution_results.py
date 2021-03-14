@@ -47,7 +47,7 @@ class NodeExecutionResult:
     @property
     def success(self):
         """bool: Whether all steps in the execution were successful."""
-        return all([not event.is_failure for event in self.event_list])
+        return all(not event.is_failure for event in self.event_list)
 
     @abstractproperty
     def output_values(self) -> Dict[str, Any]:
