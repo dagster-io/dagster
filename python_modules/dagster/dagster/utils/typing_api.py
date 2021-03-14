@@ -13,7 +13,7 @@ def _get_origin(ttype):
 def is_closed_python_optional_type(ttype):
     # Optional[X] is Union[X, NoneType] which is what we match against here
     origin = _get_origin(ttype)
-    return origin == typing.Union and len(ttype.__args__) == 2 and ttype.__args__[1] == type(None)
+    return origin == typing.Union and len(ttype.__args__) == 2 and ttype.__args__[1] is type(None)
 
 
 def is_python_dict_type(ttype):
