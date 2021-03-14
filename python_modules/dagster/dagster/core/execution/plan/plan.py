@@ -103,7 +103,7 @@ class _PlanBuilder:
         self._steps: Dict[str, ExecutionStepUnion] = OrderedDict()
         self.step_output_map: Dict[
             SolidOutputHandle, Union[StepOutputHandle, UnresolvedStepOutputHandle]
-        ] = dict()
+        ] = {}
         self.known_state = known_state
         self._seen_handles: Set[StepHandleUnion] = set()
 

@@ -31,7 +31,7 @@ class TypedDictLoader(DagsterTypeLoader):
 
     def construct_from_config_value(self, context, config_value):
         config_value = check.dict_param(config_value, "config_value")
-        runtime_value = dict()
+        runtime_value = {}
         for key, val in config_value.items():
             runtime_value[key] = self._value_dagster_type.loader.construct_from_config_value(
                 context, val
