@@ -101,7 +101,7 @@ class RetryWrapper:
 
         if name in self.__unwrap_methods:
             return partial(x.__func__, self)
-        elif hasattr(x, "__call__"):
+        elif callable(x):
             return self.__wrap_method_with_call_and_maybe_retry(x)
         else:
             return x
