@@ -480,7 +480,7 @@ def _create_external_pipeline_run(
     )
 
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    if subset_pipeline_result.success == False:
+    if subset_pipeline_result.success is False:
         raise DagsterLaunchFailedError(
             "Failed to load external pipeline subset: {error_message}".format(
                 error_message=subset_pipeline_result.error.message
