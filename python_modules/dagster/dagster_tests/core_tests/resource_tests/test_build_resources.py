@@ -3,6 +3,7 @@ from dagster import Field, resource
 from dagster.core.errors import DagsterResourceFunctionError
 from dagster.core.execution.build_resources import build_resources
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
 
 def test_basic_resource():
@@ -12,7 +13,7 @@ def test_basic_resource():
 
     with DagsterInstance.ephemeral() as dagster_instance:
         with build_resources(
-            resource_defs={"basic_resource": basic_resource},
+            resources={"basic_resource": basic_resource},
             instance=dagster_instance,
         ) as resources:
             assert resources.basic_resource == "foo"
@@ -29,7 +30,7 @@ def test_resource_with_config():
 
     with DagsterInstance.ephemeral() as dagster_instance:
         with build_resources(
-            resource_defs={"basic_resource": basic_resource},
+            resources={"basic_resource": basic_resource},
             instance=dagster_instance,
             run_config={"basic_resource": {"config": {"plant": "maple tree"}}},
         ) as resources:
@@ -47,7 +48,7 @@ def test_resource_with_dependencies():
 
     with DagsterInstance.ephemeral() as dagster_instance:
         with build_resources(
-            resource_defs={"no_deps": no_deps, "has_deps": has_deps},
+            resources={"no_deps": no_deps, "has_deps": has_deps},
             instance=dagster_instance,
             run_config={"no_deps": {"config": {"animal": "dog"}}},
         ) as resources:
@@ -65,9 +66,7 @@ def test_error_in_resource_initialization():
             DagsterResourceFunctionError,
             match="Error executing resource_fn on ResourceDefinition i_will_fail",
         ):
-            with build_resources(
-                resource_defs={"i_will_fail": i_will_fail}, instance=dagster_instance
-            ):
+            with build_resources(resources={"i_will_fail": i_will_fail}, instance=dagster_instance):
                 pass
 
 
@@ -79,3 +78,20 @@ def test_resource_init_requires_instance():
 
     with DagsterInstance.ephemeral() as instance:
         build_resources({"basic_resource": basic_resource}, instance)
+
+
+def test_resource_init_values():
+    @resource(required_resource_keys={"bar"})
+    def foo_resource(init_context):
+        assert init_context.resources.bar == "bar"
+        return "foo"
+
+    with DagsterInstance.ephemeral() as instance:
+        with build_resources({"foo": foo_resource, "bar": "bar"}, instance) as resources:
+            assert resources.foo == "foo"
+            assert resources.bar == "bar"
+
+
+def test_resource_init_io_manager():
+    with DagsterInstance.ephemeral() as instance:
+        build_resources({"io_manager": InMemoryIOManager}, instance)

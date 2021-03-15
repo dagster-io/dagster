@@ -175,7 +175,7 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance):
             # We can do better here by only initializing the io manager and the resources it
             # depends on.
             with build_resources(
-                resource_defs=mode_def.resource_defs,
+                resources=mode_def.resource_defs,
                 instance=instance,
                 run_config=run_config.get("resources", {}),
                 log_manager=log_manager,
