@@ -22,6 +22,12 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql.yaml
+       :caption: dagster.yaml
+       :start-after: start_marker_schedules
+       :end-before: end_marker_schedules
+       :language: YAML
+
     Note that the fields in this config are :py:class:`~dagster.StringSource` and
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """

@@ -1,8 +1,43 @@
-# ==================================================================================================
-# Run Storage
-# ==================================================================================================
-# Controls how the history of runs is persisted. Can be set to SqliteRunStorage (default) or
-# PostgresRunStorage.
+
+# start_marker_run_storage_sqlite
+
+# there are two ways to set run_storage to SqliteRunStorage
+
+# this config manually sets the directory (`base_dir`) for Sqlite to store run information in:
+run_storage:
+  module: dagster.core.storage.runs
+  class: SqliteRunStorage
+  config:
+    base_dir: /path/to/dir
+
+# and this config grabs the directory from an environment variable
+run_storage:
+  module: dagster.core.storage.runs
+  class: SqliteRunStorage
+  config:
+    base_dir:
+      env: SQLITE_RUN_STORAGE_BASE_DIR
+
+# end_marker_run_storage_sqlite
+
+
+# start_marker_run_storage_postgres
+
+# There are three ways to set run_storage to PostgresRunStorage
+
+# this config manually sets the Postgres credentials
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      username: { DAGSTER_PG_USERNAME }
+      password: { DAGSTER_PG_PASSWORD }
+      hostname: { DAGSTER_PG_HOSTNAME }
+      db_name: { DAGSTER_PG_DB }
+      port: 5432
+
+# and this config grabs the database credentials from environment variables
 run_storage:
   module: dagster_postgres.run_storage
   class: PostgresRunStorage
@@ -18,13 +53,134 @@ run_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-# ==================================================================================================
-# Event Log Storage
-# ==================================================================================================
-# Controls how the structured event logs produced by each run are persisted. Can be set to
-# SqliteEventLogStorage (default) or PostgresEventLogStorage.
+# and this config sets the credentials via DB connection string / url:
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_url: { PG_DB_CONN_STRING }
+
+# This config gets the DB connection string / url via environment variables:
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_url:
+      env: PG_DB_CONN_STRING
+
+# end_marker_run_storage_postgres
+
+# start_marker_run_storage_mysql
+
+# There are three ways to set run_storage to MySQLRunStorage
+
+# this config manually sets the MySQL credentials
+run_storage:
+  module: dagster_mysql.run_storage
+  class: MySQLRunStorage
+  config:
+  mysql_db:
+    username: { DAGSTER_MYSQL_USERNAME }
+    password: { DAGSTER_MYSQL_PASSWORD }
+    hostname: { DAGSTER_MYSQL_HOSTNAME }
+    db_name: { DAGSTER_MYSQL_DB }
+    port: 3306
+
+
+# and this config grabs the database credentials from environment variables
+run_storage:
+  module: dagster_mysql.run_storage
+  class: MySQLRunStorage
+  config:
+    mysql_db:
+      username:
+        env: DAGSTER_MYSQL_USERNAME
+      password:
+        env: DAGSTER_MYSQL_PASSWORD
+      hostname:
+        env: DAGSTER_MYSQL_HOSTNAME
+      db_name:
+        env: DAGSTER_MYSQL_DB
+      port: 3306
+
+# and this config sets the credentials via DB connection string / url:
+run_storage:
+  module: dagster_mysql.run_storage
+  class: MySQLRunStorage
+  config:
+    mysql_url: { MYSQL_DB_CONN_STRING }
+
+# this config grabs the MySQL connection string from environment variables
+run_storage:
+  module: dagster_mysql.run_storage
+  class: MySQLRunStorage
+  config:
+    mysql_url:
+      env: MYSQL_DB_CONN_STRING
+
+# end_marker_run_storage_mysql
+
+# start_marker_event_log_storage_sqlite
+
+# there are two ways to set `event_log_storage` to SqliteEventLogStorage
+
+# the first manually sets the directory (`base_dir`) to write event log data to:
 event_log_storage:
-  module: dagster_postgres.event_log
+  module: dagster.core.storage.event_log
+  class: SqliteEventLogStorage
+  config:
+    base_dir: /path/to/dir
+
+# and the second grabs the directory from an environment variable
+event_log_storage:
+  module: dagster.core.storage.event_log
+  class: SqliteEventLogStorage
+  config:
+    base_dir:
+      env: SQLITE_EVENT_LOG_STORAGE_BASE_DIR
+
+# end_marker_event_log_storage_sqlite
+
+# start_marker_event_log_storage_consolidated_sqlite
+
+# there are two ways to set `event_log_storage` to ConsolidatedSqliteEventLogStorage
+
+# the first manually sets the directory (`base_dir`) to write event log data to:
+event_log_storage:
+  module: dagster.core.storage.event_log
+  class: ConsolidatedSqliteEventLogStorage
+  config:
+    base_dir: /path/to/dir
+
+# and the second grabs the directory from an environment variable
+event_log_storage:
+  module: dagster.core.storage.event_log
+  class: ConsolidatedSqliteEventLogStorage
+  config:
+    base_dir:
+      env: CONSOLIDATED_SQLITE_EVENT_LOG_STORAGE_BASE_DIR
+
+# end_marker_event_log_storage_consolidated_sqlite
+
+# start_marker_event_log_storage_postgres
+
+# There are four ways to set event_log_storage to PostgresEventLogStorage
+
+# this config manually sets the Postgres credentials
+event_log_storage:
+  module: dagster_postgres.event_log_storage
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      username: { DAGSTER_PG_USERNAME }
+      password: { DAGSTER_PG_PASSWORD }
+      hostname: { DAGSTER_PG_HOSTNAME }
+      db_name: { DAGSTER_PG_DB }
+      port: 5432
+
+# and this config grabs the database credentials from environment variables
+event_log_storage:
+  module: dagster_postgres.event_log_storage
   class: PostgresEventLogStorage
   config:
     postgres_db:
@@ -38,21 +194,119 @@ event_log_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-# ==================================================================================================
-# Scheduler
-# ==================================================================================================
-# Provides an optional scheduler which controls execution of pipeline runs at regular intervals.
-# We recommend using the default DagsterDaemonScheduler - SystemCronScheduler and K8sScheduler are
-# also available but are deprecated.
+# and this config sets the credentials via DB connection string / url:
+event_log_storage:
+  module: dagster_postgres.event_log_storage
+  class: PostgresEventLogStorage
+  config:
+    postgres_url: { PG_DB_CONN_STRING }
+
+# This config gets the DB connection string / url via environment variables:
+event_log_storage:
+  module: dagster_postgres.event_log_storage
+  class: PostgresEventLogStorage
+  config:
+    postgres_url:
+      env: PG_DB_CONN_STRING
+
+# end_marker_event_log_storage_postgres
+
+# start_marker_event_log_storage_mysql
+
+# There are four ways to set event_log_storage to MySQLRunStorage
+
+# this config manually sets the MySQL credentials
+event_log_storage:
+  module: dagster_mysql.event_log_storage
+  class: MySQLEventLogStorage
+  config:
+  mysql_db:
+    username: { DAGSTER_MYSQL_USERNAME }
+    password: { DAGSTER_MYSQL_PASSWORD }
+    hostname: { DAGSTER_MYSQL_HOSTNAME }
+    db_name: { DAGSTER_MYSQL_DB }
+    port: 3306
+
+
+# and this config grabs the database credentials from environment variables
+event_log_storage:
+  module: dagster_mysql.event_log_storage
+  class: MySQLEventLogStorage
+  config:
+    mysql_db:
+      username:
+        env: DAGSTER_MYSQL_USERNAME
+      password:
+        env: DAGSTER_MYSQL_PASSWORD
+      hostname:
+        env: DAGSTER_MYSQL_HOSTNAME
+      db_name:
+        env: DAGSTER_MYSQL_DB
+      port: 3306
+
+# and this config sets the credentials via DB connection string / url:
+event_log_storage:
+  module: dagster_mysql.event_log_storage
+  class: MySQLEventLogStorage
+  config:
+    mysql_url: { MYSQL_DB_CONN_STRING }
+
+# this config grabs the MySQL connection string from environment variables
+event_log_storage:
+  module: dagster_mysql.event_log_storage
+  class: MySQLEventLogStorage
+  config:
+    mysql_url:
+      env: MYSQL_DB_CONN_STRING
+
+# end_marker_event_log_storage_mysql
+
+# start_marker_dagster_daemon
+
 scheduler:
   module: dagster.core.scheduler
   class: DagsterDaemonScheduler
 
-# ==================================================================================================
-# Schedule Storage
-# ==================================================================================================
-# Controls the backing storage used by the scheduler to manage the state of schedules and persist
-# records of attempts.
+# end_marker_dagster_daemon
+
+# start_marker_schedule_storage_sqlite
+
+# there are two ways to set `schedule_storage` to SqliteScheduleStorage
+
+# the first manually sets the directory (`base_dir`) to write schedule-related data to:
+schedule_storage:
+  module: dagster.core.storage.schedules
+  class: SqliteScheduleStorage
+  config:
+    base_dir: /path/to/dir
+
+# the second grabs the directory from an environment variable
+schedule_storage:
+  module: dagster.core.storage.schedules
+  class: SqliteScheduleStorage
+  config:
+    base_dir:
+      env: SQLITE_SCHEDULE_STORAGE_DIRECTORY
+
+# end_marker_schedule_storage_sqlite
+
+# start_marker_schedule_storage_postgres
+
+# There are three ways to set schedule_storage to PostgresScheduleStorage
+
+# this config manually sets the Postgres credentials
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      username: { DAGSTER_PG_USERNAME }
+      password: { DAGSTER_PG_PASSWORD }
+      hostname: { DAGSTER_PG_HOSTNAME }
+      db_name: { DAGSTER_PG_DB }
+      port: 5432
+
+# and this config grabs the database credentials from environment variables
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
@@ -68,33 +322,207 @@ schedule_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-# ==================================================================================================
-# Run Launcher
-# ==================================================================================================
-# Component that determines where runs are executed.
+# and this config sets the credentials via DB connection string / url:
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_url: { PG_DB_CONN_STRING }
+
+# This config gets the DB connection string / url via environment variables:
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_url:
+      env: PG_DB_CONN_STRING
+
+# end_marker_schedule_storage_postgres
+
+# start_marker_schedule_storage_mysql
+
+# There are three ways to set schedule_storage to MySQLScheduleStorage
+
+# this config manually sets the MySQL credentials
+schedule_storage:
+  module: dagster_mysql.schedule_storage
+  class: MySQLScheduleStorage
+  config:
+  mysql_db:
+    username: { DAGSTER_MYSQL_USERNAME }
+    password: { DAGSTER_MYSQL_PASSWORD }
+    hostname: { DAGSTER_MYSQL_HOSTNAME }
+    db_name: { DAGSTER_MYSQL_DB }
+    port: 3306
+
+
+# and this config grabs the database credentials from environment variables
+schedule_storage:
+  module: dagster_mysql.schedule_storage
+  class: MySQLScheduleStorage
+  config:
+    mysql_db:
+      username:
+        env: DAGSTER_MYSQL_USERNAME
+      password:
+        env: DAGSTER_MYSQL_PASSWORD
+      hostname:
+        env: DAGSTER_MYSQL_HOSTNAME
+      db_name:
+        env: DAGSTER_MYSQL_DB
+      port: 3306
+
+# and this config sets the credentials via DB connection string / url:
+schedule_storage:
+  module: dagster_mysql.schedule_storage
+  class: MySQLScheduleStorage
+  config:
+    mysql_url: { MYSQL_DB_CONN_STRING }
+
+# this config grabs the MySQL connection string from environment variables
+schedule_storage:
+  module: dagster_mysql.schedule_storage
+  class: MySQLScheduleStorage
+  config:
+    mysql_url:
+      env: MYSQL_DB_CONN_STRING
+
+# end_marker_schedule_storage_mysql
+
+# start_marker_run_launcher_default
+
 run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
 
-# ==================================================================================================
-# Run Coordinator
-# ==================================================================================================
-# Determines the policy used to determine the prioritization rules and concurrency limits for runs.
-# Can be set to DefaultRunCoordinator (default) or QueuedRunCoordinator when you want to maintain
-# limits on the number of runs that can be executing at once.
+# end_marker_run_launcher_default
+
+# start_marker_run_launcher_k8s
+
+# there are multiple ways to configure the K8sRunLauncher
+
+# you can set the follow configuration values directly
+run_launcher:
+  module: dagster_k8s.launcher
+  class: K8sRunLauncher
+  config:
+    service_account_name: pipeline_run_service_account
+    job_image: my_project/dagster_image:latest
+    instance_config_map: dagster-instance
+    postgres_password_secret: dagster-postgresql-secret
+
+# alternatively, you can grab any of these config values from environment variables:
+run_launcher:
+  module: dagster_k8s.launcher
+  class: K8sRunLauncher
+  config:
+    service_account_name:
+      env: PIPELINE_RUN_SERVICE_ACCOUNT
+    job_image:
+      env: DAGSTER_IMAGE_NAME
+    instance_config_map:
+      env: DAGSTER_INSTANCE_CONFIG_MAP
+    postgres_password_secret:
+      env: DAGSTER_POSTGRES_SECRET
+
+# end_marker_run_launcher_k8s
+
+# start_marker_run_coordinator_default
+
+# Since DefaultRunCoordinator is the default option, omitting the `run_coordinator` key will also suffice,
+# but if you would like to set it explicitly:
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: DefaultRunCoordinator
+
+# end_marker_run_coordinator_default
+
+# start_marker_run_coordinator_queued
+
+# There are a few ways to configure the QueuedRunCoordinator:
+
+# this first option has concurrency limits set to default values
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
 
-# ==================================================================================================
-# Compute Log Storage
-# ==================================================================================================
-# Controls the capture and persistence of raw stdout & stderr text logs.
-#
-# Currently supported:
-# - LocalComputeLogManager (default)
-# - AzureBlobComputeLogManager
-# - S3ComputeLogManager
+# this second option manually specifies limits:
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 25
+    tag_concurrency_limits:
+      - key: "database"
+        value: "redshift"
+        limit: 4
+      - key: "dagster/backfill"
+        limit: 10
+
+# as always, some or all of these values can be obtained from environment variables:
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs:
+      env: DAGSTER_OVERALL_CONCURRENCY_LIMIT
+    tag_concurrency_limits:
+      - key: "database"
+        value: "redshift"
+        limit:
+          env: DAGSTER_REDSHIFT_CONCURRENCY_LIMIT
+      - key: "dagster/backfill"
+        limit:
+          env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
+
+# end_marker_run_coordinator_queued
+
+# start_marker_compute_log_storage_local
+
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir: /path/to/directory
+
+# end_marker_compute_log_storage_local
+
+# start_marker_compute_log_storage_blob
+# there are multiple ways to configure the AzureBlobComputeLogManager
+
+# you can set the necessary configuration values directly:
+compute_logs:
+  module: dagster_azure.blob.compute_log_manager
+  class: AzureBlobComputeLogManager
+  config:
+    storage_account: mycorp-dagster
+    container: compute-logs
+    secret_key: foo
+    local_dir: /tmp/bar
+    prefix: dagster-test-
+
+# alternatively, you can grab the
+compute_logs:
+  module: dagster_azure.blob.compute_log_manager
+  class: AzureBlobComputeLogManager
+  config:
+    storage_account:
+      env: MYCORP_DAGSTER_STORAGE_ACCOUNT_NAME
+    container:
+      env: CONTAINER_NAME
+    secret_key:
+      env: SECRET_KEY
+    local_dir:
+      env: LOCAL_DIR_PATH
+    prefix:
+      env: DAGSTER_COMPUTE_LOG_PREFIX
+
+# end_marker_compute_log_storage_blob
+
+# start_marker_compute_log_storage_s3
+# there are multiple ways to configure the S3ComputeLogManager
+
+# you can set the config values directly:
 compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
@@ -102,22 +530,42 @@ compute_logs:
     bucket: "mycorp-dagster-compute-logs"
     prefix: "dagster-test-"
 
-# ==================================================================================================
-# Local Artifact Storage
-# ==================================================================================================
-# Controls where to store data on the local disk. Primarily used for storing schedule metadata.
-#
-# Currently only supports LocalArtifactStorage.
+# or grab some or all of them from environment variables
+compute_logs:
+  module: dagster_aws.s3.compute_log_manager
+  class: S3ComputeLogManager
+  config:
+    bucket:
+      env: MYCORP_DAGSTER_COMPUTE_LOGS_BUCKET
+    prefix:
+      env: DAGSTER_COMPUTE_LOG_PREFIX
+
+# end_marker_compute_log_storage_s3
+
+# start_marker_local_artifact_storage
+# there are two possible ways to configure LocalArtifactStorage
+
+# example local_artifact_storage setup pointing to /var/shared/dagster directory
 local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage
   config:
-    base_dir: "/var/shared/dagster"
+    base_dir: "/path/to/dir"
 
-# ==================================================================================================
-# Telemetry
-# ==================================================================================================
-# Allows opting out of Dagster collecting usage statistics. See
-# https://docs.dagster.io/install#telemetry for more details.
+# alternatively, `base_dir` can be set to an environment variable
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir:
+      env: DAGSTER_LOCAL_ARTIFACT_STORAGE_DIR
+
+# end_marker_local_artifact_storage
+
+# start_marker_telemetry
+
+# Allows opting out of Dagster collecting usage statistics.
 telemetry:
   enabled: false
+
+# end_marker_telemetry

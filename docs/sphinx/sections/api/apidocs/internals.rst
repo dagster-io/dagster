@@ -114,7 +114,7 @@ Run storage
 .. autoclass:: SqliteRunStorage
 
 
-See also: :py:class:`dagster_postgres.PostgresRunStorage`.
+See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster_mysql.MySQLRunStorage`.
 
 ----
 
@@ -129,7 +129,9 @@ Event log storage
 
 .. autoclass:: SqliteEventLogStorage
 
-See also: :py:class:`dagster_postgres.PostgresEventLogStorage`.
+.. autoclass:: ConsolidatedSqliteEventLogStorage
+
+See also: :py:class:`dagster_postgres.PostgresEventLogStorage` and :py:class:`dagster_mysql.MySQLEventLogStorage`.
 
 ----
 
@@ -210,7 +212,7 @@ Scheduling
 
 .. autoclass:: SqliteScheduleStorage
 
-See also: :py:class:`dagster_postgres.PostgresScheduleStorage`.
+see also: :py:class:`dagster_postgres.PostgresScheduleStorage` and :py:class:`dagster_mysql.MySQLScheduleStorage`.
 
 ----
 

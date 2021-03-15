@@ -26,47 +26,47 @@ const PyObject: React.FunctionComponent<{
   pluralize = false,
   decorator = false,
 }) => {
-  const value = useContext(SearchIndexContext);
-  if (!value) {
-    return null;
-  }
+    const value = useContext(SearchIndexContext);
+    if (!value) {
+      return null;
+    }
 
-  const objects = value.objects as any;
-  const moduleObjects = objects[module];
-  const objectData = moduleObjects && moduleObjects[object];
+    const objects = value.objects as any;
+    const moduleObjects = objects[module];
+    const objectData = moduleObjects && moduleObjects[object];
 
-  let textValue = displayText || object;
-  if (pluralize) {
-    textValue += "s";
-  }
-  if (decorator) {
-    textValue = "@" + textValue;
-  }
+    let textValue = displayText || object;
+    if (pluralize) {
+      textValue += "s";
+    }
+    if (decorator) {
+      textValue = "@" + textValue;
+    }
 
-  if (!moduleObjects || !objectData) {
-    // TODO: broken link
-    // https://github.com/dagster-io/dagster/issues/2939
+    if (!moduleObjects || !objectData) {
+      // TODO: broken link
+      // https://github.com/dagster-io/dagster/issues/2939
+      return (
+        <a className="no-underline hover:underline" href="#">
+          <code className="bg-red-100 p-1">{textValue}</code>
+        </a>
+      );
+    }
+
+    const fileIndex = objectData[0];
+    // TODO: refer to all anchors available in apidocs
+    // https://github.com/dagster-io/dagster/issues/3568
+    const doc = value.docnames[fileIndex];
+    const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
+
     return (
-      <a className="no-underline hover:underline" href="#">
-        <code className="bg-red-100 p-1">{textValue}</code>
-      </a>
+      <Link href={link + "#" + module + "." + object}>
+        <a className="no-underline hover:underline">
+          <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
+        </a>
+      </Link>
     );
-  }
-
-  const fileIndex = objectData[0];
-  // TODO: refer to all anchors available in apidocs
-  // https://github.com/dagster-io/dagster/issues/3568
-  const doc = value.docnames[fileIndex];
-  const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
-
-  return (
-    <Link href={link + "#" + module + "." + object}>
-      <a className="no-underline hover:underline">
-        <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
-      </a>
-    </Link>
-  );
-};
+  };
 
 const Check = () => {
   return (
@@ -247,7 +247,7 @@ const CodeReferenceLink = (props: { filePath: string }) => {
 const InstanceDiagramBox = ({ href = "#", className = "", children }) => {
   return (
     <a
-      href="href"
+      href={href}
       className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 flex-1 h-16 rounded flex justify-center items-center font-medium ${className}`}
     >
       {children}
