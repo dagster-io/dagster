@@ -9,7 +9,7 @@ import React, { useContext } from "react";
 
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
-
+import Icons from "../Icons";
 export const SearchIndexContext = React.createContext(null);
 
 const PyObject: React.FunctionComponent<{
@@ -291,4 +291,5 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Icons,
 };

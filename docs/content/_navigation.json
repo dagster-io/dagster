@@ -12,10 +12,6 @@
             "path": "/getting-started/install"
           },
           {
-            "title": "\"Hello World\"",
-            "path": "/getting-started/hello-world"
-          },
-          {
             "title": "Create a New Project",
             "path": "/getting-started/create-new-project"
           },
@@ -175,15 +171,10 @@
           {
             "title": "Dagit UI",
             "path": "/concepts/dagit/dagit"
-          }
-        ]
-      },
-      {
-        "title": "Assets",
-        "children": [
+          },
           {
             "title": "Asset Catalog",
-            "path": "/concepts/assets/asset-catalog"
+            "path": "/concepts/dagit/asset-catalog"
           }
         ]
       },
