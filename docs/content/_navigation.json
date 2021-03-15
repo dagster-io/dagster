@@ -247,11 +247,19 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Best Practice Guides",
+        "title": "Dagster Guides",
         "children": [
           {
             "title": "Versioning and Memoization (Experimental)",
             "path": "/guides/dagster/memoization"
+          },
+          {
+            "title": "Lakehouse (Experimental)",
+            "path": "/guides/dagster/lakehouse"
+          },
+          {
+            "title": "Lakehouse with Pandas and PySpark (Experimental)",
+            "path": "/guides/dagster/multi-type-lakehouse"
           }
         ]
       },
@@ -260,15 +268,27 @@
         "children": [
           {
             "title": "Dagster with dbt",
-            "path": "/guides/integrations/template"
+            "path": "/guides/integrations/dbt"
+          },
+          {
+            "title": "Dagster with Airflow",
+            "path": "/guides/integrations/airflow"
+          },
+          {
+            "title": "Dagster with Great Expectations",
+            "path": "/guides/integrations/great-expectations"
+          },
+          {
+            "title": "Dagster with PySpark",
+            "path": "/guides/integrations/pyspark"
           },
           {
             "title": "Dagster with Pandas",
-            "path": "/guides/integrations/template"
+            "path": "/guides/integrations/pandas"
           },
           {
             "title": "Dagster with Jupyter/Papermill",
-            "path": "/guides/integrations/template"
+            "path": "/guides/integrations/dagstermill"
           }
         ]
       }
