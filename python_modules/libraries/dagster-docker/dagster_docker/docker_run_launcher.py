@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import docker
 from dagster import Field, StringSource, check
@@ -23,14 +24,18 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     env_vars (Optional[List[str]]): The list of environment variables names to forward to the
         docker container.
     network (Optional[str]): Name of the network this container to which to connect the
-        launched container at creation time."""
+        launched container at creation time.
+    volumes (Optional[str]): The list of volumes to forward to the docker container, in the form of named-volume:/path/to/mount."""
 
-    def __init__(self, inst_data=None, image=None, registry=None, env_vars=None, network=None):
+    def __init__(
+        self, inst_data=None, image=None, registry=None, env_vars=None, network=None, volumes=None
+    ):
         self._inst_data = inst_data
         self._image = image
         self._registry = registry
         self._env_vars = env_vars
         self._network = network
+        self._volumes = volumes
 
         super().__init__()
 
@@ -64,6 +69,11 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 str,
                 is_required=False,
                 description="Name of the network this container to which to connect the launched container at creation time",
+            ),
+            "volumes": Field(
+                [str],
+                is_required=False,
+                description="The list of volumes to forward to the docker container, in the form of named-volume:/path/to/mount",
             ),
         }
 
@@ -117,6 +127,16 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             {env_name: os.getenv(env_name) for env_name in self._env_vars} if self._env_vars else {}
         )
 
+        volumes = {}
+        if self._volumes:
+            for volume_binding in self._volumes:
+                regex_result = re.match(r"(.*?):((/[^/ ]*)+/?)", volume_binding)
+                if not regex_result:
+                    raise Exception("Volume string is not of format 'named-volume:/path/to/mount")
+                volume_name = regex_result.group(1)
+                volume_binding = regex_result.group(2)
+                volumes[volume_name] = {"bind": volume_binding, "mode": "rw"}
+
         client = self._get_client()
 
         try:
@@ -126,6 +146,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=self._network,
+                volumes=volumes,
             )
 
         except docker.errors.ImageNotFound:
@@ -136,6 +157,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=self._network,
+                volumes=volumes,
             )
 
         self._instance.report_engine_event(
