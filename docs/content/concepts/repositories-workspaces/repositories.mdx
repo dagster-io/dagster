@@ -1,7 +1,7 @@
 ---
 title: Repositories | Dagster
 description:
-  Dagster Repositories are collections of pipelines and other definitions that various tools, such
+  A repository is a collection of pipelines and other definitions that various tools, such
   as the Dagster CLI or Dagit, can target to load the definitions.
 ---
 
@@ -9,11 +9,6 @@ description:
 
 A repository is a collection of pipelines and other definitions that various tools, such
 as the Dagster CLI or Dagit, can target to load the definitions.
-
-<div className="w-full h-48 bg-gray-50 flex items-center justify-center">
-  TODO diagram: a repo includes pipelines, partition_sets, schedules, and
-  sensors
-</div>
 
 ## Relevant APIs
 
@@ -24,24 +19,26 @@ as the Dagster CLI or Dagit, can target to load the definitions.
 
 ## Overview
 
-Repositories are convenient ways to organize your pipelines and other definitions. Each repository:
+A repository is a convenient way to organize your pipelines and other definitions. Each repository:
 
 - Includes various definitions: [Pipelines](/concepts/solids-pipelines/pipelines),
   [Schedules](/concepts/partitions-schedules-sensors/schedules), [Sensors](/concepts/partitions-schedules-sensors/sensors),
   and [Partition Sets](/concepts/partitions-schedules-sensors/partitions).
-- Is loaded into its own "user" process distinct from the Dagster "host" framework process, and communicates over an IPC mechanism.
-- Can be sourced from an isolated Python environment, so you can manage your dependencies (or even your own Python versions) separately.
+- Is loaded in a different process than Dagster system processes like dagit. Any communication
+  between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository
+  code can't affect Dagster or other repositories.
+- Can be loaded in its own Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 
-You can also set up several repositories and load them at once via a `workspace.yaml`.
-This can be useful for organization purposes, in order to group pipelines and other artifacts by teams.
-See [Workspace](/concepts/repositories-workspaces/workspaces) to learn more about this setting up multiple repositories.
+You can set up multiple repositories and load them all at once by creating a `workspace.yaml` file.
+This can be useful to group pipelines and other artifacts by team for organization purposes.
+See [Workspace](/concepts/repositories-workspaces/workspaces) to learn more about setting up multiple repositories.
 
 ---
 
 ## Defining a Repository
 
 Repositories are
-declared using the <PyObject module="dagster" object="RepositoryDefinition" /> API as follows:
+declared using the <PyObject module="dagster" object="RepositoryDefinition" /> API or <PyObject module="dagster" object="repository" /> decorator. For example:
 
 ```python file=/concepts/repositories_workspaces/repository_definition.py startafter=start_repository_definition_marker_0 endbefore=end_repository_definition_marker_0
 @pipeline
@@ -79,114 +76,23 @@ def my_repository():
     ]
 ```
 
-You can return a list of items, each one of which can be
+The repository specifies a list of items, each of which can be
 a <PyObject module="dagster" object="PipelineDefinition"/>, <PyObject module="dagster" object="ScheduleDefinition" />, <PyObject module="dagster" object="SensorDefinition" />, or <PyObject module="dagster" object="PartitionSetDefinition" />.
 
 ## Using a Repository
 
-If you save the code above as `repos.py`, you can then run the command line tools on it. Try running:
+If you save the code above as `repo.py`, you can then run the Dagster command line tools on it. Try running:
 
 ```bash
-dagit -f repos.py
+dagit -f repo.py
 ```
 
-Now you can see all pipelines, schedules and sensors in this repository are on the left:
+Now you can see that all pipelines, schedules and sensors in this repository are on the left:
 
 <img src="/images/concepts/repo-dagit.png" />
 
-You can also use `-m` to specify module where the repository lives. See detailed references
-in [`dagit`](/\_apidocs/cli#dagit).
+You can also use `-m` to specify a module where the repository lives (See [`dagit`](/\_apidocs/cli#dagit) for the full list of ways to locate a repository).
 
 Loading repositories via the `-f` or `-m` options is actually just a convenience function. The
 underlying abstraction is the Workspace, which determines all of the available repositories
 available to Dagit. See [Workspace](/concepts/repositories-workspaces/workspaces) for more details.
-
-<!-- Uncomment this section when we have examples -->
-
-<!-- ## Examples
-
-### First example
-
-Some supporting text for the example
-
-```python
-
-    ...
-
-```
-
-### Second example
-
-Some supporting text for the example
-
-```python
-
-    ...
-
-``` -->
-
-## Patterns
-
-### <Check/> Lazy Construction
-
-Notice that this requires eager construction of all its member definitions. In large codebases,
-pipeline construction time can be large. In these cases, it may behoove you to only construct them
-on demand. For that, you can also return a dictionary of function references, which are constructed
-on demand:
-
-```python file=/concepts/repositories_workspaces/lazy_repository_definition.py startafter=start_lazy_repository_definition_marker_0 endbefore=end_lazy_repository_definition_marker_0
-def load_addition_pipeline():
-    @pipeline
-    def addition_pipeline():
-        return add(return_one(), return_two())
-
-    return addition_pipeline
-
-
-def load_subtraction_pipeline():
-    @pipeline
-    def subtraction_pipeline():
-        return subtract(return_one(), return_two())
-
-    return subtraction_pipeline
-
-
-def load_daily_addition_schedule():
-    @daily_schedule(
-        pipeline_name="addition_pipeline",
-        start_date=datetime.datetime(2020, 1, 1),
-    )
-    def daily_addition_schedule(date):
-        return {}
-
-    return daily_addition_schedule
-
-
-def load_addition_sensor():
-    @sensor(pipeline_name="addition_pipeline")
-    def addition_sensor(context):
-        should_run = True
-        if should_run:
-            yield RunRequest(run_key=None, run_config={})
-
-    return addition_sensor
-
-
-@repository
-def my_lazy_repository():
-    # Note that we can pass a dict of functions, rather than a list of
-    # pipeline definitions. This allows us to construct pipelines lazily,
-    # if, e.g., initializing a pipeline involves any heavy compute
-    return {
-        "pipelines": {
-            "addition_pipeline": load_addition_pipeline,
-            "subtraction_pipeline": load_subtraction_pipeline,
-        },
-        "schedules": {"daily_addition_schedule": load_daily_addition_schedule},
-        "sensors": {"addition_sensor": load_addition_sensor},
-    }
-```
-
-Note that the name of the pipeline in the `RepositoryDefinition` must match the name we declared for
-it in its `pipeline` (the default is the function name). Don't worry, if these names don't match,
-you'll see a helpful error message.
