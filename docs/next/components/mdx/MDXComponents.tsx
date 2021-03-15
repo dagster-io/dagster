@@ -246,7 +246,7 @@ const CodeReferenceLink = (props: { filePath: string }) => {
 const InstanceDiagramBox = ({ href = "#", className = "", children }) => {
   return (
     <a
-      href="href"
+      href={href}
       className={`bg-gray-100 hover:bg-gray-200 flex-1 h-16 rounded flex justify-center items-center font-medium ${className}`}
     >
       {children}
