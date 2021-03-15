@@ -31,10 +31,12 @@ const octokit = new Octokit({
 export const createGithubIssue = async ({
   title,
   body,
+  labels = [],
   dryRun = false,
 }: {
   title: string;
   body: string;
+  labels: string[];
   dryRun: boolean;
 }) => {
   if (dryRun) {
@@ -46,7 +48,7 @@ export const createGithubIssue = async ({
     repo: process.env.GITHUB_REPO,
     title,
     body,
-    labels: ["documentation"],
+    labels: labels,
   });
 
   return issue.data.html_url;

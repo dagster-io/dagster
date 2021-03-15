@@ -87,6 +87,7 @@ export default function (receiver) {
       const issue = await createGithubIssue({
         title: `[Content Gap] ${message}`,
         body: githubIssueBody,
+        labels: trigger === DOCS_TRIGGER ? ["documentation"] : [],
         dryRun: event.text.includes("--skip-issue"),
       });
 
