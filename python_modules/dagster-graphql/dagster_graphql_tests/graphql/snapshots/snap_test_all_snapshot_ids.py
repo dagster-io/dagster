@@ -1000,6 +1000,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "tag_asset_solid",
         "solid_name": "tag_asset_solid",
         "tags": {}
@@ -1069,7 +1070,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 10'] = 'af25b27e66cb3858bf08768a0cf91d8a9b3b2c7c'
+snapshots['test_all_snapshot_ids 10'] = '782a996a83fc8a4239ea582c49545246b29f172d'
 
 snapshots['test_all_snapshot_ids 11'] = '''{
   "__class__": "PipelineSnapshot",
@@ -2114,9 +2115,11 @@ snapshots['test_all_snapshot_ids 11'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": []
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_solid",
         "solid_name": "sum_solid",
         "tags": {}
@@ -2193,7 +2196,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 12'] = '467ada93ddc30929202f44c026c1aa2309f8aa8a'
+snapshots['test_all_snapshot_ids 12'] = '454e888d85cce2b5363690d18194d2f2566de3ea'
 
 snapshots['test_all_snapshot_ids 13'] = '''{
   "__class__": "PipelineSnapshot",
@@ -3279,6 +3282,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "sum_df",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -3288,6 +3292,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "df_expectations_solid",
         "solid_name": "df_expectations_solid",
         "tags": {}
@@ -3298,9 +3303,11 @@ snapshots['test_all_snapshot_ids 13'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": []
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_solid",
         "solid_name": "sum_solid",
         "tags": {}
@@ -3311,6 +3318,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "sum_df",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -3320,6 +3328,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_sq_solid",
         "solid_name": "sum_sq_solid",
         "tags": {}
@@ -3448,7 +3457,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 14'] = '8d720f96290883ddd210b34cdde48d138d8ba5d5'
+snapshots['test_all_snapshot_ids 14'] = 'a1660a981592a39b59d9a10d49387ebd08f4a143'
 
 snapshots['test_all_snapshot_ids 15'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4547,6 +4556,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "y",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -4556,6 +4566,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "multiply_by_two",
         "solid_name": "double_total",
         "tags": {}
@@ -4563,6 +4574,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "emit",
         "solid_name": "emit",
         "tags": {}
@@ -4570,6 +4582,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "emit_ten",
         "solid_name": "emit_ten",
         "tags": {}
@@ -4580,6 +4593,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "y",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -4589,6 +4603,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": true,
         "solid_def_name": "multiply_by_two",
         "solid_name": "multiply_by_two",
         "tags": {}
@@ -4599,6 +4614,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "y",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -4610,6 +4626,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "ten",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -4621,9 +4638,11 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "should_fail",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": []
           }
         ],
+        "is_dynamic_mapped": true,
         "solid_def_name": "multiply_inputs",
         "solid_name": "multiply_inputs",
         "tags": {}
@@ -4634,6 +4653,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "nums",
+            "is_dynamic_collect": true,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -4643,6 +4663,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_numbers",
         "solid_name": "sum_numbers",
         "tags": {}
@@ -4821,7 +4842,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 16'] = '582b3bd722c8ce784d1ad2dab3b06430f79f2948'
+snapshots['test_all_snapshot_ids 16'] = 'd86ebf7425895a02a4cb4d6f5081675f6614fb0c'
 
 snapshots['test_all_snapshot_ids 17'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5925,6 +5946,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "depth",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -5934,6 +5956,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "fail",
         "solid_name": "fail",
         "tags": {}
@@ -5944,6 +5967,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "depth",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -5953,6 +5977,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "fail",
         "solid_name": "fail_2",
         "tags": {}
@@ -5963,6 +5988,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "depth",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -5972,6 +5998,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "fail",
         "solid_name": "fail_3",
         "tags": {}
@@ -5982,6 +6009,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "depth",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -5991,6 +6019,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "reset",
         "solid_name": "reset",
         "tags": {}
@@ -5998,6 +6027,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "spawn",
         "solid_name": "spawn",
         "tags": {}
@@ -6135,7 +6165,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 18'] = '370dc6573c69912c5581847fb85c9320b78301f0'
+snapshots['test_all_snapshot_ids 18'] = '59be39608f2cdb420073a45a69b8400ed4d28459'
 
 snapshots['test_all_snapshot_ids 19'] = '''{
   "__class__": "PipelineSnapshot",
@@ -7195,6 +7225,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "hard_fail_or_0",
         "solid_name": "hard_fail_or_0",
         "tags": {}
@@ -7205,6 +7236,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "n",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -7214,6 +7246,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "increment",
         "solid_name": "increment",
         "tags": {}
@@ -7317,9 +7350,9 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = 'b291cff38b3a534af5d6cb459006a595bc2b3cf8'
+snapshots['test_all_snapshot_ids 2'] = '7406396fb41ea0259eae9e707b6a710c45ec0ba3'
 
-snapshots['test_all_snapshot_ids 20'] = '47f84b16398780a3ce9e4f4e2404e749dc3fd40b'
+snapshots['test_all_snapshot_ids 20'] = '805b17d6283c075596f1064e4a7c12e9b5ccbf0b'
 
 snapshots['test_all_snapshot_ids 21'] = '''{
   "__class__": "PipelineSnapshot",
@@ -8315,6 +8348,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_that_gets_tags",
         "solid_name": "solid_that_gets_tags",
         "tags": {}
@@ -8386,7 +8420,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
   }
 }'''
 
-snapshots['test_all_snapshot_ids 22'] = '96a0a8dba1ce845a26464e918a04a50386849692'
+snapshots['test_all_snapshot_ids 22'] = 'cb4183e1fce4a78527ec5b5889a26ad52c19b5a7'
 
 snapshots['test_all_snapshot_ids 23'] = '''{
   "__class__": "PipelineSnapshot",
@@ -9414,6 +9448,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "loop",
         "solid_name": "loop",
         "tags": {}
@@ -9491,7 +9526,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 24'] = '2a11aaff1abea199563f4e47e5caed32c8ea7b12'
+snapshots['test_all_snapshot_ids 24'] = 'b74c905b7246e2d9c23f5c15896fbc8a3333ab0b'
 
 snapshots['test_all_snapshot_ids 25'] = '''{
   "__class__": "PipelineSnapshot",
@@ -10487,6 +10522,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "materialize",
         "solid_name": "materialize",
         "tags": {}
@@ -10556,7 +10592,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 26'] = '61a2b44e31f9bf906f3e0780c382036376ae91f7'
+snapshots['test_all_snapshot_ids 26'] = '6460a8ca4d30acbe835a4e1a38e92a227a1feb99'
 
 snapshots['test_all_snapshot_ids 27'] = '''{
   "__class__": "PipelineSnapshot",
@@ -11634,6 +11670,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "a_solid_with_three_field_config",
         "solid_name": "a_solid_with_three_field_config",
         "tags": {}
@@ -11641,6 +11678,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "noop_solid",
         "solid_name": "noop_solid",
         "tags": {}
@@ -11737,7 +11775,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 28'] = '349692153339a01c4b456bf2f4396e73213dc04f'
+snapshots['test_all_snapshot_ids 28'] = '6962c81d494e5cadb6b9ab12419415977c4aa4e3'
 
 snapshots['test_all_snapshot_ids 29'] = '''{
   "__class__": "PipelineSnapshot",
@@ -12825,6 +12863,7 @@ snapshots['test_all_snapshot_ids 29'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "a_solid_with_multilayered_config",
         "solid_name": "a_solid_with_multilayered_config",
         "tags": {}
@@ -13908,6 +13947,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "_",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -13917,6 +13957,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "after_failure",
         "solid_name": "after_failure",
         "tags": {}
@@ -13924,6 +13965,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "always_succeed",
         "solid_name": "always_succeed",
         "tags": {}
@@ -13934,6 +13976,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "_",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -13943,6 +13986,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "conditionally_fail",
         "solid_name": "conditionally_fail",
         "tags": {}
@@ -14064,7 +14108,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 30'] = 'a0fa07d36d9a03c99b957f0ac3ea508302e71be7'
+snapshots['test_all_snapshot_ids 30'] = 'de8124b780b7916a5f7944f076746fd181509c40'
 
 snapshots['test_all_snapshot_ids 31'] = '''{
   "__class__": "PipelineSnapshot",
@@ -15069,6 +15113,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_asset_a",
         "solid_name": "solid_asset_a",
         "tags": {}
@@ -15079,6 +15124,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -15088,6 +15134,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_asset_b",
         "solid_name": "solid_asset_b",
         "tags": {}
@@ -15183,7 +15230,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 32'] = 'f6dec3d7eea218b0aa05282137729a3f7e87c045'
+snapshots['test_all_snapshot_ids 32'] = 'cd817bdbedf35446a0cffc39427f61c0a72211fa'
 
 snapshots['test_all_snapshot_ids 33'] = '''{
   "__class__": "PipelineSnapshot",
@@ -16393,6 +16440,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_six",
         "solid_name": "return_six",
         "tags": {}
@@ -16536,7 +16584,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 34'] = '884b5f4970ddb6a7e6da5f030232265e1fe51c15'
+snapshots['test_all_snapshot_ids 34'] = '46f31be0e71ae8ec37db6ee2dab53bdacb0250bf'
 
 snapshots['test_all_snapshot_ids 35'] = '''{
   "__class__": "PipelineSnapshot",
@@ -17724,6 +17772,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "apply_to_three",
         "solid_name": "apply_to_three",
         "tags": {}
@@ -17897,7 +17946,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 36'] = 'eb27a46e42a57398d87c0f148b4ea29427c6cda8'
+snapshots['test_all_snapshot_ids 36'] = 'db1a6bfdf4963da7384745652ce8747b927d7ad7'
 
 snapshots['test_all_snapshot_ids 37'] = '''{
   "__class__": "PipelineSnapshot",
@@ -18893,6 +18942,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "throw_a_thing",
         "solid_name": "throw_a_thing",
         "tags": {}
@@ -18962,7 +19012,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 38'] = '68bae6477b4ef98114e59e24b5be49b1982fd952'
+snapshots['test_all_snapshot_ids 38'] = '07de569d659ddda9b2d9cfe3849fcce3ad16b119'
 
 snapshots['test_all_snapshot_ids 39'] = '''{
   "__class__": "PipelineSnapshot",
@@ -19967,6 +20017,7 @@ snapshots['test_all_snapshot_ids 39'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_foo",
         "solid_name": "return_foo",
         "tags": {}
@@ -19977,6 +20028,7 @@ snapshots['test_all_snapshot_ids 39'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "_",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -19986,6 +20038,7 @@ snapshots['test_all_snapshot_ids 39'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_hello_world",
         "solid_name": "return_hello_world",
         "tags": {}
@@ -20081,9 +20134,9 @@ snapshots['test_all_snapshot_ids 39'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 4'] = '1172f05bae08cd7208f6401afc3857787f21767a'
+snapshots['test_all_snapshot_ids 4'] = 'd60a843df4a723efbf30dc78c3213ff68a5bd3ba'
 
-snapshots['test_all_snapshot_ids 40'] = '53b0c2370abc329575169da76c4ca43def30be16'
+snapshots['test_all_snapshot_ids 40'] = '415049859be06c3a3e38dbefa3781e230571ea39'
 
 snapshots['test_all_snapshot_ids 41'] = '''{
   "__class__": "PipelineSnapshot",
@@ -21079,6 +21132,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_hello",
         "solid_name": "return_hello",
         "tags": {}
@@ -21148,7 +21202,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 42'] = '06e396a9258238bbe6a93063cbb39bdaf978fbef'
+snapshots['test_all_snapshot_ids 42'] = '9e763f304e858ca3852dcb66103ffa6be862378a'
 
 snapshots['test_all_snapshot_ids 43'] = '''{
   "__class__": "PipelineSnapshot",
@@ -22144,6 +22198,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "noop_solid",
         "solid_name": "noop_solid",
         "tags": {}
@@ -22213,7 +22268,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 44'] = 'f5fdbdc207fcef54e65f7e14b2f511f6d29f9876'
+snapshots['test_all_snapshot_ids 44'] = '9dfe20d8e31bb905c15bacc012b4be684e78243a'
 
 snapshots['test_all_snapshot_ids 45'] = '''{
   "__class__": "PipelineSnapshot",
@@ -23209,6 +23264,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_partitioned_asset",
         "solid_name": "solid_partitioned_asset",
         "tags": {}
@@ -23278,7 +23334,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 46'] = 'cfeadec0b91225c452cb1cb19af336947522d78b'
+snapshots['test_all_snapshot_ids 46'] = '881a1d23e5c47b4fdb240ae72111d379e4739a98'
 
 snapshots['test_all_snapshot_ids 47'] = '''{
   "__class__": "PipelineSnapshot",
@@ -24312,6 +24368,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "takes_an_enum",
         "solid_name": "takes_an_enum",
         "tags": {}
@@ -24389,7 +24446,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 48'] = '535a2cf7998989de65d7997c497255be9d23969d'
+snapshots['test_all_snapshot_ids 48'] = '154dca5766528e0586d3502cb8df5e7efc8cb4f1'
 
 snapshots['test_all_snapshot_ids 49'] = '''{
   "__class__": "PipelineSnapshot",
@@ -25301,6 +25358,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "emit_failed_expectation",
         "solid_name": "emit_failed_expectation",
         "tags": {}
@@ -25308,6 +25366,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "emit_successful_expectation",
         "solid_name": "emit_successful_expectation",
         "tags": {}
@@ -25315,6 +25374,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "emit_successful_expectation_no_metadata",
         "solid_name": "emit_successful_expectation_no_metadata",
         "tags": {}
@@ -26625,9 +26685,11 @@ snapshots['test_all_snapshot_ids 5'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": []
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "add_four",
         "solid_name": "add_four",
         "tags": {}
@@ -26638,6 +26700,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -26647,6 +26710,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "div_four",
         "solid_name": "div_four",
         "tags": {}
@@ -26703,9 +26767,11 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                 {
                   "__class__": "InputDependencySnap",
                   "input_name": "num",
+                  "is_dynamic_collect": false,
                   "upstream_output_snaps": []
                 }
               ],
+              "is_dynamic_mapped": false,
               "solid_def_name": "add_two",
               "solid_name": "adder_1",
               "tags": {}
@@ -26716,6 +26782,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                 {
                   "__class__": "InputDependencySnap",
                   "input_name": "num",
+                  "is_dynamic_collect": false,
                   "upstream_output_snaps": [
                     {
                       "__class__": "OutputHandleSnap",
@@ -26725,6 +26792,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                   ]
                 }
               ],
+              "is_dynamic_mapped": false,
               "solid_def_name": "add_two",
               "solid_name": "adder_2",
               "tags": {}
@@ -26782,9 +26850,11 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                 {
                   "__class__": "InputDependencySnap",
                   "input_name": "num",
+                  "is_dynamic_collect": false,
                   "upstream_output_snaps": []
                 }
               ],
+              "is_dynamic_mapped": false,
               "solid_def_name": "add_one",
               "solid_name": "adder_1",
               "tags": {}
@@ -26795,6 +26865,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                 {
                   "__class__": "InputDependencySnap",
                   "input_name": "num",
+                  "is_dynamic_collect": false,
                   "upstream_output_snaps": [
                     {
                       "__class__": "OutputHandleSnap",
@@ -26804,6 +26875,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                   ]
                 }
               ],
+              "is_dynamic_mapped": false,
               "solid_def_name": "add_one",
               "solid_name": "adder_2",
               "tags": {}
@@ -26861,9 +26933,11 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                 {
                   "__class__": "InputDependencySnap",
                   "input_name": "num",
+                  "is_dynamic_collect": false,
                   "upstream_output_snaps": []
                 }
               ],
+              "is_dynamic_mapped": false,
               "solid_def_name": "div_two",
               "solid_name": "div_1",
               "tags": {}
@@ -26874,6 +26948,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                 {
                   "__class__": "InputDependencySnap",
                   "input_name": "num",
+                  "is_dynamic_collect": false,
                   "upstream_output_snaps": [
                     {
                       "__class__": "OutputHandleSnap",
@@ -26883,6 +26958,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
                   ]
                 }
               ],
+              "is_dynamic_mapped": false,
               "solid_def_name": "div_two",
               "solid_name": "div_2",
               "tags": {}
@@ -26987,7 +27063,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 50'] = '8505c61c51112630173104157a54c86ceb663469'
+snapshots['test_all_snapshot_ids 50'] = '43675c6c18def77296d188f410e945120a8f42ce'
 
 snapshots['test_all_snapshot_ids 51'] = '''{
   "__class__": "PipelineSnapshot",
@@ -28000,6 +28076,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "some_input",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -28009,6 +28086,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "fail_subset",
         "solid_name": "fail_subset",
         "tags": {}
@@ -28016,6 +28094,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "one",
         "solid_name": "one",
         "tags": {}
@@ -28111,7 +28190,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 52'] = 'e1455c997c55f022b3fec0846b0925de380d3535'
+snapshots['test_all_snapshot_ids 52'] = 'fef274ea3183948bc49401aa95d1be07dfd77326'
 
 snapshots['test_all_snapshot_ids 53'] = '''{
   "__class__": "PipelineSnapshot",
@@ -29084,6 +29163,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_with_list",
         "solid_name": "solid_with_list",
         "tags": {}
@@ -29152,7 +29232,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 54'] = 'a36634aaa3c1b4318a40914fcd5ed7e08b2bdd96'
+snapshots['test_all_snapshot_ids 54'] = 'e4ee72fcdf0d8b777873cb2668f853517d604872'
 
 snapshots['test_all_snapshot_ids 55'] = '''{
   "__class__": "PipelineSnapshot",
@@ -30194,6 +30274,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_with_required_resource",
         "solid_name": "solid_with_required_resource",
         "tags": {}
@@ -30279,7 +30360,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 56'] = 'ae7125bc0e9fe05d7ca20c29dfd2ff6060e5f971'
+snapshots['test_all_snapshot_ids 56'] = 'e3fab592c5fbee11ae71bf9f5297e8657a956d21'
 
 snapshots['test_all_snapshot_ids 57'] = '''{
   "__class__": "PipelineSnapshot",
@@ -31360,6 +31441,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "one",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -31369,6 +31451,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "get_input_one",
         "solid_name": "get_input_one",
         "tags": {}
@@ -31379,6 +31462,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "one",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -31388,6 +31472,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "get_input_two",
         "solid_name": "get_input_two",
         "tags": {}
@@ -31395,6 +31480,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_one",
         "solid_name": "return_one",
         "tags": {}
@@ -31405,6 +31491,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "input_one",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -31416,6 +31503,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "input_two",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -31425,6 +31513,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_inputs",
         "solid_name": "sum_inputs",
         "tags": {}
@@ -31594,7 +31683,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 58'] = '0ac9b0effbbd9c8a6908f4c1f03578fa52cab231'
+snapshots['test_all_snapshot_ids 58'] = '6539cb363ac553954044796731d2ce934ca20d22'
 
 snapshots['test_all_snapshot_ids 59'] = '''{
   "__class__": "PipelineSnapshot",
@@ -32783,6 +32872,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "inp",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -32792,6 +32882,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "can_fail",
         "solid_name": "can_fail",
         "tags": {}
@@ -32802,6 +32893,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "value",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -32811,6 +32903,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "passthrough",
         "solid_name": "child_fail",
         "tags": {}
@@ -32821,6 +32914,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "start",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -32830,6 +32924,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "no_output",
         "solid_name": "child_multi_skip",
         "tags": {}
@@ -32840,6 +32935,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "start",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -32849,6 +32945,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "no_output",
         "solid_name": "child_skip",
         "tags": {}
@@ -32859,6 +32956,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "start",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -32868,6 +32966,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "no_output",
         "solid_name": "grandchild_fail",
         "tags": {}
@@ -32875,6 +32974,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "multi",
         "solid_name": "multi",
         "tags": {}
@@ -33037,9 +33137,9 @@ snapshots['test_all_snapshot_ids 59'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 6'] = '3d954dfebb13130eae3c8d9d8c80261c512c0d14'
+snapshots['test_all_snapshot_ids 6'] = '41ed83fae6736e8bf540b38c636bd7fd3beb7aa3'
 
-snapshots['test_all_snapshot_ids 60'] = 'f3e1d23a1ef66ba12761f71241b3fda469d771a1'
+snapshots['test_all_snapshot_ids 60'] = '0b6869341bfc0406c48a31975af3aebf870141c2'
 
 snapshots['test_all_snapshot_ids 61'] = '''{
   "__class__": "PipelineSnapshot",
@@ -34044,6 +34144,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "start",
         "solid_name": "start",
         "tags": {}
@@ -34054,6 +34155,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -34063,6 +34165,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "will_fail",
         "solid_name": "will_fail",
         "tags": {}
@@ -34174,7 +34277,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 62'] = 'a7fff8613c81d6bbaa7acaa735c325e6f47aa1ce'
+snapshots['test_all_snapshot_ids 62'] = '4b84603e59b81c0bff853a47dfe4cdf6d59b71bc'
 
 snapshots['test_all_snapshot_ids 63'] = '''{
   "__class__": "PipelineSnapshot",
@@ -35197,6 +35300,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_any",
         "solid_name": "return_any",
         "tags": {}
@@ -35204,6 +35308,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_bool",
         "solid_name": "return_bool",
         "tags": {}
@@ -35211,6 +35316,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_int",
         "solid_name": "return_int",
         "tags": {}
@@ -35218,6 +35324,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "return_str",
         "solid_name": "return_str",
         "tags": {}
@@ -35344,7 +35451,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 64'] = '6c3163a514b834d3005174f9c486128f21451ebf'
+snapshots['test_all_snapshot_ids 64'] = 'f35c1e7566a2337602b8c99bba168393accb4e7e'
 
 snapshots['test_all_snapshot_ids 65'] = '''{
   "__class__": "PipelineSnapshot",
@@ -36340,6 +36447,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "solid_asset_a",
         "solid_name": "solid_asset_a",
         "tags": {}
@@ -36409,7 +36517,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 66'] = '6468f9e906c07f00d20d69192241ff61b58624e2'
+snapshots['test_all_snapshot_ids 66'] = '3b03b348deb777e8ac70d01ea11afde98f637b23'
 
 snapshots['test_all_snapshot_ids 67'] = '''{
   "__class__": "PipelineSnapshot",
@@ -37405,6 +37513,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "spew",
         "solid_name": "spew",
         "tags": {}
@@ -37474,7 +37583,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 68'] = 'd1e41276487ec4cc76ff605fd1593d39a7c6f9cb'
+snapshots['test_all_snapshot_ids 68'] = '332dff222b4579191c8e46ac43601befbf3bfe1b'
 
 snapshots['test_all_snapshot_ids 69'] = '''{
   "__class__": "PipelineSnapshot",
@@ -38470,6 +38579,7 @@ snapshots['test_all_snapshot_ids 69'] = '''{
       {
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
+        "is_dynamic_mapped": false,
         "solid_def_name": "simple_solid",
         "solid_name": "simple_solid",
         "tags": {}
@@ -39616,9 +39726,11 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": []
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_solid",
         "solid_name": "sum_solid",
         "tags": {}
@@ -39629,6 +39741,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "sum_df",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -39638,6 +39751,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_sq_solid",
         "solid_name": "sum_sq_solid",
         "tags": {}
@@ -39740,9 +39854,9 @@ snapshots['test_all_snapshot_ids 7'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 70'] = '0c481e69efef0a7579f1a3764f1c78fd57b841d0'
+snapshots['test_all_snapshot_ids 70'] = '90785e7276f216f00421962697eac5111ef1aed5'
 
-snapshots['test_all_snapshot_ids 8'] = '7356cc9d28382c41e741f6cad9afaa7cdf2caf44'
+snapshots['test_all_snapshot_ids 8'] = '1e61b0d2a8b402bd35639631ac1e74d406d13480'
 
 snapshots['test_all_snapshot_ids 9'] = '''{
   "__class__": "PipelineSnapshot",
@@ -40819,9 +40933,11 @@ snapshots['test_all_snapshot_ids 9'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "num",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": []
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_solid",
         "solid_name": "sum_solid",
         "tags": {}
@@ -40832,6 +40948,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
           {
             "__class__": "InputDependencySnap",
             "input_name": "sum_df",
+            "is_dynamic_collect": false,
             "upstream_output_snaps": [
               {
                 "__class__": "OutputHandleSnap",
@@ -40841,6 +40958,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
             ]
           }
         ],
+        "is_dynamic_mapped": false,
         "solid_def_name": "sum_sq_solid",
         "solid_name": "sum_sq_solid",
         "tags": {}

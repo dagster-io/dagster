@@ -1026,6 +1026,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
         {
           "__class__": "SolidInvocationSnap",
           "input_dep_snaps": [],
+          "is_dynamic_mapped": false,
           "solid_def_name": "a_solid",
           "solid_name": "a_solid",
           "tags": {}
@@ -2158,6 +2159,7 @@ snapshots['test_external_repository_data 1'] = '''{
             {
               "__class__": "SolidInvocationSnap",
               "input_dep_snaps": [],
+              "is_dynamic_mapped": false,
               "solid_def_name": "a_solid",
               "solid_name": "a_solid",
               "tags": {}

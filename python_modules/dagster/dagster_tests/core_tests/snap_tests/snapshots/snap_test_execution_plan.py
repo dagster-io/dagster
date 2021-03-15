@@ -10,7 +10,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "61a05a96e27bc93d20b4c540f51c9c6e6d0c12b0",
+  "pipeline_snapshot_id": "0baebbaa257331ddeaccd3076c3dca413e099cf4",
   "step_keys_to_execute": [
     "solid_one",
     "solid_two"
@@ -71,7 +71,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "f5fdbdc207fcef54e65f7e14b2f511f6d29f9876",
+  "pipeline_snapshot_id": "9dfe20d8e31bb905c15bacc012b4be684e78243a",
   "step_keys_to_execute": [
     "noop_solid"
   ],
@@ -100,7 +100,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "d505b5cfc0aaa61c8677d3b0d277e2f542fe1968",
+  "pipeline_snapshot_id": "3c29d0513af8e2ebfb301e3c1dd9ca66718c0f91",
   "step_keys_to_execute": [
     "noop_solid"
   ],
@@ -140,7 +140,7 @@ snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "7ae7c139339f3cb052fdc4e959384925b39962df",
+  "pipeline_snapshot_id": "9549e65e338684809d962c9e77276836bbab9842",
   "step_keys_to_execute": [
     "comp_1.return_one",
     "comp_1.add_one",

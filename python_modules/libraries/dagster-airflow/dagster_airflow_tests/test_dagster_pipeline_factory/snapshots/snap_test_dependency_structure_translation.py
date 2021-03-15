@@ -6,326 +6,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_one_task_dag 1'] = '''{
-  "__class__": "DependencyStructureSnapshot",
-  "solid_invocation_snaps": [
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator",
-      "solid_name": "airflow_dummy_operator",
-      "tags": {}
-    }
-  ]
-}'''
-
-snapshots['test_two_task_dag_no_dep 1'] = '''{
-  "__class__": "DependencyStructureSnapshot",
-  "solid_invocation_snaps": [
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
-      "tags": {}
-    }
-  ]
-}'''
-
-snapshots['test_two_task_dag_with_dep 1'] = '''{
-  "__class__": "DependencyStructureSnapshot",
-  "solid_invocation_snaps": [
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
-      "tags": {}
-    }
-  ]
-}'''
-
-snapshots['test_diamond_task_dag 1'] = '''{
-  "__class__": "DependencyStructureSnapshot",
-  "solid_invocation_snaps": [
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_3",
-      "solid_name": "airflow_dummy_operator_3",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_2"
-            },
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_3"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_4",
-      "solid_name": "airflow_dummy_operator_4",
-      "tags": {}
-    }
-  ]
-}'''
-
-snapshots['test_multi_root_dag 1'] = '''{
-  "__class__": "DependencyStructureSnapshot",
-  "solid_invocation_snaps": [
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_3",
-      "solid_name": "airflow_dummy_operator_3",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            },
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_2"
-            },
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_3"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_4",
-      "solid_name": "airflow_dummy_operator_4",
-      "tags": {}
-    }
-  ]
-}'''
-
-snapshots['test_multi_leaf_dag 1'] = '''{
-  "__class__": "DependencyStructureSnapshot",
-  "solid_invocation_snaps": [
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": []
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_3",
-      "solid_name": "airflow_dummy_operator_3",
-      "tags": {}
-    },
-    {
-      "__class__": "SolidInvocationSnap",
-      "input_dep_snaps": [
-        {
-          "__class__": "InputDependencySnap",
-          "input_name": "airflow_task_ready",
-          "upstream_output_snaps": [
-            {
-              "__class__": "OutputHandleSnap",
-              "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
-            }
-          ]
-        }
-      ],
-      "solid_def_name": "airflow_dummy_operator_4",
-      "solid_name": "airflow_dummy_operator_4",
-      "tags": {}
-    }
-  ]
-}'''
-
 snapshots['test_complex_dag 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
@@ -335,6 +15,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -344,6 +25,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_entry_gcs",
       "solid_name": "airflow_create_entry_gcs",
       "tags": {}
@@ -354,6 +36,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -363,6 +46,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_entry_gcs_result",
       "solid_name": "airflow_create_entry_gcs_result",
       "tags": {}
@@ -373,6 +57,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -382,6 +67,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_entry_gcs_result2",
       "solid_name": "airflow_create_entry_gcs_result2",
       "tags": {}
@@ -392,9 +78,11 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": []
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_entry_group",
       "solid_name": "airflow_create_entry_group",
       "tags": {}
@@ -405,6 +93,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -414,6 +103,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_entry_group_result",
       "solid_name": "airflow_create_entry_group_result",
       "tags": {}
@@ -424,6 +114,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -433,6 +124,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_entry_group_result2",
       "solid_name": "airflow_create_entry_group_result2",
       "tags": {}
@@ -443,6 +135,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -452,6 +145,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag",
       "solid_name": "airflow_create_tag",
       "tags": {}
@@ -462,6 +156,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -471,6 +166,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_result",
       "solid_name": "airflow_create_tag_result",
       "tags": {}
@@ -481,6 +177,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -490,6 +187,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_result2",
       "solid_name": "airflow_create_tag_result2",
       "tags": {}
@@ -500,6 +198,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -509,6 +208,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_template",
       "solid_name": "airflow_create_tag_template",
       "tags": {}
@@ -519,6 +219,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -528,6 +229,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_template_field",
       "solid_name": "airflow_create_tag_template_field",
       "tags": {}
@@ -538,6 +240,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -547,6 +250,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_template_field_result",
       "solid_name": "airflow_create_tag_template_field_result",
       "tags": {}
@@ -557,6 +261,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -566,6 +271,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_template_result",
       "solid_name": "airflow_create_tag_template_result",
       "tags": {}
@@ -576,6 +282,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -585,6 +292,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_create_tag_template_result2",
       "solid_name": "airflow_create_tag_template_result2",
       "tags": {}
@@ -595,6 +303,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -629,6 +338,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_delete_entry",
       "solid_name": "airflow_delete_entry",
       "tags": {}
@@ -639,6 +349,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -663,6 +374,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_delete_entry_group",
       "solid_name": "airflow_delete_entry_group",
       "tags": {}
@@ -673,6 +385,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -697,6 +410,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_delete_tag",
       "solid_name": "airflow_delete_tag",
       "tags": {}
@@ -707,6 +421,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -731,6 +446,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_delete_tag_template",
       "solid_name": "airflow_delete_tag_template",
       "tags": {}
@@ -741,6 +457,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -770,6 +487,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_delete_tag_template_field",
       "solid_name": "airflow_delete_tag_template_field",
       "tags": {}
@@ -780,6 +498,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -789,6 +508,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_get_entry",
       "solid_name": "airflow_get_entry",
       "tags": {}
@@ -799,6 +519,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -808,6 +529,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_get_entry_group",
       "solid_name": "airflow_get_entry_group",
       "tags": {}
@@ -818,6 +540,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -827,6 +550,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_get_entry_group_result",
       "solid_name": "airflow_get_entry_group_result",
       "tags": {}
@@ -837,6 +561,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -846,6 +571,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_get_entry_result",
       "solid_name": "airflow_get_entry_result",
       "tags": {}
@@ -856,6 +582,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -865,6 +592,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_get_tag_template",
       "solid_name": "airflow_get_tag_template",
       "tags": {}
@@ -875,6 +603,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -884,6 +613,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_get_tag_template_result",
       "solid_name": "airflow_get_tag_template_result",
       "tags": {}
@@ -894,6 +624,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -903,6 +634,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_list_tags",
       "solid_name": "airflow_list_tags",
       "tags": {}
@@ -913,6 +645,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -922,6 +655,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_list_tags_result",
       "solid_name": "airflow_list_tags_result",
       "tags": {}
@@ -932,6 +666,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -941,6 +676,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_lookup_entry",
       "solid_name": "airflow_lookup_entry",
       "tags": {}
@@ -951,6 +687,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -960,6 +697,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_lookup_entry_result",
       "solid_name": "airflow_lookup_entry_result",
       "tags": {}
@@ -970,6 +708,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -984,6 +723,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_rename_tag_template_field",
       "solid_name": "airflow_rename_tag_template_field",
       "tags": {}
@@ -994,6 +734,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -1023,6 +764,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_search_catalog",
       "solid_name": "airflow_search_catalog",
       "tags": {}
@@ -1033,6 +775,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -1042,6 +785,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_search_catalog_result",
       "solid_name": "airflow_search_catalog_result",
       "tags": {}
@@ -1052,6 +796,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -1061,6 +806,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_update_entry",
       "solid_name": "airflow_update_entry",
       "tags": {}
@@ -1071,6 +817,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -1080,6 +827,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_update_tag",
       "solid_name": "airflow_update_tag",
       "tags": {}
@@ -1090,6 +838,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -1099,6 +848,7 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_update_tag_template",
       "solid_name": "airflow_update_tag_template",
       "tags": {}
@@ -1109,6 +859,7 @@ snapshots['test_complex_dag 1'] = '''{
         {
           "__class__": "InputDependencySnap",
           "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
           "upstream_output_snaps": [
             {
               "__class__": "OutputHandleSnap",
@@ -1118,8 +869,363 @@ snapshots['test_complex_dag 1'] = '''{
           ]
         }
       ],
+      "is_dynamic_mapped": false,
       "solid_def_name": "airflow_update_tag_template_field",
       "solid_name": "airflow_update_tag_template_field",
+      "tags": {}
+    }
+  ]
+}'''
+
+snapshots['test_diamond_task_dag 1'] = '''{
+  "__class__": "DependencyStructureSnapshot",
+  "solid_invocation_snaps": [
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_1",
+      "solid_name": "airflow_dummy_operator_1",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_2",
+      "solid_name": "airflow_dummy_operator_2",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_3",
+      "solid_name": "airflow_dummy_operator_3",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_2"
+            },
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_3"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_4",
+      "solid_name": "airflow_dummy_operator_4",
+      "tags": {}
+    }
+  ]
+}'''
+
+snapshots['test_multi_leaf_dag 1'] = '''{
+  "__class__": "DependencyStructureSnapshot",
+  "solid_invocation_snaps": [
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_1",
+      "solid_name": "airflow_dummy_operator_1",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_2",
+      "solid_name": "airflow_dummy_operator_2",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_3",
+      "solid_name": "airflow_dummy_operator_3",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_4",
+      "solid_name": "airflow_dummy_operator_4",
+      "tags": {}
+    }
+  ]
+}'''
+
+snapshots['test_multi_root_dag 1'] = '''{
+  "__class__": "DependencyStructureSnapshot",
+  "solid_invocation_snaps": [
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_1",
+      "solid_name": "airflow_dummy_operator_1",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_2",
+      "solid_name": "airflow_dummy_operator_2",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_3",
+      "solid_name": "airflow_dummy_operator_3",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            },
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_2"
+            },
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_3"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_4",
+      "solid_name": "airflow_dummy_operator_4",
+      "tags": {}
+    }
+  ]
+}'''
+
+snapshots['test_one_task_dag 1'] = '''{
+  "__class__": "DependencyStructureSnapshot",
+  "solid_invocation_snaps": [
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator",
+      "solid_name": "airflow_dummy_operator",
+      "tags": {}
+    }
+  ]
+}'''
+
+snapshots['test_two_task_dag_no_dep 1'] = '''{
+  "__class__": "DependencyStructureSnapshot",
+  "solid_invocation_snaps": [
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_1",
+      "solid_name": "airflow_dummy_operator_1",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_2",
+      "solid_name": "airflow_dummy_operator_2",
+      "tags": {}
+    }
+  ]
+}'''
+
+snapshots['test_two_task_dag_with_dep 1'] = '''{
+  "__class__": "DependencyStructureSnapshot",
+  "solid_invocation_snaps": [
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": []
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_1",
+      "solid_name": "airflow_dummy_operator_1",
+      "tags": {}
+    },
+    {
+      "__class__": "SolidInvocationSnap",
+      "input_dep_snaps": [
+        {
+          "__class__": "InputDependencySnap",
+          "input_name": "airflow_task_ready",
+          "is_dynamic_collect": false,
+          "upstream_output_snaps": [
+            {
+              "__class__": "OutputHandleSnap",
+              "output_name": "airflow_task_complete",
+              "solid_name": "airflow_dummy_operator_1"
+            }
+          ]
+        }
+      ],
+      "is_dynamic_mapped": false,
+      "solid_def_name": "airflow_dummy_operator_2",
+      "solid_name": "airflow_dummy_operator_2",
       "tags": {}
     }
   ]

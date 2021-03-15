@@ -873,3 +873,13 @@ class DependencyStructure:
 
     def get_upstream_dynamic_handle_for_solid(self, solid_name: str) -> Any:
         return self._dynamic_fan_out_index.get(solid_name)
+
+    def get_dependency_type(self, solid_input_handle: SolidInputHandle) -> Optional[DependencyType]:
+        result = self._handle_dict.get(solid_input_handle)
+        if result is None:
+            return None
+        dep_type, _ = result
+        return dep_type
+
+    def is_dynamic_mapped(self, solid_name: str) -> bool:
+        return solid_name in self._dynamic_fan_out_index

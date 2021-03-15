@@ -84,6 +84,7 @@ type Solid {
   definition: ISolidDefinition!
   inputs: [Input!]!
   outputs: [Output!]!
+  isDynamicMapped: Boolean!
 }
 
 interface ISolidDefinition {
@@ -163,6 +164,7 @@ type Input {
   solid: Solid!
   definition: InputDefinition!
   dependsOn: [Output!]!
+  isDynamicCollect: Boolean!
 }
 
 type Output {

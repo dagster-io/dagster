@@ -4,6 +4,7 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
 from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
     infer_pipeline_selector,
 )
@@ -174,3 +175,53 @@ def test_dynamic_subset(graphql_context):
     assert step_did_not_run(logs, "multiply_by_two[1]")
     assert step_did_succeed(logs, "multiply_by_two[2]")
     assert step_did_succeed(logs, "double_total")
+
+
+DEP_QUERY = """
+query PresetsQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
+    ... on Pipeline {
+      name
+      solids {
+        name
+        isDynamicMapped
+        inputs {
+          isDynamicCollect
+          dependsOn {
+            solid { name }
+          }
+        }
+        outputs {
+          definition {
+            name
+            isDynamic
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def test_dynamic_dep_fields(graphql_context):
+    selector = infer_pipeline_selector(graphql_context, "dynamic_pipeline")
+    result = execute_dagster_graphql(graphql_context, DEP_QUERY, variables={"selector": selector})
+    assert not result.errors
+    solids = {solid["name"]: solid for solid in result.data["pipelineOrError"]["solids"]}
+
+    assert solids["emit_ten"]["isDynamicMapped"] == False
+    assert solids["emit_ten"]["outputs"][0]["definition"]["isDynamic"] == False
+
+    assert solids["emit"]["isDynamicMapped"] == False
+    assert solids["emit"]["outputs"][0]["definition"]["isDynamic"] == True
+
+    assert solids["multiply_inputs"]["isDynamicMapped"] == True
+
+    assert solids["multiply_by_two"]["isDynamicMapped"] == True
+
+    assert solids["sum_numbers"]["isDynamicMapped"] == False
+    assert solids["sum_numbers"]["inputs"][0]["isDynamicCollect"] == True
+
+    assert solids["double_total"]["isDynamicMapped"] == False
+    assert solids["double_total"]["inputs"][0]["isDynamicCollect"] == False

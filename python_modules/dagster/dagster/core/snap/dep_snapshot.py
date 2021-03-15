@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import GraphDefinition
-from dagster.core.definitions.dependency import Solid, SolidInputHandle
+from dagster.core.definitions.dependency import DependencyType, Solid, SolidInputHandle
 from dagster.serdes import whitelist_for_serdes
 
 
@@ -24,6 +24,8 @@ def build_solid_invocation_snap(icontains_solids, solid):
                     OutputHandleSnap(oh.solid.name, oh.output_def.name)
                     for oh in input_to_outputs_map.get(input_handle, [])
                 ],
+                is_dynamic_collect=dep_structure.get_dependency_type(input_handle)
+                == DependencyType.DYNAMIC_COLLECT,
             )
         )
 
@@ -32,6 +34,7 @@ def build_solid_invocation_snap(icontains_solids, solid):
         solid_def_name=solid.definition.name,
         tags=solid.tags,
         input_dep_snaps=input_def_snaps,
+        is_dynamic_mapped=dep_structure.is_dynamic_mapped(solid.name),
     )
 
 
@@ -159,22 +162,29 @@ class OutputHandleSnap(namedtuple("_OutputHandleSnap", "solid_name output_name")
 
 
 @whitelist_for_serdes
-class InputDependencySnap(namedtuple("_InputDependencySnap", "input_name upstream_output_snaps")):
-    def __new__(cls, input_name, upstream_output_snaps):
+class InputDependencySnap(
+    namedtuple("_InputDependencySnap", "input_name upstream_output_snaps is_dynamic_collect")
+):
+    def __new__(cls, input_name, upstream_output_snaps, is_dynamic_collect=False):
         return super(InputDependencySnap, cls).__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
             upstream_output_snaps=check.list_param(
                 upstream_output_snaps, "upstream_output_snaps", of_type=OutputHandleSnap
             ),
+            # Could be derived from a dependency type enum as well
+            # if we wanted to persist that
+            is_dynamic_collect=check.bool_param(is_dynamic_collect, "is_dynamic_collect"),
         )
 
 
 @whitelist_for_serdes
 class SolidInvocationSnap(
-    namedtuple("_SolidInvocationSnap", "solid_name solid_def_name tags input_dep_snaps")
+    namedtuple(
+        "_SolidInvocationSnap", "solid_name solid_def_name tags input_dep_snaps is_dynamic_mapped"
+    )
 ):
-    def __new__(cls, solid_name, solid_def_name, tags, input_dep_snaps):
+    def __new__(cls, solid_name, solid_def_name, tags, input_dep_snaps, is_dynamic_mapped=False):
         return super(SolidInvocationSnap, cls).__new__(
             cls,
             solid_name=check.str_param(solid_name, "solid_name"),
@@ -183,4 +193,12 @@ class SolidInvocationSnap(
             input_dep_snaps=check.list_param(
                 input_dep_snaps, "input_dep_snaps", of_type=InputDependencySnap
             ),
+            is_dynamic_mapped=check.bool_param(is_dynamic_mapped, "is_dynamic_mapped"),
         )
+
+    def input_dep_snap(self, input_name: str) -> InputDependencySnap:
+        for inp_snap in self.input_dep_snaps:
+            if inp_snap.input_name == input_name:
+                return inp_snap
+
+        check.failed(f"No input found named {input_name}")

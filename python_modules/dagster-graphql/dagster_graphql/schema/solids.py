@@ -87,6 +87,7 @@ class GrapheneInput(graphene.ObjectType):
     solid = graphene.NonNull(lambda: GrapheneSolid)
     definition = graphene.NonNull(GrapheneInputDefinition)
     depends_on = non_null_list(lambda: GrapheneOutput)
+    is_dynamic_collect = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Input"
@@ -132,6 +133,9 @@ class GrapheneInput(graphene.ObjectType):
                 self._solid_name, self._input_name
             )
         ]
+
+    def resolve_is_dynamic_collect(self, _graphene_info):
+        return self._solid_invocation_snap.input_dep_snap(self._input_name).is_dynamic_collect
 
 
 class GrapheneOutput(graphene.ObjectType):
@@ -398,6 +402,7 @@ class GrapheneSolid(graphene.ObjectType):
     definition = graphene.NonNull(lambda: GrapheneISolidDefinition)
     inputs = non_null_list(GrapheneInput)
     outputs = non_null_list(GrapheneOutput)
+    is_dynamic_mapped = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Solid"
@@ -447,6 +452,9 @@ class GrapheneSolid(graphene.ObjectType):
             )
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
+
+    def resolve_is_dynamic_mapped(self, _graphene_info):
+        return self._solid_invocation_snap.is_dynamic_mapped
 
 
 class GrapheneSolidContainer(graphene.Interface):
