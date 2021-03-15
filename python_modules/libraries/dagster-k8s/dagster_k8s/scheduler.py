@@ -1,4 +1,5 @@
 import time
+import warnings
 
 import kubernetes
 from dagster import DagsterInstance, Field, Noneable, StringSource, check
@@ -32,6 +33,13 @@ class K8sScheduler(Scheduler, ConfigurableClass):
         env_config_maps=None,
         env_secrets=None,
     ):
+        warnings.warn(
+            "`K8sScheduler` is deprecated and will be removed in the 0.12.0 dagster release."
+            " We recommend that you use the Dagster native scheduler instead, which runs automatically "
+            " as part of the dagster-daemon process. You can configure this scheduler by removing "
+            " the `scheduler` key from your `dagster.yaml` file. See"
+            " https://docs.dagster.io/deployment/dagster-daemon for more information on how to deploy."
+        )
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
         if load_incluster_config:

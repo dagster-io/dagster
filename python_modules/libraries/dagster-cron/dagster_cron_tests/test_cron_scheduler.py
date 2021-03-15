@@ -141,17 +141,18 @@ def get_cron_jobs():
 
 
 def define_scheduler_instance(tempdir):
-    return DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
-        run_storage=InMemoryRunStorage(),
-        event_storage=InMemoryEventLogStorage(),
-        compute_log_manager=NoOpComputeLogManager(),
-        schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, "schedules")),
-        scheduler=SystemCronScheduler(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=SyncInMemoryRunLauncher(),
-    )
+    with pytest.warns(UserWarning, match="`SystemCronScheduler` is deprecated"):
+        return DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(tempdir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(),
+            schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, "schedules")),
+            scheduler=SystemCronScheduler(),
+            run_coordinator=DefaultRunCoordinator(),
+            run_launcher=SyncInMemoryRunLauncher(),
+        )
 
 
 def test_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name

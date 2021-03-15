@@ -45,20 +45,21 @@ def schedule_tempdir():
 def k8s_scheduler(
     cluster_provider, helm_namespace_for_k8s_run_launcher
 ):  # pylint: disable=redefined-outer-name,unused-argument
-    return K8sScheduler(
-        scheduler_namespace=helm_namespace_for_k8s_run_launcher,
-        image_pull_secrets=[{"name": "element-dev-key"}],
-        service_account_name="dagit-admin",
-        instance_config_map="dagster-instance",
-        postgres_password_secret="dagster-postgresql-secret",
-        dagster_home="/opt/dagster/dagster_home",
-        job_image=get_test_project_docker_image(),
-        load_incluster_config=False,
-        kubeconfig_file=cluster_provider.kubeconfig_file,
-        image_pull_policy=image_pull_policy(),
-        env_config_maps=["dagster-pipeline-env", "test-env-configmap"],
-        env_secrets=["test-env-secret"],
-    )
+    with pytest.warns(UserWarning, match="`K8sScheduler` is deprecated"):
+        return K8sScheduler(
+            scheduler_namespace=helm_namespace_for_k8s_run_launcher,
+            image_pull_secrets=[{"name": "element-dev-key"}],
+            service_account_name="dagit-admin",
+            instance_config_map="dagster-instance",
+            postgres_password_secret="dagster-postgresql-secret",
+            dagster_home="/opt/dagster/dagster_home",
+            job_image=get_test_project_docker_image(),
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            image_pull_policy=image_pull_policy(),
+            env_config_maps=["dagster-pipeline-env", "test-env-configmap"],
+            env_secrets=["test-env-secret"],
+        )
 
 
 @pytest.fixture(scope="function")
