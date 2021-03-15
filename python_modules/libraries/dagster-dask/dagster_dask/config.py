@@ -125,6 +125,7 @@ def create_from_config(config):
 
         # Deprecated option for specifying an existing cluster by its scheduler address.
         if cluster_type == "existing":
+            cluster = None
             client_config["address"] = cluster_opts["address"]
 
         # Get the module and class information from DaskClusterTypes, and instantiate
