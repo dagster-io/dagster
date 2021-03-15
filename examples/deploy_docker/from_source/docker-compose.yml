@@ -96,3 +96,6 @@ networks:
   docker_example_network:
     driver: bridge
     name: docker_example_network
+
+volumes:
+  docker_example_volume:
