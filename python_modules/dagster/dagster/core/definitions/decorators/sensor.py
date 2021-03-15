@@ -41,9 +41,7 @@ def sensor(
         mode (Optional[str]): The mode to apply when executing runs for this sensor.
             (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
-            between sensor evaluations.  Practically, the time elapsed between sensor evaluations
-            will be the shortest multiple of the sensor daemon evaluation interval (30 seconds) that
-            is greater than or equal to this value.
+            between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
     """
     check.opt_str_param(name, "name")
