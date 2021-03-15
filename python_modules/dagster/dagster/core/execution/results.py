@@ -377,8 +377,8 @@ class SolidExecutionResult:
 
     @property
     def materialization_events_during_compute(self):
-        """List[DagsterEvent]: All events of type ``STEP_MATERIALIZATION``."""
-        return self._compute_steps_of_type(DagsterEventType.STEP_MATERIALIZATION)
+        """List[DagsterEvent]: All events of type ``ASSET_MATERIALIZATION``."""
+        return self._compute_steps_of_type(DagsterEventType.ASSET_MATERIALIZATION)
 
     @property
     def expectation_events_during_compute(self):

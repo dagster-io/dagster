@@ -187,7 +187,7 @@ def test_basic_materialization_event():
         solid_result = result.result_for_solid("return_one")
         step_events = solid_result.step_events_by_kind[StepKind.COMPUTE]
         mat_event = list(
-            filter(lambda de: de.event_type == DagsterEventType.STEP_MATERIALIZATION, step_events)
+            filter(lambda de: de.event_type == DagsterEventType.ASSET_MATERIALIZATION, step_events)
         )[0]
 
         mat = mat_event.event_specific_data.materialization
@@ -360,7 +360,7 @@ def test_basic_yield_multiple_materializations():
             [
                 True
                 for event_type in event_types
-                if event_type == DagsterEventType.STEP_MATERIALIZATION.value
+                if event_type == DagsterEventType.ASSET_MATERIALIZATION.value
             ]
         )
     )

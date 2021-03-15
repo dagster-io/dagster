@@ -364,7 +364,7 @@ def test_generate_training_set(mocker):
         event
         for event in test_pipeline_result.step_event_list
         if event.solid_name == "upload_training_set_to_gcs"
-        and event.event_type_value == "STEP_MATERIALIZATION"
+        and event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization

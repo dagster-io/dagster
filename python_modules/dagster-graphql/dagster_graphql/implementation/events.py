@@ -154,7 +154,7 @@ def from_dagster_event_record(event_record, pipeline_name):
             type_check=output_data.type_check_data,
             **basic_params,
         )
-    elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+    elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
         materialization = dagster_event.step_materialization_data.materialization
         return GrapheneStepMaterializationEvent(materialization=materialization, **basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:

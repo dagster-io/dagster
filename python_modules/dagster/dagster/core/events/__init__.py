@@ -40,7 +40,7 @@ class DagsterEventType(Enum):
     STEP_UP_FOR_RETRY = "STEP_UP_FOR_RETRY"  # "failed" but want to retry
     STEP_RESTARTED = "STEP_RESTARTED"
 
-    STEP_MATERIALIZATION = "STEP_MATERIALIZATION"
+    ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
     PIPELINE_INIT_FAILURE = "PIPELINE_INIT_FAILURE"
@@ -75,7 +75,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_FAILURE,
     DagsterEventType.STEP_SUCCESS,
     DagsterEventType.STEP_SKIPPED,
-    DagsterEventType.STEP_MATERIALIZATION,
+    DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.OBJECT_STORE_OPERATION,
     DagsterEventType.HANDLED_OUTPUT,
@@ -129,7 +129,7 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, "event_specific_data", StepFailureData)
     elif event_type == DagsterEventType.STEP_SUCCESS:
         check.inst_param(event_specific_data, "event_specific_data", StepSuccessData)
-    elif event_type == DagsterEventType.STEP_MATERIALIZATION:
+    elif event_type == DagsterEventType.ASSET_MATERIALIZATION:
         check.inst_param(event_specific_data, "event_specific_data", StepMaterializationData)
     elif event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         check.inst_param(event_specific_data, "event_specific_data", StepExpectationResultData)
@@ -403,17 +403,17 @@ class DagsterEvent(
 
     @property
     def is_step_materialization(self):
-        return self.event_type == DagsterEventType.STEP_MATERIALIZATION
+        return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
     @property
     def asset_key(self):
-        if self.event_type != DagsterEventType.STEP_MATERIALIZATION:
+        if self.event_type != DagsterEventType.ASSET_MATERIALIZATION:
             return None
         return self.step_materialization_data.materialization.asset_key
 
     @property
     def partition(self):
-        if self.event_type != DagsterEventType.STEP_MATERIALIZATION:
+        if self.event_type != DagsterEventType.ASSET_MATERIALIZATION:
             return None
         return self.step_materialization_data.materialization.partition
 
@@ -445,7 +445,7 @@ class DagsterEvent(
     @property
     def step_materialization_data(self):
         _assert_type(
-            "step_materialization_data", DagsterEventType.STEP_MATERIALIZATION, self.event_type
+            "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
         return self.event_specific_data
 
@@ -606,13 +606,13 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def step_materialization(step_context, materialization, asset_lineage=None):
+    def asset_materialization(step_context, materialization, asset_lineage=None):
         check.inst_param(
             materialization, "materialization", (AssetMaterialization, Materialization)
         )
         check.opt_list_param(asset_lineage, "asset_lineage", AssetLineageInfo)
         return DagsterEvent.from_step(
-            event_type=DagsterEventType.STEP_MATERIALIZATION,
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
             step_context=step_context,
             event_specific_data=StepMaterializationData(materialization, asset_lineage),
             message=materialization.description
@@ -1214,12 +1214,15 @@ class AssetStoreOperationType(Enum):
 
 
 def _handle_back_compat(event_type_value, event_specific_data):
+    # transform old specific process events in to engine events
     if event_type_value == "PIPELINE_PROCESS_START":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
     elif event_type_value == "PIPELINE_PROCESS_STARTED":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
     elif event_type_value == "PIPELINE_PROCESS_EXITED":
         return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+
+    # changes asset store ops in to get/set asset
     elif event_type_value == "ASSET_STORE_OPERATION":
         if event_specific_data.op in ("GET_ASSET", AssetStoreOperationType.GET_ASSET):
             return (
@@ -1235,6 +1238,11 @@ def _handle_back_compat(event_type_value, event_specific_data):
                     event_specific_data.output_name, event_specific_data.asset_store_key, []
                 ),
             )
+
+    # previous name for ASSET_MATERIALIZATION was STEP_MATERIALIZATION
+    if event_type_value == "STEP_MATERIALIZATION":
+        return DagsterEventType.ASSET_MATERIALIZATION.value, event_specific_data
+
     else:
         return event_type_value, event_specific_data
 

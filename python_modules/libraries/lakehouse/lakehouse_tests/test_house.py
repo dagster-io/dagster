@@ -203,7 +203,7 @@ def test_build_and_execute_composite_solid_deps(basic_lakehouse_and_storages):
 def test_yields_materialization(basic_lakehouse_single_asset_pipeline):
     result = execute_pipeline(basic_lakehouse_single_asset_pipeline, mode="dev")
     materialization_events = [
-        event for event in result.event_list if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in result.event_list if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization

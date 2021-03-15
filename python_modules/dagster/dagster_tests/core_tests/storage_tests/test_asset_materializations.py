@@ -55,7 +55,7 @@ def test_output_definition_single_partition_materialization():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 2
 
@@ -110,7 +110,7 @@ def test_output_definition_multiple_partition_materialization():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
 
@@ -173,7 +173,7 @@ def test_io_manager_single_partition_materialization():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 2
 

@@ -211,7 +211,7 @@ class SqlEventLogStorage(EventLogStorage):
                 run_id=run_id,
                 steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
-                materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
+                materializations=counts.get(DagsterEventType.ASSET_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
                 enqueued_time=datetime_as_float(enqueued_time) if enqueued_time else None,
                 launch_time=datetime_as_float(launch_time) if launch_time else None,
@@ -299,7 +299,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [
-                        DagsterEventType.STEP_MATERIALIZATION.value,
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
                         DagsterEventType.STEP_EXPECTATION_RESULT.value,
                     ]
                 )
@@ -320,7 +320,7 @@ class SqlEventLogStorage(EventLogStorage):
                 event = check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
-                if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                if event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
                     materializations[event.step_key].append(
                         event.dagster_event.event_specific_data.materialization
                     )

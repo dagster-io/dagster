@@ -80,7 +80,7 @@ def event_list_hook(
             @event_list_hook(required_resource_keys={'slack'})
             def slack_on_materializations(context, event_list):
                 for event in event_list:
-                    if event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                    if event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
                         message = '{solid} has materialized an asset {key}.'.format(
                             solid=context.solid.name,
                             key=event.asset_key

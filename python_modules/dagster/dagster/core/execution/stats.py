@@ -50,7 +50,7 @@ def build_run_stats_from_events(run_id, records):
             steps_failed += 1
         if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             steps_succeeded += 1
-        if dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+        if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             materializations += 1
         if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
             expectations += 1
@@ -111,7 +111,7 @@ def build_run_step_stats_from_events(
         if dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
-        if dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+        if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             check.inst(dagster_event.event_specific_data, StepMaterializationData)
             materialization = dagster_event.event_specific_data.materialization
             step_materializations = by_step_key[step_key].get("materializations", [])

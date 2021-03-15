@@ -75,7 +75,7 @@ def test_io_manager_diamond_lineage():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 5
 
@@ -177,7 +177,7 @@ def test_input_definition_multiple_partition_lineage():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
 
@@ -246,7 +246,7 @@ def test_mixed_asset_definition_lineage():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
 
@@ -306,7 +306,7 @@ def test_dynamic_output_definition_single_partition_materialization():
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
     materializations = [
-        event for event in events if event.event_type_value == "STEP_MATERIALIZATION"
+        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 5
 

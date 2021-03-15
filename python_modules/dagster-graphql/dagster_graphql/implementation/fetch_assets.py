@@ -41,7 +41,7 @@ def get_asset_events(graphene_info, asset_key, partitions=None, cursor=None, lim
         event
         for record_id, event in events
         if event.is_dagster_event
-        and event.dagster_event.event_type_value == DagsterEventType.STEP_MATERIALIZATION.value
+        and event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
     ]
 
 

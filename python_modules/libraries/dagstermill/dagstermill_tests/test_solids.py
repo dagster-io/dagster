@@ -50,7 +50,7 @@ def cleanup_result_notebook(result):
     if not result:
         return
     materialization_events = [
-        x for x in result.step_event_list if x.event_type_value == "STEP_MATERIALIZATION"
+        x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
@@ -91,7 +91,7 @@ def test_hello_world_with_output_notebook():
     with exec_for_test("hello_world_with_output_notebook_pipeline") as result:
         assert result.success
         materializations = [
-            x for x in result.event_list if x.event_type_value == "STEP_MATERIALIZATION"
+            x for x in result.event_list if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         assert len(materializations) == 1
 
@@ -152,7 +152,7 @@ def test_reexecute_result_notebook():
         assert result.success
 
         materialization_events = [
-            x for x in result.step_event_list if x.event_type_value == "STEP_MATERIALIZATION"
+            x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
@@ -177,7 +177,7 @@ def test_hello_world_with_output():
 def test_hello_world_explicit_yield():
     with exec_for_test("hello_world_explicit_yield_pipeline") as result:
         materializations = [
-            x for x in result.event_list if x.event_type_value == "STEP_MATERIALIZATION"
+            x for x in result.event_list if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         assert len(materializations) == 2
         assert get_path(materializations[1]) == "/path/to/file"
@@ -213,7 +213,7 @@ def test_error_notebook():
 
     with exec_for_test("error_pipeline", raise_on_error=False) as result:
         assert not result.success
-        assert result.step_event_list[1].event_type.value == "STEP_MATERIALIZATION"
+        assert result.step_event_list[1].event_type.value == "ASSET_MATERIALIZATION"
         assert result.step_event_list[2].event_type.value == "STEP_FAILURE"
 
 
@@ -236,7 +236,7 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.step_event_list if x.event_type_value == "STEP_MATERIALIZATION"][0]
+            [x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"][0]
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:

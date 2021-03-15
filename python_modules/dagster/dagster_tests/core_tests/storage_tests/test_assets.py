@@ -191,7 +191,7 @@ def test_asset_events(asset_aware_context):
         for event in asset_events:
             assert isinstance(event, EventRecord)
             assert event.is_dagster_event
-            assert event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION
+            assert event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
             assert event.dagster_event.asset_key
 
         asset_events = event_log_storage.get_asset_events(AssetKey(["path", "to", "asset_3"]))
@@ -387,7 +387,7 @@ def _materialization_event_record(run_id, asset_key):
         step_key="my_step_key",
         pipeline_name="my_pipeline",
         dagster_event=DagsterEvent(
-            DagsterEventType.STEP_MATERIALIZATION.value,
+            DagsterEventType.ASSET_MATERIALIZATION.value,
             "my_pipeline",
             step_key="my_step_key",
             event_specific_data=StepMaterializationData(AssetMaterialization(asset_key=asset_key)),

@@ -193,7 +193,7 @@ def test_airflow_execution_date_tags_containerized(
         materialized_airflow_execution_date = None
         for result in results.values():
             for event in result:
-                if event.event_type_value == "STEP_MATERIALIZATION":
+                if event.event_type_value == "ASSET_MATERIALIZATION":
                     materialization = event.event_specific_data.materialization
                     materialization_entry = materialization.metadata_entries[0]
                     materialized_airflow_execution_date = materialization_entry.entry_data.text

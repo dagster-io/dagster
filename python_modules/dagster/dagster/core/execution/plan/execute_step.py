@@ -318,7 +318,7 @@ def core_dagster_event_sequence_for_step(
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
             # to do something with these in the above path eventually
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
-                yield DagsterEvent.step_materialization(step_context, user_event, input_lineage)
+                yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
@@ -500,7 +500,7 @@ def _store_output(
 
     # do not alter explicitly created AssetMaterializations
     for materialization in manager_materializations:
-        yield DagsterEvent.step_materialization(step_context, materialization, input_lineage)
+        yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(
         output_context, output_def, output_manager
@@ -513,7 +513,7 @@ def _store_output(
             output_def,
             manager_metadata_entries,
         ):
-            yield DagsterEvent.step_materialization(step_context, materialization, input_lineage)
+            yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     yield DagsterEvent.handled_output(
         step_context,
@@ -578,7 +578,7 @@ def _create_type_materializations(
                             )
                         )
 
-                    yield DagsterEvent.step_materialization(step_context, materialization)
+                    yield DagsterEvent.asset_materialization(step_context, materialization)
 
 
 def _user_event_sequence_for_step_compute_fn(

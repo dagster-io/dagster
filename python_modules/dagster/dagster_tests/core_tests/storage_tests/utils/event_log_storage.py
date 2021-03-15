@@ -87,7 +87,7 @@ def _stats_records(run_id):
             run_id,
             "D",
             now - 125,
-            DagsterEventType.STEP_MATERIALIZATION,
+            DagsterEventType.ASSET_MATERIALIZATION,
             StepMaterializationData(AssetMaterialization(asset_key="mat_1")),
         ),
         _event_record(
@@ -101,7 +101,7 @@ def _stats_records(run_id):
             run_id,
             "D",
             now - 75,
-            DagsterEventType.STEP_MATERIALIZATION,
+            DagsterEventType.ASSET_MATERIALIZATION,
             StepMaterializationData(AssetMaterialization(asset_key="mat_2")),
         ),
         _event_record(
@@ -115,7 +115,7 @@ def _stats_records(run_id):
             run_id,
             "D",
             now - 25,
-            DagsterEventType.STEP_MATERIALIZATION,
+            DagsterEventType.ASSET_MATERIALIZATION,
             StepMaterializationData(AssetMaterialization(asset_key="mat_3")),
         ),
         _event_record(
@@ -785,7 +785,7 @@ class TestEventLogStorage:
         assert len(events) == 1
         event = events[0]
         assert isinstance(event, EventRecord)
-        assert event.dagster_event.event_type_value == DagsterEventType.STEP_MATERIALIZATION.value
+        assert event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
 
     def test_asset_events_error_parsing(self, storage):
         if not isinstance(storage, SqlEventLogStorage):
