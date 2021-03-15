@@ -33,7 +33,7 @@ The following table lists the cluster types known to ``dagster-dask`` and their 
 Type     Module                                                    Class
 =======  ========================================================  =====
 local    :std:doc:`dask.distributed <dask-distributed:index>`      :py:class:`LocalCluster <dask:distributed.deploy.local.LocalCluster>`
-ssh      :std:doc:`dask.distributed <dask-distributed:index>`      :py:function:`SSHCluster <dask:distributed.deploy.ssh.SSHCluster>`
+ssh      :std:doc:`dask.distributed <dask-distributed:index>`      :py:func:`SSHCluster <dask:distributed.deploy.ssh.SSHCluster>`
 azureml  :std:doc:`dask_cloudprovider <dask-cloudprovider:index>`  :py:class:`AzureMLCluster <dask-cloudprovider:dask_cloudprovider.azureml.AzureMLCluster>`
 ecs      :std:doc:`dask_cloudprovider <dask-cloudprovider:index>`  :py:class:`ECSCluster <dask-cloudprovider:dask_cloudprovider.aws.ECSCluster>`
 fargate  :std:doc:`dask_cloudprovider <dask-cloudprovider:index>`  :py:class:`FargateCluster <dask-cloudprovider:dask_cloudprovider.aws.FargateCluster>`
