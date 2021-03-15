@@ -6,6 +6,11 @@ module.exports = {
         destination: "/docs/latest",
         permanent: true,
       },
+      {
+        source: "/",
+        destination: "/getting-started",
+        permanent: true,
+      },
     ];
   },
 };
