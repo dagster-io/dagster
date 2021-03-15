@@ -1,27 +1,37 @@
 import {ApolloConsumer} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
+import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
 import {JobsList} from 'src/nav/JobsList';
+import {RepoNavItem} from 'src/nav/RepoNavItem';
+import {RepoDetails} from 'src/nav/RepoSelector';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
-import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
   WorkspaceContext,
 } from 'src/workspace/WorkspaceContext';
+import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
 
 export const LAST_REPO_KEY = 'dagit.last-repo';
 export const REPO_KEYS = 'dagit.repo-keys';
+
+const buildDetails = memoize((option: DagsterRepoOption) => ({
+  repoAddress: buildRepoAddress(option.repository.name, option.repositoryLocation.name),
+  metadata: option.repository.displayMetadata,
+}));
 
 /**
  * useNavVisibleRepos vends `[reposForKeys, toggleRepo]` and internally mirrors the current
  * selection into localStorage so that the default selection in new browser windows
  * is the repo currently active in your session.
  */
-const useNavVisibleRepos = (options: DagsterRepoOption[]) => {
+const useNavVisibleRepos = (
+  options: DagsterRepoOption[],
+): [typeof repoDetailsForKeys, typeof toggleRepo] => {
   const [repoKeys, setRepoKeys] = React.useState<Set<string> | null>(() => {
     const keys = window.localStorage.getItem(REPO_KEYS);
     if (keys) {
@@ -39,12 +49,19 @@ const useNavVisibleRepos = (options: DagsterRepoOption[]) => {
     return null;
   });
 
-  const toggleRepo = React.useCallback((option: DagsterRepoOption) => {
-    const key = getRepositoryOptionHash(option);
+  const toggleRepo = React.useCallback((option: RepoDetails) => {
+    const {repoAddress} = option;
+    const key = `${repoAddress.name}:${repoAddress.location}`;
 
-    // todo dish: Only allow one repo to be toggled until the UI affordances are in place
-    // for multiple selection. After that, start using the `Set` as intended.
-    setRepoKeys(new Set([key]));
+    setRepoKeys((current) => {
+      const copy = new Set([...Array.from(current || [])]);
+      if (copy.has(key)) {
+        copy.delete(key);
+      } else {
+        copy.add(key);
+      }
+      return copy;
+    });
   }, []);
 
   const reposForKeys = React.useMemo(() => {
@@ -52,24 +69,28 @@ const useNavVisibleRepos = (options: DagsterRepoOption[]) => {
       return options;
     }
 
-    // todo dish: For now, only allow choosing one repo at a time.
     if (!repoKeys) {
       return options.slice(0, 1);
     }
 
-    const filteredOptions = options.filter((o) => repoKeys.has(getRepositoryOptionHash(o)));
-    if (!filteredOptions.length) {
-      return options.slice(0, 1);
+    const filtered = options.filter((o) => repoKeys.has(getRepositoryOptionHash(o)));
+    if (filtered.length) {
+      return filtered;
     }
 
-    return filteredOptions.slice(0, 1);
+    // If no matches for localStorage repo keys, just return the first one in the list.
+    return options.slice(0, 1);
   }, [options, repoKeys]);
+
+  const repoDetailsForKeys = React.useMemo(() => new Set(reposForKeys.map(buildDetails)), [
+    reposForKeys,
+  ]);
 
   React.useEffect(() => {
     window.localStorage.setItem(REPO_KEYS, JSON.stringify(Array.from(repoKeys || new Set())));
   }, [repoKeys]);
 
-  return [reposForKeys, toggleRepo] as [typeof reposForKeys, typeof toggleRepo];
+  return [repoDetailsForKeys, toggleRepo];
 };
 
 export const LeftNavRepositorySection = () => {
@@ -83,8 +104,20 @@ export const LeftNavRepositorySection = () => {
     '/:rootTab?',
   ]);
 
-  const {allRepos, loading} = React.useContext(WorkspaceContext);
+  const {allRepos} = React.useContext(WorkspaceContext);
   const [visibleRepos, toggleRepo] = useNavVisibleRepos(allRepos);
+
+  const visibleOptions = React.useMemo(() => {
+    return Array.from(visibleRepos)
+      .map((visible) => {
+        const {repoAddress} = visible;
+        return allRepos.find(
+          (option) =>
+            getRepositoryOptionHash(option) === `${repoAddress.name}:${repoAddress.location}`,
+        );
+      })
+      .filter((option) => !!option) as DagsterRepoOption[];
+  }, [allRepos, visibleRepos]);
 
   return (
     <div
@@ -99,19 +132,18 @@ export const LeftNavRepositorySection = () => {
         minHeight: 0,
       }}
     >
-      <RepositoryPicker
-        loading={loading}
-        options={allRepos}
+      <RepoNavItem
+        allRepos={allRepos.map(buildDetails)}
         selected={visibleRepos}
-        toggleRepo={toggleRepo}
+        onToggle={toggleRepo}
       />
       <ApolloConsumer>
         {(client) => <RepositoryLocationStateObserver client={client} />}
       </ApolloConsumer>
-      {visibleRepos.length ? (
+      {visibleRepos.size ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          <RepositoryContentList {...match?.params} repos={visibleRepos} />
-          <JobsList {...match?.params} repos={visibleRepos} />
+          <RepositoryContentList {...match?.params} repos={visibleOptions} />
+          <JobsList {...match?.params} repos={visibleOptions} />
         </div>
       ) : null}
     </div>

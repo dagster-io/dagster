@@ -3,8 +3,10 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
+import {Spinner} from 'src/ui/Spinner';
 import {SwitchWithoutLabel} from 'src/ui/SwitchWithoutLabel';
 import {Caption} from 'src/ui/Text';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
@@ -13,23 +15,23 @@ import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 export type RepoDetails = {
   repoAddress: RepoAddress;
-  host: string;
-  port: string;
+  metadata: {key: string; value: string}[];
 };
 
 interface Props {
+  onBrowse: () => void;
   onToggle: (repoDetails: RepoDetails) => void;
   options: RepoDetails[];
   selected: Set<RepoDetails>;
 }
 
 export const RepoSelector: React.FC<Props> = (props) => {
-  const {onToggle, options, selected} = props;
+  const {onBrowse, onToggle, options, selected} = props;
 
   return (
     <Group direction="column" spacing={16}>
       {options.map((option) => {
-        const {repoAddress, host, port} = option;
+        const {repoAddress, metadata} = option;
         const addressString = repoAddressAsString(repoAddress);
         const checked = selected.has(option);
         return (
@@ -52,11 +54,15 @@ export const RepoSelector: React.FC<Props> = (props) => {
                   <RepoName>{repoAddress.name}</RepoName>
                   <RepoLocation>{`@${repoAddress.location}`}</RepoLocation>
                 </Box>
-                <Caption style={{color: Colors.GRAY3}}>{`host: ${host}, port: ${port}`}</Caption>
+                <Caption style={{color: Colors.GRAY3}}>
+                  {metadata.map(({key, value}) => `${key}: ${value}`).join(', ')}
+                </Caption>
               </Group>
             </RepoLabel>
             <Box margin={{left: 16}}>
-              <BrowseLink to={workspacePathFromAddress(repoAddress)}>Browse</BrowseLink>
+              <BrowseLink to={workspacePathFromAddress(repoAddress)} onClick={onBrowse}>
+                Browse
+              </BrowseLink>
             </Box>
             <ReloadButton repoAddress={repoAddress} />
           </Box>
@@ -109,10 +115,20 @@ const BrowseLink = styled(Link)`
   }
 `;
 
-const ReloadButton: React.FC<{repoAddress: RepoAddress}> = () => {
+const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+  const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
   return (
-    <ReloadButtonInner onClick={() => {}}>
-      <Icon icon="refresh" iconSize={14} color={Colors.GRAY5} />
+    <ReloadButtonInner onClick={onClick}>
+      {reloading ? (
+        <Spinner purpose="body-text" />
+      ) : (
+        <Icon
+          icon="refresh"
+          iconSize={12}
+          color={Colors.GRAY5}
+          style={{position: 'relative', top: '-2px'}}
+        />
+      )}
     </ReloadButtonInner>
   );
 };
@@ -123,8 +139,13 @@ const ReloadButtonInner = styled.button`
   cursor: pointer;
   padding: 4px;
   margin: 0 0 0 12px;
+  outline: none;
 
   :hover .bp3-icon svg {
     fill: ${Colors.GRAY3};
+  }
+
+  :focus .bp3-icon svg {
+    fill: ${Colors.LIGHT_GRAY3};
   }
 `;

@@ -116,7 +116,8 @@ describe('Repository options', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(2);
+        // Three links. One for repo, two for pipelines.
+        expect(screen.getAllByRole('link')).toHaveLength(3);
       });
     });
 
@@ -133,7 +134,8 @@ describe('Repository options', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(2);
+        // Three links. One for repo, two for pipelines.
+        expect(screen.getAllByRole('link')).toHaveLength(3);
       });
     });
 
@@ -149,9 +151,9 @@ describe('Repository options', () => {
         </ApolloTestProvider>,
       );
 
-      // Initialize to `foo@bar`, which has four pipelines.
+      // Initialize to `foo@bar`, which has four pipelines. Plus one for repo.
       await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(4);
+        expect(screen.getAllByRole('link')).toHaveLength(5);
       });
     });
 
@@ -167,13 +169,13 @@ describe('Repository options', () => {
         </ApolloTestProvider>,
       );
 
-      // Initialize to `lorem@ipsum`, which has two pipelines.
+      // Initialize to `lorem@ipsum`, which has two pipelines. Plus one for repo.
       await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(2);
+        expect(screen.getAllByRole('link')).toHaveLength(3);
       });
     });
 
-    it('TEMPORARY: initializes with first repo option, if multiple `REPO_KEYS` localStorage', async () => {
+    it('initializes with multiple repo option, if multiple `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["lorem:ipsum", "foo:bar"]');
       render(
         <ApolloTestProvider mocks={mocks}>
@@ -185,9 +187,9 @@ describe('Repository options', () => {
         </ApolloTestProvider>,
       );
 
-      // Initialize to `lorem@ipsum`, which has two pipelines.
+      // Six total pipelines, and no link for single repo name.
       await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(2);
+        expect(screen.getAllByRole('link')).toHaveLength(6);
       });
     });
   });

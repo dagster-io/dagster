@@ -5,7 +5,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {featureEnabled, FeatureFlag} from 'src/app/Util';
 import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {RepoDetails, RepoSelector} from 'src/nav/RepoSelector';
 import {Box} from 'src/ui/Box';
@@ -23,29 +22,39 @@ interface Props {
 
 export const RepoNavItem: React.FC<Props> = (props) => {
   const {allRepos, selected, onToggle} = props;
+  const [open, setOpen] = React.useState(false);
+
+  const onInteraction = React.useCallback((nextState: boolean) => {
+    setOpen(nextState);
+  }, []);
 
   const summary = () => {
     if (allRepos.length === 0) {
       return <span style={{color: Colors.GRAY1}}>No repositories</span>;
     }
-    if (allRepos.length === 1 || selected.size === 1) {
-      return <SingleRepoSummary repoAddress={allRepos[0].repoAddress} />;
+    if (allRepos.length === 1) {
+      return <SingleRepoSummary repoAddress={allRepos[0].repoAddress} fullWidth />;
+    }
+    if (selected.size === 1) {
+      const selectedRepo = Array.from(selected)[0];
+      return <SingleRepoSummary repoAddress={selectedRepo.repoAddress} fullWidth={false} />;
     }
     return (
-      <span style={{color: Colors.LIGHT_GRAY3, fontWeight: 500}}>
-        {`Showing ${selected.size} of ${allRepos.length}`}
+      <span style={{color: Colors.LIGHT_GRAY3, fontWeight: 500, userSelect: 'none'}}>
+        {`${selected.size} of ${allRepos.length} shown`}
       </span>
     );
   };
 
   return (
     <Box
-      background={Colors.DARK_GRAY2}
+      background={Colors.DARK_GRAY1}
+      border={{side: 'horizontal', width: 1, color: Colors.DARK_GRAY4}}
       padding={{vertical: 8, horizontal: 12}}
       flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
     >
-      <Group direction="column" spacing={2}>
-        <div style={{color: Colors.GRAY3, fontSize: '11px', textTransform: 'uppercase'}}>
+      <Group direction="column" spacing={4}>
+        <div style={{color: Colors.GRAY3, fontSize: '10.5px', textTransform: 'uppercase'}}>
           Repository
         </div>
         {summary()}
@@ -53,18 +62,24 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       {allRepos.length > 1 ? (
         <Popover
           canEscapeKeyClose
-          interactionKind="click"
+          isOpen={open}
+          onInteraction={onInteraction}
           modifiers={{offset: {enabled: true, options: {offset: [0, 24]}}}}
           placement="right"
           popoverClassName="bp3-dark"
           content={
-            <Box padding={16} style={{maxWidth: '500px', borderRadius: '3px'}}>
-              <RepoSelector options={allRepos} onToggle={onToggle} selected={selected} />
+            <Box padding={16} style={{maxWidth: '600px', borderRadius: '3px'}}>
+              <RepoSelector
+                options={allRepos}
+                onToggle={onToggle}
+                selected={selected}
+                onBrowse={() => setOpen(false)}
+              />
             </Box>
           }
         >
           <ButtonLink color={Colors.GRAY5} underline="hover">
-            <span style={{fontSize: '13px'}}>Filter</span>
+            <span style={{fontSize: '12px'}}>Filter</span>
           </ButtonLink>
         </Popover>
       ) : null}
@@ -72,21 +87,31 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+const SingleRepoSummary: React.FC<{fullWidth: boolean; repoAddress: RepoAddress}> = ({
+  fullWidth,
+  repoAddress,
+}) => {
   const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
   return (
     <Group direction="row" spacing={8} alignItems="center">
-      <SingleRepoNameLink to={workspacePathFromAddress(repoAddress)}>
+      <SingleRepoNameLink to={workspacePathFromAddress(repoAddress)} $fullWidth={fullWidth}>
         {repoAddress.name}
       </SingleRepoNameLink>
       <ShortcutHandler
-        onShortcut={() => {}}
+        onShortcut={onClick}
         shortcutLabel={`⌥R`}
-        shortcutFilter={(e) => e.keyCode === 82 && e.altKey && featureEnabled(FeatureFlag.LeftNav)}
+        shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
       >
-        <Tooltip content={reloading ? 'Reloading…' : `Reload location ${location}`}>
+        <Tooltip
+          inheritDarkTheme={false}
+          content={
+            <Reloading>{reloading ? 'Reloading…' : `Reload location ${location}`}</Reloading>
+          }
+        >
           {reloading ? (
-            <Spinner purpose="body-text" />
+            <span style={{position: 'relative', top: '1px'}}>
+              <Spinner purpose="body-text" />
+            </span>
           ) : (
             <StyledButton onClick={onClick}>
               <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
@@ -98,19 +123,23 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   );
 };
 
-const SingleRepoNameLink = styled(Link)`
-  color: Colors.LIGHT_GRAY3,
-  max-width: 190px;
+const SingleRepoNameLink = styled(Link)<{$fullWidth: boolean}>`
+  color: ${Colors.LIGHT_GRAY3};
+  display: block;
+  max-width: ${({$fullWidth}) => ($fullWidth ? '192px' : '150px')};
   overflow-x: hidden;
   text-overflow: ellipsis;
+  transition: color 100ms linear;
 
   && {
     color: ${Colors.LIGHT_GRAY3};
     font-weight: 500;
   }
 
-  && :hover, &&:active {
-    color: ${Colors.LIGHT_GRAY1};
+  &&:hover,
+  &&:active {
+    color: ${Colors.LIGHT_GRAY5};
+    text-decoration: none;
   }
 `;
 
@@ -138,4 +167,11 @@ const StyledButton = styled.button`
   :hover .bp3-icon svg {
     fill: ${Colors.BLUE5};
   }
+`;
+
+const Reloading = styled.div`
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  max-width: 600px;
+  white-space: nowrap;
 `;

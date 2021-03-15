@@ -16,6 +16,11 @@ interface RepositoryContentListProps {
   repos: DagsterRepoOption[];
 }
 
+type Item = {
+  to: string;
+  label: string;
+};
+
 export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
   tab,
   repos,
@@ -46,21 +51,25 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
       );
 
       const results = await Promise.all(promises);
-      const allSolids = Array.prototype.concat.apply(
-        [],
-        results.map((result) => {
-          if (result.data.repositoryOrError.__typename === 'Repository') {
-            const name = result.data.repositoryOrError.name;
-            const location = result.data.repositoryOrError.location.name;
-            const solids = result.data.repositoryOrError.usedSolids;
-            return solids.map((solid) => ({
-              to: workspacePath(name, location, `/solids/${solid.definition.name}`),
-              label: solid.definition.name,
-            }));
-          }
-          return [];
-        }),
-      );
+      const allSolids = Array.prototype.concat
+        .apply(
+          [],
+          results.map((result) => {
+            if (result.data.repositoryOrError.__typename === 'Repository') {
+              const name = result.data.repositoryOrError.name;
+              const location = result.data.repositoryOrError.location.name;
+              const solids = result.data.repositoryOrError.usedSolids;
+              return solids.map((solid) => ({
+                to: workspacePath(name, location, `/solids/${solid.definition.name}`),
+                label: solid.definition.name,
+              }));
+            }
+            return [];
+          }),
+        )
+        .sort((a: Item, b: Item) =>
+          a.label.toLocaleLowerCase().localeCompare(b.label.toLocaleLowerCase()),
+        );
 
       setSelectedSolids(allSolids);
     };
@@ -119,7 +128,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
       <Items>
         {items.map((p) => (
           <Item
-            key={p.label}
+            key={p.to}
             data-tooltip={p.label}
             data-tooltip-style={p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle}
             className={`${p.label === selector ? 'selected' : ''}`}
