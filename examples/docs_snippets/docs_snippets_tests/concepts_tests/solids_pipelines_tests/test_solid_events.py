@@ -1,14 +1,14 @@
 import pytest
-from dagster import execute_solid, Failure
+from dagster import Failure, execute_solid
 from docs_snippets.concepts.solids_pipelines.solid_events import (
-    my_simple_yield_solid,
-    my_simple_return_solid,
-    my_named_yield_solid,
-    my_metadata_output,
-    my_metadata_expectation_solid,
-    my_failure_solid,
-    my_retry_solid,
     my_asset_solid,
+    my_failure_solid,
+    my_metadata_expectation_solid,
+    my_metadata_output,
+    my_named_yield_solid,
+    my_retry_solid,
+    my_simple_return_solid,
+    my_simple_yield_solid,
 )
 
 
