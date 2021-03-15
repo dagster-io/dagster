@@ -49,7 +49,7 @@ export default function (receiver) {
     logLevel: LogLevel.DEBUG,
   });
 
-  app.event("app_mention", async ({ event, message, say, client }) => {
+  app.event("app_mention", async ({ event, say, client }) => {
     if (
       event.text.includes(DOCS_TRIGGER) ||
       event.text.includes(ISSUE_TRIGGER)
@@ -87,9 +87,10 @@ export default function (receiver) {
       const issue = await createGithubIssue({
         title: `[Content Gap] ${message}`,
         body: githubIssueBody,
+        dryRun: event.text.includes("--skip-issue"),
       });
 
-      say({ text: `Created issue at: ${issue}`, thread_ts });
+      await say({ text: `Created issue at: ${issue}`, thread_ts });
     }
   });
 }

@@ -31,10 +31,16 @@ const octokit = new Octokit({
 export const createGithubIssue = async ({
   title,
   body,
+  dryRun = false,
 }: {
   title: string;
   body: string;
+  dryRun: boolean;
 }) => {
+  if (dryRun) {
+    return "https://github.com";
+  }
+
   const issue = await octokit.issues.create({
     owner: process.env.GITHUB_OWNER,
     repo: process.env.GITHUB_REPO,
