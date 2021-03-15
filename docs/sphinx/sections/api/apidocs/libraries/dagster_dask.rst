@@ -57,13 +57,15 @@ The Dask executor runs Dagster pipelines as a graph of futures on a Dask cluster
 .. autodata:: dask_executor
   :annotation: ExecutorDefinition
 
-See the `Dask deployment guide <https://docs.dagster.io/deploying/dask/>`_ for information about using Dask for execution.
+See :ref:`Configuring Dask` for information about configuring a Dask executor, and the `Dask deployment guide <https://docs.dagster.io/deploying/dask/>`_ for information about using Dask for execution.
 
 Resources
 ---------
 
 .. autodata:: dask_resource
   :annotation: ResourceDefinition
+
+See :ref:`Configuring Dask` for information about configuring a Dask resource.
 
 Types
 -----
