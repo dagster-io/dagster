@@ -16,13 +16,13 @@ Then, run the developer server in the same `/docs` directory:
 make dev
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Open http://localhost:3001 with your browser to see the result.
 
 All content is in the `/content` folder.
 
 **_Try it out_**
 
-Open http://localhost:3000/concepts/solids-pipelines/solids in your browser, and the file `/content/concepts/solid-pipelines/solids.mdx` in your editor. Try editing the file and see your changes be reflected live in the browser.
+Open http://localhost:3001/concepts/solids-pipelines/solids in your browser, and the file `/content/concepts/solid-pipelines/solids.mdx` in your editor. Try editing the file and see your changes be reflected live in the browser.
 
 ---
 
