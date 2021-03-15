@@ -115,10 +115,6 @@
           {
             "title": "Executing Pipelines",
             "path": "/concepts/solids-pipelines/executing"
-          },
-          {
-            "title": "Testing Solids and Pipelines",
-            "path": "/concepts/solids-pipelines/testing"
           }
         ]
       },
@@ -126,16 +122,21 @@
         "title": "Modes & Resources",
         "children": [
           {
-            "title": "Mode Definitions",
+            "title": "Modes",
             "path": "/concepts/modes-resources/modes"
           },
           {
-            "title": "Resource Definitions",
+            "title": "Resources",
             "path": "/concepts/modes-resources/resources"
-          },
+          }
+        ]
+      },
+      {
+        "title": "Testing",
+        "children": [
           {
-            "title": "Testing Modes and Resources",
-            "path": "/concepts/modes-resources/testing"
+            "title": "Testing",
+            "path": "/concepts/testing"
           }
         ]
       },
