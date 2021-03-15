@@ -75,7 +75,7 @@ if __name__ == "__main__":
             "rx<=1.6.1",  # 3.0 was a breaking change.
             "tabulate",
             "tqdm",
-            "sqlalchemy>=1.0",
+            "sqlalchemy>=1.0,<1.4.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
             'psutil >= 1.0; platform_system=="Windows"',
