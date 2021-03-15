@@ -44,9 +44,9 @@ Based on the component's scope, the component is configured either at the Dagste
 
 ### Pipeline Execution Flow
 
-Pipeline execution flows through several parts of the system. The components in the table below handle execution in the order they are listed. This table describes runs launched by Dagit. Runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster Daemon](/deployments/dagster-daemon) instead of Dagit.
+Pipeline execution flows through several parts of the system. The components in the table below handle execution in the order they are listed. This table describes runs launched by Dagit. Runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster Daemon](/deployment/dagster-daemon) instead of Dagit.
 
-In a deployment without the [Dagster Daemon](/deployments/dagster-daemon), Dagit calls the Run Launcher directly, skipping the Run Coordinator.
+In a deployment without the [Dagster Daemon](/deployment/dagster-daemon), Dagit calls the Run Launcher directly, skipping the Run Coordinator.
 
 | Component                                      | Description                                                                                                                                                                                                                                                 | Configured by |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
