@@ -5,34 +5,38 @@ description: Schedules are ...
 
 # Schedules
 
-Dagster includes a built-in scheduler that can be used to launch runs on a fixed interval.
+Dagster includes a scheduler that can be used to launch runs on a fixed interval.
 
 <img src="/images/schedules.png" />
 
 ## Relevant APIs
 
-| Name                                             | Description                                                                                                                                                                                      |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject object="daily_schedule" decorator />   | Decorator that defines a schedule that executes every day at a fixed time                                                                                                                        |
-| <PyObject object="hourly_schedule" decorator />  | Decorator that defines a schedule that executes every hour at a fixed time                                                                                                                       |
-| <PyObject object="weekly_schedule" decorator />  | Decorator that defines a schedule that executes every week on a fixed day and time                                                                                                               |
-| <PyObject object="monthly_schedule" decorator /> | Decorator that defines a schedule that executes every month on a fixed day and time                                                                                                              |
-| <PyObject object="schedule" decorator />         | Decorator that defines a schedule that executes according to a given cron schedule. It's important to note that schedules created using this schedule are [non-partition based schedules](#TODO) |
-| <PyObject object="ScheduleExecutionContext" />   | The context passed to the schedule definition execution function                                                                                                                                 |
-| <PyObject object="ScheduleDefinition"  />        | Base class for schedules. You almost never want to use initialize this class directly. Instead, you should use one of the many decorators above                                                  |
+| Name                                             | Description                                                                                                                                                                                                                                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="daily_schedule" decorator />   | Decorator that defines a schedule that executes every day at a fixed time                                                                                                                                                                                                 |
+| <PyObject object="hourly_schedule" decorator />  | Decorator that defines a schedule that executes every hour at a fixed time                                                                                                                                                                                                |
+| <PyObject object="weekly_schedule" decorator />  | Decorator that defines a schedule that executes every week on a fixed day and time                                                                                                                                                                                        |
+| <PyObject object="monthly_schedule" decorator /> | Decorator that defines a schedule that executes every month on a fixed day and time                                                                                                                                                                                       |
+| <PyObject object="schedule" decorator />         | Decorator that defines a schedule that executes according to a given cron schedule. It's important to note that schedules created using this schedule are [non-partition based schedules](/concepts/partitions-schedules-sensors/schedules#non-partition-based-schedules) |
+| <PyObject object="ScheduleExecutionContext" />   | The context passed to the schedule definition execution function                                                                                                                                                                                                          |
+| <PyObject object="ScheduleDefinition"  />        | Base class for schedules. You almost never want to use initialize this class directly. Instead, you should use one of the many decorators above                                                                                                                           |
 
 ## Overview
 
-A schedule is a definition in Dagster that targets a pipeline and is used to execute the pipeline on a fixed schedule. The definition itself is responsible for generating run configuration for the pipeline on each schedule tick. In order to run schedules, you will need to run the [dagster-daemon](#TODO) process.
+A _schedule_ is a definition in Dagster that is used to execute a pipeline at a fixed interval. Each
+time at which a schedule is evaluated is called a _tick_. The schedule definition is
+responsible for generating run configuration for the pipeline on each tick.
 
-Schedules have several important properties:
+Each schedule:
 
-- Each schedule targets a specific pipeline
-- A schedule defines a function that returns run configuration for the targeted pipeline.
-- A schedule optionally defines tags, a mode, and a solid selection for the targeted pipeline.
-- A schedule optionally defines a `should_execute` function, which can be used to skip a schedule execution based on an abitrary condition.
+- Targets a single pipeline
+- Defines a function that returns run configuration for the targeted pipeline.
+- Optionally defines tags, a mode, and a solid selection for the targeted pipeline.
+- Optionally defines a `should_execute` function, which can be used to skip some ticks.
 
-Dagster also includes a built in scheduler, the <PyObject object="DagsterDaemonScheduler"/>, which runs as a part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](#TODO) page for instructions on how to run the daemon in order to execute your schedules.
+Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have
+defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on
+how to run the daemon in order to execute your schedules.
 
 ---
 
@@ -40,74 +44,178 @@ Dagster also includes a built in scheduler, the <PyObject object="DagsterDaemonS
 
 There are two tpes of schedules in Dagster:
 
-- Partition based
-- Non-partition based
+- Partition-based
+- Non-partition-based
 
-(TODO): Small intro about how to decide whichs schedule to use
+Partition-based schedules are best when your pipeline operates on data that is partitioned by time
+(for example, a pipeline that fills in a daily partition of a table). Non-partition-based
+schedules are best when you just want to run an operation on a fixed interval (for example, a
+pipeline that rebuilds the same table on each execution)
 
 ### Partition-based schedules
 
-Partition-based schedules are schedules that generate an underlying <PyObject object="PartitionSetDefinition"/> to execute against. The scheduelr will make sure that a run will be executed for every partition in the partition set.
+Partition-based schedules generate an underlying <PyObject object="PartitionSetDefinition"/> to execute against. The scheduler will make sure that a run is executed for every partition in the partition set, starting from the time that the schedule is turned on.
 
-For example, if we wanted to create a schedule that runs at 11:00 AM every day, we could use the <PyObject object="daily_schedule" decorator />, which is a decorator that produced a partition-based daily schedule.
+For example, if we wanted to create a schedule that runs at 11:00 AM every day, we could use <PyObject object="daily_schedule" decorator />, a decorator that produces a partition-based daily schedule.
 
-```python
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_partition_based_schedule endbefore=end_partition_based_schedule
 @daily_schedule(
-    pipeline_name="my_data_pipeline",
-    start_date=datetime(2021, 1, 1),
-    execution_time=time(11, 0),
+    pipeline_name="my_pipeline",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_time=datetime.time(11, 0),
     execution_timezone="US/Central",
 )
 def my_daily_schedule(date):
     return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
 ```
 
-Partition-based schedules are useful when it's important for a successful run to exist for every scheduled run time. For example, if each run fills in a daily partition of a data warehouse table, basing your schedule on a partition set allows you to track which days have corresponding runs and fill in gaps when runs fail.
+The decorated schedule function should accept a `datetime` and return the run config for the
+pipeline run associated with that partition. The scheduler will ensure that the schedule function
+is evaluated exactly once for every partition to generate run config, which is then
+used to create and launch a pipeline run.
+
+Partition-based schedules require a `start_date` that indicates when the set of partitions begins.
+The scheduler will only kick off runs for times after both the `start_date` and the time when
+the schedule was turned on. You can kick off runs for times between the `start_date` and when the schedule is turned on by
+launching a [backfill](/concepts/partitions-schedules-sensors/backfills).
+
+By default, the partition that is used for the run will be one partition earlier than the partition
+that includes the current time, to capture a common ETL use case - for example, a daily schedule
+will fill in the previous day's partition, and a monthly schedule will fill in last month's
+partition. You can customize this behavior by changing the `partition_days_offset` parameter for a
+daily schedule. The default value of this parameter is 1, which means that the scheduler goes back one day to determine
+the partition. Setting the value to 0 will cause the schedule to fill in the partition that
+corresponds to the current day, and increasing it above 1 will cause it to fill in an even earlier
+partition. A similarly-named parameter also exists for the other execution intervals.
 
 ### Non-partition-based schedules
 
-## Running the scheduler
+When you want to run a schedule on a fixed interval and don't need partitions, you
+can use the <PyObject object="schedule" decorator /> decorator to define your schedule.
 
-## Examples
+For example, this schedule runs at 1:00 AM in US/Central time every day:
 
-### Cron schedule
-
-For use-cases where you want to run the schedule on a fixed cron interval and don't need partition based configuration, you can use the \<PyObject object="schedule" decorator"/> decorator to define your schedule.
-
-In this example, the schedule runs at 1:00 AM in US/Central every day
-
-```python
-@schedule(
-    cron_schedule="0 1 * * *", pipeline_name="my_data_pipeline", execution_timezone="US/Central"
-)  # Executes at 1:00 AM in US/Central time every day
-def my_schedule(context):
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_non_partition_based_schedule endbefore=end_non_partition_based_schedule
+@schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
+def my_schedule(_context):
     return {"solids": {"dataset_name": "my_dataset"}}
 ```
 
-You can also access the execution time fron the context:
+You can also access the execution time fron the passed-in context:
 
-```python
-@schedule(
-    cron_schedule="0 1 * * *", pipeline_name="my_data_pipeline", execution_timezone="US/Central"
-)  # Executes at 1:00 AM in US/Central time every day
-def my_schedule(context):
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_execution_time endbefore=end_execution_time
+@schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
+def my_execution_time_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {"solids": {"process_data_for_date": {"config": {"date": date}}}}`
+    return {"solids": {"dataset_name": "my_dataset", "execution_date": date}}
 ```
 
-### Hourly Schedule
+### Timezones
 
-### Daily Schedule
+You can customize the timezone in which your schedule executes by setting the `execution_timezone`
+parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
 
-### Weekly Schedule
+For example, the following schedule executes daily at 9AM in US/Pacific time:
 
-### Monthly Schedule
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
+@daily_schedule(
+    pipeline_name="my_data_pipeline",
+    start_date=datetime.datetime(2020, 1, 1),
+    execution_time=datetime.time(9, 0),
+    execution_timezone="US/Pacific",
+)
+def my_timezone_schedule(date):
+    return {
+        "solids": {
+            "process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d %H:%M:%S")}}
+        }
+    }
+```
 
-### Schedule from Custom Partition Set
+### Daylight Savings Time
 
-If you have a unique scheduling requirement, you can define your own partition set and schedule definition using the base classes.
+Because of Daylight Savings Time transitions, it's possible to specify an execution time that does
+not exist for every scheduled interval. For example, say you have a daily schedule with an execution
+time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM
+when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
 
-TODO
+If you specify such an execution time, Dagster runs your schedule at the next time that exists. In the previous example, the schedule would run at 3:00 AM.
+
+It's also possible to specify an execution time that exists twice on one day every year. For
+example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute.
+In this case, Dagster will execute your schedule at the latter of the two possible times.
+
+Hourly schedules will be unaffected by daylight savings time transitions - the schedule will
+continue to run exactly once every hour, even as the timezone changes. In the example above where
+the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour
+would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
+
+## Running the scheduler
+
+In order for your schedule to run, it must be started. The easiest way to start and stop schedules
+is in Dagit from the Schedules page. You can also start and stop a schedule with the `dagster schedule start`
+and `dagster schedule stop` commands.
+
+Once your schedule is started, if you're running the
+[dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will
+begin executing immediately. See
+the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section
+below if your schedule has been started but isn't submitting runs.
+
+## Examples
+
+### Hourly partition-based schedule
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_hourly_schedule endbefore=end_hourly_schedule
+@hourly_schedule(
+    pipeline_name="my_pipeline",
+    start_date=datetime.datetime(2020, 1, 1),
+    execution_time=datetime.time(hour=0, minute=25),
+    execution_timezone="US/Central",
+)
+def my_hourly_schedule(date):
+    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d %H")}}}}
+```
+
+### Daily partition-based schedule
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_daily_schedule endbefore=end_daily_schedule
+@daily_schedule(
+    pipeline_name="my_pipeline",
+    start_date=datetime.datetime(2020, 1, 1),
+    execution_time=datetime.time(hour=9, minute=0),
+    execution_timezone="US/Central",
+)
+def my_daily_schedule(date):
+    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
+```
+
+### Weekly partition-based schedule
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_weekly_schedule endbefore=end_weekly_schedule
+@weekly_schedule(
+    pipeline_name="my_pipeline",
+    start_date=datetime.datetime(2020, 1, 1),
+    execution_day_of_week=1,  # Monday
+    execution_timezone="US/Central",
+)
+def my_weekly_schedule(date):
+    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
+```
+
+### Monthly partition-based schedule
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_monthly_schedule endbefore=end_monthly_schedule
+@monthly_schedule(
+    pipeline_name="my_pipeline",
+    start_date=datetime.datetime(2020, 1, 1),
+    execution_timezone="US/Central",
+    execution_day_of_month=15,
+    execution_time=datetime.time(hour=9, minute=0),
+)
+def my_monthly_schedule(date):
+    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m")}}}}
+```
 
 ## Patterns
 
@@ -117,47 +225,41 @@ If you already have a preset defined for a pipeline you want to schedule, you ca
 
 In this example, we directly use the `solid_selection`, `mode`, `tags`, and `run_config` from the preset:
 
-```python
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_preset endbefore=end_preset
 @daily_schedule(
-    start_date=...,
+    start_date=datetime.datetime(2020, 1, 1),
     pipeline_name="my_pipeline",
     solid_selection=preset.solid_selection,
     mode=preset.mode,
     tags_fn_for_date=lambda _: preset.tags,
 )
-def my_daily_schedule(_date):
+def my_preset_schedule(_date):
     return preset.run_config
 ```
 
-You might need to modify the preset's run config to include information about the date partition the schedule is running for. You can use the `merge_dicts` util to inject the date:
+You might need to modify the preset's run config to include information about the date partition:
 
-```python
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_modified_preset endbefore=end_modified_preset
 @daily_schedule(
-    start_date=...,
+    start_date=datetime.datetime(2020, 1, 1),
     pipeline_name="my_pipeline",
     solid_selection=preset.solid_selection,
     mode=preset.mode,
     tags_fn_for_date=lambda _: preset.tags,
 )
-def my_daily_schedule(_date):
-    return merge_dicts(preset.run_config, {"date": date.strftime("%Y-%m-%d")}}
+def my_modified_preset_schedule(date):
+    modified_run_config = preset.run_config.copy()
+    modified_run_config["date"] = date.strftime("%Y-%m-%d")
+    return modified_run_config
 ```
 
 If you find yourself using presets to generate schedule definitions frequently, you can use a helper function similar to this one to take a preset and return a schedule.
 
-```python
-from dagster import check, PipelineDefinition, DagsterInvalidDefinitionError, daily_schedule
-import datetime
-
-
+```python file=concepts/partitions_schedules_sensors/schedules/preset_helper.py startafter=start_preset_helper endbefore=end_preset_helper
 def daily_schedule_definition_from_pipeline_preset(pipeline, preset_name, start_date):
-    check.inst_param(pipeline, "pipeline", PipelineDefinition)
-    check.str_param(preset_name, "preset_name")
-    check.inst_param(start_date, "start_date", datetime.datetime)
-
     preset = pipeline.get_preset(preset_name)
     if not preset:
-        raise DagsterInvalidDefinitionError(
+        raise Exception(
             "Preset {preset_name} was not found "
             "on pipeline {pipeline_name}".format(
                 preset_name=preset_name, pipeline_name=pipeline.name
@@ -171,15 +273,15 @@ def daily_schedule_definition_from_pipeline_preset(pipeline, preset_name, start_
         mode=preset.mode,
         tags_fn_for_date=lambda _: preset.tags,
     )
-    def my_daily_schedule(_date):
+    def my_schedule(_date):
         return preset.run_config
 
-    return my_daily_schedule
+    return my_schedule
 ```
 
 ## Troubleshooting
 
-Try these steps if you're trying to run a schedule and are running into problems. These steps assume that you are using the default scheduler on your instance, which executes your schedules in the [dagster-daemon](/deployment/dagster-daemon) service. See the [migration guide](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for instructions on how to migrate to this scheduler.
+Try these steps if you're trying to run a schedule and are running into problems.
 
 ### Step 1: Is your schedule included in your repository and turned on?
 
