@@ -9,6 +9,7 @@ from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.test_utils import new_cwd
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import wait_for_grpc_server
+from dagster.serdes.ipc import DagsterIPCProtocolError
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, find_free_port
 from dagster.utils.error import SerializableErrorInfo
@@ -45,6 +46,38 @@ def test_ping():
         assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
     finally:
         process.terminate()
+
+
+def test_load_with_invalid_param(capfd):
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    ipc_output_file = _get_ipc_output_file()
+    process = subprocess.Popen(
+        [
+            "dagster",
+            "api",
+            "grpc",
+            "--port",
+            str(port),
+            "--python-file",
+            python_file,
+            "--ipc-output-file",
+            ipc_output_file,
+            "--foo-param",
+            "bar_value",
+        ],
+        stdout=subprocess.PIPE,
+    )
+
+    try:
+        with pytest.raises(DagsterIPCProtocolError):
+            wait_for_grpc_server(process, ipc_output_file)
+    finally:
+        process.terminate()
+
+    _, err = capfd.readouterr()
+    assert "no such optio" in err
 
 
 def test_load_with_error(capfd):
