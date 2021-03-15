@@ -3,8 +3,6 @@ Dask (dagster_dask)
 
 The ``dagster_dask`` module provides support for executing Dagster pipelines in Dask clusters, and using Dask as a resource to perform computations in solids. It also provides a DataFrame type with loaders and materializers so that you can easily work with DataFrames in solids.
 
-See the `Dask deployment guide <https://docs.dagster.io/deploying/dask/>`_ for more information about using Dask for execution.
-
 Configuring Dask
 ----------------
 
@@ -54,8 +52,12 @@ To use other cluster types, ensure that the Python module for the type is instal
 Executors
 ---------
 
+The Dask executor runs Dagster pipelines as a graph of futures on a Dask cluster.
+
 .. autodata:: dask_executor
   :annotation: ExecutorDefinition
+
+See the `Dask deployment guide <https://docs.dagster.io/deploying/dask/>`_ for information about using Dask for execution.
 
 Resources
 ---------
