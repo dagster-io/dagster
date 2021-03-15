@@ -67,7 +67,12 @@ autosectionlabel_prefix_document = True
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', 'intersphinx/python.inv'),
     'airflow': ('https://airflow.apache.org', 'intersphinx/airflow.inv'),
-    'dask': ('https://distributed.dask.org/en/latest/', 'intersphinx/dask.inv'),
+    'dask': ('https://docs.dask.org/en/latest/', 'intersphinx/dask.inv'),
+    'dask-cloudprovider': ('https://cloudprovider.dask.org/en/latest/', 'intersphinx/dask-cloudprovider.inv'),
+    'dask-distributed': ('https://distributed.dask.org/en/latest/', 'intersphinx/dask-distributed.inv'),
+    'dask-jobqueue': ('https://jobqueue.dask.org/en/latest/', 'intersphinx/dask-jobqueue.inv'),
+    'dask-kubernetes': ('https://kubernetes.dask.org/en/latest/', 'intersphinx/dask-kubernetes.inv'),
+    'dask-yarn': ('https://yarn.dask.org/en/latest/', 'intersphinx/dask-yarn.inv'),
     'celery': ('http://docs.celeryproject.org/en/latest/', 'intersphinx/celery.inv'),
     'boto3': ('https://boto3.amazonaws.com/v1/documentation/api/latest/', 'intersphinx/boto3.inv'),
     'psycopg2': ('https://www.psycopg.org/docs/', 'intersphinx/psycopg2.inv'),
