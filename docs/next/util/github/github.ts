@@ -22,7 +22,7 @@ const octokit = new Octokit({
   auth: {
     appId: process.env.GITHUB_APP_ID,
     privateKey: getDecryptedPrivateKey(),
-    clientId: process.env.GITHUB_PRIVATE_KEY,
+    clientId: process.env.GITHUB_CLIENT_ID,
     installationId: process.env.GITHUB_INSTALLATION_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
   },
