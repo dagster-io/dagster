@@ -24,26 +24,8 @@ DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 def dask_executor(init_context):
     """Dask-based executor.
 
-    The 'cluster' can be one of the following:
-    ('existing', 'local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube').
-
-    If the Dask executor is used without providing executor-specific config, a local Dask cluster
-    will be created (as when calling :py:class:`dask.distributed.Client() <dask:distributed.Client>`
-    with :py:class:`dask.distributed.LocalCluster() <dask:distributed.LocalCluster>`).
-
-    The Dask executor optionally takes the following config:
-
-    .. code-block:: none
-
-        cluster:
-            {
-                local?: # takes distributed.LocalCluster parameters
-                    {
-                        timeout?: 5,  # Timeout duration for initial connection to the scheduler
-                        n_workers?: 4  # Number of workers to start
-                        threads_per_worker?: 1 # Number of threads per each worker
-                    }
-            }
+    The Dask executor provides config settings for Dask clusters and clients. It can be used to
+    create a new Dask cluster, or connect to an existing cluster by the scheduler address.
 
     If you'd like to configure a dask executor in addition to the
     :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
@@ -57,7 +39,6 @@ def dask_executor(init_context):
         @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
         def dask_enabled_pipeline():
             pass
-
     """
     check_cross_process_constraints(init_context)
     dask_config = {
