@@ -70,4 +70,39 @@ See :ref:`Configuring Dask` for information about configuring a Dask resource.
 Types
 -----
 
+The ``DataFrame`` type represents a Dask DataFrame for solid inputs and outputs. It includes loader and materialization support for reading and writing DataFrames in various formats. The following table lists the supported formats, along with their corresponding Dask DataFrame functions.
+
+=========  ==============================================================  ========================
+Type       Read Function (Loader)                                          To Method (Materializer)
+=========  ==============================================================  ========================
+csv        :py:func:`read_csv <dask:dask.dataframe.read_csv>`              :py:meth:`to_csv <dask:dask.dataframe.DataFrame.to_csv>`
+parquet    :py:func:`read_parquet <dask:dask.dataframe.read_parquet>`      :py:meth:`to_parquet <dask:dask.dataframe.DataFrame.to_parquet>`
+json       :py:func:`read_json <dask:dask.dataframe.read_json>`            :py:meth:`to_json <dask:dask.dataframe.DataFrame.to_json>`
+fwf        :py:func:`read_fwf <dask:dask.dataframe.read_fwf>`
+hdf        :py:func:`read_hdf <dask:dask.dataframe.read_hdf>`              :py:meth:`to_hdf <dask:dask.dataframe.DataFrame.to_hdf>`
+orc        :py:func:`read_orc <dask:dask.dataframe.read_orc>`
+sql_table  :py:func:`read_sql_table <dask:dask.dataframe.read_sql_table>`
+sql                                                                        :py:meth:`to_sql <dask:dask.dataframe.DataFrame.to_sql>`
+table      :py:func:`read_table <dask.dataframe.read_table>`
+=========  ==============================================================  ========================
+
+To configure a DataFrame input or output, specify a ``read`` or ``to`` key, respectively, along with the type, and type specific config options. Here is an example that configures the input ``data_df`` to read a Parquet dataset.
+
+.. code-block:: yaml
+
+  inputs:
+    data_df:
+      read:
+        parquet:
+          path: s3://bucket/data
+          columns:
+            - id
+            - value
+          filters:
+            - - - year
+                - '='
+                - '2020'
+
+Based on the :py:func:`dask.dataframe.read_parquet <dask:dask.dataframe.read_parquet>` documentation, this input config will read the ``id`` and ``value`` fields as columns from the ``year=2020`` partition of the Parquet dataset at ``s3://bucket/data``. For each laoder or materializer type, refer to its documentation (linked above) for the full set of options.
+
 .. autodata:: DataFrame
