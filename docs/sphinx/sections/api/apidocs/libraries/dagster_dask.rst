@@ -105,4 +105,31 @@ To configure a DataFrame input or output, specify a ``read`` or ``to`` key, resp
 
 Based on the :py:func:`dask.dataframe.read_parquet <dask:dask.dataframe.read_parquet>` documentation, this input config will read the ``id`` and ``value`` fields as columns from the ``year=2020`` partition of the Parquet dataset at ``s3://bucket/data``. For each laoder or materializer type, refer to its documentation (linked above) for the full set of options.
 
+The loaders and materializers also support some utility functions for optimizing dataframes. For instance, the parquet dataset for the ``data_df`` input in the previous example might be partitioned into 8 parts. But, you have access to a Dask cluster with 32 worker nodes. In order to spread work to all 32 nodes, the dataframe should be repartitioned into at least 32 parts. This can accomplished by specifying ``repartition`` as part of the input config.
+
+.. code-block:: yaml
+
+  inputs:
+    data_df:
+      read:
+        parquet:
+          path: s3://bucket/data
+        repartition:
+          npartitions: 32
+
+The ``repartition`` config corresponds to the Dask Dataframe :py:meth:`repartition <dask.dataframe.DataFrame.repartition>` method. The following table lists the supported utility methods.
+
+======================  ======
+Config Key              Options
+======================  ======
+drop                    See :py:meth:`drop <dask.dataframe.DataFrame.drop>`.
+sample                  See :py:meth:`sample <dask.dataframe.DataFrame.sample>`.
+reset_index             See :py:meth:`reset_index <dask.dataframe.DataFrame.reset_index>`.
+set_index               See :py:meth:`set_index <dask.dataframe.DataFrame.set_index>`.
+repartition             See :py:meth:`repartition <dask.dataframe.DataFrame.repartition>`.
+normalize_column_names  If true, lowercases and converts CamelCase to snake_case on column names.
+======================  ======
+
+These utilities are not meant to replace equivalent code in solids. They are meant to help you create solids that are adaptable to different pipeline configurations. All of the options except for ``normalize_column_names`` map to the DataFrame methods of the same name.
+
 .. autodata:: DataFrame
