@@ -239,7 +239,7 @@ class SqlEventLogStorage(EventLogStorage):
                     SqlEventLogStorageTable.c.step_key,
                     SqlEventLogStorageTable.c.dagster_event_type,
                     db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
-                    db.func.count(SqlEventLogStorageTable.c.id).label("count"),
+                    db.func.count(SqlEventLogStorageTable.c.id).label("n_events_of_type_for_step"),
                 ]
             )
             .where(SqlEventLogStorageTable.c.run_id == run_id)
@@ -272,7 +272,7 @@ class SqlEventLogStorage(EventLogStorage):
                     # only count the restarted events, since the attempt count represents
                     # the number of times we have successfully started runnning the step
                     by_step_key[step_key].get("attempts", 0)
-                    + result.count
+                    + result.n_events_of_type_for_step
                 )
             if result.dagster_event_type == DagsterEventType.STEP_FAILURE.value:
                 by_step_key[step_key]["end_time"] = (

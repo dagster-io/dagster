@@ -124,13 +124,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventRecord)
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
-            result_proxy = conn.execute(
+            result = conn.execute(
                 insert_event_statement.returning(
                     SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
                 )
             )
-            res = result_proxy.fetchone()
-            result_proxy.close()
+            res = result.fetchone()
+            result.close()
             conn.execute(
                 """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
                 (res[0] + "_" + str(res[1]),),
@@ -228,13 +228,14 @@ def watcher_thread(
                 )
                 try:
                     with engine.connect() as conn:
-                        res: db.engine.ResultProxy = conn.execute(
+                        # https://github.com/dagster-io/dagster/issues/3858
+                        cursor_res = conn.execute(
                             db.select([SqlEventLogStorageTable.c.event]).where(
                                 SqlEventLogStorageTable.c.id == index
                             ),
                         )
                         dagster_event: EventRecord = deserialize_json_to_dagster_namedtuple(
-                            res.fetchone()[0]
+                            cursor_res.scalar()
                         )
                 finally:
                     engine.dispose()
