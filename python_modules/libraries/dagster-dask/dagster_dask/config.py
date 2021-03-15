@@ -131,7 +131,7 @@ def create_from_config(config):
         # Get the module and class information from DaskClusterTypes, and instantiate
         # the cluster object.
         else:
-            cluster_meta = DaskClusterType.get(cluster_type, None)
+            cluster_meta = DaskClusterTypes.get(cluster_type, None)
             if not cluster_meta:
                 raise ValueError(f'Unknown cluster type "{cluster_type}".')
 
