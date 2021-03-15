@@ -23,6 +23,7 @@ export interface SensorFragment_sensorState_repositoryOrigin_repositoryLocationM
 
 export interface SensorFragment_sensorState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SensorFragment_sensorState_repositoryOrigin_repositoryLocationMetadata[];

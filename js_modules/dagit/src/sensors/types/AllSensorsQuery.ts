@@ -29,6 +29,7 @@ export interface AllSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_
 
 export interface AllSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata[];
@@ -172,6 +173,7 @@ export interface AllSensorsQuery_unloadableJobStatesOrError_JobStates_results_re
 
 export interface AllSensorsQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSensorsQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];

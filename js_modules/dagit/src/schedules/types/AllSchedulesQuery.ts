@@ -49,6 +49,7 @@ export interface AllSchedulesQuery_repositoriesOrError_RepositoryConnection_node
 
 export interface AllSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
@@ -228,6 +229,7 @@ export interface AllSchedulesQuery_unloadableJobStatesOrError_JobStates_results_
 
 export interface AllSchedulesQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSchedulesQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];

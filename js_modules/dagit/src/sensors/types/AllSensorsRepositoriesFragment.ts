@@ -29,6 +29,7 @@ export interface AllSensorsRepositoriesFragment_RepositoryConnection_nodes_senso
 
 export interface AllSensorsRepositoriesFragment_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSensorsRepositoriesFragment_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata[];

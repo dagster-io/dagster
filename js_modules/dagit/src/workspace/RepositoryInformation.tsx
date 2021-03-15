@@ -6,6 +6,7 @@ import {RepositoryOriginFragment} from 'src/workspace/types/RepositoryOriginFrag
 
 export const REPOSITORY_ORIGIN_FRAGMENT = gql`
   fragment RepositoryOriginFragment on RepositoryOrigin {
+    id
     repositoryLocationName
     repositoryName
     repositoryLocationMetadata {
@@ -20,6 +21,7 @@ export const REPOSITORY_INFO_FRAGMENT = gql`
     id
     name
     origin {
+      id
       ...RepositoryOriginFragment
     }
     location {

@@ -49,6 +49,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryO
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
@@ -142,6 +143,7 @@ export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {
 
 export interface RepositorySchedulesFragment_origin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: RepositorySchedulesFragment_origin_repositoryLocationMetadata[];

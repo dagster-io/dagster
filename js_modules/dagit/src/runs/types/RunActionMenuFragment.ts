@@ -24,6 +24,7 @@ export interface RunActionMenuFragment_repositoryOrigin_repositoryLocationMetada
 
 export interface RunActionMenuFragment_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: RunActionMenuFragment_repositoryOrigin_repositoryLocationMetadata[];

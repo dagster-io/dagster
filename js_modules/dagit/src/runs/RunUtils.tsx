@@ -334,6 +334,7 @@ export const RUN_ACTION_MENU_FRAGMENT = gql`
     }
     status
     repositoryOrigin {
+      id
       ...RepositoryOriginFragment
     }
   }

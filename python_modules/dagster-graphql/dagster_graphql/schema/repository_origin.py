@@ -14,6 +14,7 @@ class GrapheneRepositoryMetadata(graphene.ObjectType):
 
 
 class GrapheneRepositoryOrigin(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     repository_location_name = graphene.NonNull(graphene.String)
     repository_name = graphene.NonNull(graphene.String)
     repository_location_metadata = non_null_list(GrapheneRepositoryMetadata)
@@ -24,6 +25,9 @@ class GrapheneRepositoryOrigin(graphene.ObjectType):
     def __init__(self, origin):
         super().__init__()
         self._origin = check.inst_param(origin, "origin", ExternalRepositoryOrigin)
+
+    def resolve_id(self, _graphene_info):
+        return self._origin.get_id()
 
     def resolve_repository_location_name(self, _graphene_info):
         return self._origin.repository_location_origin.location_name

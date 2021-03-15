@@ -15,6 +15,7 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
     }
     pipelineSnapshotId
     repositoryOrigin {
+      id
       repositoryName
       repositoryLocationName
     }

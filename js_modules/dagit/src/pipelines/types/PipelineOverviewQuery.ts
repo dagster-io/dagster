@@ -247,6 +247,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_repositoryOrigin_repositoryLocationMetadata[];

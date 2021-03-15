@@ -37,6 +37,7 @@ export const JOB_STATE_FRAGMENT = gql`
     jobType
     status
     repositoryOrigin {
+      id
       ...RepositoryOriginFragment
     }
     jobSpecificData {

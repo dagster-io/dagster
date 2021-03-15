@@ -27,6 +27,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrig
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata[];

@@ -18,6 +18,7 @@ export interface AllSchedulesUnloadablesFragment_JobStates_results_repositoryOri
 
 export interface AllSchedulesUnloadablesFragment_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSchedulesUnloadablesFragment_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];

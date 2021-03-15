@@ -49,6 +49,7 @@ export interface AllSchedulesRepositoriesFragment_RepositoryConnection_nodes_sch
 
 export interface AllSchedulesRepositoriesFragment_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSchedulesRepositoriesFragment_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];

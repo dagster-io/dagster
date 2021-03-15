@@ -16,6 +16,7 @@ export interface RepositoryInfoFragment_origin_repositoryLocationMetadata {
 
 export interface RepositoryInfoFragment_origin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: RepositoryInfoFragment_origin_repositoryLocationMetadata[];

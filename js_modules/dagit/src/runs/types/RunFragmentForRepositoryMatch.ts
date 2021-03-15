@@ -15,6 +15,7 @@ export interface RunFragmentForRepositoryMatch_pipeline {
 
 export interface RunFragmentForRepositoryMatch_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }

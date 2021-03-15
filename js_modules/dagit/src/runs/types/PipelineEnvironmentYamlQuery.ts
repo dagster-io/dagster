@@ -19,6 +19,7 @@ export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun_pip
 
 export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }

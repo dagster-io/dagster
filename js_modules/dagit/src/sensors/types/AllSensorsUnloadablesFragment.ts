@@ -18,6 +18,7 @@ export interface AllSensorsUnloadablesFragment_JobStates_results_repositoryOrigi
 
 export interface AllSensorsUnloadablesFragment_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: AllSensorsUnloadablesFragment_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];

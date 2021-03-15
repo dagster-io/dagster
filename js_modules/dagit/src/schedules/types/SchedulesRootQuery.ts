@@ -53,6 +53,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
@@ -146,6 +147,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_origin_reposito
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_origin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata[];
@@ -208,6 +210,7 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results
 
 export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];

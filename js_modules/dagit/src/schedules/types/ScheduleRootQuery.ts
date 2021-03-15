@@ -68,6 +68,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_reposi
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata[];

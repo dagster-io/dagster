@@ -277,6 +277,7 @@ type PipelineRun {
 }
 
 type RepositoryOrigin {
+  id: String!
   repositoryLocationName: String!
   repositoryName: String!
   repositoryLocationMetadata: [RepositoryMetadata!]!

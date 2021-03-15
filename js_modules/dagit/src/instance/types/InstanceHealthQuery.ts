@@ -93,6 +93,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
 
 export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_origin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata[];
@@ -137,6 +138,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
 
 export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
@@ -235,6 +237,7 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
 
 export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata[];
@@ -372,6 +375,7 @@ export interface InstanceHealthQuery_unloadableJobStatesOrError_JobStates_result
 
 export interface InstanceHealthQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: InstanceHealthQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];

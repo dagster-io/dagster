@@ -60,6 +60,7 @@ export interface RunFragment_executionPlan {
 
 export interface RunFragment_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryName: string;
   repositoryLocationName: string;
 }

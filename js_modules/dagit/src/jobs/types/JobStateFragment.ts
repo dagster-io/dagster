@@ -18,6 +18,7 @@ export interface JobStateFragment_repositoryOrigin_repositoryLocationMetadata {
 
 export interface JobStateFragment_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: JobStateFragment_repositoryOrigin_repositoryLocationMetadata[];

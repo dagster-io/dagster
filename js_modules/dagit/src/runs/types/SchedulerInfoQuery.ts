@@ -107,6 +107,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
@@ -200,6 +201,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_origin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata[];

@@ -43,6 +43,7 @@ export interface ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocat
 
 export interface ScheduleFragment_scheduleState_repositoryOrigin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];

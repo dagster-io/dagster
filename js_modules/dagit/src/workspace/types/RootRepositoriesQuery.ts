@@ -29,6 +29,7 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_origin {
   __typename: "RepositoryOrigin";
+  id: string;
   repositoryLocationName: string;
   repositoryName: string;
   repositoryLocationMetadata: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_origin_repositoryLocationMetadata[];
