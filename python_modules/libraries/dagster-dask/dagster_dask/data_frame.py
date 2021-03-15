@@ -1,5 +1,4 @@
 import contextlib
-import warnings
 
 import dask.dataframe as dd
 from dagster import (
@@ -366,19 +365,10 @@ def _dataframe_loader_config():
         {
             "read": Field(
                 Selector(read_fields),
-                is_required=False,
             ),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()
-            },
-            # https://github.com/dagster-io/dagster/issues/2872
-            **{
-                field_name: Field(
-                    field_config,
-                    is_required=False,
-                )
-                for field_name, field_config in read_fields.items()
             },
         }
     )
@@ -386,18 +376,7 @@ def _dataframe_loader_config():
 
 @dagster_type_loader(_dataframe_loader_config())
 def dataframe_loader(_context, config):
-    read_type, read_options = None, None
-    if "read" in config:
-        read_type, read_options = next(iter(config["read"].items()))
-
-    # https://github.com/dagster-io/dagster/issues/2872
-    else:
-        for key in DataFrameReadTypes:
-            if key in config:
-                read_type, read_options = key, config[key]
-                warnings.warn(
-                    "Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=key)
-                )
+    read_type, read_options = next(iter(config["read"].items()))
 
     if not read_type:
         raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
@@ -442,19 +421,10 @@ def _dataframe_materializer_config():
         {
             "to": Field(
                 Selector(to_fields),
-                is_required=False,
             ),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()
-            },
-            # https://github.com/dagster-io/dagster/issues/2872
-            **{
-                field_name: Field(
-                    field_config,
-                    is_required=False,
-                )
-                for field_name, field_config in to_fields.items()
             },
         }
     )
@@ -464,18 +434,7 @@ def _dataframe_materializer_config():
 def dataframe_materializer(_context, config, dask_df):
     check.inst_param(dask_df, "dask_df", dd.DataFrame)
 
-    if "to" in config:
-        to_specs = config["to"]
-
-    # https://github.com/dagster-io/dagster/issues/2872
-    else:
-        to_specs = {
-            to_type: to_options
-            for to_type, to_options in config.items()
-            if to_type in DataFrameToTypes
-        }
-        for key in to_specs.keys():
-            warnings.warn("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=key))
+    to_specs = config["to"]
 
     # Apply any utility functions in preparation for materialization
     dask_df = apply_utilities_to_df(dask_df, config)

@@ -6,6 +6,7 @@
 
 - Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
 - The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only effect custom `Executor` classes.
+- [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
 
 ## 0.10.9
 

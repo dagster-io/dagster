@@ -120,7 +120,9 @@ def test_dask():
     run_config = {
         "solids": {
             "dask_solid": {
-                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+                "inputs": {
+                    "df": {"read": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+                }
             }
         }
     }
@@ -184,7 +186,9 @@ def test_dask_terminate():
     run_config = {
         "solids": {
             "sleepy_dask_solid": {
-                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+                "inputs": {
+                    "df": {"read": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+                }
             }
         }
     }
