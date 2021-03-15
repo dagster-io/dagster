@@ -6,6 +6,7 @@ import pytest
 from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
 from dagster.serdes.errors import SerdesClassUsageError
 from dagster.serdes.serdes import (
+    DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
     WhitelistMap,
     _deserialize_json_to_dagster_namedtuple,
@@ -104,6 +105,43 @@ def test_forward_compat_serdes_new_enum_field():
     assert unpacked != corge
     assert unpacked.name == corge.name
     assert unpacked.value == corge.value
+
+
+def test_serdes_enum_backcompat():
+    test_map = WhitelistMap()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Corge(Enum):
+        FOO = 1
+        BAR = 2
+
+    assert test_map.has_enum_entry("Corge")
+
+    corge = Corge.FOO
+
+    packed = _pack_value(corge, whitelist_map=test_map)
+
+    class CorgeBackCompatSerializer(DefaultEnumSerializer):
+        @classmethod
+        def value_from_storage_str(cls, storage_str, klass):
+            if storage_str == "FOO":
+                value = "FOO_FOO"
+            else:
+                value = storage_str
+
+            return super().value_from_storage_str(value, klass)
+
+    # pylint: disable=function-redefined
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=CorgeBackCompatSerializer)
+    class Corge(Enum):
+        BAR = 2
+        BAZ = 3
+        FOO_FOO = 4
+
+    unpacked = _unpack_value(packed, whitelist_map=test_map)
+
+    assert unpacked != corge
+    assert unpacked == Corge.FOO_FOO
 
 
 def test_backward_compat_serdes():

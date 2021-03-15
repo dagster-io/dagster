@@ -15,7 +15,7 @@ Why not pickle?
 """
 
 import inspect
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 from inspect import Parameter, signature
 from typing import Any, Dict, NamedTuple, Optional, Set, Tuple, Type, Union, cast
@@ -28,8 +28,8 @@ from .errors import SerdesClassUsageError
 # Whitelisting
 ###################################################################################################
 
-TupleEntry = Tuple[Optional[Type[NamedTuple]], Type["Serializer"]]
-EnumEntry = Type[Enum]
+TupleEntry = Tuple[Optional[Type[NamedTuple]], Type["NamedTupleSerializer"]]
+EnumEntry = Tuple[Type[Enum], Type["EnumSerializer"]]
 
 
 class WhitelistMap(NamedTuple):
@@ -40,7 +40,7 @@ class WhitelistMap(NamedTuple):
         self,
         name: str,
         nt: Optional[Type[NamedTuple]],
-        serializer: Optional[Type["Serializer"]],
+        serializer: Optional[Type["NamedTupleSerializer"]],
     ):
         self.tuples[name] = (nt, serializer or DefaultNamedTupleSerializer)
 
@@ -50,8 +50,8 @@ class WhitelistMap(NamedTuple):
     def get_tuple_entry(self, name: str) -> TupleEntry:
         return self.tuples[name]
 
-    def register_enum(self, enum: Type[Enum]):
-        self.enums[enum.__name__] = enum
+    def register_enum(self, enum: Type[Enum], serializer: Optional[Type["EnumSerializer"]]):
+        self.enums[enum.__name__] = (enum, serializer or DefaultEnumSerializer)
 
     def has_enum_entry(self, name: str) -> bool:
         return name in self.enums
@@ -85,19 +85,37 @@ def _whitelist_for_serdes(
 ):
     def __whitelist_for_serdes(klass):
         if issubclass(klass, Enum):
-            whitelist_map.register_enum(klass)
+            whitelist_map.register_enum(klass, serializer)
         elif issubclass(klass, tuple):
             _check_serdes_tuple_class_invariants(klass)
             whitelist_map.register_tuple(klass.__name__, klass, serializer)
         else:
-            check.failed(f"Can not whitelist class {klass} for serdes")
+            check.failed(f"Can not whitelist class {klass} for serdes {serializer}")
 
         return klass
 
     return __whitelist_for_serdes
 
 
-class Serializer:
+class Serializer(ABC):
+    pass
+
+
+class EnumSerializer(Serializer):
+    @classmethod
+    @abstractmethod
+    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+        raise NotImplementedError()
+
+
+class DefaultEnumSerializer(EnumSerializer):
+    @classmethod
+    @abstractmethod
+    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+        return getattr(klass, storage_str)
+
+
+class NamedTupleSerializer(Serializer):
     @classmethod
     @abstractmethod
     def value_from_storage_dict(cls, storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
@@ -111,7 +129,7 @@ class Serializer:
         raise NotImplementedError()
 
 
-class DefaultNamedTupleSerializer(Serializer):
+class DefaultNamedTupleSerializer(NamedTupleSerializer):
     @classmethod
     def skip_when_empty(cls) -> Set[str]:
         # Override this method to leave out certain fields from the serialized namedtuple
@@ -269,8 +287,8 @@ def _unpack_value(val: Any, whitelist_map: WhitelistMap) -> Any:
             whitelist_map.has_enum_entry(name),
             f"Attempted to deserialize enum {name} which was not in the whitelist.",
         )
-
-        return getattr(whitelist_map.get_enum_entry(name), member)
+        enum_class, enum_serializer = whitelist_map.get_enum_entry(name)
+        return enum_serializer.value_from_storage_str(member, enum_class)
     if isinstance(val, dict) and val.get("__set__") is not None:
         return set([_unpack_value(item, whitelist_map) for item in val["__set__"]])
     if isinstance(val, dict) and val.get("__frozenset__") is not None:
