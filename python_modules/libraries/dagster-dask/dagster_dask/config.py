@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Int, Permissive, Selector, Shape, String, check
+from dagster import Bool, Field, Int, Permissive, Selector, Shape, String, StringSource, check
 from dask.distributed import Client
 
 # Map of the possible Dask cluster types and their associated classes.
