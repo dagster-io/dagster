@@ -1,5 +1,3 @@
-import warnings
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.backcompat import experimental_arg_warning
@@ -107,15 +105,6 @@ class SolidDefinition(NodeDefinition):
     @property
     def required_resource_keys(self):
         return frozenset(self._required_resource_keys)
-
-    @property
-    def has_config_entry(self):
-        warnings.warn(
-            "SolidDefinition.has_config_entry is deprecated, starting in 0.10.0, because whether "
-            "the solid has configurable inputs or outputs depends on what managers are supplied "
-            "for its inputs and outputs."
-        )
-        return self._config_schema or self.has_configurable_inputs or self.has_configurable_outputs
 
     @property
     def version(self):

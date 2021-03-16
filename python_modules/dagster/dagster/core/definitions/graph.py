@@ -1,4 +1,3 @@
-import warnings
 from collections import OrderedDict
 
 from dagster import check
@@ -288,22 +287,6 @@ class GraphDefinition(NodeDefinition):
         for solid in self.solids:
             required_resource_keys.update(solid.definition.required_resource_keys)
         return frozenset(required_resource_keys)
-
-    @property
-    def has_config_entry(self):
-        warnings.warn(
-            "GraphDefinition.has_config_entry is deprecated, starting in 0.10.0, because whether "
-            "the graph has configurable inputs depends on what managers are supplied for its "
-            "inputs and outputs."
-        )
-
-        has_child_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
-        return (
-            self.has_config_mapping
-            or has_child_solid_config
-            or self.has_configurable_inputs
-            or self.has_configurable_outputs
-        )
 
     @property
     def dependencies(self):

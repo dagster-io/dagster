@@ -1,4 +1,3 @@
-import warnings
 from abc import abstractmethod, abstractproperty
 
 from dagster import check
@@ -103,28 +102,6 @@ class NodeDefinition(NamedConfigurableDefinition):
     def output_def_named(self, name):
         check.str_param(name, "name")
         return self._output_dict[name]
-
-    @property
-    def has_configurable_inputs(self):
-        warnings.warn(
-            "NodeDefinition.has_configurable_inputs is deprecated, starting in 0.10.0, because "
-            "whether the node has configurable inputs depends on what RootInputManager is supplied "
-            "in the mode."
-        )
-        return any([inp.dagster_type.loader or inp.root_manager_key for inp in self._input_defs])
-
-    @property
-    def has_configurable_outputs(self):
-        warnings.warn(
-            "NodeDefinition.has_configurable_inputs is deprecated, starting in 0.10.0, because "
-            "whether the node has configurable inputs depends on what IOManager is supplied in the "
-            " mode."
-        )
-        return any([out.dagster_type.materializer for out in self._output_defs])
-
-    @abstractproperty
-    def has_config_entry(self):
-        raise NotImplementedError()
 
     @abstractmethod
     def iterate_node_defs(self):
