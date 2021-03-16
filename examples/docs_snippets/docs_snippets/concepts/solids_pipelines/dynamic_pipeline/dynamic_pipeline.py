@@ -2,6 +2,7 @@
 
 # start_marker
 import os
+from typing import List
 
 from dagster import Field, pipeline, solid
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
@@ -29,9 +30,16 @@ def process_file(_, path: str) -> int:
     return os.path.getsize(path)
 
 
+@solid
+def summarize_directory(_, sizes: List[int]) -> int:
+    # simple example of totalling sizes
+    return sum(sizes)
+
+
 @pipeline
 def process_directory():
-    files_in_directory().map(process_file)
+    file_results = files_in_directory().map(process_file)
+    summarize_directory(file_results.collect())
 
 
 # end_marker

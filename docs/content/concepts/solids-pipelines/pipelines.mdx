@@ -261,14 +261,15 @@ def fan_in_pipeline():
 
 In this example, we have 10 solids that all output the number `1`. The `sum_fan_in` solid takes all of these outputs as a list and sums them.
 
-### Dynamic fan-out <Experimental/>
+### Dynamic Mapping & Collect <Experimental/>
 
-In most cases, the structure of a pipeline is pre-determined before execution. Dagster now has experimental support for creating pipelines where the final structure is not determined until run-time. This is useful for map/reduce pipeline structures, where you want to execute a set of solids for each result of another solid.
+In most cases, the structure of a pipeline is pre-determined before execution. Dagster now has experimental support for creating pipelines where the final structure is not determined until run-time. This is useful for pipeline structures where you want to execute a separate instance of a solid for each entry in a certain output.
 
-In this example we have a solid `files_in_directory` that defines a <PyObject object="DynamicOutputDefinition" module="dagster.experimental"/>. This dynamic output will cause the downstream dependencies to be cloned for each <PyObject object="DynamicOutput"  module="dagster.experimental"/> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject object="DynamicOutput"  module="dagster.experimental"/>.
+In this example we have a solid `files_in_directory` that defines a <PyObject object="DynamicOutputDefinition" module="dagster.experimental"/>. We `map` over the dynamic output which will cause the downstream dependencies to be cloned for each <PyObject object="DynamicOutput"  module="dagster.experimental"/> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject object="DynamicOutput"  module="dagster.experimental"/>. Once that's all complete, we `collect` the over results of `process_file` and pass that in to `summarize_directory`.
 
 ```python file=/concepts/solids_pipelines/dynamic_pipeline/dynamic_pipeline.py startafter=start_marker endbefore=end_marker
 import os
+from typing import List
 
 from dagster import Field, pipeline, solid
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
@@ -296,9 +297,16 @@ def process_file(_, path: str) -> int:
     return os.path.getsize(path)
 
 
+@solid
+def summarize_directory(_, sizes: List[int]) -> int:
+    # simple example of totalling sizes
+    return sum(sizes)
+
+
 @pipeline
 def process_directory():
-    files_in_directory().map(process_file)
+    file_results = files_in_directory().map(process_file)
+    summarize_directory(file_results.collect())
 ```
 
 ### Order-based Dependencies (Nothing dependencies)

@@ -60,3 +60,4 @@ def test_dynamic_pipeline():
         "program_py": 34,
         "words_txt": 40,
     }
+    assert result.result_for_solid("summarize_directory").output_value() == 74
