@@ -5,6 +5,7 @@ import {Link, Route, Switch} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {QueryCountdown} from 'src/app/QueryCountdown';
+import {InstanceBackfills} from 'src/instance/InstanceBackfills';
 import {InstanceConfig} from 'src/instance/InstanceConfig';
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {InstanceHealthPage} from 'src/instance/InstanceHealthPage';
@@ -50,6 +51,7 @@ export const InstanceStatusRoot = (props: Props) => {
               <Tab id="health" title={<Link to="/instance/health">Health</Link>} />
               <Tab id="schedules" title={<Link to="/instance/schedules">Schedules</Link>} />
               <Tab id="sensors" title={<Link to="/instance/sensors">Sensors</Link>} />
+              <Tab id="backfills" title={<Link to="/instance/backfills">Backfills</Link>} />
               <Tab id="config" title={<Link to="/instance/config">Configuration</Link>} />
             </Tabs>
             <Box padding={{bottom: 8}}>
@@ -70,6 +72,7 @@ export const InstanceStatusRoot = (props: Props) => {
             path="/instance/sensors"
             render={() => <InstanceSensors queryData={queryData} />}
           />
+          <Route path="/instance/backfills" render={() => <InstanceBackfills />} />
           <Route path="/instance/config" render={() => <InstanceConfig />} />
         </Switch>
       </Group>

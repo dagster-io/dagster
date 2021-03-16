@@ -5,7 +5,7 @@ import {Tag} from 'src/ui/Tag';
 
 export enum DagsterTag {
   Namespace = 'dagster/',
-
+  Backfill = 'dagster/backfill',
   SolidSelection = 'dagster/solid_selection',
   StepSelection = 'dagster/step_selection',
   PartitionSet = 'dagster/partition_set',
