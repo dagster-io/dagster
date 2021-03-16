@@ -277,7 +277,24 @@
         ]
       },
       {
-        "title": "Deployment Guides",
+        "title": "Kubernetes Deployment Guides",
+        "children": [
+          {
+            "title": "Deploying Dagster with Helm",
+            "path": "/deployment/guides/kubernetes/deploying-with-helm"
+          },
+          {
+            "title": "Deploying Dagster with Helm, Advanced",
+            "path": "/deployment/guides/kubernetes/deploying-with-helm-advanced"
+          },
+          {
+            "title": "Customizing your Kubernetes Deployment",
+            "path": "/deployment/guides/kubernetes/customizing-your-deployment"
+          }
+        ]
+      },
+      {
+        "title": "Other Deployment Guides",
         "children": [
           {
             "title": "Running Dagster as a Service",
@@ -286,10 +303,6 @@
           {
             "title": "Deploying Dagster to Docker",
             "path": "/deployment/guides/docker"
-          },
-          {
-            "title": "Deploying Dagster to Kubernetes",
-            "path": "/deployment/guides/kubernetes"
           },
           {
             "title": "Deploying Dagster to AWS",
