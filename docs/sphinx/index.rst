@@ -11,42 +11,44 @@
    sections/api/apidocs/internals
    sections/api/apidocs/loggers
    sections/api/apidocs/modes-resources
-   sections/api/apidocs/object-managers
+   sections/api/apidocs/io-managers
    sections/api/apidocs/partitions
    sections/api/apidocs/pipeline
    sections/api/apidocs/presets
    sections/api/apidocs/repositories
-   sections/api/apidocs/schedules
+   sections/api/apidocs/schedules-sensors
    sections/api/apidocs/solids
    sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities
-   sections/api/apidocs/libraries/dagster_airflow
-   sections/api/apidocs/libraries/dagster_aws
-   sections/api/apidocs/libraries/dagster_azure
-   sections/api/apidocs/libraries/dagster_celery
-   sections/api/apidocs/libraries/dagster_celery_docker
-   sections/api/apidocs/libraries/dagster_celery_k8s
-   sections/api/apidocs/libraries/dagster_cron
-   sections/api/apidocs/libraries/dagster_dask
-   sections/api/apidocs/libraries/dagster_databricks
-   sections/api/apidocs/libraries/dagster_datadog
-   sections/api/apidocs/libraries/dagster_dbt
-   sections/api/apidocs/libraries/dagster_gcp
-   sections/api/apidocs/libraries/dagster_ge
-   sections/api/apidocs/libraries/dagster_github
-   sections/api/apidocs/libraries/dagster_k8s
-   sections/api/apidocs/libraries/dagster_pagerduty
-   sections/api/apidocs/libraries/dagster_pandas
-   sections/api/apidocs/libraries/dagster_papertrail
-   sections/api/apidocs/libraries/dagster_postgres
-   sections/api/apidocs/libraries/dagster_prometheus
-   sections/api/apidocs/libraries/dagster_pyspark
-   sections/api/apidocs/libraries/dagster_shell
-   sections/api/apidocs/libraries/dagster_slack
-   sections/api/apidocs/libraries/dagster_snowflake
-   sections/api/apidocs/libraries/dagster_spark
-   sections/api/apidocs/libraries/dagster_ssh
-   sections/api/apidocs/libraries/dagster_twilio
+   sections/api/apidocs/libraries/dagster-airflow
+   sections/api/apidocs/libraries/dagster-aws
+   sections/api/apidocs/libraries/dagster-azure
+   sections/api/apidocs/libraries/dagster-celery
+   sections/api/apidocs/libraries/dagster-celery-docker
+   sections/api/apidocs/libraries/dagster-celery-k8s
+   sections/api/apidocs/libraries/dagster-cron
+   sections/api/apidocs/libraries/dagster-dask
+   sections/api/apidocs/libraries/dagster-databricks
+   sections/api/apidocs/libraries/dagster-datadog
+   sections/api/apidocs/libraries/dagster-dbt
+   sections/api/apidocs/libraries/dagster-docker
+   sections/api/apidocs/libraries/dagster-gcp
+   sections/api/apidocs/libraries/dagster-ge
+   sections/api/apidocs/libraries/dagster-github
+   sections/api/apidocs/libraries/dagster-k8s
+   sections/api/apidocs/libraries/dagster-mysql
+   sections/api/apidocs/libraries/dagster-pagerduty
+   sections/api/apidocs/libraries/dagster-pandas
+   sections/api/apidocs/libraries/dagster-papertrail
+   sections/api/apidocs/libraries/dagster-postgres
+   sections/api/apidocs/libraries/dagster-prometheus
+   sections/api/apidocs/libraries/dagster-pyspark
+   sections/api/apidocs/libraries/dagster-shell
+   sections/api/apidocs/libraries/dagster-slack
+   sections/api/apidocs/libraries/dagster-snowflake
+   sections/api/apidocs/libraries/dagster-spark
+   sections/api/apidocs/libraries/dagster-ssh
+   sections/api/apidocs/libraries/dagster-twilio
    sections/api/apidocs/libraries/dagstermill
    sections/api/apidocs/libraries/lakehouse

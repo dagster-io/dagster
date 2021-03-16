@@ -243,59 +243,6 @@
     ]
   },
   {
-    "title": "Guides",
-    "icon": "Search",
-    "path": "/guides",
-    "children": [
-      {
-        "title": "Dagster Guides",
-        "children": [
-          {
-            "title": "Versioning and Memoization (Experimental)",
-            "path": "/guides/dagster/memoization"
-          },
-          {
-            "title": "Lakehouse (Experimental)",
-            "path": "/guides/dagster/lakehouse"
-          },
-          {
-            "title": "Lakehouse with Pandas and PySpark (Experimental)",
-            "path": "/guides/dagster/multi-type-lakehouse"
-          }
-        ]
-      },
-      {
-        "title": "Integration Guides",
-        "children": [
-          {
-            "title": "Dagster with dbt",
-            "path": "/guides/integrations/dbt"
-          },
-          {
-            "title": "Dagster with Airflow",
-            "path": "/guides/integrations/airflow"
-          },
-          {
-            "title": "Dagster with Great Expectations",
-            "path": "/guides/integrations/great-expectations"
-          },
-          {
-            "title": "Dagster with PySpark",
-            "path": "/guides/integrations/pyspark"
-          },
-          {
-            "title": "Dagster with Pandas",
-            "path": "/guides/integrations/pandas"
-          },
-          {
-            "title": "Dagster with Jupyter/Papermill",
-            "path": "/guides/integrations/dagstermill"
-          }
-        ]
-      }
-    ]
-  },
-  {
     "title": "Deployment",
     "icon": "Cloud",
     "path": "/deployment",
@@ -372,6 +319,66 @@
           {
             "title": "Customizing Run Launcher",
             "path": "/deployment/custom-infra/custom-run-launcher"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Integrations",
+    "icon": "Grid",
+    "path": "/integrations",
+    "children": [
+      {
+        "title": "Integration Guides",
+        "children": [
+          {
+            "title": "Dagster with dbt",
+            "path": "/integrations/dbt"
+          },
+          {
+            "title": "Dagster with Airflow",
+            "path": "/integrations/airflow"
+          },
+          {
+            "title": "Dagster with Great Expectations",
+            "path": "/integrations/great-expectations"
+          },
+          {
+            "title": "Dagster with PySpark",
+            "path": "/integrations/pyspark"
+          },
+          {
+            "title": "Dagster with Pandas",
+            "path": "/integrations/pandas"
+          },
+          {
+            "title": "Dagster with Jupyter/Papermill",
+            "path": "/integrations/dagstermill"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Guides",
+    "icon": "Search",
+    "path": "/guides",
+    "children": [
+      {
+        "title": "Dagster Guides",
+        "children": [
+          {
+            "title": "Versioning and Memoization (Experimental)",
+            "path": "/guides/dagster/memoization"
+          },
+          {
+            "title": "Lakehouse (Experimental)",
+            "path": "/guides/dagster/lakehouse"
+          },
+          {
+            "title": "Lakehouse with Pandas and PySpark (Experimental)",
+            "path": "/guides/dagster/multi-type-lakehouse"
           }
         ]
       }
@@ -459,108 +466,112 @@
             "path": "/_apidocs/libraries/dagstermill"
           },
           {
-            "title": "Airflow (dagster_airflow)",
-            "path": "/_apidocs/libraries/dagster_airflow"
+            "title": "Airflow (dagster-airflow)",
+            "path": "/_apidocs/libraries/dagster-airflow"
           },
           {
-            "title": "AWS (dagster_aws)",
-            "path": "/_apidocs/libraries/dagster_aws"
+            "title": "AWS (dagster-aws)",
+            "path": "/_apidocs/libraries/dagster-aws"
           },
           {
-            "title": "Azure (dagster_azure)",
-            "path": "/_apidocs/libraries/dagster_azure"
+            "title": "Azure (dagster-azure)",
+            "path": "/_apidocs/libraries/dagster-azure"
           },
           {
-            "title": "Celery (dagster_celery)",
-            "path": "/_apidocs/libraries/dagster_celery"
+            "title": "Celery (dagster-celery)",
+            "path": "/_apidocs/libraries/dagster-celery"
           },
           {
-            "title": "Celery + Docker (dagster_celery_docker)",
-            "path": "/_apidocs/libraries/dagster_celery_docker"
+            "title": "Celery + Docker (dagster-celery-docker)",
+            "path": "/_apidocs/libraries/dagster-celery-docker"
           },
           {
-            "title": "Cron (dagster_cron)",
-            "path": "/_apidocs/libraries/dagster_cron"
+            "title": "Cron (dagster-cron)",
+            "path": "/_apidocs/libraries/dagster-cron"
           },
           {
-            "title": "Dask (dagster_dask)",
-            "path": "/_apidocs/libraries/dagster_dask"
+            "title": "Dask (dagster-dask)",
+            "path": "/_apidocs/libraries/dagster-dask"
           },
           {
-            "title": "Datadog (dagster_datadog)",
-            "path": "/_apidocs/libraries/dagster_datadog"
+            "title": "Databricks (dagster-databricks)",
+            "path": "/_apidocs/libraries/dagster-databricks"
           },
           {
-            "title": "Databricks (dagster_databricks)",
-            "path": "/_apidocs/libraries/dagster_databricks"
+            "title": "Datadog (dagster-datadog)",
+            "path": "/_apidocs/libraries/dagster-datadog"
           },
           {
-            "title": "dbt (dagster_dbt)",
-            "path": "/_apidocs/libraries/dagster_dbt"
+            "title": "dbt (dagster-dbt)",
+            "path": "/_apidocs/libraries/dagster-dbt"
           },
           {
-            "title": "GCP (dagster_gcp)",
-            "path": "/_apidocs/libraries/dagster_gcp"
+            "title": "Docker (dagster-docker)",
+            "path": "/_apidocs/libraries/dagster-docker"
           },
           {
-            "title": "Great Expectations (dagster_ge)",
-            "path": "/_apidocs/libraries/dagster_ge"
+            "title": "GCP (dagster-gcp)",
+            "path": "/_apidocs/libraries/dagster-gcp"
           },
           {
-            "title": "Github (dagster_github)",
-            "path": "/_apidocs/libraries/dagster_github"
+            "title": "Great Expectations (dagster-ge)",
+            "path": "/_apidocs/libraries/dagster-ge"
           },
           {
-            "title": "Kubernetes (dagster_k8s)",
-            "path": "/_apidocs/libraries/dagster_k8s"
+            "title": "Github (dagster-github)",
+            "path": "/_apidocs/libraries/dagster-github"
           },
           {
-            "title": "PagerDuty (dagster_pagerduty)",
-            "path": "/_apidocs/libraries/dagster_pagerduty"
+            "title": "Kubernetes (dagster-k8s)",
+            "path": "/_apidocs/libraries/dagster-k8s"
           },
           {
-            "title": "Pandas (dagster_pandas)",
-            "path": "/_apidocs/libraries/dagster_pandas"
+            "title": "PagerDuty (dagster-pagerduty)",
+            "path": "/_apidocs/libraries/dagster-pagerduty"
           },
           {
-            "title": "Papertrail (dagster_papertrail)",
-            "path": "/_apidocs/libraries/dagster_papertrail"
+            "title": "Pandas (dagster-pandas)",
+            "path": "/_apidocs/libraries/dagster-pandas"
           },
           {
-            "title": "PostgreSQL (dagster_postgres)",
-            "path": "/_apidocs/libraries/dagster_postgres"
+            "title": "Papertrail (dagster-papertrail)",
+            "path": "/_apidocs/libraries/dagster-papertrail"
           },
           {
-            "title": "Prometheus (dagster_prometheus)",
-            "path": "/_apidocs/libraries/dagster_prometheus"
+            "title": "PostgreSQL (dagster-postgres)",
+            "path": "/_apidocs/libraries/dagster-postgres"
           },
           {
-            "title": "Pyspark (dagster_pyspark)",
-            "path": "/_apidocs/libraries/dagster_pyspark"
+            "title": "Prometheus (dagster-prometheus)",
+            "path": "/_apidocs/libraries/dagster-prometheus"
           },
           {
-            "title": "Shell (dagster_shell)",
-            "path": "/_apidocs/libraries/dagster_shell"
+            "title": "Pyspark (dagster-pyspark)",
+            "path": "/_apidocs/libraries/dagster-pyspark"
           },
           {
-            "title": "Slack (dagster_slack)",
-            "path": "/_apidocs/libraries/dagster_slack"
+            "title": "Shell (dagster-shell)",
+            "path": "/_apidocs/libraries/dagster-shell"
           },
           {
-            "title": "Snowflake (dagster_snowflake)",
-            "path": "/_apidocs/libraries/dagster_snowflake"
+            "title": "Slack (dagster-slack)",
+            "path": "/_apidocs/libraries/dagster-slack"
           },
           {
-            "title": "Spark (dagster_spark)",
-            "path": "/_apidocs/libraries/dagster_spark"
+            "title": "Snowflake (dagster-snowflake)",
+            "path": "/_apidocs/libraries/dagster-snowflake"
           },
           {
-            "title": "SSH / SFTP (dagster_ssh)",
-            "path": "/_apidocs/libraries/dagster_ssh"
+            "title": "Spark (dagster-spark)",
+            "path": "/_apidocs/libraries/dagster-spark"
           },
           {
-            "title": "Twilio (dagster_twilio)",
-            "path": "/_apidocs/libraries/dagster_twilio"
+            "title": "SSH / SFTP (dagster-ssh)",
+            "path": "/_apidocs/libraries/dagster-ssh"
+          },
+          {
+            "title": "Twilio (dagster-twilio)",
+            "path": "/_apidocs/libraries/dagster-twilio"
           },
           {
             "title": "Lakehouse (experimental)",
