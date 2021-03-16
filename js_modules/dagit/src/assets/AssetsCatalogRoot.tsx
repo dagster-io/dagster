@@ -18,10 +18,10 @@ export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = (
     <Page>
       <Group direction="column" spacing={12}>
         <PageHeader title={<Heading>Assets</Heading>} />
-        {featureEnabled(FeatureFlag.AssetCatalog) ? (
-          <AssetsCatalogTable />
-        ) : (
+        {featureEnabled(FeatureFlag.DirectoryAssetCatalog) ? (
           <AssetsCatalogTable prefixPath={currentPath} />
+        ) : (
+          <AssetsCatalogTable />
         )}
       </Group>
     </Page>

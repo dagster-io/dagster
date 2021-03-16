@@ -26,9 +26,9 @@ export const FeatureFlagsRoot = () => {
           onChange={() => toggleFlag(FeatureFlag.DebugConsoleLogging)}
         />
         <Checkbox
-          label={'New Asset Catalog'}
-          checked={flags.includes(FeatureFlag.AssetCatalog)}
-          onChange={() => toggleFlag(FeatureFlag.AssetCatalog)}
+          label={'Directory-structured Asset Catalog'}
+          checked={flags.includes(FeatureFlag.DirectoryAssetCatalog)}
+          onChange={() => toggleFlag(FeatureFlag.DirectoryAssetCatalog)}
         />
       </div>
     </div>

@@ -27,7 +27,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
   });
 
   const pathDetails = () => {
-    if (currentPath.length === 1 || featureEnabled(FeatureFlag.AssetCatalog)) {
+    if (currentPath.length === 1 || !featureEnabled(FeatureFlag.DirectoryAssetCatalog)) {
       return <Link to="/instance/assets">Asset</Link>;
     }
 
@@ -60,7 +60,9 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
       <Group direction="column" spacing={20}>
         <PageHeader
           title={
-            featureEnabled(FeatureFlag.AssetCatalog) ? (
+            featureEnabled(FeatureFlag.DirectoryAssetCatalog) ? (
+              <Heading>{currentPath[currentPath.length - 1]}</Heading>
+            ) : (
               <Box flex={{alignItems: 'center'}}>
                 {currentPath
                   .map<React.ReactNode>((p, i) => <Heading key={i}>{p}</Heading>)
@@ -72,8 +74,6 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
                     curr,
                   ])}
               </Box>
-            ) : (
-              <Heading>{currentPath[currentPath.length - 1]}</Heading>
             )
           }
           icon="th"
@@ -82,10 +82,10 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetNotFoundError') {
-              if (featureEnabled(FeatureFlag.AssetCatalog)) {
-                return <AssetsCatalogTable />;
+              if (featureEnabled(FeatureFlag.DirectoryAssetCatalog)) {
+                return <AssetsCatalogTable prefixPath={currentPath} />;
               }
-              return <AssetsCatalogTable prefixPath={currentPath} />;
+              return <AssetsCatalogTable />;
             }
 
             return (

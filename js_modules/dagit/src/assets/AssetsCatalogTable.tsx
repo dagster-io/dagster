@@ -84,10 +84,10 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}
 
           return (
             <Wrapper>
-              {featureEnabled(FeatureFlag.AssetCatalog) ? (
-                <AssetFilter assets={assets} query={q} onSetQuery={setQ} />
-              ) : (
+              {featureEnabled(FeatureFlag.DirectoryAssetCatalog) ? (
                 <AssetSearch assets={allAssets} />
+              ) : (
+                <AssetFilter assets={assets} query={q} onSetQuery={setQ} />
               )}
               <AssetsTable assets={matching} currentPath={prefixPath || []} />
             </Wrapper>
@@ -266,7 +266,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
 
 const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: string[]}) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
-  const isFlattened = featureEnabled(FeatureFlag.AssetCatalog);
+  const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
 
   if (!isFlattened) {
     const pathMap: {[key: string]: Asset} = {};
