@@ -9,66 +9,65 @@ description:
 
 Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
-Through it, you can inspect solid and pipeline definitions, launch runs, view launched runs, and
-view assets produced by those runs.
+You can inspect solid and pipeline definitions, launch runs, view launched runs, and view assets produced by those runs.
 
-To launch the Dagit web server, run `dagit`. The command will print out the URL you can access the
-interface from in the browser, usually on port 3000.
+To launch the Dagit web server, run `dagit`. The command will print out the URL you can access the interface from in the browser, usually on port 3000.
 
-Dagit fetches definitions - pipelines, solids, schedules, partition sets - from a set of
-repositories configured in a `workspace.yaml`. It fetches runs from a run storage, configured in
-an instance's `dagster.yaml`. It fetches assets from an asset storage, also configured in an
-instance's `dagster.yaml`.
+Dagit fetches definitions - pipelines, solids, schedules, partition sets - from a set of repositories configured in `workspace.yaml`. It fetches runs and assets from storage, configured in an instance's `dagster.yaml`.
 
 These are the main pages inside Dagit:
 
 ## Pipeline
 
-The Pipeline page lets you explore a pipeline definition, launch a pipeline run, and examine a
-pipeline run.
+The Pipeline page offers tools to explore a pipeline definition and launch runs for that pipeline.
 
 <!-- Notes: all screenshots are from go/dev -->
 
 ### Pipeline definition
 
-The Definition tab in the pipeline page shows the topology of solids that make up a
-pipeline. Selecting a solid reveals detailed metadata about it in the right pane.
+The Definition tab shows the topology of solids that make up a pipeline. Selecting a solid reveals detailed metadata about it in the pane to the right.
 
 <img src="/images/concepts/dagit/pipeline-definition.png" />
 
 ### Playground
 
-The Playground tab in the pipeline page lets you experiment with configuration and launch runs. You
-can select from the set of presets for the pipeline, or type in your own configuration in the
-editor.
+The Playground tab provides a code editor to let you experiment with configuration and launch runs. You can select from the set of presets for the pipeline, or provide custom configuration in the editor.
 
 <img src="/images/concepts/dagit/playground.png" />
 
-### Run
+### Runs
 
-The Run tab in the pipeline page lets you see what happened within a single pipeline run. The upper
-left pane contains a Gantt chart, indicating how long each solid took to execute. The bottom pane
-shows events and logs emitted during the course of execution. The "Launch Re-execution" button
-lets you kick off a new run with the same configuration as the displayed run.
+The Runs tab shows the list of recent runs for the pipeline.
 
-<img src="/images/concepts/dagit/single-run.png" />
+_image needed_
 
 ## Solid
 
-The Solid page lets you see detailed information about a solid definition.
+The Solid page provides detailed information about a solid definition.
 
-<img src="/images/concepts/dagit/solid-definition.png" />
+_probably needs a new screentshot?_
 
 ## Runs
 
-The Runs page lists all pipeline runs. You can filter the list by pipeline name, run ID,
-execution status, or pipeline tag.
+The Runs page lists all pipeline runs. You can filter the list by pipeline name, run ID, execution status, or pipeline tag. Click a run ID to view details for that run.
 
 <img src="/images/concepts/dagit/all-runs.png" />
+
+### Viewing a single run
+
+The Run page provides details for a single run, including timing information, errors, and logs.
+
+The upper left pane contains a Gantt chart, indicating how long each solid took to execute. The bottom pane displays filterable events and logs emitted during the course of execution. Click the "Launch Re-execution" button to kick off a new run with the same configuration as the displayed run.
+
+_image does not match the button label described above_
+
+<img src="/images/concepts/dagit/single-run.png" />
 
 ## Assets
 
 The Assets page lists all assets. You can filter the list by asset key.
+
+_screenshot needs more assets_
 
 <img src="/images/concepts/dagit/all-assets.png" />
 
@@ -76,23 +75,25 @@ The Assets page lists all assets. You can filter the list by asset key.
 
 The Asset page lists details about a single asset.
 
+_would be good to have a screenshot with a nicer graph_
+
 <img src="/images/concepts/dagit/asset.png" />
 
 ## Schedules
 
-The Schedules page lists all schedules.
+The Schedules page lists all schedules defined in your workspace, as well as information about upcoming ticks for anticipated scheduled runs.
 
 <img src="/images/concepts/dagit/schedules.png" />
 
 ### Schedule
 
-The Schedule page lists details about a single schedule.
+The Schedule page includes details about a single schedule, its recent tick history, and recent runs.
 
 <img src="/images/concepts/dagit/single-schedule.png" />
 
 ## Status
 
-The Status page lists details about the instance configuration and the status of instance health,
-schedules, sensors, and more.
+The Instance status page includes information about the status of the repositories in your workspace, daemon health,
+schedules, sensors, and configuration details.
 
 <img src="/images/concepts/dagit/status-instance.png" />
