@@ -1322,7 +1322,7 @@ class DagsterInstance:
         run = self.get_run_by_id(run_id)
 
         try:
-            self._run_launcher.launch_run(self, run, external_pipeline=external_pipeline)
+            self._run_launcher.launch_run(run, external_pipeline=external_pipeline)
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(

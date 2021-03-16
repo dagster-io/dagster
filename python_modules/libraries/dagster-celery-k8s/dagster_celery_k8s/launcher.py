@@ -7,7 +7,6 @@ from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
@@ -148,8 +147,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(instance, "instance", DagsterInstance)
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 

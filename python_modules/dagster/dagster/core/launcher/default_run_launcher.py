@@ -50,7 +50,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return DefaultRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 

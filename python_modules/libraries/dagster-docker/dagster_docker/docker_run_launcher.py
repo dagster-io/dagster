@@ -81,7 +81,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
@@ -107,7 +107,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             ExecuteRunArgs(
                 pipeline_origin=external_pipeline.get_python_origin(),
                 pipeline_run_id=run.run_id,
-                instance_ref=instance.get_ref(),
+                instance_ref=self._instance.get_ref(),
             )
         )
 
