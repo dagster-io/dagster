@@ -43,6 +43,7 @@ def test_solid_def():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[produce_string, solid_one],
+        name="test",
         dependencies={"solid_one": {"input_one": DependencyDefinition("produce_string")}},
     )
 
@@ -134,6 +135,7 @@ def test_pipeline_types():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[produce_string, solid_one],
+        name="test",
         dependencies={"solid_one": {"input_one": DependencyDefinition("produce_string")}},
     )
 
@@ -152,6 +154,7 @@ def test_mapper_errors():
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
         PipelineDefinition(
             solid_defs=[solid_a],
+            name="test",
             dependencies={"solid_b": {"arg_a": DependencyDefinition("solid_a")}},
         )
     assert (
@@ -162,6 +165,7 @@ def test_mapper_errors():
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
         PipelineDefinition(
             solid_defs=[solid_a],
+            name="test",
             dependencies={
                 SolidInvocation("solid_b", alias="solid_c"): {
                     "arg_a": DependencyDefinition("solid_a")
@@ -233,6 +237,7 @@ def test_cycle_detect():
     with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
         PipelineDefinition(
             solid_defs=[return_one, add],
+            name="test",
             dependencies={
                 SolidInvocation("add", alias="first"): {
                     "a": DependencyDefinition("return_one"),

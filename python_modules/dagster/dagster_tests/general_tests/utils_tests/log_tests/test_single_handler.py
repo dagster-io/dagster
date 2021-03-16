@@ -31,7 +31,7 @@ def test_log_level_filtering():
             InitLoggerContext(
                 {},
                 logger_def,
-                pipeline_def=PipelineDefinition([]),
+                pipeline_def=PipelineDefinition([], "test"),
                 run_id="",
             )
         )

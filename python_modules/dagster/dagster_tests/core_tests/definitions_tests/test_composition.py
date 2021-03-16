@@ -88,7 +88,7 @@ def test_basic():
         add_one(num=one)
 
     assert (
-        execute_pipeline(PipelineDefinition(solid_defs=[test]))
+        execute_pipeline(PipelineDefinition(solid_defs=[test], name="test"))
         .result_for_handle("test.add_one")
         .output_value()
         == 2
@@ -195,7 +195,7 @@ def test_multiple():
         add_one(num=one)
         add_one.alias("add_one_2")(num=two)
 
-    results = execute_pipeline(PipelineDefinition(solid_defs=[test]))
+    results = execute_pipeline(PipelineDefinition(solid_defs=[test], name="test"))
     assert results.result_for_handle("test.add_one").output_value() == 2
     assert results.result_for_handle("test.add_one_2").output_value() == 3
 
@@ -214,7 +214,7 @@ def test_two_inputs_with_dsl():
         subtract(num_one=return_two(), num_two=return_three())
 
     assert (
-        execute_pipeline(PipelineDefinition(solid_defs=[test]))
+        execute_pipeline(PipelineDefinition(solid_defs=[test], name="test"))
         .result_for_handle("test.subtract")
         .output_value()
         == -1
@@ -227,7 +227,7 @@ def test_basic_aliasing_with_dsl():
         add_one.alias("renamed")(num=return_one())
 
     assert (
-        execute_pipeline(PipelineDefinition(solid_defs=[test]))
+        execute_pipeline(PipelineDefinition(solid_defs=[test], name="test"))
         .result_for_handle("test.renamed")
         .output_value()
         == 2
@@ -249,7 +249,7 @@ def test_diamond_graph():
         value_one, value_two = emit_values()
         subtract(num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two))
 
-    result = execute_pipeline(PipelineDefinition(solid_defs=[diamond]))
+    result = execute_pipeline(PipelineDefinition(solid_defs=[diamond], name="test"))
 
     assert result.result_for_handle("diamond.subtract").output_value() == -1
 
@@ -272,6 +272,7 @@ def test_mapping():
         execute_pipeline(
             PipelineDefinition(
                 solid_defs=[return_one, composed_inout, pipe],
+                name="test",
                 dependencies={
                     "composed_inout": {"num_in": DependencyDefinition("return_one")},
                     "pipe": {"num": DependencyDefinition("composed_inout", "num_out")},
@@ -392,7 +393,7 @@ def test_deep_graph():
         )
 
     result = execute_pipeline(
-        PipelineDefinition(solid_defs=[test]),
+        PipelineDefinition(solid_defs=[test], name="test"),
         {"solids": {"test": {"solids": {"download_num": {"config": 123}}}}},
     )
     assert result.result_for_handle("test.canonicalize_num").output_value() == 123
@@ -408,7 +409,7 @@ def test_recursion():
 
         add_one(inner())
 
-    assert execute_pipeline(PipelineDefinition(solid_defs=[outer])).success
+    assert execute_pipeline(PipelineDefinition(solid_defs=[outer], name="test")).success
 
 
 class Garbage(Exception):

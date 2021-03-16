@@ -205,7 +205,9 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 
 def test_pipeline_execution_graph_diamond():
-    pipe = PipelineDefinition(solid_defs=create_diamond_solids(), dependencies=diamond_deps())
+    pipe = PipelineDefinition(
+        solid_defs=create_diamond_solids(), name="test", dependencies=diamond_deps()
+    )
     return _do_test(pipe)
 
 
@@ -268,7 +270,7 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
     stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
 
     single_dep_pipe = PipelineDefinition(
-        solid_defs=[stub_solid_a, stub_solid_b], dependencies={"stub_a": {}}
+        solid_defs=[stub_solid_a, stub_solid_b], name="test", dependencies={"stub_a": {}}
     )
 
     assert execute_pipeline(single_dep_pipe).success
@@ -310,7 +312,7 @@ def _do_test(pipe):
 
 
 def test_empty_pipeline_execution():
-    result = execute_pipeline(PipelineDefinition(solid_defs=[]))
+    result = execute_pipeline(PipelineDefinition(solid_defs=[], name="test"))
 
     assert result.success
 
@@ -338,6 +340,7 @@ def test_pipeline_subset():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, add_one],
+        name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
@@ -367,6 +370,7 @@ def test_pipeline_explicit_subset():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, add_one],
+        name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
@@ -436,6 +440,7 @@ def test_pipeline_subset_with_multi_dependency():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, return_two, noop],
+        name="test",
         dependencies={
             "noop": {
                 "dep": MultiDependencyDefinition(
@@ -479,6 +484,7 @@ def test_pipeline_explicit_subset_with_multi_dependency():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, return_two, noop],
+        name="test",
         dependencies={
             "noop": {
                 "dep": MultiDependencyDefinition(
@@ -714,6 +720,7 @@ def test_reexecution_fs_storage():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, add_one],
+        name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
     run_config = {"storage": {"filesystem": {}}}
@@ -766,6 +773,7 @@ def test_reexecution_fs_storage_with_solid_selection():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, add_one],
+        name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
     run_config = {"storage": {"filesystem": {}}}
@@ -854,6 +862,7 @@ def test_single_step_reexecution():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[return_one, add_one],
+        name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
     run_config = {"storage": {"filesystem": {}}}
@@ -981,7 +990,7 @@ def test_default_run_id():
         assert uuid.UUID(context.run_id)
         called["run_id"] = context.run_id
 
-    pipeline_def = PipelineDefinition(solid_defs=[check_run_id])
+    pipeline_def = PipelineDefinition(solid_defs=[check_run_id], name="test")
 
     result = execute_pipeline(pipeline_def)
     assert result.run_id == called["run_id"]

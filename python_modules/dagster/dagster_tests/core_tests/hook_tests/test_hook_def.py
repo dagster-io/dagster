@@ -47,6 +47,7 @@ def test_hook():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid],
+        name="test",
         dependencies={
             SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook, named_hook}): {}
         },
@@ -73,6 +74,7 @@ def test_hook_user_error():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid],
+        name="test",
         dependencies={SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={error_hook}): {}},
     )
 
@@ -121,6 +123,7 @@ def test_hook_with_resource():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid],
+        name="test",
         dependencies={SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook}): {}},
         mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})],
     )
@@ -144,6 +147,7 @@ def test_hook_resource_error():
     ):
         PipelineDefinition(
             solid_defs=[a_solid],
+            name="test",
             dependencies={SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook}): {}},
             mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})],
         )
@@ -177,6 +181,7 @@ def test_success_hook():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[succeeded_solid, failed_solid],
+        name="test",
         dependencies={
             SolidInvocation(
                 "succeeded_solid",
@@ -231,6 +236,7 @@ def test_failure_hook():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[failed_solid, succeeded_solid],
+        name="test",
         dependencies={
             SolidInvocation(
                 "failed_solid",
@@ -271,6 +277,7 @@ def test_success_hook_event():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid, failed_solid],
+        name="test",
         dependencies={
             SolidInvocation("a_solid", hook_defs={a_hook}): {},
             SolidInvocation("failed_solid", hook_defs={a_hook}): {},
@@ -305,6 +312,7 @@ def test_failure_hook_event():
 
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid, failed_solid],
+        name="test",
         dependencies={
             SolidInvocation("a_solid", hook_defs={a_hook}): {},
             SolidInvocation("failed_solid", hook_defs={a_hook}): {},

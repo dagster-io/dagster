@@ -65,6 +65,7 @@ def test_two_inputs_without_dsl():
 
     pipeline_def = PipelineDefinition(
         solid_defs=[subtract, return_two, return_three],
+        name="test",
         dependencies={
             "subtract": {
                 "num_one": DependencyDefinition("return_two"),
@@ -305,9 +306,3 @@ def test_bad_positional_input_use():
             # so the two remaining have no positions and this is
             # ambiguous
             add_kw(return_two(), return_two(), return_two())
-
-
-def test_nameless():
-    noname = PipelineDefinition([return_one])
-
-    assert noname.name.startswith("__pipeline")

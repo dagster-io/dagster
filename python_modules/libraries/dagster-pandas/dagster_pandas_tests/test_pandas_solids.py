@@ -18,6 +18,7 @@ from dagster_pandas import DataFrame
 def get_solid_result_value(solid_inst):
     pipe = PipelineDefinition(
         solid_defs=[load_num_csv_solid("load_csv"), solid_inst],
+        name="test",
         dependencies={
             solid_inst.name: {
                 list(solid_inst.input_dict.values())[0].name: DependencyDefinition("load_csv")
@@ -69,7 +70,7 @@ def test_pandas_csv_in_memory():
 
 
 def _sum_only_pipeline():
-    return PipelineDefinition(solid_defs=[sum_table, sum_sq_table], dependencies={})
+    return PipelineDefinition(solid_defs=[sum_table, sum_sq_table], name="test", dependencies={})
 
 
 def test_two_input_solid():
@@ -88,6 +89,7 @@ def test_two_input_solid():
             load_num_csv_solid("load_csv2"),
             two_input_solid,
         ],
+        name="test",
         dependencies={
             "two_input_solid": {
                 "num_csv1": DependencyDefinition("load_csv1"),
@@ -151,6 +153,7 @@ def test_pandas_multiple_inputs():
 
     pipe = PipelineDefinition(
         solid_defs=[load_num_csv_solid("load_one"), load_num_csv_solid("load_two"), double_sum],
+        name="test",
         dependencies={
             "double_sum": {
                 "num_csv1": DependencyDefinition("load_one"),
@@ -170,6 +173,7 @@ def test_rename_input():
     result = execute_pipeline(
         PipelineDefinition(
             solid_defs=[load_num_csv_solid("load_csv"), sum_table, sum_sq_table_renamed_input],
+            name="test",
             dependencies={
                 "sum_table": {"num_csv": DependencyDefinition("load_csv")},
                 sum_sq_table_renamed_input.name: {

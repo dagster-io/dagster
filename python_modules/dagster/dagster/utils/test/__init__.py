@@ -233,7 +233,7 @@ def execute_solid_within_pipeline(
 
 @contextmanager
 def yield_empty_pipeline_context(run_id=None, instance=None):
-    pipeline = InMemoryPipeline(PipelineDefinition([]))
+    pipeline = InMemoryPipeline(PipelineDefinition([], "empty"))
     pipeline_def = pipeline.get_definition()
     instance = check.opt_inst_param(
         instance, "instance", DagsterInstance, default=DagsterInstance.ephemeral()

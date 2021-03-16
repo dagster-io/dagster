@@ -47,6 +47,7 @@ def test_circular_dep():
     with pytest.raises(DagsterInvalidDefinitionError, match="circular reference"):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
+            name="test",
             dependencies={"A": {}, "B": {"b_input": DependencyDefinition("B")}},
         )
 
@@ -57,6 +58,7 @@ def test_from_solid_not_there():
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
+            name="test",
             dependencies={
                 "A": {},
                 "B": {"b_input": DependencyDefinition("A")},
@@ -71,6 +73,7 @@ def test_from_non_existant_input():
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
+            name="test",
             dependencies={"B": {"not_an_input": DependencyDefinition("A")}},
         )
 
@@ -81,6 +84,7 @@ def test_to_solid_not_there():
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
+            name="test",
             dependencies={"A": {}, "B": {"b_input": DependencyDefinition("NOTTHERE")}},
         )
 
@@ -91,6 +95,7 @@ def test_to_solid_output_not_there():
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
+            name="test",
             dependencies={"B": {"b_input": DependencyDefinition("A", output="NOTTHERE")}},
         )
 
@@ -99,7 +104,10 @@ def test_invalid_item_in_solid_list():
     with pytest.raises(
         DagsterInvalidDefinitionError, match="Invalid item in solid list: 'not_a_solid'"
     ):
-        PipelineDefinition(solid_defs=["not_a_solid"])
+        PipelineDefinition(
+            solid_defs=["not_a_solid"],
+            name="test",
+        )
 
 
 def test_one_layer_off_dependencies():
@@ -108,7 +116,7 @@ def test_one_layer_off_dependencies():
         match="Received a IDependencyDefinition one layer too high under key B",
     ):
         PipelineDefinition(
-            solid_defs=solid_a_b_list(), dependencies={"B": DependencyDefinition("A")}
+            solid_defs=solid_a_b_list(), name="test", dependencies={"B": DependencyDefinition("A")}
         )
 
 
@@ -119,6 +127,7 @@ def test_malformed_dependencies():
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
+            name="test",
             dependencies={"B": {"b_input": {"b_input": DependencyDefinition("A")}}},
         )
 
@@ -127,7 +136,7 @@ def test_list_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='The expected type for "dependencies" is dict'
     ):
-        PipelineDefinition(solid_defs=solid_a_b_list(), dependencies=[])
+        PipelineDefinition(solid_defs=solid_a_b_list(), name="test", dependencies=[])
 
 
 def test_pass_unrelated_type_to_field_error_solid_definition():

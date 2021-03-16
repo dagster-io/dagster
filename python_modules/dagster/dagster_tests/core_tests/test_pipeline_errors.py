@@ -39,7 +39,10 @@ def create_root_fn_failure_solid(name):
 
 
 def test_compute_failure_pipeline():
-    pipeline_def = PipelineDefinition(solid_defs=[create_root_fn_failure_solid("failing")])
+    pipeline_def = PipelineDefinition(
+        solid_defs=[create_root_fn_failure_solid("failing")],
+        name="test",
+    )
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
     assert not pipeline_result.success

@@ -1,5 +1,3 @@
-import uuid
-import warnings
 from functools import update_wrapper
 
 from dagster import check
@@ -29,10 +27,6 @@ from .solid import NodeDefinition
 from .utils import validate_tags
 
 
-def _anonymous_pipeline_name():
-    return "__pipeline__" + str(uuid.uuid4()).replace("-", "")
-
-
 class PipelineDefinition(GraphDefinition):
     """Defines a Dagster pipeline.
 
@@ -49,7 +43,7 @@ class PipelineDefinition(GraphDefinition):
 
     Args:
         solid_defs (List[SolidDefinition]): The set of solids used in this pipeline.
-        name (Optional[str]): The name of the pipeline. Must be unique within any
+        name (str): The name of the pipeline. Must be unique within any
             :py:class:`RepositoryDefinition` containing the pipeline.
         description (Optional[str]): A human-readable description of the pipeline.
         dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
@@ -122,7 +116,7 @@ class PipelineDefinition(GraphDefinition):
     def __init__(
         self,
         solid_defs,
-        name=None,
+        name,
         description=None,
         dependencies=None,
         mode_defs=None,
@@ -135,12 +129,6 @@ class PipelineDefinition(GraphDefinition):
         positional_inputs=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
     ):
-        if not name:
-            warnings.warn(
-                "Pipeline must have a name. Names will be required starting in 0.10.0 or later."
-            )
-            name = _anonymous_pipeline_name()
-
         # For these warnings they check truthiness because they get changed to [] higher
         # in the stack for the decorator case
 

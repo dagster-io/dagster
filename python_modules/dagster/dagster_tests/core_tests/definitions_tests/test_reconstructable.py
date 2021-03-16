@@ -68,7 +68,7 @@ def test_not_defined_in_module(mocker):
 
 
 def test_manual_instance():
-    defn = PipelineDefinition([the_solid])
+    defn = PipelineDefinition([the_solid], "test")
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Reconstructable target should be a function or definition produced by a decorated function",

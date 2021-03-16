@@ -12,7 +12,7 @@ def setup_json_file_logger(tf_name, name="foo", level=logging.DEBUG):
     init_logger_context = InitLoggerContext(
         {},
         logger_def,
-        pipeline_def=PipelineDefinition([]),
+        pipeline_def=PipelineDefinition([], "test"),
         run_id="",
     )
 

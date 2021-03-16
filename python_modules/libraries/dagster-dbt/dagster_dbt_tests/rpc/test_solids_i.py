@@ -127,6 +127,7 @@ class TestDBTSingleOperationSolids:
         result = execute_pipeline(
             PipelineDefinition(
                 [configured_solid],
+                name="test",
                 mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": mock_dbt_rpc_resource})],
             ),
             instance=instance,
