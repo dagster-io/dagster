@@ -76,7 +76,10 @@ def get_args(callable_):
 
 def wait_for_pid(pid, timeout=30):
     if IS_WINDOWS:
-        os.waitpid(pid, 0)
+        try:
+            os.waitpid(pid, 0)
+        except OSError:
+            print("GOT THE FOLLOWING ERROR: " + str(sys.exc_info()))
         return
 
     start_time = time.time()
