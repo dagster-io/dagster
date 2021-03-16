@@ -37,6 +37,7 @@ type MDXData = {
 
 type HTMLData = {
   body: string;
+  toc: string;
 };
 
 enum PageType {
@@ -180,8 +181,9 @@ function MDXRenderer({ data }: { data: MDXData }) {
 }
 
 function HTMLRenderer({ data }: { data: HTMLData }) {
-  const { body } = data;
+  const { body, toc } = data;
   const markup = { __html: body };
+  const tocMarkup = { __html: toc };
 
   return (
     <>
@@ -190,6 +192,8 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
         tabIndex={0}
       >
         {/* Start main area*/}
+
+        <VersionNotice />
         <div className="py-6 px-4 sm:px-6 lg:px-8 w-full">
           <div
             className="prose dark:prose-dark max-w-none"
@@ -198,6 +202,19 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
         </div>
         {/* End main area */}
       </div>
+
+      <aside className="hidden relative xl:block flex-none w-96 flex-shrink-0 border-gray-200">
+        {/* Start secondary column (hidden on smaller screens) */}
+        <div className="flex flex-col justify-between  sticky top-24  py-6 px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 border px-4 py-4 relative overflow-y-scroll max-h-(screen-60)">
+            <div className="uppercase text-sm font-semibold text-gray-500 dark:text-gray-300">
+              On this page
+            </div>
+            <div className="mt-6 prose" dangerouslySetInnerHTML={tocMarkup} />
+          </div>
+        </div>
+        {/* End secondary column */}
+      </aside>
     </>
   );
 }
@@ -281,10 +298,10 @@ async function getSphinxData(
       curr = curr[part];
     }
 
-    const { body } = curr;
+    const { body, toc } = curr;
 
     return {
-      props: { type: PageType.HTML, data: { body } },
+      props: { type: PageType.HTML, data: { body, toc } },
     };
   } else {
     const pathToFile = path.resolve(basePath, "api/modules.json");
@@ -296,6 +313,7 @@ async function getSphinxData(
     }
 
     const { body } = curr;
+
     return {
       props: { type: PageType.HTML, data: { body } },
     };

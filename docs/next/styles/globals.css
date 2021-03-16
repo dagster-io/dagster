@@ -8,25 +8,55 @@
   }
 }
 
+/* These classes contain anchor links in the API docs. This property a scroll-margin top to compensate
+for the navigation bar. */
+
 dd,
 dt,
 div.section {
   scroll-margin-top: 90px;
 }
 
+/* By default, the anchor link icon is a bit too close and too visible. This property moves it to the
+right makes it less visible.  */
+
 a.headerlink {
   @apply ml-4 text-gray-300 hover:text-blue-400;
 }
 
-dl.class,
-dl.data,
-dl.attribute,
-dl.method,
-dl.exception,
-dl.function {
-  @apply bg-gray-100 px-4 py-2 rounded-md;
+/* API Docs Styles
+==================================================================================================*/
+
+dl {
+  @apply relative bg-gray-50 dark:bg-gray-800 my-4 px-4 rounded-lg border;
 }
 
-.section h2 {
-  @apply mt-0;
+/* Special cases for CLI */
+
+.section#dagster-cli .section,
+.section#cli .section {
+  @apply relative bg-gray-50 dark:bg-gray-800 my-4 px-4 rounded-lg border;
+}
+
+.section > .section h2 {
+  @apply my-8;
+}
+
+/* End Special cases for CLI */
+
+dl > dt {
+  @apply bg-gray-100 border-b -mx-4 px-4 pr-16 py-2;
+}
+
+dl > dd > dl {
+  @apply bg-gray-50 border;
+}
+
+.sig-prename,
+.sig-name {
+  @apply text-blue-600 text-lg !important;
+}
+
+dt > a.reference.internal {
+  @apply absolute top-3 right-3 opacity-50 text-sm;
 }

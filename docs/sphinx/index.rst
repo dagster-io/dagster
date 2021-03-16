@@ -21,7 +21,6 @@
    sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities
-<<<<<<< HEAD
    sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure
@@ -51,36 +50,5 @@
    sections/api/apidocs/libraries/dagster-spark
    sections/api/apidocs/libraries/dagster-ssh
    sections/api/apidocs/libraries/dagster-twilio
-=======
-   sections/api/apidocs/libraries/dagster_airflow
-   sections/api/apidocs/libraries/dagster_aws
-   sections/api/apidocs/libraries/dagster_azure
-   sections/api/apidocs/libraries/dagster_celery
-   sections/api/apidocs/libraries/dagster_celery_docker
-   sections/api/apidocs/libraries/dagster_celery_k8s
-   sections/api/apidocs/libraries/dagster_cron
-   sections/api/apidocs/libraries/dagster_dask
-   sections/api/apidocs/libraries/dagster_databricks
-   sections/api/apidocs/libraries/dagster_datadog
-   sections/api/apidocs/libraries/dagster_dbt
-   sections/api/apidocs/libraries/dagster_docker
-   sections/api/apidocs/libraries/dagster_gcp
-   sections/api/apidocs/libraries/dagster_ge
-   sections/api/apidocs/libraries/dagster_github
-   sections/api/apidocs/libraries/dagster_k8s
-   sections/api/apidocs/libraries/dagster_mysql
-   sections/api/apidocs/libraries/dagster_pagerduty
-   sections/api/apidocs/libraries/dagster_pandas
-   sections/api/apidocs/libraries/dagster_papertrail
-   sections/api/apidocs/libraries/dagster_postgres
-   sections/api/apidocs/libraries/dagster_prometheus
-   sections/api/apidocs/libraries/dagster_pyspark
-   sections/api/apidocs/libraries/dagster_shell
-   sections/api/apidocs/libraries/dagster_slack
-   sections/api/apidocs/libraries/dagster_snowflake
-   sections/api/apidocs/libraries/dagster_spark
-   sections/api/apidocs/libraries/dagster_ssh
-   sections/api/apidocs/libraries/dagster_twilio
->>>>>>> 20cfb74a1... [docs] Clean up several sphinx errors
    sections/api/apidocs/libraries/dagstermill
    sections/api/apidocs/libraries/lakehouse
