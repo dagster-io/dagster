@@ -115,6 +115,7 @@ export const AssetsFilter = ({
   const onSelect = React.useCallback(
     (suggestion: string) => {
       onSetQuery(onSelectSuggestion(suggestion));
+      setHighlight(0);
     },
     [onSetQuery, onSelectSuggestion],
   );
@@ -150,6 +151,12 @@ export const AssetsFilter = ({
       setHighlight(highlight === lastResult ? 0 : highlight + 1);
     }
   };
+
+  const onChange = (e: React.ChangeEvent<any>) => {
+    onSetQuery(e.target.value);
+    setHighlight(0);
+  };
+
   const isOpen = shown && suggestions.length > 0;
   return (
     <Popover
@@ -184,7 +191,7 @@ export const AssetsFilter = ({
         fill={false}
         placeholder={`Filter asset_keys...`}
         hasSuggestions={isOpen}
-        onChange={(e: React.ChangeEvent<any>) => onSetQuery(e.target.value)}
+        onChange={onChange}
         onKeyDown={onKeyDown}
         onBlur={() => setShown(false)}
         onFocus={() => setShown(true)}
