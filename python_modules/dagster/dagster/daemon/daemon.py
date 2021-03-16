@@ -199,13 +199,8 @@ class SchedulerDaemon(DagsterDaemon):
 
 class SensorDaemon(DagsterDaemon):
     @staticmethod
-    def create_from_instance(instance):
-        sensor_settings = instance.get_settings("sensor_settings") or {}
-        return SensorDaemon(
-            interval_seconds=sensor_settings.get(
-                "interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
-            ),
-        )
+    def create_from_instance(_instance):
+        return SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
 
     @classmethod
     def daemon_type(cls):
