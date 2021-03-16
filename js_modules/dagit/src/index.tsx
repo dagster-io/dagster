@@ -4,8 +4,6 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import 'src/fonts/fonts.css';
-
 import {ApolloClient, ApolloLink, ApolloProvider} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {Colors} from '@blueprintjs/core';

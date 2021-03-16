@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+import {FontFamily} from 'src/ui/styles';
+
 const PX_TO_UNITS = 0.62;
 
 interface ISize {
@@ -73,7 +75,8 @@ export class SVGMonospaceText extends React.PureComponent<
     const line1Y = (Number(y) || 0) - (line2.length > 0 ? (Number(size) * LINE_SPACING) / 2 : 0);
 
     const style: React.CSSProperties = {
-      font: `${size}px "Source Code Pro", monospace`,
+      fontFamily: FontFamily.monospace,
+      fontSize: `${size}px`,
       pointerEvents: 'none',
     };
 
