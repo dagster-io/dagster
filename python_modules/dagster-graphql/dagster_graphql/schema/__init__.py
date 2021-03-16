@@ -11,7 +11,7 @@ def types():
     from .roots import types as roots_types
     from .schedules import types as schedules_types
     from .asset_key import GrapheneAssetKey
-    from .backfill import GraphenePartitionBackfillResult, GraphenePartitionBackfillSuccess
+    from .backfill import GrapheneLaunchBackfillResult, GrapheneLaunchBackfillSuccess
     from .config_type_or_error import GrapheneConfigTypeOrError
     from .config_types import types as config_types
     from .dagster_types import types as dagster_types_types
@@ -43,7 +43,7 @@ def types():
         + roots_types()
         + schedules_types()
         + [GrapheneAssetKey]
-        + [GraphenePartitionBackfillResult, GraphenePartitionBackfillSuccess]
+        + [GrapheneLaunchBackfillResult, GrapheneLaunchBackfillSuccess]
         + [GrapheneConfigTypeOrError]
         + config_types
         + dagster_types_types

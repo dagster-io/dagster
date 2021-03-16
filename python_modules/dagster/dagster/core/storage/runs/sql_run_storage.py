@@ -675,11 +675,19 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
-    def get_backfills(self, status=None):
+    def get_backfills(self, status=None, cursor=None, limit=None):
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db.select([BulkActionsTable.c.body])
         if status:
             query = query.where(BulkActionsTable.c.status == status.value)
+        if cursor:
+            cursor_query = db.select([BulkActionsTable.c.id]).where(
+                BulkActionsTable.c.key == cursor
+            )
+            query = query.where(BulkActionsTable.c.id < cursor_query)
+        if limit:
+            query = query.limit(limit)
+        query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
         return [deserialize_json_to_dagster_namedtuple(row[0]) for row in rows]
 

@@ -9,6 +9,7 @@
 //==============================================================
 
 export enum BulkActionStatus {
+  CANCELED = "CANCELED",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
   REQUESTED = "REQUESTED",
@@ -164,7 +165,7 @@ export interface JobSelector {
   jobName: string;
 }
 
-export interface PartitionBackfillParams {
+export interface LaunchBackfillParams {
   selector: PartitionSetSelector;
   partitionNames: string[];
   reexecutionSteps?: string[] | null;

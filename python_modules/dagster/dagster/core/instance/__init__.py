@@ -1542,8 +1542,8 @@ class DagsterInstance:
         return daemons
 
     # backfill
-    def get_backfills(self, status=None):
-        return self._run_storage.get_backfills(status=status)
+    def get_backfills(self, status=None, cursor=None, limit=None):
+        return self._run_storage.get_backfills(status=status, cursor=cursor, limit=limit)
 
     def get_backfill(self, backfill_id):
         return self._run_storage.get_backfill(backfill_id)

@@ -21,9 +21,8 @@ export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfi
   __typename: "PartitionBackfill";
   backfillId: string;
   status: BulkActionStatus;
-  isPersisted: boolean;
-  numRequested: number | null;
-  numTotal: number | null;
+  numRequested: number;
+  numTotal: number;
   runs: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs[];
 }
 

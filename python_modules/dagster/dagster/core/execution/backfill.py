@@ -30,6 +30,7 @@ class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELED = "CANCELED"
 
 
 @whitelist_for_serdes

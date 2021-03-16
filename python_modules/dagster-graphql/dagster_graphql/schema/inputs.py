@@ -96,7 +96,7 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
         name = "PartitionSetSelector"
 
 
-class GraphenePartitionBackfillParams(graphene.InputObjectType):
+class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.NonNull(GraphenePartitionSetSelector)
     partitionNames = non_null_list(graphene.String)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
@@ -105,7 +105,7 @@ class GraphenePartitionBackfillParams(graphene.InputObjectType):
     forceSynchronousSubmission = graphene.Boolean()
 
     class Meta:
-        name = "PartitionBackfillParams"
+        name = "LaunchBackfillParams"
 
 
 class GrapheneSensorSelector(graphene.InputObjectType):
@@ -220,7 +220,7 @@ types = [
     GrapheneJobSelector,
     GrapheneMarshalledInput,
     GrapheneMarshalledOutput,
-    GraphenePartitionBackfillParams,
+    GrapheneLaunchBackfillParams,
     GraphenePartitionSetSelector,
     GraphenePipelineRunsFilter,
     GraphenePipelineSelector,

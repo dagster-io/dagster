@@ -26,6 +26,7 @@ type Query {
   assetsOrError(prefixPath: [String!]): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
+  partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -598,6 +599,7 @@ type PartitionSet {
   partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
   partition(partitionName: String!): Partition
   partitionStatusesOrError: PartitionStatusesOrError!
+  repositoryOrigin: RepositoryOrigin!
 }
 
 union PartitionsOrError = Partitions | PythonError
@@ -970,11 +972,13 @@ union PartitionBackfillOrError = PartitionBackfill | PythonError
 type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
-  isPersisted: Boolean!
-  numRequested: Int
-  numTotal: Int
-  fromFailure: Boolean
-  reexecutionSteps: [String!]
+  numRequested: Int!
+  numTotal: Int!
+  fromFailure: Boolean!
+  reexecutionSteps: [String!]!
+  partitionSetName: String!
+  timestamp: Float!
+  partitionSet: PartitionSet
   runs(limit: Int): [PipelineRun!]!
 }
 
@@ -982,6 +986,13 @@ enum BulkActionStatus {
   REQUESTED
   COMPLETED
   FAILED
+  CANCELED
+}
+
+union PartitionBackfillsOrError = PartitionBackfills | PythonError
+
+type PartitionBackfills {
+  results: [PartitionBackfill!]!
 }
 
 type Mutation {
@@ -996,8 +1007,9 @@ type Mutation {
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   reloadWorkspace: ReloadWorkspaceMutationResult!
-  launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
   wipeAsset(assetKey: AssetKeyInput!): AssetWipeMutationResult!
+  launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
+  cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
 union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
@@ -1098,14 +1110,20 @@ type RepositoryLocationNotFound implements Error {
 
 union ReloadWorkspaceMutationResult = RepositoryLocationConnection | PythonError
 
-union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union AssetWipeMutationResult = AssetNotFoundError | PythonError | AssetWipeSuccess
 
-type PartitionBackfillSuccess {
+type AssetWipeSuccess {
+  assetKey: AssetKey!
+}
+
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+
+type LaunchBackfillSuccess {
   backfillId: String!
   launchedRunIds: [String]
 }
 
-input PartitionBackfillParams {
+input LaunchBackfillParams {
   selector: PartitionSetSelector!
   partitionNames: [String!]!
   reexecutionSteps: [String!]
@@ -1119,10 +1137,10 @@ input PartitionSetSelector {
   repositorySelector: RepositorySelector!
 }
 
-union AssetWipeMutationResult = AssetNotFoundError | PythonError | AssetWipeSuccess
+union CancelBackfillResult = CancelBackfillSuccess | PythonError
 
-type AssetWipeSuccess {
-  assetKey: AssetKey!
+type CancelBackfillSuccess {
+  backfillId: String!
 }
 
 type Subscription {
@@ -1619,8 +1637,8 @@ type DeleteRunMutation {
   Output: DeletePipelineRunResult!
 }
 
-type LaunchPartitionBackfillMutation {
-  Output: PartitionBackfillResult!
+type LaunchBackfillMutation {
+  Output: LaunchBackfillResult!
 }
 
 type LaunchPipelineExecutionMutation {

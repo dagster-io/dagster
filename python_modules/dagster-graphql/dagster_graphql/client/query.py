@@ -347,7 +347,7 @@ query ReexecutionInfoQuery($runId: ID!) {
 LAUNCH_PARTITION_BACKFILL_MUTATION = (
     ERROR_FRAGMENT
     + """
-mutation($backfillParams: PartitionBackfillParams!) {
+mutation($backfillParams: LaunchBackfillParams!) {
   launchPartitionBackfill(backfillParams: $backfillParams) {
     __typename
     ... on PythonError {
@@ -356,7 +356,7 @@ mutation($backfillParams: PartitionBackfillParams!) {
     ... on PartitionSetNotFoundError {
       message
     }
-    ... on PartitionBackfillSuccess {
+    ... on LaunchBackfillSuccess {
       backfillId
       launchedRunIds
     }

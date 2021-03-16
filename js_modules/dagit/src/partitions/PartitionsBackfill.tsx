@@ -627,7 +627,7 @@ const LaunchBackfillButton: React.FC<{
       return;
     }
 
-    if (data && data.launchPartitionBackfill.__typename === 'PartitionBackfillSuccess') {
+    if (data && data.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
       onSuccess?.(data.launchPartitionBackfill.backfillId);
     } else {
       onError?.(data);
@@ -753,10 +753,10 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
 `;
 
 const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
-  mutation LaunchPartitionBackfill($backfillParams: PartitionBackfillParams!) {
+  mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
     launchPartitionBackfill(backfillParams: $backfillParams) {
       __typename
-      ... on PartitionBackfillSuccess {
+      ... on LaunchBackfillSuccess {
         backfillId
       }
       ... on PartitionSetNotFoundError {

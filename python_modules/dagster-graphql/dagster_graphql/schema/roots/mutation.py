@@ -2,6 +2,7 @@ import graphene
 from dagster.core.definitions.events import AssetKey
 
 from ...implementation.execution import (
+    cancel_partition_backfill,
     create_and_launch_partition_backfill,
     delete_pipeline_run,
     launch_pipeline_execution,
@@ -21,7 +22,7 @@ from ...implementation.utils import (
     pipeline_selector_from_graphql,
 )
 from ..asset_key import GrapheneAssetKey
-from ..backfill import GraphenePartitionBackfillResult
+from ..backfill import GrapheneCancelBackfillResult, GrapheneLaunchBackfillResult
 from ..errors import (
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -36,7 +37,7 @@ from ..external import (
     GrapheneRepositoryLocationConnection,
     GrapheneRepositoryLocationLoadFailure,
 )
-from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GraphenePartitionBackfillParams
+from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
 from ..pipelines.pipeline import GraphenePipelineRun
 from ..runs import GrapheneLaunchPipelineExecutionResult, GrapheneLaunchPipelineReexecutionResult
 from ..schedules import (
@@ -199,18 +200,32 @@ class GrapheneLaunchPipelineExecutionMutation(graphene.Mutation):
         )
 
 
-class GrapheneLaunchPartitionBackfillMutation(graphene.Mutation):
-    Output = graphene.NonNull(GraphenePartitionBackfillResult)
+class GrapheneLaunchBackfillMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneLaunchBackfillResult)
 
     class Arguments:
-        backfillParams = graphene.NonNull(GraphenePartitionBackfillParams)
+        backfillParams = graphene.NonNull(GrapheneLaunchBackfillParams)
 
     class Meta:
         description = "Launches a set of partition backfill runs via the run launcher configured on the instance."
-        name = "LaunchPartitionBackfillMutation"
+        name = "LaunchBackfillMutation"
 
     def mutate(self, graphene_info, **kwargs):
         return create_and_launch_partition_backfill(graphene_info, kwargs["backfillParams"])
+
+
+class GrapheneCancelBackfillMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneCancelBackfillResult)
+
+    class Arguments:
+        backfillId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = "Marks a partition backfill as canceled."
+        name = "CancelBackfillMutation"
+
+    def mutate(self, graphene_info, **kwargs):
+        return cancel_partition_backfill(graphene_info, kwargs["backfillId"])
 
 
 @capture_error
@@ -379,8 +394,9 @@ class GrapheneMutation(graphene.ObjectType):
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
     reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
-    launch_partition_backfill = GrapheneLaunchPartitionBackfillMutation.Field()
     wipe_asset = GrapheneAssetWipeMutation.Field()
+    launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
+    cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
 
     class Meta:
         name = "Mutation"

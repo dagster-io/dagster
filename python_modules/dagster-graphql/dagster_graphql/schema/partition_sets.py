@@ -21,6 +21,7 @@ from .errors import (
 from .inputs import GraphenePipelineRunsFilter
 from .pipelines.pipeline import GraphenePipelineRun
 from .pipelines.status import GraphenePipelineRunStatus
+from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
 
@@ -172,6 +173,7 @@ class GraphenePartitionSet(graphene.ObjectType):
     )
     partition = graphene.Field(GraphenePartition, partition_name=graphene.NonNull(graphene.String))
     partitionStatusesOrError = graphene.NonNull(GraphenePartitionStatusesOrError)
+    repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
 
     class Meta:
         name = "PartitionSet"
@@ -216,6 +218,10 @@ class GraphenePartitionSet(graphene.ObjectType):
         return get_partition_set_partition_statuses(
             graphene_info, self._external_repository_handle, self._external_partition_set.name
         )
+
+    def resolve_repositoryOrigin(self, _):
+        origin = self._external_partition_set.get_external_origin().external_repository_origin
+        return GrapheneRepositoryOrigin(origin)
 
 
 class GraphenePartitionSetOrError(graphene.Union):

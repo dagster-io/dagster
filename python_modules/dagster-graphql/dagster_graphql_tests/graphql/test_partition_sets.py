@@ -215,7 +215,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert not result.errors
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
         run_ids = result.data["launchPartitionBackfill"]["launchedRunIds"]
 
@@ -255,7 +255,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert not result.errors
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
 
         result = execute_dagster_graphql(
@@ -293,7 +293,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert not result.errors
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 10
 
         result = execute_dagster_graphql(

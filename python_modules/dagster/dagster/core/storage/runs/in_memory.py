@@ -119,10 +119,10 @@ class InMemoryRunStorage(RunStorage):
 
         return len(self.get_runs(filters))
 
-    def _slice(self, runs, cursor, limit):
+    def _slice(self, items, cursor, limit, key_fn=lambda _: _.run_id):
         if cursor:
             try:
-                index = next(i for i, run in enumerate(runs) if run.run_id == cursor)
+                index = next(i for i, item in enumerate(items) if key_fn(item) == cursor)
             except StopIteration:
                 return []
             start = index + 1
@@ -134,7 +134,7 @@ class InMemoryRunStorage(RunStorage):
         else:
             end = None
 
-        return list(runs)[start:end]
+        return list(items)[start:end]
 
     def get_run_by_id(self, run_id):
         check.str_param(run_id, "run_id")
@@ -257,13 +257,14 @@ class InMemoryRunStorage(RunStorage):
             "The dagster daemon lives in a separate process. It cannot use in memory storage."
         )
 
-    def get_backfills(self, status=None):
+    def get_backfills(self, status=None, cursor=None, limit=None):
         check.opt_inst_param(status, "status", BulkActionStatus)
-        return [
+        backfills = [
             backfill
             for backfill in self._bulk_actions.values()
             if not status or status == backfill.status
         ]
+        return self._slice(backfills[::-1], cursor, limit, key_fn=lambda _: _.backfill_id)
 
     def get_backfill(self, backfill_id):
         check.str_param(backfill_id, "backfill_id")

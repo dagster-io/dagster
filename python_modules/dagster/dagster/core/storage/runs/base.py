@@ -276,7 +276,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     # Backfill storage
     @abstractmethod
-    def get_backfills(self, status=None):
+    def get_backfills(self, status=None, cursor=None, limit=None):
         """ Get a list of partition backfills """
 
     @abstractmethod

@@ -95,11 +95,9 @@ export const PartitionProgress = (props: Props) => {
 
   const {numQueued, numInProgress, numSucceeded, numFailed, numTotalRuns} = counts;
   const numFinished = numSucceeded + numFailed;
-  const unscheduled = results.isPersisted
-    ? (results.numTotal || 0) - (results.numRequested || 0)
-    : 0;
-  const skipped = results.isPersisted ? (results.numRequested || 0) - numTotalRuns : 0;
-  const numTotal = results.isPersisted ? results.numTotal || 0 : numTotalRuns;
+  const unscheduled = results.numTotal - results.numRequested;
+  const skipped = results.numRequested - numTotalRuns;
+  const numTotal = results.numTotal;
 
   const table = (
     <TooltipTable>
@@ -128,12 +126,10 @@ export const PartitionProgress = (props: Props) => {
           count={numFailed}
           numTotal={numTotal}
         />
-        {results.isPersisted && numTotalRuns < (results.numRequested || 0) ? (
+        {numTotalRuns < results.numRequested ? (
           <TooltipTableRow humanText="Skipped" count={skipped} numTotal={numTotal} />
         ) : null}
-        {results.isPersisted ? (
-          <TooltipTableRow humanText="To be scheduled" count={unscheduled} numTotal={numTotal} />
-        ) : null}
+        <TooltipTableRow humanText="To be scheduled" count={unscheduled} numTotal={numTotal} />
       </tbody>
     </TooltipTable>
   );
@@ -236,7 +232,6 @@ const PARTITION_PROGRESS_QUERY = gql`
       ... on PartitionBackfill {
         backfillId
         status
-        isPersisted
         numRequested
         numTotal
         runs(limit: $limit) {

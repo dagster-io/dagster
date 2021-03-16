@@ -17,11 +17,25 @@ PARTITION_PROGRESS_QUERY = """
         __typename
         backfillId
         status
-        isPersisted
         numRequested
         numTotal
         fromFailure
         reexecutionSteps
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+    }
+  }
+"""
+
+CANCEL_BACKFILL_MUTATION = """
+  mutation($backfillId: String!) {
+    cancelPartitionBackfill(backfillId: $backfillId) {
+      ... on CancelBackfillSuccess {
+        __typename
+        backfillId
       }
       ... on PythonError {
         message
@@ -51,7 +65,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
         result = execute_dagster_graphql(
@@ -62,7 +76,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["isPersisted"]
         assert result.data["partitionBackfillOrError"]["numRequested"] == 0
         assert result.data["partitionBackfillOrError"]["numTotal"] == 2
 
@@ -89,7 +102,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
         result = execute_dagster_graphql(
@@ -100,10 +113,55 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["isPersisted"]
         assert result.data["partitionBackfillOrError"]["numRequested"] == 0
         assert result.data["partitionBackfillOrError"]["numTotal"] == 2
         assert result.data["partitionBackfillOrError"]["reexecutionSteps"] == ["after_failure"]
+
+    def test_cancel_backfill(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integer_partition",
+                    },
+                    "partitionNames": ["2", "3"],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context, PARTITION_PROGRESS_QUERY, variables={"backfillId": backfill_id}
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
+        assert result.data["partitionBackfillOrError"]["numRequested"] == 0
+        assert result.data["partitionBackfillOrError"]["numTotal"] == 2
+
+        result = execute_dagster_graphql(
+            graphql_context, CANCEL_BACKFILL_MUTATION, variables={"backfillId": backfill_id}
+        )
+        assert result.data
+        assert result.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
+
+        result = execute_dagster_graphql(
+            graphql_context, PARTITION_PROGRESS_QUERY, variables={"backfillId": backfill_id}
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "CANCELED"
 
 
 class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
@@ -136,7 +194,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
 
         # re-execute from failure (without the failure file)
         result = execute_dagster_graphql_and_finish_runs(
@@ -153,7 +211,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
         result = execute_dagster_graphql(
@@ -163,7 +221,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["isPersisted"]
         assert result.data["partitionBackfillOrError"]["numRequested"] == 0
         assert result.data["partitionBackfillOrError"]["numTotal"] == 2
         assert result.data["partitionBackfillOrError"]["fromFailure"]
