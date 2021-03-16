@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from dagster.core.test_utils import instance_for_test
 from dagster.daemon.cli import run_command
 from dagster.daemon.controller import daemon_controller_from_instance
-from dagster.daemon.daemon import BackfillDaemon, SchedulerDaemon
+from dagster.daemon.daemon import SchedulerDaemon
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 
 
@@ -25,7 +25,7 @@ def test_scheduler_instance():
         ) as controller:
             daemons = controller.daemons
 
-            assert len(daemons) == 2
+            assert len(daemons) == 3
 
             assert any(isinstance(daemon, SchedulerDaemon) for daemon in daemons)
 
@@ -44,23 +44,8 @@ def test_run_coordinator_instance():
         ) as controller:
             daemons = controller.daemons
 
-            assert len(daemons) == 3
+            assert len(daemons) == 4
             assert any(isinstance(daemon, QueuedRunCoordinatorDaemon) for daemon in daemons)
-
-
-def test_backfill_instance():
-    with instance_for_test(
-        overrides={
-            "backfill": {"daemon_enabled": True},
-        }
-    ) as instance:
-        with daemon_controller_from_instance(
-            instance, wait_for_processes_on_exit=True
-        ) as controller:
-            daemons = controller.daemons
-
-            assert len(daemons) == 3
-            assert any(isinstance(daemon, BackfillDaemon) for daemon in daemons)
 
 
 def _scheduler_ran(caplog):

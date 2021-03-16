@@ -75,11 +75,6 @@ data:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
     {{- end }}
 
-    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.backfill.enabled) }}
-    backfill:
-      daemon_enabled: true
-    {{- end }}
-
     {{- $computeLogManagerType := .Values.computeLogManager.type }}
     {{- if not (eq $computeLogManagerType "LocalComputeLogManager") }}
     compute_logs:

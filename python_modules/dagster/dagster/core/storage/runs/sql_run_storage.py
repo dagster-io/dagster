@@ -675,11 +675,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
-    def has_bulk_actions_table(self):
-        with self.connect() as conn:
-            inspector = db.engine.reflection.Inspector.from_engine(conn.engine)
-            return "bulk_actions" in inspector.get_table_names()
-
     def get_backfills(self, status=None):
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db.select([BulkActionsTable.c.body])

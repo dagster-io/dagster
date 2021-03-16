@@ -677,8 +677,8 @@ ingress:
     succeedingPaths: []
 
 ####################################################################################################
-# Dagster Daemon (Optional) Deploy a daemon for launching queued runs, running partition backfills,
-# and running schedules and sensors.
+# Dagster Daemon (Optional) Deploy a daemon for launching queued runs and running schedules and
+# sensors.
 #
 # By default, this daemon is included in your deployment and used to run schedules and sensors.
 # Setting `enabled` to false will stop the daemon from being included in your deployment.
@@ -688,9 +688,6 @@ ingress:
 #
 # Setting `enabled` in `queuedRunCoordinator` allows you to set limits on the total number of runs
 # that can execute at once.
-#
-# Setting `enabled` in `backfill` allows you to schedule backfills asynchronously instead of in a
-# dagit request (which might aggressively tie up resources for large backfill jobs).
 ####################################################################################################
 dagsterDaemon:
   enabled: true
@@ -703,9 +700,6 @@ dagsterDaemon:
   queuedRunCoordinator:
     enabled: false
     config: {}
-
-  backfill:
-    enabled: false
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:

@@ -90,7 +90,6 @@ class GrapheneInstance(graphene.ObjectType):
     runQueuingSupported = graphene.NonNull(graphene.Boolean)
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
-    daemonBackfillEnabled = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Instance"
@@ -119,7 +118,3 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_daemonHealth(self, _graphene_info):
         return GrapheneDaemonHealth(instance=self._instance)
-
-    def resolve_daemonBackfillEnabled(self, _graphene_info):
-        backfill_settings = self._instance.get_settings("backfill") or {}
-        return backfill_settings.get("daemon_enabled", False)

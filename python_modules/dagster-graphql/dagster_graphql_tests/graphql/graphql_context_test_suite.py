@@ -254,24 +254,6 @@ class InstanceManagers:
         )
 
     @staticmethod
-    def sqlite_instance_with_daemon_backfill():
-        @contextmanager
-        def _sqlite_instance_with_default_hijack():
-            with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
-                    overrides={
-                        "backfill": {"daemon_enabled": True},
-                    },
-                ) as instance:
-                    yield instance
-
-        return MarkedManager(
-            _sqlite_instance_with_default_hijack,
-            [Marks.sqlite_instance, Marks.backfill_daemon],
-        )
-
-    @staticmethod
     def postgres_instance_with_sync_run_launcher():
         @contextmanager
         def _postgres_instance():
@@ -310,22 +292,6 @@ class InstanceManagers:
         return MarkedManager(
             _postgres_instance_with_default_hijack,
             [Marks.postgres_instance, Marks.default_run_launcher],
-        )
-
-    @staticmethod
-    def postgres_instance_with_daemon_backfill():
-        @contextmanager
-        def _postgres_instance_with_default_hijack():
-            with graphql_postgres_instance(
-                overrides={
-                    "backfill": {"daemon_enabled": True},
-                }
-            ) as instance:
-                yield instance
-
-        return MarkedManager(
-            _postgres_instance_with_default_hijack,
-            [Marks.postgres_instance, Marks.backfill_daemon],
         )
 
     @staticmethod
@@ -670,22 +636,6 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def sqlite_with_backfill_daemon_managed_grpc_env():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_daemon_backfill(),
-            EnvironmentManagers.managed_grpc(),
-            test_id="sqlite_with_backfill_daemon_managed_grpc_env",
-        )
-
-    @staticmethod
-    def postgres_with_backfill_daemon_managed_grpc_env():
-        return GraphQLContextVariant(
-            InstanceManagers.postgres_instance_with_daemon_backfill(),
-            EnvironmentManagers.managed_grpc(),
-            test_id="postgres_with_backfill_daemon_managed_grpc_env",
-        )
-
-    @staticmethod
     def all_variants():
         """
         There is a test case that keeps this up-to-date. If you add a static
@@ -697,10 +647,8 @@ class GraphQLContextVariant:
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
-            GraphQLContextVariant.sqlite_with_backfill_daemon_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
-            GraphQLContextVariant.postgres_with_backfill_daemon_managed_grpc_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
             GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_in_memory_instance_lazy_repository(),

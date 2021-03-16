@@ -480,7 +480,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           </GridScrollContainer>
         </div>
 
-        {instance.daemonBackfillEnabled && !instance.daemonHealth.daemonStatus.healthy ? (
+        {!instance.daemonHealth.daemonStatus.healthy ? (
           <div style={{marginTop: 10}}>
             <Alert
               intent="warning"
@@ -747,7 +747,6 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
           healthy
         }
       }
-      daemonBackfillEnabled
       runQueuingSupported
     }
   }

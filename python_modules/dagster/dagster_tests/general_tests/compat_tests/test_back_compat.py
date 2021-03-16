@@ -367,9 +367,8 @@ def test_0_10_6_add_bulk_actions_table():
         assert get_current_alembic_version(db_path) == "0da417ae1b81"
         assert "bulk_actions" not in get_sqlite3_tables(db_path)
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            assert not instance.has_bulk_actions_table()
             instance.upgrade()
-            assert instance.has_bulk_actions_table()
+            assert "bulk_actions" in get_sqlite3_tables(db_path)
 
 
 def test_0_11_0_add_asset_details():

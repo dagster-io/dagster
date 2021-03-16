@@ -257,9 +257,6 @@ class InMemoryRunStorage(RunStorage):
             "The dagster daemon lives in a separate process. It cannot use in memory storage."
         )
 
-    def has_bulk_actions_table(self):
-        return True
-
     def get_backfills(self, status=None):
         check.opt_inst_param(status, "status", BulkActionStatus)
         return [

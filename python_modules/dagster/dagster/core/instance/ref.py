@@ -186,7 +186,7 @@ class InstanceRef(
             ),
         )
 
-        settings_keys = {"telemetry", "backfill"}
+        settings_keys = {"telemetry"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
         if custom_instance_class:

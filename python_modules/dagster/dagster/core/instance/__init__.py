@@ -1534,20 +1534,14 @@ class DagsterInstance:
             QueuedRunCoordinatorDaemon,
         )
 
-        daemons = [SensorDaemon.daemon_type()]
-        backfill_settings = self.get_settings("backfill") or {}
+        daemons = [SensorDaemon.daemon_type(), BackfillDaemon.daemon_type()]
         if isinstance(self.scheduler, DagsterDaemonScheduler):
             daemons.append(SchedulerDaemon.daemon_type())
         if isinstance(self.run_coordinator, QueuedRunCoordinator):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
-        if backfill_settings.get("daemon_enabled"):
-            daemons.append(BackfillDaemon.daemon_type())
         return daemons
 
     # backfill
-    def has_bulk_actions_table(self):
-        return self._run_storage.has_bulk_actions_table()
-
     def get_backfills(self, status=None):
         return self._run_storage.get_backfills(status=status)
 

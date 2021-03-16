@@ -10,15 +10,10 @@ class QueuedRunCoordinator(BaseModel):
     config: dict
 
 
-class Backfill(BaseModel):
-    enabled: bool
-
-
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
     queuedRunCoordinator: QueuedRunCoordinator
-    backfill: Backfill
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]

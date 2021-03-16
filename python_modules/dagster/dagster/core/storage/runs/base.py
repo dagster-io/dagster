@@ -276,10 +276,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     # Backfill storage
     @abstractmethod
-    def has_bulk_actions_table(self):
-        """ Bulk actions table table """
-
-    @abstractmethod
     def get_backfills(self, status=None):
         """ Get a list of partition backfills """
 

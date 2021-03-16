@@ -56,19 +56,11 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         backfill_timestamp=pendulum.now("UTC").timestamp(),
     )
 
-    backfill_settings = graphene_info.context.instance.get_settings("backfill") or {}
-    daemonEnabled = backfill_settings.get("daemon_enabled")
-    if daemonEnabled and not graphene_info.context.instance.has_bulk_actions_table():
-        check.failed(
-            "A schema migration is required before daemon-based backfills can be supported. "
-            "Try running `dagster instance migrate` to migrate your instance and try again."
-        )
-    elif daemonEnabled:
-        graphene_info.context.instance.add_backfill(backfill)
-        return GraphenePartitionBackfillSuccess(backfill_id=backfill_id)
-    else:
+    if backfill_params.get("forceSynchronousSubmission"):
+        # should only be used in a test situation
         to_submit = [name for name in partition_names]
         submitted_run_ids = []
+
         while to_submit:
             chunk = to_submit[:BACKFILL_CHUNK_SIZE]
             to_submit = to_submit[BACKFILL_CHUNK_SIZE:]
@@ -83,13 +75,13 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
             backfill_id=backfill_id, launched_run_ids=submitted_run_ids
         )
 
+    graphene_info.context.instance.add_backfill(backfill)
+    return GraphenePartitionBackfillSuccess(backfill_id=backfill_id)
+
 
 @capture_error
 def get_backfill(graphene_info, backfill_id):
     from ...schema.backfill import GraphenePartitionBackfill
 
-    if graphene_info.context.instance.has_bulk_actions_table():
-        backfill_job = graphene_info.context.instance.get_backfill(backfill_id)
-        return GraphenePartitionBackfill(backfill_id, backfill_job)
-    else:
-        return GraphenePartitionBackfill(backfill_id)
+    backfill_job = graphene_info.context.instance.get_backfill(backfill_id)
+    return GraphenePartitionBackfill(backfill_id, backfill_job)

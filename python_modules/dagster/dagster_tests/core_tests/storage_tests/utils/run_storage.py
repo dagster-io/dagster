@@ -990,9 +990,6 @@ class TestRunStorage:
 
     def test_backfill(self, storage):
         origin = self.fake_partition_set_origin("fake_partition_set")
-        if not storage.has_bulk_actions_table():
-            pytest.skip("Storage does not support bulk actions")
-
         backfills = storage.get_backfills()
         assert len(backfills) == 0
 

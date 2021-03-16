@@ -184,10 +184,15 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
+        with pytest.raises(DagsterInstanceMigrationRequired):
+            with DagsterInstance.from_config(tempdir) as instance:
+                instance.get_backfills()
+
         with DagsterInstance.from_config(tempdir) as instance:
-            assert not instance.has_bulk_actions_table()
             instance.upgrade()
-            assert instance.has_bulk_actions_table()
+
+        with DagsterInstance.from_config(tempdir) as upgraded_instance:
+            assert len(upgraded_instance.get_backfills()) == 0
 
 
 def test_0_11_0_add_asset_details(hostname, conn_string):

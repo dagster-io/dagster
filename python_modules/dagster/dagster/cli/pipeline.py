@@ -935,12 +935,11 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
         )
 
         if isinstance(partition_execution_data, ExternalPartitionExecutionErrorData):
-            if instance.has_bulk_actions_table():
-                instance.add_backfill(
-                    backfill_job.with_status(BulkActionStatus.FAILED).with_error(
-                        partition_execution_data.error
-                    )
+            instance.add_backfill(
+                backfill_job.with_status(BulkActionStatus.FAILED).with_error(
+                    partition_execution_data.error
                 )
+            )
             return print_fn("Backfill failed: {}".format(partition_execution_data.error))
 
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
@@ -957,8 +956,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
             if pipeline_run:
                 instance.submit_run(pipeline_run.run_id, external_pipeline)
 
-        if instance.has_bulk_actions_table():
-            instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
+        instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 
         print_fn("Launched backfill job `{}`".format(backfill_id))
 

@@ -131,7 +131,6 @@ export interface PartitionsBackfillSelectorQuery_instance {
   __typename: "Instance";
   runLauncher: PartitionsBackfillSelectorQuery_instance_runLauncher | null;
   daemonHealth: PartitionsBackfillSelectorQuery_instance_daemonHealth;
-  daemonBackfillEnabled: boolean;
   runQueuingSupported: boolean;
 }
 
