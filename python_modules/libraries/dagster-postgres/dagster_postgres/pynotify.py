@@ -78,6 +78,7 @@ def await_pg_notifications(
     timeout: float = 5.0,
     yield_on_timeout: bool = False,
     exit_event: Optional[Event] = None,
+    started_event: Optional[Event] = None,
 ) -> Iterator[Optional[Notify]]:
     """Subscribe to PostgreSQL notifications, and handle them
     in infinite-loop style.
@@ -88,6 +89,7 @@ def await_pg_notifications(
         timeout (float, optional): Timeout interval. Defaults to 5.0.
         yield_on_timeout (bool, optional): Should the function yield on timeout. Defaults to False.
         exit_event (Optional[Event], optional): Event that indicates that polling for new notifications should stop. Defaults to None.
+        started_event (Optional[Event], optional): Event that this function can set to notify that the subscription has been established. Defaults to None.
 
     Yields:
         Iterator[Optional[Notify]]: Can yield one of two types:
@@ -104,6 +106,9 @@ def await_pg_notifications(
 
     if channels:
         start_listening(conn, channels)
+
+    if started_event:
+        started_event.set()
 
     try:
 

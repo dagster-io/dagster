@@ -200,8 +200,8 @@ def watcher_thread(
     handlers_dict: MutableMapping[str, List[CallbackAfterCursor]],
     dict_lock: threading.Lock,
     watcher_thread_exit: threading.Event,
+    watcher_thread_started: threading.Event,
 ):
-
     try:
         for notif in await_pg_notifications(
             conn_string,
@@ -209,6 +209,7 @@ def watcher_thread(
             timeout=POLLING_CADENCE,
             yield_on_timeout=True,
             exit_event=watcher_thread_exit,
+            started_event=watcher_thread_started,
         ):
             if not isinstance(notif, psycopg2.extensions.Notify):
                 if watcher_thread_exit.is_set():
@@ -254,14 +255,23 @@ class PostgresEventWatcher:
         self._handlers_dict: MutableMapping[str, List[CallbackAfterCursor]] = defaultdict(list)
         self._dict_lock: threading.Lock = threading.Lock()
         self._watcher_thread_exit: Optional[threading.Event] = None
+        self._watcher_thread_started: Optional[threading.Event] = None
         self._watcher_thread: Optional[threading.Thread] = None
 
-    def watch_run(self, run_id: str, start_cursor: int, callback: Callable[[EventRecord], None]):
+    def watch_run(
+        self,
+        run_id: str,
+        start_cursor: int,
+        callback: Callable[[EventRecord], None],
+        start_timeout=15,
+    ):
         check.str_param(run_id, "run_id")
         check.int_param(start_cursor, "start_cursor")
         check.callable_param(callback, "callback")
         if not self._watcher_thread:
             self._watcher_thread_exit = threading.Event()
+            self._watcher_thread_started = threading.Event()
+
             self._watcher_thread = threading.Thread(
                 target=watcher_thread,
                 args=(
@@ -269,11 +279,17 @@ class PostgresEventWatcher:
                     self._handlers_dict,
                     self._dict_lock,
                     self._watcher_thread_exit,
+                    self._watcher_thread_started,
                 ),
                 name="postgres-event-watch",
             )
             self._watcher_thread.daemon = True
             self._watcher_thread.start()
+
+            # Wait until the watcher thread is actually listening before returning
+            self._watcher_thread_started.wait(start_timeout)
+            if not self._watcher_thread_started.is_set():
+                raise Exception("Watcher thread never started")
 
         with self._dict_lock:
             self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor + 1, callback))
