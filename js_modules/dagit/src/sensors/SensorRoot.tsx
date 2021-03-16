@@ -99,6 +99,7 @@ const SENSOR_ROOT_QUERY = gql`
     instance {
       ...InstanceHealthFragment
       daemonHealth {
+        id
         daemonStatus(daemonType: "SENSOR") {
           id
           healthy

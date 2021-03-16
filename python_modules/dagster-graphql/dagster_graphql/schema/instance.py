@@ -57,6 +57,7 @@ class GrapheneDaemonStatus(graphene.ObjectType):
 
 
 class GrapheneDaemonHealth(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     daemonStatus = graphene.Field(
         graphene.NonNull(GrapheneDaemonStatus), daemon_type=graphene.Argument(graphene.String)
     )
@@ -68,6 +69,9 @@ class GrapheneDaemonHealth(graphene.ObjectType):
     def __init__(self, instance):
         super().__init__()
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
+
+    def resolve_id(self, _graphene_info):
+        return "daemonHealth"
 
     def resolve_daemonStatus(self, _graphene_info, daemon_type):
         check.str_param(daemon_type, "daemon_type")

@@ -123,6 +123,7 @@ export interface PartitionsBackfillSelectorQuery_instance_daemonHealth_daemonSta
 
 export interface PartitionsBackfillSelectorQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   daemonStatus: PartitionsBackfillSelectorQuery_instance_daemonHealth_daemonStatus;
 }
 

@@ -932,6 +932,7 @@ type RunLauncher {
 }
 
 type DaemonHealth {
+  id: String!
   daemonStatus(daemonType: String): DaemonStatus!
   allDaemonStatuses: [DaemonStatus!]!
 }

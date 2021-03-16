@@ -192,6 +192,7 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
 
 export interface ScheduleRootQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses[];
 }
 

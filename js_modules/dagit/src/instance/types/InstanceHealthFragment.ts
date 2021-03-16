@@ -33,6 +33,7 @@ export interface InstanceHealthFragment_daemonHealth_allDaemonStatuses {
 
 export interface InstanceHealthFragment_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: InstanceHealthFragment_daemonHealth_allDaemonStatuses[];
 }
 

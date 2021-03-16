@@ -135,6 +135,7 @@ export interface SensorRootQuery_instance_daemonHealth_daemonStatus {
 
 export interface SensorRootQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: SensorRootQuery_instance_daemonHealth_allDaemonStatuses[];
   daemonStatus: SensorRootQuery_instance_daemonHealth_daemonStatus;
 }

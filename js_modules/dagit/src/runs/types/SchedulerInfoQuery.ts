@@ -60,6 +60,7 @@ export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses {
 
 export interface SchedulerInfoQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses[];
 }
 

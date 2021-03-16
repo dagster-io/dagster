@@ -12,6 +12,7 @@ INDIVIDUAL_DAEMON_QUERY = """
 query InstanceDetailSummaryQuery {
     instance {
         daemonHealth {
+            id
             sensor: daemonStatus(daemonType: "SENSOR") {
                 daemonType
                 required
@@ -39,6 +40,7 @@ ALL_DAEMON_QUERY = """
 query InstanceDetailSummaryQuery {
     instance {
         daemonHealth {
+            id
             allDaemonStatuses {
                 daemonType
                 required
@@ -54,6 +56,7 @@ DAEMON_HEALTH_QUERY = """
 query InstanceDetailSummaryQuery {
     instance {
         daemonHealth {
+            id
             sensor: daemonStatus(daemonType: "SENSOR"){
                 lastHeartbeatErrors {
                     message
@@ -80,6 +83,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "instance": {
                 "daemonHealth": {
+                    "id": "daemonHealth",
                     "sensor": {
                         "daemonType": "SENSOR",
                         "required": True,
@@ -111,6 +115,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "instance": {
                 "daemonHealth": {
+                    "id": "daemonHealth",
                     "allDaemonStatuses": [
                         {
                             "daemonType": "SENSOR",
@@ -130,7 +135,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                         ]
                         if scheduler_required
                         else []
-                    )
+                    ),
                 }
             }
         }

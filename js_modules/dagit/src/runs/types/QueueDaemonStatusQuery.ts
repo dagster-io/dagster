@@ -18,6 +18,7 @@ export interface QueueDaemonStatusQuery_instance_daemonHealth_daemonStatus {
 
 export interface QueueDaemonStatusQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   daemonStatus: QueueDaemonStatusQuery_instance_daemonHealth_daemonStatus;
 }
 

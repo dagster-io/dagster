@@ -741,6 +741,7 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
         name
       }
       daemonHealth {
+        id
         daemonStatus(daemonType: "BACKFILL") {
           id
           healthy

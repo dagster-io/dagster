@@ -35,6 +35,7 @@ export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {
 
 export interface InstanceHealthQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses[];
 }
 

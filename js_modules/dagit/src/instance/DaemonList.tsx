@@ -89,6 +89,7 @@ export const DaemonList = (props: Props) => {
 
 export const DAEMON_HEALTH_FRAGMENT = gql`
   fragment DaemonHealthFragment on DaemonHealth {
+    id
     allDaemonStatuses {
       id
       daemonType

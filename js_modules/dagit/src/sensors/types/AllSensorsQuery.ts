@@ -157,6 +157,7 @@ export interface AllSensorsQuery_instance_daemonHealth_allDaemonStatuses {
 
 export interface AllSensorsQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: AllSensorsQuery_instance_daemonHealth_allDaemonStatuses[];
 }
 

@@ -188,6 +188,7 @@ export interface AllSchedulesQuery_instance_daemonHealth_allDaemonStatuses {
 
 export interface AllSchedulesQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
+  id: string;
   allDaemonStatuses: AllSchedulesQuery_instance_daemonHealth_allDaemonStatuses[];
 }
 
