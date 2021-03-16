@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "bokeh",
             "dagster",
             "dask[dataframe]>=1.2.2",
-            "distributed>=1.28.1,<=2.30.1",
+            "distributed>=1.28.1",
             # resolve issue with aiohttp pin of chardet for aiohttp<=3.7.3, req'd by dask-kubernetes
             # https://github.com/dagster-io/dagster/issues/3539
             "chardet<4.0",
