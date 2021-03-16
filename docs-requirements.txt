@@ -1,5 +1,3 @@
-Sphinx==2.2.2
-sphinx-autobuild==0.7.1
 -e ./python_modules/dagster[test]
 -e ./python_modules/dagster-graphql
 -e ./python_modules/dagit
@@ -19,7 +17,8 @@ sphinx-autobuild==0.7.1
 -e ./python_modules/libraries/dagster-ge
 -e ./python_modules/libraries/dagster-github
 -e ./python_modules/libraries/dagster-k8s
--e ./python_modules/libraries/dagster-k8s
+-e ./python_modules/libraries/dagster-mysql
+-e ./python_modules/libraries/dagster-pagerduty
 -e ./python_modules/libraries/dagster-pandas
 -e ./python_modules/libraries/dagster-papertrail
 -e ./python_modules/libraries/dagster-postgres
@@ -34,5 +33,6 @@ sphinx-autobuild==0.7.1
 -e ./python_modules/libraries/dagstermill
 -e ./python_modules/libraries/lakehouse
 -e ./python_modules/automation
-sphinx-click==2.3.1
-recommonmark==0.4.0
+Sphinx==3.5.2
+sphinx-click==2.5.0
+recommonmark==0.7.1

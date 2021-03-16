@@ -42,7 +42,20 @@ The API documentation is authored separately in the `dagster/docs/sphinx` folder
 
 If you update the API documentation in the `dagster/docs/sphinx` folder, you need to rebuild the output from Sphinx in order to see your changes reflected in the documentation site.
 
-In the `dagster/docs` directory (not this directory), run:
+First, you'll need a separate virtual environment from the one you usually use to develop Dagster.
+
+```
+pyenv virtualenv 3.8.1 dagster-docs
+pyenv activate dagster-docs
+```
+
+Then, with the virtual environment activated, run the following from the `dagster/` root directory:
+
+```
+pip install -r docs-requirements.txt
+```
+
+Finally, in the `dagster/docs` directory (not this directory), run:
 
 ```
 make build
