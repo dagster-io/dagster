@@ -96,7 +96,7 @@ def create_shell_command_solid(
 
     Examples:
 
-    .. literalinclude:: ../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_solid.py
+    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_solid.py
        :language: python
 
 
@@ -163,7 +163,7 @@ def create_shell_script_solid(
 
     Examples:
 
-    .. literalinclude:: ../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_solid.py
+    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_solid.py
        :language: python
 
 

@@ -168,10 +168,10 @@ def date_partition_range(
 
 def identity_partition_selector(context, partition_set_def):
     """Utility function for supplying a partition selector when creating a schedule from a
-    partition set made of `datetime`s that assumes the schedule always executes at the
+    partition set made of ``datetime``s that assumes the schedule always executes at the
     partition time.
 
-    It's important that the cron string passed into `create_schedule_definition` match
+    It's important that the cron string passed into ``create_schedule_definition`` match
     the partition set times. For example, a schedule created from a partition set with partitions for each day at
     midnight would create its partition selector as follows:
 

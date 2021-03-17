@@ -220,18 +220,3 @@ Exception handling
 .. currentmodule:: dagster.core.errors
 
 .. autofunction:: user_code_error_boundary
-
-----
-
-Architecture
-------------
-
-Details of internal architecture captured at a specific point in time. These are expected to only be
-useful to people working on dagster core or complex libraries/integrations.
-
-Pipeline Execution Flow - March 2020 (0.7.6)
-********************************************
-
-.. image:: //assets/images/apidocs/internal/execution_flow.png
-    :scale: 40 %
-    :align: center

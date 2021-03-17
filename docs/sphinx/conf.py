@@ -17,12 +17,8 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
-import sys
 
-from dagster.utils import script_relative_path
 from recommonmark.parser import CommonMarkParser
-
-sys.path.insert(0, script_relative_path("../dagster"))
 
 project = "Dagster"
 copyright = " 2019, Elementl, Inc"  # pylint: disable=W0622
@@ -54,7 +50,7 @@ extensions = [
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
 
-autodoc_typehints = "none"
+# autodoc_typehints = "none"
 
 # To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
 # the inv field set to None, e.g.
