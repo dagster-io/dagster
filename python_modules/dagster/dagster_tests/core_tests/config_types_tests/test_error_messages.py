@@ -42,10 +42,7 @@ def test_invalid_list_element():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "Invalid type: dagster_type must be DagsterType, "
-            "a python scalar, or a python type that has been marked usable as "
-            "a dagster type via @usable_dagster_type or "
-            "make_python_type_usable_as_dagster_type:"
+            "Invalid type: dagster_type must be an instance of DagsterType or a Python type: "
         ),
     ):
         _ = List[Noneable(int)]

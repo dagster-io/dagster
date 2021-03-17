@@ -1,11 +1,16 @@
 from typing import Any, Dict, List, Optional, Tuple
 
+import pytest
 from dagster import (
+    DagsterInvalidDefinitionError,
+    DagsterType,
     InputDefinition,
     Int,
     composite_solid,
+    execute_pipeline,
     execute_solid,
     lambda_solid,
+    make_python_type_usable_as_dagster_type,
     pipeline,
     solid,
     usable_as_dagster_type,
@@ -358,3 +363,135 @@ def test_pipeline_api_stability():
 
     # assert definition does not error
     assert empty
+
+
+def test_unregistered_type_annotation_output():
+    class MyClass:
+        pass
+
+    @solid
+    def my_solid(_) -> MyClass:
+        return MyClass()
+
+    assert my_solid.output_defs[0].dagster_type.display_name == "MyClass"
+
+    @pipeline
+    def my_pipeline():
+        my_solid()
+
+    execute_pipeline(my_pipeline)
+
+
+def test_unregistered_type_annotation_input():
+    class MyClass:
+        pass
+
+    @solid
+    def solid1(_):
+        return MyClass()
+
+    @solid
+    def solid2(_, _input1: MyClass):
+        pass
+
+    @pipeline
+    def my_pipeline():
+        solid2(solid1())
+
+    execute_pipeline(my_pipeline)
+
+
+def test_use_auto_type_twice():
+    class MyClass:
+        pass
+
+    @solid
+    def my_solid(_) -> MyClass:
+        return MyClass()
+
+    @solid
+    def my_solid_2(_) -> MyClass:
+        return MyClass()
+
+    @pipeline
+    def my_pipeline():
+        my_solid()
+        my_solid_2()
+
+    execute_pipeline(my_pipeline)
+
+
+def test_register_after_solid_definition():
+    class MyClass:
+        pass
+
+    @solid
+    def _my_solid(_) -> MyClass:
+        return MyClass()
+
+    my_dagster_type = DagsterType(name="aaaa", type_check_fn=lambda _, _a: True)
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        make_python_type_usable_as_dagster_type(MyClass, my_dagster_type)
+
+
+def test_same_name_different_modules():
+    class MyClass:
+        pass
+
+    from dagster_tests.general_tests.py3_tests.other_module import MyClass as OtherModuleMyClass
+
+    @solid
+    def my_solid(_) -> MyClass:
+        return MyClass()
+
+    @solid
+    def my_solid_2(_) -> OtherModuleMyClass:
+        return OtherModuleMyClass()
+
+    @pipeline
+    def my_pipeline():
+        my_solid()
+        my_solid_2()
+
+    execute_pipeline(my_pipeline)
+
+
+def test_fan_in():
+    class MyClass:
+        pass
+
+    @solid
+    def upstream_solid(_):
+        return MyClass()
+
+    @solid
+    def downstream_solid(_, _input: List[MyClass]):
+        pass
+
+    @pipeline
+    def my_pipeline():
+        downstream_solid([upstream_solid.alias("a")(), upstream_solid.alias("b")()])
+
+    assert downstream_solid.input_defs[0].dagster_type.display_name == "[MyClass]"
+
+    execute_pipeline(my_pipeline)
+
+
+def test_composites_user_defined_type():
+    class MyClass:
+        pass
+
+    @lambda_solid
+    def emit_one() -> MyClass:
+        return MyClass()
+
+    @lambda_solid
+    def subtract(_n1: MyClass, _n2: MyClass) -> MyClass:
+        return MyClass()
+
+    @composite_solid
+    def add_one(a: MyClass) -> MyClass:
+        return subtract(a, emit_one())
+
+    assert add_one.input_mappings
