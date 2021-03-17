@@ -33,6 +33,7 @@ AssetKeyTable = db.Table(
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("last_materialization", db.Text),
     db.Column("last_run_id", db.String(255)),
+    db.Column("asset_details", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 

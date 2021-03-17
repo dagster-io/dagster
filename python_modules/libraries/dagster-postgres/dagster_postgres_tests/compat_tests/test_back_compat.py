@@ -215,8 +215,10 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
                 match=_migration_regex("event log", current_revision="3e71cf573ba6"),
             ):
                 storage.get_asset_tags(AssetKey(["test"]))
+                storage.all_asset_keys()
             instance.upgrade()
             storage.get_asset_tags(AssetKey(["test"]))
+            storage.all_asset_keys()
 
 
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):

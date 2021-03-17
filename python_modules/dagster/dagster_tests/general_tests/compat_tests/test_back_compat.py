@@ -371,7 +371,7 @@ def test_0_10_6_add_bulk_actions_table():
             assert "bulk_actions" in get_sqlite3_tables(db_path)
 
 
-def test_0_11_0_add_asset_details():
+def test_0_11_0_add_asset_columns():
     src_dir = file_relative_path(__file__, "snapshot_0_11_0_pre_asset_details/sqlite")
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
@@ -383,3 +383,4 @@ def test_0_11_0_add_asset_details():
             instance.upgrade()
             assert "last_materialization" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "last_run_id" in set(get_sqlite3_columns(db_path, "asset_keys"))
+            assert "asset_details" in set(get_sqlite3_columns(db_path, "asset_keys"))

@@ -5,7 +5,7 @@ Revises: ba4050312958
 Create Date: 2021-03-15 15:08:10.277993
 
 """
-from dagster.core.storage.migration.utils import add_asset_detail_columns
+from dagster.core.storage.migration.utils import add_asset_materialization_columns
 
 # revision identifiers, used by Alembic.
 revision = "3ca619834060"
@@ -15,7 +15,7 @@ depends_on = None
 
 
 def upgrade():
-    add_asset_detail_columns()
+    add_asset_materialization_columns()
 
 
 def downgrade():
