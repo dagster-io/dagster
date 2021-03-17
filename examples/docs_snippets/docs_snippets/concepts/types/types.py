@@ -23,14 +23,29 @@ def double_even(_, num):
 # end_basic_even_type_no_annotations
 
 # start_basic_even_type_with_annotations
-@solid
-def double_even_with_annotations(_, num: EvenDagsterType) -> EvenDagsterType:
-    # These type annotations are a shorthand for constructing InputDefinitions
-    # and OutputDefinitions, and are not mypy compliant
-    return num  # at runtime this is a python int
+@solid(
+    input_defs=[InputDefinition("num", EvenDagsterType)],
+    output_defs=[OutputDefinition(EvenDagsterType)],
+)
+def double_even_with_annotations(_, num: int) -> int:
+    return num
 
 
 # end_basic_even_type_with_annotations
+
+
+# start_auto_type
+
+
+class MyClass:
+    pass
+
+
+def my_solid(_) -> MyClass:
+    return MyClass()
+
+
+# end_auto_type
 
 
 # start_test_dagster_type
