@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -58,20 +57,6 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
 @whitelist_for_serdes
 class StepExecutionSkipped(namedtuple("_StepExecutionSkipped", "")):
     pass
-
-
-@click.command(
-    name="execute_run_with_structured_logs",
-    help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
-    ),
-)
-@click.argument("input_json", type=click.STRING)
-@click.pass_context
-def execute_run_with_structured_logs_command(ctx, input_json):  # pylint: disable=unused-argument
-    warnings.warn("execute_run_with_structured_logs is deprecated. Use execute_run instead.")
-    ctx.forward(execute_run_command)
 
 
 @click.command(
@@ -186,20 +171,6 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
             return False
 
     return True
-
-
-@click.command(
-    name="execute_step_with_structured_logs",
-    help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
-    ),
-)
-@click.argument("input_json", type=click.STRING)
-@click.pass_context
-def execute_step_with_structured_logs_command(ctx, input_json):  # pylint: disable=unused-argument
-    warnings.warn("execute_step_with_structured_logs is deprecated. Use execute_step instead.")
-    ctx.forward(execute_step_command)
 
 
 @click.command(
@@ -693,9 +664,7 @@ def create_api_cli_group():
     )
 
     group.add_command(execute_run_command)
-    group.add_command(execute_run_with_structured_logs_command)
     group.add_command(execute_step_command)
-    group.add_command(execute_step_with_structured_logs_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     group.add_command(grpc_health_check_command)
