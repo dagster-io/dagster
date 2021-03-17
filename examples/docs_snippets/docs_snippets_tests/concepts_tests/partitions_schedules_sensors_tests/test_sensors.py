@@ -65,12 +65,11 @@ def test_pipeline_failure_sensor_has_request():
                 instance=instance,
             )
 
-        context = SensorExecutionContext(
+        with SensorExecutionContext(
             instance_ref=instance.get_ref(), last_run_key=None, last_completion_time=None
-        )
-
-        requests = pipeline_failure_sensor.get_execution_data(context)
-        assert len(requests) == 1
+        ) as context:
+            requests = pipeline_failure_sensor.get_execution_data(context)
+            assert len(requests) == 1
 
 
 def test_pipeline_failure_sensor_has_no_request():
@@ -81,9 +80,8 @@ def test_pipeline_failure_sensor_has_no_request():
             instance=instance,
         )
 
-        context = SensorExecutionContext(
+        with SensorExecutionContext(
             instance_ref=instance.get_ref(), last_run_key=None, last_completion_time=None
-        )
-
-        requests = pipeline_failure_sensor.get_execution_data(context)
-        assert len(requests) == 0
+        ) as context:
+            requests = pipeline_failure_sensor.get_execution_data(context)
+            assert len(requests) == 0

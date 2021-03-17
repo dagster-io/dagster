@@ -1,5 +1,5 @@
 import inspect
-from contextlib import contextmanager
+from contextlib import ExitStack
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
@@ -26,19 +26,39 @@ class SensorExecutionContext:
         last_run_key (str): The run key of the RunRequest most recently created by this sensor.
     """
 
-    __slots__ = ["_instance_ref", "_last_completion_time", "_last_run_key"]
+    __slots__ = [
+        "_instance_ref",
+        "_last_completion_time",
+        "_last_run_key",
+        "_exit_stack",
+        "_instance",
+    ]
 
     def __init__(self, instance_ref, last_completion_time, last_run_key):
+        self._exit_stack = ExitStack()
+        self._instance = None
+
         self._instance_ref = check.inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
             last_completion_time, "last_completion_time"
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
 
-    @contextmanager
-    def get_instance(self):
-        with DagsterInstance.from_ref(self._instance_ref) as instance:
-            yield instance
+        self._instance = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
+
+    @property
+    def instance(self):
+        if not self._instance:
+            self._instance = self._exit_stack.enter_context(
+                DagsterInstance.from_ref(self._instance_ref)
+            )
+        return self._instance
 
     @property
     def last_completion_time(self):

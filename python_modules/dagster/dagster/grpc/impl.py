@@ -215,21 +215,20 @@ def get_external_schedule_execution(
         else None
     )
 
-    schedule_context = ScheduleExecutionContext(instance_ref, scheduled_execution_time)
-
-    try:
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: "Error occurred during the execution function for schedule "
-            "{schedule_name}".format(schedule_name=schedule_def.name),
-        ):
-            return ExternalScheduleExecutionData.from_execution_data(
-                schedule_def.get_execution_data(schedule_context)
+    with ScheduleExecutionContext(instance_ref, scheduled_execution_time) as schedule_context:
+        try:
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: "Error occurred during the execution function for schedule "
+                "{schedule_name}".format(schedule_name=schedule_def.name),
+            ):
+                return ExternalScheduleExecutionData.from_execution_data(
+                    schedule_def.get_execution_data(schedule_context)
+                )
+        except ScheduleExecutionError:
+            return ExternalScheduleExecutionErrorData(
+                serializable_error_info_from_exc_info(sys.exc_info())
             )
-    except ScheduleExecutionError:
-        return ExternalScheduleExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
 
 
 def get_external_sensor_execution(
@@ -244,23 +243,22 @@ def get_external_sensor_execution(
     definition = recon_repo.get_definition()
     sensor_def = definition.get_sensor_def(sensor_name)
 
-    sensor_context = SensorExecutionContext(
+    with SensorExecutionContext(
         instance_ref, last_completion_time=last_completion_timestamp, last_run_key=last_run_key
-    )
-
-    try:
-        with user_code_error_boundary(
-            SensorExecutionError,
-            lambda: "Error occurred during the execution of evaluation_fn for sensor "
-            "{sensor_name}".format(sensor_name=sensor_def.name),
-        ):
-            return ExternalSensorExecutionData.from_execution_data(
-                sensor_def.get_execution_data(sensor_context)
+    ) as sensor_context:
+        try:
+            with user_code_error_boundary(
+                SensorExecutionError,
+                lambda: "Error occurred during the execution of evaluation_fn for sensor "
+                "{sensor_name}".format(sensor_name=sensor_def.name),
+            ):
+                return ExternalSensorExecutionData.from_execution_data(
+                    sensor_def.get_execution_data(sensor_context)
+                )
+        except SensorExecutionError:
+            return ExternalSensorExecutionErrorData(
+                serializable_error_info_from_exc_info(sys.exc_info())
             )
-    except SensorExecutionError:
-        return ExternalSensorExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
 
 
 def get_partition_config(recon_repo, partition_set_name, partition_name):

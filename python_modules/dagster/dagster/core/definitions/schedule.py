@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import ExitStack
 from datetime import datetime
 
 import pendulum
@@ -36,18 +36,30 @@ class ScheduleExecutionContext:
             DagsterDaemonScheduler.
     """
 
-    __slots__ = ["_instance_ref", "_scheduled_execution_time"]
+    __slots__ = ["_instance_ref", "_scheduled_execution_time", "_exit_stack", "_instance"]
 
     def __init__(self, instance_ref, scheduled_execution_time):
+        self._exit_stack = ExitStack()
+        self._instance = None
+
         self._instance_ref = check.inst_param(instance_ref, "instance_ref", InstanceRef)
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
 
-    @contextmanager
-    def get_instance(self):
-        with DagsterInstance.from_ref(self._instance_ref) as instance:
-            yield instance
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._exit_stack.close()
+
+    @property
+    def instance(self):
+        if not self._instance:
+            self._instance = self._exit_stack.enter_context(
+                DagsterInstance.from_ref(self._instance_ref)
+            )
+        return self._instance
 
     @property
     def scheduled_execution_time(self):
