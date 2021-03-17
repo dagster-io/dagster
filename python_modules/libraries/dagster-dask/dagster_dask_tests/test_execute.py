@@ -264,9 +264,7 @@ def test_existing_scheduler_address():
             reconstructable(dask_engine_pipeline),
             run_config={
                 "intermediate_storage": {"filesystem": {}},
-                "execution": {
-                    "dask": {"config": {"client": {"address": scheduler_address}}}
-                },
+                "execution": {"dask": {"config": {"client": {"address": scheduler_address}}}},
             },
             instance=instance,
         )
