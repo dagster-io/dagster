@@ -66,40 +66,37 @@ Dagit be running in the cloud. If you are connecting a local Dagit
 instance to a remote RDS storage, double check that your local node is
 able to connect to RDS.
 
-## Using S3 for intermediates storage (WIP)
+## Using S3 for IO Management
 
-To enable parallel computation (e.g., with the multiprocessing or
-Dagster celery executors), you will also need to configure persistent
-intermediate storage -- for instance, using an S3 bucket to store
+To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store
 intermediates.
 
-You'll first need to need to add S3 storage to your **`ModeDefinition`**.
+You'll first need to need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
 
-```python
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_intermediate_storage_defs
+```python file=/deploying/aws/io_manager.py
 from dagster import ModeDefinition
+from dagster_gcp.gcs.io_manager import gcs_pickle_io_manager
+from dagster_gcp.gcs.resources import gcs_resource
 
 prod_mode = ModeDefinition(
-    name='prod',
-    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
-    resource_defs={'s3': s3_resource}
+    name="prod",
+    resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager},
 )
 ```
 
-Then, just add the following YAML block in your pipeline config:
+Then, add the following YAML block in your pipeline config:
 
-```yaml
-intermediate_storage:
-  s3:
+```yaml file=/deploying/aws/io_manager.yaml
+resources:
+  io_manager:
     config:
-      s3_bucket: your-s3-bucket-name
+      gcs_bucket: my-cool-bucket
+      gcs_prefix: good/prefix-for-files-
 ```
 
-The resource uses `boto` under the hood, so if you are accessing your private buckets you will
+The resource uses `boto` under the hood, so if you are accessing your private buckets, you will
 need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables
 or follow one of the other boto authentication methods.
 
-With this in place, your pipeline runs will store intermediates on S3 in
-the location
-`s3://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`
+With this in place, your pipeline runs will store intermediates on S3 in the location
+`s3://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`.
