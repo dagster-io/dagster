@@ -87,7 +87,7 @@ named `dagster_dbt.dbt_rpc_*`.
 
 Your dbt RPC server can be running locally or remotely. To use the dbt RPC solids in your Dagster
 pipeline, you will need to create a resource for your dbt RPC server. To learn more about Dagster
-resources, visit the [Resources Overview](/concepts/modes-resources/resources).
+resources, visit the [Resources Overview](/concepts/modes-resources).
 
 `dagster_dbt.dbt_rpc_resource` can be configured with your specific host and port.
 
@@ -116,7 +116,7 @@ def my_dbt_pipeline():
 
 The code snippet above shows a Dagster pipeline with a single solid `dbt_rpc_run`. The solid
 `dbt_rpc_run` has a required resource key `"dbt_rpc"`. So, any pipeline that uses `dbt_rpc_run` will
-need a [ModeDefinition](/concepts/modes-resources/modes) that defines a resource under the
+need a [ModeDefinition](/concepts/modes-resources) that defines a resource under the
 key `"dbt_rpc"`.
 
 **Example:** The solid `dbt_rpc_run` is configured to run specific models in a dbt project. This is
