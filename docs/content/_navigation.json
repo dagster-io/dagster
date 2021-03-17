@@ -122,12 +122,8 @@
         "title": "Modes & Resources",
         "children": [
           {
-            "title": "Modes",
-            "path": "/concepts/modes-resources/modes"
-          },
-          {
-            "title": "Resources",
-            "path": "/concepts/modes-resources/resources"
+            "title": "Modes & Resources",
+            "path": "/concepts/modes-resources"
           }
         ]
       },

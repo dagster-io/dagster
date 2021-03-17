@@ -9,10 +9,10 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Relevant APIs
 
-| Name                                     | Description                                                                                                                                                                                                      |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="execute_pipeline"  />  | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. For more info, see the [Executing Pipelines](/concepts/solids-pipelines/executing) section |
-| <PyObject object="execute_solid" />      | A method to execute a single solid in an ephemeral pipeline, intended to support unit tests.                                                                                                                     |
+| Name                                    | Description                                                                                                                                                                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="execute_pipeline"  /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. For more info, see the [Executing Pipelines](/concepts/solids-pipelines/executing) section |
+| <PyObject object="execute_solid" />     | A method to execute a single solid in an ephemeral pipeline, intended to support unit tests.                                                                                                                     |
 
 ## Overview
 
@@ -62,7 +62,7 @@ As noted above, data applications often rely on and encode their business logic 
 
 To make local testing possible, you may structure your software to, as much as possible, cleanly separate this business logic from your operating environment. This is one of the reasons why Dagster flows through a context object throughout its entire computation.
 
-Attached to the context is a set of user-defined [resources](/concepts/modes-resources/resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. We can then configure pipelines to be in different "modes", which can alter what version of the resource is vented to the user.
+Attached to the context is a set of user-defined [resources](/concepts/modes-resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. We can then configure pipelines to be in different "modes", which can alter what version of the resource is vented to the user.
 
 For example, in order to skip external dependencies in tests, you may find yourself needing to constantly comment and uncomment like:
 
@@ -115,7 +115,7 @@ def run_in_prod():
     execute_pipeline(download_pipeline, mode="prod")
 ```
 
-For more information, you can check out the [Modes](/concepts/modes-resources/modes) and [Resources](/concepts/modes-resources/resources) sections.
+For more information, you can check out the [Modes](/concepts/modes-resources) and [Resources](/concepts/modes-resources) sections.
 
 ## Examples
 
