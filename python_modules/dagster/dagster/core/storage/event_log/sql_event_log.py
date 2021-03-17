@@ -15,7 +15,7 @@ from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import EventLogStorage, extract_asset_events_cursor
-from .migration import REINDEX_DATA_MIGRATIONS, SECONDARY_INDEX_ASSET_KEY
+from .migration import REINDEX_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
 
@@ -540,113 +540,31 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
-        if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
-            query = (
-                db.select([1])
-                .where(
-                    db.or_(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
-                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                    )
+        query = (
+            db.select([1])
+            .where(
+                db.or_(
+                    AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
                 )
-                .limit(1)
             )
-        else:
-            query = (
-                db.select([1])
-                .where(
-                    db.or_(
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                    )
-                )
-                .limit(1)
-            )
+            .limit(1)
+        )
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
         return len(results) > 0
 
-    def get_asset_keys(self, prefix_path=None):
-        lazy_migrate = False
-
-        if not prefix_path:
-            if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
-                query = db.select([AssetKeyTable.c.asset_key])
-            else:
-                query = (
-                    db.select([SqlEventLogStorageTable.c.asset_key])
-                    .where(SqlEventLogStorageTable.c.asset_key != None)
-                    .distinct()
-                )
-
-                # This is in place to migrate everyone to using the secondary index table for asset
-                # keys.  Performing this migration should result in a big performance boost for
-                # any asset-catalog reads.
-
-                # After a sufficient amount of time (>= 0.11.0?), we can remove the checks
-                # for has_secondary_index(SECONDARY_INDEX_ASSET_KEY) and always read from the
-                # AssetKeyTable, since we are already writing to the table. Tracking the conditional
-                # check removal here: https://github.com/dagster-io/dagster/issues/3507
-                lazy_migrate = True
-        else:
-            if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
-                query = db.select([AssetKeyTable.c.asset_key]).where(
-                    db.or_(
-                        AssetKeyTable.c.asset_key.startswith(AssetKey.get_db_prefix(prefix_path)),
-                        AssetKeyTable.c.asset_key.startswith(
-                            AssetKey.get_db_prefix(prefix_path, legacy=True)
-                        ),
-                    )
-                )
-            else:
-                query = (
-                    db.select([SqlEventLogStorageTable.c.asset_key])
-                    .where(SqlEventLogStorageTable.c.asset_key != None)
-                    .where(
-                        db.or_(
-                            SqlEventLogStorageTable.c.asset_key.startswith(
-                                AssetKey.get_db_prefix(prefix_path)
-                            ),
-                            SqlEventLogStorageTable.c.asset_key.startswith(
-                                AssetKey.get_db_prefix(prefix_path, legacy=True)
-                            ),
-                        )
-                    )
-                    .distinct()
-                )
+    def all_asset_keys(self):
+        query = db.select([AssetKeyTable.c.asset_key])
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
-        if lazy_migrate:
-            # This is in place to migrate everyone to using the secondary index table for asset
-            # keys.  Performing this migration should result in a big performance boost for
-            # any subsequent asset-catalog reads.
-            self._lazy_migrate_secondary_index_asset_key(
-                [asset_key for (asset_key,) in results if asset_key]
-            )
         return list(
             set([AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key])
         )
-
-    def _lazy_migrate_secondary_index_asset_key(self, asset_keys):
-        with self.index_connection() as conn:
-            results = conn.execute(db.select([AssetKeyTable.c.asset_key])).fetchall()
-            existing = [asset_key for (asset_key,) in results if asset_key]
-            to_migrate = set(asset_keys) - set(existing)
-            for asset_key in to_migrate:
-                try:
-                    conn.execute(
-                        AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                            asset_key=AssetKey.from_db_string(asset_key).to_string()
-                        )
-                    )
-                except db.exc.IntegrityError:
-                    # asset key already present
-                    pass
-        self.enable_secondary_index(SECONDARY_INDEX_ASSET_KEY)
 
     def get_asset_events(
         self,

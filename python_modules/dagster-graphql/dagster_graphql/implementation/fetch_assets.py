@@ -6,13 +6,13 @@ from .utils import capture_error
 
 
 @capture_error
-def get_assets(graphene_info, prefix_path):
+def get_assets(graphene_info):
     from ..schema.pipelines.pipeline import GrapheneAsset
     from ..schema.roots.assets import GrapheneAssetConnection
 
     instance = graphene_info.context.instance
 
-    asset_keys = instance.all_asset_keys(prefix_path=prefix_path)
+    asset_keys = instance.all_asset_keys()
     asset_tags_by_key = instance.all_asset_tags()
     return GrapheneAssetConnection(
         nodes=[

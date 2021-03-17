@@ -193,10 +193,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     instance = graphene.NonNull(GrapheneInstance)
 
-    assetsOrError = graphene.Field(
-        graphene.NonNull(GrapheneAssetsOrError),
-        prefixPath=graphene.Argument(graphene.List(graphene.NonNull(graphene.String))),
-    )
+    assetsOrError = graphene.NonNull(GrapheneAssetsOrError)
 
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
@@ -359,8 +356,8 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_instance(self, graphene_info):
         return GrapheneInstance(graphene_info.context.instance)
 
-    def resolve_assetsOrError(self, graphene_info, **kwargs):
-        return get_assets(graphene_info, kwargs.get("prefixPath"))
+    def resolve_assetsOrError(self, graphene_info):
+        return get_assets(graphene_info)
 
     def resolve_assetOrError(self, graphene_info, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))

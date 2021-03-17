@@ -23,7 +23,7 @@ type Query {
   executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError(prefixPath: [String!]): AssetsOrError!
+  assetsOrError: AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!

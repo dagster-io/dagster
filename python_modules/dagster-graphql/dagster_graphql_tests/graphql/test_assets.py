@@ -5,8 +5,8 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 GET_ASSET_KEY_QUERY = """
-    query AssetKeyQuery($prefixPath: [String!]) {
-        assetsOrError(prefixPath: $prefixPath) {
+    query AssetKeyQuery {
+        assetsOrError {
             __typename
             ...on AssetConnection {
                 nodes {
@@ -108,25 +108,9 @@ class TestAssetAwareEventLog(
         ]
     )
 ):
-    def test_get_asset_keys(self, graphql_context, snapshot):
+    def test_all_asset_keys(self, graphql_context, snapshot):
         _create_run(graphql_context, "multi_asset_pipeline")
-        result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": None}
-        )
-        assert result.data
-        assert result.data["assetsOrError"]
-        assert result.data["assetsOrError"]["nodes"]
-
-        # sort by materialization asset key to keep list order is consistent for snapshot
-        result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
-
-        snapshot.assert_match(result.data)
-
-    def test_get_prefixed_asset_keys(self, graphql_context, snapshot):
-        _create_run(graphql_context, "multi_asset_pipeline")
-        result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": ["a"]}
-        )
+        result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
         assert result.data
         assert result.data["assetsOrError"]
         assert result.data["assetsOrError"]["nodes"]

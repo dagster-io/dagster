@@ -96,20 +96,13 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                     return True
         return False
 
-    def get_asset_keys(self, prefix_path=None):
+    def all_asset_keys(self):
         asset_records = []
         for records in self._logs.values():
             asset_records += [
                 record
                 for record in records
-                if record.is_dagster_event
-                and record.dagster_event.asset_key
-                and (
-                    not prefix_path
-                    or record.dagster_event.asset_key.to_string().startswith(
-                        AssetKey.get_db_prefix(prefix_path)
-                    )
-                )
+                if record.is_dagster_event and record.dagster_event.asset_key
             ]
 
         asset_events = [

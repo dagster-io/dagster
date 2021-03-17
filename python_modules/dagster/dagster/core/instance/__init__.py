@@ -1016,8 +1016,8 @@ class DagsterInstance:
 
     # asset storage
 
-    def all_asset_keys(self, prefix_path=None):
-        return self._event_storage.get_asset_keys(prefix_path=prefix_path)
+    def all_asset_keys(self):
+        return self._event_storage.all_asset_keys()
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
