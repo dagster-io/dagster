@@ -75,9 +75,7 @@ services:
       - dagster-daemon
       - run
     container_name: docker_example_daemon
-    deploy:
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
