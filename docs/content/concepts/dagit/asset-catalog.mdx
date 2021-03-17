@@ -5,15 +5,14 @@ description: Dagster provides a data-aware orchestration graph.
 
 # Asset Catalog
 
-"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.
-An asset might be a table in a database that solids append to, an ML model in a model store that
-solids overwrite, or even a slack channel that solids write messages to.
+Dagster lets you track the interactions between solids, outputs, and assets and view them in the Asset Catalog.
 
 ## Relevant APIs
 
 | Name                                                        | Description                                                      |
 | ----------------------------------------------------------- | ---------------------------------------------------------------- |
 | <PyObject module="dagster" object="AssetMaterialization" /> | Dagster event indicating that a solid has materialized an asset. |
+| <PyObject module="dagster" object="AssetKey" />             | A unique identifier for a particular external asset              |
 
 ## Overview
 
@@ -23,7 +22,67 @@ in the catalog is an asset and includes:
 - Runs that mutated or created the asset.
 - Metadata logged by developers about the asset.
 
-Developers place entries in the Asset Catalog by yielding <PyObject module="dagster" object="AssetMaterialization" />
+Developers place entries in the Asset Catalog by referencing assets in their pipelines. There are
+two general patterns for referencing an asset when using Dagster:
+
+- Yield an <PyObject object="AssetMaterialization" /> event at runtime
+- Link a solid output to an <PyObject object="AssetKey" />, allowing Dagster to automatically construct an <PyObject object="AssetMaterialization" /> (experimental)
+
+## Assets
+
+"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by a solid.
+An asset might be a table in a database that a solid appends to, an ML model in a model store that
+a solid overwrites, or even a slack channel that a solid writes messages to.
+
+Solid outputs often correspond to assets. For example, a solid might be responsible for recreating a table, and one of its outputs might correspond to the contents of that table.
+
+Assets can also have partitions, which refer to slices of the overall asset. The simplest example would be a table that has a partition for each day. A given solid execution may simply write a single day's worth of data to that table, rather than dropping the existing contents and replacing them with new data.
+
+## AssetMaterializations
+
+An <PyObject object="AssetMaterialization" /> is a Dagster event that indicates that a particular
+asset (identified by the `asset_key` parameter) has been created or updated. These can either be
+yielded by the user at runtime, or automatically created by Dagster in cases where an <PyObject object="AssetKey" />
+has been referenced by a solid output.
+
+## Asset Catalog in Dagit
+
+After emitting an <PyObject object="AssetMaterialization" /> event (regardless of how it is created), we should see an entry in the Asset Catalog.
+
+Note: The Asset Catalog in Dagit is only enabled for instances configured with an "asset-aware"
+event log storage, such as `PostgresEventLogStorage` and `ConsolidatedSqliteEventLogStorage`. Here
+is an example of an asset-aware instance configuration:
+
+```yaml file=/concepts/assets/dagster.yaml
+run_launcher:
+  module: dagster.core.launcher
+  class: DefaultRunLauncher
+
+event_log_storage:
+  module: dagster.core.storage.event_log
+  class: ConsolidatedSqliteEventLogStorage
+  config:
+    base_dir: "/var/shared/dagster_home"
+```
+
+_Please refer to the [Dagster Instance](/deployment/dagster-instance) section for more information_
+_about configuring your Dagster instance._
+
+Once the Dagster instance is configured with an asset-aware event log storage, after you run a
+pipeline which generates an asset, you'll find the asset listed on the `Assets` tab in Dagit.
+
+<img src="/images/concepts/assets/asset-page.png" />
+
+You can also find the details about it by clicking the asset key of it, `my_dataset` in this case.
+
+<img src="/images/concepts/assets/asset-details.png" />
+
+Clicking the \[View Asset Dashboard] on the materialization event from the log generated above can
+also bring you to the corresponding Asset details page.
+
+## Yielding AssetMaterializations at Runtime
+
+Developers can place entries in the Asset Catalog by yielding <PyObject module="dagster" object="AssetMaterialization" />
 events from inside their solids or [output managers](/concepts/io-management/io-managers). The act
 of mutating or creating an asset is called a "materialization". <PyObject module="dagster" object="AssetMaterialization" />
 events may include arbitrary metadata that describes the asset at the time of the materialization.
@@ -33,9 +92,9 @@ There are two general patterns for dealing with assets when using Dagster:
 - Materialize assets from inside the body of a solid.
 - Focus solid on pure business logic, and delegate the materialization of assets to IOManagers.
 
----
+Correspondingly, there are two places where you are allowed to yield <PyObject module="dagster" object="AssetMaterialization" /> at runtime.
 
-## Yielding an AssetMaterialization
+### Yielding an AssetMaterialization from a Solid
 
 To make the Asset Catalog aware that we materialized an asset in our solid, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event.
 This would involve changing the following solid:
@@ -71,55 +130,18 @@ We should now see a materialization event in the event log when we execute this 
 
 <img src="/images/concepts/assets/asset-materialization.png" />
 
-## Asset Catalog in Dagit
+### Yielding an AssetMaterialization from an IOManager
 
-After emitting an AssetMaterialization event, we should now also see an entry in the Asset Catalog.
-
-Note: The Asset Catalog in Dagit is only enabled for instances configured with an "asset-aware"
-event log storage, such as `PostgresEventLogStorage` and `ConsolidatedSqliteEventLogStorage`. Here
-is an example of an asset-aware instance configuration:
-
-```yaml file=/concepts/assets/dagster.yaml
-run_launcher:
-  module: dagster.core.launcher
-  class: DefaultRunLauncher
-
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: ConsolidatedSqliteEventLogStorage
-  config:
-    base_dir: "/var/shared/dagster_home"
-```
-
-_Please refer to the [Dagster Instance](/deployment/dagster-instance) section for more information_
-_about configuring your Dagster instance._
-
-Once the Dagster instance is configured with an asset-aware event log storage, after you run a
-pipeline which generates an asset, you'll find the asset listed on the `Assets` tab in Dagit.
-
-<img src="/images/concepts/assets/asset-page.png" />
-
-You can also find the details about it by clicking the asset key of it, `my_dataset` in this case.
-
-<img src="/images/concepts/assets/asset-details.png" />
-
-Clicking the \[View Asset Dashboard] on the materialization event from the log generated above can
-also bring you to the corresponding Asset details page.
-
-## Examples
-
-### Recording Asset Materializations in Output Managers
-
-To record that an OutputManager or IOManager has mutated or created an asset, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method.
+To record that an <PyObject object ="IOManager"/> has mutated or created an asset, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event from its `handle_output` method.
 
 ```python file=/concepts/assets/materialization_io_managers.py startafter=start_marker_0 endbefore=end_marker_0
 class PandasCsvIOManager(IOManager):
     def load_input(self, context):
-        file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
-        return pd.read_csv(file_path)
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+        return read_csv(file_path)
 
     def handle_output(self, context, obj):
-        file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
 
         obj.to_csv(file_path)
 
@@ -128,7 +150,7 @@ class PandasCsvIOManager(IOManager):
         )
 ```
 
-### Attaching Metadata to the Asset Materialization
+### Attaching Metadata to an AssetMaterialization
 
 There are a variety of types of metadata that can be associated with a materialization event, all
 through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each materialization
@@ -160,11 +182,11 @@ Example with an IOManager:
 ```python file=concepts/assets/materialization_io_managers.py startafter=start_marker_1 endbefore=end_marker_1
 class PandasCsvIOManagerWithMetadata(IOManager):
     def load_input(self, context):
-        file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
-        return pd.read_csv(file_path)
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+        return read_csv(file_path)
 
     def handle_output(self, context, obj):
-        file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
 
         obj.to_csv(file_path)
 
@@ -180,3 +202,92 @@ class PandasCsvIOManagerWithMetadata(IOManager):
 
 Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
 on they types of event metadata available.
+
+## Linking Solid Outputs to Assets <Experimental />
+
+It's fairly common to know what assets you will be writing to before a given pipeline runs. In these
+cases, it may be more convenient
+
+Just as there are two places in which you can yield runtime <PyObject object="AssetMaterialization" />
+events (within a solid body, and within an IOManager), we provide two different interfaces for
+linking a solid output to to an asset. Regardless of which you choose, every time the solid runs and
+yields that output, an <PyObject object="AssetMaterialization" /> event will automatically be created
+to record this information.
+
+If you specified any metadata entries on the <PyObject object="Output" /> event while yielding it,
+these entries will automatically be attached to the materialization event for this asset.
+
+Note: The following two interfaces are mutually exclusive.
+
+### Attaching to the Output Definition <Experimental />
+
+For cases where you are storing your asset within the body of a solid, the easiest way of linking
+an asset to a solid output is with the `asset_key` parameter on the relevant <PyObject object="OutputDefinition"/> in your solid.
+
+This parameter can be one of two things. For simple cases, where a solid will always be writing to the
+same asset, you can define a constant <PyObject object="AssetKey"/> that identifies the asset you are linking.
+
+```python file=/concepts/assets/materialization_solids.py startafter=start_output_def_mat_solid_0 endbefore=end_output_def_mat_solid_0
+@solid(output_defs=[OutputDefinition(asset_key=AssetKey("my_dataset"))])
+def my_constant_asset_solid(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    yield Output(remote_storage_path)
+```
+
+For cases where the asset that you want to link to an output might change based on some context in
+the pipeline (such as the mode), you can pass in a function that takes <PyObject object="OutputContext"/> and returns
+an <PyObject object="AssetKey"/>.
+
+```python file=/concepts/assets/materialization_solids.py startafter=start_output_def_mat_solid_1 endbefore=end_output_def_mat_solid_1
+def get_asset_key(context: OutputContext):
+    mode = context.step_context.mode_def
+    return AssetKey(f"my_dataset_{mode}")
+
+
+@solid(output_defs=[OutputDefinition(asset_key=get_asset_key)])
+def my_variable_asset_solid(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    yield Output(remote_storage_path)
+```
+
+### Referencing assets on the IOManager <Experimental />
+
+If you've defined a custom <PyObject object="IOManager"/> to handle storing your solid's outputs, the <PyObject object="IOManager"/> will likely be the most natural place to define which asset a particular output will be written to. To do this,
+you can implement the `get_output_asset_key` function on your <PyObject object="IOManager"/>.
+
+Similar to the above interface, this function takes <PyObject object="OutputContext"/> and returns
+an <PyObject object="AssetKey"/>. The following example functions nearly identically to `PandasCsvIOManagerWithMetadata` from the [runtime example](/concepts/dagit/asset-catalog#yielding-an-assetmaterialization-from-an-iomanager) above.
+
+```python file=/concepts/assets/materialization_io_managers.py startafter=start_asset_def endbefore=end_asset_def
+class PandasCsvIOManagerWithAsset(IOManager):
+    def load_input(self, context):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+        return read_csv(file_path)
+
+    def handle_output(self, context, obj):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+
+        obj.to_csv(file_path)
+
+        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
+        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+
+    def get_output_asset_key(self, context):
+        file_path = os.path.join("my_base_dir", context.step_key, context.name)
+        return AssetKey(file_path)
+```
+
+When an output is linked to an asset in this way, the generated <PyObject object="AssetMaterialization" />
+event will contain any <PyObject object="EventMetadataEntry" /> information yielded from the `handle_output` function
+(in addiition to all of the `metadata_entries` specified on the corresponding <PyObject object="Output" /> event).
+
+See the [IOManager docs](/concepts/io-management/io-managers#yielding-metadata-from-an-iomanager) for more information on yielding these entries from an IOManager.
+
+## Asset Lineage <Experimental />
+
+When a solid output is linked to an <PyObject object="AssetKey"/>, Dagster can automatically generate
+lineage information that describes how this asset relates to other output-linked assets.
+
+<TODO />

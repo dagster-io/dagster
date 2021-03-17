@@ -1,6 +1,15 @@
 # pylint: disable=unused-argument
 
-from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, Output, pipeline, solid
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    EventMetadataEntry,
+    Output,
+    OutputContext,
+    OutputDefinition,
+    pipeline,
+    solid,
+)
 
 
 def read_df():
@@ -8,7 +17,7 @@ def read_df():
 
 
 def persist_to_storage(df):
-    return 1
+    return "tmp"
 
 
 def calculate_bytes(df):
@@ -35,6 +44,35 @@ def my_materialization_solid(context):
 
 
 # end_materialization_solids_marker_1
+
+# start_output_def_mat_solid_0
+
+
+@solid(output_defs=[OutputDefinition(asset_key=AssetKey("my_dataset"))])
+def my_constant_asset_solid(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    yield Output(remote_storage_path)
+
+
+# end_output_def_mat_solid_0
+
+# start_output_def_mat_solid_1
+
+
+def get_asset_key(context: OutputContext):
+    mode = context.step_context.mode_def
+    return AssetKey(f"my_dataset_{mode}")
+
+
+@solid(output_defs=[OutputDefinition(asset_key=get_asset_key)])
+def my_variable_asset_solid(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    yield Output(remote_storage_path)
+
+
+# end_output_def_mat_solid_1
 
 
 # start_materialization_solids_marker_2
