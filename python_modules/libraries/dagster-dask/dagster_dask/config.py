@@ -123,10 +123,14 @@ def create_from_config(config):
         # of a single dict member because the `cluster` field is defined as a selector.
         cluster_type, cluster_opts = next(iter(cluster_config.items()))
 
-        # Deprecated option for specifying an existing cluster by its scheduler address.
+        # Specifying an "existing" cluster type is deprecated.
+        # https://github.com/dagster-io/dagster/issues/3854
         if cluster_type == "existing":
             cluster = None
             client_config["address"] = cluster_opts["address"]
+            warnings.warn(
+                "Specifying cluster:existing:address is deprecated. Use client:address: instead."
+            )
 
         # Get the module and class information from DaskClusterTypes, and instantiate
         # the cluster object.
