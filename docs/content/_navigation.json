@@ -154,6 +154,15 @@
         ]
       },
       {
+        "title": "Dagster Types",
+        "children": [
+          {
+            "title": "Dagster Types",
+            "path": "/concepts/types"
+          }
+        ]
+      },
+      {
         "title": "IO Management",
         "children": [
           {
