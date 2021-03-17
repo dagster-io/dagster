@@ -27,9 +27,14 @@ export const SidebarSolidInvocation: React.FC<ISidebarSolidInvocationProps> = (p
         <DependencyTable>
           <tbody>
             {solid.inputs.some((o) => o.dependsOn.length) && <DependencyHeaderRow label="Inputs" />}
-            {solid.inputs.map(({definition, dependsOn}) =>
+            {solid.inputs.map(({definition, dependsOn, isDynamicCollect}) =>
               dependsOn.map((source, idx) => (
-                <DependencyRow key={idx} from={source} to={definition.name} />
+                <DependencyRow
+                  key={idx}
+                  from={source}
+                  to={definition.name}
+                  isDynamic={isDynamicCollect}
+                />
               )),
             )}
             {solid.outputs.some((o) => o.dependedBy.length) && (
@@ -37,7 +42,12 @@ export const SidebarSolidInvocation: React.FC<ISidebarSolidInvocationProps> = (p
             )}
             {solid.outputs.map(({definition, dependedBy}) =>
               dependedBy.map((target, idx) => (
-                <DependencyRow key={idx} from={definition.name} to={target} />
+                <DependencyRow
+                  key={idx}
+                  from={definition.name}
+                  to={target}
+                  isDynamic={definition.isDynamic}
+                />
               )),
             )}
           </tbody>
@@ -59,6 +69,7 @@ export const SIDEBAR_SOLID_INVOCATION_FRAGMENT = gql`
   fragment SidebarSolidInvocationFragment on Solid {
     name
     inputs {
+      isDynamicCollect
       definition {
         name
         description
@@ -79,6 +90,7 @@ export const SIDEBAR_SOLID_INVOCATION_FRAGMENT = gql`
       definition {
         name
         description
+        isDynamic
         type {
           ...DagsterTypeWithTooltipFragment
         }

@@ -46,6 +46,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
 
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_inputs {
   __typename: "Input";
+  isDynamicCollect: boolean;
   definition: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_inputs_definition;
   dependsOn: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_inputs_dependsOn[];
 }
@@ -61,6 +62,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "OutputDefinition";
   name: string;
   description: string | null;
+  isDynamic: boolean | null;
   type: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_outputs_definition_type;
 }
 

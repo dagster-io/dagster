@@ -19,8 +19,12 @@ export const toGraphQueryItems = (
   runtimeStepKeys: string[],
 ) => {
   const nodeTable: {[key: string]: IGanttNode} = {};
+
+  // Map of "multiply_input[*]" => ["multiply_input[1]", "multiply_input[2]"]
   const keyExpansionMap: {[key: string]: string[]} = {};
 
+  // Find unresolved steps in the initial plan - build the key expansion map
+  // and add each runtime step to the nodeTable.
   for (const step of plan.steps) {
     if (step.kind === StepKind.UNRESOLVED_MAPPED) {
       const runtime = invocationsOfPlannedDynamicStep(step.key, runtimeStepKeys);
@@ -70,7 +74,6 @@ export const toGraphQueryItems = (
           } else {
             upstreamKeys = [upstream.key];
           }
-
           for (const upstreamKey of upstreamKeys) {
             let output = nodeTable[upstreamKey].outputs[0];
             if (!output) {

@@ -40,6 +40,7 @@ export interface SidebarSolidInvocationFragment_inputs_dependsOn {
 
 export interface SidebarSolidInvocationFragment_inputs {
   __typename: "Input";
+  isDynamicCollect: boolean;
   definition: SidebarSolidInvocationFragment_inputs_definition;
   dependsOn: SidebarSolidInvocationFragment_inputs_dependsOn[];
 }
@@ -55,6 +56,7 @@ export interface SidebarSolidInvocationFragment_outputs_definition {
   __typename: "OutputDefinition";
   name: string;
   description: string | null;
+  isDynamic: boolean | null;
   type: SidebarSolidInvocationFragment_outputs_definition_type;
 }
 

@@ -40,6 +40,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs {
   __typename: "Input";
   definition: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs_definition;
+  isDynamicCollect: boolean;
   dependsOn: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs_dependsOn[];
 }
 
@@ -223,6 +224,7 @@ export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solid
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid {
   __typename: "Solid";
   name: string;
+  isDynamicMapped: boolean;
   inputs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs[];
   outputs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs[];
   definition: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition;

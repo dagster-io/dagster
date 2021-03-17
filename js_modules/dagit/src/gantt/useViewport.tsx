@@ -84,19 +84,15 @@ export const useViewport = (
   };
 
   const onMoveToViewport = (targetOffset: {left: number; top: number}, animated: boolean) => {
+    const {width, height} = ref.current.getBoundingClientRect();
+
     if (animation.current) {
       animation.current.cancel();
       animation.current = null;
     }
 
-    targetOffset.left = Math.min(
-      ref.current.scrollWidth - size.width,
-      Math.max(0, targetOffset.left),
-    );
-    targetOffset.top = Math.min(
-      ref.current.scrollHeight - size.height,
-      Math.max(0, targetOffset.top),
-    );
+    targetOffset.left = Math.min(ref.current.scrollWidth - width, Math.max(0, targetOffset.left));
+    targetOffset.top = Math.min(ref.current.scrollHeight - height, Math.max(0, targetOffset.top));
 
     const onDone = () => {
       ref.current.scrollTop = targetOffset.top;

@@ -40,6 +40,7 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs_depen
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs {
   __typename: "Input";
   definition: SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs_definition;
+  isDynamicCollect: boolean;
   dependsOn: SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs_dependsOn[];
 }
 
@@ -223,6 +224,7 @@ export type SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition = Soli
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids {
   __typename: "Solid";
   name: string;
+  isDynamicMapped: boolean;
   inputs: SolidSelectorQuery_pipelineOrError_Pipeline_solids_inputs[];
   outputs: SolidSelectorQuery_pipelineOrError_Pipeline_solids_outputs[];
   definition: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition;

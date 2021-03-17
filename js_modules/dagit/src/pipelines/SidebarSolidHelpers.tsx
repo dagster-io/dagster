@@ -69,14 +69,17 @@ export const Invocation = (props: {
 export const DependencyRow = ({
   from,
   to,
+  isDynamic,
 }: {
   from: SolidLinkInfo | string;
   to: SolidLinkInfo | string;
+  isDynamic: boolean | null;
 }) => {
   return (
     <tr>
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <SolidLink {...from} />}</Cell>
-      <td>
+      <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
+        {isDynamic && <Icon icon="asterisk" iconSize={12} color={Colors.GRAY1} />}
         <Icon icon="arrow-right" iconSize={12} color={Colors.GRAY1} />
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <SolidLink {...to} />}</Cell>

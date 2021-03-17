@@ -38,6 +38,7 @@ export interface PipelineGraphSolidFragment_inputs_dependsOn {
 export interface PipelineGraphSolidFragment_inputs {
   __typename: "Input";
   definition: PipelineGraphSolidFragment_inputs_definition;
+  isDynamicCollect: boolean;
   dependsOn: PipelineGraphSolidFragment_inputs_dependsOn[];
 }
 
@@ -221,6 +222,7 @@ export type PipelineGraphSolidFragment_definition = PipelineGraphSolidFragment_d
 export interface PipelineGraphSolidFragment {
   __typename: "Solid";
   name: string;
+  isDynamicMapped: boolean;
   inputs: PipelineGraphSolidFragment_inputs[];
   outputs: PipelineGraphSolidFragment_outputs[];
   definition: PipelineGraphSolidFragment_definition;

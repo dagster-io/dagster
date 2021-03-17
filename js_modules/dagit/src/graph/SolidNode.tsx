@@ -202,6 +202,19 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
 
         {composite && this.renderSolidCompositeIndicator()}
 
+        {invocation?.isDynamicMapped && (
+          <g style={{transform: 'translate(7px, 7px)'}}>
+            <SVGFlowLayoutRect
+              {...layout.solid}
+              fill={'#F0D9CA'}
+              stroke="#979797"
+              strokeWidth={1}
+              spacing={0}
+              padding={12}
+            />
+          </g>
+        )}
+
         {this.renderSolid()}
 
         {definition.inputDefinitions.map((item, idx) => (
@@ -239,10 +252,12 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
 export const SOLID_NODE_INVOCATION_FRAGMENT = gql`
   fragment SolidNodeInvocationFragment on Solid {
     name
+    isDynamicMapped
     inputs {
       definition {
         name
       }
+      isDynamicCollect
       dependsOn {
         definition {
           name

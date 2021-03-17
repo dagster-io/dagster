@@ -38,6 +38,7 @@ export interface SolidNodeInvocationFragment_inputs_dependsOn {
 export interface SolidNodeInvocationFragment_inputs {
   __typename: "Input";
   definition: SolidNodeInvocationFragment_inputs_definition;
+  isDynamicCollect: boolean;
   dependsOn: SolidNodeInvocationFragment_inputs_dependsOn[];
 }
 
@@ -77,6 +78,7 @@ export interface SolidNodeInvocationFragment_outputs {
 export interface SolidNodeInvocationFragment {
   __typename: "Solid";
   name: string;
+  isDynamicMapped: boolean;
   inputs: SolidNodeInvocationFragment_inputs[];
   outputs: SolidNodeInvocationFragment_outputs[];
 }
