@@ -161,61 +161,9 @@ load_from:
     )
 
 
-def _get_multi_location_python_env_workspace_yaml(executable):
-    return """
-load_from:
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_file:
-                relative_path: hello_world_repository.py
-                location_name: loaded_from_file
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_module:
-                module_name: dagster.utils.test.hello_world_repository
-                location_name: loaded_from_module
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_file:
-                relative_path: named_hello_world_repository.py
-                location_name: named_loaded_from_file
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_module:
-                module_name: dagster.utils.test.named_hello_world_repository
-                location_name: named_loaded_from_module
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_module:
-                module_name: dagster.utils.test.named_hello_world_repository
-                attribute: named_hello_world_repository
-                location_name: named_loaded_from_module_attribute
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_file:
-                relative_path: named_hello_world_repository.py
-                attribute: named_hello_world_repository
-                location_name: named_loaded_from_file_attribute
-
-    """.format(
-        executable=executable
-    )
-
-
 @pytest.mark.parametrize(
     "config_source",
-    [_get_multi_location_workspace_yaml, _get_multi_location_python_env_workspace_yaml],
+    [_get_multi_location_workspace_yaml],
 )
 def test_multi_location_origins(config_source):
     fake_executable = "/var/fake/executable"
@@ -263,10 +211,7 @@ def test_multi_location_origins(config_source):
     )
 
 
-@pytest.mark.parametrize(
-    "config_source",
-    [_get_multi_location_workspace_yaml, _get_multi_location_python_env_workspace_yaml],
-)
+@pytest.mark.parametrize("config_source", [_get_multi_location_workspace_yaml])
 def test_grpc_multi_location_workspace(config_source):
     origins = location_origins_from_config(
         yaml.safe_load(config_source(sys.executable)),

@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 from collections import OrderedDict
 
 from dagster import check
@@ -255,34 +254,6 @@ def _get_executable_path(executable_path, default):
     return os.path.expanduser(executable_path) if executable_path else default
 
 
-def _location_origin_from_python_environment_config(python_environment_config, yaml_path):
-    check.dict_param(python_environment_config, "python_environment_config")
-    check.str_param(yaml_path, "yaml_path")
-
-    executable_path, target_config = (
-        _get_executable_path(python_environment_config["executable_path"], None),
-        python_environment_config["target"],
-    )
-
-    check.invariant(is_target_config(target_config))
-
-    python_file_config, python_module_config, python_package_config = (
-        target_config.get("python_file"),
-        target_config.get("python_module"),
-        target_config.get("python_package"),
-    )
-
-    if python_file_config:
-        return _location_origin_from_python_file_config(
-            python_file_config, yaml_path, executable_path
-        )
-    elif python_module_config:
-        return _location_origin_from_module_config(python_module_config, executable_path)
-    else:
-        check.invariant(python_package_config)
-        return _location_origin_from_package_config(python_package_config, executable_path)
-
-
 def _location_origin_from_location_config(location_config, yaml_path):
     check.dict_param(location_config, "location_config")
     check.str_param(yaml_path, "yaml_path")
@@ -293,15 +264,6 @@ def _location_origin_from_location_config(location_config, yaml_path):
     elif "grpc_server" in location_config:
         return _location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)
 
-    elif "python_environment" in location_config:
-        warnings.warn(
-            "The `python_environment` key is deprecated. Use `python_file`, `python_package`, or "
-            "`python_module` with the `executable_path` attribute set if you want to load a "
-            "repository in a different python environment."
-        )
-        return _location_origin_from_python_environment_config(
-            location_config["python_environment"], yaml_path
-        )
     else:
         check.not_implemented("Unsupported location config: {}".format(location_config))
 

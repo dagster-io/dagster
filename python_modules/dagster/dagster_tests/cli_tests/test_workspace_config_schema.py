@@ -137,50 +137,6 @@ load_from:
     assert _validate_yaml_contents(both_yaml).success
 
 
-def test_load_python_environment_with_file():
-    python_environment_yaml_with_file = """
-load_from:
-    - python_environment:
-        executable_path: /path/to/venv/bin/python
-        target:
-            python_file: file_valid_in_that_env.py
-"""
-
-    validation_result = _validate_yaml_contents(python_environment_yaml_with_file)
-
-    assert validation_result.success
-
-
-def test_load_python_environment_with_module():
-    python_environment_yaml_with_module = """
-load_from:
-    - python_environment:
-        executable_path: /path/to/venv/bin/python
-        target:
-            python_module: module_valid_in_that_env.py
-"""
-
-    validation_result = _validate_yaml_contents(python_environment_yaml_with_module)
-
-    assert validation_result.success
-
-
-def test_load_python_environment_with_env_var():
-    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
-        python_environment_yaml_with_file = """
-    load_from:
-        - python_environment:
-            executable_path:
-                env: TEST_EXECUTABLE_PATH
-            target:
-                python_file: file_valid_in_that_env.py
-    """
-
-        validation_result = _validate_yaml_contents(python_environment_yaml_with_file)
-
-        assert validation_result.success
-
-
 def test_load_python_file_with_env_var():
     with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
         workspace_yaml = """
@@ -298,25 +254,5 @@ def test_load_from_grpc_server_env():
     """
 
         validation_result = _validate_yaml_contents(valid_socket_yaml)
-
-        assert validation_result.success
-
-
-def test_load_python_environment_and_grpc_server():
-    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
-        valid_yaml = """
-    load_from:
-        - grpc_server:
-            host: remotehost
-            port: 4266
-            location_name: 'my_grpc_server'
-        - python_environment:
-            executable_path:
-                env: TEST_EXECUTABLE_PATH
-            target:
-                python_file: file_valid_in_that_env.py
-    """
-
-        validation_result = _validate_yaml_contents(valid_yaml)
 
         assert validation_result.success

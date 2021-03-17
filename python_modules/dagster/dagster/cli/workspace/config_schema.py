@@ -30,56 +30,35 @@ def ensure_workspace_config(workspace_config, yaml_path):
     return validation_result.value
 
 
-def _maybe_include_executable_path(config_dict, include_executable_path):
-    return merge_dicts(
-        config_dict,
-        (
-            {"executable_path": Field(StringSource, is_required=False)}
-            if include_executable_path
-            else {}
-        ),
-    )
-
-
-# In the deprecated 'python_environment' load_from option, we don't include the 'executable_path'
-# option because it's a level above alongside 'target'. In all the other load_from options, we allow
-# specifying the executable_path alongside all the other options.
-def _get_target_config(include_executable_path):
+def _get_target_config():
     return {
         "python_file": ScalarUnion(
             scalar_type=str,
-            non_scalar_schema=_maybe_include_executable_path(
-                {
-                    "relative_path": StringSource,
-                    "attribute": Field(StringSource, is_required=False),
-                    "location_name": Field(StringSource, is_required=False),
-                    "working_directory": Field(StringSource, is_required=False),
-                },
-                include_executable_path=include_executable_path,
-            ),
+            non_scalar_schema={
+                "relative_path": StringSource,
+                "attribute": Field(StringSource, is_required=False),
+                "location_name": Field(StringSource, is_required=False),
+                "working_directory": Field(StringSource, is_required=False),
+                "executable_path": Field(StringSource, is_required=False),
+            },
         ),
         "python_module": ScalarUnion(
             scalar_type=str,
-            non_scalar_schema=_maybe_include_executable_path(
-                {
-                    "module_name": StringSource,
-                    "attribute": Field(StringSource, is_required=False),
-                    "location_name": Field(StringSource, is_required=False),
-                },
-                include_executable_path=include_executable_path,
-            ),
+            non_scalar_schema={
+                "module_name": StringSource,
+                "attribute": Field(StringSource, is_required=False),
+                "location_name": Field(StringSource, is_required=False),
+                "executable_path": Field(StringSource, is_required=False),
+            },
         ),
         "python_package": ScalarUnion(
             scalar_type=str,
-            non_scalar_schema=_maybe_include_executable_path(
-                {
-                    "package_name": StringSource,
-                    "attribute": Field(StringSource, is_required=False),
-                    "location_name": Field(StringSource, is_required=False),
-                    "executable_path": Field(StringSource, is_required=False),
-                },
-                include_executable_path=include_executable_path,
-            ),
+            non_scalar_schema={
+                "package_name": StringSource,
+                "attribute": Field(StringSource, is_required=False),
+                "location_name": Field(StringSource, is_required=False),
+                "executable_path": Field(StringSource, is_required=False),
+            },
         ),
     }
 
@@ -89,12 +68,8 @@ WORKSPACE_CONFIG_SCHEMA = {
         [
             Selector(
                 merge_dicts(
-                    _get_target_config(include_executable_path=True),
+                    _get_target_config(),
                     {
-                        "python_environment": {
-                            "executable_path": StringSource,
-                            "target": Selector(_get_target_config(include_executable_path=False)),
-                        },
                         "grpc_server": {
                             "host": Field(StringSource, is_required=False),
                             "socket": Field(StringSource, is_required=False),
