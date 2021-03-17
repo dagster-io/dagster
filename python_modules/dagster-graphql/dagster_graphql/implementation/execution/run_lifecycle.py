@@ -36,7 +36,7 @@ def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_par
         )
     else:
         known_state = None
-        if execution_params.execution_metadata.parent_run_id:
+        if execution_params.execution_metadata.parent_run_id and execution_params.step_keys:
             known_state = KnownExecutionState.for_reexecution(
                 instance.all_logs(execution_params.execution_metadata.parent_run_id),
                 execution_params.step_keys,

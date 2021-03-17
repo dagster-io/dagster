@@ -85,7 +85,6 @@ class KnownExecutionState(
         """
         Copy over dynamic mappings from previous run, but drop any for steps that we intend to re-execute
         """
-
         parent_state = KnownExecutionState.derive_from_logs(parent_run_logs)
         dynamic_mappings_to_use = {
             step_key: parent_state.dynamic_mappings[step_key]
