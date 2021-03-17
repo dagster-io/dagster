@@ -137,6 +137,9 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
+    def get_display_metadata(self):
+        return self.handle.repository_location_handle.get_display_metadata()
+
 
 class ExternalPipeline(RepresentedPipeline):
     """

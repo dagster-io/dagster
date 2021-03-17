@@ -139,18 +139,10 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules {
   futureTicks: SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata {
+export interface SchedulesRootQuery_repositoryOrError_Repository_displayMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
-}
-
-export interface SchedulesRootQuery_repositoryOrError_Repository_origin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata[];
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository {
@@ -159,7 +151,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository {
   name: string;
   location: SchedulesRootQuery_repositoryOrError_Repository_location;
   schedules: SchedulesRootQuery_repositoryOrError_Repository_schedules[];
-  origin: SchedulesRootQuery_repositoryOrError_Repository_origin;
+  displayMetadata: SchedulesRootQuery_repositoryOrError_Repository_displayMetadata[];
 }
 
 export interface SchedulesRootQuery_repositoryOrError_PythonError_cause {

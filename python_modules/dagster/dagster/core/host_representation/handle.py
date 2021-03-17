@@ -22,6 +22,7 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.origin import RepositoryPythonOrigin
+from dagster.utils import merge_dicts
 
 
 def _get_repository_python_origin(
@@ -65,6 +66,9 @@ class RepositoryLocationHandle(ABC):
     @abstractproperty
     def origin(self):
         pass
+
+    def get_display_metadata(self):
+        return self.origin.get_display_metadata()
 
 
 class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
@@ -259,6 +263,12 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             for repo_name, repo_data in self._external_repositories_data.items()
         }
 
+    def get_display_metadata(self):
+        return merge_dicts(
+            self.origin.get_display_metadata(),
+            ({"image": self.container_image} if self.container_image else {}),
+        )
+
 
 class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     """
@@ -398,6 +408,12 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         )
 
         return GrpcServerRepositoryLocation(self)
+
+    def get_display_metadata(self):
+        return merge_dicts(
+            self.origin.get_display_metadata(),
+            ({"image": self.container_image} if self.container_image else {}),
+        )
 
 
 class InProcessRepositoryLocationHandle(RepositoryLocationHandle):

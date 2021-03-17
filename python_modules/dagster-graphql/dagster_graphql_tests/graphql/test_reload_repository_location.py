@@ -143,7 +143,10 @@ class TestReloadRepositoriesOutOfProcess(
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
-        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        repositories = result.data["reloadRepositoryLocation"]["repositories"]
+        assert len(repositories) == 1
+        assert repositories[0]["name"] == "test_repo"
+
         assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
 
         with mock.patch(
@@ -185,9 +188,9 @@ class TestReloadRepositoriesOutOfProcess(
                 assert cli_command_mock.call_count == 1
                 assert external_repository_mock.call_count == 1
 
-                assert result.data["reloadRepositoryLocation"]["repositories"] == [
-                    {"name": "new_repo"}
-                ]
+                repositories = result.data["reloadRepositoryLocation"]["repositories"]
+                assert len(repositories) == 1
+                assert repositories[0]["name"] == "new_repo"
 
     def test_reload_failure(self, graphql_context):
         result = execute_dagster_graphql(
@@ -199,7 +202,9 @@ class TestReloadRepositoriesOutOfProcess(
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
-        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        repositories = result.data["reloadRepositoryLocation"]["repositories"]
+        assert len(repositories) == 1
+        assert repositories[0]["name"] == "test_repo"
         assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
 
         with mock.patch(
@@ -261,7 +266,9 @@ class TestReloadRepositoriesOutOfProcess(
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
-        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        repositories = result.data["reloadRepositoryLocation"]["repositories"]
+        assert len(repositories) == 1
+        assert repositories[0]["name"] == "test_repo"
         assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
 
 
@@ -272,7 +279,11 @@ mutation ($repositoryLocationName: String!) {
       ... on RepositoryLocation {
         name
         repositories {
-            name
+          name
+          displayMetadata {
+            key
+            value
+          }
         }
         isReloadSupported
       }
@@ -332,5 +343,18 @@ class TestReloadRepositoriesManagedGrpc(
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
-        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+
+        repositories = result.data["reloadRepositoryLocation"]["repositories"]
+        assert len(repositories) == 1
+        assert repositories[0]["name"] == "test_repo"
+
+        metadatas = repositories[0]["displayMetadata"]
+        metadata_dict = {metadata["key"]: metadata["value"] for metadata in metadatas}
+
+        assert (
+            "python_file" in metadata_dict
+            or "module_name" in metadata_dict
+            or "package_name" in metadata_dict
+        )
+
         assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True

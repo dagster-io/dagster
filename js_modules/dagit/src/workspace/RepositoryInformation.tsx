@@ -20,16 +20,15 @@ export const REPOSITORY_INFO_FRAGMENT = gql`
   fragment RepositoryInfoFragment on Repository {
     id
     name
-    origin {
-      id
-      ...RepositoryOriginFragment
-    }
     location {
       id
       name
     }
+    displayMetadata {
+      key
+      value
+    }
   }
-  ${REPOSITORY_ORIGIN_FRAGMENT}
 `;
 
 export const RepositoryOriginInformation: React.FunctionComponent<{
@@ -58,7 +57,12 @@ export const RepositoryInformation: React.FunctionComponent<{
         <span style={{opacity: 0.5}}>{repository.location.name}</span>
       </div>
       <div style={{fontSize: 11, marginTop: 5}}>
-        <RepositoryOriginInformation origin={repository.origin} />
+        {repository.displayMetadata.map((metadata, idx) => (
+          <div key={idx}>
+            <span style={{marginRight: 5}}>{metadata.key}:</span>
+            <span style={{opacity: 0.5}}>{metadata.value}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

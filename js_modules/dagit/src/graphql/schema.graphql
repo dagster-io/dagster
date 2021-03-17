@@ -45,6 +45,7 @@ type Repository {
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
+  displayMetadata: [RepositoryMetadata!]!
 }
 
 type RepositoryLocation {

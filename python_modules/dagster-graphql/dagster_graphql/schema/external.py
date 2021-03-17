@@ -12,7 +12,7 @@ from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
 from .pipelines.pipeline import GraphenePipeline
-from .repository_origin import GrapheneRepositoryOrigin
+from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
@@ -84,6 +84,7 @@ class GrapheneRepository(graphene.ObjectType):
     partitionSets = non_null_list(GraphenePartitionSet)
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)
+    displayMetadata = non_null_list(GrapheneRepositoryMetadata)
 
     class Meta:
         name = "Repository"
@@ -140,6 +141,14 @@ class GrapheneRepository(graphene.ObjectType):
             GraphenePartitionSet(self._repository.handle, partition_set)
             for partition_set in self._repository.get_external_partition_sets()
         )
+
+    def resolve_displayMetadata(self, _graphene_info):
+        metadata = self._repository.get_display_metadata()
+        return [
+            GrapheneRepositoryMetadata(key=key, value=value)
+            for key, value in metadata.items()
+            if value is not None
+        ]
 
 
 class GrapheneRepositoryLocationLoadFailure(graphene.ObjectType):

@@ -135,18 +135,10 @@ export interface RepositorySchedulesFragment_schedules {
   futureTicks: RepositorySchedulesFragment_schedules_futureTicks;
 }
 
-export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {
+export interface RepositorySchedulesFragment_displayMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
-}
-
-export interface RepositorySchedulesFragment_origin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: RepositorySchedulesFragment_origin_repositoryLocationMetadata[];
 }
 
 export interface RepositorySchedulesFragment {
@@ -155,5 +147,5 @@ export interface RepositorySchedulesFragment {
   id: string;
   location: RepositorySchedulesFragment_location;
   schedules: RepositorySchedulesFragment_schedules[];
-  origin: RepositorySchedulesFragment_origin;
+  displayMetadata: RepositorySchedulesFragment_displayMetadata[];
 }

@@ -194,18 +194,10 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   futureTicks: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata {
+export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_displayMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
-}
-
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_origin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata[];
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes {
@@ -214,7 +206,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   name: string;
   location: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_location;
   schedules: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules[];
-  origin: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_origin;
+  displayMetadata: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_displayMetadata[];
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection {

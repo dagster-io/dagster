@@ -86,24 +86,16 @@ export interface InstanceHealthQuery_repositoryLocationsOrError_PythonError {
 
 export type InstanceHealthQuery_repositoryLocationsOrError = InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection | InstanceHealthQuery_repositoryLocationsOrError_PythonError;
 
-export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_origin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata[];
-}
-
 export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
+}
+
+export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_displayMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
 }
 
 export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet_partitionStatusesOrError_PythonError {
@@ -317,8 +309,8 @@ export interface InstanceHealthQuery_repositoriesOrError_RepositoryConnection_no
   __typename: "Repository";
   id: string;
   name: string;
-  origin: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_origin;
   location: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_location;
+  displayMetadata: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_displayMetadata[];
   schedules: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_schedules[];
   sensors: InstanceHealthQuery_repositoriesOrError_RepositoryConnection_nodes_sensors[];
 }
