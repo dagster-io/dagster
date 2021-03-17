@@ -240,6 +240,9 @@ class InstanceManagers:
                         "run_launcher": {
                             "module": "dagster",
                             "class": "DefaultRunLauncher",
+                            "config": {
+                                "wait_for_processes": True,
+                            },
                         },
                     },
                 ) as instance:
@@ -296,6 +299,9 @@ class InstanceManagers:
                     "run_launcher": {
                         "module": "dagster",
                         "class": "DefaultRunLauncher",
+                        "config": {
+                            "wait_for_processes": True,
+                        },
                     },
                 }
             ) as instance:

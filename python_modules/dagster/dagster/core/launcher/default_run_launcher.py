@@ -1,7 +1,7 @@
 import time
 
 import grpc
-from dagster import check, seven
+from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.host_representation.handle import (
@@ -30,11 +30,18 @@ GRPC_REPOSITORY_LOCATION_HANDLE_TYPES = (
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data=None, wait_for_processes=False):
         self._inst_data = inst_data
 
-        # Used for test cleanup purposes only
-        self._run_id_to_managed_grpc_pid = {}
+        # Whether to wait for any processes that were used to launch runs to finish
+        # before disposing of this launcher. Primarily useful for test cleanup where
+        # we want to make sure that resources used by the test are cleaned up before
+        # the test ends.
+        self._wait_for_processes = check.bool_param(wait_for_processes, "wait_for_processes")
+
+        self._run_ids = set()
+
+        self._processes_to_wait_for = []
 
         super().__init__()
 
@@ -44,11 +51,13 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {}
+        return {"wait_for_processes": Field(Bool, is_required=False)}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return DefaultRunLauncher(inst_data=inst_data)
+        return DefaultRunLauncher(
+            inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
+        )
 
     def launch_run(self, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
@@ -94,13 +103,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 )
             )
 
-        pid_to_wait_for = (
-            repository_location_handle.grpc_server_process.pid
-            if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
-            else 0
-        )
+        self._run_ids.add(run.run_id)
 
-        self._run_id_to_managed_grpc_pid[run.run_id] = pid_to_wait_for
+        if self._wait_for_processes and isinstance(
+            repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
+        ):
+            self._processes_to_wait_for.append(repository_location_handle.grpc_server_process)
 
         return run
 
@@ -175,7 +183,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         while True:
             active_run_ids = [
                 run_id
-                for run_id in self._run_id_to_managed_grpc_pid.keys()
+                for run_id in self._run_ids
                 if (
                     self._instance.get_run_by_id(run_id)
                     and not self._instance.get_run_by_id(run_id).is_finished
@@ -196,15 +204,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             time.sleep(interval)
             interval = interval * 2
 
-    def cleanup_managed_grpc_servers(self):
-        """Shut down any managed grpc servers that used this run launcher to start a run.
-        Should only be used for teardown purposes within tests (generally it's fine for a server
-        to out-live the host process, since it might be finishing an execution and will
-        automatically shut itself down once it no longer receives a heartbeat from the host
-        process). But in tests, gRPC servers access the DagsterInstance during execution, so we need
-        to shut them down before we can safely remove the temporary directory created for the
-        DagsterInstance.
-        """
-        for pid in set(self._run_id_to_managed_grpc_pid.values()):
-            if pid > 0:
-                seven.wait_for_pid(pid)
+    def dispose(self):
+        if not self._wait_for_processes:
+            return
+
+        for process in self._processes_to_wait_for:
+            process.wait()
