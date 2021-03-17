@@ -35,7 +35,6 @@ class HelmTemplate:
                 "template",
                 self.name,
                 os.path.join(git_repo_root(), "helm", "dagster"),
-                "--dependency-update",
                 "--debug",
                 *['--values', tmp_file.name],
                 *["--show-only", self.output],

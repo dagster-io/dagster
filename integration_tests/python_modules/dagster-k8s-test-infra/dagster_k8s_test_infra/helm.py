@@ -192,7 +192,6 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
             "--namespace",
             namespace,
             "--debug",
-            "--dependency-update",
             "-f",
             "-",
             "dagster",
