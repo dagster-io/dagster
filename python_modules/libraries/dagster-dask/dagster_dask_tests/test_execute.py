@@ -230,6 +230,9 @@ def test_dask_terminate():
 
 
 def test_existing_scheduler():
+    # Specifying an "existing" cluster type is deprecated.
+    # https://github.com/dagster-io/dagster/issues/3854
+
     def _execute(scheduler_address, instance):
         return execute_pipeline(
             reconstructable(dask_engine_pipeline),
@@ -237,6 +240,32 @@ def test_existing_scheduler():
                 "intermediate_storage": {"filesystem": {}},
                 "execution": {
                     "dask": {"config": {"cluster": {"existing": {"address": scheduler_address}}}}
+                },
+            },
+            instance=instance,
+        )
+
+    async def _run_test():
+        with instance_for_test() as instance:
+            async with Scheduler() as scheduler:
+                async with Worker(scheduler.address) as _:
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, _execute, scheduler.address, instance
+                    )
+                    assert result.success
+                    assert result.result_for_solid("simple").output_value() == 1
+
+    asyncio.get_event_loop().run_until_complete(_run_test())
+
+
+def test_existing_scheduler_address():
+    def _execute(scheduler_address, instance):
+        return execute_pipeline(
+            reconstructable(dask_engine_pipeline),
+            run_config={
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {
+                    "dask": {"config": {"client": {"address": scheduler_address}}}
                 },
             },
             instance=instance,
