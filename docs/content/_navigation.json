@@ -268,10 +268,6 @@
             "path": "/deployment/dagster-daemon"
           },
           {
-            "title": "Dagster Storage",
-            "path": "/deployment/dagster-storage"
-          },
-          {
             "title": "Run Launcher",
             "path": "/deployment/run-launcher"
           },
