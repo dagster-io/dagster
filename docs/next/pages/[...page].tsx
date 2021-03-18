@@ -1,6 +1,8 @@
 import MDXComponents, {
   SearchIndexContext,
 } from "../components/mdx/MDXComponents";
+import Pagination from "../components/Pagination";
+
 import { SphinxPrefix, sphinxPrefixFromPage } from "../util/useSphinx";
 import { useVersion, versionFromPage } from "../util/useVersion";
 
@@ -136,6 +138,7 @@ function MDXRenderer({ data }: { data: MDXData }) {
           <div className="DocSearch-content prose dark:prose-dark max-w-none">
             {content}
           </div>
+          <Pagination />
         </div>
         {/* End main area */}
       </div>

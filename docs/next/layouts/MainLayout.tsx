@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-import Pagination from "components/Pagination";
 import { Search } from "components/Search";
 import Sidebar from "../components/Sidebar";
 import { Transition } from "@headlessui/react";
@@ -566,13 +565,9 @@ const Layout = ({ children }) => {
                 setDarkMode={setDarkMode}
               />
 
-              <div className="w-full relative z-0 flex justify-center">
+              <div className="w-full relative z-0 flex justify-center mb-8">
                 {children}
               </div>
-            </div>
-
-            <div className="pb-12">
-              <Pagination />
             </div>
           </div>
         </div>
