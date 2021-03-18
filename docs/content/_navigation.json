@@ -245,7 +245,7 @@
         "children": [
           {
             "title": "Executors",
-            "path": "/concepts/executors/executors"
+            "path": "/concepts/executors"
           }
         ]
       }
@@ -341,10 +341,6 @@
           {
             "title": "Executing on Airflow",
             "path": "/deployment/custom-infra/airflow"
-          },
-          {
-            "title": "Customizing Run Launcher",
-            "path": "/deployment/custom-infra/custom-run-launcher"
           }
         ]
       }

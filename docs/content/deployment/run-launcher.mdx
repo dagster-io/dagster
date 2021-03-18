@@ -7,9 +7,9 @@ description: TODO
 
 ## Relevant APIs
 
-| Name                                                             | Description |
-| ---------------------------------------------------------------- | ----------- |
-| <PyObject module="dagster.core.launcher" object="RunLauncher" /> | TODO        |
+| Name                                                             | Description                   |
+| ---------------------------------------------------------------- | ----------------------------- |
+| <PyObject module="dagster.core.launcher" object="RunLauncher" /> | Base class for run launchers. |
 
 ## Overview
 
@@ -25,10 +25,15 @@ The simplest run launcher is the built-in run launcher, <PyObject module="dagste
 
 Other run launchers include:
 
-- <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which allocates a
-  Kubernetes Job per run.
+- <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which allocates a Kubernetes Job per run.
 
-<TODO />
+  For more information, check out [Kubernetes Deployment Guides](/deployment/guides/kubernetes/deploying-with-helm).
+
+- <PyObject module="dagster_docker" object="DockerRunLauncher" />, which launches runs in a Docker container.
+
+  For more information, check out [Deploying Dagster to Docker Guide](/deployment/guides/docker) and [Docker deployment example](/deployment/guides/docker#example).
+
+- <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, which launches runs as single Kubernetes Jobs.
 
 ## Custom Run Launchers
 
