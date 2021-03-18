@@ -50,7 +50,7 @@ extensions = [
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
 
-# autodoc_typehints = "none"
+autodoc_typehints = "none"
 
 # To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
 # the inv field set to None, e.g.
