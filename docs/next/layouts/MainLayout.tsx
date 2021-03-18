@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import Pagination from "components/Pagination";
 import { Search } from "components/Search";
 import Sidebar from "../components/Sidebar";
 import { Transition } from "@headlessui/react";
 import cx from "classnames";
+import newGithubIssueUrl from "new-github-issue-url";
 import { useLocalStorage } from "react-use";
 import { useVersion } from "../util/useVersion";
 
@@ -17,6 +18,33 @@ export const FeedbackModal = ({
 }) => {
   const { asPath, version } = useVersion();
   const [currentPage, setCurrentPage] = useState<string>(asPath);
+  const [currentVersion, setCurrentVersion] = useState<string>(version);
+  const [description, setDescription] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [submitOption, setSubmitOption] = useState<string>("GH");
+
+  const enablePrivateSubmition = false;
+
+  useEffect(() => {
+    setCurrentVersion(version);
+    setCurrentPage(asPath);
+    setTitle(`Problem on ${asPath} page`);
+  }, [asPath, version]);
+
+  const submitFeedback = (e) => {
+    e.preventDefault();
+
+    const url = newGithubIssueUrl({
+      user: "dagster-io",
+      repo: "dagster",
+      title: `[Documentation Feedback] ${title}`,
+      body: description,
+      labels: ["documentation"],
+    });
+
+    window.open(url, "_blank");
+    closeFeedback();
+  };
 
   return (
     <Transition show={isOpen}>
@@ -112,10 +140,29 @@ export const FeedbackModal = ({
                             name="project_name"
                             id="project_name"
                             className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            value={version}
+                            value={currentVersion}
                             onChange={(event) =>
-                              setCurrentPage(event.target.value)
+                              setCurrentVersion(event.target.value)
                             }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="project_name"
+                          className="block text-sm font-medium text-gray-900"
+                        >
+                          Issue Title
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="text"
+                            name="project_name"
+                            id="project_name"
+                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                            value={title}
+                            onChange={(event) => setTitle(event.target.value)}
                           />
                         </div>
                       </div>
@@ -133,107 +180,127 @@ export const FeedbackModal = ({
                             rows={4}
                             className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
                             defaultValue={""}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
                           />
                         </div>
                       </div>
 
-                      <fieldset>
-                        <legend className="sr-only">
-                          Submit as Public Github Issue
-                        </legend>
-                        <div className="bg-white rounded-md -space-y-px">
-                          {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
-                          <div className="relative border rounded-tl-md rounded-tr-md p-4 flex">
-                            <div className="flex items-center h-5">
-                              <input
-                                id="settings-option-0"
-                                name="privacy_setting"
-                                type="radio"
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
-                                defaultChecked
-                              />
+                      {enablePrivateSubmition && (
+                        <>
+                          <fieldset>
+                            <legend className="sr-only">
+                              Submit as Public Github Issue
+                            </legend>
+                            <div className="bg-white rounded-md -space-y-px">
+                              {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
+                              <div className="relative border rounded-tl-md rounded-tr-md p-4 flex">
+                                <div className="flex items-center h-5">
+                                  <input
+                                    id="settings-option-0"
+                                    name="gh_setting"
+                                    value="GH"
+                                    type="radio"
+                                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                                    defaultChecked
+                                    checked={submitOption === "GH"}
+                                    onChange={(e) =>
+                                      setSubmitOption(e.target.value)
+                                    }
+                                  />
+                                </div>
+                                <label
+                                  htmlFor="settings-option-0"
+                                  className="ml-3 flex flex-col cursor-pointer"
+                                >
+                                  {/* On: "text-indigo-900", Off: "text-gray-900" */}
+                                  <span className="block text-sm font-medium">
+                                    Submit as public Github Issue
+                                  </span>
+                                  {/* On: "text-indigo-700", Off: "text-gray-500" */}
+                                  <span className="block text-sm">
+                                    Submit this feedback to our public issue
+                                    tracker at{" "}
+                                    <a href="#" className="underline">
+                                      https://github.com/dagster-io/dagster/issues
+                                    </a>
+                                  </span>
+                                </label>
+                              </div>
+                              {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
+                              <div className="relative border border-gray-200 p-4 flex">
+                                <div className="flex items-center h-5">
+                                  <input
+                                    id="settings-option-1"
+                                    name="private_setting"
+                                    value="Private"
+                                    type="radio"
+                                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                                    checked={submitOption === "Private"}
+                                    onChange={(e) =>
+                                      setSubmitOption(e.target.value)
+                                    }
+                                  />
+                                </div>
+                                <label
+                                  htmlFor="settings-option-1"
+                                  className="ml-3 flex flex-col cursor-pointer"
+                                >
+                                  {/* On: "text-indigo-900", Off: "text-gray-900" */}
+                                  <span className="block text-sm font-medium">
+                                    Private to Dagster Team
+                                  </span>
+                                  {/* On: "text-indigo-700", Off: "text-gray-500" */}
+                                  <span className="block text-sm">
+                                    Send this feedback privately to the Dagster
+                                    team
+                                  </span>
+                                </label>
+                              </div>
+                              {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
                             </div>
-                            <label
-                              htmlFor="settings-option-0"
-                              className="ml-3 flex flex-col cursor-pointer"
-                            >
-                              {/* On: "text-indigo-900", Off: "text-gray-900" */}
-                              <span className="block text-sm font-medium">
-                                Submit as public Github Issue
-                              </span>
-                              {/* On: "text-indigo-700", Off: "text-gray-500" */}
-                              <span className="block text-sm">
-                                Submit this feedback to our public issue tracker
-                                at{" "}
-                                <a href="#" className="underline">
-                                  https://github.com/dagster-io/dagster/issues
-                                </a>
-                              </span>
-                            </label>
-                          </div>
-                          {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
-                          <div className="relative border border-gray-200 p-4 flex">
-                            <div className="flex items-center h-5">
-                              <input
-                                id="settings-option-1"
-                                name="privacy_setting"
-                                type="radio"
-                                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
-                              />
-                            </div>
-                            <label
-                              htmlFor="settings-option-1"
-                              className="ml-3 flex flex-col cursor-pointer"
-                            >
-                              {/* On: "text-indigo-900", Off: "text-gray-900" */}
-                              <span className="block text-sm font-medium">
-                                Private to Dagster Team
-                              </span>
-                              {/* On: "text-indigo-700", Off: "text-gray-500" */}
-                              <span className="block text-sm">
-                                Send this feedback privately to the Dagster team
-                              </span>
-                            </label>
-                          </div>
-                          {/* On: "bg-indigo-50 border-indigo-200 z-10", Off: "border-gray-200" */}
-                        </div>
-                      </fieldset>
+                          </fieldset>
 
-                      <div>
-                        <label
-                          htmlFor="project_name"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Your Github Handle (Optional)
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="project_name"
-                            id="project_name"
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            placeholder="@yourusername"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="project_name"
-                          className="block text-sm font-medium text-gray-900"
-                        >
-                          Your Email (Optional)
-                        </label>
-                        <div className="mt-1">
-                          <input
-                            type="text"
-                            name="project_name"
-                            id="project_name"
-                            className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
-                            placeholder="@yourusername"
-                          />
-                        </div>
-                      </div>
+                          {submitOption == "Private" && (
+                            <>
+                              <div>
+                                <label
+                                  htmlFor="project_name"
+                                  className="block text-sm font-medium text-gray-900"
+                                >
+                                  Your Github Handle (Optional)
+                                </label>
+                                <div className="mt-1">
+                                  <input
+                                    type="text"
+                                    name="project_name"
+                                    id="project_name"
+                                    className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                                    placeholder="@yourusername"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor="project_name"
+                                  className="block text-sm font-medium text-gray-900"
+                                >
+                                  Your Email (Optional)
+                                </label>
+                                <div className="mt-1">
+                                  <input
+                                    type="text"
+                                    name="project_name"
+                                    id="project_name"
+                                    className="block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                                    placeholder="@yourusername"
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -246,10 +313,10 @@ export const FeedbackModal = ({
                   Cancel
                 </button>
                 <button
-                  onClick={closeFeedback}
+                  onClick={submitFeedback}
                   className="ml-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Submit Feedback
+                  Submit Feedback as GH Issue
                 </button>
               </div>
             </form>
@@ -289,7 +356,7 @@ const Header = ({ openFeedback, isDarkMode, setDarkMode }) => {
           {/* Github Icon */}
           <a href="https://github.com/dagster-io/dagster">
             <svg
-              className="h-6 w-6 text-gray-400 hover:text-gray-900 transition transform hover:scale-105 hover:rotate-6"
+              className="h-6 w-6 text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition transform hover:scale-105 hover:rotate-6"
               role="img"
               viewBox="0 0 24 24"
               fill="currentColor"
