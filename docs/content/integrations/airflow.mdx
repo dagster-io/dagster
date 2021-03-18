@@ -6,7 +6,9 @@ title: Dagster with Airflow | Dagster
 
 <CodeReferenceLink filePath="examples/airflow_ingest" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster_airflow) package provides ways to integrate Airflow DAGs and Dagster pipelines.
+The [`dagster-airflow`](/\_apidocs/libraries/dagster_airflow) package allows users to run Dagster pipelines on Airflow clusters, and to import Airflow DAGs into Dagster instances.
+
+This is not recommended for new projects. This is designed for users who want to use the Dagster API within an existing Airflow cluster, and for those who want tooling support to migrate away from Airflow. Using Dagster within an Airflow limits its capabilities, as you still have to rely on Airflow's scheduler, and not all Dagster features (e.g. manual retries from Dagit) will work.
 
 ## Airflow Ingest
 
