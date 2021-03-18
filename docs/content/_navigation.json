@@ -115,10 +115,6 @@
           {
             "title": "Solid Hooks",
             "path": "/concepts/solids-pipelines/solid-hooks"
-          },
-          {
-            "title": "Executing Pipelines",
-            "path": "/concepts/solids-pipelines/executing"
           }
         ]
       },

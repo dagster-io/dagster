@@ -32,7 +32,7 @@ but composite solids can also provide mapping information to control how data an
 
 To define a composite solid, use the <PyObject object="composite_solid" decorator /> decorator.
 
-We use function calls within the decorated function body to indicate the dependency structure between the solids making up the pipeline.
+We use function calls within the decorated function body to indicate the dependency structure between the solids making up the composite solid.
 
 In this example, the `add_one` solid depends on the `return_one` solid's output. Because this data dependency exists, the `return_one` solid executes after `add_one` runs successfully and emits the required output.
 
