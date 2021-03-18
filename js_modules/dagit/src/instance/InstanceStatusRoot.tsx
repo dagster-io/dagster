@@ -72,7 +72,10 @@ export const InstanceStatusRoot = (props: Props) => {
             path="/instance/sensors"
             render={() => <InstanceSensors queryData={queryData} />}
           />
-          <Route path="/instance/backfills" render={() => <InstanceBackfills />} />
+          <Route
+            path="/instance/backfills"
+            render={() => <InstanceBackfills queryData={queryData} />}
+          />
           <Route path="/instance/config" render={() => <InstanceConfig />} />
         </Switch>
       </Group>

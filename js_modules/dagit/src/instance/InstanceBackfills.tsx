@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql, QueryResult} from '@apollo/client';
 import {Colors, Icon, NonIdealState, Popover, Button, Menu, MenuItem, Tag} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
@@ -11,6 +11,7 @@ import {
   InstanceBackfillsQueryVariables,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
 } from 'src/instance/types/InstanceBackfillsQuery';
+import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
 import {PipelineReference} from 'src/pipelines/PipelineReference';
 import {
   doneStatuses,
@@ -23,6 +24,7 @@ import {TerminationDialog} from 'src/runs/TerminationDialog';
 import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {BulkActionStatus, PipelineRunStatus} from 'src/types/globalTypes';
+import {Alert} from 'src/ui/Alert';
 import {Box} from 'src/ui/Box';
 import {CursorPaginationControls} from 'src/ui/CursorControls';
 import {Group} from 'src/ui/Group';
@@ -36,7 +38,7 @@ type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfi
 
 const PAGE_SIZE = 25;
 
-export const InstanceBackfills = () => {
+export const InstanceBackfills = ({queryData}: {queryData: QueryResult<InstanceHealthQuery>}) => {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     InstanceBackfillsQuery,
     InstanceBackfillsQueryVariables
@@ -83,8 +85,35 @@ export const InstanceBackfills = () => {
           );
         }
 
+        const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
+        const backfillHealths = daemonHealths
+          .filter((daemon) => daemon.daemonType == 'BACKFILL')
+          .map((daemon) => daemon.required && daemon.healthy);
+        const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
+
         return (
           <>
+            {isBackfillHealthy ? null : (
+              <Box margin={{bottom: 8}}>
+                <Alert
+                  intent="warning"
+                  title="The backfill daemon is not running."
+                  description={
+                    <div>
+                      See the{' '}
+                      <a
+                        href="https://docs.dagster.io/overview/daemon"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        dagster-daemon documentation
+                      </a>{' '}
+                      for more information on how to deploy the dagster-daemon process.
+                    </div>
+                  }
+                />
+              </Box>
+            )}
             <BackfillTable
               backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
               refetch={queryResult.refetch}
