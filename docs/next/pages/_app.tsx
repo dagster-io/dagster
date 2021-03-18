@@ -1,13 +1,14 @@
 import "../styles/globals.css";
 import "../styles/prism.css";
 
-import { useEffect } from "react";
-import { useRouter } from "next/router";
 import * as gtag from "../util/gtag";
+
 import type { AppProps } from "next/app";
 import { DefaultSeo } from "next-seo";
 import Layout from "../layouts/MainLayout";
-import { normalizeVersionPath, useVersion } from "../util/useVersion";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { useVersion } from "../util/useVersion";
 
 // TODO: update BASE_URL before launching
 // const BASE_URL = "https://docs.dagster.io";

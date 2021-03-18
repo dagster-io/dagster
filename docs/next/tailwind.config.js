@@ -23,6 +23,7 @@ module.exports = {
     extend: {
       colors: {
         gray: colors.trueGray,
+        cyan: colors.cyan,
       },
       animation: {
         wiggle: "wiggle 1s ease-in-out infinite",

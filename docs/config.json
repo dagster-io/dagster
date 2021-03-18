@@ -1,0 +1,47 @@
+{
+  "index_name": "Testing",
+  "sitemap_urls": ["https://dagster.vercel.app/sitemap.xml"],
+  "start_urls": [
+    {
+      "url": "https://dagster.vercel.app/"
+    },
+    {
+      "url": "https://dagster.vercel.app/_apidocs/",
+      "selectors_key": "api_docs"
+    }
+  ],
+  "selectors": {
+    "default": {
+      "lvl0": {
+        "selector": ".DocSearch-lvl0",
+        "global": true,
+        "default_value": "Documentation"
+      },
+      "lvl1": {
+        "selector": ".DocSearch-lvl1",
+        "global": true,
+        "default_value": "Documentation"
+      },
+      "lvl2": {
+        "selector": ".DocSearch-lvl2",
+        "global": true,
+        "default_value": "Title"
+      },
+      "lvl3": ".DocSearch-content h1",
+      "lvl4": ".DocSearch-content h2",
+      "lvl5": ".DocSearch-content h3",
+      "text": ".DocSearch-content p, .DocSearch-content li"
+    },
+
+    "api_docs": {
+      "lvl0": ".section h1",
+      "lvl1": ".section h2",
+      "lvl2": ".section h3",
+      "lvl3": ".section h4",
+      "lvl4": ".section h5, .section .rubric",
+      "lvl5": ".section h6, .section dt",
+      "text": ".section p, .section li"
+    }
+  },
+  "nb_hits": "OUTPUT OF THE CRAWL"
+}

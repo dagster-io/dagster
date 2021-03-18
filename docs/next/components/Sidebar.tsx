@@ -44,7 +44,9 @@ const TopLevelNavigation = () => {
               >
                 {Icons[item.icon]}
               </svg>
-              {item.title}
+              <span className={cx({ "DocSearch-lvl0": match })}>
+                {item.title}
+              </span>
             </a>
           </Link>
         );
@@ -56,6 +58,7 @@ const TopLevelNavigation = () => {
 const SecondaryNavigation = () => {
   const navigation = useNavigation();
   const currentSection = getCurrentSection(navigation);
+  const { asPathWithoutAnchor } = useVersion();
 
   if (!currentSection?.children) {
     return null;
@@ -64,10 +67,19 @@ const SecondaryNavigation = () => {
   return (
     <>
       {currentSection.children.map((section) => {
+        const match = section.children.find(
+          (section) => section.path == asPathWithoutAnchor
+        );
+
         return (
           <div key={section.title} className="mt-8">
             <h3
-              className="px-3 text-xs font-semibold text-blue-500 dark:text-blue-200 uppercase tracking-wider"
+              className={cx(
+                "px-3 text-xs font-semibold text-blue-500 dark:text-blue-200 uppercase tracking-wider",
+                {
+                  "DocSearch-lvl1": match,
+                }
+              )}
               id="teams-headline"
             >
               {section.title}
@@ -81,7 +93,7 @@ const SecondaryNavigation = () => {
               >
                 {section.children.map((section) => {
                   return (
-                    <RecursiveNavigation
+                    <ThirdLevelNavigation
                       key={section.title}
                       section={section}
                     />
@@ -93,6 +105,32 @@ const SecondaryNavigation = () => {
         );
       })}
     </>
+  );
+};
+
+const ThirdLevelNavigation = ({ section }) => {
+  const { asPathWithoutAnchor } = useVersion();
+
+  return (
+    <Link href={section.path}>
+      <a
+        className={cx(
+          "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700",
+          {
+            "bg-blue-100 text-gray-900 hover:bg-blue-100 dark:bg-gray-600":
+              section.path === asPathWithoutAnchor,
+          }
+        )}
+      >
+        <span
+          className={cx({
+            "DocSearch-lvl2": section.path === asPathWithoutAnchor,
+          })}
+        >
+          {section.title}
+        </span>
+      </a>
+    </Link>
   );
 };
 
@@ -202,26 +240,6 @@ const VersionDropdown = () => {
         </Menu>
       </div>
     </div>
-  );
-};
-
-const RecursiveNavigation = ({ section }) => {
-  const { asPath } = useVersion();
-
-  return (
-    <Link href={section.path}>
-      <a
-        className={cx(
-          "group flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-md hover:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700",
-          {
-            "bg-blue-100 text-gray-900 hover:bg-blue-100 dark:bg-gray-600":
-              section.path === asPath,
-          }
-        )}
-      >
-        <span>{section.title}</span>
-      </a>
-    </Link>
   );
 };
 
