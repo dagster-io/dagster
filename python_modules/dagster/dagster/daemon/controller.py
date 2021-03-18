@@ -78,6 +78,7 @@ class DagsterDaemonController:
                 target=daemon.run_loop,
                 args=(self._daemon_uuid, self._daemon_shutdown_event, self._grpc_server_registry),
                 name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
+                daemon=True,  # Individual daemons should not outlive controller process
             )
             self._daemon_threads[daemon_type].start()
 
@@ -110,9 +111,16 @@ class DagsterDaemonController:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._daemon_shutdown_event.set()
-        for thread in self._daemon_threads.values():
+        for daemon_type, thread in self._daemon_threads.items():
             if thread.is_alive():
                 thread.join(timeout=30)
+
+                if thread.is_alive():
+                    self._logger.error(
+                        "Thread for {daemon_type} did not shut down gracefully".format(
+                            daemon_type=daemon_type
+                        )
+                    )
 
     def _add_daemon(self, daemon):
         self._daemons[daemon.daemon_type()] = daemon

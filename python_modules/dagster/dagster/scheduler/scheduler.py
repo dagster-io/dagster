@@ -207,7 +207,7 @@ def launch_scheduled_runs_for_schedule(
         with _ScheduleLaunchContext(tick, instance, logger) as tick_context:
             _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
-            _schedule_runs_at_time(
+            yield from _schedule_runs_at_time(
                 instance,
                 logger,
                 repo_location,
@@ -217,7 +217,6 @@ def launch_scheduled_runs_for_schedule(
                 tick_context,
                 debug_crash_flags,
             )
-            yield
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
@@ -271,6 +270,7 @@ def _schedule_runs_at_time(
             f"Failed to fetch schedule data for {external_schedule.name}: {error.to_string()}"
         )
         tick_context.update_state(JobTickStatus.FAILURE, error=error)
+        yield
         return
 
     if not schedule_execution_data.run_requests:
@@ -278,6 +278,7 @@ def _schedule_runs_at_time(
 
         # Update tick to skipped state and return
         tick_context.update_state(JobTickStatus.SKIPPED)
+        yield
         return
 
     for run_request in schedule_execution_data.run_requests:
@@ -292,6 +293,7 @@ def _schedule_runs_at_time(
                     f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
                 )
                 tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+                yield
                 continue
             else:
                 logger.info(
@@ -307,6 +309,7 @@ def _schedule_runs_at_time(
                 external_pipeline,
                 run_request,
             )
+            yield
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 

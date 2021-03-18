@@ -88,7 +88,7 @@ class DagsterDaemon(AbstractContextManager):
         self._current_iteration_exceptions = []
         daemon_generator = self.run_iteration(instance, daemon_shutdown_event, grpc_server_registry)
 
-        while not until or pendulum.now("UTC") < until:
+        while (not daemon_shutdown_event.is_set()) and (not until or pendulum.now("UTC") < until):
             try:
                 result = check.opt_inst(
                     next(daemon_generator), tuple([SerializableErrorInfo, CompletedIteration])

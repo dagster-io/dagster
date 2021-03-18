@@ -23,16 +23,11 @@ def define_dagster_checker():
             ),
             "W0002": ("print() call", "print-call", "Cannot call print()"),
             "W0003": (
-                "setting daemon=True in threading.Thread constructor",
-                "daemon-thread",
-                "Cannot set daemon=True in threading.Thread constructor (py2 compat)",
-            ),
-            "W0004": (
                 "calling pendulum.create or pendulum.datetime",
                 "pendulum-create",
                 "Use dagster.seven.create_pendulum_time instead of pendulum.create or pendulum.datetime",
             ),
-            "W0005": (
+            "W0004": (
                 "calling in_tz() on a pendulum datetime",
                 "pendulum-in-tz",
                 "Use dagster.seven.to_timezone instead of calling in_tz on a pendulum datetime",
@@ -77,15 +72,7 @@ def define_dagster_checker():
                 and node.func.name == "print"
             ):
                 self.add_message("print-call", node=node)
-            if (
-                node.callable
-                and isinstance(node.func, astroid.node_classes.Attribute)
-                and node.func.attrname == "Thread"
-                and isinstance(node.func.expr, astroid.node_classes.Name)
-                and node.func.expr.name == "threading"
-                and "daemon" in [keyword.arg for keyword in node.keywords]
-            ):
-                self.add_message("daemon-thread", node=node)
+
             if (
                 node.callable
                 and isinstance(node.func, astroid.node_classes.Attribute)

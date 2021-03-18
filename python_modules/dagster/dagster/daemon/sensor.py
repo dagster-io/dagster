@@ -221,7 +221,7 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
                 external_sensor, job_state, tick, instance, logger
             ) as tick_context:
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
-                _evaluate_sensor(
+                yield from _evaluate_sensor(
                     tick_context,
                     instance,
                     repo_location,
@@ -236,7 +236,6 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
                 tick_status=JobTickStatus.SKIPPED,
                 before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
             )
-            yield
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
@@ -270,6 +269,7 @@ def _evaluate_sensor(
             f"Failed to resolve sensor for {external_sensor.name} : {sensor_runtime_data.error.to_string()}"
         )
         context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
+        yield
         return
 
     assert isinstance(sensor_runtime_data, ExternalSensorExecutionData)
@@ -285,6 +285,7 @@ def _evaluate_sensor(
         else:
             context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
             context.update_state(JobTickStatus.SKIPPED)
+        yield
         return
 
     pipeline_selector = PipelineSelector(
@@ -307,6 +308,7 @@ def _evaluate_sensor(
 
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
+            yield
             continue
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
@@ -326,6 +328,7 @@ def _evaluate_sensor(
                 f"Run {run.run_id} created successfully but failed to launch: "
                 f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
             )
+        yield
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
@@ -343,6 +346,8 @@ def _evaluate_sensor(
         context.update_state(JobTickStatus.SUCCESS)
     else:
         context.update_state(JobTickStatus.SKIPPED)
+
+    yield
 
 
 def _is_under_min_interval(job_state, now):
