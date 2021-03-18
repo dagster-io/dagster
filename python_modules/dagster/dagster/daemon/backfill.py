@@ -38,7 +38,7 @@ def execute_backfill_iteration(instance, grpc_server_registry, logger, debug_cra
     backfill_jobs = instance.get_backfills(status=BulkActionStatus.REQUESTED)
 
     if not backfill_jobs:
-        logger.error("No backfill jobs requested.")
+        logger.info("No backfill jobs requested.")
         yield
         return
 
