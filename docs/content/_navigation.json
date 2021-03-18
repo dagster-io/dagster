@@ -105,6 +105,10 @@
             "path": "/concepts/solids-pipelines/pipelines"
           },
           {
+            "title": "Composite Solids",
+            "path": "/concepts/solids-pipelines/composite-solids"
+          },
+          {
             "title": "Solid Events",
             "path": "/concepts/solids-pipelines/solid-events"
           },
