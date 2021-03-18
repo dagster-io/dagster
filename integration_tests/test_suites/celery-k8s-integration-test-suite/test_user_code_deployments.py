@@ -97,5 +97,7 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-a
 
     assert runmaster_job_name
 
-    result = wait_for_job_and_get_raw_logs(job_name=runmaster_job_name, namespace=namespace)
+    result = wait_for_job_and_get_raw_logs(
+        job_name=runmaster_job_name, namespace=namespace, wait_timeout=450
+    )
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
