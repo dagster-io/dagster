@@ -40,7 +40,7 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
         targetTagName="div"
         position={Position.LEFT}
       >
-        <Tag isDagsterTag={isDagsterTag} onClick={onClick} tag={displayTag} />;
+        <Tag isDagsterTag={isDagsterTag} onClick={onClick} tag={displayTag} />
       </Tooltip>
     );
   }
