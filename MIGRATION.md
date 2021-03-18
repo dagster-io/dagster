@@ -2,6 +2,54 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+# Migrating to 0.11.0
+
+### Action Required: Run and event storage schema changes
+
+Run this after migrating to 0.11.0:
+
+```
+dagster instance migrate
+```
+
+This release includes several schema changes to the Dagster storages that improve performance, allow support for MySQL, and enable new features like asset tags and reliable backfills. After upgrading to 0.11.0, run the `dagster instance migrate` command to migrate your instance storage to the latest schema.
+
+### Action Required: Schedule timezones
+
+Schedules now run in UTC (instead of the system timezone) if no timezone has been set on the schedule. If you’re using a deprecated scheduler like `SystemCronScheduler` or `K8sScheduler`, we recommend that you switch to the native Dagster scheduler. The deprecated schedulers will be removed in the next Dagster release.
+
+### Action Required: Asset storage
+
+If upgrading directly to `0.11.0` from `0.9.22` or lower, you might notice some asset keys missing from the catalog if they have not been materialized using a version `0.9.16` or greater.  We removed some back-compatibility for performance reasons.  If this is the case, you can either run `dagster instance reindex` or execute the appropriate pipelines to materialize those assets again.  In either case, the full history of the asset will still be maintained.
+
+### Removals of Deprecated APIs
+
+* The `instance` argument to `RunLauncher.launch_run` has been removed. If you have written a custom RunLauncher, you’ll need to update the signature of that method. You can still access the `DagsterInstance` on the `RunLauncher` via the `_instance` parameter.
+* The `has_config_entry`, `has_configurable_inputs`, and `has_configurable_outputs` properties of `solid` and `composite_solid` have been removed.
+* The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
+* The `execute_run_with_structured_logs` and `execute_step_with_structured_logs` internal CLI entry points have been removed. Use `execute_run` or `execute_step` instead.
+* The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](http://docs.dagster.io/[concepts/repositories-workspaces/workspaces](https://dagster.vercel.app/concepts/repositories-workspaces/workspaces)) for more information on configuring your `workspace.yaml` file.
+* [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
+
+### Breaking Changes
+
+* Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
+* The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only affect custom `Executor` classes.
+* Submitting partition backfills in Dagit now requires `dagster-daemon` to be running.  The instance setting in `dagster.yaml` to optionally enable daemon-based backfills has been removed, because all backfills are now daemon-based backfills.
+```
+# removed, no longer a valid setting in dagster.yaml
+    backfill:
+      daemon_enabled: true
+```
+The corresponding value flag `dagsterDaemon.backfill.enabled` has also been removed from the Dagster helm chart.
+
+* The sensor daemon interval settings in `dagster.yaml` has been removed.  The sensor daemon now runs in a continuous loop so this customization is no longer useful.
+```
+# removed, no longer a valid setting in dagster.yaml
+    sensor_settings:
+      interval_seconds: 10
+```
+
 # Migrating to 0.10.0
 
 ## Action Required: Run and event storage schema changes
