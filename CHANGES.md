@@ -2,12 +2,110 @@
 
 ## 0.11.0
 
-**Breaking Changes**
+### Major Changes
 
-- Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
-- The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only effect custom `Executor` classes.
-- [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
-- The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
+* **MySQL is now supported as a backend for storages** you can now run your Dagster Instance on top of MySQL instead of Postgres. See the docs for how to configure MySQL for [Event Log Storage](https://docs.dagster.io/deployment/dagster-instance#mysqleventlogstorage), [Run Storage](https://docs.dagster.io/deployment/dagster-instance#mysqlrunstorage), and [Schedule Storage](https://docs.dagster.io/deployment/dagster-instance#mysqlschedulestorage).
+* A new **backfills page** in Dagit lets you monitor and cancel currently running backfills.  Backfills are now managed by the Dagster Daemon, which means you can launch backfills over thousands of partitions without risking crashing your Dagit server.
+* [Experimental] Dagster now helps you track the **lineage of assets**. You can attach `AssetKeys` to solid outputs through either the `OutputDefinition` or `IOManager`, which allows Dagster to automatically generate asset lineage information for assets referenced in this way. Direct parents of an asset will appear in the Dagit Asset Catalog. See the [asset docs](https://docs.dagster.io/concepts/assets/asset-materializations) to learn more.
+* [Experimental] A **collect operation for dynamic orchestration** allows you to run solids that take a set of dynamically mapped outputs as an input.  Building on the dynamic orchestration features of `DynamicOutput` and `map` from the last release, this release includes the ability to `collect` over dynamically mapped outputs. You can see an example [here](http://concepts/solids-pipelines/pipelines#dynamic-mapping%E2%80%94collect).
+* Dagster has a new **documentation site**. The URL is still [https://docs.dagster.io](https://docs.dagster.io/), but the site has a new design and updated content. If you’re on an older version of Dagster, you can still view pre-0.11.0 documentation at [https://legacy-docs.dagster.io](https://legacy-docs.dagster.io/).
+* **dagster new-project** is a new CLI command that generates a Dagster project with skeleton code on your filesystem.  [Learn how to use it here.](https://docs.dagster.io/getting-started/create-new-project)
+
+### Additions
+
+#### Core
+
+* Sensors and Schedules
+    * Added a `partition_days_offset` argument to the `@daily_schedule` decorator that allows you to customize which partition is used for each execution of your schedule. The default value of this parameter is `1`, which means that a schedule that runs on day N will fill in the partition for day N-1. To create a schedule that uses the partition for the current day, set this parameter to `0`, or increase it to make the schedule use an earlier day’s partition. Similar arguments have also been added for the other partitioned schedule decorators (`@monthly_schedule`, `@weekly_schedule`, and `@hourly_schedule`).
+    * Both sensors and schedule definitions support a `description` parameter that takes in a human-readable string description and displays it on the corresponding landing page in Dagit.
+* Assets
+    * [Experimental] `AssetMaterialization` now accepts a `tags` argument.  Tags can be used to filter assets in Dagit.
+    * Added support for assets to the default SQLite event log storage.
+* Daemon
+    * The `QueuedRunCoordinator` daemon is now more resilient to errors while dequeuing runs. Previously runs which could not launch would block the queue. They will now be marked as failed and removed from the queue.
+    * The `dagster-daemon` process uses fewer resources and spins up fewer subprocesses to load pipeline information. Previously, the scheduler, sensor, and run queue daemon each spun up their own process for this–now they share a single process.
+    * The `dagster-daemon` process now runs each of its daemons in its own thread. This allows the scheduler, sensor loop, and daemon for launching queued runs to run in parallel, without slowing each other down.
+* Deployment
+    * When specifying the location of a gRPC server in your `workspace.yaml` file to load your pipelines, you can now specify an environment variable for the server’s hostname and port.
+    * When deploying your own gRPC server for your pipelines, you can now specify that connecting to that server should use a secure SSL connection.
+* When a solid-decorated function has a Python type annotation and no Dagster type has been explicitly registered for that Python type, Dagster now automatically constructs a corresponding Dagster type instead of raising an error.
+* Added a `dagster run delete` CLI command to delete a run and its associated event log entries.
+* `fs_io_manager` now defaults the base directory to `base_dir` via the Dagster instance’s `local_artifact_storage` configuration. Previously, it defaulted to the directory where the pipeline was executed.
+* When user code raises an error inside `handle_output`, `load_input`, or a type check function, the log output now includes context about which input or output the error occurred during.
+* We have added the `BoolSource` config type (similar to the `StringSource` type). The config value for this type can be a boolean literal or a pointer to an environment variable that is set to a boolean value.
+* When trying to run a pipeline where every step has been memoized, you now get a `DagsterNoStepsToExecuteException`.
+* The `OutputContext` passed to the `has_output` method of `MemoizableIOManager` now includes a working `log`.
+
+#### Dagit
+
+* After manually reloading the current repository, users will now be prompted to regenerate preset-based or partition-set-based run configs in the Playground view. This helps ensure that the generated run config is up to date when launching new runs. The prompt does not occur when the repository is automatically reloaded.
+* Added ability to preview runs for upcoming schedule ticks.
+* Dagit now has a global search feature in the left navigation, allowing you to jump quickly to pipelines, schedules, sensors, and partition sets across your workspace. You can trigger search by clicking the search input or with the / keyboard shortcut.
+* Timestamps in Dagit have been updated to be more consistent throughout the app, and are now localized based on your browser’s settings.
+* In Dagit, a repository location reload button is now available in the header of every pipeline, schedule, and sensor page.
+* You can now makes changes to your `workspace.yaml` file without restarting Dagit. To reload your workspace, navigate to the Status page and press the “Reload all” button in the Workspace section.
+* When viewing a run in Dagit, log filtering behavior has been improved. `step` and `type` filtering now offers fuzzy search, all log event types are now searchable, and visual bugs within the input have been repaired. Additionally, the default setting for “Hide non-matches” has been flipped to `true`.
+* When using a `grpc_server` repository location, Dagit will automatically detect changes and prompt you to reload when the remote server updates.
+* When launching a backfill from Dagit, the “Re-execute From Last Run” option has been removed, because it had confusing semantics. “Re-execute From Failure” now includes a tooltip.
+* Added a secondary index to improve performance when querying run status.
+* The asset catalog now displays a flattened view of all assets, along with a filter field.  Tags from AssetMaterializations can be used to filter the catalog view.
+* The asset catalog now enables wiping an individual assets from an action in the menu.  Bulk wipes of assets is still only supported with the CLI command `dagster asset wipe`.
+
+#### Integrations
+
+* [dagster-snowflake] `snowflake_resource` can now be configured to use the SQLAlchemy connector (thanks @basilvetas!)
+* [dagster-pagerduty / dagster-slack] Added built-in hook integrations to create Pagerduty/Slack alerts when solids fail.
+* [dagstermill] Users can now specify custom tags & descriptions for notebook solids.
+* [dagster-dbt] The dbt commands `seed` and `docs generate` are now available as solids in the library `dagster-dbt`. (thanks [@dehume-drizly](https://github.com/dehume-drizly)!)
+* [dagster-spark] - The `dagster-spark` config schemas now support loading values for all fields via environment variables.
+* [dagster-gcp] The `gcs_pickle_io_manager` now also retries on 403 Forbidden errors, which previously would only retry on 429 TooManyRequests.
+
+#### Kubernetes/Helm
+
+* Users can set Kubernetes labels on Celery worker deployments
+* Users can set environment variables for Flower deployment
+* The Redis helm chart is now included as an optional dagster helm chart dependency
+* `K8sRunLauncher` and `CeleryK8sRunLauncher` no longer reload the pipeline being executed just before launching it. The previous behavior ensured that the latest version of the pipeline was always being used, but was inconsistent with other run launchers. Instead, to ensure that you’re running the latest version of your pipeline, you can refresh your repository in Dagit by pressing the button next to the repository name.
+* Added a flag to the Dagster helm chart that lets you specify that the cluster already has a redis server available, so the Helm chart does not need to create one in order to use redis as a messaging queue. For more information, see the Helm chart’s values.yaml file.
+* Celery queues can now be configured with different node selectors. Previously, configuring a node selector applied it to all Celery queues.
+* When setting `userDeployments.deployments` in the Helm chart, `replicaCount` now defaults to 1 if not specified.
+* Changed our weekly docker image releases (the default images in the helm chart). `dagster/dagster-k8s` and `dagster/dagster-celery-k8s` can be used for all processes which don't require user code (Dagit, Daemon, and Celery workers when using the CeleryK8sExecutor). `user-code-example` can be used for a sample user repository. The prior images (`k8s-dagit`, `k8s-celery-worker`, `k8s-example`) are deprecated.
+* All images used in our Helm chart are now fully qualified, including a registry name. If you are encountering rate limits when attempting to pull images from DockerHub, you can now edit the Helm chart to pull from a registry of your choice.
+* We now officially use Helm 3 to manage our Dagster Helm chart.
+* We are now publishing the `dagster-k8s`, `dagster-celery-k8s`, `user-code-example`, and `k8s-dagit-example` images to a public ECR registry in addition to DockerHub. If you are encountering rate limits when attempting to pull images from DockerHub, you should now be able to pull these images from public.ecr.aws/dagster.
+* `.Values.dagsterHome` is now a global variable, available at `.Values.global.dagsterHome`.
+* `.Values.global.postgresqlSecretName` has been introduced, for subcharts to access the Dagster Helm chart’s generated Postgres secret properly.
+* `.Values.userDeployments` has been renamed `.Values.dagster-user-deployments` to reference the subchart’s values. When using Dagster User Deployments, enabling `.Values.dagster-user-deployments.enabled` will create a `workspace.yaml` for Dagit to locate gRPC servers with user code. To create the actual gRPC servers, `.Values.dagster-user-deployments.enableSubchart` should be enabled. To manage the gRPC servers in a separate Helm release, `.Values.dagster-user-deployments.enableSubchart` should be disabled, and the subchart should be deployed in its own helm release.
+
+### Breaking changes
+
+* Schedules now run in UTC (instead of the system timezone) if no timezone has been set on the schedule. If you’re using a deprecated scheduler like `SystemCronScheduler` or `K8sScheduler`, we recommend that you switch to the native Dagster scheduler. The deprecated schedulers will be removed in the next Dagster release.
+* Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
+* The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only affect custom `Executor` classes.
+
+* Submitting partition backfills in Dagit now requires `dagster-daemon` to be running.  The instance setting in `dagster.yaml` to optionally enable daemon-based backfills has been removed, because all backfills are now daemon-based backfills.
+```
+# removed, no longer a valid setting in dagster.yaml
+    backfill:
+      daemon_enabled: true
+```
+The corresponding value flag `dagsterDaemon.backfill.enabled` has also been removed from the Dagster helm chart.
+
+* The sensor daemon interval settings in `dagster.yaml` has been removed.  The sensor daemon now runs in a continuous loop so this customization is no longer useful.
+```
+# removed, no longer a valid setting in dagster.yaml
+    sensor_settings:
+      interval_seconds: 10
+```
+
+#### Removal of deprecated APIs
+
+* The `instance` argument to `RunLauncher.launch_run` has been removed. If you have written a custom RunLauncher, you’ll need to update the signature of that method. You can still access the `DagsterInstance` on the `RunLauncher` via the `_instance` parameter.
+* The `has_config_entry`, `has_configurable_inputs`, and `has_configurable_outputs` properties of `solid` and `composite_solid` have been removed.
+* The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
+* The `execute_run_with_structured_logs` and `execute_step_with_structured_logs` internal CLI entry points have been removed. Use `execute_run` or `execute_step` instead.
+* The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](http://docs.dagster.io/[concepts/repositories-workspaces/workspaces](https://dagster.vercel.app/concepts/repositories-workspaces/workspaces)) for more information on configuring your `workspace.yaml` file.
+* [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
 
 ## 0.10.9
 
