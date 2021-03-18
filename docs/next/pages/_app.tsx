@@ -10,9 +10,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useVersion } from "../util/useVersion";
 
-// TODO: update BASE_URL before launching
-// const BASE_URL = "https://docs.dagster.io";
-const BASE_URL = "https://dagster.vercel.app";
+const BASE_URL = "https://docs.dagster.io";
 const DEFAULT_SEO = {
   title: "Dagster Docs",
   // TODO: unset this

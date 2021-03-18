@@ -1,12 +1,12 @@
 {
   "index_name": "Testing",
-  "sitemap_urls": ["https://dagster.vercel.app/sitemap.xml"],
+  "sitemap_urls": ["https://docs.dagster.io/sitemap.xml"],
   "start_urls": [
     {
-      "url": "https://dagster.vercel.app/"
+      "url": "https://docs.dagster.io/"
     },
     {
-      "url": "https://dagster.vercel.app/_apidocs/",
+      "url": "https://docs.dagster.io/_apidocs/",
       "selectors_key": "api_docs"
     }
   ],

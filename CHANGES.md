@@ -104,7 +104,7 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
 * The `has_config_entry`, `has_configurable_inputs`, and `has_configurable_outputs` properties of `solid` and `composite_solid` have been removed.
 * The deprecated optionality of the `name` argument to `PipelineDefinition` has been removed, and the argument is now required.
 * The `execute_run_with_structured_logs` and `execute_step_with_structured_logs` internal CLI entry points have been removed. Use `execute_run` or `execute_step` instead.
-* The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](http://docs.dagster.io/[concepts/repositories-workspaces/workspaces](https://dagster.vercel.app/concepts/repositories-workspaces/workspaces)) for more information on configuring your `workspace.yaml` file.
+* The `python_environment` key has been removed from `workspace.yaml`. Instead, to specify that a repository location should use a custom python environment, set the `executable_path` key within a `python_file`, `python_module`, or `python_package` key. See [the docs](https://docs.dagster.io/concepts/repositories-workspaces/workspaces) for more information on configuring your `workspace.yaml` file.
 * [dagster-dask] The deprecated schema for reading or materializing dataframes has been removed. Use the `read` or `to` keys accordingly.
 
 ## 0.10.9
