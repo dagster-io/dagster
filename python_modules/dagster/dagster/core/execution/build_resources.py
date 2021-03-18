@@ -15,6 +15,8 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import ResourceConfig, config_map_resources
 from dagster.loggers import default_system_loggers
 
+from .api import ephemeral_instance_if_missing
+
 
 def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:
     # initialize default colored console logger
@@ -50,7 +52,7 @@ def _get_mapped_resource_config(
 @contextmanager
 def build_resources(
     resources: Dict[str, Any],
-    instance: DagsterInstance,
+    instance: Optional[DagsterInstance] = None,
     run_config: Optional[Dict[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
@@ -66,7 +68,7 @@ def build_resources(
         resources (Dict[str, Any]): Resource instances or definitions to build. All
             required resource dependencies to a given resource must be contained within this
             dictionary, or the resource build will fail.
-        instance (DagsterInstance): The dagster instance configured to instantiate resources on.
+        instance (Optional[DagsterInstance]): The dagster instance configured to instantiate resources on.
         run_config (Optional[Dict[str, Any]]): A dict representing the configuration to be provided
             to each resource during initialization and teardown.
         pipeline_run (Optional[PipelineRun]): The pipeline run to provide during resource
@@ -87,26 +89,29 @@ def build_resources(
             resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
         else:
             resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-    instance = check.inst_param(instance, "instance", DagsterInstance)
+    instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
     mapped_resource_config = _get_mapped_resource_config(resource_defs, run_config)
-    resources_manager = resource_initialization_manager(
-        resource_defs=resource_defs,
-        resource_configs=mapped_resource_config,
-        log_manager=log_manager if log_manager else initialize_console_manager(pipeline_run),
-        execution_plan=None,
-        pipeline_run=pipeline_run,
-        resource_keys_to_init=set(resource_defs.keys()),
-        instance=instance,
-        resource_instances_to_override=None,
-        emit_persistent_events=False,
-    )
-    try:
-        list(resources_manager.generate_setup_events())
-        instantiated_resources = check.inst(resources_manager.get_object(), ScopedResourcesBuilder)
-        yield instantiated_resources.build(
-            set(instantiated_resources.resource_instance_dict.keys())
+    with ephemeral_instance_if_missing(instance) as dagster_instance:
+        resources_manager = resource_initialization_manager(
+            resource_defs=resource_defs,
+            resource_configs=mapped_resource_config,
+            log_manager=log_manager if log_manager else initialize_console_manager(pipeline_run),
+            execution_plan=None,
+            pipeline_run=pipeline_run,
+            resource_keys_to_init=set(resource_defs.keys()),
+            instance=dagster_instance,
+            resource_instances_to_override=None,
+            emit_persistent_events=False,
         )
-    finally:
-        list(resources_manager.generate_teardown_events())
+        try:
+            list(resources_manager.generate_setup_events())
+            instantiated_resources = check.inst(
+                resources_manager.get_object(), ScopedResourcesBuilder
+            )
+            yield instantiated_resources.build(
+                set(instantiated_resources.resource_instance_dict.keys())
+            )
+        finally:
+            list(resources_manager.generate_teardown_events())
