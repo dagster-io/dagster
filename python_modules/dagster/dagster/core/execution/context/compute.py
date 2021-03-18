@@ -59,7 +59,19 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
 
 
 class SolidExecutionContext(StepExecutionContext, AbstractComputeExecutionContext):
-    """The ``context`` object available to solid compute logic."""
+    """The ``context`` object available as the first argument to every solid's compute function.
+
+    Users should not instantiate this object directly.
+
+    Example:
+
+    .. code-block:: python
+
+        @solid
+        def hello_world(context: SolidExecutionContext):
+            context.log.info("Hello, world!")
+
+    """
 
     __slots__ = ["_system_compute_execution_context"]
 
@@ -79,17 +91,17 @@ class SolidExecutionContext(StepExecutionContext, AbstractComputeExecutionContex
 
     @property
     def pipeline_run(self) -> PipelineRun:
-        """The current PipelineRun"""
+        """PipelineRun: The current pipeline run"""
         return self._system_compute_execution_context.pipeline_run
 
     @property
     def instance(self) -> DagsterInstance:
-        """The current Instance"""
+        """DagsterInstance: The current Dagster instance"""
         return self._system_compute_execution_context.instance
 
     @property
     def pdb(self) -> ForkedPdb:
-        """Allows pdb debugging from within the solid.
+        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
 

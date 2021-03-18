@@ -169,6 +169,7 @@ class DynamicOutputDefinition(OutputDefinition):
     definition that is yielded from the solid will create a copy of the downstream graph.
 
         .. code-block:: python
+
             @solid(
                 config_schema={
                     "path": Field(str, default_value=file_relative_path(__file__, "sample"))

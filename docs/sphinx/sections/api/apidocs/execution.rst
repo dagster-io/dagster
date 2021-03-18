@@ -19,6 +19,7 @@ Re-executing pipelines
 
 Executing solids
 ----------------
+.. currentmodule:: dagster
 
 .. autofunction:: execute_solid
 
@@ -28,30 +29,39 @@ Executing solids
 
 Execution context
 -----------------
-.. currentmodule:: dagster.core.execution.context.compute
+.. currentmodule:: dagster
 
 .. autoclass:: SolidExecutionContext
    :members:
+   :inherited-members:  
 
-.. autoclass:: AbstractComputeExecutionContext
-   :members:
-
-.. currentmodule:: dagster
-
+Reconstructable pipelines
+-------------------------
 .. autoclass:: reconstructable
    :members:
 
+.. currentmodule:: dagster.core.definitions.reconstructable
+
+.. autoclass:: ReeconstructablePipeline
+   :members:
+
+.. autofunction:: build_reconstructable_pipeline
+
 Pipeline and solid results
 --------------------------
+.. currentmodule:: dagster
 
 .. autoclass:: PipelineExecutionResult
    :members:
+   :inherited-members:
 
 .. autoclass:: SolidExecutionResult
    :members:
+   :inherited-members:
 
 .. autoclass:: CompositeSolidExecutionResult
    :members:
+   :inherited-members:
 
 .. autoclass:: DagsterEvent
    :members:
@@ -189,9 +199,12 @@ Contexts
 
 .. autoclass:: SystemComputeExecutionContext
   :members:
+  :inherited-members:
 
 .. autoclass:: TypeCheckContext
   :members:
+  :inherited-members:
 
 .. autoclass:: HookContext
    :members:
+   :inherited-members:

@@ -229,11 +229,12 @@ class ReconstructableSchedule(
 
 def reconstructable(target):
     """
-    Create a ReconstructablePipeline from a function that returns a PipelineDefinition, or a
-    function decorated with :py:func:`@pipeline <dagster.pipeline>`
+    Create a :py:class:`~dagster.core.definitions.reconstructable.ReconstructablePipeline` from a
+    function that returns a :py:class:`~dagster.PipelineDefinition`, or a function decorated with
+    :py:func:`@pipeline <dagster.pipeline>`
 
     When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like dagstermill), Dagster must know how to reconstruct the pipeline
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
     on the other side of the process boundary.
 
     This function implements a very conservative strategy for reconstructing pipelines, so that
@@ -243,8 +244,8 @@ def reconstructable(target):
     notebooks.
 
     If you need to reconstruct pipelines constructed in these ways, you should use
-    :py:func:`build_reconstructable_pipeline` instead, which allows you to specify your own
-    strategy for reconstructing a pipeline.
+    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
+    which allows you to specify your own strategy for reconstructing a pipeline.
 
     Examples:
 
@@ -323,20 +324,20 @@ def build_reconstructable_pipeline(
     reconstructable_kwargs=None,
 ):
     """
-    Create a ReconstructablePipeline.
+    Create a :py:class:`dagster.core.definitions.reconstructable.ReconstructablePipeline`.
 
     When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like dagstermill), Dagster must know how to reconstruct the pipeline
+    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
     on the other side of the process boundary.
 
     This function allows you to use the strategy of your choice for reconstructing pipelines, so
     that you can reconstruct certain kinds of pipelines that are not supported by
-    :py:func:`reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
+    :py:func:`~dagster.reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
     dynamically within a method call), or in interactive environments such as the Python REPL or
     Jupyter notebooks.
 
     If you need to reconstruct pipelines constructed in these ways, use this function instead of
-    :py:func:`reconstructable`.
+    :py:func:`~dagster.reconstructable`.
 
     Args:
         reconstructor_module_name (str): The name of the module containing the function to use to

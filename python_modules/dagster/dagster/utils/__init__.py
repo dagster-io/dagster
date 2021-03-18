@@ -39,16 +39,22 @@ PICKLE_PROTOCOL = 4
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 
-def file_relative_path(dunderfile, relative_path):
-    """
-    This function is useful when one needs to load a file that is
-    relative to the position of the current file. (Such as when
-    you encode a configuration file path in source file and want
+def file_relative_path(dunderfile: str, relative_path: str) -> str:
+    """Get a path relative to the currently executing Python file.
+
+    This function is useful when one needs to load a file that is relative to the position of
+    the current file. (Such as when you encode a configuration file path in source file and want
     in runnable in any current working directory)
 
-    It is meant to be used like the following:
+    Args:
+        dunderfile (str): Should always be ``__file__``.
+        relative_path (str): Path to get relative to the currently executing file.
 
-    file_relative_path(__file__, 'path/relative/to/file')
+    **Examples**:
+
+    .. code-block:: python
+
+        file_relative_path(__file__, 'path/relative/to/file')
 
     """
 
@@ -58,7 +64,7 @@ def file_relative_path(dunderfile, relative_path):
     return os.path.join(os.path.dirname(dunderfile), relative_path)
 
 
-def script_relative_path(file_path):
+def script_relative_path(file_path: str) -> str:
     """
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path

@@ -4,9 +4,12 @@ import sys
 
 # From https://stackoverflow.com/questions/4716533/how-to-attach-debugger-to-a-python-subproccess
 class ForkedPdb(pdb.Pdb):
-    """
-    A Pdb subclass that may be used from a forked multiprocessing child
-    Usage:
+    """A pdb subclass that may be used from a forked multiprocessing child
+
+    **Examples**:
+
+    .. code-block:: python
+
         from dagster.utils.forked_pdb import ForkedPdb
 
         @solid
@@ -18,7 +21,7 @@ class ForkedPdb(pdb.Pdb):
             # some other complicated stuff
 
     You can initiate pipeline execution via dagit and use the pdb debugger to examine/step through
-    execution at the breakpoint
+    execution at the breakpoint.
     """
 
     def interaction(self, frame, traceback):

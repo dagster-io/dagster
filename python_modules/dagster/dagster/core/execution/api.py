@@ -282,12 +282,13 @@ def execute_pipeline_iterator(
             logs.
         solid_selection (Optional[List[str]]): A list of solid selection queries (including single
             solid names) to execute. For example:
-            - ['some_solid']: select "some_solid" itself.
-            - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
-            - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
-                (downstream dependencies) within 3 levels down.
-            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
-                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
+
+            - ``['some_solid']``: selects ``some_solid`` itself.
+            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
+            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
+              (downstream dependencies) within 3 levels down.
+            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
+              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
@@ -366,12 +367,13 @@ def execute_pipeline(
             Defaults to ``True``, since this is the most useful behavior in test.
         solid_selection (Optional[List[str]]): A list of solid selection queries (including single
             solid names) to execute. For example:
-            - ['some_solid']: select "some_solid" itself.
-            - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
-            - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
-                (downstream dependencies) within 3 levels down.
-            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
-                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
+
+            - ``['some_solid']``: selects ``some_solid`` itself.
+            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
+            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
+              (downstream dependencies) within 3 levels down.
+            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
+              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
@@ -456,16 +458,16 @@ def reexecute_pipeline(
             instance.
         run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
-        step_selection (Optional[List[str]]): A list of step selection queries (including single
-            step keys) to execute. For example:
-            - ['some_solid']: select the execution step "some_solid" itself.
-            - ['*some_solid']: select the step "some_solid" and all its ancestors
-                (upstream dependencies).
-            - ['*some_solid+++']: select the step "some_solid", all its ancestors,
-                and its descendants (downstream dependencies) within 3 levels down.
-            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select
-                "some_solid" and all its ancestors, "other_solid_a" itself, and
-                "other_solid_b" and its direct child execution steps.
+        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
+            solid names) to execute. For example:
+
+            - ``['some_solid']``: selects ``some_solid`` itself.
+            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
+            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
+              (downstream dependencies) within 3 levels down.
+            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
+              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
+
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
         preset (Optional[str]): The name of the pipeline preset to use. You may not set both
@@ -564,16 +566,16 @@ def reexecute_pipeline_iterator(
             instance.
         run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
-        step_selection (Optional[List[str]]): A list of step selection queries (including single
-            step keys) to execute. For example:
-            - ['some_solid']: select the execution step "some_solid" itself.
-            - ['*some_solid']: select the step "some_solid" and all its ancestors
-                (upstream dependencies).
-            - ['*some_solid+++']: select the step "some_solid", all its ancestors,
-                and its descendants (downstream dependencies) within 3 levels down.
-            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select
-                "some_solid" and all its ancestors, "other_solid_a" itself, and
-                "other_solid_b" and its direct child execution steps.
+        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
+            solid names) to execute. For example:
+
+            - ``['some_solid']``: selects ``some_solid`` itself.
+            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
+            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
+              (downstream dependencies) within 3 levels down.
+            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
+              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
+
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
         preset (Optional[str]): The name of the pipeline preset to use. You may not set both
