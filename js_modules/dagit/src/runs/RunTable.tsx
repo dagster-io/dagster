@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';

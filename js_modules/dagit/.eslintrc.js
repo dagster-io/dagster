@@ -43,12 +43,20 @@ module.exports = {
     'no-restricted-imports': [
       'error',
       {
-        patterns: ['./*', '../*'],
+        patterns: ['./*', '../*', '!styled-components/macro'],
         paths: [
           {
             name: '@blueprintjs/core',
             importNames: ['Alert', 'Callout', 'Spinner'],
             message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: 'styled-components',
+            message: 'Please import from `styled-components/macro`.',
+          },
+          {
+            name: 'react-router',
+            message: 'Please import from `react-router-dom`.',
           },
         ],
       },

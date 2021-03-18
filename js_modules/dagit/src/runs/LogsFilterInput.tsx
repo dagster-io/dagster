@@ -1,7 +1,7 @@
 import {Colors, Popover} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {SuggestionProvider} from 'src/ui/TokenizingField';
 import {useSuggestionsForString} from 'src/ui/useSuggestionsForString';

@@ -1,7 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';

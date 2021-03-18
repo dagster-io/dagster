@@ -3,7 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {ROOT_SERVER_URI} from 'src/app/DomUtils';
 import {GraphQueryItem, filterByQuery} from 'src/app/GraphQueryImpl';

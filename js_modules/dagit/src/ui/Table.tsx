@@ -1,5 +1,5 @@
 import {HTMLTable, Colors, IHTMLTableProps} from '@blueprintjs/core';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 interface TableProps extends IHTMLTableProps {
   $compact?: boolean;

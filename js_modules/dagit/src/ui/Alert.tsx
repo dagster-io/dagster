@@ -1,6 +1,6 @@
 import {Colors, Icon, IconName} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';

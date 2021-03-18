@@ -2,7 +2,7 @@ import {Colors, Icon} from '@blueprintjs/core';
 import {Popover2 as Popover, Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {featureEnabled, FeatureFlag} from 'src/app/Util';

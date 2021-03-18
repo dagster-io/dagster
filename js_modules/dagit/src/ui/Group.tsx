@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled, {css} from 'styled-components';
+import styled, {css} from 'styled-components/macro';
 
 import {Box} from 'src/ui/Box';
 import {AlignItems, DirectionalSpacing, FlexProperties, FlexWrap, Spacing} from 'src/ui/types';

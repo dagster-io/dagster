@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {Group} from 'src/ui/Group';
 import {Spinner} from 'src/ui/Spinner';

@@ -1,7 +1,7 @@
 import {ApolloConsumer} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import {useRouteMatch} from 'react-router';
+import {useRouteMatch} from 'react-router-dom';
 
 import {JobsList} from 'src/nav/JobsList';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';

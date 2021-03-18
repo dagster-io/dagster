@@ -3,7 +3,7 @@ import {Popover2 as Popover} from '@blueprintjs/popover2';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';

@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
 

@@ -13,7 +13,7 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
 import {featureEnabled, FeatureFlag} from 'src/app/Util';

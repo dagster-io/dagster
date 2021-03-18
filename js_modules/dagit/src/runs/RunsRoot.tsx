@@ -3,9 +3,8 @@ import {Colors, Divider, NonIdealState, Tab, Tabs, Tag} from '@blueprintjs/core'
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import {RouteComponentProps, Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {QueryCountdown} from 'src/app/QueryCountdown';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';

@@ -2,7 +2,7 @@ import {Colors, Icon, IconName} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {SearchResult, SearchResultType} from 'src/search/types';
 

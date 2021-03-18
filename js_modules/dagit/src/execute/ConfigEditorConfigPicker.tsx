@@ -11,7 +11,7 @@ import {
 import {Select, Suggest} from '@blueprintjs/select';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {IExecutionSession} from 'src/app/LocalStorage';

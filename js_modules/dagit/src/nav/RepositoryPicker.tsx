@@ -1,7 +1,7 @@
 import {Colors, Icon, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
 import {Box} from 'src/ui/Box';

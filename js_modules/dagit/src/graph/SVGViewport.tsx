@@ -1,7 +1,7 @@
 import {Colors, Icon, Slider} from '@blueprintjs/core';
 import animate from 'amator';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;

@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
-import styled, {createGlobalStyle, css} from 'styled-components';
+import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
 import {InstanceConfigQuery} from 'src/instance/types/InstanceConfigQuery';
 import {Box} from 'src/ui/Box';

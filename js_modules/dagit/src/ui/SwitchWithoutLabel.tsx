@@ -1,5 +1,5 @@
 import {Switch} from '@blueprintjs/core';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 export const SwitchWithoutLabel = styled(Switch)`
   &.bp3-control.bp3-switch {

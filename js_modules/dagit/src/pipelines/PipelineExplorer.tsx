@@ -4,7 +4,7 @@ import Color from 'color';
 import {History} from 'history';
 import * as querystring from 'query-string';
 import * as React from 'react';
-import {Route} from 'react-router';
+import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from 'src/app/GraphQueryImpl';

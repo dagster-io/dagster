@@ -1,7 +1,7 @@
 import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, LinkProps, useHistory, useLocation} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import navBarImage from 'src/images/nav-logo-icon.png';

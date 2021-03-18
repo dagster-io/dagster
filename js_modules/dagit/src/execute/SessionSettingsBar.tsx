@@ -1,5 +1,5 @@
 import {Colors} from '@blueprintjs/core';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 export const SessionSettingsBar = styled.div`
   color: white;

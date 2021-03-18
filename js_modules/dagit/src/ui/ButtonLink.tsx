@@ -1,6 +1,6 @@
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import styled, {css} from 'styled-components';
+import styled, {css} from 'styled-components/macro';
 
 type Color =
   | string

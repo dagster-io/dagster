@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';

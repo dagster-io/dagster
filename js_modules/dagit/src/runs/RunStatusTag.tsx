@@ -1,6 +1,6 @@
 import {Popover, Tag} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {assertUnreachable} from 'src/app/Util';
 import {RunStats} from 'src/runs/RunStats';

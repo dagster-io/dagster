@@ -2,7 +2,7 @@ import {InputGroup as BlueprintInputGroup, Colors, Popover} from '@blueprintjs/c
 import Fuse from 'fuse.js';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsTableQuery';
 import {useSuggestionsForString} from 'src/ui/useSuggestionsForString';

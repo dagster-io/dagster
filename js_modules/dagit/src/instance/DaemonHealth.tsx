@@ -1,6 +1,6 @@
 import {Button, Classes, Colors, Dialog, Tag} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from 'src/instance/types/DaemonHealthFragment';
 import {Box} from 'src/ui/Box';

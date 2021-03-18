@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {PipelineTableFragment} from 'src/pipelines/types/PipelineTableFragment';
 import {RunStatusWithStats} from 'src/runs/RunStatusDots';

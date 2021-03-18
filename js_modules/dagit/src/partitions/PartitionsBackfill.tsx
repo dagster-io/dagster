@@ -12,7 +12,7 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import qs from 'qs';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/app/CustomAlertProvider';
 import {SharedToaster} from 'src/app/DomUtils';

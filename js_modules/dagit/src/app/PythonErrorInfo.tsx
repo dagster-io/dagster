@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Button} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
 import {MetadataEntries} from 'src/runs/MetadataEntry';

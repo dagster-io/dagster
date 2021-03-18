@@ -1,4 +1,4 @@
-import styled, {css} from 'styled-components';
+import styled, {css} from 'styled-components/macro';
 
 import {assertUnreachable} from 'src/app/Util';
 import {BorderSetting, DirectionalSpacing, FlexProperties} from 'src/ui/types';

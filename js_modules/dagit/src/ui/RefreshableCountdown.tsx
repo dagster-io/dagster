@@ -1,6 +1,6 @@
 import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {Group} from 'src/ui/Group';
 

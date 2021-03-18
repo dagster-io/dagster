@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {

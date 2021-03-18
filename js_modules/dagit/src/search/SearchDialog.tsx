@@ -2,7 +2,7 @@ import {Colors, Icon, Overlay} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/app/ShortcutHandler';
 import {SearchResults} from 'src/search/SearchResults';

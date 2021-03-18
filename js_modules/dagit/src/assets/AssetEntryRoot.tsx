@@ -3,7 +3,7 @@ import {Colors, Breadcrumbs, IBreadcrumbProps, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {featureEnabled, FeatureFlag} from 'src/app/Util';
 import {AssetView} from 'src/assets/AssetView';

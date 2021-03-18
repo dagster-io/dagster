@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
 import {InstanceWarningQuery} from 'src/nav/types/InstanceWarningQuery';

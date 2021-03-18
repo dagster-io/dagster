@@ -1,6 +1,6 @@
 import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {DEFAULT_TIME_FORMAT, TimeFormat} from 'src/app/time/TimestampFormat';
 import {TimezoneContext} from 'src/app/time/TimezoneContext';

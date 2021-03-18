@@ -2,8 +2,7 @@ import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router';
-import {Link} from 'react-router-dom';
+import {RouteComponentProps, Link} from 'react-router-dom';
 
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {PipelineReference} from 'src/pipelines/PipelineReference';

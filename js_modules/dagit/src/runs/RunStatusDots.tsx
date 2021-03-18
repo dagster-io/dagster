@@ -1,6 +1,6 @@
 import {Popover, Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import styled, {css, keyframes} from 'styled-components';
+import styled, {css, keyframes} from 'styled-components/macro';
 
 import {RunStats} from 'src/runs/RunStats';
 import {inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';

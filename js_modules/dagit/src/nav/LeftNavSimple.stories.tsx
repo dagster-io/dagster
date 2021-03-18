@@ -3,7 +3,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled, {createGlobalStyle} from 'styled-components';
+import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {LeftNavSimple} from 'src/nav/LeftNavSimple';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
