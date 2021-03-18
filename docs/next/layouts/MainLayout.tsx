@@ -523,7 +523,7 @@ const Layout = ({ children }) => {
                   <div className="flex items-center">
                     <img
                       className="w-6 h-6 inline-block"
-                      src="https://docs.dagster.io/assets/logos/small.png"
+                      src="https://legacy-docs.dagster.io/assets/logos/small.png"
                     />
                   </div>
                   <div>

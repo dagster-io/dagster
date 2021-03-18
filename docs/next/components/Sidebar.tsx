@@ -227,7 +227,7 @@ const VersionDropdown = () => {
                     <Menu.Item>
                       {({ active }) => (
                         <a
-                          href="legacy-docs.dagster.io"
+                          href="https://legacy-docs.dagster.io"
                           className={`${
                             active
                               ? "bg-gray-100 text-gray-900"
@@ -256,7 +256,7 @@ const SidebarContents = () => {
         <a href="/" className="flex items-center">
           <img
             className="w-5 h-5 inline-block"
-            src="https://docs.dagster.io/assets/logos/small.png"
+            src="https://legacy-docs.dagster.io/assets/logos/small.png"
           />
           <span className="ml-2 text-lg font-extrabold dark:text-gray-200">
             Dagster
