@@ -433,18 +433,25 @@ class EventGenerationManager:
             yield from self.generator
 
 
-def utc_datetime_from_timestamp(timestamp):
-    tz = None
+def utc_timezone():
     if sys.version_info.major >= 3 and sys.version_info.minor >= 2:
         from datetime import timezone
 
-        tz = timezone.utc
+        return timezone.utc
     else:
         import pytz
 
-        tz = pytz.utc
+        return pytz.utc
 
+
+def utc_datetime_from_timestamp(timestamp):
+    tz = utc_timezone()
     return datetime.datetime.fromtimestamp(timestamp, tz=tz)
+
+
+def utc_datetime_from_naive(dt):
+    tz = utc_timezone()
+    return dt.replace(tzinfo=tz)
 
 
 def is_enum_value(value):

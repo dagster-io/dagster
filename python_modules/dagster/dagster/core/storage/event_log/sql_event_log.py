@@ -3,15 +3,17 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 
+import pendulum
 import sqlalchemy as db
 from dagster import check, seven
-from dagster.core.definitions.events import AssetKey, Materialization
+from dagster.core.assets import AssetDetails
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
+from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import EventLogStorage, extract_asset_events_cursor
@@ -557,14 +559,59 @@ class SqlEventLogStorage(EventLogStorage):
         return len(results) > 0
 
     def all_asset_keys(self):
-        query = db.select([AssetKeyTable.c.asset_key])
-
         with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+            results = conn.execute(
+                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
+            ).fetchall()
 
-        return list(
-            set([AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key])
-        )
+            asset_keys = set()
+            wiped = set()
+            wiped_timestamps = {}
+            for result in results:
+                asset_key = AssetKey.from_db_string(result[0])
+                asset_details = AssetDetails.from_db_string(result[1])
+                asset_keys.add(asset_key)
+                if asset_details and asset_details.last_wipe_timestamp:
+                    wiped_timestamps[asset_key] = asset_details.last_wipe_timestamp
+
+            if wiped_timestamps:
+                materialized_timestamps = {}
+
+                # fetch the last materialization timestamp per asset key
+                materialization_results = conn.execute(
+                    db.select(
+                        [
+                            SqlEventLogStorageTable.c.asset_key,
+                            db.func.max(SqlEventLogStorageTable.c.timestamp),
+                        ]
+                    )
+                    .where(
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string() for asset_key in wiped_timestamps.keys()]
+                        )
+                    )
+                    .group_by(SqlEventLogStorageTable.c.asset_key)
+                    .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
+                ).fetchall()
+
+                for result in materialization_results:
+                    asset_key = AssetKey.from_db_string(result[0])
+                    last_materialized_timestamp = result[1]
+                    materialized_timestamps[asset_key] = last_materialized_timestamp
+
+                # calculate the set of wiped asset keys that have not had a materialization since
+                # the wipe timestamp
+                wiped = set(
+                    [
+                        asset_key
+                        for asset_key in wiped_timestamps.keys()
+                        if not materialized_timestamps.get(asset_key)
+                        or utc_datetime_from_naive(materialized_timestamps.get(asset_key))
+                        < utc_datetime_from_timestamp(wiped_timestamps[asset_key])
+                    ]
+                )
+
+        return list(asset_keys.difference(wiped))
 
     def get_asset_events(
         self,
@@ -641,28 +688,6 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [run_id for (run_id, _timestamp) in results]
 
-    def _remove_asset_key_from_event_record(self, event_record):
-        if not event_record.dagster_event.event_specific_data.materialization.asset_key:
-            return event_record
-
-        dagster_event = event_record.dagster_event
-        event_specific_data = dagster_event.event_specific_data
-        materialization = event_specific_data.materialization
-        updated_materialization = Materialization(
-            label=materialization.label,
-            description=materialization.description,
-            metadata_entries=materialization.metadata_entries,
-            asset_key=None,
-            skip_deprecation_warning=True,
-        )
-        updated_event_specific_data = event_specific_data._replace(
-            materialization=updated_materialization
-        )
-        updated_dagster_event = dagster_event._replace(
-            event_specific_data=updated_event_specific_data
-        )
-        return event_record._replace(dagster_event=updated_dagster_event)
-
     def all_asset_tags(self):
         query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.last_materialization])
         tags_by_asset_key = defaultdict(dict)
@@ -695,37 +720,19 @@ class SqlEventLogStorage(EventLogStorage):
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        event_query = db.select(
-            [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
-        ).where(
-            db.or_(
-                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-            )
-        )
-        asset_key_delete = AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-            db.or_(
-                AssetKeyTable.c.asset_key == asset_key.to_string(),
-                AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-            )
-        )
 
         with self.index_connection() as conn:
-            conn.execute(asset_key_delete)
-            results = conn.execute(event_query).fetchall()
-
-        # rather than deleting the events for the asset key, we update the records to remove
-        # the asset_key in order to preserve the event log history
-        for row_id, json_str in results:
-            try:
-                event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                if not isinstance(event_record, EventRecord):
-                    continue
-
-                updated_record = self._remove_asset_key_from_event_record(event_record)
-
-                # update the event_record here
-                self.update_event_log_record(row_id, updated_record)
-
-            except seven.JSONDecodeError:
-                logging.warning("Could not parse asset event record id `{}`.".format(row_id))
+            conn.execute(
+                AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                    )
+                )
+                .values(
+                    asset_details=serialize_dagster_namedtuple(
+                        AssetDetails(last_wipe_timestamp=pendulum.now("UTC").timestamp())
+                    )
+                )
+            )

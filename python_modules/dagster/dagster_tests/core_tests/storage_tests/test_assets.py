@@ -10,7 +10,6 @@ from dagster import (
     Field,
     Output,
     execute_pipeline,
-    file_relative_path,
     pipeline,
     solid,
 )
@@ -30,7 +29,6 @@ from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.utils.test import copy_directory
 
 
 def get_instance(temp_dir, event_log_storage):
@@ -348,35 +346,6 @@ def test_asset_secondary_index(asset_aware_context):
         event_log_storage.delete_events(two_two.run_id)
         asset_keys = event_log_storage.all_asset_keys()
         assert len(asset_keys) == 1
-
-
-def test_asset_key_structure():
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_9_16_asset_key_structure")
-    with copy_directory(src_dir) as test_dir:
-        asset_storage = ConsolidatedSqliteEventLogStorage(test_dir)
-        asset_keys = asset_storage.all_asset_keys()
-        assert len(asset_keys) == 5
-
-        # get a structured asset key
-        asset_key = AssetKey(["dashboards", "cost_dashboard"])
-
-        # check that backcompat events are read
-        assert asset_storage.has_asset_key(asset_key)
-        events = asset_storage.get_asset_events(asset_key)
-        assert len(events) == 1
-        run_ids = asset_storage.get_asset_run_ids(asset_key)
-        assert len(run_ids) == 1
-
-        asset_storage.upgrade()
-
-        # check that backcompat events are merged with newly stored events
-        run_id = "fake_run_id"
-        asset_storage.store_event(_materialization_event_record(run_id, asset_key))
-        assert asset_storage.has_asset_key(asset_key)
-        events = asset_storage.get_asset_events(asset_key)
-        assert len(events) == 2
-        run_ids = asset_storage.get_asset_run_ids(asset_key)
-        assert len(run_ids) == 2
 
 
 @asset_test

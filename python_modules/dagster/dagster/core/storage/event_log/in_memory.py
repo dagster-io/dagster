@@ -1,3 +1,4 @@
+import time
 from collections import OrderedDict, defaultdict
 from typing import Dict
 
@@ -21,6 +22,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
         self._asset_tags = defaultdict(dict)
+        self._wiped_asset_keys = {}
         if preload:
             for payload in preload:
                 self._logs[payload.pipeline_run.run_id] = EventLogSequence(payload.event_list)
@@ -108,6 +110,8 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_events = [
             record.dagster_event
             for record in sorted(asset_records, key=lambda x: x.timestamp, reverse=True)
+            if not self._wiped_asset_keys.get(record.dagster_event.asset_key)
+            or self._wiped_asset_keys.get(record.dagster_event.asset_key) < record.timestamp
         ]
         asset_keys = OrderedDict()
         for event in asset_events:
@@ -170,31 +174,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-
-        for run_id in self._logs.keys():
-            updated_records = []
-            for record in self._logs[run_id]:
-                if (
-                    not record.is_dagster_event
-                    or not record.dagster_event.asset_key
-                    or record.dagster_event.asset_key.to_string() != asset_key.to_string()
-                ):
-                    # not an asset record
-                    updated_records.append(record)
-                else:
-                    dagster_event = record.dagster_event
-                    event_specific_data = dagster_event.event_specific_data
-                    materialization = event_specific_data.materialization
-                    updated_materialization = materialization._replace(asset_key=None)
-                    updated_event_specific_data = event_specific_data._replace(
-                        materialization=updated_materialization
-                    )
-                    updated_dagster_event = dagster_event._replace(
-                        event_specific_data=updated_event_specific_data
-                    )
-                    updated_record = record._replace(dagster_event=updated_dagster_event)
-                    updated_records.append(updated_record)
-            self._logs[run_id] = updated_records
+        self._wiped_asset_keys[asset_key] = time.time()
 
     def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
         return {asset_key: tags for asset_key, tags in self._asset_tags.items()}
