@@ -176,7 +176,7 @@
         ]
       },
       {
-        "title": "Dagit UI",
+        "title": "Dagit UI & GraphQL API",
         "children": [
           {
             "title": "Dagit UI",
@@ -185,6 +185,11 @@
           {
             "title": "Asset Catalog",
             "path": "/concepts/dagit/asset-catalog"
+          },
+
+          {
+            "title": "GraphQL API",
+            "path": "/concepts/dagit/graphql"
           }
         ]
       },
