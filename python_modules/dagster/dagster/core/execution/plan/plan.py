@@ -663,18 +663,24 @@ class ExecutionPlan(
                 only steps that are included in step_keys_to_execute.
         """
         deps = OrderedDict()
+
+        # for things transitively downstream of unresolved collect steps
+        unresolved_set = set()
+
         for key, handle in self.executable_map.items():
             step = cast(ExecutionStep, self.step_dict[handle])
             filtered_deps = []
             depends_on_unresolved = False
             for dep in step.get_execution_dependency_keys():
-                if dep in self.executable_map:
+                if dep in self.executable_map and dep not in unresolved_set:
                     filtered_deps.append(dep)
                 elif dep in self.step_keys_to_execute:
                     depends_on_unresolved = True
 
             if not depends_on_unresolved:
                 deps[key] = set(filtered_deps)
+            else:
+                unresolved_set.add(key)
 
         return deps
 

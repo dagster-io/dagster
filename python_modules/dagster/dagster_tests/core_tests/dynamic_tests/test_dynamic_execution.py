@@ -41,9 +41,15 @@ def echo(_, x: int) -> int:
 
 @solid(
     output_defs=[DynamicOutputDefinition()],
-    config_schema={"range": Field(int, is_required=False, default_value=3)},
+    config_schema={
+        "range": Field(int, is_required=False, default_value=3),
+        "fail": Field(bool, is_required=False, default_value=False),
+    },
 )
 def emit(context):
+    if context.solid_config["fail"]:
+        raise Exception("FAILURE")
+
     for i in range(context.solid_config["range"]):
         yield DynamicOutput(value=i, mapping_key=str(i))
 
@@ -63,7 +69,8 @@ def dynamic_echo(_, nums):
 def dynamic_pipeline():
     numbers = emit()
     dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
-    multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
+    n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
+    echo(n)  # test transitive downstream of collect
 
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
@@ -94,6 +101,7 @@ def test_map_basic():
         }
         assert result.result_for_solid("sum_numbers").output_value() == 60
         assert result.result_for_solid("double_total").output_value() == 120
+        assert result.result_for_solid("echo").output_value() == 120
 
 
 def test_map_empty():
@@ -133,6 +141,7 @@ def test_map_multi():
         }
         assert result.result_for_solid("sum_numbers").output_value() == 60
         assert result.result_for_solid("double_total").output_value() == 120
+        assert result.result_for_solid("echo").output_value() == 120
 
 
 def test_composite_wrapping():
@@ -239,3 +248,28 @@ def test_bad_step_selection():
                 instance=instance,
                 step_selection=["emit", "multiply_by_two[1]"],
             )
+
+
+def test_map_basic_fail():
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            run_config={"solids": {"emit": {"config": {"fail": True}}}},
+            raise_on_error=False,
+        )
+        assert not result.success
+
+
+def test_map_multi_fail():
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            run_config={
+                "execution": {"multiprocess": {}},
+                "solids": {"emit": {"config": {"fail": True}}},
+            },
+            raise_on_error=False,
+        )
+        assert not result.success
