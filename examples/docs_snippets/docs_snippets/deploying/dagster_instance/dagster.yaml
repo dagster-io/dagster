@@ -479,11 +479,23 @@ run_coordinator:
 
 # start_marker_compute_log_storage_local
 
+# there are two ways to set the directory that the LocalComputeLogManager writes
+# stdout & stderr logs to
+
+# You could directly set the `base_dir` key
 compute_logs:
   module: dagster.core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir: /path/to/directory
+
+# Alternatively, you could set the `base_dir` key to an environment variable
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir:
+      env: LOCAL_COMPUTE_LOG_MANAGER_DIRECTORY
 
 # end_marker_compute_log_storage_local
 
@@ -501,7 +513,7 @@ compute_logs:
     local_dir: /tmp/bar
     prefix: dagster-test-
 
-# alternatively, you can grab the
+# alternatively, you can obtain any of these config values from environment variables
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -520,6 +532,7 @@ compute_logs:
 # end_marker_compute_log_storage_blob
 
 # start_marker_compute_log_storage_s3
+
 # there are multiple ways to configure the S3ComputeLogManager
 
 # you can set the config values directly:

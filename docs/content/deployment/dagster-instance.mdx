@@ -686,11 +686,23 @@ To configure Compute Log Storage, set the `compute_logs` key in your `dagster.ya
 <PyObject module="dagster.core.storage.local_compute_log_manager" object="LocalComputeLogManager" /> writes stdout & stderr logs to disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_local endbefore=end_marker_compute_log_storage_local
+# there are two ways to set the directory that the LocalComputeLogManager writes
+# stdout & stderr logs to
+
+# You could directly set the `base_dir` key
 compute_logs:
   module: dagster.core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir: /path/to/directory
+
+# Alternatively, you could set the `base_dir` key to an environment variable
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir:
+      env: LOCAL_COMPUTE_LOG_MANAGER_DIRECTORY
 ```
 
 #### AzureBlobComputeLogManager
@@ -711,7 +723,7 @@ compute_logs:
     local_dir: /tmp/bar
     prefix: dagster-test-
 
-# alternatively, you can grab the
+# alternatively, you can obtain any of these config values from environment variables
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -796,7 +808,7 @@ anonymized usage statistics.
 
 To configure Telemetry, set the `telemetry` key in your `dagster.yaml`.
 
-For more information on how and why we use telemetry, please visit the <Link href="https://docs.dagster.io/install#telemetry">Telemetry Docs</Link>
+For more information on how and why we use telemetry, please visit the <Link href="/getting-started/telemetry">Telemetry Docs</Link>.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_telemetry endbefore=end_marker_telemetry
 # Allows opting out of Dagster collecting usage statistics.
