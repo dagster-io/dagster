@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from dagster.core.storage.intermediate_storage import IntermediateStorage
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.definitions.resource import Resources
 
 
 class SystemExecutionContextData(
@@ -352,7 +353,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
         dagster_type: DagsterType,
         source_handle: Optional[StepOutputHandle] = None,
         resource_config: Any = None,
-        resources: Optional[NamedTuple] = None,
+        resources: Optional["Resources"] = None,
     ) -> "InputContext":
         return InputContext(
             pipeline_name=self.pipeline_def.name,
@@ -531,7 +532,7 @@ class OutputContext(
         # This is used internally by the intermediate storage adapter, we don't usually expect users to mock this.
         step_context: Optional[SystemStepExecutionContext] = None,
         resource_config: Optional[Any] = None,
-        resources: Optional[NamedTuple] = None,
+        resources: Optional["Resources"] = None,
     ):
 
         return super(OutputContext, cls).__new__(
@@ -619,7 +620,7 @@ class InputContext(
         # This is used internally by the intermediate storage adapter, we don't expect users to mock this.
         step_context: Optional[SystemStepExecutionContext] = None,
         resource_config: Any = None,
-        resources: Optional[NamedTuple] = None,
+        resources: Optional["Resources"] = None,
     ):
 
         return super(InputContext, cls).__new__(

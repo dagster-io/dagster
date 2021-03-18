@@ -1,5 +1,6 @@
 from collections import namedtuple
 from functools import update_wrapper
+from typing import Optional, Set
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -219,6 +220,10 @@ def resource(config_schema=None, description=None, required_resource_keys=None, 
     return _wrap
 
 
+class Resources:
+    pass
+
+
 class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_instance_dict")):
     """There are concepts in the codebase (e.g. solids, system storage) that receive
     only the resources that they have specified in required_resource_keys.
@@ -233,7 +238,7 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             ),
         )
 
-    def build(self, required_resource_keys):
+    def build(self, required_resource_keys: Optional[Set[str]]) -> Resources:
 
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
@@ -259,8 +264,10 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             if key in self.resource_instance_dict
         }
 
-        class ScopedResources(namedtuple("Resources", list(resource_instance_dict.keys()))):
+        class _ScopedResources(
+            namedtuple("_ScopedResources", list(resource_instance_dict.keys())), Resources  # type: ignore[misc]
+        ):
             def __getattr__(self, attr):
                 raise DagsterUnknownResourceError(attr)
 
-        return ScopedResources(**resource_instance_dict)
+        return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
