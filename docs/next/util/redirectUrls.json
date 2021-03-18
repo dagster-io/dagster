@@ -1,0 +1,415 @@
+[
+  {
+    "source": "/install",
+    "destination": "/getting-started",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/setup",
+    "destination": "/tutorial/intro-tutorial/setup",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/overview",
+    "destination": "/tutorial",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/execute",
+    "destination": "/tutorial/intro-tutorial/single-solid-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/basics_solids",
+    "destination": "/tutorial/intro-tutorial/configuring-solids",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/basics_pipelines",
+    "destination": "/tutorial/intro-tutorial/connecting-solids",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/testable",
+    "destination": "/tutorial/intro-tutorial/testable",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/types",
+    "destination": "/tutorial/advanced-tutorial/types",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced_solids",
+    "destination": "/tutorial/advanced-tutorial/solids",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced_pipelines",
+    "destination": "/tutorial/advanced-tutorial/pipelines",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced_materializations",
+    "destination": "/tutorial/advanced-tutorial/materializations",
+    "permanent": true
+  },
+
+  {
+    "source": "/tutorial/advanced_repositories",
+    "destination": "/tutorial/advanced-tutorial/repositories",
+    "permanent": true
+  },
+
+  {
+    "source": "/tutorial/advanced_scheduling",
+    "destination": "/tutorial/advanced-tutorial/scheduling",
+    "permanent": true
+  },
+  { "source": "/overview", "destination": "/concepts", "permanent": true },
+  {
+    "source": "/overview/solids-pipelines/solids",
+    "destination": "/concepts/solids-pipelines/solids",
+    "permanent": true
+  },
+  {
+    "source": "/overview/solids-pipelines/solid-factories",
+    "destination": "/concepts/solids-pipelines/solids",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/solids-pipelines/pipelines",
+    "destination": "/concepts/solids-pipelines/pipelines",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/solids-pipelines/solid-events",
+    "destination": "/concepts/solids-pipelines/solid-events",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/expectations",
+    "destination": "/concepts/solids-pipelines/solid-events",
+    "permanent": true
+  },
+  {
+    "source": "/examples/hooks",
+    "destination": "/concepts/solids-pipelines/solid-hooks",
+    "permanent": true
+  },
+  {
+    "source": "/overview/execution",
+    "destination": "/concepts/solids-pipelines/executing",
+    "permanent": true
+  },
+  {
+    "source": "/examples/pipeline_unittesting",
+    "destination": "/concepts/solids-pipelines/testing",
+    "permanent": true
+  },
+  {
+    "source": "/overview/configuration/run-config",
+    "destination": "/concepts/configuration/config-schema",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/configuration/configured",
+    "destination": "/concepts/configuration/configured",
+    "permanent": true
+  },
+  {
+    "source": "/overview/modes-resources-presets/modes-resources",
+    "destination": "/concepts/modes-resources",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/io-managers/io-managers",
+    "destination": "/concepts/io-management/io-managers",
+    "permanent": true
+  },
+  {
+    "source": "/overview/types",
+    "destination": "/concepts/types",
+    "permanent": true
+  },
+  {
+    "source": "/overview/asset-materializations",
+    "destination": "/concepts/assets/asset-catalog",
+    "permanent": true
+  },
+  {
+    "source": "/overview/repositories-workspaces/repositories",
+    "destination": "/concepts/repositories-workspaces/repositories",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/repositories-workspaces/workspaces",
+    "destination": "/concepts/repositories-workspaces/workspaces",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/logging/logging",
+    "destination": "/concepts/logging/loggers",
+    "permanent": true
+  },
+  {
+    "source": "/overview/logging/customize-logging",
+    "destination": "/concepts/logging/loggers",
+    "permanent": true
+  },
+  {
+    "source": "/overview/partitions-backfill/partitions",
+    "destination": "/concepts/partitions-schedules-sensors/partitions",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/partitions-backfill/backfill",
+    "destination": "/concepts/partitions-schedules-sensors/backfills",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/schedules-sensors/schedules",
+    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/schedules-sensors/sensors",
+    "destination": "/concepts/partitions-schedules-sensors/sensors",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/instances/dagster-instance",
+    "destination": "/deployment/dagster-instance",
+    "permanent": true
+  },
+  {
+    "source": "/overview/pipeline-runs/run-launcher",
+    "destination": "/deployment/run-launcher",
+    "permanent": true
+  },
+  {
+    "source": "/overview/pipeline-runs/executor",
+    "destination": "/concepts/executors",
+    "permanent": true
+  },
+  {
+    "source": "/overview/pipeline-runs/run-coordinator",
+    "destination": "/deployment/run-coordinator",
+    "permanent": true
+  },
+  {
+    "source": "/overview/pipeline-runs/limiting-run-concurrency",
+    "destination": "/deployment/run-coordinator",
+    "permanent": true
+  },
+
+  {
+    "source": "/overview/dagit",
+    "destination": "/concepts/dagit/dagit",
+    "permanent": true
+  },
+  {
+    "source": "/overview/daemon",
+    "destination": "/deployment/dagster-daemon",
+    "permanent": true
+  },
+  {
+    "source": "/overview/graphql-api",
+    "destination": "/concepts/dagit/graphql",
+    "permanent": true
+  },
+  {
+    "source": "/overview/packages/core-packages",
+    "destination": "/_apidocs",
+    "permanent": true
+  },
+  {
+    "source": "/overview/packages/libraries",
+    "destination": "/integrations",
+    "permanent": true
+  },
+  {
+    "source": "/overview/packages/dagster_pandas",
+    "destination": "/integrations/pandas",
+    "permanent": true
+  },
+  {
+    "source": "/overview/packages/dagstermill",
+    "destination": "/integrations/dagstermill",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/local",
+    "destination": "/deployment/guides/service",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/docker",
+    "destination": "/deployment/guides/docker",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/kubernetes",
+    "destination": "/deployment/guides/kubernetes/deploying-with-helm",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/aws",
+    "destination": "/deployment/guides/aws",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/gcp",
+    "destination": "/deployment/guides/gcp",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/celery",
+    "destination": "/deployment/custom-infra/celery",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/dask",
+    "destination": "/deployment/custom-infra/dask",
+    "permanent": true
+  },
+  {
+    "source": "/deploying/airflow",
+    "destination": "/deployment/custom-infra/airflow",
+    "permanent": true
+  },
+  {
+    "source": "/troubleshooting/schedules",
+    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "permanent": true
+  },
+
+  {
+    "source": "/troubleshooting/run-queue",
+    "destination": "/deployment/run-coordinator",
+    "permanent": true
+  },
+  {
+    "source": "/examples/airflow_ingest",
+    "destination": "/integrations/airflow",
+    "permanent": true
+  },
+  {
+    "source": "/examples/airline_demo",
+    "destination": "NA",
+    "permanent": true
+  },
+  {
+    "source": "/examples/materializations",
+    "destination": "/concepts/assets/asset-catalog",
+    "permanent": true
+  },
+  {
+    "source": "/examples/conditional_execution",
+    "destination": "/concepts/solids-pipelines/pipelines#conditional-branching",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/config_mapping",
+    "destination": "/concepts/configuration/config-schema#config-mapping",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/dbt_example",
+    "destination": "/integrations/dbt",
+    "permanent": true
+  },
+  {
+    "source": "/examples/dep_dsl",
+    "destination": "/concepts/solids-pipelines/pipelines#pipeline-dsl",
+    "permanent": true
+  },
+  {
+    "source": "/examples/deploy_docker",
+    "destination": "/deployment/guides/docker#example",
+    "permanent": true
+  },
+  {
+    "source": "/examples/emr_pyspark",
+    "destination": "/integrations/pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/examples/fan_in_pipeline",
+    "destination": "/concepts/solids-pipelines/pipelines#fixed-fan-in-pipeline",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/ge_example",
+    "destination": "/integrations/great-expectations",
+    "permanent": true
+  },
+  {
+    "source": "/examples/hooks",
+    "destination": "/concepts/solids-pipelines/solid-hooks",
+    "permanent": true
+  },
+  {
+    "source": "/examples/multi_location",
+    "destination": "/concepts/repositories-workspaces/workspaces#loading-multiple-repositories",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/nothing",
+    "destination": "/concepts/solids-pipelines/pipelines#order-based-dependencies-nothing-dependencies",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/pipeline_tags",
+    "destination": "/concepts/solids-pipelines/pipelines#pipeline-tags",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/pipeline_unittesting",
+    "destination": "/concepts/solids-pipelines/testing",
+    "permanent": true
+  },
+  {
+    "source": "/examples/basic_pyspark",
+    "destination": "/integrations/pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/examples/dynamic_graph",
+    "destination": "/concepts/solids-pipelines/pipelines#dynamic-fan-out",
+    "permanent": true
+  },
+
+  {
+    "source": "/examples/simple_lakehouse",
+    "destination": "/guides/dagster/lakehouse",
+    "permanent": true
+  },
+  {
+    "source": "/examples/multi_type_lakehouse",
+    "destination": "/guides/dagster/multi-type-lakehouse",
+    "permanent": true
+  },
+  {
+    "source": "/examples/memoized_development",
+    "destination": "/guides/dagster/memoization",
+    "permanent": true
+  }
+]

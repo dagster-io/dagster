@@ -1,3 +1,5 @@
+const redirectUrls = require("./util/redirectUrls.json");
+
 module.exports = {
   async redirects() {
     return [
@@ -11,6 +13,7 @@ module.exports = {
         destination: "/getting-started",
         permanent: true,
       },
+      ...redirectUrls,
     ];
   },
 };
