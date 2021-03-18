@@ -7,6 +7,8 @@ import {
   Popover,
   InputGroup as BlueprintInputGroup,
   NonIdealState,
+  Tooltip,
+  Colors,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -25,6 +27,7 @@ import {
 } from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {Loading} from 'src/ui/Loading';
 import {Table} from 'src/ui/Table';
 import {Tag} from 'src/ui/Tag';
@@ -33,6 +36,18 @@ type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 type AssetKey = AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
 type AssetTag = AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags;
 
+const EXPERIMENTAL_TAGS_WARNING = (
+  <Box style={{maxWidth: 300}}>
+    Tags are an experimental feature of asset materializations. See the{' '}
+    <a
+      href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization"
+      style={{color: Colors.WHITE}}
+    >
+      AssetMaterialization documentation
+    </a>{' '}
+    for more about adding asset tags.
+  </Box>
+);
 export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}> = ({
   prefixPath,
 }) => {
@@ -238,6 +253,7 @@ const AssetsTable = ({
     setToWipe(undefined);
   };
   const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
+  const hasTags = !!assets.filter((asset) => asset.tags.length).length;
 
   if (!isFlattened) {
     const pathMap: {[key: string]: Asset} = {};
@@ -290,7 +306,20 @@ const AssetsTable = ({
         <thead>
           <tr>
             <th>Asset Key</th>
-            <th>Tags</th>
+            {hasTags ? (
+              <th>
+                <Group direction="row" spacing={8} alignItems="center">
+                  Tags
+                  <Tooltip position="top" content={EXPERIMENTAL_TAGS_WARNING}>
+                    <Icon
+                      icon={IconNames.INFO_SIGN}
+                      iconSize={12}
+                      style={{position: 'relative', top: '-2px'}}
+                    />
+                  </Tooltip>
+                </Group>
+              </th>
+            ) : null}
             <th>Actions</th>
           </tr>
         </thead>
@@ -314,15 +343,17 @@ const AssetsTable = ({
                     </Box>
                   </Link>
                 </td>
-                <td>
-                  {asset.tags.length ? (
-                    <Box flex={{direction: 'row', wrap: 'wrap'}}>
-                      {asset.tags.map((tag, idx) => (
-                        <Tag tag={tag} key={idx} onClick={() => onClick(tag)} />
-                      ))}
-                    </Box>
-                  ) : null}
-                </td>
+                {hasTags ? (
+                  <td>
+                    {asset.tags.length ? (
+                      <Box flex={{direction: 'row', wrap: 'wrap'}}>
+                        {asset.tags.map((tag, idx) => (
+                          <Tag tag={tag} key={idx} onClick={() => onClick(tag)} />
+                        ))}
+                      </Box>
+                    ) : null}
+                  </td>
+                ) : null}
                 <td>
                   <Popover
                     content={

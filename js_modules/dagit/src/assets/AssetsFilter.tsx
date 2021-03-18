@@ -22,6 +22,10 @@ const getAssetFilterProviders = memoize((assets: Asset[] = []) => {
   });
   tagList.sort();
 
+  if (!tagList.length) {
+    return [];
+  }
+
   return [
     {
       token: 'tag',
