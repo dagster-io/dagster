@@ -11,6 +11,7 @@ export function normalizeVersionPath(
 ): {
   version?: string;
   asPath: string;
+  asPathWithoutAnchor: string;
   versions: string[];
   defaultVersion: string;
 } {
@@ -28,8 +29,14 @@ export function normalizeVersionPath(
     return false;
   });
 
+  let asPathWithoutAnchor = asPath;
+  if (asPathWithoutAnchor.indexOf("#") > 0) {
+    asPathWithoutAnchor = asPath.substring(0, asPath.indexOf("#"));
+  }
+
   return {
     asPath,
+    asPathWithoutAnchor,
     version: detectedVersion,
     versions: ALL_VERSIONS,
     defaultVersion,

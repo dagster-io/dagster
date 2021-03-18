@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 import Pagination from "components/Pagination";
+import { Search } from "components/Search";
 import Sidebar from "../components/Sidebar";
 import { Transition } from "@headlessui/react";
 import cx from "classnames";
@@ -268,27 +269,8 @@ const Header = ({ openFeedback, isDarkMode, setDarkMode }) => {
       >
         {/* Search Bar*/}
         <div className="px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-          <div className=" text-gray-700 dark:text-gray-400 hover:bg-gray-50 hover:bg-gray-800 flex items-center">
-            <svg
-              className="h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div className="ml-4 hover:text-gray-900 dark:hover:text-gray-200">
-              Quick search{" "}
-              <span className="hidden sm:inline">for anything</span>{" "}
-              <span className="hidden lg:inline-block px-2 py-1 ml-2 text-gray-500 dark:text-gray-200 text-sm border border-gray-200 dark:border-gray-500 rounded-md">
-                ⌘K
-              </span>
-            </div>
+          <div className="flex items-center">
+            <Search />
           </div>
           <div>
             <button
