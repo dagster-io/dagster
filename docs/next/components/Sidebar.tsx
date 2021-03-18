@@ -263,7 +263,7 @@ const SidebarContents = () => {
       <VersionDropdown />
       {/* Sidebar component, swap this element with another sidebar if you like */}
       <div className="h-0 flex-1 flex flex-col overflow-y-auto">
-        <div className="hidden lg:block h-12 pointer-events-none absolute inset-x-0 right-1 z-10 bg-gradient-to-b from-gray-100 dark:from-gray-900"></div>
+        <div className="hidden lg:block h-6 pointer-events-none absolute inset-x-0 right-1 z-10 bg-gradient-to-b from-gray-100 dark:from-gray-900"></div>
         {/* Sidebar Search */}
         <div className="hidden px-3 mt-5">
           <label htmlFor="search" className="sr-only">

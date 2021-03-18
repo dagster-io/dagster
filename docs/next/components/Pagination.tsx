@@ -22,7 +22,7 @@ const Pagination = () => {
       <div className="-mt-px w-0 flex-1 flex">
         {prev && (
           <Link href={prev.path}>
-            <a className="border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            <a className="border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm font-medium text-gray-500 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300">
               {/* Heroicon name: arrow-narrow-left */}
               <svg
                 className="mr-3 h-5 w-5 text-gray-400"
@@ -45,7 +45,7 @@ const Pagination = () => {
       <div className="-mt-px w-0 flex-1 flex justify-end">
         {next && (
           <Link href={next.path}>
-            <a className="border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            <a className="border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm font-medium text-gray-500 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300">
               {next.title}
               {/* Heroicon name: arrow-narrow-right */}
               <svg

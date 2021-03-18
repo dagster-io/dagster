@@ -7,9 +7,10 @@
 
 import React, { useContext } from "react";
 
+import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
-import Icons from "../Icons";
+
 export const SearchIndexContext = React.createContext(null);
 
 const PyObject: React.FunctionComponent<{
@@ -103,7 +104,7 @@ const Cross = () => {
 
 const LinkGrid = ({ children }) => {
   return (
-    <div className="rounded-lg bg-gray-200 p-4 overflow-hidden shadow divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
+    <div className="rounded-lg bg-gray-200 dark:bg-gray-700 p-4 overflow-hidden shadow divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
       {children}
     </div>
   );
@@ -153,7 +154,7 @@ const Badge = ({ text }) => {
 
 const LinkGridItem = ({ title, href, children, tags = [] }) => {
   return (
-    <div className="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 hover:bg-gray-50 transition-colors">
+    <div className="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none relative group bg-white dark:bg-gray-800 p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 hover:bg-gray-50 transition-colors">
       <div className="mt-8">
         <h3 className="text-lg font-medium">
           <Link href={href}>
@@ -247,7 +248,7 @@ const InstanceDiagramBox = ({ href = "#", className = "", children }) => {
   return (
     <a
       href="href"
-      className={`bg-gray-100 hover:bg-gray-200 flex-1 h-16 rounded flex justify-center items-center font-medium ${className}`}
+      className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 flex-1 h-16 rounded flex justify-center items-center font-medium ${className}`}
     >
       {children}
     </a>
