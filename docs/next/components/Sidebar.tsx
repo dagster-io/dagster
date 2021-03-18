@@ -135,7 +135,12 @@ const ThirdLevelNavigation = ({ section }) => {
 };
 
 const VersionDropdown = () => {
-  const { version: currentVersion, versions, asPath } = useVersion();
+  const {
+    latestVersion,
+    version: currentVersion,
+    versions,
+    asPath,
+  } = useVersion();
 
   return (
     <div className="z-20 px-3 relative inline-block text-left">
@@ -150,7 +155,8 @@ const VersionDropdown = () => {
                       <span className="flex-1 min-w-0">
                         <span className="text-gray-900 text-sm font-medium truncate"></span>{" "}
                         <span className="text-gray-500 dark:text-gray-300 text-sm truncate">
-                          {currentVersion}
+                          {currentVersion}{" "}
+                          {currentVersion === latestVersion && "(latest)"}
                         </span>
                       </span>
                     </span>
@@ -221,7 +227,7 @@ const VersionDropdown = () => {
                     <Menu.Item>
                       {({ active }) => (
                         <a
-                          href="#sign-out"
+                          href="legacy-docs.dagster.io"
                           className={`${
                             active
                               ? "bg-gray-100 text-gray-900"

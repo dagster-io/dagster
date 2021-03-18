@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import ALL_VERSIONS from "../.versioned_content/_versions.json";
 import { useRouter } from "next/router";
 
-const defaultVersion = "master";
+const defaultVersion =
+  process.env.NODE_ENV === "production"
+    ? ALL_VERSIONS[ALL_VERSIONS.length - 1]
+    : "master";
+const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
 
 export function normalizeVersionPath(
   asPath: string,
@@ -14,6 +18,7 @@ export function normalizeVersionPath(
   asPathWithoutAnchor: string;
   versions: string[];
   defaultVersion: string;
+  latestVersion: string;
 } {
   let detectedVersion: string = defaultVersion;
   // first item will be empty string from splitting at first char
@@ -40,6 +45,7 @@ export function normalizeVersionPath(
     version: detectedVersion,
     versions: ALL_VERSIONS,
     defaultVersion,
+    latestVersion,
   };
 }
 
