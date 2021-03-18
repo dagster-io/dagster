@@ -18,66 +18,81 @@ Each page in this section contains:
     title="Solids and Pipelines"
     href="/concepts/solids-pipelines/solids"
   >
-    Solids and Pipelines are the building blocks of Dagster code. You use these in conjunction to define execution graphs. This section covers how to define and use both solids and pipelines.
+    Solids and Pipelines are the building blocks of Dagster code. You use these
+    in conjunction to define execution graphs. This section covers how to define
+    and use both solids and pipelines.
   </LinkGridItem>
   <LinkGridItem
     title="Modes and Resources"
     href="/concepts/modes-resources/modes"
   >
-    Modes, alongside resources, enable you to separate the pipeline logic from the environments and therefore make it easier to test and develop data pipelines in various environments.
+    Modes, alongside resources, enable you to separate the pipeline logic from
+    the environments and therefore make it easier to test and develop data
+    pipelines in various environments.
   </LinkGridItem>
-  <LinkGridItem
-    title="Testing"
-    href="/concepts/testing"
-  >
-    Dagster enables you to build testable and maintainable data applications. This section shows that Dagster enables you to unit-test your data pipelines, separate business logic from environments for testing, and run data quality tests.
+  <LinkGridItem title="Testing" href="/concepts/testing">
+    Dagster enables you to build testable and maintainable data applications.
+    This section shows that Dagster enables you to unit-test your data
+    pipelines, separate business logic from environments for testing, and run
+    data quality tests.
   </LinkGridItem>
   <LinkGridItem
     title="Configuration System"
     href="/concepts/configuration/config-schema"
   >
-  Dagster provides a configuration system that makes your data applications reliable and maintainable. This section demonstrates how configurations work with different Dagster entities.
+    Dagster provides a configuration system that makes your data applications
+    reliable and maintainable. This section demonstrates how configurations work
+    with different Dagster entities.
   </LinkGridItem>
-  <LinkGridItem
-    title="Dagster Types"
-    href="/concepts/types"
-  >
-  Dagster includes facilities for typing the input and output values of solids (“runtime” types). This section explains how to define, use, and test types in Dagster.
+  <LinkGridItem title="Dagster Types" href="/concepts/types">
+    Dagster includes facilities for typing the input and output values of solids
+    (“runtime” types). This section explains how to define, use, and test types
+    in Dagster.
   </LinkGridItem>
   <LinkGridItem
     title="IO Management"
     href="/concepts/io-managements/io-managers"
   >
-  IO Managers are user-provided objects that store solid outputs and load them as inputs to downstream solids. This section explains how Dagster thinks about IO management and shows how to define and use IO managers and other IO-related features.
+    IO Managers are user-provided objects that store solid outputs and load them
+    as inputs to downstream solids. This section explains how Dagster thinks
+    about IO management and shows how to define and use IO managers and other
+    IO-related features.
   </LinkGridItem>
-  <LinkGridItem
-    title="Dagit & GraphQL API"
-    href="/concepts/dagit/dagit"
-  >
-    Dagit is a web-based interface for viewing and interacting with Dagster objects. This section walks you through Dagit's functionalities and the GraphQL API used to interact with Dagster programatically.
+  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
+    Dagit is a web-based interface for viewing and interacting with Dagster
+    objects. This section walks you through Dagit's functionalities and the
+    GraphQL API used to interact with Dagster programatically.
   </LinkGridItem>
   <LinkGridItem
     title="Repositories and Workspaces"
     href="/concepts/solids-pipelines/solids"
   >
-  A workspace is a collection of user-defined repositories and information about where to find them. Dagster tools, like Dagit and the Dagster CLI, use workspaces to load user code. This section shows how to define and when to use repositories and workspaces.
+    A workspace is a collection of user-defined repositories and information
+    about where to find them. Dagster tools, like Dagit and the Dagster CLI, use
+    workspaces to load user code. This section shows how to define and when to
+    use repositories and workspaces.
   </LinkGridItem>
   <LinkGridItem
     title="Schedules, Sensors, and Partitions"
     href="/concepts/partitions-schedules-sensors/schedules"
   >
-    Schedulers can launch runs on a fixed interval, while sensors allow you to run based on any external state change. This section demonstrates how to define them and their convenient capabilities like partitioning and backfilling.
+    Schedulers can launch runs on a fixed interval, while sensors allow you to
+    run based on any external state change. This section demonstrates how to
+    define them and their convenient capabilities like partitioning and
+    backfilling.
   </LinkGridItem>
-  <LinkGridItem
-    title="Logging"
-    href="/concepts/logging/loggers"
-  >
-  Dagster includes a rich and extensible logging system. This section showcases Dagster's built-in logger and shows how you can customize loggers to fit your logging and monitoring infrastructure.
+  <LinkGridItem title="Assets" href="/concepts/assets/asset-materializations">
+    Assets are data objects that you produce during a pipeline run. This section
+    walks you through how to inform Dagster about these assets so that they can
+    be tracked over time.
   </LinkGridItem>
-  <LinkGridItem
-    title="Executors"
-    href="/concepts/executors/executors"
-  >
-  Executors are responsible for executing steps within a pipeline run. This section explains how to define an executor to meet your computation needs.
+  <LinkGridItem title="Logging" href="/concepts/logging/loggers">
+    Dagster includes a rich and extensible logging system. This section
+    showcases Dagster's built-in logger and shows how you can customize loggers
+    to fit your logging and monitoring infrastructure.
+  </LinkGridItem>
+  <LinkGridItem title="Executors" href="/concepts/executors/executors">
+    Executors are responsible for executing steps within a pipeline run. This
+    section explains how to define an executor to meet your computation needs.
   </LinkGridItem>
 </LinkGrid>

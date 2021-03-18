@@ -1,15 +1,15 @@
 """isort:skip_file"""
-from dagster import solid
+from dagster import solid, EventMetadataEntry
 
 
 @solid
 def solid1(_):
-    pass
+    return []
 
 
 @solid
 def solid2(_, _a):
-    pass
+    return []
 
 
 def write_dataframe_to_table(**_kwargs):
@@ -17,7 +17,7 @@ def write_dataframe_to_table(**_kwargs):
 
 
 def read_dataframe_from_table(**_kwargs):
-    pass
+    return []
 
 
 # start_marker
@@ -47,3 +47,32 @@ def my_pipeline():
 
 
 # end_marker
+
+# start_metadata_marker
+class DataframeTableIOManagerWithMetadata(IOManager):
+    def handle_output(self, context, obj):
+        table_name = context.name
+        write_dataframe_to_table(name=table_name, dataframe=obj)
+
+        # attach these to the Handled Output event
+        yield EventMetadataEntry.int(len(obj), label="number of rows")
+        yield EventMetadataEntry.text(table_name, label="table name")
+
+    def load_input(self, context):
+        table_name = context.upstream_output.name
+        return read_dataframe_from_table(name=table_name)
+
+
+# end_metadata_marker
+
+
+@io_manager
+def df_table_io_manager_with_metadata(_):
+    return DataframeTableIOManagerWithMetadata()
+
+
+@pipeline(
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": df_table_io_manager_with_metadata})]
+)
+def my_pipeline_with_metadata():
+    solid2(solid1())

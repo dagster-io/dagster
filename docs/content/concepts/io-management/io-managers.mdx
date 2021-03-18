@@ -243,7 +243,7 @@ Then, when executing a pipeline, you can pass in this per-output config.
     )
 ```
 
-### Providing per-output metadata to an IO manager (experimental)
+### Providing per-output metadata to an IO manager <Experimental />
 
 You might want to provide static metadata that controls how particular outputs are stored. You don't plan to change the metadata at runtime, so it makes more sense to attach it to a definition rather than expose it as a configuration option.
 
@@ -331,3 +331,30 @@ def test_my_io_manager_load_input():
     context = InputContext(upstream_output=OutputContext(name="abc", step_key="123"))
     assert my_io_manager.load_input(context) == 5
 ```
+
+## Yielding metadata from an IOManager <Experimental />
+
+Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this,
+you can optionally yield <PyObject object="EventMetadataEntry"/> objects from within the body of the `handle_output`
+function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
+
+```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
+class DataframeTableIOManagerWithMetadata(IOManager):
+    def handle_output(self, context, obj):
+        table_name = context.name
+        write_dataframe_to_table(name=table_name, dataframe=obj)
+
+        # attach these to the Handled Output event
+        yield EventMetadataEntry.int(len(obj), label="number of rows")
+        yield EventMetadataEntry.text(table_name, label="table name")
+
+    def load_input(self, context):
+        table_name = context.upstream_output.name
+        return read_dataframe_from_table(name=table_name)
+```
+
+Any entries yielded this way will be attached to the `Handled Output` event for this output.
+
+Additionally, if you have specified that this `handle_output` function will be writing to an asset by
+defining a `get_output_asset_key` function, these metadata entries will also be attached to the
+materialization event created for that asset. You can learn more about this functionality in the \[Asset Docs].

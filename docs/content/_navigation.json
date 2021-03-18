@@ -183,11 +183,6 @@
             "path": "/concepts/dagit/dagit"
           },
           {
-            "title": "Asset Catalog",
-            "path": "/concepts/dagit/asset-catalog"
-          },
-
-          {
             "title": "GraphQL API",
             "path": "/concepts/dagit/graphql"
           }
@@ -233,6 +228,15 @@
           {
             "title": "Backfills",
             "path": "/concepts/partitions-schedules-sensors/backfills"
+          }
+        ]
+      },
+      {
+        "title": "Assets",
+        "children": [
+          {
+            "title": "Asset Materializations",
+            "path": "/concepts/assets/asset-materializations"
           }
         ]
       },

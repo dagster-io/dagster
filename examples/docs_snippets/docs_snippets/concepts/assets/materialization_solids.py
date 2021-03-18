@@ -1,14 +1,27 @@
 # pylint: disable=unused-argument
 
-from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, Output, pipeline, solid
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    EventMetadataEntry,
+    Output,
+    OutputContext,
+    OutputDefinition,
+    pipeline,
+    solid,
+)
 
 
 def read_df():
     return 1
 
 
-def persist_to_storage(df):
+def read_df_for_date(_):
     return 1
+
+
+def persist_to_storage(df):
+    return "tmp"
 
 
 def calculate_bytes(df):
@@ -35,6 +48,62 @@ def my_materialization_solid(context):
 
 
 # end_materialization_solids_marker_1
+
+# start_simple_asset_solid
+
+
+@solid
+def my_asset_solid(context):
+    df = read_df()
+    persist_to_storage(df)
+    yield AssetMaterialization(asset_key="my_dataset")
+    yield Output(df)
+
+
+# end_simple_asset_solid
+
+# start_output_def_mat_solid_0
+
+
+@solid(output_defs=[OutputDefinition(asset_key=AssetKey("my_dataset"))])
+def my_constant_asset_solid(context):
+    df = read_df()
+    persist_to_storage(df)
+    yield Output(df)
+
+
+# end_output_def_mat_solid_0
+
+# start_output_def_mat_solid_1
+
+
+def get_asset_key(context: OutputContext):
+    mode = context.step_context.mode_def.name
+    return AssetKey(f"my_dataset_{mode}")
+
+
+@solid(output_defs=[OutputDefinition(asset_key=get_asset_key)])
+def my_variable_asset_solid(context):
+    df = read_df()
+    persist_to_storage(df)
+    yield Output(df)
+
+
+# end_output_def_mat_solid_1
+
+# start_partitioned_asset_materialization
+
+
+@solid(config_schema={"date": str})
+def my_partitioned_asset_solid(context):
+    partition_date = context.solid_config["date"]
+    df = read_df_for_date(partition_date)
+    remote_storage_path = persist_to_storage(df)
+    yield AssetMaterialization(asset_key="my_dataset", partition=partition_date)
+    yield Output(remote_storage_path)
+
+
+# end_partitioned_asset_materialization
 
 
 # start_materialization_solids_marker_2
