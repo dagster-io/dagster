@@ -9,10 +9,6 @@ export const Table = styled(HTMLTable)<TableProps>`
   border: none;
   width: 100%;
 
-  & tbody tr {
-    box-shadow: inset 0 1px ${Colors.LIGHT_GRAY3};
-  }
-
   & tr th {
     box-shadow: none !important;
     color: ${Colors.GRAY2};
@@ -24,7 +20,7 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr td {
     color: ${Colors.DARK_GRAY4};
-    box-shadow: none !important;
+    box-shadow: inset 0 1px ${Colors.LIGHT_GRAY3} !important;
     padding: ${({$compact}) => ($compact ? '8px 8px 8px 0' : '12px 24px 12px 0')};
   }
 

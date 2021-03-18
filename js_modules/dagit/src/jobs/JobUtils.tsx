@@ -75,7 +75,7 @@ export const StatusTable = styled.table`
 
   &&&&& tbody > tr > td {
     background: transparent;
-    box-shadow: none;
+    box-shadow: none !important;
     padding: 1px 0;
   }
 
