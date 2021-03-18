@@ -13,9 +13,6 @@ import { useVersion } from "../util/useVersion";
 const BASE_URL = "https://docs.dagster.io";
 const DEFAULT_SEO = {
   title: "Dagster Docs",
-  // TODO: unset this
-  // while dark launch, we mark all pages to noindex
-  dangerouslySetAllPagesToNoIndex: true,
   twitter: {
     site: "@dagsterio",
     cardType: "summary_large_image",
