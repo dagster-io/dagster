@@ -7,11 +7,7 @@ description: A pipeline is a set of solids with explicit data dependencies on ea
 
 A pipeline is a set of solids with explicit data dependencies on each other, creating a directed acyclic graph, or DAG.
 
-<img class="mx-auto" src="/images/pipelines.png" />
-
-<!-- TODO: center images -->
-
-<!-- ![Pipeline Diagram](/images/pipelines.png) -->
+![Pipeline Diagram](/images/pipelines.png)
 
 ## Relevant APIs
 
@@ -20,6 +16,7 @@ A pipeline is a set of solids with explicit data dependencies on each other, cre
 | <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> | The decorator used to define a pipeline.                                                                                                                                                                           |
 | <PyObject module="dagster" object="PipelineDefinition" />               | Base class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="pipeline" decorator /> which returns a <PyObject object="PipelineDefinition"  /> |
 | <PyObject module="dagster" object="ModeDefinition" />                   | Modes allow you to vary pipeline behavior between different deployment environments. For more info, see the [Modes](...) section                                                                                   |
+| <PyObject module="dagster" object="PresetDefinition" />                 | Presets allow you to predefine pipeline configurations.                                                                                                                                                            |
 
 ## Overview
 
@@ -87,7 +84,7 @@ def tag_pipeline():
     add_one.tag({"my_tag": "my_value"})(add_one(return_one()))
 ```
 
-## Pipeline configuration
+## Pipeline Configuration
 
 ### Pipeline Modes
 
@@ -102,6 +99,44 @@ prod_mode = ModeDefinition("prod")
 @pipeline(mode_defs=[dev_mode, staging_mode, prod_mode])
 def my_modes_pipeline():
     my_solid()
+```
+
+### Pipeline Presets
+
+You can predefine configurations in which a pipeline can execute. <PyObject object="PresetDefinition" /> allows you to do so by specifying configuration values at the pipeline definition time.
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_preset_pipeline endbefore=end_preset_pipeline
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            name="one",
+            run_config={"solids": {"add_one": {"inputs": {"number": 1}}}},
+        ),
+        PresetDefinition(
+            name="two",
+            run_config={"solids": {"add_one": {"inputs": {"number": 2}}}},
+        ),
+    ]
+)
+def my_presets_pipeline():
+    add_one()
+```
+
+In Dagit, You can choose and load a preset in the Playground:
+
+![Pipeline Presets](/images/concepts/pipelines/presets.png)
+
+To run a pipeline in a script or in a test, You can specify a preset name via `preset` argument to the Python API <PyObject object="execute_pipeline" />:
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_run_preset endbefore=end_run_preset
+def run_pipeline():
+    execute_pipeline(my_presets_pipeline, preset="one")
+```
+
+You can also use the Dagster CLI <PyObject module="dagster-pipeline-execute" object="--preset" displayText="dagster pipeline execute --preset" /> to run a pipeline with a preset name:
+
+```bash
+dagster pipeline execute my_presets_pipeline --preset one
 ```
 
 ### Pipeline Tags

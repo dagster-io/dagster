@@ -5,6 +5,8 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     PipelineDefinition,
+    PresetDefinition,
+    execute_pipeline,
     pipeline,
     solid,
 )
@@ -80,6 +82,35 @@ def my_modes_pipeline():
 
 
 # end_modes_pipeline
+
+# start_preset_pipeline
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            name="one",
+            run_config={"solids": {"add_one": {"inputs": {"number": 1}}}},
+        ),
+        PresetDefinition(
+            name="two",
+            run_config={"solids": {"add_one": {"inputs": {"number": 2}}}},
+        ),
+    ]
+)
+def my_presets_pipeline():
+    add_one()
+
+
+# end_preset_pipeline
+
+# start_run_preset
+
+
+def run_pipeline():
+    execute_pipeline(my_presets_pipeline, preset="one")
+
+
+# end_run_preset
+
 
 # start_tags_pipeline
 @pipeline(tags={"my_tag": "my_value"})
