@@ -77,7 +77,7 @@ class _Solid:
             output_defs=output_defs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
-            description=self.description,
+            description=self.description or fn.__doc__,
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
             positional_inputs=positional_inputs,
@@ -120,7 +120,8 @@ def solid(
     Args:
         name (Optional[str]): Name of solid. Must be unique within any :py:class:`PipelineDefinition`
             using the solid.
-        description (Optional[str]): Human-readable description of this solid.
+        description (Optional[str]): Human-readable description of this solid. If not provided, and
+            the decorated function has docstring, that docstring will be used as the description.
         input_defs (Optional[List[InputDefinition]]):
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):

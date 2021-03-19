@@ -19,6 +19,30 @@ from dagster.core.definitions import inference
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 
+def test_infer_solid_description_from_docstring():
+    @solid
+    def my_solid(_):
+        """Here is some docstring"""
+
+    assert my_solid.description == "Here is some docstring"
+
+
+def test_infer_solid_description_no_docstring():
+    @solid
+    def my_solid(_):
+        pass
+
+    assert my_solid.description is None
+
+
+def test_docstring_does_not_override():
+    @solid(description="abc")
+    def my_solid(_):
+        """Here is some docstring"""
+
+    assert my_solid.description == "abc"
+
+
 def test_single_typed_input():
     @solid
     def add_one_infer(_context, num: int):
