@@ -56,7 +56,9 @@ class ActiveExecution:
         self._pending: Dict[str, Set[str]] = self._plan.get_executable_step_deps()
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
-        self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = {}
+        self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = (
+            dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
+        )
 
         # steps move in to these buckets as a result of _update calls
         self._executable: List[str] = []

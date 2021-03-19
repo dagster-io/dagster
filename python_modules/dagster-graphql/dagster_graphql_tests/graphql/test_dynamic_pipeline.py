@@ -62,6 +62,7 @@ def test_dynamic_resume_reexecution(graphql_context):
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                     "storage": {"filesystem": {}},
+                    "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
                     "rootRunId": parent_run_id,
@@ -139,6 +140,7 @@ def test_dynamic_full_reexecution(graphql_context):
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                     "storage": {"filesystem": {}},
+                    "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
                     "rootRunId": parent_run_id,
@@ -216,6 +218,7 @@ def test_dynamic_subset(graphql_context):
                 "runConfigData": {
                     "solids": {"multiply_inputs": {"inputs": {"should_fail": {"value": True}}}},
                     "storage": {"filesystem": {}},
+                    "execution": {"multiprocess": {}},
                 },
                 "executionMetadata": {
                     "rootRunId": parent_run_id,

@@ -53,7 +53,6 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         pipeline = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
             start_termination_thread(self.term_event)
-
             execution_plan = create_execution_plan(
                 pipeline=pipeline,
                 run_config=self.run_config,

@@ -214,6 +214,32 @@ def test_partial_reexecute():
         assert result_3.success
 
 
+def test_partial_reexecute_multiproc():
+    with instance_for_test() as instance:
+        result_1 = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            run_config={"execution": {"multiprocess": {}}},
+            instance=instance,
+        )
+        assert result_1.success
+
+        result_2 = reexecute_pipeline(
+            reconstructable(dynamic_pipeline),
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["sum_numbers*"],
+        )
+        assert result_2.success
+
+        result_3 = reexecute_pipeline(
+            reconstructable(dynamic_pipeline),
+            parent_run_id=result_1.run_id,
+            instance=instance,
+            step_selection=["multiply_by_two[1]*"],
+        )
+        assert result_3.success
+
+
 def test_fan_out_in_out_in():
     with instance_for_test() as instance:
         result = execute_pipeline(
