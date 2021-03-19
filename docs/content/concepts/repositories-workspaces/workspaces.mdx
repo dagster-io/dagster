@@ -8,10 +8,6 @@ description: Dagster Workspaces are collections of user-defined repositories and
 A _workspace_ is a collection of user-defined [repositories](/concepts/repositories-workspaces/repositories) and information about where to find them.
 Dagster tools, like Dagit and the Dagster CLI, use workspaces to load user code.
 
-<div className="w-full h-48 bg-gray-50 flex items-center justify-center">
-  TODO diagram: relations among workspace, repositories, and instance
-</div>
-
 ## Relevant APIs
 
 | Name                                       | Description                                                                                                   |
@@ -92,7 +88,7 @@ from that directory with no arguments and see the repositories defined in the wo
 <img src="/images/concepts/workspace-dagit.png" />
 
 Using a `workspace.yaml` keeps you from having to type the same
-`-f` or`  -m ` flag repeatedly. You can also load the workspace yaml file from a different location with `-w`. See detailed references
+`-f` or `-m` flag repeatedly. You can also load the workspace yaml file from a different location with `-w`. See detailed references
 in [`dagit`](/\_apidocs/cli#dagit).
 
 ## Examples
