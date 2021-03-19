@@ -227,10 +227,11 @@ def after_install(options, home_dir):
 
 
 @cli.command()
+@click.option("--chart-path", "-p", required=True, type=click.Path(exists=True, resolve_path=True))
 @click.option("--helm-repo", "-r", required=True, type=click.Path(exists=True, resolve_path=True))
 @click.option("--ver", "-v", required=True)
 @click.option("--dry-run", is_flag=True)
-def helm(helm_repo, ver, dry_run):
+def helm(chart_path, helm_repo, ver, dry_run):
     """Publish the Dagster Helm chart
 
     See: https://medium.com/containerum/how-to-make-and-share-your-own-helm-package-50ae40f6c221
@@ -246,7 +247,7 @@ def helm(helm_repo, ver, dry_run):
     cmd = [
         "helm",
         "package",
-        "dagster",
+        chart_path,
         "--dependency-update",
         "--destination",
         helm_repo,
@@ -258,12 +259,22 @@ def helm(helm_repo, ver, dry_run):
     click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
     click.echo(subprocess.check_output(cmd, cwd=helm_path))
 
-    cmd = ["helm", "repo", "index", ".", "--url", "https://dagster-io.github.io/helm/"]
+    cmd = [
+        "helm",
+        "repo",
+        "index",
+        ".",
+        "--merge",
+        "index.yaml",
+        "--url",
+        "https://dagster-io.github.io/helm/",
+    ]
     click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
     click.echo(subprocess.check_output(cmd, cwd=helm_repo))
 
     # Commit and push Helm updates for this Dagster release
-    msg = "Helm release for Dagster release {}".format(ver)
+    chart_name = os.path.basename(os.path.normpath(chart_path))
+    msg = f"Helm release for {chart_name} release {ver}"
     git_commit_updates(helm_repo, msg)
     git_push(cwd=helm_repo, dry_run=dry_run)
 
