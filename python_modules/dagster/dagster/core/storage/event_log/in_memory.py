@@ -22,7 +22,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
         self._asset_tags = defaultdict(dict)
-        self._wiped_asset_keys = {}
+        self._wiped_asset_keys = defaultdict(float)
         if preload:
             for payload in preload:
                 self._logs[payload.pipeline_run.run_id] = EventLogSequence(payload.event_list)
@@ -94,6 +94,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                     record.is_dagster_event
                     and record.dagster_event.asset_key
                     and record.dagster_event.asset_key == asset_key
+                    and self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
                 ):
                     return True
         return False
@@ -110,8 +111,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_events = [
             record.dagster_event
             for record in sorted(asset_records, key=lambda x: x.timestamp, reverse=True)
-            if not self._wiped_asset_keys.get(record.dagster_event.asset_key)
-            or self._wiped_asset_keys.get(record.dagster_event.asset_key) < record.timestamp
+            if self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
         ]
         asset_keys = OrderedDict()
         for event in asset_events:
@@ -137,6 +137,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 if record.is_dagster_event
                 and record.dagster_event.asset_key == asset_key
                 and (not partitions or record.dagster_event.partition in partitions)
+                and self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
             ]
 
         before_cursor, after_cursor = extract_asset_events_cursor(
@@ -166,7 +167,11 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_run_ids = set()
         for run_id, records in self._logs.items():
             for record in records:
-                if record.is_dagster_event and record.dagster_event.asset_key == asset_key:
+                if (
+                    record.is_dagster_event
+                    and record.dagster_event.asset_key == asset_key
+                    and self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
+                ):
                     asset_run_ids.add(run_id)
                     break
 
@@ -175,6 +180,8 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self._wiped_asset_keys[asset_key] = time.time()
+        if asset_key in self._asset_tags:
+            del self._asset_tags[asset_key]
 
     def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
         return {asset_key: tags for asset_key, tags in self._asset_tags.items()}

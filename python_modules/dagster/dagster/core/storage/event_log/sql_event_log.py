@@ -2,6 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
+from typing import Optional
 
 import pendulum
 import sqlalchemy as db
@@ -543,7 +544,7 @@ class SqlEventLogStorage(EventLogStorage):
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
         query = (
-            db.select([1])
+            db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
             .where(
                 db.or_(
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
@@ -554,9 +555,31 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
+            row = conn.execute(query).fetchone()
+            if not row:
+                return False
 
-        return len(results) > 0
+            asset_details: Optional[AssetDetails] = AssetDetails.from_db_string(row[1])
+            if not asset_details or not asset_details.last_wipe_timestamp:
+                return True
+
+            materialization_row = conn.execute(
+                db.select([SqlEventLogStorageTable.c.timestamp])
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                    )
+                )
+                .order_by(SqlEventLogStorageTable.c.timestamp.desc())
+                .limit(1)
+            ).fetchone()
+            if not materialization_row:
+                return False
+
+            return utc_datetime_from_naive(materialization_row[0]) > utc_datetime_from_timestamp(
+                asset_details.last_wipe_timestamp
+            )
 
     def all_asset_keys(self):
         with self.index_connection() as conn:
@@ -569,7 +592,7 @@ class SqlEventLogStorage(EventLogStorage):
             wiped_timestamps = {}
             for result in results:
                 asset_key = AssetKey.from_db_string(result[0])
-                asset_details = AssetDetails.from_db_string(result[1])
+                asset_details: Optional[AssetDetails] = AssetDetails.from_db_string(result[1])
                 asset_keys.add(asset_key)
                 if asset_details and asset_details.last_wipe_timestamp:
                     wiped_timestamps[asset_key] = asset_details.last_wipe_timestamp
@@ -613,6 +636,28 @@ class SqlEventLogStorage(EventLogStorage):
 
         return list(asset_keys.difference(wiped))
 
+    def _get_asset_details(self, asset_key):
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        row = None
+        with self.index_connection() as conn:
+            row = conn.execute(
+                db.select([AssetKeyTable.c.asset_details]).where(
+                    AssetKeyTable.c.asset_key == asset_key.to_string()
+                )
+            ).fetchone()
+            if not row or not row[0]:
+                return None
+            return deserialize_json_to_dagster_namedtuple(row[0])
+
+    def _add_asset_wipe_filter_to_query(self, query, asset_details):
+        if not asset_details or not asset_details.last_wipe_timestamp:
+            return query
+
+        return query.where(
+            SqlEventLogStorageTable.c.timestamp
+            > utc_datetime_from_timestamp(asset_details.last_wipe_timestamp)
+        )
+
     def get_asset_events(
         self,
         asset_key,
@@ -634,6 +679,9 @@ class SqlEventLogStorage(EventLogStorage):
         )
         if partitions:
             query = query.where(SqlEventLogStorageTable.c.partition.in_(partitions))
+
+        asset_details = self._get_asset_details(asset_key)
+        query = self._add_asset_wipe_filter_to_query(query, asset_details)
 
         before_cursor, after_cursor = extract_asset_events_cursor(
             cursor, before_cursor, after_cursor, ascending
@@ -683,6 +731,9 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
 
+        asset_details = self._get_asset_details(asset_key)
+        query = self._add_asset_wipe_filter_to_query(query, asset_details)
+
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
@@ -728,8 +779,10 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
                 .values(
+                    last_materialization=None,
+                    last_run_id=None,
                     asset_details=serialize_dagster_namedtuple(
                         AssetDetails(last_wipe_timestamp=pendulum.now("UTC").timestamp())
-                    )
+                    ),
                 )
             )

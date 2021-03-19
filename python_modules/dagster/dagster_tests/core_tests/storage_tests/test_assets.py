@@ -307,22 +307,34 @@ def test_asset_wipe(asset_aware_context):
     with asset_aware_context() as ctx:
         instance, event_log_storage = ctx
         one = execute_pipeline(pipeline_one, instance=instance)
-        execute_pipeline(pipeline_two, instance=instance)
+        two = execute_pipeline(pipeline_two, instance=instance)
         asset_keys = event_log_storage.all_asset_keys()
         assert len(asset_keys) == 3
+        assert event_log_storage.has_asset_key(AssetKey("asset_1"))
+        asset_events = event_log_storage.get_asset_events(AssetKey("asset_1"))
+        assert len(asset_events) == 2
+        asset_run_ids = event_log_storage.get_asset_run_ids(AssetKey("asset_1"))
+        assert set(asset_run_ids) == set([one.run_id, two.run_id])
+
         log_count = len(event_log_storage.get_logs_for_run(one.run_id))
         instance.wipe_assets(asset_keys)
         asset_keys = event_log_storage.all_asset_keys()
         assert len(asset_keys) == 0
+        assert not event_log_storage.has_asset_key(AssetKey("asset_1"))
+        asset_events = event_log_storage.get_asset_events(AssetKey("asset_1"))
+        assert len(asset_events) == 0
+        asset_run_ids = event_log_storage.get_asset_run_ids(AssetKey("asset_1"))
+        assert set(asset_run_ids) == set()
         assert log_count == len(event_log_storage.get_logs_for_run(one.run_id))
 
-        execute_pipeline(pipeline_one, instance=instance)
-        execute_pipeline(pipeline_two, instance=instance)
+        one_again = execute_pipeline(pipeline_one, instance=instance)
         asset_keys = event_log_storage.all_asset_keys()
-        assert len(asset_keys) == 3
-        instance.wipe_assets([AssetKey(["path", "to", "asset_3"])])
-        asset_keys = event_log_storage.all_asset_keys()
-        assert len(asset_keys) == 2
+        assert len(asset_keys) == 1
+        assert event_log_storage.has_asset_key(AssetKey("asset_1"))
+        asset_events = event_log_storage.get_asset_events(AssetKey("asset_1"))
+        assert len(asset_events) == 1
+        asset_run_ids = event_log_storage.get_asset_run_ids(AssetKey("asset_1"))
+        assert set(asset_run_ids) == set([one_again.run_id])
 
 
 @asset_test
