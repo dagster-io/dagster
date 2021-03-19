@@ -21,6 +21,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster.core.events.log import EventRecord, construct_event_logger
@@ -1060,3 +1061,17 @@ def test_resource_run_info_exists_during_execution():
         return 1
 
     assert_pipeline_runs_with_resource(resource_checks_run_info, {}, 1)
+
+
+def test_resource_needs_resource():
+    @resource(required_resource_keys={"bar_resource"})
+    def foo_resource(init_context):
+        return init_context.resources.bar_resource + "foo"
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="is required by resource"):
+
+        @pipeline(
+            mode_defs=[ModeDefinition(resource_defs={"foo_resource": foo_resource})],
+        )
+        def _fail():
+            pass

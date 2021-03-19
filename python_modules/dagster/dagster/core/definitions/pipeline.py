@@ -643,6 +643,14 @@ def _validate_resource_dependencies(
                         )
                     )
 
+        for resource_key, resource in mode_def.resource_defs.items():
+            for required_resource in resource.required_resource_keys:
+                if required_resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        f'Resource "{required_resource}" is required by resource at key "{resource_key}", '
+                        f'but is not provided by mode "{mode_def.name}"'
+                    )
+
 
 def _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict):
     for dagster_type in dagster_type_dict.values():
