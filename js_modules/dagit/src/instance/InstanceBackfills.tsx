@@ -66,21 +66,9 @@ export const InstanceBackfills = ({queryData}: {queryData: QueryResult<InstanceH
         if (!partitionBackfillsOrError.results.length) {
           return (
             <NonIdealState
-              icon="automatic-updates"
-              title="No sensors found"
-              description={
-                <p>
-                  This instance does not have any sensors defined. Visit the{' '}
-                  <a
-                    href="https://docs.dagster.io/overview/schedules-sensors/sensors"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    sensor documentation
-                  </a>{' '}
-                  for more information about setting up sensors in Dagster.
-                </p>
-              }
+              icon="multi-select"
+              title="No backfills found"
+              description={<p>This instance does not have any backfill jobs.</p>}
             />
           );
         }
