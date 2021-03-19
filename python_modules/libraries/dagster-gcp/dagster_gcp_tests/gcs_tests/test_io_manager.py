@@ -9,12 +9,14 @@ from dagster import (
     PipelineRun,
     lambda_solid,
     pipeline,
+    solid,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.api import create_execution_plan, execute_pipeline, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.utils import make_new_run_id
+from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage
@@ -133,3 +135,27 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
     assert get_step_output(add_one_step_events, "add_one")
     assert io_manager.load_input(context) == 2
+
+
+def test_dynamic(gcs_bucket):
+    @solid(output_defs=[DynamicOutputDefinition()])
+    def numbers(_):
+        for i in range(3):
+            yield DynamicOutput(i, mapping_key=str(i))
+
+    @solid
+    def echo(_, x):
+        return x
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource})
+        ]
+    )
+    def dynamic():
+        numbers().map(echo)
+
+    result = execute_pipeline(
+        dynamic, run_config={"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket}}}}
+    )
+    assert result.success
