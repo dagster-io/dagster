@@ -45,7 +45,7 @@ def test_queue_from_schedule_and_sensor(tmpdir, foo_example_repo):
         instance.start_schedule_and_update_storage_state(external_schedule)
         instance.start_sensor(external_sensor)
 
-        with start_daemon(timeout=90):
+        with start_daemon(timeout=180):
             run = create_run(instance, foo_pipeline_handle)
             with external_pipeline_from_run(run) as external_pipeline:
                 instance.submit_run(run.run_id, external_pipeline)
