@@ -2,12 +2,13 @@ import {gql, useMutation} from '@apollo/client';
 import {Button, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
-import {ReconcileSchedulerState} from 'src/schedules/types/ReconcileSchedulerState';
-import {JobType} from 'src/types/globalTypes';
-import {Spinner} from 'src/ui/Spinner';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+import {JobType} from '../types/globalTypes';
+import {Spinner} from '../ui/Spinner';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
+import {ReconcileSchedulerState} from './types/ReconcileSchedulerState';
 
 export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);

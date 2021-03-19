@@ -2,16 +2,17 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {assertUnreachable} from 'src/app/Util';
-import {StatusTable} from 'src/jobs/JobUtils';
+import {assertUnreachable} from '../app/Util';
+import {StatusTable} from '../jobs/JobUtils';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 import {
   ScheduleFragment,
   ScheduleFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results,
-} from 'src/schedules/types/ScheduleFragment';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './types/ScheduleFragment';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 

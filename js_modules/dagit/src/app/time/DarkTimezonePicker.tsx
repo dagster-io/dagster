@@ -1,8 +1,8 @@
 import {Button} from '@blueprintjs/core';
 import React from 'react';
 
-import {TimezoneSelect} from 'src/app/time/TimezoneSelect';
-import {automaticLabel} from 'src/app/time/browserTimezone';
+import {TimezoneSelect} from './TimezoneSelect';
+import {automaticLabel} from './browserTimezone';
 
 export const DarkTimezonePicker: React.FC = () => {
   const trigger = React.useCallback(

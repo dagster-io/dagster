@@ -3,20 +3,21 @@ import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {useConfirmation} from 'src/app/CustomConfirmationProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {errorStackToYamlPath} from 'src/configeditor/ConfigEditorUtils';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
-} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
+} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {ButtonLink} from '../ui/ButtonLink';
+import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
-} from 'src/execute/types/RunPreviewValidationFragment';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
+} from './types/RunPreviewValidationFragment';
 
 type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;

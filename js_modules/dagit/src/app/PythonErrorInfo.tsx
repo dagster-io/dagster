@@ -3,11 +3,12 @@ import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
-import {MetadataEntries} from 'src/runs/MetadataEntry';
-import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
-import {ErrorSource} from 'src/types/globalTypes';
-import {FontFamily} from 'src/ui/styles';
+import {MetadataEntries} from '../runs/MetadataEntry';
+import {MetadataEntryFragment} from '../runs/types/MetadataEntryFragment';
+import {ErrorSource} from '../types/globalTypes';
+import {FontFamily} from '../ui/styles';
+
+import {PythonErrorFragment} from './types/PythonErrorFragment';
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;

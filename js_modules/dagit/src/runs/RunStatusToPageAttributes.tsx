@@ -1,8 +1,9 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {RunStatusPipelineRunFragment} from 'src/runs/types/RunStatusPipelineRunFragment';
-import {PipelineRunStatus} from 'src/types/globalTypes';
+import {PipelineRunStatus} from '../types/globalTypes';
+
+import {RunStatusPipelineRunFragment} from './types/RunStatusPipelineRunFragment';
 
 const link = (document.querySelector("link[rel*='icon']") ||
   document.createElement('link')) as HTMLLinkElement;

@@ -4,16 +4,14 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PipelineExplorerPath} from 'src/pipelines/PipelinePathUtils';
-import {
-  SidebarPipelineInfo,
-  SIDEBAR_PIPELINE_INFO_FRAGMENT,
-} from 'src/pipelines/SidebarPipelineInfo';
-import {SidebarSolidContainer} from 'src/pipelines/SidebarSolidContainer';
-import {SidebarTabbedContainerPipelineFragment} from 'src/pipelines/types/SidebarTabbedContainerPipelineFragment';
-import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
-import {TypeExplorerContainer} from 'src/typeexplorer/TypeExplorerContainer';
-import {TypeListContainer} from 'src/typeexplorer/TypeListContainer';
+import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
+import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+
+import {PipelineExplorerPath} from './PipelinePathUtils';
+import {SidebarPipelineInfo, SIDEBAR_PIPELINE_INFO_FRAGMENT} from './SidebarPipelineInfo';
+import {SidebarSolidContainer} from './SidebarSolidContainer';
+import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
 
 interface ISidebarTabbedContainerProps {
   types?: string;

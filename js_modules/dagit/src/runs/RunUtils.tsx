@@ -4,21 +4,22 @@ import qs from 'query-string';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {APP_PATH_PREFIX} from 'src/app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {Timestamp} from 'src/app/time/Timestamp';
-import {DagsterTag} from 'src/runs/RunTag';
-import {StepSelection} from 'src/runs/StepSelection';
-import {TimeElapsed} from 'src/runs/TimeElapsed';
-import {LaunchPipelineExecution} from 'src/runs/types/LaunchPipelineExecution';
-import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
-import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
-import {RunFragment} from 'src/runs/types/RunFragment';
-import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
-import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
-import {ExecutionParams, PipelineRunStatus} from 'src/types/globalTypes';
-import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/workspace/RepositoryInformation';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {APP_PATH_PREFIX} from '../app/DomUtils';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {Timestamp} from '../app/time/Timestamp';
+import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
+import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
+
+import {DagsterTag} from './RunTag';
+import {StepSelection} from './StepSelection';
+import {TimeElapsed} from './TimeElapsed';
+import {LaunchPipelineExecution} from './types/LaunchPipelineExecution';
+import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
+import {RunActionMenuFragment} from './types/RunActionMenuFragment';
+import {RunFragment} from './types/RunFragment';
+import {RunTableRunFragment} from './types/RunTableRunFragment';
+import {RunTimeFragment} from './types/RunTimeFragment';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();

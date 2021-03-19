@@ -3,11 +3,11 @@ import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Body, Code, Heading, Subheading} from 'src/ui/Text';
-import {AlignItems, FlexWrap, Spacing} from 'src/ui/types';
+import {Box} from './Box';
+import {ButtonLink} from './ButtonLink';
+import {Group} from './Group';
+import {Body, Code, Heading, Subheading} from './Text';
+import {AlignItems, FlexWrap, Spacing} from './types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

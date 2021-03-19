@@ -4,20 +4,21 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
-import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
-import {canceledStatuses, queuedStatuses} from 'src/runs/RunStatuses';
-import {RunTags} from 'src/runs/RunTags';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from 'src/runs/RunUtils';
-import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Table} from 'src/ui/Table';
-import {TokenizingFieldValue} from 'src/ui/TokenizingField';
-import {FontFamily} from 'src/ui/styles';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Table} from '../ui/Table';
+import {TokenizingFieldValue} from '../ui/TokenizingField';
+import {FontFamily} from '../ui/styles';
+
+import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
+import {RunStatusTagWithStats} from './RunStatusTag';
+import {canceledStatuses, queuedStatuses} from './RunStatuses';
+import {RunTags} from './RunTags';
+import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];

@@ -3,11 +3,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {titleOfIO} from 'src/app/Util';
-import {SectionHeader} from 'src/pipelines/SidebarComponents';
-import {SolidColumn} from 'src/runs/LogsRowComponents';
-import {Code} from 'src/ui/Text';
-import {FontFamily} from 'src/ui/styles';
+import {titleOfIO} from '../app/Util';
+import {SolidColumn} from '../runs/LogsRowComponents';
+import {Code} from '../ui/Text';
+import {FontFamily} from '../ui/styles';
+
+import {SectionHeader} from './SidebarComponents';
 
 type SolidLinkInfo = {
   solid: {name: string};

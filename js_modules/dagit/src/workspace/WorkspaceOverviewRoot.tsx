@@ -2,14 +2,15 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Group} from 'src/ui/Group';
-import {LoadingSpinner} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Table} from 'src/ui/Table';
-import {Heading} from 'src/ui/Text';
-import {useRepositoryOptions} from 'src/workspace/WorkspaceContext';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {Group} from '../ui/Group';
+import {LoadingSpinner} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Table} from '../ui/Table';
+import {Heading} from '../ui/Text';
+
+import {useRepositoryOptions} from './WorkspaceContext';
+import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();

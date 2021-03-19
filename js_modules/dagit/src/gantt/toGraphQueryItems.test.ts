@@ -1,5 +1,6 @@
-import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
-import {StepKind} from 'src/types/globalTypes';
+import {StepKind} from '../types/globalTypes';
+
+import {toGraphQueryItems} from './toGraphQueryItems';
 
 describe('toGraphQueryItems', () => {
   it('basic conversion', () => {

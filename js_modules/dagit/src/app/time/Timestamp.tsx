@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import {TimeFormat} from 'src/app/time/TimestampFormat';
-import {TimezoneContext} from 'src/app/time/TimezoneContext';
-import {timestampToString} from 'src/app/time/timestampToString';
+import {TimeFormat} from './TimestampFormat';
+import {TimezoneContext} from './TimezoneContext';
+import {timestampToString} from './timestampToString';
 
 interface Props {
   timestamp: {ms: number} | {unix: number};

@@ -3,13 +3,11 @@ import {Code, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {breakOnUnderscores} from 'src/app/Util';
-import {SolidTypeSignatureFragment} from 'src/solids/types/SolidTypeSignatureFragment';
-import {
-  DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT,
-  TypeWithTooltip,
-} from 'src/typeexplorer/TypeWithTooltip';
-import {FontFamily} from 'src/ui/styles';
+import {breakOnUnderscores} from '../app/Util';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {FontFamily} from '../ui/styles';
+
+import {SolidTypeSignatureFragment} from './types/SolidTypeSignatureFragment';
 
 interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;

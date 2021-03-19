@@ -2,7 +2,7 @@ import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
+import {useQueryPersistedState} from '../useQueryPersistedState';
 
 const Test: React.FunctionComponent<{options: Parameters<typeof useQueryPersistedState>[0]}> = ({
   options,

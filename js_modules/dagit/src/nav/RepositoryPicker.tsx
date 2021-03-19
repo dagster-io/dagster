@@ -3,11 +3,12 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
-import {Box} from 'src/ui/Box';
-import {Spinner} from 'src/ui/Spinner';
-import {RepositoryInformation} from 'src/workspace/RepositoryInformation';
-import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
+import {Box} from '../ui/Box';
+import {Spinner} from '../ui/Spinner';
+import {RepositoryInformation} from '../workspace/RepositoryInformation';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
 interface RepositoryPickerProps {
   loading: boolean;

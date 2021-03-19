@@ -2,12 +2,13 @@ import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {JOB_STATE_FRAGMENT} from 'src/jobs/JobUtils';
-import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
-import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
-import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
+
+import {SCHEDULER_FRAGMENT} from './SchedulerInfo';
+import {SchedulerFragment} from './types/SchedulerFragment';
 
 export const SCHEDULE_FRAGMENT = gql`
   fragment ScheduleFragment on Schedule {

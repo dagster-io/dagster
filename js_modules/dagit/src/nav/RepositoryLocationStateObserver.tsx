@@ -3,13 +3,14 @@ import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
-import {DirectGraphQLSubscription} from 'src/app/DirectGraphQLSubscription';
-import {LocationStateChangeSubscription} from 'src/nav/types/LocationStateChangeSubscription';
-import {LocationStateChangeEventType} from 'src/types/globalTypes';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Caption} from 'src/ui/Text';
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
+import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
+import {LocationStateChangeEventType} from '../types/globalTypes';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {Caption} from '../ui/Text';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
+
+import {LocationStateChangeSubscription} from './types/LocationStateChangeSubscription';
 
 const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   subscription LocationStateChangeSubscription {

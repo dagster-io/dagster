@@ -1,5 +1,6 @@
-import {ConfigEditorRunConfigSchemaFragment_allConfigTypes} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {createTypeLookup, scaffoldType} from 'src/execute/scaffoldType';
+import {ConfigEditorRunConfigSchemaFragment_allConfigTypes} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+
+import {createTypeLookup, scaffoldType} from './scaffoldType';
 
 // prettier-ignore
 const allConfigTypes: ConfigEditorRunConfigSchemaFragment_allConfigTypes[] = [

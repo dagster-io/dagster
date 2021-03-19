@@ -2,20 +2,21 @@ import {Button, IconName, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {SharedToaster} from 'src/app/DomUtils';
-import {filterByQuery} from 'src/app/GraphQueryImpl';
-import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
-import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
-import {IStepState} from 'src/runs/RunMetadataProvider';
-import {doneStatuses} from 'src/runs/RunStatuses';
-import {ReExecutionStyle} from 'src/runs/RunUtils';
-import {StepSelection} from 'src/runs/StepSelection';
-import {TerminationDialog, TerminationState} from 'src/runs/TerminationDialog';
-import {RunFragment} from 'src/runs/types/RunFragment';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
+import {SharedToaster} from '../app/DomUtils';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
+import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+
+import {IStepState} from './RunMetadataProvider';
+import {doneStatuses} from './RunStatuses';
+import {ReExecutionStyle} from './RunUtils';
+import {StepSelection} from './StepSelection';
+import {TerminationDialog, TerminationState} from './TerminationDialog';
+import {RunFragment} from './types/RunFragment';
 
 // Descriptions of re-execute options
 export const REEXECUTE_PIPELINE_UNKNOWN =

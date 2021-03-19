@@ -43,7 +43,7 @@ module.exports = {
     'no-restricted-imports': [
       'error',
       {
-        patterns: ['./*', '../*', '!styled-components/macro'],
+        patterns: ['!styled-components/macro'],
         paths: [
           {
             name: '@blueprintjs/core',

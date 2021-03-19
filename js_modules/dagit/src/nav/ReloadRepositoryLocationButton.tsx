@@ -2,14 +2,15 @@ import {gql, useApolloClient, useMutation} from '@apollo/client';
 import {Button, Icon, Intent, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SharedToaster} from 'src/app/DomUtils';
-import {useInvalidateConfigsForRepo} from 'src/app/LocalStorage';
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
+import {SharedToaster} from '../app/DomUtils';
+import {useInvalidateConfigsForRepo} from '../app/LocalStorage';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {Spinner} from '../ui/Spinner';
+
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
-} from 'src/nav/types/ReloadRepositoryLocationMutation';
-import {Spinner} from 'src/ui/Spinner';
+} from './types/ReloadRepositoryLocationMutation';
 
 type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
 type OnReload = (location: string, result: ReloadResult) => void;

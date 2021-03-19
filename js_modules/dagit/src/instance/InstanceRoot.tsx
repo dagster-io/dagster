@@ -1,13 +1,14 @@
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
-import {AssetEntryRoot} from 'src/assets/AssetEntryRoot';
-import {AssetsCatalogRoot} from 'src/assets/AssetsCatalogRoot';
-import {InstanceStatusRoot} from 'src/instance/InstanceStatusRoot';
-import {RunRoot} from 'src/runs/RunRoot';
-import {RunsRoot} from 'src/runs/RunsRoot';
-import {SnapshotRoot} from 'src/snapshots/SnapshotRoot';
-import {MainContent} from 'src/ui/MainContent';
+import {AssetEntryRoot} from '../assets/AssetEntryRoot';
+import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
+import {RunRoot} from '../runs/RunRoot';
+import {RunsRoot} from '../runs/RunsRoot';
+import {SnapshotRoot} from '../snapshots/SnapshotRoot';
+import {MainContent} from '../ui/MainContent';
+
+import {InstanceStatusRoot} from './InstanceStatusRoot';
 
 export const InstanceRoot = () => {
   return (

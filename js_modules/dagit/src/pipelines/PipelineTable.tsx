@@ -4,14 +4,15 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PipelineTableFragment} from 'src/pipelines/types/PipelineTableFragment';
-import {RunStatusWithStats} from 'src/runs/RunStatusDots';
-import {Group} from 'src/ui/Group';
-import {Table} from 'src/ui/Table';
-import {Caption} from 'src/ui/Text';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {Group} from '../ui/Group';
+import {Table} from '../ui/Table';
+import {Caption} from '../ui/Text';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {PipelineTableFragment} from './types/PipelineTableFragment';
 
 export type PipelineForTable = {pipeline: PipelineTableFragment; repoAddress: RepoAddress};
 

@@ -2,11 +2,12 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {TimezoneContext} from 'src/app/time/TimezoneContext';
-import {browserTimezone} from 'src/app/time/browserTimezone';
-import {LogLevel} from 'src/runs/LogLevel';
-import {ColumnWidthsContext} from 'src/runs/LogsScrollingTableHeader';
-import {FontFamily} from 'src/ui/styles';
+import {TimezoneContext} from '../app/time/TimezoneContext';
+import {browserTimezone} from '../app/time/browserTimezone';
+import {FontFamily} from '../ui/styles';
+
+import {LogLevel} from './LogLevel';
+import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({

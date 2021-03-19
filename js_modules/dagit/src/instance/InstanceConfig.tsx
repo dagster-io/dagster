@@ -4,12 +4,13 @@ import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
-import {InstanceConfigQuery} from 'src/instance/types/InstanceConfigQuery';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
-import {Spinner} from 'src/ui/Spinner';
-import {Subheading} from 'src/ui/Text';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {Spinner} from '../ui/Spinner';
+import {Subheading} from '../ui/Text';
+
+import {InstanceConfigQuery} from './types/InstanceConfigQuery';
 
 const YamlShimStyle = createGlobalStyle`
   .hljs.yaml {

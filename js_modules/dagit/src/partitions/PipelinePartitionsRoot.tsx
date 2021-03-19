@@ -4,19 +4,20 @@ import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {PartitionView} from 'src/partitions/PartitionView';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {Box} from '../ui/Box';
+import {Loading} from '../ui/Loading';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {PartitionView} from './PartitionView';
 import {
   PipelinePartitionsRootQuery,
   PipelinePartitionsRootQueryVariables,
-} from 'src/partitions/types/PipelinePartitionsRootQuery';
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {Box} from 'src/ui/Box';
-import {Loading} from 'src/ui/Loading';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './types/PipelinePartitionsRootQuery';
 
 interface Props {
   pipelinePath: string;

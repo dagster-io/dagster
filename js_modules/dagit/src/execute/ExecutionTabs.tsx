@@ -3,14 +3,14 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useConfirmation} from 'src/app/CustomConfirmationProvider';
+import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
   IStorageData,
   applyChangesToSession,
   applyCreateSession,
   applyRemoveSession,
   applySelectSession,
-} from 'src/app/LocalStorage';
+} from '../app/LocalStorage';
 
 interface ExecutationTabProps {
   canRemove?: boolean;

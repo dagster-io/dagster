@@ -1,18 +1,19 @@
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {InstanceHealthFragment} from 'src/instance/types/InstanceHealthFragment';
-import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
-import {SensorInfo} from 'src/sensors/SensorInfo';
-import {SensorsTable} from 'src/sensors/SensorsTable';
-import {AllSensorsRepositoriesFragment} from 'src/sensors/types/AllSensorsRepositoriesFragment';
-import {AllSensorsUnloadablesFragment} from 'src/sensors/types/AllSensorsUnloadablesFragment';
-import {JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Subheading} from 'src/ui/Text';
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {InstanceHealthFragment} from '../instance/types/InstanceHealthFragment';
+import {UnloadableSensors} from '../jobs/UnloadableJobs';
+import {JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Subheading} from '../ui/Text';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
+import {SensorInfo} from './SensorInfo';
+import {SensorsTable} from './SensorsTable';
+import {AllSensorsRepositoriesFragment} from './types/AllSensorsRepositoriesFragment';
+import {AllSensorsUnloadablesFragment} from './types/AllSensorsUnloadablesFragment';
 
 interface Props {
   instance: InstanceHealthFragment;

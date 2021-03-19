@@ -2,9 +2,9 @@ import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {useSuggestionsForString} from 'src/ui/useSuggestionsForString';
+import {ButtonLink} from './ButtonLink';
+import {Group} from './Group';
+import {useSuggestionsForString} from './useSuggestionsForString';
 
 // eslint-disable-next-line import/no-default-export
 export default {

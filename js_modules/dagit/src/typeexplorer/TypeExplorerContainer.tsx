@@ -1,14 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PipelineExplorerPath} from 'src/pipelines/PipelinePathUtils';
-import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from 'src/typeexplorer/TypeExplorer';
+import {PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
+import {Loading} from '../ui/Loading';
+import {usePipelineSelector} from '../workspace/WorkspaceContext';
+
+import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from './TypeExplorer';
 import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables,
-} from 'src/typeexplorer/types/TypeExplorerContainerQuery';
-import {Loading} from 'src/ui/Loading';
-import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
+} from './types/TypeExplorerContainerQuery';
 
 interface ITypeExplorerContainerProps {
   explorerPath: PipelineExplorerPath;

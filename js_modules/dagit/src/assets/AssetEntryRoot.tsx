@@ -5,16 +5,17 @@ import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {featureEnabled, FeatureFlag} from 'src/app/Util';
-import {AssetView} from 'src/assets/AssetView';
-import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
-import {AssetEntryRootQuery} from 'src/assets/types/AssetEntryRootQuery';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
+import {featureEnabled, FeatureFlag} from '../app/Util';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+
+import {AssetView} from './AssetView';
+import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
 
 export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
   const currentPath: string[] = (match.params['0'] || '')

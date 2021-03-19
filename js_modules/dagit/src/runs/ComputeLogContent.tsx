@@ -5,12 +5,13 @@ import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
-import {ROOT_SERVER_URI} from 'src/app/DomUtils';
-import {ExecutionStateDot} from 'src/runs/ExecutionStateDot';
-import {IStepState} from 'src/runs/RunMetadataProvider';
-import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
-import {Spinner} from 'src/ui/Spinner';
-import {FontFamily} from 'src/ui/styles';
+import {ROOT_SERVER_URI} from '../app/DomUtils';
+import {Spinner} from '../ui/Spinner';
+import {FontFamily} from '../ui/styles';
+
+import {ExecutionStateDot} from './ExecutionStateDot';
+import {IStepState} from './RunMetadataProvider';
+import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 
 interface IComputeLogContentProps {
   runState: IStepState;

@@ -3,10 +3,11 @@ import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {InstanceWarningQuery} from 'src/nav/types/InstanceWarningQuery';
-import {Group} from 'src/ui/Group';
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {Group} from '../ui/Group';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
+
+import {InstanceWarningQuery} from './types/InstanceWarningQuery';
 
 export const InstanceWarningIcon = React.memo(() => {
   const {locations} = React.useContext(WorkspaceContext);

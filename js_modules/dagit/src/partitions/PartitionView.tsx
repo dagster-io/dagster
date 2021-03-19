@@ -3,19 +3,20 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {PartitionGraphSet} from 'src/partitions/PartitionGraphSet';
-import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelector';
-import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
-import {PartitionSetSelector} from 'src/partitions/PartitionSetSelector';
-import {PartitionsBackfillPartitionSelector} from 'src/partitions/PartitionsBackfill';
-import {RunTagsSupportedTokens} from 'src/partitions/RunTagsTokenizingField';
-import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from 'src/partitions/types/PipelinePartitionsRootQuery';
-import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
-import {useQueryPersistedRunFilters} from 'src/runs/RunsFilter';
-import {CursorHistoryControls} from 'src/ui/CursorControls';
-import {Spinner} from 'src/ui/Spinner';
-import {RepoAddress} from 'src/workspace/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
+import {CursorHistoryControls} from '../ui/CursorControls';
+import {Spinner} from '../ui/Spinner';
+import {RepoAddress} from '../workspace/types';
+
+import {PartitionGraphSet} from './PartitionGraphSet';
+import {PartitionPageSizeSelector} from './PartitionPageSizeSelector';
+import {PartitionRunMatrix} from './PartitionRunMatrix';
+import {PartitionSetSelector} from './PartitionSetSelector';
+import {PartitionsBackfillPartitionSelector} from './PartitionsBackfill';
+import {RunTagsSupportedTokens} from './RunTagsTokenizingField';
+import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
+import {useChunkedPartitionsQuery} from './useChunkedPartitionsQuery';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 

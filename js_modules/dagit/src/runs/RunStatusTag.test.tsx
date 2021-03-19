@@ -1,8 +1,9 @@
 import {render, screen} from '@testing-library/react';
 import React from 'react';
 
-import {RunStatusTag} from 'src/runs/RunStatusTag';
-import {PipelineRunStatus} from 'src/types/globalTypes';
+import {PipelineRunStatus} from '../types/globalTypes';
+
+import {RunStatusTag} from './RunStatusTag';
 
 describe('RunStatusTag', () => {
   describe('Status type', () => {

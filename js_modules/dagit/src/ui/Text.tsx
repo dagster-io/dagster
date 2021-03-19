@@ -1,7 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
-import {FontFamily} from 'src/ui/styles';
+import {FontFamily} from './styles';
 
 interface TextProps {
   color?: string;

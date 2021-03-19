@@ -1,7 +1,7 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage} from 'src/assets/types/AssetQuery';
+import {AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage} from './types/AssetQuery';
 
 export const AssetLineageInfoElement: React.FunctionComponent<{
   lineage_info: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage;

@@ -1,14 +1,15 @@
 import {Button, Classes, Colors, Dialog, NonIdealState, Tag} from '@blueprintjs/core';
 import React from 'react';
 
-import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {Table} from 'src/ui/Table';
-import {Trace} from 'src/ui/Trace';
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RootRepositoriesQuery';
+import {useRepositoryLocationReload} from '../nav/ReloadRepositoryLocationButton';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+import {Table} from '../ui/Table';
+import {Trace} from '../ui/Trace';
+
+import {WorkspaceContext} from './WorkspaceContext';
+import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from './types/RootRepositoriesQuery';
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
   props,

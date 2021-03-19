@@ -4,17 +4,18 @@ import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {STEP_STATUS_COLORS} from 'src/partitions/RunMatrixUtils';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {DagsterTag} from '../runs/RunTag';
+import {openRunInBrowser} from '../runs/RunUtils';
+import {StepEventStatus} from '../types/globalTypes';
+import {Spinner} from '../ui/Spinner';
+
+import {STEP_STATUS_COLORS} from './RunMatrixUtils';
 import {
   PartitionRunListForStepQuery,
   PartitionRunListForStepQueryVariables,
-} from 'src/partitions/types/PartitionRunListForStepQuery';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
-import {DagsterTag} from 'src/runs/RunTag';
-import {openRunInBrowser} from 'src/runs/RunUtils';
-import {StepEventStatus} from 'src/types/globalTypes';
-import {Spinner} from 'src/ui/Spinner';
+} from './types/PartitionRunListForStepQuery';
 
 interface StepStats {
   startTime: number | null;

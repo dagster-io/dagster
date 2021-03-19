@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
 
 export const LoadingOverlay: React.FC<{
   isLoading: boolean;

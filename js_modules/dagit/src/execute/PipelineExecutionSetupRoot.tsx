@@ -2,11 +2,11 @@ import * as querystring from 'query-string';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 
-import {IExecutionSession, applyCreateSession, useStorage} from 'src/app/LocalStorage';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {IExecutionSession, applyCreateSession, useStorage} from '../app/LocalStorage';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   pipelinePath: string;

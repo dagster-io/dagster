@@ -1,8 +1,8 @@
 import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {Alert, Props} from 'src/ui/Alert';
-import {ButtonLink} from 'src/ui/ButtonLink';
+import {Alert, Props} from './Alert';
+import {ButtonLink} from './ButtonLink';
 
 // eslint-disable-next-line import/no-default-export
 export default {

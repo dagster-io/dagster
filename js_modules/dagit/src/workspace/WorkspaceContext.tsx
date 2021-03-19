@@ -2,18 +2,19 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
-import {findRepoContainingPipeline} from 'src/workspace/findRepoContainingPipeline';
-import {RepoAddress} from 'src/workspace/types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+
+import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
+import {buildRepoAddress} from './buildRepoAddress';
+import {findRepoContainingPipeline} from './findRepoContainingPipeline';
+import {RepoAddress} from './types';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoryLocationsOrError_PythonError,
   RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes,
   RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation,
   RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories,
-} from 'src/workspace/types/RootRepositoriesQuery';
+} from './types/RootRepositoriesQuery';
 
 type Repository = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories;
 type RepositoryLocation = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation;

@@ -4,15 +4,16 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
-import {RepoDetails, RepoSelector} from 'src/nav/RepoSelector';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
+import {RepoDetails, RepoSelector} from './RepoSelector';
 
 interface Props {
   allRepos: RepoDetails[];

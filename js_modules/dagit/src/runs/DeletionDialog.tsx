@@ -2,15 +2,16 @@ import {useMutation} from '@apollo/client';
 import {Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {NavigationBlock} from 'src/runs/NavitationBlock';
-import {DELETE_MUTATION} from 'src/runs/RunUtils';
+import {Group} from '../ui/Group';
+import {FontFamily} from '../ui/styles';
+
+import {NavigationBlock} from './NavitationBlock';
+import {DELETE_MUTATION} from './RunUtils';
 import {
   Delete,
   Delete_deletePipelineRun_PipelineRunNotFoundError,
   Delete_deletePipelineRun_PythonError,
-} from 'src/runs/types/Delete';
-import {Group} from 'src/ui/Group';
-import {FontFamily} from 'src/ui/styles';
+} from './types/Delete';
 
 export interface Props {
   isOpen: boolean;

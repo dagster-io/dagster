@@ -4,8 +4,10 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {breakOnUnderscores} from 'src/app/Util';
-import {Description} from 'src/pipelines/Description';
+import {breakOnUnderscores} from '../app/Util';
+import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+
+import {Description} from './Description';
 import {
   SectionHeader,
   SectionInner,
@@ -13,9 +15,8 @@ import {
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from 'src/pipelines/SidebarComponents';
-import {SidebarPipelineInfoFragment} from 'src/pipelines/types/SidebarPipelineInfoFragment';
-import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/typeexplorer/ConfigTypeSchema';
+} from './SidebarComponents';
+import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
 
 const NO_DESCRIPTION = '';
 

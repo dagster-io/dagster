@@ -1,4 +1,4 @@
-import {RepoAddress} from 'src/workspace/types';
+import {RepoAddress} from './types';
 
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;

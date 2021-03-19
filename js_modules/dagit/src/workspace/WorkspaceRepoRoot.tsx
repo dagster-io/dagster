@@ -2,17 +2,18 @@ import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
-import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
-import {SensorsRoot} from 'src/sensors/SensorsRoot';
-import {SolidsRoot} from 'src/solids/SolidsRoot';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
-import {RepositoryPipelinesList} from 'src/workspace/RepositoryPipelinesList';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {SchedulesRoot} from '../schedules/SchedulesRoot';
+import {SensorsRoot} from '../sensors/SensorsRoot';
+import {SolidsRoot} from '../solids/SolidsRoot';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+
+import {RepositoryPipelinesList} from './RepositoryPipelinesList';
+import {repoAddressAsString} from './repoAddressAsString';
+import {RepoAddress} from './types';
+import {workspacePathFromAddress} from './workspacePath';
 
 interface Props {
   tab?: string;

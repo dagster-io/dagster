@@ -4,13 +4,14 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {JobsListQuery} from 'src/nav/types/JobsListQuery';
-import {JobStatus, JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {BorderSetting} from 'src/ui/types';
-import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {JobStatus, JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {BorderSetting} from '../ui/types';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {workspacePath} from '../workspace/workspacePath';
+
+import {JobsListQuery} from './types/JobsListQuery';
 
 type Item = {
   to: string;

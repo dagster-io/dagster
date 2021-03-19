@@ -5,24 +5,25 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {formatElapsedTime} from 'src/app/Util';
-import {Timestamp} from 'src/app/time/Timestamp';
-import {AssetNumericHistoricalData, LABEL_STEP_EXECUTION_TIME} from 'src/assets/AssetView';
-import {Sparkline} from 'src/assets/Sparkline';
-import {
-  AssetQuery_assetOrError_Asset_assetMaterializations,
-  AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
-} from 'src/assets/types/AssetQuery';
-import {useViewport} from 'src/gantt/useViewport';
+import {formatElapsedTime} from '../app/Util';
+import {Timestamp} from '../app/time/Timestamp';
+import {useViewport} from '../gantt/useViewport';
 import {
   GridColumn,
   GridScrollContainer,
   GridFloatingContainer,
   LeftLabel,
-} from 'src/partitions/RunMatrixUtils';
-import {MetadataEntry} from 'src/runs/MetadataEntry';
-import {titleForRun} from 'src/runs/RunUtils';
-import {FontFamily} from 'src/ui/styles';
+} from '../partitions/RunMatrixUtils';
+import {MetadataEntry} from '../runs/MetadataEntry';
+import {titleForRun} from '../runs/RunUtils';
+import {FontFamily} from '../ui/styles';
+
+import {AssetNumericHistoricalData, LABEL_STEP_EXECUTION_TIME} from './AssetView';
+import {Sparkline} from './Sparkline';
+import {
+  AssetQuery_assetOrError_Asset_assetMaterializations,
+  AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
+} from './types/AssetQuery';
 
 const COL_WIDTH = 120;
 

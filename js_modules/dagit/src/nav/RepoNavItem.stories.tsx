@@ -2,11 +2,12 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {RepoNavItem} from 'src/nav/RepoNavItem';
-import {RepoDetails} from 'src/nav/RepoSelector';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {Box} from 'src/ui/Box';
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {Box} from '../ui/Box';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
+import {RepoNavItem} from './RepoNavItem';
+import {RepoDetails} from './RepoSelector';
 
 // eslint-disable-next-line import/no-default-export
 export default {

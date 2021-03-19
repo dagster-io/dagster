@@ -3,15 +3,20 @@ import {Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {breakOnUnderscores} from 'src/app/Util';
-import {Description} from 'src/pipelines/Description';
+import {breakOnUnderscores} from '../app/Util';
+import {pluginForMetadata} from '../plugins';
+import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
+import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+
+import {Description} from './Description';
 import {
   SectionItemContainer,
   SectionSmallHeader,
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from 'src/pipelines/SidebarComponents';
+} from './SidebarComponents';
 import {
   Invocation,
   ResourceContainer,
@@ -21,15 +26,8 @@ import {
   SolidLinks,
   SolidMappingTable,
   TypeWrapper,
-} from 'src/pipelines/SidebarSolidHelpers';
-import {SidebarSolidDefinitionFragment} from 'src/pipelines/types/SidebarSolidDefinitionFragment';
-import {pluginForMetadata} from 'src/plugins';
-import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/solids/SolidTypeSignature';
-import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/typeexplorer/ConfigTypeSchema';
-import {
-  DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT,
-  TypeWithTooltip,
-} from 'src/typeexplorer/TypeWithTooltip';
+} from './SidebarSolidHelpers';
+import {SidebarSolidDefinitionFragment} from './types/SidebarSolidDefinitionFragment';
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;

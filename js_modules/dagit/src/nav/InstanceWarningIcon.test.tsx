@@ -4,9 +4,10 @@ import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {InstanceWarningIcon} from 'src/nav/InstanceWarningIcon';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+
+import {InstanceWarningIcon} from './InstanceWarningIcon';
 
 describe('InstanceWarningIcon', () => {
   const defaultMocks = {

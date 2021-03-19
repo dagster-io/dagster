@@ -2,8 +2,8 @@ import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import * as TestRenderer from 'react-test-renderer';
 
-import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
-import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
+import {ConfigEditorModePicker} from '../execute/ConfigEditorModePicker';
+import {ModeNotFoundError} from '../execute/ModeNotFoundError';
 
 const defaultMode = {
   name: 'default',

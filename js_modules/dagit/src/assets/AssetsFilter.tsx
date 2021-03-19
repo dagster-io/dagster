@@ -4,8 +4,9 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsTableQuery';
-import {useSuggestionsForString} from 'src/ui/useSuggestionsForString';
+import {useSuggestionsForString} from '../ui/useSuggestionsForString';
+
+import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsTableQuery';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 

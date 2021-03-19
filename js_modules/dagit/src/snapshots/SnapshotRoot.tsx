@@ -1,10 +1,11 @@
 import * as React from 'react';
 import {Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {PipelineExplorerSnapshotRoot} from 'src/pipelines/PipelineExplorerRoot';
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {PipelineRunsRoot} from 'src/pipelines/PipelineRunsRoot';
-import {SnapshotNav} from 'src/snapshots/SnapshotNav';
+import {PipelineExplorerSnapshotRoot} from '../pipelines/PipelineExplorerRoot';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {PipelineRunsRoot} from '../pipelines/PipelineRunsRoot';
+
+import {SnapshotNav} from './SnapshotNav';
 
 export const SnapshotRoot: React.FC<RouteComponentProps<{pipelinePath: string; tab?: string}>> = (
   props,

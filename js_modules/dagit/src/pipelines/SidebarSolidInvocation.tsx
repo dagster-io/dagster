@@ -2,16 +2,13 @@ import {gql} from '@apollo/client';
 import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {breakOnUnderscores} from 'src/app/Util';
-import {SidebarSection, SidebarTitle} from 'src/pipelines/SidebarComponents';
-import {
-  DependencyHeaderRow,
-  DependencyRow,
-  DependencyTable,
-} from 'src/pipelines/SidebarSolidHelpers';
-import {SidebarSolidInvocationFragment} from 'src/pipelines/types/SidebarSolidInvocationFragment';
-import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from 'src/typeexplorer/TypeWithTooltip';
+import {breakOnUnderscores} from '../app/Util';
+import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
+
+import {SidebarSection, SidebarTitle} from './SidebarComponents';
+import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarSolidHelpers';
+import {SidebarSolidInvocationFragment} from './types/SidebarSolidInvocationFragment';
 
 interface ISidebarSolidInvocationProps {
   solid: SidebarSolidInvocationFragment;

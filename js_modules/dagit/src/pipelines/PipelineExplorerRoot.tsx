@@ -4,28 +4,29 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Redirect, RouteComponentProps, useHistory} from 'react-router-dom';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Loading} from '../ui/Loading';
+import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 import {
   PipelineExplorer,
   PipelineExplorerOptions,
   PIPELINE_EXPLORER_FRAGMENT,
   PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT,
-} from 'src/pipelines/PipelineExplorer';
+} from './PipelineExplorer';
 import {
   PipelineExplorerPath,
   explorerPathFromString,
   explorerPathToString,
-} from 'src/pipelines/PipelinePathUtils';
+} from './PipelinePathUtils';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot,
-} from 'src/pipelines/types/PipelineExplorerRootQuery';
-import {PipelineExplorerSolidHandleFragment} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
-import {Loading} from 'src/ui/Loading';
-import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './types/PipelineExplorerRootQuery';
+import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],

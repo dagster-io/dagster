@@ -3,9 +3,10 @@ import {render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {LeftNav} from 'src/nav/LeftNav';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+
+import {LeftNav} from './LeftNav';
 
 describe('LeftNav', () => {
   const defaultMocks = {

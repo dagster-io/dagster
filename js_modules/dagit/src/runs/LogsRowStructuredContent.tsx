@@ -1,23 +1,24 @@
 import {Colors, Intent, Tag} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {assertUnreachable} from 'src/app/Util';
-import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
-import {ComputeLogLink} from 'src/runs/ComputeLogModal';
-import {EventTypeColumn} from 'src/runs/LogsRowComponents';
+import {assertUnreachable} from '../app/Util';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {ErrorSource} from '../types/globalTypes';
+
+import {ComputeLogLink} from './ComputeLogModal';
+import {EventTypeColumn} from './LogsRowComponents';
 import {
   LogRowStructuredContentTable,
   MetadataEntries,
   MetadataEntryAction,
   MetadataEntryLink,
-} from 'src/runs/MetadataEntry';
-import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
+} from './MetadataEntry';
+import {IRunMetadataDict} from './RunMetadataProvider';
 import {
   LogsRowStructuredFragment,
   LogsRowStructuredFragment_StepMaterializationEvent_materialization,
-} from 'src/runs/types/LogsRowStructuredFragment';
-import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
-import {ErrorSource} from 'src/types/globalTypes';
+} from './types/LogsRowStructuredFragment';
+import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;

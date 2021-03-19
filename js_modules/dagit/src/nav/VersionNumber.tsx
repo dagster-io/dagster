@@ -3,7 +3,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {VersionNumberQuery} from 'src/nav/types/VersionNumberQuery';
+import {VersionNumberQuery} from './types/VersionNumberQuery';
 
 export const VersionNumber = () => {
   const {data} = useQuery<VersionNumberQuery>(VERSION_NUMBER_QUERY, {

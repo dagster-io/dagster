@@ -3,28 +3,26 @@ import {NonIdealState, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {QueryCountdown} from 'src/app/QueryCountdown';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {
-  PipelineRunsRootQuery,
-  PipelineRunsRootQueryVariables,
-} from 'src/pipelines/types/PipelineRunsRootQuery';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
-import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
+import {QueryCountdown} from '../app/QueryCountdown';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
   RunFilterTokenType,
   RunsFilter,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-} from 'src/runs/RunsFilter';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
-import {Box} from 'src/ui/Box';
-import {CursorPaginationControls} from 'src/ui/CursorControls';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {TokenizingFieldValue} from 'src/ui/TokenizingField';
+} from '../runs/RunsFilter';
+import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {Box} from '../ui/Box';
+import {CursorPaginationControls} from '../ui/CursorControls';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {TokenizingFieldValue} from '../ui/TokenizingField';
+
+import {explorerPathFromString} from './PipelinePathUtils';
+import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];

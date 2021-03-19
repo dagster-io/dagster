@@ -5,46 +5,44 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/app/LocalStorage';
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {ConfigEditor} from 'src/configeditor/ConfigEditor';
-import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PipelineRunTag, IExecutionSession, IStorageData} from '../app/LocalStorage';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {ConfigEditor} from '../configeditor/ConfigEditor';
+import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
 import {
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
-} from 'src/configeditor/ConfigEditorUtils';
-import {isHelpContextEqual} from 'src/configeditor/isHelpContextEqual';
+} from '../configeditor/ConfigEditorUtils';
+import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
+import {DagsterTag} from '../runs/RunTag';
+import {PipelineSelector, RepositorySelector} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {SecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
 import {
   ConfigEditorConfigPicker,
   CONFIG_PARTITION_SELECTION_QUERY,
-} from 'src/execute/ConfigEditorConfigPicker';
-import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
-import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
-import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
-import {LoadingOverlay} from 'src/execute/LoadingOverlay';
-import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from 'src/execute/RunPreview';
-import {SessionSettingsBar} from 'src/execute/SessionSettingsBar';
-import {SolidSelector} from 'src/execute/SolidSelector';
-import {TagContainer, TagEditor} from 'src/execute/TagEditor';
-import {scaffoldPipelineConfig} from 'src/execute/scaffoldType';
-import {ConfigEditorGeneratorPipelineFragment_presets} from 'src/execute/types/ConfigEditorGeneratorPipelineFragment';
-import {ExecutionSessionContainerPartitionSetsFragment} from 'src/execute/types/ExecutionSessionContainerPartitionSetsFragment';
-import {ExecutionSessionContainerPipelineFragment} from 'src/execute/types/ExecutionSessionContainerPipelineFragment';
-import {ExecutionSessionContainerRunConfigSchemaFragment} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
-import {
-  PreviewConfigQuery,
-  PreviewConfigQueryVariables,
-} from 'src/execute/types/PreviewConfigQuery';
-import {DagsterTag} from 'src/runs/RunTag';
-import {PipelineSelector, RepositorySelector} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {SecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from './ConfigEditorConfigPicker';
+import {ConfigEditorHelp} from './ConfigEditorHelp';
+import {ConfigEditorModePicker} from './ConfigEditorModePicker';
+import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {LoadingOverlay} from './LoadingOverlay';
+import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
+import {SessionSettingsBar} from './SessionSettingsBar';
+import {SolidSelector} from './SolidSelector';
+import {TagContainer, TagEditor} from './TagEditor';
+import {scaffoldPipelineConfig} from './scaffoldType';
+import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
+import {ExecutionSessionContainerPartitionSetsFragment} from './types/ExecutionSessionContainerPartitionSetsFragment';
+import {ExecutionSessionContainerPipelineFragment} from './types/ExecutionSessionContainerPipelineFragment';
+import {ExecutionSessionContainerRunConfigSchemaFragment} from './types/ExecutionSessionContainerRunConfigSchemaFragment';
+import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;

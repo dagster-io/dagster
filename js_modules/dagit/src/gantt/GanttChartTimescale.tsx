@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {CSS_DURATION, GanttViewport, LEFT_INSET} from 'src/gantt/Constants';
+import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
 const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
 const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;

@@ -1,7 +1,7 @@
 import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {TimeElapsed, Props} from 'src/runs/TimeElapsed';
+import {TimeElapsed, Props} from './TimeElapsed';
 
 // eslint-disable-next-line import/no-default-export
 export default {

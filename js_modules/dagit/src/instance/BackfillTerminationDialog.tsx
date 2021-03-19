@@ -2,10 +2,11 @@ import {gql, useMutation} from '@apollo/client';
 import {Button, Classes, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from 'src/instance/types/InstanceBackfillsQuery';
-import {doneStatuses} from 'src/runs/RunStatuses';
-import {TerminationDialog} from 'src/runs/TerminationDialog';
-import {BulkActionStatus} from 'src/types/globalTypes';
+import {doneStatuses} from '../runs/RunStatuses';
+import {TerminationDialog} from '../runs/TerminationDialog';
+import {BulkActionStatus} from '../types/globalTypes';
+
+import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 

@@ -3,14 +3,15 @@ import {Tag, Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {explorerPathToString, PipelineExplorerPath} from 'src/pipelines/PipelinePathUtils';
-import {SnapshotQuery} from 'src/snapshots/types/SnapshotQuery';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
-import {FontFamily} from 'src/ui/styles';
-import {useActivePipelineForName} from 'src/workspace/WorkspaceContext';
+import {explorerPathToString, PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+import {FontFamily} from '../ui/styles';
+import {useActivePipelineForName} from '../workspace/WorkspaceContext';
+
+import {SnapshotQuery} from './types/SnapshotQuery';
 
 const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {

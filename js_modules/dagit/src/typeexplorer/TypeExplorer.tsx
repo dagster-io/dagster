@@ -2,15 +2,16 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Description} from 'src/pipelines/Description';
+import {Description} from '../pipelines/Description';
 import {
   SectionInner,
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from 'src/pipelines/SidebarComponents';
-import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from 'src/typeexplorer/ConfigTypeSchema';
-import {TypeExplorerFragment} from 'src/typeexplorer/types/TypeExplorerFragment';
+} from '../pipelines/SidebarComponents';
+
+import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
+import {TypeExplorerFragment} from './types/TypeExplorerFragment';
 
 interface ITypeExplorerProps {
   type: TypeExplorerFragment;

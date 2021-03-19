@@ -4,11 +4,12 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {tabForPipelinePathComponent} from 'src/nav/PipelineNav';
-import {ContentListSolidsQuery} from 'src/nav/types/ContentListSolidsQuery';
-import {Box} from 'src/ui/Box';
-import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {Box} from '../ui/Box';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {workspacePath} from '../workspace/workspacePath';
+
+import {tabForPipelinePathComponent} from './PipelineNav';
+import {ContentListSolidsQuery} from './types/ContentListSolidsQuery';
 
 interface RepositoryContentListProps {
   selector?: string;

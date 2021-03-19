@@ -5,9 +5,17 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ROOT_SERVER_URI} from 'src/app/DomUtils';
-import {GraphQueryItem, filterByQuery} from 'src/app/GraphQueryImpl';
-import {WebsocketStatusContext} from 'src/app/WebsocketStatus';
+import {ROOT_SERVER_URI} from '../app/DomUtils';
+import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {WebsocketStatusContext} from '../app/WebsocketStatus';
+import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
+import {StepSelection} from '../runs/StepSelection';
+import {Box} from '../ui/Box';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+
 import {
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
@@ -27,30 +35,23 @@ import {
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
-} from 'src/gantt/Constants';
-import {isDynamicStep} from 'src/gantt/DynamicStepSupport';
+} from './Constants';
+import {isDynamicStep} from './DynamicStepSupport';
 import {
   BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
   interestingQueriesFor,
-} from 'src/gantt/GanttChartLayout';
-import {GanttChartModeControl} from 'src/gantt/GanttChartModeControl';
-import {GanttChartTimescale} from 'src/gantt/GanttChartTimescale';
-import {GanttStatusPanel} from 'src/gantt/GanttStatusPanel';
-import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/gantt/VizComponents';
-import {ZoomSlider} from 'src/gantt/ZoomSlider';
-import {useViewport} from 'src/gantt/useViewport';
-import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/runs/RunMetadataProvider';
-import {StepSelection} from 'src/runs/StepSelection';
-import {Box} from 'src/ui/Box';
-import {GraphQueryInput} from 'src/ui/GraphQueryInput';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
+} from './GanttChartLayout';
+import {GanttChartModeControl} from './GanttChartModeControl';
+import {GanttChartTimescale} from './GanttChartTimescale';
+import {GanttStatusPanel} from './GanttStatusPanel';
+import {OptionsContainer, OptionsDivider, OptionsSpacer} from './VizComponents';
+import {ZoomSlider} from './ZoomSlider';
+import {useViewport} from './useViewport';
 
-export {GanttChartMode} from 'src/gantt/Constants';
+export {GanttChartMode} from './Constants';
 
 const HIGHLIGHT_TIME_EVENT = 'gantt-highlight-time';
 

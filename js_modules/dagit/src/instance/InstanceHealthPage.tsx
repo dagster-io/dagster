@@ -2,12 +2,13 @@ import {QueryResult} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {DaemonList} from 'src/instance/DaemonList';
-import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
-import {Group} from 'src/ui/Group';
-import {Subheading} from 'src/ui/Text';
-import {ReloadAllButton} from 'src/workspace/ReloadAllButton';
-import {RepositoryLocationsList} from 'src/workspace/RepositoryLocationsList';
+import {Group} from '../ui/Group';
+import {Subheading} from '../ui/Text';
+import {ReloadAllButton} from '../workspace/ReloadAllButton';
+import {RepositoryLocationsList} from '../workspace/RepositoryLocationsList';
+
+import {DaemonList} from './DaemonList';
+import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 interface Props {
   queryData: QueryResult<InstanceHealthQuery>;

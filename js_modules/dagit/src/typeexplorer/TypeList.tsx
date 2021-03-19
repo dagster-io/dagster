@@ -8,12 +8,10 @@ import {
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from 'src/pipelines/SidebarComponents';
-import {
-  DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT,
-  TypeWithTooltip,
-} from 'src/typeexplorer/TypeWithTooltip';
-import {TypeListFragment} from 'src/typeexplorer/types/TypeListFragment';
+} from '../pipelines/SidebarComponents';
+
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
+import {TypeListFragment} from './types/TypeListFragment';
 
 interface ITypeListProps {
   types: Array<TypeListFragment>;

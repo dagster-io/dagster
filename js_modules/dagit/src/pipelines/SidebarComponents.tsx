@@ -3,7 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {FontFamily} from 'src/ui/styles';
+import {FontFamily} from '../ui/styles';
 
 interface ISidebarSectionProps {
   title: string;

@@ -1,8 +1,9 @@
 import * as React from 'react';
 
-import {featureEnabled, FeatureFlag} from 'src/app/Util';
-import {LeftNav} from 'src/nav/LeftNav';
-import {LeftNavSimple} from 'src/nav/LeftNavSimple';
+import {featureEnabled, FeatureFlag} from '../app/Util';
+
+import {LeftNav} from './LeftNav';
+import {LeftNavSimple} from './LeftNavSimple';
 
 export const LeftNavBranch = () => {
   const isFlagged = featureEnabled(FeatureFlag.LeftNav);

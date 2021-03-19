@@ -6,32 +6,29 @@ import * as React from 'react';
 import {RouteComponentProps, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {QueryCountdown} from 'src/app/QueryCountdown';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {AllScheduledTicks} from 'src/runs/AllScheduledTicks';
-import {doneStatuses, inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
-import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
-import {
-  RunsFilter,
-  runsFilterForSearchTokens,
-  useQueryPersistedRunFilters,
-} from 'src/runs/RunsFilter';
-import {CountFragment} from 'src/runs/types/CountFragment';
-import {QueueDaemonStatusQuery} from 'src/runs/types/QueueDaemonStatusQuery';
-import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Alert} from 'src/ui/Alert';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {CursorPaginationControls} from 'src/ui/CursorControls';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
-import {TokenizingFieldValue} from 'src/ui/TokenizingField';
+import {QueryCountdown} from '../app/QueryCountdown';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {CursorPaginationControls} from '../ui/CursorControls';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+import {TokenizingFieldValue} from '../ui/TokenizingField';
+
+import {AllScheduledTicks} from './AllScheduledTicks';
+import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
+import {RunsQueryRefetchContext} from './RunUtils';
+import {RunsFilter, runsFilterForSearchTokens, useQueryPersistedRunFilters} from './RunsFilter';
+import {CountFragment} from './types/CountFragment';
+import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
+import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
+import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 

@@ -2,15 +2,16 @@ import {gql} from '@apollo/client';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {Timestamp} from 'src/app/time/Timestamp';
-import {DaemonHealth} from 'src/instance/DaemonHealth';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {Timestamp} from '../app/time/Timestamp';
+import {Group} from '../ui/Group';
+import {Table} from '../ui/Table';
+
+import {DaemonHealth} from './DaemonHealth';
 import {
   DaemonHealthFragment,
   DaemonHealthFragment_allDaemonStatuses as DaemonStatus,
-} from 'src/instance/types/DaemonHealthFragment';
-import {Group} from 'src/ui/Group';
-import {Table} from 'src/ui/Table';
+} from './types/DaemonHealthFragment';
 
 interface DaemonLabelProps {
   daemon: DaemonStatus;

@@ -1,16 +1,17 @@
 import * as React from 'react';
 
-import {DEFAULT_RESULT_NAME, titleOfIO} from 'src/app/Util';
-import {PipelineColorScale} from 'src/graph/PipelineColorScale';
-import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from 'src/graph/SVGComponents';
-import {ILayout} from 'src/graph/getFullSolidLayout';
-import {Edge, isHighlighted} from 'src/graph/highlighting';
+import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/Util';
+
+import {PipelineColorScale} from './PipelineColorScale';
+import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
+import {ILayout} from './getFullSolidLayout';
+import {Edge, isHighlighted} from './highlighting';
 import {
   SolidNodeDefinitionFragment,
   SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions,
   SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-} from 'src/graph/types/SolidNodeDefinitionFragment';
-import {SolidNodeInvocationFragment} from 'src/graph/types/SolidNodeInvocationFragment';
+} from './types/SolidNodeDefinitionFragment';
+import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';

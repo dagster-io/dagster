@@ -3,19 +3,20 @@ import {Colors, Intent, Popover} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {filterByQuery} from 'src/app/GraphQueryImpl';
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
+import {SVGViewport} from '../graph/SVGViewport';
+import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
 import {
   SolidSelectorQuery,
   SolidSelectorQuery_pipelineOrError,
   SolidSelectorQuery_pipelineOrError_Pipeline_solids,
-} from 'src/execute/types/SolidSelectorQuery';
-import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
-import {SVGViewport} from 'src/graph/SVGViewport';
-import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
-import {GraphQueryInput} from 'src/ui/GraphQueryInput';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from './types/SolidSelectorQuery';
 
 interface ISolidSelectorProps {
   pipelineName: string;

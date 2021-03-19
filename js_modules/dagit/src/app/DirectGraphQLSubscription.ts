@@ -1,8 +1,8 @@
 import {print} from 'graphql/language/printer';
 import debounce from 'lodash/debounce';
 
-import {DagsterGraphQLError, showGraphQLError} from 'src/app/AppError';
-import {WEBSOCKET_URI} from 'src/app/DomUtils';
+import {DagsterGraphQLError, showGraphQLError} from './AppError';
+import {WEBSOCKET_URI} from './DomUtils';
 
 type FlushCallback<T> = (messages: T[], isFirstResponse: boolean) => void;
 type ErrorCallback = (error: DagsterGraphQLError) => void;

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {FontFamily} from 'src/ui/styles';
+import {FontFamily} from '../ui/styles';
 
 export interface PipelineExplorerPath {
   pipelineName: string;

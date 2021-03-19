@@ -5,13 +5,14 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
-import {LeftNavSimple} from 'src/nav/LeftNavSimple';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Table} from 'src/ui/Table';
-import {Heading} from 'src/ui/Text';
-import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Table} from '../ui/Table';
+import {Heading} from '../ui/Text';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+
+import {LeftNavSimple} from './LeftNavSimple';
 
 const BodyReset = createGlobalStyle`
   body {

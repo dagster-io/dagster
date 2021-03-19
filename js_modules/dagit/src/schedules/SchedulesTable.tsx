@@ -16,28 +16,29 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from 'src/jobs/JobTick';
-import {JobRunStatus} from 'src/jobs/JobUtils';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {ReconcileButton} from 'src/schedules/ReconcileButton';
+import {TickTag} from '../jobs/JobTick';
+import {JobRunStatus} from '../jobs/JobUtils';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {JobStatus, JobType} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Table} from '../ui/Table';
+import {Code} from '../ui/Text';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {ReconcileButton} from './ReconcileButton';
 import {
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
   displayScheduleMutationErrors,
-} from 'src/schedules/ScheduleMutations';
-import {SchedulePartitionStatus} from 'src/schedules/SchedulePartitionStatus';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {humanCronString} from 'src/schedules/humanCronString';
-import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
-import {StartSchedule} from 'src/schedules/types/StartSchedule';
-import {StopSchedule} from 'src/schedules/types/StopSchedule';
-import {JobStatus, JobType} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {SwitchWithoutLabel} from 'src/ui/SwitchWithoutLabel';
-import {Table} from 'src/ui/Table';
-import {Code} from 'src/ui/Text';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './ScheduleMutations';
+import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {TimestampDisplay} from './TimestampDisplay';
+import {humanCronString} from './humanCronString';
+import {ScheduleFragment} from './types/ScheduleFragment';
+import {StartSchedule} from './types/StartSchedule';
+import {StopSchedule} from './types/StopSchedule';
 
 export const SchedulesTable: React.FC<{
   schedules: ScheduleFragment[];

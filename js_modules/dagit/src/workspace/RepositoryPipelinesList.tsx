@@ -2,12 +2,13 @@ import {gql, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from 'src/pipelines/PipelineTable';
-import {Page} from 'src/ui/Page';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {RepositoryPipelinesListQuery} from 'src/workspace/types/RepositoryPipelinesListQuery';
+import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
+import {Page} from '../ui/Page';
+
+import {repoAddressAsString} from './repoAddressAsString';
+import {repoAddressToSelector} from './repoAddressToSelector';
+import {RepoAddress} from './types';
+import {RepositoryPipelinesListQuery} from './types/RepositoryPipelinesListQuery';
 
 const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {

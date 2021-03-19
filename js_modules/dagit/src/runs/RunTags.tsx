@@ -1,8 +1,9 @@
 import * as React from 'react';
 
-import {RunTag} from 'src/runs/RunTag';
-import {Box} from 'src/ui/Box';
-import {TokenizingFieldValue} from 'src/ui/TokenizingField';
+import {Box} from '../ui/Box';
+import {TokenizingFieldValue} from '../ui/TokenizingField';
+
+import {RunTag} from './RunTag';
 
 interface RunTagType {
   key: string;

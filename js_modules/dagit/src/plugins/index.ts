@@ -1,7 +1,7 @@
-import {SidebarSolidDefinitionFragment} from 'src/pipelines/types/SidebarSolidDefinitionFragment';
-import * as generic from 'src/plugins/generic';
-import * as ipynb from 'src/plugins/ipynb';
-import * as sql from 'src/plugins/sql';
+import {SidebarSolidDefinitionFragment} from '../pipelines/types/SidebarSolidDefinitionFragment';
+import * as generic from '../plugins/generic';
+import * as ipynb from '../plugins/ipynb';
+import * as sql from '../plugins/sql';
 
 const plugins = {
   sql: sql,

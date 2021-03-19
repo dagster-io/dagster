@@ -1,8 +1,8 @@
 import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {formatElapsedTime} from 'src/app/Util';
-import {Group} from 'src/ui/Group';
+import {formatElapsedTime} from '../app/Util';
+import {Group} from '../ui/Group';
 
 export interface Props {
   startUnix: number | null;

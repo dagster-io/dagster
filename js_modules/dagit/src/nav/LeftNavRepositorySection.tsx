@@ -4,17 +4,18 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {JobsList} from 'src/nav/JobsList';
-import {RepoNavItem} from 'src/nav/RepoNavItem';
-import {RepoDetails} from 'src/nav/RepoSelector';
-import {RepositoryContentList} from 'src/nav/RepositoryContentList';
-import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
   WorkspaceContext,
-} from 'src/workspace/WorkspaceContext';
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
+} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
+import {JobsList} from './JobsList';
+import {RepoNavItem} from './RepoNavItem';
+import {RepoDetails} from './RepoSelector';
+import {RepositoryContentList} from './RepositoryContentList';
+import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 export const LAST_REPO_KEY = 'dagit.last-repo';
 export const REPO_KEYS = 'dagit.repo-keys';

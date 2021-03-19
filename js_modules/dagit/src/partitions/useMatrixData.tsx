@@ -1,13 +1,14 @@
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
-import {filterByQuery, GraphQueryItem} from 'src/app/GraphQueryImpl';
-import {GanttChartLayout} from 'src/gantt/Constants';
-import {GanttChartMode} from 'src/gantt/GanttChart';
-import {buildLayout} from 'src/gantt/GanttChartLayout';
-import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from 'src/partitions/types/PartitionRunMatrixPipelineQuery';
-import {PartitionRunMatrixRunFragment} from 'src/partitions/types/PartitionRunMatrixRunFragment';
-import {StepEventStatus} from 'src/types/globalTypes';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {GanttChartLayout} from '../gantt/Constants';
+import {GanttChartMode} from '../gantt/GanttChart';
+import {buildLayout} from '../gantt/GanttChartLayout';
+import {StepEventStatus} from '../types/globalTypes';
+
+import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
+import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
 
 type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;
 

@@ -1,7 +1,7 @@
 import {Button, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {useReloadWorkspace} from 'src/workspace/useReloadWorkspace';
+import {useReloadWorkspace} from './useReloadWorkspace';
 
 export const ReloadAllButton = () => {
   const {reloading, onClick} = useReloadWorkspace();

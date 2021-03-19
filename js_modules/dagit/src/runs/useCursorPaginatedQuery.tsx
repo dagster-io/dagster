@@ -2,8 +2,8 @@ import {useQuery} from '@apollo/client';
 import {DocumentNode} from 'graphql';
 import * as React from 'react';
 
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {CursorPaginationProps} from 'src/ui/CursorControls';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {CursorPaginationProps} from '../ui/CursorControls';
 
 interface CursorPaginationQueryVariables {
   cursor?: string | null;

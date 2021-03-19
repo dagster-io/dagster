@@ -2,16 +2,17 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {PipelineRoot} from 'src/pipelines/PipelineRoot';
-import {ScheduleRoot} from 'src/schedules/ScheduleRoot';
-import {SensorRoot} from 'src/sensors/SensorRoot';
-import {MainContent} from 'src/ui/MainContent';
-import {AllPipelinesRoot} from 'src/workspace/AllPipelinesRoot';
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-import {WorkspaceOverviewRoot} from 'src/workspace/WorkspaceOverviewRoot';
-import {WorkspacePipelineRoot} from 'src/workspace/WorkspacePipelineRoot';
-import {WorkspaceRepoRoot} from 'src/workspace/WorkspaceRepoRoot';
-import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
+import {PipelineRoot} from '../pipelines/PipelineRoot';
+import {ScheduleRoot} from '../schedules/ScheduleRoot';
+import {SensorRoot} from '../sensors/SensorRoot';
+import {MainContent} from '../ui/MainContent';
+
+import {AllPipelinesRoot} from './AllPipelinesRoot';
+import {WorkspaceContext} from './WorkspaceContext';
+import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
+import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
+import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
+import {repoAddressFromPath} from './repoAddressFromPath';
 
 const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;

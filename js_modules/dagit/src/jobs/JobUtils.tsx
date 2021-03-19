@@ -4,14 +4,15 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {TICK_TAG_FRAGMENT} from 'src/jobs/JobTick';
-import {JobStateFragment} from 'src/jobs/types/JobStateFragment';
-import {RunStatus} from 'src/runs/RunStatusDots';
-import {titleForRun} from 'src/runs/RunUtils';
-import {Group} from 'src/ui/Group';
-import {FontFamily} from 'src/ui/styles';
-import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/workspace/RepositoryInformation';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {RunStatus} from '../runs/RunStatusDots';
+import {titleForRun} from '../runs/RunUtils';
+import {Group} from '../ui/Group';
+import {FontFamily} from '../ui/styles';
+import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
+
+import {TICK_TAG_FRAGMENT} from './JobTick';
+import {JobStateFragment} from './types/JobStateFragment';
 
 export const JobRunStatus: React.FC<{
   jobState: JobStateFragment;

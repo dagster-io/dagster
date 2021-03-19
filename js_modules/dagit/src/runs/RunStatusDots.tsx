@@ -2,10 +2,11 @@ import {Popover, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
-import {RunStats} from 'src/runs/RunStats';
-import {inProgressStatuses, queuedStatuses} from 'src/runs/RunStatuses';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Spinner} from 'src/ui/Spinner';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Spinner} from '../ui/Spinner';
+
+import {RunStats} from './RunStats';
+import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 
 const RUN_STATUS_COLORS = {
   QUEUED: Colors.BLUE5,

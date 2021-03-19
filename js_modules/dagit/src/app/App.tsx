@@ -1,22 +1,23 @@
 import * as React from 'react';
 import {BrowserRouter, Route, Switch} from 'react-router-dom';
 
-import {CustomAlertProvider} from 'src/app/CustomAlertProvider';
-import {CustomConfirmationProvider} from 'src/app/CustomConfirmationProvider';
-import {CustomTooltipProvider} from 'src/app/CustomTooltipProvider';
-import {APP_PATH_PREFIX} from 'src/app/DomUtils';
-import {FallthroughRoot} from 'src/app/FallthroughRoot';
-import {FeatureFlagsRoot} from 'src/app/FeatureFlagsRoot';
-import {SettingsRoot} from 'src/app/SettingsRoot';
-import {TimezoneProvider} from 'src/app/time/TimezoneContext';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {InstanceRoot} from 'src/instance/InstanceRoot';
-import {LeftNavBranch} from 'src/nav/LeftNavBranch';
-import {AllSchedulesRoot} from 'src/schedules/AllSchedulesRoot';
-import {AllSensorsRoot} from 'src/sensors/AllSensorsRoot';
-import {AllPipelinesRoot} from 'src/workspace/AllPipelinesRoot';
-import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
-import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {InstanceRoot} from '../instance/InstanceRoot';
+import {LeftNavBranch} from '../nav/LeftNavBranch';
+import {AllSchedulesRoot} from '../schedules/AllSchedulesRoot';
+import {AllSensorsRoot} from '../sensors/AllSensorsRoot';
+import {AllPipelinesRoot} from '../workspace/AllPipelinesRoot';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceRoot} from '../workspace/WorkspaceRoot';
+
+import {CustomAlertProvider} from './CustomAlertProvider';
+import {CustomConfirmationProvider} from './CustomConfirmationProvider';
+import {CustomTooltipProvider} from './CustomTooltipProvider';
+import {APP_PATH_PREFIX} from './DomUtils';
+import {FallthroughRoot} from './FallthroughRoot';
+import {FeatureFlagsRoot} from './FeatureFlagsRoot';
+import {SettingsRoot} from './SettingsRoot';
+import {TimezoneProvider} from './time/TimezoneContext';
 
 export const AppContent = () => {
   useDocumentTitle('Dagit');

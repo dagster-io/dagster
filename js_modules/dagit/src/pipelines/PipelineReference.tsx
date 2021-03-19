@@ -2,9 +2,10 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {PipelineSnapshotLink} from 'src/pipelines/PipelinePathUtils';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {PipelineSnapshotLink} from './PipelinePathUtils';
 
 interface Props {
   pipelineName: string;

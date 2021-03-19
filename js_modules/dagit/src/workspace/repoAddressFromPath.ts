@@ -1,5 +1,5 @@
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
-import {RepoAddress} from 'src/workspace/types';
+import {buildRepoAddress} from './buildRepoAddress';
+import {RepoAddress} from './types';
 
 export const repoAddressFromPath = (path: string): RepoAddress | null => {
   const postSplit = path.split('@');

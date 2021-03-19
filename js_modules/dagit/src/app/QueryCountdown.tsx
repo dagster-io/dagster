@@ -1,8 +1,8 @@
 import {NetworkStatus, QueryResult} from '@apollo/client';
 import * as React from 'react';
 
-import {useCountdown} from 'src/ui/Countdown';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
+import {useCountdown} from '../ui/Countdown';
+import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 
 interface Props<TData> {
   pollInterval: number;

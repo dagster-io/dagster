@@ -4,37 +4,38 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {filterByQuery} from 'src/app/GraphQueryImpl';
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {GanttChart, GanttChartMode, QueuedState} from 'src/gantt/GanttChart';
-import {toGraphQueryItems} from 'src/gantt/toGraphQueryItems';
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {LogFilter, LogsProvider, LogsProviderLogs} from 'src/runs/LogsProvider';
-import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
-import {LogsToolbar} from 'src/runs/LogsToolbar';
-import {RunActionButtons} from 'src/runs/RunActionButtons';
-import {RunContext} from 'src/runs/RunContext';
-import {IRunMetadataDict, IStepState, RunMetadataProvider} from 'src/runs/RunMetadataProvider';
-import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {GanttChart, GanttChartMode, QueuedState} from '../gantt/GanttChart';
+import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+
+import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
+import {LogsScrollingTable} from './LogsScrollingTable';
+import {LogsToolbar} from './LogsToolbar';
+import {RunActionButtons} from './RunActionButtons';
+import {RunContext} from './RunContext';
+import {IRunMetadataDict, IStepState, RunMetadataProvider} from './RunMetadataProvider';
+import {RunStatusToPageAttributes} from './RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   getReexecutionVariables,
   handleLaunchResult,
   ReExecutionStyle,
-} from 'src/runs/RunUtils';
+} from './RunUtils';
 import {
   LaunchPipelineReexecution,
   LaunchPipelineReexecutionVariables,
-} from 'src/runs/types/LaunchPipelineReexecution';
-import {RunFragment} from 'src/runs/types/RunFragment';
+} from './types/LaunchPipelineReexecution';
+import {RunFragment} from './types/RunFragment';
 import {
   RunPipelineRunEventFragment,
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
-} from 'src/runs/types/RunPipelineRunEventFragment';
-import {useQueryPersistedLogFilter} from 'src/runs/useQueryPersistedLogFilter';
-import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/ui/SplitPanelContainer';
-import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
+} from './types/RunPipelineRunEventFragment';
+import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
   client: ApolloClient<any>;

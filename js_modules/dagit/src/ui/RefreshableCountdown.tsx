@@ -2,7 +2,7 @@ import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Group} from 'src/ui/Group';
+import {Group} from './Group';
 
 interface Props {
   refreshing: boolean;

@@ -3,21 +3,22 @@ import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {JOB_STATE_FRAGMENT} from 'src/jobs/JobUtils';
-import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
-import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
-import {SensorInfo} from 'src/sensors/SensorInfo';
-import {SensorsTable} from 'src/sensors/SensorsTable';
-import {SensorsRootQuery} from 'src/sensors/types/SensorsRootQuery';
-import {JobType} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {UnloadableSensors} from '../jobs/UnloadableJobs';
+import {JobType} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {SENSOR_FRAGMENT} from './SensorFragment';
+import {SensorInfo} from './SensorInfo';
+import {SensorsTable} from './SensorsTable';
+import {SensorsRootQuery} from './types/SensorsRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;

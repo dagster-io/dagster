@@ -2,9 +2,10 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {AssetNumericHistoricalData} from 'src/assets/AssetView';
-import {Group} from 'src/ui/Group';
-import {Subheading} from 'src/ui/Text';
+import {Group} from '../ui/Group';
+import {Subheading} from '../ui/Text';
+
+import {AssetNumericHistoricalData} from './AssetView';
 
 export const AssetValueGraph: React.FunctionComponent<{
   label: string;

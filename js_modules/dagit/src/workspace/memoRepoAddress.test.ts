@@ -1,4 +1,4 @@
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
+import {buildRepoAddress} from './buildRepoAddress';
 
 describe('buildRepoAddress', () => {
   it('returns the exact object for the same arguments', () => {

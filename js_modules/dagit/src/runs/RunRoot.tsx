@@ -4,18 +4,19 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {RouteComponentProps, Link} from 'react-router-dom';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {Run} from 'src/runs/Run';
-import {RunConfigDialog, RunDetails} from 'src/runs/RunDetails';
-import {RunFragments} from 'src/runs/RunFragments';
-import {RunStatusTag} from 'src/runs/RunStatusTag';
-import {RunRootQuery} from 'src/runs/types/RunRootQuery';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
-import {FontFamily} from 'src/ui/styles';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+import {FontFamily} from '../ui/styles';
+
+import {Run} from './Run';
+import {RunConfigDialog, RunDetails} from './RunDetails';
+import {RunFragments} from './RunFragments';
+import {RunStatusTag} from './RunStatusTag';
+import {RunRootQuery} from './types/RunRootQuery';
 
 export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
   const {runId} = props.match.params;

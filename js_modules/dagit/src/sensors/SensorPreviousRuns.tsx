@@ -1,11 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {DagsterTag} from 'src/runs/RunTag';
-import {PreviousRunsForSensorQuery} from 'src/sensors/types/PreviousRunsForSensorQuery';
-import {SensorFragment} from 'src/sensors/types/SensorFragment';
-import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
-import {RepoAddress} from 'src/workspace/types';
+import {DagsterTag} from '../runs/RunTag';
+import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
+import {RepoAddress} from '../workspace/types';
+
+import {PreviousRunsForSensorQuery} from './types/PreviousRunsForSensorQuery';
+import {SensorFragment} from './types/SensorFragment';
 
 const RUNS_LIMIT = 20;
 

@@ -1,10 +1,11 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {RunStatus} from 'src/runs/RunStatusDots';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {MetadataTable} from 'src/ui/MetadataTable';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {MetadataTable} from '../ui/MetadataTable';
+
+import {RunStatus} from './RunStatusDots';
 
 // eslint-disable-next-line import/no-default-export
 export default {

@@ -1,6 +1,7 @@
-import {memoize} from 'src/app/Util';
-import {RepositorySelector} from 'src/types/globalTypes';
-import {RepoAddress} from 'src/workspace/types';
+import {memoize} from '../app/Util';
+import {RepositorySelector} from '../types/globalTypes';
+
+import {RepoAddress} from './types';
 
 export const repoAddressToSelector = memoize<RepoAddress, RepositorySelector>(
   (repoAddress: RepoAddress): RepositorySelector => {

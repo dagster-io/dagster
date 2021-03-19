@@ -3,8 +3,8 @@ import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
+import {Box} from './Box';
+import {Group} from './Group';
 import {
   AlignItems,
   BorderSide,
@@ -12,7 +12,7 @@ import {
   FlexDirection,
   JustifyContent as JustifyContentType,
   Spacing,
-} from 'src/ui/types';
+} from './types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

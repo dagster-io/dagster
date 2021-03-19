@@ -2,15 +2,16 @@ import {gql} from '@apollo/client';
 import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {RunTags} from 'src/runs/RunTags';
-import {TimeElapsed} from 'src/runs/TimeElapsed';
-import {RunDetailsFragment} from 'src/runs/types/RunDetailsFragment';
-import {RunFragment} from 'src/runs/types/RunFragment';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
-import {MetadataTable} from 'src/ui/MetadataTable';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {MetadataTable} from '../ui/MetadataTable';
+
+import {RunTags} from './RunTags';
+import {TimeElapsed} from './TimeElapsed';
+import {RunDetailsFragment} from './types/RunDetailsFragment';
+import {RunFragment} from './types/RunFragment';
 
 const timingStringForStatus = (status?: PipelineRunStatus) => {
   switch (status) {

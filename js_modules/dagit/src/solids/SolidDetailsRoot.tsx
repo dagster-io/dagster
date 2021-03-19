@@ -5,13 +5,14 @@ import styled from 'styled-components/macro';
 import {
   SidebarSolidDefinition,
   SIDEBAR_SOLID_DEFINITION_FRAGMENT,
-} from 'src/pipelines/SidebarSolidDefinition';
-import {SidebarSolidInvocationInfo} from 'src/pipelines/SidebarSolidHelpers';
-import {SolidCard, SOLID_CARD_SOLID_DEFINITION_FRAGMENT} from 'src/solids/SolidCard';
-import {UsedSolidDetailsQuery} from 'src/solids/types/UsedSolidDetailsQuery';
-import {Loading} from 'src/ui/Loading';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from '../pipelines/SidebarSolidDefinition';
+import {SidebarSolidInvocationInfo} from '../pipelines/SidebarSolidHelpers';
+import {Loading} from '../ui/Loading';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {SolidCard, SOLID_CARD_SOLID_DEFINITION_FRAGMENT} from './SolidCard';
+import {UsedSolidDetailsQuery} from './types/UsedSolidDetailsQuery';
 
 interface UsedSolidDetailsProps {
   name: string;

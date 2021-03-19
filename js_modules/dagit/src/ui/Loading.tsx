@@ -3,8 +3,8 @@ import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {Box} from 'src/ui/Box';
-import {Spinner} from 'src/ui/Spinner';
+import {Box} from './Box';
+import {Spinner} from './Spinner';
 
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;

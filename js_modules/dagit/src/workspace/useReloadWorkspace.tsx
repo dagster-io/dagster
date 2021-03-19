@@ -2,10 +2,11 @@ import {gql, useApolloClient, useMutation} from '@apollo/client';
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {SharedToaster} from 'src/app/DomUtils';
-import {useInvalidateConfigsForRepo} from 'src/app/LocalStorage';
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {ReloadWorkspaceMutation} from 'src/workspace/types/ReloadWorkspaceMutation';
+import {SharedToaster} from '../app/DomUtils';
+import {useInvalidateConfigsForRepo} from '../app/LocalStorage';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+
+import {ReloadWorkspaceMutation} from './types/ReloadWorkspaceMutation';
 
 export const useReloadWorkspace = () => {
   const apollo = useApolloClient();

@@ -2,10 +2,10 @@ import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {Caption, Code} from 'src/ui/Text';
+import {Box} from './Box';
+import {Group} from './Group';
+import {Spinner} from './Spinner';
+import {Caption, Code} from './Text';
 
 // eslint-disable-next-line import/no-default-export
 export default {

@@ -13,24 +13,25 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {IExecutionSession} from 'src/app/LocalStorage';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {PythonErrorFragment} from 'src/app/types/PythonErrorFragment';
-import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {IExecutionSession} from '../app/LocalStorage';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {RepositorySelector} from '../types/globalTypes';
+import {Spinner} from '../ui/Spinner';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {ConfigEditorGeneratorPartitionSetsFragment_results} from './types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorGeneratorPipelineFragment_presets,
-} from 'src/execute/types/ConfigEditorGeneratorPipelineFragment';
+} from './types/ConfigEditorGeneratorPipelineFragment';
 import {
   ConfigPartitionsQuery,
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-} from 'src/execute/types/ConfigPartitionsQuery';
-import {RepositorySelector} from 'src/types/globalTypes';
-import {Spinner} from 'src/ui/Spinner';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from './types/ConfigPartitionsQuery';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;

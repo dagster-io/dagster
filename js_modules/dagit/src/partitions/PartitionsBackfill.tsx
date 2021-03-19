@@ -14,15 +14,27 @@ import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {SharedToaster} from 'src/app/DomUtils';
-import {filterByQuery} from 'src/app/GraphQueryImpl';
-import {PipelineRunTag} from 'src/app/LocalStorage';
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {LaunchButton} from 'src/execute/LaunchButton';
-import {TagContainer, TagEditor} from 'src/execute/TagEditor';
-import {GanttChartMode} from 'src/gantt/GanttChart';
-import {buildLayout} from 'src/gantt/GanttChartLayout';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SharedToaster} from '../app/DomUtils';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {PipelineRunTag} from '../app/LocalStorage';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {LaunchButton} from '../execute/LaunchButton';
+import {TagContainer, TagEditor} from '../execute/TagEditor';
+import {GanttChartMode} from '../gantt/GanttChart';
+import {buildLayout} from '../gantt/GanttChartLayout';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+import {stringFromValue} from '../ui/TokenizingField';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 import {
   GridColumn,
   GridFloatingContainer,
@@ -30,20 +42,9 @@ import {
   LeftLabel,
   TopLabel,
   TopLabelTilted,
-} from 'src/partitions/RunMatrixUtils';
-import {LaunchPartitionBackfill} from 'src/partitions/types/LaunchPartitionBackfill';
-import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Alert} from 'src/ui/Alert';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {GraphQueryInput} from 'src/ui/GraphQueryInput';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {stringFromValue} from 'src/ui/TokenizingField';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './RunMatrixUtils';
+import {LaunchPartitionBackfill} from './types/LaunchPartitionBackfill';
+import {PartitionsBackfillSelectorQuery} from './types/PartitionsBackfillSelectorQuery';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 

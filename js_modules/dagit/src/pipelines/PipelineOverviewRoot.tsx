@@ -4,20 +4,13 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 
-import {Timestamp} from 'src/app/time/Timestamp';
-import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
-import {SVGViewport} from 'src/graph/SVGViewport';
-import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {OverviewJobFragment} from 'src/pipelines/types/OverviewJobFragment';
-import {
-  PipelineOverviewQuery,
-  PipelineOverviewQueryVariables,
-  PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
-} from 'src/pipelines/types/PipelineOverviewQuery';
-import {RunActionsMenu} from 'src/runs/RunActionsMenu';
-import {RunStatus, RunStatusWithStats} from 'src/runs/RunStatusDots';
+import {Timestamp} from '../app/time/Timestamp';
+import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
+import {SVGViewport} from '../graph/SVGViewport';
+import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {RunActionsMenu} from '../runs/RunActionsMenu';
+import {RunStatus, RunStatusWithStats} from '../runs/RunStatusDots';
 import {
   RunTime,
   RunsQueryRefetchContext,
@@ -25,15 +18,23 @@ import {
   RunElapsed,
   RUN_ACTION_MENU_FRAGMENT,
   RUN_TIME_FRAGMENT,
-} from 'src/runs/RunUtils';
-import {JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Loading} from 'src/ui/Loading';
-import {Table} from 'src/ui/Table';
-import {FontFamily} from 'src/ui/styles';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from '../runs/RunUtils';
+import {JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Loading} from '../ui/Loading';
+import {Table} from '../ui/Table';
+import {FontFamily} from '../ui/styles';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {explorerPathFromString} from './PipelinePathUtils';
+import {OverviewJobFragment} from './types/OverviewJobFragment';
+import {
+  PipelineOverviewQuery,
+  PipelineOverviewQueryVariables,
+  PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
+} from './types/PipelineOverviewQuery';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 

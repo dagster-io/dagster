@@ -1,9 +1,10 @@
 import {QueryResult} from '@apollo/client';
 import * as React from 'react';
 
-import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
-import {AllSensors} from 'src/sensors/AllSensors';
-import {Loading} from 'src/ui/Loading';
+import {AllSensors} from '../sensors/AllSensors';
+import {Loading} from '../ui/Loading';
+
+import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 interface Props {
   queryData: QueryResult<InstanceHealthQuery>;

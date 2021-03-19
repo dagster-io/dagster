@@ -1,19 +1,20 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {JobTickHistory} from 'src/jobs/TickHistory';
-import {SensorDetails} from 'src/sensors/SensorDetails';
-import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
-import {SensorInfo} from 'src/sensors/SensorInfo';
-import {SensorPreviousRuns} from 'src/sensors/SensorPreviousRuns';
-import {SensorRootQuery} from 'src/sensors/types/SensorRootQuery';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {JobTickHistory} from '../jobs/TickHistory';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {SensorDetails} from './SensorDetails';
+import {SENSOR_FRAGMENT} from './SensorFragment';
+import {SensorInfo} from './SensorInfo';
+import {SensorPreviousRuns} from './SensorPreviousRuns';
+import {SensorRootQuery} from './types/SensorRootQuery';
 
 const INTERVAL = 15 * 1000;
 

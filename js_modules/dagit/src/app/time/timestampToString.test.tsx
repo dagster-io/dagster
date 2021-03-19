@@ -1,4 +1,4 @@
-import {timestampToString} from 'src/app/time/timestampToString';
+import {timestampToString} from './timestampToString';
 
 const DEC_1_2020 = 1606824000; // Dec 1, 2020 00:00 UTC
 const JAN_1_2021 = 1609459200; // Jan 1, 2021 00:00 UTC

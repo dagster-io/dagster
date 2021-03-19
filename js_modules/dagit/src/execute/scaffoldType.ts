@@ -1,8 +1,8 @@
-import {assertUnreachable} from 'src/app/Util';
+import {assertUnreachable} from '../app/Util';
 import {
   ConfigEditorRunConfigSchemaFragment_allConfigTypes,
   ConfigEditorRunConfigSchemaFragment,
-} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
+} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
 
 export const scaffoldType = (
   configTypeKey: string,

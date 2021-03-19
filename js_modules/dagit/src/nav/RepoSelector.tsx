@@ -3,15 +3,16 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {SwitchWithoutLabel} from 'src/ui/SwitchWithoutLabel';
-import {Caption} from 'src/ui/Text';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Caption} from '../ui/Text';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
 
 export type RepoDetails = {
   repoAddress: RepoAddress;

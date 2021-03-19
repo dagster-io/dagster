@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
-import {Alert} from 'src/ui/Alert';
+import {DaemonHealthFragment} from '../instance/types/DaemonHealthFragment';
+import {Alert} from '../ui/Alert';
 
 export const SensorInfo: React.FC<{
   daemonHealth: DaemonHealthFragment | undefined;

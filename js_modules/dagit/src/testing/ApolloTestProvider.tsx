@@ -6,8 +6,9 @@ import {makeExecutableSchema} from '@graphql-tools/schema';
 import {loader} from 'graphql.macro';
 import * as React from 'react';
 
-import {AppCache} from 'src/app/AppCache';
-import {defaultMocks} from 'src/testing/defaultMocks';
+import {AppCache} from '../app/AppCache';
+
+import {defaultMocks} from './defaultMocks';
 
 interface Props {
   children: React.ReactNode;

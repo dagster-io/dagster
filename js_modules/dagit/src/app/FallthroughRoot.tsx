@@ -2,8 +2,8 @@ import {NonIdealState} from '@blueprintjs/core';
 import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {workspacePath} from '../workspace/workspacePath';
 
 const InstanceRedirect = (props: RouteComponentProps<any>) => {
   const {location} = props;

@@ -1,4 +1,4 @@
-import {KeyShortcut} from 'src/nav/config';
+import {KeyShortcut} from './config';
 
 export const shortcutLabel = (shortcut: KeyShortcut) => {
   const {code, modifier} = shortcut;

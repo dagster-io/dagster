@@ -2,9 +2,9 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
-import {isHelpContextEqual} from 'src/configeditor/isHelpContextEqual';
-import {ConfigTypeSchema, TypeData} from 'src/typeexplorer/ConfigTypeSchema';
+import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
+import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
+import {ConfigTypeSchema, TypeData} from '../typeexplorer/ConfigTypeSchema';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;

@@ -1,4 +1,4 @@
-import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
+import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 
 export const isHelpContextEqual = (
   prev: ConfigEditorHelpContext | null,

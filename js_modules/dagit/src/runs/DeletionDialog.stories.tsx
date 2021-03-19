@@ -2,8 +2,9 @@ import {Story, Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {DeletionDialog, Props as DeletionDialogProps} from 'src/runs/DeletionDialog';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+
+import {DeletionDialog, Props as DeletionDialogProps} from './DeletionDialog';
 
 // eslint-disable-next-line import/no-default-export
 export default {

@@ -2,18 +2,19 @@ import {useMutation} from '@apollo/client';
 import {Checkbox, Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {NavigationBlock} from 'src/runs/NavitationBlock';
-import {TERMINATE_MUTATION} from 'src/runs/RunUtils';
+import {TerminatePipelinePolicy} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {FontFamily} from '../ui/styles';
+
+import {NavigationBlock} from './NavitationBlock';
+import {TERMINATE_MUTATION} from './RunUtils';
 import {
   Terminate,
   Terminate_terminatePipelineExecution_PipelineRunNotFoundError,
   Terminate_terminatePipelineExecution_PythonError,
   Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure,
-} from 'src/runs/types/Terminate';
-import {TerminatePipelinePolicy} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {FontFamily} from 'src/ui/styles';
+} from './types/Terminate';
 
 export interface Props {
   isOpen: boolean;

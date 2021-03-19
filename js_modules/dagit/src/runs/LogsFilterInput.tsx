@@ -3,8 +3,8 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {SuggestionProvider} from 'src/ui/TokenizingField';
-import {useSuggestionsForString} from 'src/ui/useSuggestionsForString';
+import {SuggestionProvider} from '../ui/TokenizingField';
+import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
 interface Props {
   value: string;

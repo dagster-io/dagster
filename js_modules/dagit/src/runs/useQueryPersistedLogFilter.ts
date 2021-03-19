@@ -1,8 +1,9 @@
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {DefaultLogLevels, LogLevel} from 'src/runs/LogLevel';
-import {LogFilter} from 'src/runs/LogsProvider';
-import {getRunFilterProviders} from 'src/runs/getRunFilterProviders';
-import {tokenizedValueFromString} from 'src/ui/TokenizingField';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {tokenizedValueFromString} from '../ui/TokenizingField';
+
+import {DefaultLogLevels, LogLevel} from './LogLevel';
+import {LogFilter} from './LogsProvider';
+import {getRunFilterProviders} from './getRunFilterProviders';
 
 const DELIMITER = '|';
 

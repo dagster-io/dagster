@@ -2,8 +2,8 @@ import {Colors, Icon, IconName} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
+import {Box} from './Box';
+import {Group} from './Group';
 
 export interface Props {
   intent: 'info' | 'warning' | 'error' | 'success';

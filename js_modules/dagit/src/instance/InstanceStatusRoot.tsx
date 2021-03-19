@@ -3,26 +3,27 @@ import {Tab, Tabs, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Route, Switch} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {QueryCountdown} from 'src/app/QueryCountdown';
-import {InstanceBackfills} from 'src/instance/InstanceBackfills';
-import {InstanceConfig} from 'src/instance/InstanceConfig';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {InstanceHealthPage} from 'src/instance/InstanceHealthPage';
-import {InstanceSchedules} from 'src/instance/InstanceSchedules';
-import {InstanceSensors} from 'src/instance/InstanceSensors';
-import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
-import {JOB_STATE_FRAGMENT} from 'src/jobs/JobUtils';
-import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
-import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
-import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
-import {REPOSITORY_INFO_FRAGMENT} from 'src/workspace/RepositoryInformation';
-import {REPOSITORY_LOCATIONS_FRAGMENT} from 'src/workspace/WorkspaceContext';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {QueryCountdown} from '../app/QueryCountdown';
+import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
+import {SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
+import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
+
+import {InstanceBackfills} from './InstanceBackfills';
+import {InstanceConfig} from './InstanceConfig';
+import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstanceHealthPage} from './InstanceHealthPage';
+import {InstanceSchedules} from './InstanceSchedules';
+import {InstanceSensors} from './InstanceSensors';
+import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 const POLL_INTERVAL = 15 * 1000;
 

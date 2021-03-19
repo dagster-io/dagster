@@ -1,16 +1,17 @@
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Timestamp} from 'src/app/time/Timestamp';
-import {AssetLineageInfoElement} from 'src/assets/AssetLineageInfoElement';
-import {AssetQuery_assetOrError_Asset_assetMaterializations} from 'src/assets/types/AssetQuery';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {MetadataEntries} from 'src/runs/MetadataEntry';
-import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
-import {titleForRun} from 'src/runs/RunUtils';
-import {Group} from 'src/ui/Group';
-import {Table} from 'src/ui/Table';
-import {FontFamily} from 'src/ui/styles';
+import {Timestamp} from '../app/time/Timestamp';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {MetadataEntries} from '../runs/MetadataEntry';
+import {RunStatusTagWithStats} from '../runs/RunStatusTag';
+import {titleForRun} from '../runs/RunUtils';
+import {Group} from '../ui/Group';
+import {Table} from '../ui/Table';
+import {FontFamily} from '../ui/styles';
+
+import {AssetLineageInfoElement} from './AssetLineageInfoElement';
+import {AssetQuery_assetOrError_Asset_assetMaterializations} from './types/AssetQuery';
 
 export const AssetMaterializationTable: React.FunctionComponent<{
   isPartitioned: boolean;

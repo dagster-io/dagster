@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Box} from 'src/ui/Box';
+import {Box} from './Box';
 
 type Row = {key: string; value: React.ReactNode};
 

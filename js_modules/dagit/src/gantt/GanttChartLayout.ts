@@ -1,5 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 
+import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
+
 import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
@@ -12,9 +14,8 @@ import {
   IGanttNode,
   LEFT_INSET,
   FLAT_INSET_FROM_PARENT,
-} from 'src/gantt/Constants';
-import {isDynamicStep} from 'src/gantt/DynamicStepSupport';
-import {IRunMetadataDict, IStepAttempt, IStepState} from 'src/runs/RunMetadataProvider';
+} from './Constants';
+import {isDynamicStep} from './DynamicStepSupport';
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];

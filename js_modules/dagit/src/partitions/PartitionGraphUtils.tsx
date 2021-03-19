@@ -3,8 +3,9 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {colorHash} from 'src/app/Util';
-import {PartitionGraphFragment} from 'src/partitions/types/PartitionGraphFragment';
+import {colorHash} from '../app/Util';
+
+import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 
 export const PIPELINE_LABEL = 'Total pipeline';
 export const PARTITION_GRAPH_FRAGMENT = gql`

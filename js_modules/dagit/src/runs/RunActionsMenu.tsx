@@ -3,25 +3,26 @@ import {Button, Menu, MenuDivider, MenuItem, Popover, Position, Tooltip} from '@
 import * as qs from 'query-string';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {ROOT_SERVER_URI} from 'src/app/DomUtils';
-import {DeletionDialog} from 'src/runs/DeletionDialog';
-import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
-import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from 'src/runs/RunFragments';
-import {doneStatuses} from 'src/runs/RunStatuses';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {ROOT_SERVER_URI} from '../app/DomUtils';
+import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+
+import {DeletionDialog} from './DeletionDialog';
+import {REEXECUTE_PIPELINE_UNKNOWN} from './RunActionButtons';
+import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
+import {doneStatuses} from './RunStatuses';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   RunsQueryRefetchContext,
   getReexecutionVariables,
   handleLaunchResult,
-} from 'src/runs/RunUtils';
-import {TerminationDialog} from 'src/runs/TerminationDialog';
-import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
-import {PipelineEnvironmentYamlQuery} from 'src/runs/types/PipelineEnvironmentYamlQuery';
-import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
-import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
-import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
-import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
+} from './RunUtils';
+import {TerminationDialog} from './TerminationDialog';
+import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
+import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
+import {RunActionMenuFragment} from './types/RunActionMenuFragment';
+import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment | RunActionMenuFragment;

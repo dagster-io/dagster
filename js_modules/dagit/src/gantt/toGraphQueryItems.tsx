@@ -1,9 +1,10 @@
 import {gql} from '@apollo/client';
 
-import {IGanttNode} from 'src/gantt/Constants';
-import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from 'src/gantt/DynamicStepSupport';
-import {ExecutionPlanToGraphFragment} from 'src/gantt/types/ExecutionPlanToGraphFragment';
-import {StepKind} from 'src/types/globalTypes';
+import {StepKind} from '../types/globalTypes';
+
+import {IGanttNode} from './Constants';
+import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicStepSupport';
+import {ExecutionPlanToGraphFragment} from './types/ExecutionPlanToGraphFragment';
 
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that

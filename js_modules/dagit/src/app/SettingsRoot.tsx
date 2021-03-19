@@ -1,16 +1,17 @@
 import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {getFeatureFlags, setFeatureFlags, FeatureFlag} from 'src/app/Util';
-import {TimezoneSelect} from 'src/app/time/TimezoneSelect';
-import {automaticLabel} from 'src/app/time/browserTimezone';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {MetadataTable} from 'src/ui/MetadataTable';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading, Subheading} from 'src/ui/Text';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {MetadataTable} from '../ui/MetadataTable';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading, Subheading} from '../ui/Text';
+
+import {getFeatureFlags, setFeatureFlags, FeatureFlag} from './Util';
+import {TimezoneSelect} from './time/TimezoneSelect';
+import {automaticLabel} from './time/browserTimezone';
 
 export const SettingsRoot = () => {
   useDocumentTitle('Settings');

@@ -2,8 +2,8 @@ import {Button} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {Countdown, useCountdown} from 'src/ui/Countdown';
-import {Group} from 'src/ui/Group';
+import {Countdown, useCountdown} from './Countdown';
+import {Group} from './Group';
 
 // eslint-disable-next-line import/no-default-export
 export default {

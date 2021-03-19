@@ -3,10 +3,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {RunStatsQuery, RunStatsQueryVariables} from 'src/runs/types/RunStatsQuery';
-import {Box} from 'src/ui/Box';
-import {Spinner} from 'src/ui/Spinner';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {Box} from '../ui/Box';
+import {Spinner} from '../ui/Spinner';
+
+import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStatsQuery';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {

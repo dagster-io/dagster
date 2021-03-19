@@ -2,13 +2,14 @@ import {gql, useQuery} from '@apollo/client';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {TimezoneProvider} from 'src/app/time/TimezoneContext';
-import {RunDetails, RUN_DETAILS_FRAGMENT} from 'src/runs/RunDetails';
-import {RunDetailsTestQuery} from 'src/runs/types/RunDetailsTestQuery';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {PipelineRunStatus} from 'src/types/globalTypes';
+import {TimezoneProvider} from '../app/time/TimezoneContext';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {PipelineRunStatus} from '../types/globalTypes';
 
-jest.mock('src/app/time/browserTimezone.ts', () => ({
+import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
+import {RunDetailsTestQuery} from './types/RunDetailsTestQuery';
+
+jest.mock('../app/time/browserTimezone.ts', () => ({
   browserTimezone: () => 'America/Los_Angeles',
 }));
 

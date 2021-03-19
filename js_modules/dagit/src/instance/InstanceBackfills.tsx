@@ -4,35 +4,36 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {BackfillTerminationDialog} from 'src/instance/BackfillTerminationDialog';
-import {
-  InstanceBackfillsQuery,
-  InstanceBackfillsQueryVariables,
-  InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
-} from 'src/instance/types/InstanceBackfillsQuery';
-import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PipelineReference} from '../pipelines/PipelineReference';
 import {
   doneStatuses,
   failedStatuses,
   inProgressStatuses,
   queuedStatuses,
   successStatuses,
-} from 'src/runs/RunStatuses';
-import {TerminationDialog} from 'src/runs/TerminationDialog';
-import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {BulkActionStatus, PipelineRunStatus} from 'src/types/globalTypes';
-import {Alert} from 'src/ui/Alert';
-import {Box} from 'src/ui/Box';
-import {CursorPaginationControls} from 'src/ui/CursorControls';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Table} from 'src/ui/Table';
-import {stringFromValue} from 'src/ui/TokenizingField';
-import {FontFamily} from 'src/ui/styles';
-import {workspacePath} from 'src/workspace/workspacePath';
+} from '../runs/RunStatuses';
+import {TerminationDialog} from '../runs/TerminationDialog';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {BulkActionStatus, PipelineRunStatus} from '../types/globalTypes';
+import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
+import {CursorPaginationControls} from '../ui/CursorControls';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Table} from '../ui/Table';
+import {stringFromValue} from '../ui/TokenizingField';
+import {FontFamily} from '../ui/styles';
+import {workspacePath} from '../workspace/workspacePath';
+
+import {BackfillTerminationDialog} from './BackfillTerminationDialog';
+import {
+  InstanceBackfillsQuery,
+  InstanceBackfillsQueryVariables,
+  InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
+} from './types/InstanceBackfillsQuery';
+import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 

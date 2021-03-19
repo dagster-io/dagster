@@ -1,20 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {
-  RunsSearchSpaceQuery,
-  RunsSearchSpaceQuery_pipelineRunTags,
-} from 'src/runs/types/RunsSearchSpaceQuery';
-import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {PipelineRunStatus, PipelineRunsFilter} from '../types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-} from 'src/ui/TokenizingField';
-import {DagsterRepoOption, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
+} from '../ui/TokenizingField';
+import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
+
+import {
+  RunsSearchSpaceQuery,
+  RunsSearchSpaceQuery_pipelineRunTags,
+} from './types/RunsSearchSpaceQuery';
 
 type PipelineRunTags = RunsSearchSpaceQuery_pipelineRunTags[];
 

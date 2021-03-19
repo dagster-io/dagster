@@ -15,22 +15,23 @@ import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {featureEnabled, FeatureFlag} from 'src/app/Util';
-import {AssetWipeDialog} from 'src/assets/AssetWipeDialog';
-import {AssetsFilter, filterAssets} from 'src/assets/AssetsFilter';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Table} from '../ui/Table';
+import {Tag} from '../ui/Tag';
+
+import {AssetWipeDialog} from './AssetWipeDialog';
+import {AssetsFilter, filterAssets} from './AssetsFilter';
 import {
   AssetsTableQuery,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes_key,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags,
-} from 'src/assets/types/AssetsTableQuery';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Table} from 'src/ui/Table';
-import {Tag} from 'src/ui/Tag';
+} from './types/AssetsTableQuery';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 type AssetKey = AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;

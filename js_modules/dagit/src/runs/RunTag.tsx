@@ -1,7 +1,7 @@
 import {Position, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {Tag} from 'src/ui/Tag';
+import {Tag} from '../ui/Tag';
 
 export enum DagsterTag {
   Namespace = 'dagster/',

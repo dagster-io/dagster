@@ -11,8 +11,8 @@ import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
 import 'codemirror/keymap/sublime';
 import 'codemirror/lib/codemirror.css';
-import 'src/configeditor/codemirror-yaml/lint'; // Patch lint
-import 'src/configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
+import './codemirror-yaml/lint'; // Patch lint
+import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
 import {Editor} from 'codemirror';
 import * as React from 'react';
@@ -20,15 +20,16 @@ import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {debounce} from 'src/app/Util';
-import {ConfigEditorHelpContext} from 'src/configeditor/ConfigEditorHelpContext';
+import {debounce} from '../app/Util';
+import {FontFamily} from '../ui/styles';
+
+import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
-} from 'src/configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
-import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {FontFamily} from 'src/ui/styles';
+} from './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
+import {ConfigEditorRunConfigSchemaFragment} from './types/ConfigEditorRunConfigSchemaFragment';
 
 interface ConfigEditorProps {
   configCode: string;

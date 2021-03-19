@@ -3,7 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import {Select} from '@blueprintjs/select';
 import * as React from 'react';
 
-import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
+import {ModeNotFoundError} from './ModeNotFoundError';
 
 interface Mode {
   name: string;

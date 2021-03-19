@@ -16,29 +16,30 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {copyValue} from 'src/app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {RunTags} from 'src/runs/RunTags';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {RepositorySchedulesFragment} from 'src/schedules/types/RepositorySchedulesFragment';
-import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
+import {copyValue} from '../app/DomUtils';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunTags} from '../runs/RunTags';
+import {JobStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {Spinner} from '../ui/Spinner';
+import {Table} from '../ui/Table';
+import {FontFamily} from '../ui/styles';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {TimestampDisplay} from './TimestampDisplay';
+import {RepositorySchedulesFragment} from './types/RepositorySchedulesFragment';
+import {ScheduleFragment} from './types/ScheduleFragment';
 import {
   ScheduleTickConfigQuery,
   ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult,
   ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests,
-} from 'src/schedules/types/ScheduleTickConfigQuery';
-import {JobStatus} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {HighlightedCodeBlock} from 'src/ui/HighlightedCodeBlock';
-import {Spinner} from 'src/ui/Spinner';
-import {Table} from 'src/ui/Table';
-import {FontFamily} from 'src/ui/styles';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './types/ScheduleTickConfigQuery';
 
 interface ScheduleTick {
   schedule: ScheduleFragment;

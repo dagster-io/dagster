@@ -3,17 +3,18 @@ import * as React from 'react';
 import {useHistory, Link, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {WebsocketStatus} from 'src/app/WebsocketStatus';
-import {DarkTimezonePicker} from 'src/app/time/DarkTimezonePicker';
-import navBarImage from 'src/images/nav-logo-icon.png';
-import navTitleImage from 'src/images/nav-title.png';
-import {InstanceWarningIcon} from 'src/nav/InstanceWarningIcon';
-import {LeftNavRepositorySection} from 'src/nav/LeftNavRepositorySection';
-import {VersionNumber} from 'src/nav/VersionNumber';
-import {SearchDialog} from 'src/search/SearchDialog';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {WebsocketStatus} from '../app/WebsocketStatus';
+import {DarkTimezonePicker} from '../app/time/DarkTimezonePicker';
+import navBarImage from '../images/nav-logo-icon.png';
+import navTitleImage from '../images/nav-title.png';
+import {SearchDialog} from '../search/SearchDialog';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+
+import {InstanceWarningIcon} from './InstanceWarningIcon';
+import {LeftNavRepositorySection} from './LeftNavRepositorySection';
+import {VersionNumber} from './VersionNumber';
 
 export const LeftNav = () => {
   const history = useHistory();

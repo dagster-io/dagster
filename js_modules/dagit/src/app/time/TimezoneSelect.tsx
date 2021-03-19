@@ -3,8 +3,8 @@ import {Select} from '@blueprintjs/select';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {TimezoneContext} from 'src/app/time/TimezoneContext';
-import {browserTimezone, browserTimezoneAbbreviation} from 'src/app/time/browserTimezone';
+import {TimezoneContext} from './TimezoneContext';
+import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';
 
 const formatOffset = (mm: number) => {
   const amm = Math.abs(mm);

@@ -1,4 +1,4 @@
-import {ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
+import {ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError} from './types/ExecutionSessionContainerRunConfigSchemaFragment';
 
 export type ModeNotFoundError =
   | ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError

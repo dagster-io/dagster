@@ -2,13 +2,14 @@ import {Colors, Tooltip, Position} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {formatElapsedTime} from 'src/app/Util';
-import {GanttChartMode} from 'src/gantt/Constants';
-import {boxStyleFor} from 'src/gantt/GanttChartLayout';
-import {RunGroupPanel} from 'src/gantt/RunGroupPanel';
-import {IRunMetadataDict, IStepState} from 'src/runs/RunMetadataProvider';
-import {StepSelection} from 'src/runs/StepSelection';
-import {Spinner} from 'src/ui/Spinner';
+import {formatElapsedTime} from '../app/Util';
+import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
+import {StepSelection} from '../runs/StepSelection';
+import {Spinner} from '../ui/Spinner';
+
+import {GanttChartMode} from './Constants';
+import {boxStyleFor} from './GanttChartLayout';
+import {RunGroupPanel} from './RunGroupPanel';
 
 interface GanttStatusPanelProps {
   metadata: IRunMetadataDict;

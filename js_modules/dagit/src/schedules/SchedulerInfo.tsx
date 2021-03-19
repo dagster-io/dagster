@@ -2,12 +2,13 @@ import {gql} from '@apollo/client';
 import {Code} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {DaemonHealthFragment} from 'src/instance/types/DaemonHealthFragment';
-import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
-import {Alert} from 'src/ui/Alert';
-import {Group} from 'src/ui/Group';
-import {FontFamily} from 'src/ui/styles';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {DaemonHealthFragment} from '../instance/types/DaemonHealthFragment';
+import {Alert} from '../ui/Alert';
+import {Group} from '../ui/Group';
+import {FontFamily} from '../ui/styles';
+
+import {SchedulerFragment} from './types/SchedulerFragment';
 
 export const SCHEDULER_FRAGMENT = gql`
   fragment SchedulerFragment on SchedulerOrError {

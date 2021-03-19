@@ -2,11 +2,12 @@ import {Popover, Tag} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {assertUnreachable} from 'src/app/Util';
-import {RunStats} from 'src/runs/RunStats';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
+import {assertUnreachable} from '../app/Util';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+
+import {RunStats} from './RunStats';
 
 export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
   const {status} = props;

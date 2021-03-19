@@ -1,16 +1,11 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {
-  StartSchedule,
-  StartSchedule_startSchedule_PythonError,
-} from 'src/schedules/types/StartSchedule';
-import {
-  StopSchedule,
-  StopSchedule_stopRunningSchedule_PythonError,
-} from 'src/schedules/types/StopSchedule';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+
+import {StartSchedule, StartSchedule_startSchedule_PythonError} from './types/StartSchedule';
+import {StopSchedule, StopSchedule_stopRunningSchedule_PythonError} from './types/StopSchedule';
 
 export const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleSelector: ScheduleSelector!) {

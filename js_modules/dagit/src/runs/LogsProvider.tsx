@@ -1,13 +1,14 @@
 import {ApolloClient, gql} from '@apollo/client';
 import * as React from 'react';
 
-import {DirectGraphQLSubscription} from 'src/app/DirectGraphQLSubscription';
-import {RunFragments} from 'src/runs/RunFragments';
-import {PipelineRunLogsSubscription} from 'src/runs/types/PipelineRunLogsSubscription';
-import {PipelineRunLogsSubscriptionStatusFragment} from 'src/runs/types/PipelineRunLogsSubscriptionStatusFragment';
-import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {TokenizingFieldValue} from 'src/ui/TokenizingField';
+import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {TokenizingFieldValue} from '../ui/TokenizingField';
+
+import {RunFragments} from './RunFragments';
+import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
+import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
+import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';

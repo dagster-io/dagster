@@ -5,28 +5,29 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {QueryCountdown} from 'src/app/QueryCountdown';
-import {
-  PartitionProgressQuery,
-  PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill,
-} from 'src/partitions/types/PartitionProgressQuery';
-import {RunStatusDot} from 'src/runs/RunStatusDots';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {QueryCountdown} from '../app/QueryCountdown';
+import {RunStatusDot} from '../runs/RunStatusDots';
 import {
   doneStatuses,
   failedStatuses,
   inProgressStatuses,
   queuedStatuses,
   successStatuses,
-} from 'src/runs/RunStatuses';
-import {TerminationDialog} from 'src/runs/TerminationDialog';
-import {POLL_INTERVAL} from 'src/runs/useCursorPaginatedQuery';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {stringFromValue} from 'src/ui/TokenizingField';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from '../runs/RunStatuses';
+import {TerminationDialog} from '../runs/TerminationDialog';
+import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
+import {PipelineRunStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {stringFromValue} from '../ui/TokenizingField';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {
+  PartitionProgressQuery,
+  PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill,
+} from './types/PartitionProgressQuery';
 interface Props {
   pipelineName: string;
   repoAddress: RepoAddress;

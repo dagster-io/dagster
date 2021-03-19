@@ -6,26 +6,27 @@ import {useHistory, useLocation} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {SolidDetailScrollContainer, UsedSolidDetails} from 'src/solids/SolidDetailsRoot';
-import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from 'src/solids/SolidTypeSignature';
-import {
-  SolidsRootQuery,
-  SolidsRootQuery_repositoryOrError_Repository_usedSolids,
-} from 'src/solids/types/SolidsRootQuery';
-import {Loading} from 'src/ui/Loading';
-import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Loading} from '../ui/Loading';
+import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-} from 'src/ui/TokenizingField';
-import {FontFamily} from 'src/ui/styles';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from '../ui/TokenizingField';
+import {FontFamily} from '../ui/styles';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {SolidDetailScrollContainer, UsedSolidDetails} from './SolidDetailsRoot';
+import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from './SolidTypeSignature';
+import {
+  SolidsRootQuery,
+  SolidsRootQuery_repositoryOrError_Repository_usedSolids,
+} from './types/SolidsRootQuery';
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};

@@ -2,11 +2,12 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
+import {JobTickStatus} from '../types/globalTypes';
+
 import {
   JobTickHistoryQuery_jobStateOrError_JobState_ticks,
   JobTickHistoryQuery_jobStateOrError_JobState_nextTick,
-} from 'src/jobs/types/JobTickHistoryQuery';
-import {JobTickStatus} from 'src/types/globalTypes';
+} from './types/JobTickHistoryQuery';
 
 type FutureTick = JobTickHistoryQuery_jobStateOrError_JobState_nextTick;
 type JobTick = JobTickHistoryQuery_jobStateOrError_JobState_ticks;

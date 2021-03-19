@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {Prompt} from 'react-router-dom';
 
-import {useOnBeforeUnload} from 'src/hooks/useOnBeforeUnload';
+import {useOnBeforeUnload} from '../hooks/useOnBeforeUnload';
 
 interface Props {
   message: string;

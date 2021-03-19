@@ -2,7 +2,7 @@ import {
   DefaultQuerystring,
   decodeRunPageFilters,
   encodeRunPageFilters,
-} from 'src/runs/useQueryPersistedLogFilter';
+} from './useQueryPersistedLogFilter';
 
 describe('encodeRunPageFilters', () => {
   it('serializes log levels, ', () => {

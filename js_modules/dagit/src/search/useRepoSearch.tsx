@@ -2,9 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
-import {SearchResult, SearchResultType} from 'src/search/types';
-import {SearchBootstrapQuery} from 'src/search/types/SearchBootstrapQuery';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {workspacePath} from '../workspace/workspacePath';
+
+import {SearchResult, SearchResultType} from './types';
+import {SearchBootstrapQuery} from './types/SearchBootstrapQuery';
 
 const fuseOptions = {
   keys: ['label', 'tags', 'type'],

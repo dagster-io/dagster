@@ -1,25 +1,26 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {JobTickHistory} from 'src/jobs/TickHistory';
-import {DagsterTag} from 'src/runs/RunTag';
-import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
-import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
-import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
-import {PreviousRunsForScheduleQuery} from 'src/schedules/types/PreviousRunsForScheduleQuery';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {JobTickHistory} from '../jobs/TickHistory';
+import {DagsterTag} from '../runs/RunTag';
+import {Group} from '../ui/Group';
+import {ScrollContainer} from '../ui/ListComponents';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {ScheduleDetails} from './ScheduleDetails';
+import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
+import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
+import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
-} from 'src/schedules/types/ScheduleRootQuery';
-import {Group} from 'src/ui/Group';
-import {ScrollContainer} from 'src/ui/ListComponents';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from './types/ScheduleRootQuery';
 
 interface Props {
   scheduleName: string;

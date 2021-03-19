@@ -1,9 +1,10 @@
 import {QueryResult} from '@apollo/client';
 import * as React from 'react';
 
-import {InstanceHealthQuery} from 'src/instance/types/InstanceHealthQuery';
-import {AllSchedules} from 'src/schedules/AllSchedules';
-import {Loading} from 'src/ui/Loading';
+import {AllSchedules} from '../schedules/AllSchedules';
+import {Loading} from '../ui/Loading';
+
+import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 interface Props {
   queryData: QueryResult<InstanceHealthQuery>;

@@ -2,19 +2,20 @@ import {IconName, Tab, Tabs, Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
-import {RepositoryLink} from 'src/nav/RepositoryLink';
 import {
   explorerPathFromString,
   explorerPathToString,
   PipelineExplorerPath,
-} from 'src/pipelines/PipelinePathUtils';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
-import {useRepository} from 'src/workspace/WorkspaceContext';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from '../pipelines/PipelinePathUtils';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+import {useRepository} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {RepositoryLink} from './RepositoryLink';
 
 interface TabConfig {
   title: string;

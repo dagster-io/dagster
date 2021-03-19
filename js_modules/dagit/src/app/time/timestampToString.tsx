@@ -1,7 +1,7 @@
 import moment from 'moment-timezone';
 
-import {TimeFormat, DEFAULT_TIME_FORMAT} from 'src/app/time/TimestampFormat';
-import {browserTimezone} from 'src/app/time/browserTimezone';
+import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
+import {browserTimezone} from './browserTimezone';
 
 export type TimestampProps = ({ms: number} | {unix: number}) & {
   timeFormat?: TimeFormat;

@@ -3,15 +3,16 @@ import * as React from 'react';
 import {Link, LinkProps, useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import navBarImage from 'src/images/nav-logo-icon.png';
-import navTitleImage from 'src/images/nav-title.png';
-import {VersionNumber} from 'src/nav/VersionNumber';
-import {config, matchSome, NavItemConfig} from 'src/nav/config';
-import {shortcutLabel} from 'src/nav/shortcutLabel';
-import {SearchDialog} from 'src/search/SearchDialog';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import navBarImage from '../images/nav-logo-icon.png';
+import navTitleImage from '../images/nav-title.png';
+import {SearchDialog} from '../search/SearchDialog';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+
+import {VersionNumber} from './VersionNumber';
+import {config, matchSome, NavItemConfig} from './config';
+import {shortcutLabel} from './shortcutLabel';
 
 interface NavItemProps extends NavItemConfig {
   pathname: string;

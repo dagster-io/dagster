@@ -1,10 +1,11 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {StartSensor_startSensor_PythonError, StartSensor} from 'src/sensors/types/StartSensor';
-import {StopSensor_stopSensor_PythonError, StopSensor} from 'src/sensors/types/StopSensor';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+
+import {StartSensor_startSensor_PythonError, StartSensor} from './types/StartSensor';
+import {StopSensor_stopSensor_PythonError, StopSensor} from './types/StopSensor';
 
 export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {

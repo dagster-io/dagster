@@ -6,27 +6,28 @@ import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Timestamp} from 'src/app/time/Timestamp';
-import {AssetLineageInfoElement} from 'src/assets/AssetLineageInfoElement';
-import {AssetMaterializationMatrix} from 'src/assets/AssetMaterializationMatrix';
-import {AssetMaterializationTable} from 'src/assets/AssetMaterializationTable';
-import {AssetValueGraph} from 'src/assets/AssetValueGraph';
+import {Timestamp} from '../app/time/Timestamp';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
+import {titleForRun} from '../runs/RunUtils';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {MetadataTable} from '../ui/MetadataTable';
+import {Subheading} from '../ui/Text';
+import {FontFamily} from '../ui/styles';
+
+import {AssetLineageInfoElement} from './AssetLineageInfoElement';
+import {AssetMaterializationMatrix} from './AssetMaterializationMatrix';
+import {AssetMaterializationTable} from './AssetMaterializationTable';
+import {AssetValueGraph} from './AssetValueGraph';
 import {
   AssetQuery,
   AssetQueryVariables,
   AssetQuery_assetOrError_Asset_assetMaterializations,
   AssetQuery_assetOrError_Asset,
-} from 'src/assets/types/AssetQuery';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from 'src/runs/MetadataEntry';
-import {titleForRun} from 'src/runs/RunUtils';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {MetadataTable} from 'src/ui/MetadataTable';
-import {Subheading} from 'src/ui/Text';
-import {FontFamily} from 'src/ui/styles';
+} from './types/AssetQuery';
 
 interface AssetKey {
   path: string[];

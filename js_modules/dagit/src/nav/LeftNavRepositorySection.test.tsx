@@ -3,9 +3,10 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from 'src/nav/LeftNavRepositorySection';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+
+import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from './LeftNavRepositorySection';
 
 describe('Repository options', () => {
   const defaultMocks = {

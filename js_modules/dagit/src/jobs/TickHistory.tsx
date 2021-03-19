@@ -14,23 +14,24 @@ import moment from 'moment-timezone';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {TICK_TAG_FRAGMENT, RunList, TickTag} from 'src/jobs/JobTick';
-import {LiveTickTimeline} from 'src/jobs/LiveTickTimeline';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {JobTickStatus, JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
+import {Subheading} from '../ui/Text';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {TICK_TAG_FRAGMENT, RunList, TickTag} from './JobTick';
+import {LiveTickTimeline} from './LiveTickTimeline';
 import {
   JobTickHistoryQuery,
   JobTickHistoryQuery_jobStateOrError_JobState_ticks,
-} from 'src/jobs/types/JobTickHistoryQuery';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {JobTickStatus, JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Spinner} from 'src/ui/Spinner';
-import {Subheading} from 'src/ui/Text';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from './types/JobTickHistoryQuery';
 
 import 'chartjs-plugin-zoom';
 

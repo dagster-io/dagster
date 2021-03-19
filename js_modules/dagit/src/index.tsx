@@ -12,13 +12,13 @@ import * as ReactDOM from 'react-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {App} from 'src/app/App';
-import {AppCache} from 'src/app/AppCache';
-import {AppErrorLink} from 'src/app/AppError';
-import {WEBSOCKET_URI} from 'src/app/DomUtils';
-import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from 'src/app/Util';
-import {WebsocketStatusProvider} from 'src/app/WebsocketStatus';
-import {FontFamily} from 'src/ui/styles';
+import {App} from './app/App';
+import {AppCache} from './app/AppCache';
+import {AppErrorLink} from './app/AppError';
+import {WEBSOCKET_URI} from './app/DomUtils';
+import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './app/Util';
+import {WebsocketStatusProvider} from './app/WebsocketStatus';
+import {FontFamily} from './ui/styles';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these

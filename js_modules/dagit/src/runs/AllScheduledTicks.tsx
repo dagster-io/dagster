@@ -2,18 +2,19 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {SchedulerInfoQuery} from 'src/runs/types/SchedulerInfoQuery';
-import {POLL_INTERVAL} from 'src/runs/useCursorPaginatedQuery';
-import {REPOSITORY_SCHEDULES_FRAGMENT} from 'src/schedules/ScheduleUtils';
-import {SchedulerInfo, SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
-import {SchedulesNextTicks} from 'src/schedules/SchedulesNextTicks';
-import {Alert} from 'src/ui/Alert';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
+import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
+import {Alert} from '../ui/Alert';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+
+import {SchedulerInfoQuery} from './types/SchedulerInfoQuery';
+import {POLL_INTERVAL} from './useCursorPaginatedQuery';
 
 export const AllScheduledTicks = () => {
   const queryResult = useQuery<SchedulerInfoQuery>(SCHEDULER_INFO_QUERY, {

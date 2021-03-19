@@ -1,4 +1,4 @@
-import {ConfigEditorRunConfigSchemaFragment_allConfigTypes} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {ConfigEditorRunConfigSchemaFragment_allConfigTypes} from './types/ConfigEditorRunConfigSchemaFragment';
 
 export interface ConfigEditorHelpContext {
   type: ConfigEditorRunConfigSchemaFragment_allConfigTypes;

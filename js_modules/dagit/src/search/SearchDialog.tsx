@@ -4,13 +4,14 @@ import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {SearchResults} from 'src/search/SearchResults';
-import {SearchResult} from 'src/search/types';
-import {useRepoSearch} from 'src/search/useRepoSearch';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {FontFamily} from 'src/ui/styles';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {FontFamily} from '../ui/styles';
+
+import {SearchResults} from './SearchResults';
+import {SearchResult} from './types';
+import {useRepoSearch} from './useRepoSearch';
 
 type State = {
   shown: boolean;

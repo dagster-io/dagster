@@ -1,14 +1,15 @@
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {PipelineExecutionRoot} from 'src/execute/PipelineExecutionRoot';
-import {PipelineExecutionSetupRoot} from 'src/execute/PipelineExecutionSetupRoot';
-import {PipelineNav} from 'src/nav/PipelineNav';
-import {PipelinePartitionsRoot} from 'src/partitions/PipelinePartitionsRoot';
-import {PipelineExplorerRegexRoot} from 'src/pipelines/PipelineExplorerRoot';
-import {PipelineOverviewRoot} from 'src/pipelines/PipelineOverviewRoot';
-import {PipelineRunsRoot} from 'src/pipelines/PipelineRunsRoot';
-import {RepoAddress} from 'src/workspace/types';
+import {PipelineExecutionRoot} from '../execute/PipelineExecutionRoot';
+import {PipelineExecutionSetupRoot} from '../execute/PipelineExecutionSetupRoot';
+import {PipelineNav} from '../nav/PipelineNav';
+import {PipelinePartitionsRoot} from '../partitions/PipelinePartitionsRoot';
+import {RepoAddress} from '../workspace/types';
+
+import {PipelineExplorerRegexRoot} from './PipelineExplorerRoot';
+import {PipelineOverviewRoot} from './PipelineOverviewRoot';
+import {PipelineRunsRoot} from './PipelineRunsRoot';
 
 interface Props {
   repoAddress: RepoAddress;

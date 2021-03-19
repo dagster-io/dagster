@@ -2,11 +2,12 @@ import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from 'src/runs/RunTable';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Subheading} from 'src/ui/Text';
-import {PreviousRunsFragment} from 'src/workspace/types/PreviousRunsFragment';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Subheading} from '../ui/Text';
+
+import {PreviousRunsFragment} from './types/PreviousRunsFragment';
 
 export const PreviousRunsSection: React.FC<{
   loading: boolean;

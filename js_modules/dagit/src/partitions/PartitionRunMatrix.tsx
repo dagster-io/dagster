@@ -3,10 +3,17 @@ import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover, Icon} from '@b
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useViewport} from 'src/gantt/useViewport';
-import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
-import {PartitionProgress} from 'src/partitions/PartitionProgress';
-import {PartitionRunListForStep} from 'src/partitions/PartitionRunListForStep';
+import {useViewport} from '../gantt/useViewport';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {Box} from '../ui/Box';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Group} from '../ui/Group';
+import {TokenizingFieldValue} from '../ui/TokenizingField';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {PartitionProgress} from './PartitionProgress';
+import {PartitionRunListForStep} from './PartitionRunListForStep';
 import {
   GridColumn,
   GridFloatingContainer,
@@ -14,26 +21,15 @@ import {
   LeftLabel,
   TopLabel,
   TopLabelTilted,
-} from 'src/partitions/RunMatrixUtils';
-import {RunTagsTokenizingField} from 'src/partitions/RunTagsTokenizingField';
-import {SliceSlider} from 'src/partitions/SliceSlider';
+} from './RunMatrixUtils';
+import {RunTagsTokenizingField} from './RunTagsTokenizingField';
+import {SliceSlider} from './SliceSlider';
 import {
   PartitionRunMatrixPipelineQuery,
   PartitionRunMatrixPipelineQueryVariables,
-} from 'src/partitions/types/PartitionRunMatrixPipelineQuery';
-import {PartitionRunMatrixRunFragment} from 'src/partitions/types/PartitionRunMatrixRunFragment';
-import {
-  useMatrixData,
-  MatrixStep,
-  DisplayOptions,
-  StatusSquareFinalColor,
-} from 'src/partitions/useMatrixData';
-import {Box} from 'src/ui/Box';
-import {GraphQueryInput} from 'src/ui/GraphQueryInput';
-import {Group} from 'src/ui/Group';
-import {TokenizingFieldValue} from 'src/ui/TokenizingField';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+} from './types/PartitionRunMatrixPipelineQuery';
+import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
+import {useMatrixData, MatrixStep, DisplayOptions, StatusSquareFinalColor} from './useMatrixData';
 
 const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of partitions.';
 

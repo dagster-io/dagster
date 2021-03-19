@@ -3,33 +3,34 @@ import {Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from 'src/jobs/JobTick';
-import {RepositoryLink} from 'src/nav/RepositoryLink';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
+import {TickTag} from '../jobs/JobTick';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {JobStatus, JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {CountdownStatus, useCountdown} from '../ui/Countdown';
+import {Group} from '../ui/Group';
+import {MetadataTable} from '../ui/MetadataTable';
+import {PageHeader} from '../ui/PageHeader';
+import {RefreshableCountdown} from '../ui/RefreshableCountdown';
+import {Code, Heading} from '../ui/Text';
+import {FontFamily} from '../ui/styles';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
-} from 'src/schedules/ScheduleMutations';
-import {SchedulePartitionStatus} from 'src/schedules/SchedulePartitionStatus';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
-import {humanCronString} from 'src/schedules/humanCronString';
-import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
-import {StartSchedule} from 'src/schedules/types/StartSchedule';
-import {StopSchedule} from 'src/schedules/types/StopSchedule';
-import {JobStatus, JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {CountdownStatus, useCountdown} from 'src/ui/Countdown';
-import {Group} from 'src/ui/Group';
-import {MetadataTable} from 'src/ui/MetadataTable';
-import {PageHeader} from 'src/ui/PageHeader';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
-import {Code, Heading} from 'src/ui/Text';
-import {FontFamily} from 'src/ui/styles';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './ScheduleMutations';
+import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {TimestampDisplay} from './TimestampDisplay';
+import {humanCronString} from './humanCronString';
+import {ScheduleFragment} from './types/ScheduleFragment';
+import {StartSchedule} from './types/StartSchedule';
+import {StopSchedule} from './types/StopSchedule';
 
 const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 

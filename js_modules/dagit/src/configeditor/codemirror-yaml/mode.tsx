@@ -6,7 +6,7 @@ import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/dialog/dialog.css';
 import * as yaml from 'yaml';
 
-import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {ConfigEditorRunConfigSchemaFragment} from '../types/ConfigEditorRunConfigSchemaFragment';
 
 // Example YAML for testing this parser:
 // https://gist.github.com/bengotow/0b700e7d0367750cb31eaf697f865d70

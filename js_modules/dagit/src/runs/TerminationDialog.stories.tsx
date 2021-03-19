@@ -2,8 +2,9 @@ import {Story, Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {TerminationDialog, Props as TerminationDialogProps} from 'src/runs/TerminationDialog';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+
+import {TerminationDialog, Props as TerminationDialogProps} from './TerminationDialog';
 
 // eslint-disable-next-line import/no-default-export
 export default {

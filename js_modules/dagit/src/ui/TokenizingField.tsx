@@ -3,8 +3,8 @@ import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {Box} from 'src/ui/Box';
-import {Spinner} from 'src/ui/Spinner';
+import {Box} from './Box';
+import {Spinner} from './Spinner';
 
 export interface SuggestionProvider {
   token: string;

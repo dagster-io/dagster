@@ -1,20 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from 'src/app/PythonErrorInfo';
-import {QueryCountdown} from 'src/app/QueryCountdown';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceHealthFragment';
-import {JOB_STATE_FRAGMENT} from 'src/jobs/JobUtils';
-import {AllSensors} from 'src/sensors/AllSensors';
-import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
-import {AllSensorsQuery} from 'src/sensors/types/AllSensorsQuery';
-import {JobType} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Heading} from 'src/ui/Text';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {QueryCountdown} from '../app/QueryCountdown';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {JobType} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading} from '../ui/Text';
+
+import {AllSensors} from './AllSensors';
+import {SENSOR_FRAGMENT} from './SensorFragment';
+import {AllSensorsQuery} from './types/AllSensorsQuery';
 
 const POLL_INTERVAL = 15 * 1000;
 

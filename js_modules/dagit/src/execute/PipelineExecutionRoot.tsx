@@ -9,29 +9,30 @@ import {
   applyChangesToSession,
   applyCreateSession,
   useStorage,
-} from 'src/app/LocalStorage';
-import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from 'src/configeditor/ConfigEditorUtils';
+} from '../app/LocalStorage';
+import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from '../configeditor/ConfigEditorUtils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
-} from 'src/execute/ConfigEditorConfigPicker';
-import {ExecutionSessionContainer} from 'src/execute/ExecutionSessionContainer';
-import {ExecutionSessionContainerError} from 'src/execute/ExecutionSessionContainerError';
-import {ExecutionSessionContainerLoading} from 'src/execute/ExecutionSessionContainerLoading';
-import {ExecutionTabs} from 'src/execute/ExecutionTabs';
+} from './ConfigEditorConfigPicker';
+import {ExecutionSessionContainer} from './ExecutionSessionContainer';
+import {ExecutionSessionContainerError} from './ExecutionSessionContainerError';
+import {ExecutionSessionContainerLoading} from './ExecutionSessionContainerLoading';
+import {ExecutionTabs} from './ExecutionTabs';
 import {
   PipelineExecutionConfigSchemaQuery,
   PipelineExecutionConfigSchemaQueryVariables,
-} from 'src/execute/types/PipelineExecutionConfigSchemaQuery';
+} from './types/PipelineExecutionConfigSchemaQuery';
 import {
   PipelineExecutionRootQuery,
   PipelineExecutionRootQueryVariables,
-} from 'src/execute/types/PipelineExecutionRootQuery';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './types/PipelineExecutionRootQuery';
 
 interface Props {
   pipelinePath: string;

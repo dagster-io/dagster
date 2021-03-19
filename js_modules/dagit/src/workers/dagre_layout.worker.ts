@@ -1,4 +1,4 @@
-import {layoutPipeline} from 'src/graph/layout';
+import {layoutPipeline} from '../graph/layout';
 // eslint-disable-next-line no-restricted-globals
 const ctx: Worker = self as any;
 

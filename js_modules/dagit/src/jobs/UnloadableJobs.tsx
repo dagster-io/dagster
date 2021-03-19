@@ -2,26 +2,27 @@ import {useMutation} from '@apollo/client';
 import {Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {useConfirmation} from 'src/app/CustomConfirmationProvider';
-import {TickTag} from 'src/jobs/JobTick';
-import {JobRunStatus} from 'src/jobs/JobUtils';
-import {JobStateFragment} from 'src/jobs/types/JobStateFragment';
+import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
   STOP_SCHEDULE_MUTATION,
   displayScheduleMutationErrors,
-} from 'src/schedules/ScheduleMutations';
-import {humanCronString} from 'src/schedules/humanCronString';
-import {StopSchedule} from 'src/schedules/types/StopSchedule';
-import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from 'src/sensors/SensorMutations';
-import {StopSensor} from 'src/sensors/types/StopSensor';
-import {JobType, JobStatus} from 'src/types/globalTypes';
-import {Alert} from 'src/ui/Alert';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
-import {Table} from 'src/ui/Table';
-import {Subheading} from 'src/ui/Text';
-import {RepositoryOriginInformation} from 'src/workspace/RepositoryInformation';
+} from '../schedules/ScheduleMutations';
+import {humanCronString} from '../schedules/humanCronString';
+import {StopSchedule} from '../schedules/types/StopSchedule';
+import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
+import {StopSensor} from '../sensors/types/StopSensor';
+import {JobType, JobStatus} from '../types/globalTypes';
+import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+import {Table} from '../ui/Table';
+import {Subheading} from '../ui/Text';
+import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
+
+import {TickTag} from './JobTick';
+import {JobRunStatus} from './JobUtils';
+import {JobStateFragment} from './types/JobStateFragment';
 
 export const UnloadableSensors: React.FunctionComponent<{
   sensorStates: JobStateFragment[];

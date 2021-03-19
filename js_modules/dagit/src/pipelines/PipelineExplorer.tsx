@@ -7,22 +7,23 @@ import * as React from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {filterByQuery} from 'src/app/GraphQueryImpl';
-import {PIPELINE_GRAPH_SOLID_FRAGMENT} from 'src/graph/PipelineGraph';
-import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
-import {SolidJumpBar} from 'src/pipelines/PipelineJumpComponents';
-import {PipelineExplorerPath, explorerPathToString} from 'src/pipelines/PipelinePathUtils';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
+import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
+import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {SolidJumpBar} from './PipelineJumpComponents';
+import {PipelineExplorerPath, explorerPathToString} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
-} from 'src/pipelines/SidebarTabbedContainer';
-import {PipelineExplorerFragment} from 'src/pipelines/types/PipelineExplorerFragment';
-import {PipelineExplorerSolidHandleFragment} from 'src/pipelines/types/PipelineExplorerSolidHandleFragment';
-import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
-import {GraphQueryInput} from 'src/ui/GraphQueryInput';
-import {SplitPanelContainer} from 'src/ui/SplitPanelContainer';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './SidebarTabbedContainer';
+import {PipelineExplorerFragment} from './types/PipelineExplorerFragment';
+import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;

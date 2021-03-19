@@ -6,17 +6,18 @@ import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {LogFilter, LogsProviderLogs} from 'src/runs/LogsProvider';
+import {Spinner} from '../ui/Spinner';
+
+import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {
   LOGS_ROW_STRUCTURED_FRAGMENT,
   LOGS_ROW_UNSTRUCTURED_FRAGMENT,
   Structured,
   Unstructured,
-} from 'src/runs/LogsRow';
-import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
-import {IRunMetadataDict} from 'src/runs/RunMetadataProvider';
-import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
-import {Spinner} from 'src/ui/Spinner';
+} from './LogsRow';
+import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
+import {IRunMetadataDict} from './RunMetadataProvider';
+import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
 interface ILogsScrollingTableProps {
   logs: LogsProviderLogs;

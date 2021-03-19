@@ -3,18 +3,19 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ParentSolidNode, SVGLabeledParentRect} from 'src/graph/ParentSolidNode';
-import {SVGViewport, DETAIL_ZOOM, SVGViewportInteractor} from 'src/graph/SVGViewport';
-import {SolidLinks} from 'src/graph/SolidLinks';
+import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+
+import {ParentSolidNode, SVGLabeledParentRect} from './ParentSolidNode';
+import {SVGViewport, DETAIL_ZOOM, SVGViewportInteractor} from './SVGViewport';
+import {SolidLinks} from './SolidLinks';
 import {
   SolidNode,
   SOLID_NODE_DEFINITION_FRAGMENT,
   SOLID_NODE_INVOCATION_FRAGMENT,
-} from 'src/graph/SolidNode';
-import {IFullPipelineLayout, IFullSolidLayout, ILayout} from 'src/graph/getFullSolidLayout';
-import {Edge, isHighlighted, isSolidHighlighted} from 'src/graph/highlighting';
-import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
-import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
+} from './SolidNode';
+import {IFullPipelineLayout, IFullSolidLayout, ILayout} from './getFullSolidLayout';
+import {Edge, isHighlighted, isSolidHighlighted} from './highlighting';
+import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 
 const NoOp = () => {};
 

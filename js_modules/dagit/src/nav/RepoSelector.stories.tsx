@@ -3,9 +3,10 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {RepoDetails, RepoSelector} from 'src/nav/RepoSelector';
-import {Box} from 'src/ui/Box';
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
+import {Box} from '../ui/Box';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
+import {RepoDetails, RepoSelector} from './RepoSelector';
 
 // eslint-disable-next-line import/no-default-export
 export default {

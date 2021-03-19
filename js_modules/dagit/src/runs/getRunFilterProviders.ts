@@ -1,6 +1,6 @@
 import memoize from 'lodash/memoize';
 
-import {DagsterEventType} from 'src/types/globalTypes';
+import {DagsterEventType} from '../types/globalTypes';
 
 const typeValues = memoize(() => Object.values(DagsterEventType).sort());
 

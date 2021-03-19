@@ -4,20 +4,17 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {
-  PipelineForTable,
-  PipelineTable,
-  PIPELINE_TABLE_FRAGMENT,
-} from 'src/pipelines/PipelineTable';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {Code, Heading} from 'src/ui/Text';
-import {buildRepoAddress} from 'src/workspace/buildRepoAddress';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
-import {AllPipelinesQuery} from 'src/workspace/types/AllPipelinesQuery';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {PipelineForTable, PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {Code, Heading} from '../ui/Text';
+
+import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsString} from './repoAddressAsString';
+import {AllPipelinesQuery} from './types/AllPipelinesQuery';
 
 const fuseOptions = {
   keys: ['name', 'repo', 'description'],

@@ -1,8 +1,10 @@
 import {Checkbox} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {getFeatureFlags, setFeatureFlags, FeatureFlag} from 'src/app/Util';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+
+import {getFeatureFlags, setFeatureFlags, FeatureFlag} from './Util';
+
 export const FeatureFlagsRoot = () => {
   const [flags, setFlags] = React.useState<FeatureFlag[]>(getFeatureFlags());
 

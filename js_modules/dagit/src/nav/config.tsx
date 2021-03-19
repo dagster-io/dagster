@@ -2,8 +2,9 @@ import {IconName} from '@blueprintjs/core';
 import * as React from 'react';
 import {matchPath} from 'react-router-dom';
 
-import {InstanceWarningIcon} from 'src/nav/InstanceWarningIcon';
-import {Group} from 'src/ui/Group';
+import {Group} from '../ui/Group';
+
+import {InstanceWarningIcon} from './InstanceWarningIcon';
 
 export type KeyShortcut = {
   code: string;

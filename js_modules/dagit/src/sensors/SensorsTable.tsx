@@ -4,25 +4,26 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from 'src/jobs/JobTick';
-import {JobRunStatus} from 'src/jobs/JobUtils';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {humanizeSensorInterval} from 'src/sensors/SensorDetails';
+import {TickTag} from '../jobs/JobTick';
+import {JobRunStatus} from '../jobs/JobUtils';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {JobStatus, JobType} from '../types/globalTypes';
+import {Group} from '../ui/Group';
+import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Table} from '../ui/Table';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {humanizeSensorInterval} from './SensorDetails';
 import {
   displaySensorMutationErrors,
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
-} from 'src/sensors/SensorMutations';
-import {SensorFragment} from 'src/sensors/types/SensorFragment';
-import {StartSensor} from 'src/sensors/types/StartSensor';
-import {StopSensor} from 'src/sensors/types/StopSensor';
-import {JobStatus, JobType} from 'src/types/globalTypes';
-import {Group} from 'src/ui/Group';
-import {SwitchWithoutLabel} from 'src/ui/SwitchWithoutLabel';
-import {Table} from 'src/ui/Table';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './SensorMutations';
+import {SensorFragment} from './types/SensorFragment';
+import {StartSensor} from './types/StartSensor';
+import {StopSensor} from './types/StopSensor';
 
 export const SensorsTable: React.FC<{
   repoAddress: RepoAddress;

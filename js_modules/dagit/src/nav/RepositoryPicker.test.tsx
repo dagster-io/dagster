@@ -3,9 +3,10 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {RepositoryPicker} from 'src/nav/RepositoryPicker';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {useRepositoryOptions, WorkspaceProvider} from 'src/workspace/WorkspaceContext';
+import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {useRepositoryOptions, WorkspaceProvider} from '../workspace/WorkspaceContext';
+
+import {RepositoryPicker} from './RepositoryPicker';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {

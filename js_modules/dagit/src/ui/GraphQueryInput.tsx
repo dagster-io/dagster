@@ -6,8 +6,8 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from 'src/app/GraphQueryImpl';
-import {dynamicKeyWithoutIndex, isDynamicStep} from 'src/gantt/DynamicStepSupport';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 
 interface GraphQueryInputProps {
   intent?: Intent;

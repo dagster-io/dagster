@@ -2,9 +2,10 @@ import {useQuery} from '@apollo/client';
 import {render, screen} from '@testing-library/react';
 import React from 'react';
 
-import {INSTANCE_CONFIG_QUERY} from 'src/instance/InstanceConfig';
-import {InstanceConfigQuery} from 'src/instance/types/InstanceConfigQuery';
-import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
+import {INSTANCE_CONFIG_QUERY} from '../instance/InstanceConfig';
+import {InstanceConfigQuery} from '../instance/types/InstanceConfigQuery';
+
+import {ApolloTestProvider} from './ApolloTestProvider';
 
 describe('ApolloTestProvider', () => {
   const Thing = () => {

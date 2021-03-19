@@ -1,7 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
-import {FontFamily} from 'src/ui/styles';
+import {FontFamily} from './styles';
 
 export const Trace = styled.div`
   background-color: ${Colors.LIGHT_GRAY1};

@@ -3,7 +3,7 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PartitionGraph} from 'src/partitions/PartitionGraph';
+import {PartitionGraph} from './PartitionGraph';
 import {
   PIPELINE_LABEL,
   PARTITION_GRAPH_FRAGMENT,
@@ -18,8 +18,8 @@ import {
   getStepExpectationRateForRun,
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
-} from 'src/partitions/PartitionGraphUtils';
-import {PartitionGraphSetRunFragment} from 'src/partitions/types/PartitionGraphSetRunFragment';
+} from './PartitionGraphUtils';
+import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment';
 
 export const PartitionGraphSet: React.FunctionComponent<{
   partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];

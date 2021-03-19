@@ -1,9 +1,7 @@
-import {RunFragmentForRepositoryMatch} from 'src/runs/types/RunFragmentForRepositoryMatch';
-import {DagsterRepoOption, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
-import {
-  findRepoContainingPipeline,
-  repoContainsPipeline,
-} from 'src/workspace/findRepoContainingPipeline';
+import {RunFragmentForRepositoryMatch} from '../runs/types/RunFragmentForRepositoryMatch';
+
+import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
+import {findRepoContainingPipeline, repoContainsPipeline} from './findRepoContainingPipeline';
 
 type MatchType = {
   match: DagsterRepoOption;

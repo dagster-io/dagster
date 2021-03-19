@@ -11,10 +11,10 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ShortcutHandler} from 'src/app/ShortcutHandler';
-import {WebsocketStatusContext} from 'src/app/WebsocketStatus';
-import {Box} from 'src/ui/Box';
-import {Spinner} from 'src/ui/Spinner';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {WebsocketStatusContext} from '../app/WebsocketStatus';
+import {Box} from '../ui/Box';
+import {Spinner} from '../ui/Spinner';
 
 export interface LaunchButtonConfiguration {
   title: string;

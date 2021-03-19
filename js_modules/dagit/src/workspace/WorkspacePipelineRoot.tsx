@@ -2,17 +2,18 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
-import {explorerPathFromString} from 'src/pipelines/PipelinePathUtils';
-import {Alert} from 'src/ui/Alert';
-import {Box} from 'src/ui/Box';
-import {LoadingSpinner} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {PageHeader} from 'src/ui/PageHeader';
-import {Table} from 'src/ui/Table';
-import {Heading} from 'src/ui/Text';
-import {optionToRepoAddress, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
-import {findRepoContainingPipeline} from 'src/workspace/findRepoContainingPipeline';
-import {workspacePath, workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
+import {LoadingSpinner} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {PageHeader} from '../ui/PageHeader';
+import {Table} from '../ui/Table';
+import {Heading} from '../ui/Text';
+
+import {optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext';
+import {findRepoContainingPipeline} from './findRepoContainingPipeline';
+import {workspacePath, workspacePathFromAddress} from './workspacePath';
 
 interface Props {
   pipelinePath: string;

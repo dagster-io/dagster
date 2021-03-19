@@ -1,4 +1,4 @@
-import {PipelineRunStatus} from 'src/types/globalTypes';
+import {PipelineRunStatus} from '../types/globalTypes';
 
 export const queuedStatuses = new Set([PipelineRunStatus.QUEUED]);
 

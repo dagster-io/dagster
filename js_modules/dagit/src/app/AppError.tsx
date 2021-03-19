@@ -3,8 +3,9 @@ import {Intent, Position, Toaster} from '@blueprintjs/core';
 import {GraphQLError} from 'graphql';
 import * as React from 'react';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
-import {FontFamily} from 'src/ui/styles';
+import {FontFamily} from '../ui/styles';
+
+import {showCustomAlert} from './CustomAlertProvider';
 
 export interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];

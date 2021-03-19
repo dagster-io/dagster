@@ -1,7 +1,7 @@
 import {Button, ButtonGroup} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {GanttChartMode} from 'src/gantt/Constants';
+import {GanttChartMode} from './Constants';
 
 export const GanttChartModeControl: React.FunctionComponent<{
   value: GanttChartMode;

@@ -3,29 +3,30 @@ import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from 'src/jobs/JobTick';
-import {RepositoryLink} from 'src/nav/RepositoryLink';
-import {PipelineReference} from 'src/pipelines/PipelineReference';
-import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
+import {TickTag} from '../jobs/JobTick';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {JobStatus, JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {CountdownStatus, useCountdown} from '../ui/Countdown';
+import {Group} from '../ui/Group';
+import {MetadataTable} from '../ui/MetadataTable';
+import {PageHeader} from '../ui/PageHeader';
+import {RefreshableCountdown} from '../ui/RefreshableCountdown';
+import {Heading} from '../ui/Text';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
 import {
   displaySensorMutationErrors,
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
-} from 'src/sensors/SensorMutations';
-import {SensorFragment} from 'src/sensors/types/SensorFragment';
-import {StartSensor} from 'src/sensors/types/StartSensor';
-import {StopSensor} from 'src/sensors/types/StopSensor';
-import {JobStatus, JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {CountdownStatus, useCountdown} from 'src/ui/Countdown';
-import {Group} from 'src/ui/Group';
-import {MetadataTable} from 'src/ui/MetadataTable';
-import {PageHeader} from 'src/ui/PageHeader';
-import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
-import {Heading} from 'src/ui/Text';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
+} from './SensorMutations';
+import {SensorFragment} from './types/SensorFragment';
+import {StartSensor} from './types/StartSensor';
+import {StopSensor} from './types/StopSensor';
 
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {

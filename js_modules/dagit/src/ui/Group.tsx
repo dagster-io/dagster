@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled, {css} from 'styled-components/macro';
 
-import {Box} from 'src/ui/Box';
-import {AlignItems, DirectionalSpacing, FlexProperties, FlexWrap, Spacing} from 'src/ui/types';
+import {Box} from './Box';
+import {AlignItems, DirectionalSpacing, FlexProperties, FlexWrap, Spacing} from './types';
 
 type Direction = 'row' | 'column';
 

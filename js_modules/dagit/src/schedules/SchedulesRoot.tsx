@@ -3,22 +3,23 @@ import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {PythonErrorInfo} from 'src/app/PythonErrorInfo';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {UnloadableSchedules} from 'src/jobs/UnloadableJobs';
-import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
-import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
-import {SchedulesNextTicks} from 'src/schedules/SchedulesNextTicks';
-import {SchedulesTable} from 'src/schedules/SchedulesTable';
-import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
-import {JobType} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
-import {Group} from 'src/ui/Group';
-import {Loading} from 'src/ui/Loading';
-import {Page} from 'src/ui/Page';
-import {Subheading} from 'src/ui/Text';
-import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
-import {RepoAddress} from 'src/workspace/types';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {UnloadableSchedules} from '../jobs/UnloadableJobs';
+import {JobType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {Group} from '../ui/Group';
+import {Loading} from '../ui/Loading';
+import {Page} from '../ui/Page';
+import {Subheading} from '../ui/Text';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
+import {SchedulerInfo} from './SchedulerInfo';
+import {SchedulesNextTicks} from './SchedulesNextTicks';
+import {SchedulesTable} from './SchedulesTable';
+import {SchedulesRootQuery} from './types/SchedulesRootQuery';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useDocumentTitle('Schedules');

@@ -4,17 +4,18 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from 'src/app/CustomAlertProvider';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {RunStatus} from '../runs/RunStatusDots';
+import {DagsterTag} from '../runs/RunTag';
+import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
+
 import {
   RunGroupPanelQuery,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
-} from 'src/gantt/types/RunGroupPanelQuery';
-import {RunStatus} from 'src/runs/RunStatusDots';
-import {DagsterTag} from 'src/runs/RunTag';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from 'src/runs/RunUtils';
-import {Box} from 'src/ui/Box';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
+} from './types/RunGroupPanelQuery';
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);

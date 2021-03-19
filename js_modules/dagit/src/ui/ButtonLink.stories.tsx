@@ -2,8 +2,8 @@ import {Colors} from '@blueprintjs/core';
 import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {Box} from 'src/ui/Box';
-import {ButtonLink, Props} from 'src/ui/ButtonLink';
+import {Box} from './Box';
+import {ButtonLink, Props} from './ButtonLink';
 
 // eslint-disable-next-line import/no-default-export
 export default {
