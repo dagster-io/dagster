@@ -256,7 +256,7 @@ const SidebarContents = () => {
         <a href="/" className="flex items-center">
           <img
             className="w-5 h-5 inline-block"
-            src="https://legacy-docs.dagster.io/assets/logos/small.png"
+            src="https://docs.dagster.io/assets/logos/small.png"
           />
           <span className="ml-2 text-lg font-extrabold dark:text-gray-200">
             Dagster
