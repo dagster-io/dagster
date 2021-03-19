@@ -1,15 +1,15 @@
 {
   "index_name": "Testing",
-  "sitemap_urls": ["https://docs.dagster.io/sitemap.xml"],
   "start_urls": [
-    {
-      "url": "https://docs.dagster.io/"
-    },
     {
       "url": "https://docs.dagster.io/_apidocs/",
       "selectors_key": "api_docs"
-    }
+    },
+    "https://docs.dagster.io/"
   ],
+  "sitemap_urls": ["https://docs.dagster.io/sitemap.xml"],
+  "stop_urls": ["_modules"],
+  "strip_chars": " .,;:#¶",
   "selectors": {
     "default": {
       "lvl0": {
@@ -20,7 +20,7 @@
       "lvl1": {
         "selector": ".DocSearch-lvl1",
         "global": true,
-        "default_value": "Documentation"
+        "default_value": "Section"
       },
       "lvl2": {
         "selector": ".DocSearch-lvl2",
@@ -32,16 +32,19 @@
       "lvl5": ".DocSearch-content h3",
       "text": ".DocSearch-content p, .DocSearch-content li"
     },
-
     "api_docs": {
-      "lvl0": ".section h1",
-      "lvl1": ".section h2",
-      "lvl2": ".section h3",
-      "lvl3": ".section h4",
-      "lvl4": ".section h5, .section .rubric",
-      "lvl5": ".section h6, .section dt",
+      "lvl0": {
+        "selector": "",
+        "default_value": "API"
+      },
+      "lvl1": ".section h1",
+      "lvl2": ".section h2",
+      "lvl3": ".section h3",
+      "lvl4": ".section h4",
+      "lvl5": ".section h5, .section .rubric, .section dt",
       "text": ".section p, .section li"
     }
   },
-  "nb_hits": "OUTPUT OF THE CRAWL"
+  "js_render": true,
+  "nb_hits": 9458
 }
