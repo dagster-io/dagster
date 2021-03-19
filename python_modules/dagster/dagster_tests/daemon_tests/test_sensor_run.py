@@ -725,3 +725,62 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             assert heartbeat
             assert heartbeat.errors
             assert len(heartbeat.errors) == 1
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_sensor_start_stop(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("always_on_sensor")
+            external_origin_id = external_sensor.get_external_origin_id()
+            instance.start_sensor(external_sensor)
+
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(external_origin_id)
+            assert len(ticks) == 0
+
+            evaluate_sensors(instance, grpc_server_registry)
+
+            assert instance.get_runs_count() == 1
+            run = instance.get_runs()[0]
+            ticks = instance.get_job_ticks(external_origin_id)
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SUCCESS, [run.run_id]
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=15)
+
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, grpc_server_registry)
+            # no new ticks, no new runs, we are below the 30 second min interval
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_job_ticks(external_origin_id)
+            assert len(ticks) == 1
+
+            # stop / start
+            instance.stop_sensor(external_origin_id)
+            instance.start_sensor(external_sensor)
+
+            evaluate_sensors(instance, grpc_server_registry)
+            # no new ticks, no new runs, we are below the 30 second min interval
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_job_ticks(external_origin_id)
+            assert len(ticks) == 1
+
+            freeze_datetime = freeze_datetime.add(seconds=16)
+
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, grpc_server_registry)
+            # should have new tick, new run, we are after the 30 second min interval
+            assert instance.get_runs_count() == 2
+            ticks = instance.get_job_ticks(external_origin_id)
+            assert len(ticks) == 2

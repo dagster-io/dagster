@@ -1428,26 +1428,14 @@ class DagsterInstance:
                 )
             )
         elif job_state.status != JobStatus.RUNNING:
-            # set the last completed time to the modified state time
-            self.update_job_state(
-                job_state.with_status(JobStatus.RUNNING).with_data(
-                    SensorJobData(
-                        last_tick_timestamp=datetime.utcnow().timestamp(),
-                        min_interval=external_sensor.min_interval_seconds,
-                    )
-                )
-            )
+            self.update_job_state(job_state.with_status(JobStatus.RUNNING))
 
     def stop_sensor(self, job_origin_id):
-        from dagster.core.scheduler.job import JobStatus, SensorJobData
+        from dagster.core.scheduler.job import JobStatus
 
         job_state = self.get_job_state(job_origin_id)
         if job_state:
-            self.update_job_state(
-                job_state.with_status(JobStatus.STOPPED).with_data(
-                    SensorJobData(datetime.utcnow().timestamp())
-                )
-            )
+            self.update_job_state(job_state.with_status(JobStatus.STOPPED))
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)
