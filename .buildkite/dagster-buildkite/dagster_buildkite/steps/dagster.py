@@ -549,6 +549,23 @@ def schema_checks(version=SupportedPython.V3_8):
     ]
 
 
+def manifest_checks(version=SupportedPython.V3_7):
+    library_path = os.path.join(GIT_REPO_ROOT, "python_modules", "libraries")
+    library_packages = [
+        os.path.join("python_modules", "libraries", library) for library in os.listdir(library_path)
+    ]
+
+    commands = ["pip install check-manifest"]
+    commands += [
+        "check-manifest python_modules/dagster",
+        "check-manifest python_modules/dagster-graphql",
+        "check-manifest python_modules/dagit",
+    ]
+    commands += [f"check-manifest {library}" for library in library_packages]
+
+    return [StepBuilder("manifest").on_integration_image(version).run(*commands).build()]
+
+
 def dagster_steps():
     steps = []
     steps += publish_test_images()
@@ -574,6 +591,8 @@ def dagster_steps():
         steps += m.get_tox_build_steps()
 
     steps += extra_library_tests()
+
+    steps += manifest_checks()
 
     # https://github.com/dagster-io/dagster/issues/2785
     steps += pipenv_smoke_tests()

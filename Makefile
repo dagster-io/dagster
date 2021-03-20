@@ -42,3 +42,9 @@ dev_install_quiet: install_dev_python_modules rebuild_dagit
 
 graphql_tests:
 	pytest python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
+
+check_manifest:
+	check-manifest python_modules/dagster
+	check-manifest python_modules/dagit
+	check-manifest python_modules/dagster-graphql
+	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg

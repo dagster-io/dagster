@@ -1,2 +1,4 @@
 include LICENSE
 graft dagster_postgres/alembic
+global-exclude __pycache__
+global-exclude *.py[co]
