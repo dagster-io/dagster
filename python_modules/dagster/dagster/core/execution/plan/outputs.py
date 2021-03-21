@@ -13,6 +13,34 @@ from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData
 
 
+@whitelist_for_serdes
+class StepOutputProperties(
+    NamedTuple(
+        "_StepOutputProperties",
+        [
+            ("is_required", bool),
+            ("is_dynamic", bool),
+            ("is_asset", bool),
+            ("should_materialize", bool),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        is_required: bool,
+        is_dynamic: bool,
+        is_asset: bool,
+        should_materialize: bool,
+    ):
+        return super(StepOutputProperties, cls).__new__(
+            cls,
+            check.bool_param(is_required, "is_required"),
+            check.bool_param(is_dynamic, "is_dynamic"),
+            check.bool_param(is_asset, "is_asset"),
+            check.bool_param(should_materialize, "should_materialize"),
+        )
+
+
 class StepOutput(
     NamedTuple(
         "_StepOutput",
@@ -20,10 +48,7 @@ class StepOutput(
             ("solid_handle", SolidHandle),
             ("name", str),
             ("dagster_type_key", str),
-            ("is_required", bool),
-            ("is_asset", bool),
-            ("should_materialize", Optional[bool]),
-            ("is_dynamic", bool),
+            ("properties", StepOutputProperties),
         ],
     )
 ):
@@ -34,21 +59,31 @@ class StepOutput(
         solid_handle: SolidHandle,
         name: str,
         dagster_type_key: str,
-        is_required: bool,
-        is_dynamic: bool,
-        is_asset: bool = False,
-        should_materialize: Optional[bool] = None,
+        properties: StepOutputProperties,
     ):
         return super(StepOutput, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
-            is_required=check.bool_param(is_required, "is_required"),
-            is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
-            is_asset=check.bool_param(is_asset, "is_asset"),
-            should_materialize=check.opt_bool_param(should_materialize, "should_materialize"),
+            properties=check.inst_param(properties, "properties", StepOutputProperties),
         )
+
+    @property
+    def is_required(self) -> bool:
+        return self.properties.is_required
+
+    @property
+    def is_dynamic(self) -> bool:
+        return self.properties.is_dynamic
+
+    @property
+    def is_asset(self) -> bool:
+        return self.properties.is_asset
+
+    @property
+    def should_materialize(self) -> bool:
+        return self.properties.should_materialize
 
 
 @whitelist_for_serdes
@@ -114,6 +149,7 @@ class StepOutputHandle(
         )
 
 
+@whitelist_for_serdes
 class UnresolvedStepOutputHandle(
     NamedTuple(
         "_UnresolvedStepOutputHandle",

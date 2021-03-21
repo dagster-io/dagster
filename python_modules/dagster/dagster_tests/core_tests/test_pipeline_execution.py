@@ -826,7 +826,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     #   re-exeucte a step which hasn't been included in the original pipeline
     with pytest.raises(
         DagsterExecutionStepNotFoundError,
-        match="Can not build subset plan from unknown step: add_one",
+        match="Step selection refers to unknown step: add_one",
     ):
         reexecute_pipeline(
             pipeline_def,

@@ -15,7 +15,7 @@ from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.system_config.objects import EnvironmentConfig
 
-from .outputs import StepOutput
+from .outputs import StepOutput, StepOutputProperties
 
 SolidOutputUnion = Union[
     DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult
@@ -41,10 +41,12 @@ def create_step_outputs(
             solid_handle=handle,
             name=output_def.name,
             dagster_type_key=output_def.dagster_type.key,
-            is_required=output_def.is_required,
-            is_dynamic=output_def.is_dynamic,
-            is_asset=output_def.is_asset,
-            should_materialize=output_def.name in config_output_names,
+            properties=StepOutputProperties(
+                is_required=output_def.is_required,
+                is_dynamic=output_def.is_dynamic,
+                is_asset=output_def.is_asset,
+                should_materialize=output_def.name in config_output_names,
+            ),
         )
         for name, output_def in solid.definition.output_dict.items()
     ]

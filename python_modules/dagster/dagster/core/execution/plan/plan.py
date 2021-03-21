@@ -64,6 +64,7 @@ from .state import KnownExecutionState
 from .step import (
     ExecutionStep,
     IExecutionStep,
+    StepKind,
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
@@ -587,7 +588,10 @@ class ExecutionPlan(
 
     def get_all_hook_defs(self) -> FrozenSet[HookDefinition]:
         hook_defs: Set[HookDefinition] = set()
-        for step in self.steps:
+        for step_handle, step in self.step_dict.items():
+            if step_handle not in self.step_handles_to_execute:
+                continue
+
             hook_defs = hook_defs.union(
                 self.pipeline_def.get_all_hooks_for_handle(step.solid_handle)
             )
@@ -798,6 +802,111 @@ class ExecutionPlan(
 
         # Finally, we build and return the execution plan
         return plan_builder.build()
+
+    @staticmethod
+    def rebuild_step_input(step_input_snap):
+        from dagster.core.snap.execution_plan_snapshot import ExecutionStepInputSnap
+
+        check.inst_param(step_input_snap, "step_input_snap", ExecutionStepInputSnap)
+
+        step_input_source = step_input_snap.source
+
+        if isinstance(
+            step_input_source,
+            (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
+        ):
+            return UnresolvedMappedStepInput(
+                step_input_snap.name,
+                step_input_snap.dagster_type_key,
+                step_input_snap.source,
+            )
+        elif isinstance(step_input_source, FromDynamicCollect):
+            return UnresolvedCollectStepInput(
+                step_input_snap.name,
+                step_input_snap.dagster_type_key,
+                step_input_snap.source,
+            )
+        else:
+            check.inst_param(step_input_source, "step_input_source", StepInputSource)
+            return StepInput(
+                step_input_snap.name,
+                step_input_snap.dagster_type_key,
+                step_input_snap.source,
+            )
+
+    @staticmethod
+    def rebuild_from_snapshot(
+        pipeline,
+        pipeline_name,
+        execution_plan_snapshot,
+        environment_config,
+    ):
+        if not execution_plan_snapshot.can_reconstruct_plan:
+            raise DagsterInvariantViolationError(
+                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
+                "had enough information to fully reconstruct the ExecutionPlan"
+            )
+
+        step_dict = {}
+
+        for step_snap in execution_plan_snapshot.steps:
+            input_snaps = step_snap.inputs
+            output_snaps = step_snap.outputs
+
+            step_inputs = [
+                ExecutionPlan.rebuild_step_input(step_input_snap) for step_input_snap in input_snaps
+            ]
+
+            step_outputs = [
+                StepOutput(
+                    step_output_snap.solid_handle,
+                    step_output_snap.name,
+                    step_output_snap.dagster_type_key,
+                    step_output_snap.properties,
+                )
+                for step_output_snap in output_snaps
+            ]
+
+            if step_snap.kind == StepKind.COMPUTE:
+                step = ExecutionStep(
+                    step_snap.step_handle,
+                    pipeline_name,
+                    step_inputs,
+                    step_outputs,
+                    step_snap.tags,
+                )
+            elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
+                step = UnresolvedMappedExecutionStep(
+                    step_snap.step_handle,
+                    pipeline_name,
+                    step_inputs,
+                    step_outputs,
+                    step_snap.tags,
+                )
+            elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
+                step = UnresolvedCollectExecutionStep(
+                    step_snap.step_handle,
+                    pipeline_name,
+                    step_inputs,
+                    step_outputs,
+                    step_snap.tags,
+                )
+            else:
+                raise Exception(f"Unexpected step kind {str(step_snap.kind)}")
+
+            step_dict[step.handle] = step
+
+        step_handles_to_execute = [
+            StepHandle.parse_from_key(key) for key in execution_plan_snapshot.step_keys_to_execute
+        ]
+
+        return ExecutionPlan(
+            pipeline,
+            step_dict,
+            step_handles_to_execute,
+            environment_config,
+            execution_plan_snapshot.initial_known_state,
+        )
 
     @property
     def storage_is_persistent(self) -> bool:
