@@ -54,6 +54,14 @@ def get_foo_pipeline_handle():
 
 
 @contextmanager
+def get_foo_external_pipeline():
+    with get_bar_repo_grpc_repository_location_handle() as handle:
+        yield GrpcServerRepositoryLocation(handle).get_repository(
+            "bar_repo"
+        ).get_full_external_pipeline("foo")
+
+
+@contextmanager
 def get_foo_grpc_pipeline_handle():
     with get_bar_grpc_repo_handle() as repo_handle:
         yield PipelineHandle("foo", repo_handle)

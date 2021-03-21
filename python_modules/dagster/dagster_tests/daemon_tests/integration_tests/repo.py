@@ -20,18 +20,18 @@ def other_foo_pipeline():
     pipeline_name="foo_pipeline",
     cron_schedule="*/1 * * * *",
 )
-def never_run_schedule(_context):
+def always_run_schedule(_context):
     return {}
 
 
 @sensor(pipeline_name="foo_pipeline")
-def never_on_sensor(_context):
+def always_on_sensor(_context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
 @repository
 def example_repo():
-    return [foo_pipeline, never_run_schedule, never_on_sensor]
+    return [foo_pipeline, always_run_schedule, always_on_sensor]
 
 
 @repository
