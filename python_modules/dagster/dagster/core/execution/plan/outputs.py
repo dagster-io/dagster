@@ -1,4 +1,4 @@
-from typing import Callable, List, NamedTuple, Optional, Union
+from typing import List, NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.definitions import (
@@ -22,8 +22,6 @@ class StepOutput(
             ("dagster_type_key", str),
             ("is_required", bool),
             ("is_asset", bool),
-            ("get_asset_key", Optional[Callable]),
-            ("get_asset_partitions", Optional[Callable]),
             ("should_materialize", Optional[bool]),
             ("is_dynamic", bool),
         ],
@@ -39,8 +37,6 @@ class StepOutput(
         is_required: bool,
         is_dynamic: bool,
         is_asset: bool = False,
-        get_asset_key: Optional[Callable] = None,
-        get_asset_partitions: Optional[Callable] = None,
         should_materialize: Optional[bool] = None,
     ):
         return super(StepOutput, cls).__new__(
@@ -51,10 +47,6 @@ class StepOutput(
             is_required=check.bool_param(is_required, "is_required"),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
             is_asset=check.bool_param(is_asset, "is_asset"),
-            get_asset_key=check.opt_callable_param(get_asset_key, "get_asset_key"),
-            get_asset_partitions=check.opt_callable_param(
-                get_asset_partitions, "get_asset_partitions"
-            ),
             should_materialize=check.opt_bool_param(should_materialize, "should_materialize"),
         )
 

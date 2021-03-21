@@ -309,10 +309,13 @@ class FromStepOutput(
         # check output_def
         upstream_output = step_context.execution_plan.get_step_output(self.step_output_handle)
         if upstream_output.is_asset:
+            output_def = step_context.pipeline_def.get_solid(
+                upstream_output.solid_handle
+            ).output_def_named(upstream_output.name)
             lineage_info = _get_asset_lineage_from_fns(
                 load_context.upstream_output,
-                upstream_output.get_asset_key,
-                upstream_output.get_asset_partitions,
+                output_def.get_asset_key,
+                output_def.get_asset_partitions,
             )
             return [lineage_info] if lineage_info else []
 
