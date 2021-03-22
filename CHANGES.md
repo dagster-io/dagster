@@ -2,6 +2,11 @@
 
 ## 0.11.1
 
+**Community Contributions**
+
+- Fixed `dagster new-project`, which broke on the 0.11.0 release (Thank you @saulius!)
+- Docs fixes (Thanks @michaellynton and @zuik!)
+
 **New**
 
 - The left navigation in Dagit now allows viewing more than one repository at a time. Click “Filter” to choose which repositories to show.
@@ -9,7 +14,6 @@
 
 **Bugfixes**
 
-- Fixed `dagster new-project`, which broke on the 0.11.0 release
 - Previously, fonts were not served correctly in Dagit when using the `--path-prefix option`. Custom fonts and their CSS have now been removed, and system fonts are now used for both normal and monospace text.
 - In Dagit, table borders are now visible in Safari.
 - Stopping and starting a sensor was preventing future sensor evaluations due to a timezone issue when calculating the minimum interval from the last tick timestamp. This is now fixed.
