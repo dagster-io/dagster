@@ -24,6 +24,23 @@ const buildDetails = memoize((option: DagsterRepoOption) => ({
   metadata: option.repository.displayMetadata,
 }));
 
+const keysFromLocalStorage = () => {
+  const keys = window.localStorage.getItem(REPO_KEYS);
+  if (keys) {
+    const parsed: string[] = JSON.parse(keys);
+    return new Set(parsed);
+  }
+
+  // todo dish: Temporary while migrating to support filtering on multiple repos in
+  // left nav.
+  const key = window.localStorage.getItem(LAST_REPO_KEY);
+  if (key) {
+    return new Set([key]);
+  }
+
+  return new Set();
+};
+
 /**
  * useNavVisibleRepos vends `[reposForKeys, toggleRepo]` and internally mirrors the current
  * selection into localStorage so that the default selection in new browser windows
@@ -32,21 +49,22 @@ const buildDetails = memoize((option: DagsterRepoOption) => ({
 const useNavVisibleRepos = (
   options: DagsterRepoOption[],
 ): [typeof repoDetailsForKeys, typeof toggleRepo] => {
-  const [repoKeys, setRepoKeys] = React.useState<Set<string> | null>(() => {
-    const keys = window.localStorage.getItem(REPO_KEYS);
-    if (keys) {
-      const parsed: string[] = JSON.parse(keys);
-      return new Set(parsed);
+  // Collect keys from localStorage. Any keys that are present in our option list will be our
+  // initial state. If there are none, just grab the first option.
+  const [repoKeys, setRepoKeys] = React.useState<Set<string>>(() => {
+    const keys = keysFromLocalStorage();
+    const hashes = options.map((option) => getRepositoryOptionHash(option));
+    const matches = hashes.filter((hash) => keys.has(hash));
+
+    if (matches.length) {
+      return new Set(matches);
     }
 
-    // todo dish: Temporary while migrating to support filtering on multiple repos in
-    // left nav.
-    const key = window.localStorage.getItem(LAST_REPO_KEY);
-    if (key) {
-      return new Set([key]);
+    if (hashes.length) {
+      return new Set([hashes[0]]);
     }
 
-    return null;
+    return new Set();
   });
 
   const toggleRepo = React.useCallback((option: RepoDetails) => {
@@ -64,36 +82,25 @@ const useNavVisibleRepos = (
     });
   }, []);
 
-  const reposForKeys = React.useMemo(() => {
-    if (!options.length) {
-      return options;
-    }
+  const reposForKeys = React.useMemo(
+    () => options.filter((o) => repoKeys.has(getRepositoryOptionHash(o))),
+    [options, repoKeys],
+  );
 
-    if (!repoKeys) {
-      return options.slice(0, 1);
-    }
-
-    const filtered = options.filter((o) => repoKeys.has(getRepositoryOptionHash(o)));
-    if (filtered.length) {
-      return filtered;
-    }
-
-    // If no matches for localStorage repo keys, just return the first one in the list.
-    return options.slice(0, 1);
-  }, [options, repoKeys]);
+  // When the list of matching repos changes, update localStorage.
+  React.useEffect(() => {
+    const foundKeys = reposForKeys.map((option) => getRepositoryOptionHash(option));
+    window.localStorage.setItem(REPO_KEYS, JSON.stringify(foundKeys));
+  }, [reposForKeys]);
 
   const repoDetailsForKeys = React.useMemo(() => new Set(reposForKeys.map(buildDetails)), [
     reposForKeys,
   ]);
 
-  React.useEffect(() => {
-    window.localStorage.setItem(REPO_KEYS, JSON.stringify(Array.from(repoKeys || new Set())));
-  }, [repoKeys]);
-
   return [repoDetailsForKeys, toggleRepo];
 };
 
-export const LeftNavRepositorySection = () => {
+const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({allRepos}) => {
   const match = useRouteMatch<
     | {repoPath: string; selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
@@ -104,7 +111,6 @@ export const LeftNavRepositorySection = () => {
     '/:rootTab?',
   ]);
 
-  const {allRepos} = React.useContext(WorkspaceContext);
   const [visibleRepos, toggleRepo] = useNavVisibleRepos(allRepos);
 
   const visibleOptions = React.useMemo(() => {
@@ -148,4 +154,14 @@ export const LeftNavRepositorySection = () => {
       ) : null}
     </div>
   );
+};
+
+export const LeftNavRepositorySection = () => {
+  const {allRepos, loading} = React.useContext(WorkspaceContext);
+
+  if (loading) {
+    return <div style={{flex: 1}} />;
+  }
+
+  return <LoadedRepositorySection allRepos={allRepos} />;
 };
