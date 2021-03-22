@@ -214,10 +214,13 @@ def create_backfill_run(
         parent_run_id = last_run.run_id if last_run else None
         root_run_id = (last_run.root_run_id or last_run.run_id) if last_run else None
         step_keys_to_execute = backfill_job.reexecution_steps
-        known_state = KnownExecutionState.for_reexecution(
-            instance.all_logs(parent_run_id),
-            step_keys_to_execute,
-        )
+        if last_run and last_run.status == PipelineRunStatus.SUCCESS:
+            known_state = KnownExecutionState.for_reexecution(
+                instance.all_logs(parent_run_id),
+                step_keys_to_execute,
+            )
+        else:
+            known_state = None
 
     if step_keys_to_execute:
         external_execution_plan = repo_location.get_external_execution_plan(
