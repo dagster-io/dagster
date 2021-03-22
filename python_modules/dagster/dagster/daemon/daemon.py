@@ -88,27 +88,34 @@ class DagsterDaemon(AbstractContextManager):
         self._current_iteration_exceptions = []
         daemon_generator = self.run_iteration(instance, grpc_server_registry)
 
-        while (not daemon_shutdown_event.is_set()) and (not until or pendulum.now("UTC") < until):
-            try:
-                result = check.opt_inst(
-                    next(daemon_generator), tuple([SerializableErrorInfo, CompletedIteration])
-                )
-                if isinstance(result, CompletedIteration):
+        try:
+            while (not daemon_shutdown_event.is_set()) and (
+                not until or pendulum.now("UTC") < until
+            ):
+                try:
+                    result = check.opt_inst(
+                        next(daemon_generator), tuple([SerializableErrorInfo, CompletedIteration])
+                    )
+                    if isinstance(result, CompletedIteration):
+                        self._last_iteration_exceptions = self._current_iteration_exceptions
+                        self._current_iteration_exceptions = []
+                    elif result:
+                        self._current_iteration_exceptions.append(result)
+                except StopIteration:
                     self._last_iteration_exceptions = self._current_iteration_exceptions
-                    self._current_iteration_exceptions = []
-                elif result:
-                    self._current_iteration_exceptions.append(result)
-            except StopIteration:
-                self._last_iteration_exceptions = self._current_iteration_exceptions
-                break
-            except Exception:  # pylint: disable=broad-except
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                self._logger.error("Caught error:\n{}".format(error_info))
-                self._current_iteration_exceptions.append(error_info)
-                self._last_iteration_exceptions = self._current_iteration_exceptions
-                break
-            finally:
-                self._check_add_heartbeat(instance, daemon_uuid)
+                    break
+                except Exception:  # pylint: disable=broad-except
+                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                    self._logger.error("Caught error:\n{}".format(error_info))
+                    self._current_iteration_exceptions.append(error_info)
+                    self._last_iteration_exceptions = self._current_iteration_exceptions
+                    break
+                finally:
+                    self._check_add_heartbeat(instance, daemon_uuid)
+
+        finally:
+            # cleanup the generator if it was stopped part-way through
+            daemon_generator.close()
 
     def _check_add_heartbeat(self, instance, daemon_uuid):
         # Always log a heartbeat after the first time an iteration returns an error to make sure we
