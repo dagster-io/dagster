@@ -97,7 +97,7 @@ export const PartitionProgress = (props: Props) => {
   const numFinished = numSucceeded + numFailed;
   const unscheduled = results.numTotal - results.numRequested;
   const skipped = results.numRequested - numTotalRuns;
-  const numTotal = results.numTotal;
+  const numTotal = Math.max(numTotalRuns, results.numTotal);
 
   const table = (
     <TooltipTable>
@@ -194,7 +194,7 @@ const TooltipTableRow: React.FC<{
   count: number;
   numTotal: number;
 }> = ({runStatus, humanText, count, numTotal}) => {
-  if (!count) {
+  if (!count || count < 0) {
     return null;
   }
 

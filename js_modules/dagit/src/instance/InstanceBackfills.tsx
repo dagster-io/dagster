@@ -316,6 +316,8 @@ const getProgressCounts = (backfill: Backfill) => {
     },
     {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
   );
+  const numTotal = numTotalRuns > backfill.numTotal ? numTotalRuns : backfill.numTotal;
+
   return {
     numQueued,
     numInProgress,
@@ -323,7 +325,7 @@ const getProgressCounts = (backfill: Backfill) => {
     numFailed,
     numUnscheduled: (backfill.numTotal || 0) - (backfill.numRequested || 0),
     numSkipped: (backfill.numRequested || 0) - numTotalRuns,
-    numTotal: backfill.numTotal || 0,
+    numTotal,
   };
 };
 
@@ -386,7 +388,7 @@ const BackfillStatusTableRow = ({
   count: number;
   isTotal?: boolean;
 }) => {
-  if (!count) {
+  if (!count || count < 0) {
     return null;
   }
   return (
