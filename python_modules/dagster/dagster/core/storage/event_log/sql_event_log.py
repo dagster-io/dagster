@@ -709,10 +709,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
-            if not rows:
-                return {}
-
-            if not rows[0]:
+            if not rows or not rows[0] or not rows[0][0]:
                 return {}
 
             materialization = deserialize_json_to_dagster_namedtuple(rows[0][0])

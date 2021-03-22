@@ -5,7 +5,7 @@ import sqlite3
 from gzip import GzipFile
 
 import pytest
-from dagster import check, execute_pipeline, file_relative_path, pipeline, solid
+from dagster import AssetKey, check, execute_pipeline, file_relative_path, pipeline, solid
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance, InstanceRef
@@ -378,9 +378,10 @@ def test_0_11_0_add_asset_columns():
         assert get_current_alembic_version(db_path) == "0da417ae1b81"
         assert "last_materialization" not in set(get_sqlite3_columns(db_path, "asset_keys"))
         assert "last_run_id" not in set(get_sqlite3_columns(db_path, "asset_keys"))
-        assert "asset_tags" not in get_sqlite3_tables(db_path)
+        assert "asset_details" not in get_sqlite3_tables(db_path)
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
             assert "last_materialization" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "last_run_id" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "asset_details" in set(get_sqlite3_columns(db_path, "asset_keys"))
+            instance.get_asset_tags(AssetKey("model"))
