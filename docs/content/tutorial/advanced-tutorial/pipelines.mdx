@@ -240,10 +240,10 @@ def modes_pipeline():
 
 Each of the ways we can invoke a Dagster pipeline lets us select which mode we'd like to run it in.
 
-From the command line, we can set `-d` or `--mode` and select the name of the mode:
+From the command line, we can set `--mode` and select the name of the mode:
 
 ```bash
-dagster pipeline execute -f modes.py -e resources.yaml -d unittest
+dagster pipeline execute -f modes.py -c resources.yaml --mode unittest
 ```
 
 Or, from the Python API:
