@@ -94,7 +94,13 @@ class SensorLaunchContext:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        if exception_value and not isinstance(exception_value, KeyboardInterrupt):
+        if exception_value and not isinstance(
+            exception_value,
+            (
+                KeyboardInterrupt,
+                GeneratorExit,
+            ),
+        ):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             self.update_state(JobTickStatus.FAILURE, error=error_data)
             self._write()
