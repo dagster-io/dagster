@@ -6,8 +6,6 @@ services:
   docker_example_postgresql:
     image: postgres:11
     container_name: docker_example_postgresql
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: "postgres_user"
       POSTGRES_PASSWORD: "postgres_password"
@@ -25,8 +23,6 @@ services:
       context: .
       dockerfile: ./Dockerfile_pipelines
     container_name: docker_example_pipelines
-    ports:
-      - "4000:4000"
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
