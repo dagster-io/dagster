@@ -31,9 +31,7 @@ that's responsible for reading and writing the results. Solids can focus on busi
 managers handle I/O. This separation makes it easier to test the business logic and run it in
 different environments.
 
-Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview
-covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and <PyObject module="dagster" object="RootInputManager" pluralize /> (experimental), which let you decide how
-inputs at the beginning of a pipeline are loaded.
+Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and <PyObject module="dagster" object="RootInputManager" displayText="RootInputManagers (experimental)" />, which let you decide how inputs at the beginning of a pipeline are loaded.
 
 ### Outputs and downstream inputs
 

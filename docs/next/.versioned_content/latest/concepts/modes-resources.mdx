@@ -33,8 +33,7 @@ properties:
 ## Defining a Resource
 
 To define a resource, use the <PyObject object="resource" decorator/> decorator. Wrap a function
-that takes an `init_context` argument as the first parameter. From this function, return or yield
-the object that you would like to be available as a resource.
+that takes an `init_context` as the first parameter, which is an instance of <PyObject object="InitResourceContext"/>. From this function, return or yield the object that you would like to be available as a resource.
 
 ```python file=/concepts/modes_resources/modes_resources.py startafter=start_resource_example endbefore=end_resource_example
 class ExternalCerealFetcher:

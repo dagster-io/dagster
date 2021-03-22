@@ -34,9 +34,9 @@ export DAEMON_DEPLOYMENT_NAME=`kubectl get deploy \
     --selector=component=dagster-daemon -o jsonpath="{.items[0].metadata.name}"`
 
 # Save each deployment's replica count to scale back up after migrating
-export DAGIT_DEPLOYMENT_REPLICA_COUNT=`k get deploy \
+export DAGIT_DEPLOYMENT_REPLICA_COUNT=`kubectl get deploy \
     --selector=component=dagit -o jsonpath="{.items[0].status.replicas}"`
-export DAEMON_DEPLOYMENT_REPLICA_COUNT=`k get deploy \
+export DAEMON_DEPLOYMENT_REPLICA_COUNT=`kubectl get deploy \
     --selector=component=dagster-daemon -o jsonpath="{.items[0].status.replicas}"`
 
 # Scale down the Deployments
@@ -52,7 +52,7 @@ kubectl scale deploy $DAEMON_DEPLOYMENT_NAME --replicas=0
 export HELM_DAGSTER_RELEASE_NAME=<DAGSTER_RELEASE_NAME>
 
 helm template $HELM_DAGSTER_RELEASE_NAME dagster/dagster \
-    --set "migrate.enabled=true"
+    --set "migrate.enabled=true" \
     --show-only templates/job-instance-migrate.yaml \
     --values values.yaml \
     | kubectl apply -f -
