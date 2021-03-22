@@ -81,7 +81,7 @@ def test_attempt_to_launch_runs_filter(instance, grpc_server_registry):
         interval_seconds=5,
         max_concurrent_runs=10,
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run"]
 
@@ -103,7 +103,7 @@ def test_attempt_to_launch_runs_no_queued(instance, grpc_server_registry):
         interval_seconds=5,
         max_concurrent_runs=10,
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert instance.run_launcher.queue() == []
 
@@ -139,7 +139,7 @@ def test_get_queued_runs_max_runs(instance, num_in_progress_runs, grpc_server_re
         interval_seconds=5,
         max_concurrent_runs=max_runs,
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
 
@@ -163,7 +163,7 @@ def test_priority(instance, grpc_server_registry):
         interval_seconds=5,
         max_concurrent_runs=10,
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == [
         "hi-pri-run",
@@ -184,7 +184,7 @@ def test_priority_on_malformed_tag(instance, grpc_server_registry):
         interval_seconds=5,
         max_concurrent_runs=10,
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["bad-pri-run"]
 
@@ -213,7 +213,7 @@ def test_tag_limits(instance, grpc_server_registry):
         max_concurrent_runs=10,
         tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 1}],
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "large-1"]
 
@@ -251,7 +251,7 @@ def test_multiple_tag_limits(instance, grpc_server_registry):
             {"key": "user", "value": "johann", "limit": 2},
         ],
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
@@ -289,7 +289,7 @@ def test_overlapping_tag_limits(instance, grpc_server_registry):
             {"key": "foo", "value": "bar", "limit": 1},
         ],
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
@@ -339,7 +339,7 @@ def test_location_handles_reused(instance, monkeypatch, grpc_server_registry):
         interval_seconds=5,
         max_concurrent_runs=10,
     )
-    list(coordinator.run_iteration(instance, None, grpc_server_registry))
+    list(coordinator.run_iteration(instance, grpc_server_registry))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run", "queued-run-2"]
     assert len(method_calls) == 1
@@ -364,9 +364,7 @@ def test_skip_error_runs(instance, grpc_server_registry):
         max_concurrent_runs=10,
     )
     errors = [
-        error
-        for error in list(coordinator.run_iteration(instance, None, grpc_server_registry))
-        if error
+        error for error in list(coordinator.run_iteration(instance, grpc_server_registry)) if error
     ]
 
     assert len(errors) == 1

@@ -121,9 +121,7 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_sensor_iteration_loop(
-    instance, grpc_server_registry, logger, daemon_shutdown_event, until=None
-):
+def execute_sensor_iteration_loop(instance, grpc_server_registry, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -139,7 +137,7 @@ def execute_sensor_iteration_loop(
 
     start_time = pendulum.now("UTC").timestamp()
     with ExitStack() as stack:
-        while not daemon_shutdown_event or not daemon_shutdown_event.is_set():
+        while True:
             start_time = pendulum.now("UTC").timestamp()
             if until and start_time >= until:
                 # provide a way of organically ending the loop to support test environment

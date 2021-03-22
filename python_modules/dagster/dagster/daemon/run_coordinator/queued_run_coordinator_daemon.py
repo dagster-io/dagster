@@ -109,7 +109,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "QUEUED_RUN_COORDINATOR"
 
-    def run_iteration(self, instance, daemon_shutdown_event, grpc_server_registry):
+    def run_iteration(self, instance, grpc_server_registry):
         in_progress_runs = self._get_in_progress_runs(instance)
         max_runs_to_launch = self._max_concurrent_runs - len(in_progress_runs)
 

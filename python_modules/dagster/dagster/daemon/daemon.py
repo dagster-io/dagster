@@ -86,7 +86,7 @@ class DagsterDaemon(AbstractContextManager):
         # which is used in the heartbeats. This guarantees that heartbeats contain the full
         # list of errors raised.
         self._current_iteration_exceptions = []
-        daemon_generator = self.run_iteration(instance, daemon_shutdown_event, grpc_server_registry)
+        daemon_generator = self.run_iteration(instance, grpc_server_registry)
 
         while (not daemon_shutdown_event.is_set()) and (not until or pendulum.now("UTC") < until):
             try:
@@ -157,7 +157,7 @@ class DagsterDaemon(AbstractContextManager):
         )
 
     @abstractmethod
-    def run_iteration(self, instance, daemon_shutdown_event, grpc_server_registry):
+    def run_iteration(self, instance, grpc_server_registry):
         """
         Execute the daemon. In order to avoid blocking the controller thread for extended periods,
         daemons can yield control during this method. Yields can be either NoneType or a
@@ -191,7 +191,7 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SCHEDULER"
 
-    def run_iteration(self, instance, daemon_shutdown_event, grpc_server_registry):
+    def run_iteration(self, instance, grpc_server_registry):
         yield from execute_scheduler_iteration(
             instance, grpc_server_registry, self._logger, self._max_catchup_runs
         )
@@ -206,10 +206,8 @@ class SensorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SENSOR"
 
-    def run_iteration(self, instance, daemon_shutdown_event, grpc_server_registry):
-        yield from execute_sensor_iteration_loop(
-            instance, grpc_server_registry, self._logger, daemon_shutdown_event
-        )
+    def run_iteration(self, instance, grpc_server_registry):
+        yield from execute_sensor_iteration_loop(instance, grpc_server_registry, self._logger)
 
 
 class BackfillDaemon(DagsterDaemon):
@@ -223,5 +221,5 @@ class BackfillDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "BACKFILL"
 
-    def run_iteration(self, instance, daemon_shutdown_event, grpc_server_registry):
+    def run_iteration(self, instance, grpc_server_registry):
         yield from execute_backfill_iteration(instance, grpc_server_registry, self._logger)

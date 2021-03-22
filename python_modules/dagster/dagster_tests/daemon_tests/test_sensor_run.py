@@ -665,7 +665,6 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
                     instance,
                     grpc_server_registry,
                     get_default_daemon_logger("SensorDaemon"),
-                    daemon_shutdown_event=None,
                     until=freeze_datetime.add(seconds=65).timestamp(),
                 )
             )
