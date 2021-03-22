@@ -1,5 +1,6 @@
 # pylint chokes on the perfectly ok import from alembic.migration
 import sys
+import threading
 from contextlib import contextmanager
 from functools import lru_cache
 
@@ -35,8 +36,12 @@ def run_alembic_downgrade(alembic_config, conn, rev, run_id=None):
     downgrade(alembic_config, rev)
 
 
+# Ensure that at most one thread can be stamping alembic revisions at once
+_alembic_lock = threading.Lock()
+
+
 def stamp_alembic_rev(alembic_config, conn, rev="head", quiet=True):
-    with quieten(quiet):
+    with _alembic_lock, quieten(quiet):
         alembic_config.attributes["connection"] = conn
         stamp(alembic_config, rev)
 
