@@ -15,20 +15,20 @@ def helm_lint_steps() -> List[dict]:
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        StepBuilder(":helm: dagster-umbrella-chart :lint-roller:")
+        StepBuilder(":helm: dagster-json-schema")
         .run(
             "pip install -e helm/dagster/schema",
             "dagster-helm schema apply",
             "git diff --exit-code",
-            "helm lint helm/dagster",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
-        StepBuilder(":helm: dagster-user-code-deployments-chart :lint-roller:")
+        StepBuilder(":helm: dagster :lint-roller:")
         .run(
-            "helm lint helm/dagster/charts/dagster-user-deployments",
+            "helm lint helm/dagster --with-subcharts --strict",
         )
         .on_integration_image(SupportedPython.V3_7)
+        .with_retry(1)
         .build(),
     ]
 
@@ -40,6 +40,7 @@ def helm_steps() -> List[dict]:
         os.path.join("helm", "dagster", "schema"),
         buildkite_label="dagster-helm-schema",
         upload_coverage=False,
+        retries=1,
     ).get_tox_build_steps()
 
     return tests
