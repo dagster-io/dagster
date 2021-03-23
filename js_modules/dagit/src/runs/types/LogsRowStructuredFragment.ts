@@ -71,7 +71,7 @@ export interface LogsRowStructuredFragment_StepMaterializationEvent_materializat
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
@@ -207,7 +207,7 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMeta
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry {
@@ -283,7 +283,7 @@ export interface LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck_met
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
@@ -361,7 +361,7 @@ export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck_me
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
@@ -428,7 +428,7 @@ export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_metadataEntr
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry {
@@ -499,7 +499,7 @@ export interface LogsRowStructuredFragment_StepExpectationResultEvent_expectatio
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry {
@@ -576,7 +576,7 @@ export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationRe
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry {
@@ -651,7 +651,7 @@ export interface LogsRowStructuredFragment_HandledOutputEvent_metadataEntries_Ev
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry {
@@ -735,7 +735,7 @@ export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_EventFloa
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_EventIntMetadataEntry {

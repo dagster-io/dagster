@@ -636,6 +636,7 @@ def materialization_pipeline():
                 EventMetadataEntry.python_artifact(file_relative_path, "python function"),
                 EventMetadataEntry.float(1.2, "float"),
                 EventMetadataEntry.int(1, "int"),
+                EventMetadataEntry.float(float("nan"), "float NaN"),
             ],
         )
         yield Output(None)

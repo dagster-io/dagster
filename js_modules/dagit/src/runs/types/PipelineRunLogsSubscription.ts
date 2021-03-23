@@ -72,7 +72,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
@@ -211,7 +211,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry {
@@ -288,7 +288,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
@@ -367,7 +367,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
@@ -434,7 +434,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry {
@@ -506,7 +506,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry {
@@ -584,7 +584,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry {
@@ -660,7 +660,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_HandledOutputEvent_metadataEntries_EventIntMetadataEntry {
@@ -746,7 +746,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_EngineEvent_metadataEntries_EventIntMetadataEntry {

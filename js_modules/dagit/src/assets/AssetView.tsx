@@ -381,12 +381,13 @@ function extractNumericData(
         continue;
       }
 
-      const y =
-        entry.__typename === 'EventIntMetadataEntry'
-          ? entry.intValue
-          : entry.__typename === 'EventFloatMetadataEntry'
-          ? entry.floatValue
-          : NaN; // should only happen if data type of entry has changed in the graphed period
+      let y = NaN;
+      if (entry.__typename === 'EventIntMetadataEntry' && entry.intValue !== null) {
+        y = entry.intValue;
+      }
+      if (entry.__typename === 'EventFloatMetadataEntry' && entry.floatValue !== null) {
+        y = entry.floatValue;
+      }
 
       append(label, {x, y});
     }

@@ -1,3 +1,5 @@
+from math import isnan
+
 from dagster import check, seven
 from dagster.core.definitions.events import (
     EventMetadataEntry,
@@ -67,10 +69,16 @@ def iterate_metadata_entries(metadata_entries):
                 name=metadata_entry.entry_data.name,
             )
         elif isinstance(metadata_entry.entry_data, FloatMetadataEntryData):
+            float_val = metadata_entry.entry_data.value
+
+            # coerce NaN to null
+            if isnan(float_val):
+                float_val = None
+
             yield GrapheneEventFloatMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
-                floatValue=metadata_entry.entry_data.value,
+                floatValue=float_val,
             )
         elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
             yield GrapheneEventIntMetadataEntry(

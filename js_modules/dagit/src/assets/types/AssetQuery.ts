@@ -88,7 +88,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializa
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries_EventIntMetadataEntry {

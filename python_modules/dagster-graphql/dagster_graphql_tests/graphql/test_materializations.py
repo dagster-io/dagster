@@ -56,6 +56,10 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         assert text_entry["__typename"] == "EventIntMetadataEntry"
         assert text_entry["intValue"]
 
+        text_entry = mat["metadataEntries"][8]
+        assert text_entry["__typename"] == "EventFloatMetadataEntry"
+        assert text_entry["floatValue"] is None  # float NaN test
+
         non_engine_event_logs = [
             message for message in logs if message["__typename"] != "EngineEvent"
         ]

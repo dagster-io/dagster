@@ -205,7 +205,7 @@ class GrapheneEventPythonArtifactMetadataEntry(graphene.ObjectType):
 
 
 class GrapheneEventFloatMetadataEntry(graphene.ObjectType):
-    floatValue = graphene.NonNull(graphene.Float)
+    floatValue = graphene.Field(graphene.Float)
 
     class Meta:
         interfaces = (GrapheneEventMetadataEntry,)

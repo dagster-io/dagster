@@ -73,7 +73,7 @@ export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_op
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry {

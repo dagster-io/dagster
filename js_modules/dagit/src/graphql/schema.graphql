@@ -1536,7 +1536,7 @@ enum LocationStateChangeEventType {
 type EventFloatMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
-  floatValue: Float!
+  floatValue: Float
 }
 
 type EventIntMetadataEntry implements EventMetadataEntry {

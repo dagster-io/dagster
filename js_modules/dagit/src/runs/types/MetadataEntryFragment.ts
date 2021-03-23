@@ -55,7 +55,7 @@ export interface MetadataEntryFragment_EventFloatMetadataEntry {
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface MetadataEntryFragment_EventIntMetadataEntry {

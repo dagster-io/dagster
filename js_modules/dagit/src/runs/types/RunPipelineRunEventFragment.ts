@@ -71,7 +71,7 @@ export interface RunPipelineRunEventFragment_StepMaterializationEvent_materializ
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
@@ -207,7 +207,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMe
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry {
@@ -283,7 +283,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_m
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
@@ -361,7 +361,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
@@ -428,7 +428,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEn
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry {
@@ -499,7 +499,7 @@ export interface RunPipelineRunEventFragment_StepExpectationResultEvent_expectat
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry {
@@ -576,7 +576,7 @@ export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent_operation
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry {
@@ -651,7 +651,7 @@ export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry {
@@ -735,7 +735,7 @@ export interface RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventFl
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
-  floatValue: number;
+  floatValue: number | null;
 }
 
 export interface RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventIntMetadataEntry {
