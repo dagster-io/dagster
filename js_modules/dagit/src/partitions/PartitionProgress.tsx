@@ -164,7 +164,11 @@ export const PartitionProgress = (props: Props) => {
               </div>
             ) : null}
             {unscheduled ? (
-              <div style={{fontVariantNumeric: 'tabular-nums'}}>{unscheduled} to be scheduled</div>
+              <Link to="/instance/backfills">
+                <div style={{fontVariantNumeric: 'tabular-nums'}}>
+                  {unscheduled} to be scheduled
+                </div>
+              </Link>
             ) : null}
           </Group>
         </Tooltip>

@@ -20,10 +20,17 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNot
   message: string;
 }
 
+export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: LaunchPartitionBackfill_launchPartitionBackfill_PythonError_cause | null;
 }
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError {

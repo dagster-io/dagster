@@ -10,7 +10,6 @@ import {
   Tooltip,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -18,7 +17,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PipelineRunTag} from '../app/LocalStorage';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {LaunchButton} from '../execute/LaunchButton';
 import {TagContainer, TagEditor} from '../execute/TagEditor';
 import {GanttChartMode} from '../gantt/GanttChart';
@@ -30,10 +29,8 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
-import {stringFromValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   GridColumn,
@@ -174,10 +171,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     );
   }
 
-  if (!data || loading) {
-    return <div />;
-  }
-
   if (data.partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
     return (
       <NonIdealState
@@ -187,29 +180,55 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       />
     );
   }
+  if (data.pipelineSnapshotOrError.__typename === 'PipelineNotFoundError') {
+    return (
+      <NonIdealState
+        icon={IconNames.ERROR}
+        title="Pipeline Not Found"
+        description={data.pipelineSnapshotOrError.message}
+      />
+    );
+  }
+  if (data.pipelineSnapshotOrError.__typename === 'PipelineSnapshotNotFoundError') {
+    return (
+      <NonIdealState
+        icon={IconNames.ERROR}
+        title="Pipeline Not Found"
+        description={data.pipelineSnapshotOrError.message}
+      />
+    );
+  }
 
-  if (
-    data.partitionSetOrError.__typename !== 'PartitionSet' ||
-    data.pipelineSnapshotOrError.__typename !== 'PipelineSnapshot'
-  ) {
-    return <div />;
+  if (data.partitionSetOrError.__typename === 'PythonError') {
+    return (
+      <Box margin={20}>
+        <PythonErrorInfo error={data.partitionSetOrError} />
+      </Box>
+    );
+  }
+
+  if (data.pipelineSnapshotOrError.__typename === 'PythonError') {
+    return (
+      <Box margin={20}>
+        <PythonErrorInfo error={data.pipelineSnapshotOrError} />;
+      </Box>
+    );
+  }
+
+  if (data.partitionSetOrError.partitionStatusesOrError.__typename === 'PythonError') {
+    return (
+      <Box margin={20}>
+        <PythonErrorInfo error={data.partitionSetOrError.partitionStatusesOrError} />
+      </Box>
+    );
   }
 
   const onSuccess = (backfillId: string) => {
-    const filteredRunsPath = workspacePathFromAddress(
-      repoAddress,
-      `/pipelines/${pipelineName}/runs?${qs.stringify({
-        q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfillId}`}]),
-      })}`,
-    );
-
     SharedToaster.show({
       message: (
         <div>
           Created backfill job:{' '}
-          <FilteredRunsLink target="_blank" href={filteredRunsPath}>
-            {backfillId}
-          </FilteredRunsLink>
+          <FilteredRunsLink href="/instance/backfills">{backfillId}</FilteredRunsLink>
         </div>
       ),
       intent: Intent.SUCCESS,
@@ -698,15 +717,13 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
               runStatus
             }
           }
+          ...PythonErrorFragment
         }
       }
       ... on PartitionSetNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
@@ -736,6 +753,13 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
           }
         }
       }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PipelineSnapshotNotFoundError {
+        message
+      }
+      ...PythonErrorFragment
     }
     instance {
       runLauncher {
@@ -751,6 +775,7 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
       runQueuingSupported
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
@@ -763,10 +788,7 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PartitionSetNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
       ... on InvalidStepError {
         invalidStepKey
       }
@@ -797,4 +819,5 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;
