@@ -12,11 +12,7 @@ interface ITagProps {
 }
 
 export const Tag = ({tag, onClick, isDagsterTag}: ITagProps) => {
-  const onTagClick = onClick
-    ? () => {
-        onClick(tag);
-      }
-    : undefined;
+  const onTagClick = () => onClick && onClick(tag);
 
   return (
     <TagElement isDagsterTag={isDagsterTag} onClick={onTagClick}>
