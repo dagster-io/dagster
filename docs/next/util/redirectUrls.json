@@ -306,11 +306,6 @@
     "permanent": true
   },
   {
-    "source": "/examples/airline_demo",
-    "destination": "NA",
-    "permanent": true
-  },
-  {
     "source": "/examples/materializations",
     "destination": "/concepts/assets/asset-catalog",
     "permanent": true
