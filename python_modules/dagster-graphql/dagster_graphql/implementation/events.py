@@ -85,6 +85,8 @@ def iterate_metadata_entries(metadata_entries):
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 intValue=metadata_entry.entry_data.value,
+                # make string representation available to allow for > 32bit int
+                intRepr=str(metadata_entry.entry_data.value),
             )
         else:
             # skip rest for now

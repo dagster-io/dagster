@@ -131,7 +131,7 @@ export const MetadataEntry: React.FC<{
     case 'EventFloatMetadataEntry':
       return <>{entry.floatValue}</>;
     case 'EventIntMetadataEntry':
-      return <>{entry.intValue}</>;
+      return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     default:
       return assertUnreachable(entry);
   }
@@ -166,6 +166,7 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     }
     ... on EventIntMetadataEntry {
       intValue
+      intRepr
     }
   }
 `;

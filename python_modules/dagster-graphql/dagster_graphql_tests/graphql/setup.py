@@ -66,6 +66,8 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
+LONG_INT = 29119888133298982934829348
+
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
@@ -637,6 +639,7 @@ def materialization_pipeline():
                 EventMetadataEntry.float(1.2, "float"),
                 EventMetadataEntry.int(1, "int"),
                 EventMetadataEntry.float(float("nan"), "float NaN"),
+                EventMetadataEntry.int(LONG_INT, "long int"),
             ],
         )
         yield Output(None)

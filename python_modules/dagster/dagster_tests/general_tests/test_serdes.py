@@ -1,6 +1,6 @@
 from collections import namedtuple
 from enum import Enum
-from typing import Set
+from typing import NamedTuple, Set
 
 import pytest
 from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
@@ -433,3 +433,16 @@ def test_to_storage_value():
     assert isinstance(alphabet, SubstituteAlphabet)
     assert not isinstance(alphabet.c, DeprecatedAlphabet)
     assert isinstance(alphabet.c, SubstituteAlphabet)
+
+
+def test_long_int():
+    test_map = WhitelistMap()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class NumHolder(NamedTuple):
+        num: int
+
+    x = NumHolder(98765432109876543210)
+    ser_x = _serialize_dagster_namedtuple(x, test_map)
+    roundtrip_x = _deserialize_json_to_dagster_namedtuple(ser_x, test_map)
+    assert x.num == roundtrip_x.num

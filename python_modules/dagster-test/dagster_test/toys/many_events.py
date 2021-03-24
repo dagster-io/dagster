@@ -91,6 +91,8 @@ def many_table_materializations(_context):
                         url="https://bigty.pe/{}".format(table), label="table_name_big"
                     ),
                     EventMetadataEntry.md(md_str=md_str, label="table_blurb"),
+                    EventMetadataEntry.int(29119888133298982934829348, label="big_int"),
+                    EventMetadataEntry.float(float("nan"), label="float_nan"),
                 ],
             )
 

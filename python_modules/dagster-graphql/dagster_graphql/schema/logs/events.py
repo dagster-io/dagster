@@ -213,7 +213,13 @@ class GrapheneEventFloatMetadataEntry(graphene.ObjectType):
 
 
 class GrapheneEventIntMetadataEntry(graphene.ObjectType):
-    intValue = graphene.NonNull(graphene.Int)
+    intValue = graphene.Field(
+        graphene.Int, description="Nullable to allow graceful degrade on > 32 bit numbers"
+    )
+    intRepr = graphene.NonNull(
+        graphene.String,
+        description="String representation of the int to support greater than 32 bit",
+    )
 
     class Meta:
         interfaces = (GrapheneEventMetadataEntry,)

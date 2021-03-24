@@ -1,4 +1,5 @@
 from dagster_graphql.test.utils import infer_pipeline_selector
+from dagster_graphql_tests.graphql.setup import LONG_INT
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
@@ -54,11 +55,15 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
 
         text_entry = mat["metadataEntries"][7]
         assert text_entry["__typename"] == "EventIntMetadataEntry"
-        assert text_entry["intValue"]
+        assert text_entry["intRepr"]
 
         text_entry = mat["metadataEntries"][8]
         assert text_entry["__typename"] == "EventFloatMetadataEntry"
         assert text_entry["floatValue"] is None  # float NaN test
+
+        text_entry = mat["metadataEntries"][9]
+        assert text_entry["__typename"] == "EventIntMetadataEntry"
+        assert int(text_entry["intRepr"]) == LONG_INT
 
         non_engine_event_logs = [
             message for message in logs if message["__typename"] != "EngineEvent"

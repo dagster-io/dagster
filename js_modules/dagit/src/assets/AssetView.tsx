@@ -382,8 +382,13 @@ function extractNumericData(
       }
 
       let y = NaN;
-      if (entry.__typename === 'EventIntMetadataEntry' && entry.intValue !== null) {
-        y = entry.intValue;
+      if (entry.__typename === 'EventIntMetadataEntry') {
+        if (entry.intValue !== null) {
+          y = entry.intValue;
+        } else {
+          // will incur precision loss here
+          y = parseInt(entry.intRepr);
+        }
       }
       if (entry.__typename === 'EventFloatMetadataEntry' && entry.floatValue !== null) {
         y = entry.floatValue;

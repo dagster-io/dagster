@@ -1542,7 +1542,8 @@ type EventFloatMetadataEntry implements EventMetadataEntry {
 type EventIntMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
-  intValue: Int!
+  intValue: Int
+  intRepr: String!
 }
 
 type EventJsonMetadataEntry implements EventMetadataEntry {

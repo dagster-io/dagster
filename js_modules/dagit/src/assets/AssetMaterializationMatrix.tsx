@@ -239,7 +239,10 @@ const plaintextFor = (
   if (entry.__typename === 'EventFloatMetadataEntry') {
     return entry.floatValue;
   } else if (entry.__typename === 'EventIntMetadataEntry') {
-    return entry.intValue.toLocaleString();
+    if (entry.intValue !== null) {
+      return entry.intValue.toLocaleString();
+    }
+    return entry.intRepr;
   } else if (entry.__typename === 'EventPathMetadataEntry') {
     return entry.path;
   } else if (entry.__typename === 'EventTextMetadataEntry') {
