@@ -21,7 +21,8 @@ from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 # Can be incremented on breaking changes to the snapshot (since it is used to reconstruct
-# the ExecutionPlan during execution)
+# the ExecutionPlan during execution). Every time you need to bump this, consider
+# adding a new snapshot folder to test in est_execution_plan_snapshot_backcompat.
 CURRENT_SNAPSHOT_VERSION = 1
 
 

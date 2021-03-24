@@ -227,6 +227,10 @@ class UnresolvedMappedExecutionStep(
     def step_inputs(self) -> List[Union[StepInput, UnresolvedMappedStepInput]]:
         return list(self.step_input_dict.values())
 
+    def step_input_named(self, name: str) -> Union[StepInput, UnresolvedMappedStepInput]:
+        check.str_param(name, "name")
+        return self.step_input_dict[name]
+
     def step_output_named(self, name: str) -> StepOutput:
         check.str_param(name, "name")
         return self.step_output_dict[name]
@@ -372,6 +376,10 @@ class UnresolvedCollectExecutionStep(
     @property
     def step_inputs(self) -> List[Union[StepInput, UnresolvedCollectStepInput]]:
         return list(self.step_input_dict.values())
+
+    def step_input_named(self, name: str) -> Union[StepInput, UnresolvedCollectStepInput]:
+        check.str_param(name, "name")
+        return self.step_input_dict[name]
 
     def step_output_named(self, name: str) -> StepOutput:
         check.str_param(name, "name")
