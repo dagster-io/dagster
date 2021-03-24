@@ -2,7 +2,7 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
-# Migrating to 0.11.0
+## Migrating to 0.11.0
 
 ### Action Required: Run and event storage schema changes
 
@@ -36,23 +36,28 @@ If upgrading directly to `0.11.0` from `0.9.22` or lower, you might notice some 
 * Names provided to `alias` on solids now enforce the same naming rules as solids. You may have to update provided names to meet these requirements.
 * The `retries` method on `Executor` should now return a `RetryMode` instead of a `Retries`. This will only affect custom `Executor` classes.
 * Submitting partition backfills in Dagit now requires `dagster-daemon` to be running.  The instance setting in `dagster.yaml` to optionally enable daemon-based backfills has been removed, because all backfills are now daemon-based backfills.
-```
-# removed, no longer a valid setting in dagster.yaml
-    backfill:
-      daemon_enabled: true
-```
+
+  ```
+  # removed, no longer a valid setting in dagster.yaml
+
+  backfill:
+    daemon_enabled: true
+  ```
+
 The corresponding value flag `dagsterDaemon.backfill.enabled` has also been removed from the Dagster helm chart.
 
 * The sensor daemon interval settings in `dagster.yaml` has been removed.  The sensor daemon now runs in a continuous loop so this customization is no longer useful.
-```
-# removed, no longer a valid setting in dagster.yaml
-    sensor_settings:
-      interval_seconds: 10
-```
 
-# Migrating to 0.10.0
+  ```
+  # removed, no longer a valid setting in dagster.yaml
+    
+  sensor_settings:
+    interval_seconds: 10
+  ```
 
-## Action Required: Run and event storage schema changes
+## Migrating to 0.10.0
+
+### Action Required: Run and event storage schema changes
 
 ```bash
 # Run after migrating to 0.10.0
@@ -67,14 +72,14 @@ turn off any running schedules, so you will need to restart any previously runni
 migrating the schema. Before turning them back on, you should follow the steps below to migrate
 to `DagsterDaemonScheduler`.
 
-## New scheduler: `DagsterDaemonScheduler`
+### New scheduler: DagsterDaemonScheduler
 
 This release includes a new `DagsterDaemonScheduler` with improved fault tolerance and full support
 for timezones. We highly recommend upgrading to the new scheduler during this release. The existing
 schedulers, `SystemCronScheduler` and `K8sScheduler`, are deprecated and will be removed in a
 future release.
 
-### Steps to migrate
+#### Steps to migrate
 
 Instead of relying on system cron or k8s cron jobs, the `DaemonScheduler` uses the new
 `dagster-daemon` service to run schedules. This requires running the `dagster-daemon` service as a
@@ -109,14 +114,14 @@ help if you experience any problems with the new scheduler.
 No migration steps are needed, but make sure you run `dagster instance migrate` as a part of
 upgrading to 0.10.0.
 
-## Deprecation: Intermediate Storage
+### Deprecation: Intermediate Storage
 
 We have deprecated the intermediate storage machinery in favor of the new IO manager abstraction,
 which offers finer-grained control over how inputs and outputs are serialized and persisted. Check
 out the [IO Managers Overview](https://docs.dagster.io/0.10.0/overview/io-managers/io-managers) for
 more information.
 
-### Steps to Migrate
+#### Steps to Migrate
 
 * We have deprecated the top level `"storage"` and `"intermediate_storage"` fields on `run_config`.
   If you are currently executing pipelines as follows:
@@ -201,7 +206,7 @@ more information.
 * We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
   new IO managers, which should be attached using the `resource_defs` argument.
 
-## Removal: `input_hydration_config` and `output_materialization_config`
+### Removal: input_hydration_config and output_materialization_config
 
 Use `dagster_type_loader` instead of `input_hydration_config` and `dagster_type_materializer`
 instead of `output_materialization_config`.
@@ -210,12 +215,12 @@ On `DagsterType` and type constructors in `dagster_pandas` use the `loader` argu
 `input_hydration_config` and the `materializer` argument instead of `dagster_type_materializer`
 argument.
 
-## Removal: `repository` key in workspace YAML
+### Removal: repository key in workspace YAML
 
 We have removed the ability to specify a repository in your workspace using the `repository:` key.
 Use `load_from:` instead when specifying how to load the repositories in your workspace.
 
-## Deprecated: `python_environment` key in workspace YAML
+### Deprecated: python_environment key in workspace YAML
 
 The `python_environment:` key is now deprecated and will be removed in a future release.
 
@@ -249,11 +254,11 @@ should now be expressed as:
 See our [Workspaces Overview](https://docs.dagster.io/overview/repositories-workspaces/workspaces#loading-from-an-external-environment)
 for more information and examples.
 
-## Removal: `config_field` property on definition classes
+### Removal: config_field property on definition classes
 
 We have removed the property `config_field` on definition classes. Use `config_schema` instead.
 
-## Removal: System Storage
+### Removal: System Storage
 
 We have removed the system storage abstractions, i.e. `SystemStorageDefinition` and
 `@system_storage` ([deprecated in 0.9.0](#deprecation-system_storage_defs)).
@@ -267,14 +272,14 @@ Please note that the intermediate storage abstraction is also deprecated and wil
   (deprecated in 0.9.0).
 
 
-## Removal: `step_keys_to_execute`
+### Removal: step_keys_to_execute
 
 We have removed the `step_keys_to_execute` argument to `reexecute_pipeline` and
 `reexecute_pipeline_iterator`, in favor of `step_selection`. This argument accepts the Dagster
 selection syntax, so, for example, `*solid_a+` represents `solid_a`, all of its upstream steps,
 and its immediate downstream steps.
 
-## Breaking Change: `date_partition_range`
+### Breaking Change: date_partition_range
 
 Starting in 0.10.0, Dagster uses the [pendulum](https://pypi.org/project/pendulum/) library to
 ensure that schedules and partitions behave correctly with respect to timezones. As part of this
@@ -303,7 +308,7 @@ date_partition_range(
 )
 ```
 
-## Breaking Change: `PartitionSetDefinition.create_schedule_definition`
+### Breaking Change: PartitionSetDefinition.create_schedule_definition
 
 When you create a schedule from a partition set using
 `PartitionSetDefinition.create_schedule_definition`, you now must supply a `partition_selector`
@@ -341,7 +346,7 @@ schedule_definition = partition_set.create_schedule_definition(
 )
 ```
 
-## Renamed: Helm values
+### Renamed: Helm values
 
 Following convention in the [Helm docs](https://helm.sh/docs/chart_best_practices/values/#naming-conventions),
 we now camel case all of our Helm values. To migrate to 0.10.0, you'll need to update your
@@ -352,7 +357,7 @@ we now camel case all of our Helm values. To migrate to 0.10.0, you'll need to u
 * `env_secrets` → `envSecrets`
 * `env_config_maps` → `envConfigMaps`
 
-## Restructured: `scheduler` in Helm values
+### Restructured: scheduler in Helm values
 
 When specifying the Dagster instance scheduler, rather than using a boolean field to switch between
 the current options of `K8sScheduler` and `DagsterDaemonScheduler`, we now require the scheduler
@@ -377,7 +382,7 @@ scheduler:
   type: DagsterDaemonScheduler
 ```
 
-## Restructured: `celery` and `k8sRunLauncher` in Helm values
+### Restructured: celery and k8sRunLauncher in Helm values
 
 `celery` and `k8sRunLauncher` now live under `runLauncher.config.celeryK8sRunLauncher` and
 `runLauncher.config.k8sRunLauncher` respectively. Now, to enable celery, `runLauncher.type` must
@@ -416,7 +421,7 @@ runLauncher:
       envSecrets: []
 ```
 
-## New Helm defaults
+### New Helm defaults
 
 By default, `userDeployments` is enabled and the `runLauncher` is set to the `K8sRunLauncher`.
 Along with the latter change, all message brokers (e.g. `rabbitmq` and `redis`) are now disabled
@@ -426,24 +431,24 @@ If you were using the `CeleryK8sRunLauncher`, one of `rabbitmq` or `redis` must 
 enabled in your Helm values.
 
 
-# Migrating to 0.9.0
+## Migrating to 0.9.0
 
-## Removal: `config` argument
+### Removal: config argument
 
 We have removed the `config` argument to the `ConfigMapping`, `@composite_solid`, `@solid`,
 `SolidDefinition`, `@executor`, `ExecutorDefinition`, `@logger`, `LoggerDefinition`, `@resource`,
 and `ResourceDefinition` APIs, which we deprecated in 0.8.0, in favor of `config_schema`, as
 described [here](#renaming-config).
 
-# Migrating to 0.8.8
+## Migrating to 0.8.8
 
-## Deprecation: `Materialization`
+### Deprecation: Materialization
 
 We deprecated the `Materialization` event type in favor of the new `AssetMaterialization` event type,
 which requires the `asset_key` parameter. Solids yielding `Materialization` events will continue
 to work as before, though the `Materialization` event will be removed in a future release.
 
-## Deprecation: `system_storage_defs`
+### Deprecation: system_storage_defs
 
 We are starting to deprecate "system storages" - instead of pipelines having a system storage
 definition which creates an intermediate storage, pipelines now directly have an intermediate
@@ -478,9 +483,9 @@ from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs
 ModeDefinition(intermediate_storage_defs=s3_plus_default_intermediate_storage_defs)
 ```
 
-# Migrating to 0.8.7
+## Migrating to 0.8.7
 
-## Loading python modules from the working directory
+### Loading python modules from the working directory
 
 Loading python modules reliant on the working directory being on the PYTHONPATH is no longer
 supported. The `dagster` and `dagit` CLI commands no longer add the working directory to the
@@ -488,9 +493,9 @@ PYTHONPATH when resolving modules, which may break some imports. Explicitly inst
 packages can be specified in workspaces using the `python_package` workspace yaml config option.
 The `python_module` config option is deprecated and will be removed in a future release.
 
-# Migrating to 0.8.6
+## Migrating to 0.8.6
 
-## dagster-celery
+### dagster-celery
 
 The `dagster-celery` module has been broken apart to manage dependencies more coherently. There
 are now three modules: `dagster-celery`, `dagster-celery-k8s`, and `dagster-celery-docker`.
@@ -501,7 +506,7 @@ which must point to the `app.py` file within the appropriate module. E.g if you 
 `celery` or `dagster-celery` cli tools. Similar for the `celery_docker_executor`:
 `-A dagster_celery_docker.app` must be used.
 
-## Deprecation: `input_hydration_config` and `output_materialization_config`
+### Deprecation: input_hydration_config and output_materialization_config
 
 We renamed the `input_hydration_config` and `output_materialization_config` decorators to
 `dagster_type_` and `dagster_type_materializer` respectively. We also renamed DagsterType's
@@ -554,19 +559,19 @@ MyType = DagsterType(
 )
 ```
 
-# Migrating to 0.8.5
+## Migrating to 0.8.5
 
-## Python 3.5
+### Python 3.5
 
 Python 3.5 is no longer under test.
 
-## `Engine` and `ExecutorConfig` -> `Executor`
+### Engine and ExecutorConfig -> Executor
 
 `Engine` and `ExecutorConfig` have been deleted in favor of `Executor`. Instead of the `@executor` decorator decorating a function that returns an `ExecutorConfig` it should now decorate a function that returns an `Executor`.
 
-# Migrating to 0.8.3
+## Migrating to 0.8.3
 
-## Change: `gcs_resource`
+### Change: gcs_resource
 
 Previously, the `gcs_resource` returned a `GCSResource` wrapper which had a single `client` property that returned a `google.cloud.storage.client.Client`. Now, the `gcs_resource` returns the client directly.
 
@@ -582,9 +587,9 @@ To:
 context.resources.gcs
 ```
 
-# Migrating to 0.8.0
+## Migrating to 0.8.0
 
-## Repository loading
+### Repository loading
 
 Dagit and other tools no longer load a single repository containing user definitions such as
 pipelines into the same process as the framework code. Instead, they load a "workspace" that can
@@ -599,7 +604,7 @@ As a consequence, the former `repository.yaml` and the associated `-y`/`--reposi
 arguments are deprecated in favor of a new `workspace.yaml` file format and associated
 `-w`/`--workspace-yaml` arguments.
 
-### Steps to migrate
+#### Steps to migrate
 
 You should replace your `repository.yaml` files with `workspace.yaml` files, which can define a
 number of possible sources from which to load repositories.
@@ -620,7 +625,7 @@ load_from:
           attribute: define_internal_dagit_repository
 ```
 
-## Repository definition
+### Repository definition
 
 The `@scheduler` and `@repository_partitions` decorators have been removed. In addition, users
 should prefer the new `@repository` decorator to instantiating `RepositoryDefinition` directly.
@@ -628,7 +633,7 @@ should prefer the new `@repository` decorator to instantiating `RepositoryDefini
 One consequence of this change is that `PartitionSetDefinition` names, including those defined by
 a `PartitionScheduleDefinition`, must now be unique within a single repository.
 
-### Steps to migrate
+#### Steps to migrate
 
 Previously you might have defined your pipelines, schedules, partition sets, and repositories in a
 python file such as the following:
@@ -732,7 +737,7 @@ Python interpreter from a `python_environment`.
 Note that the `@repository` decorator also supports more sophisticated, lazily-loaded repositories.
 Consult the documentation for the decorator for more details.
 
-## Reloadable repositories
+### Reloadable repositories
 
 In 0.7.x, dagster attempted to elide the difference between a pipeline that was defined in memory
 and one that was loaded through machinery that used the `ExecutionTargetHandle` machinery. This
@@ -764,7 +769,7 @@ execute_pipeline(reconstructable(some_pipeline), {'execution': {'multiprocess': 
 Pipelines must be defined in module scope in order for `reconstructable` to be used. Note that
 pipelines defined _interactively_, e.g., in the Python REPL, cannot be passed between processes.
 
-## Renaming environment_dict and removing RunConfig
+### Renaming environment_dict and removing RunConfig
 
 In 0.8.0, we've renamed the common `environment_dict` parameter to many user-facing APIs to
 `run_config`, and we've dropped the previous `run_config` parameter. This change affects the
@@ -783,7 +788,7 @@ directly.
 This change is intended to reduce ambiguity around the notion of a pipeline execution's
 "environment", since the config value passed as `run_config` is scoped to a single execution.
 
-## Deprecation: `config` argument
+### Deprecation: config argument
 
 In 0.8.0, we've renamed the common `config` parameter to the user-facing definition APIs to
 `config_schema`. This is intended to reduce ambiguity between config values (provided at
@@ -793,7 +798,7 @@ the `ConfigMapping`, `@composite_solid`, `@solid`, `SolidDefinition`, `@executor
 In the CLI, `dagster pipeline execute` and `dagster pipeline launch` now take `-c/--config` instead
 of `-e/--env`.
 
-## Renaming solid_subset and enabling support for solid selection DSL in Python API
+### Renaming solid_subset and enabling support for solid selection DSL in Python API
 
 In 0.8.0, we've renamed the `solid_subset`/`--solid-subset` argument to
 `solid_selection`/`--solid-selection` throughout the Python API and CLI. This affects the
@@ -807,7 +812,7 @@ In addition to the names of individual solids, the new `solid_selection` argumen
 queries like `*solid_name++` (i.e., `solid_name`, all of its ancestors, its immediate descendants,
 and their immediate descendants), previously supported only in Dagit views.
 
-## Removal of deprectated properties, methods, and arguments
+### Removal of deprectated properties, methods, and arguments
 
 - The deprecated `runtime_type` property on `InputDefinition` and `OutputDefinition` has been
   removed. Use `dagster_type` instead.
@@ -821,26 +826,26 @@ and their immediate descendants), previously supported only in Dagit views.
 - The use of `is_optional` throughout the codebase was deprecated in 0.7.x and has been removed. Use
   `is_required` instead.
 
-## Removal of Path config type
+### Removal of Path config type
 
 The built-in config type `Path` has been removed. Use `String`.
 
-## dagster-bash
+### dagster-bash
 
 This package has been renamed to dagster-shell. The`bash_command_solid` and `bash_script_solid`
 solid factory functions have been renamed to `create_shell_command_solid` and
 `create_shell_script_solid`.
 
-## Dask config
+### Dask config
 
 The config schema for the `dagster_dask.dask_executor` has changed. The previous config should
 now be nested under the key `local`.
 
-## Spark solids
+### Spark solids
 
 `dagster_spark.SparkSolidDefinition` has been removed - use `create_spark_solid` instead.
 
-# Migrating to 0.7.0
+## Migrating to 0.7.0
 
 The 0.7.0 release contains a number of breaking API changes. While listed
 in the changelog, this document goes into more detail about how to
@@ -850,7 +855,7 @@ can be adjusted to with relatively straightforward changes.
 The easiest way to use this guide is to search for associated
 error text.
 
-## Dagster Types
+### Dagster Types
 
 There have been substantial changes to the core dagster type APIs.
 
@@ -914,7 +919,7 @@ two arguments instead of one. The first argument is a instance of `TypeCheckCont
 the second argument is the value being checked. This allows the type check
 to have access to resources.
 
-## Config System
+### Config System
 
 The config APIs have been renamed to have no collisions with names in neither python's
 `typing` API nor the dagster type system. Here are some example errors:
@@ -964,7 +969,7 @@ The error could be much better. This is what happens a config type (in this
 case `Noneable`) is passed to a `List`. The fix is to use either `Array` or
 to use a bare list with a single element, which is a config type.
 
-## Required Resources
+### Required Resources
 
 Any solid, type, or configuration function that accesses a resource off of a context
 object must declare that resource key with a `required_resource_key` argument.
@@ -989,7 +994,7 @@ its required resources.
 As a result, we should see improved performance for pipeline subset execution,
 multiprocess execution, and retry execution.
 
-## RunConfig Removed
+### RunConfig Removed
 
 Error:
 
@@ -1002,7 +1007,7 @@ on the pipeline execution context has been removed and replaced with `pipeline_r
 instance. Along with the fields previously on `RunConfig`, this also includes the pipeline run
 status.
 
-## Scheduler
+### Scheduler
 
 Scheduler configuration has been moved to the `dagster.yaml`. After upgrading, the previous schedule
 history is no longer compatible with the new storage.
