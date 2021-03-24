@@ -449,6 +449,24 @@ class _Nothing(DagsterType):
         return self
 
 
+def isinstance_type_check_fn(
+    expected_python_type: typing.Type, dagster_type_name: str, expected_python_type_str: str
+):
+    def type_check(_context, value):
+        if not isinstance(value, expected_python_type):
+            return TypeCheck(
+                success=False,
+                description=(
+                    f"Value of type {type(value)} failed type check for Dagster type {dagster_type_name}, "
+                    f"expected value to be of Python type {expected_python_type_str}."
+                ),
+            )
+
+        return TypeCheck(success=True)
+
+    return type_check
+
+
 class PythonObjectDagsterType(DagsterType):
     """Define a type in dagster whose typecheck is an isinstance check.
 
@@ -516,24 +534,11 @@ class PythonObjectDagsterType(DagsterType):
         name = check.opt_str_param(name, "name", self.type_str)
         key = check.opt_str_param(key, "key", name)
         super(PythonObjectDagsterType, self).__init__(
-            key=key, name=name, type_check_fn=self.type_check_method, **kwargs
+            key=key,
+            name=name,
+            type_check_fn=isinstance_type_check_fn(python_type, name, self.type_str),
+            **kwargs,
         )
-
-    def type_check_method(self, _context, value):
-        if not isinstance(value, self.python_type):
-            return TypeCheck(
-                success=False,
-                description=(
-                    "Value of type {value_type} failed type check for Dagster type {dagster_type}, "
-                    "expected value to be of Python type {expected_type}."
-                ).format(
-                    value_type=type(value),
-                    dagster_type=self._name,
-                    expected_type=self.type_str,
-                ),
-            )
-
-        return TypeCheck(success=True)
 
 
 class NoneableInputSchema(DagsterTypeLoader):
@@ -779,14 +784,16 @@ DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
 )
 
 
-class TypeHintInferredDagsterType(PythonObjectDagsterType):
+class TypeHintInferredDagsterType(DagsterType):
     def __init__(self, python_type: typing.Type):
         qualified_name = f"{python_type.__module__}.{python_type.__name__}"
+        self.python_type = python_type
         super(TypeHintInferredDagsterType, self).__init__(
-            python_type,
-            name=qualified_name,
             key=f"_TypeHintInferred[{qualified_name}]",
             description=f"DagsterType created from a type hint for the Python type {qualified_name}",
+            type_check_fn=isinstance_type_check_fn(
+                python_type, python_type.__name__, qualified_name
+            ),
         )
 
     @property
