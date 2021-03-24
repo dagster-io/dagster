@@ -360,3 +360,103 @@ def test_chart_does_render(user_deployments: UserDeployments, full_template: Hel
     templates = full_template.render(values)
 
     assert templates
+
+
+@pytest.mark.parametrize(
+    "user_deployments",
+    [
+        UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[
+                create_simple_user_deployment("simple-deployment-one"),
+            ],
+        ),
+        UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[
+                create_complex_user_deployment("complex-deployment-one"),
+                create_complex_user_deployment("complex-deployment-two"),
+                create_simple_user_deployment("simple-deployment-three"),
+            ],
+        ),
+    ],
+    ids=[
+        "single user deployment enabled",
+        "multiple user deployments enabled",
+    ],
+)
+def test_user_deployment_checksum_unchanged(
+    user_deployments: UserDeployments, template: HelmTemplate
+):
+    values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
+
+    pre_upgrade_templates = template.render(values)
+    post_upgrade_templates = template.render(values)
+
+    # User deployment templates with the same Helm values should not redeploy in a Helm upgrade
+    for pre_upgrade_user_deployment, post_upgrade_user_deployment in zip(
+        pre_upgrade_templates, post_upgrade_templates
+    ):
+        pre_upgrade_checksum = pre_upgrade_user_deployment.spec.template.metadata.annotations[
+            "checksum/dagster-user-deployment"
+        ]
+        post_upgrade_checksum = post_upgrade_user_deployment.spec.template.metadata.annotations[
+            "checksum/dagster-user-deployment"
+        ]
+
+        assert pre_upgrade_checksum == post_upgrade_checksum
+
+
+@pytest.mark.parametrize(
+    "user_deployments",
+    [
+        (
+            UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[
+                    create_simple_user_deployment("deployment-one"),
+                    create_simple_user_deployment("deployment-two"),
+                ],
+            ),
+            UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[
+                    create_complex_user_deployment("deployment-one"),
+                    create_complex_user_deployment("deployment-two"),
+                ],
+            ),
+        )
+    ],
+    ids=["multiple user deployments change"],
+)
+def test_user_deployment_checksum_changes(
+    user_deployments: UserDeployments, template: HelmTemplate
+):
+    pre_upgrade_user_deployments, post_upgrade_user_deployments = user_deployments
+
+    pre_upgrade_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=pre_upgrade_user_deployments
+    )
+    post_upgrade_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=post_upgrade_user_deployments
+    )
+
+    pre_upgrade_templates = template.render(pre_upgrade_values)
+    post_upgrade_templates = template.render(post_upgrade_values)
+
+    # User deployment templates with the same Helm values should not redeploy in a Helm upgrade
+    for pre_upgrade_user_deployment, post_upgrade_user_deployment in zip(
+        pre_upgrade_templates, post_upgrade_templates
+    ):
+        pre_upgrade_checksum = pre_upgrade_user_deployment.spec.template.metadata.annotations[
+            "checksum/dagster-user-deployment"
+        ]
+        post_upgrade_checksum = post_upgrade_user_deployment.spec.template.metadata.annotations[
+            "checksum/dagster-user-deployment"
+        ]
+
+        assert pre_upgrade_checksum != post_upgrade_checksum

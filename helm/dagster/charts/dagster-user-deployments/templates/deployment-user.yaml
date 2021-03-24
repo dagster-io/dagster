@@ -21,7 +21,13 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
         component: user-deployments
         deployment: {{ $deployment.name }}
-      annotations: {{ $deployment.annotations | toYaml | nindent 8 }}
+      annotations:
+        checksum/dagster-user-deployment: {{ $deployment | toJson | sha256sum }}
+        {{- with $deployment.annotations }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       imagePullSecrets: {{ $.Values.imagePullSecrets | toYaml | nindent 8 }}
       serviceAccountName: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
