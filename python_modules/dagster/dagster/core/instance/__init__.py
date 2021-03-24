@@ -1522,6 +1522,9 @@ class DagsterInstance:
             QueuedRunCoordinatorDaemon,
         )
 
+        if self.is_ephemeral:
+            return []
+
         daemons = [SensorDaemon.daemon_type(), BackfillDaemon.daemon_type()]
         if isinstance(self.scheduler, DagsterDaemonScheduler):
             daemons.append(SchedulerDaemon.daemon_type())
