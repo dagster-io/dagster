@@ -2,10 +2,12 @@ import os
 
 import pytest
 from airflow.exceptions import AirflowException
-from dagster import pipeline, solid
+from dagster import pipeline, repository, solid
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.test_utils import instance_for_test
+from dagster.utils import file_relative_path
 from dagster_airflow.factory import DagsterOperatorParameters
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
 from dagster_airflow_tests.marks import requires_airflow_db
@@ -21,10 +23,20 @@ def nonce_pipeline():
     return nonce_solid()
 
 
+@repository
+def my_repository():
+    return [nonce_pipeline]
+
+
 nonce_pipeline_snapshot = nonce_pipeline.get_pipeline_snapshot()
 
 nonce_execution_plan_snapshot = snapshot_from_execution_plan(
     create_execution_plan(nonce_pipeline), nonce_pipeline.get_pipeline_snapshot_id()
+)
+
+recon_repo_for_tests = ReconstructableRepository.for_file(
+    file_relative_path(__file__, "test_dagster_docker_operator.py"),
+    "my_repository",
 )
 
 
@@ -33,7 +45,7 @@ def test_init_modified_docker_operator(dagster_docker_image):
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
             run_config={"intermediate_storage": {"filesystem": {}}},
-            pipeline_name="",
+            pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
                 "image": dagster_docker_image,
@@ -42,6 +54,7 @@ def test_init_modified_docker_operator(dagster_docker_image):
             pipeline_snapshot=nonce_pipeline_snapshot,
             execution_plan_snapshot=nonce_execution_plan_snapshot,
             instance_ref=instance.get_ref(),
+            recon_repo=recon_repo_for_tests,
         )
         DagsterDockerOperator(dagster_operator_parameters)
 
@@ -52,7 +65,7 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
             run_config={"intermediate_storage": {"filesystem": {}}},
-            pipeline_name="",
+            pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
                 "image": dagster_docker_image,
@@ -63,6 +76,7 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
             pipeline_snapshot=nonce_pipeline_snapshot,
             execution_plan_snapshot=nonce_execution_plan_snapshot,
             instance_ref=instance.get_ref(),
+            recon_repo=recon_repo_for_tests,
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
 
@@ -75,7 +89,7 @@ def test_modified_docker_operator_env(dagster_docker_image):
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
             run_config={"intermediate_storage": {"filesystem": {}}},
-            pipeline_name="",
+            pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
                 "image": dagster_docker_image,
@@ -85,6 +99,7 @@ def test_modified_docker_operator_env(dagster_docker_image):
             pipeline_snapshot=nonce_pipeline_snapshot,
             execution_plan_snapshot=nonce_execution_plan_snapshot,
             instance_ref=instance.get_ref(),
+            recon_repo=recon_repo_for_tests,
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
         with pytest.raises(AirflowException, match="Could not parse response"):
@@ -96,7 +111,7 @@ def test_modified_docker_operator_bad_command(dagster_docker_image):
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
             run_config={"intermediate_storage": {"filesystem": {}}},
-            pipeline_name="",
+            pipeline_name="nonce_pipeline",
             mode="default",
             op_kwargs={
                 "image": dagster_docker_image,
@@ -106,6 +121,7 @@ def test_modified_docker_operator_bad_command(dagster_docker_image):
             pipeline_snapshot=nonce_pipeline_snapshot,
             execution_plan_snapshot=nonce_execution_plan_snapshot,
             instance_ref=instance.get_ref(),
+            recon_repo=recon_repo_for_tests,
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
         with pytest.raises(AirflowException, match="Usage: dagster-graphql"):
@@ -126,7 +142,7 @@ def test_modified_docker_operator_url(dagster_docker_image):
             dagster_operator_parameters = DagsterOperatorParameters(
                 task_id="nonce",
                 run_config={"intermediate_storage": {"filesystem": {}}},
-                pipeline_name="",
+                pipeline_name="nonce_pipeline",
                 mode="default",
                 op_kwargs={
                     "image": dagster_docker_image,
@@ -139,6 +155,7 @@ def test_modified_docker_operator_url(dagster_docker_image):
                 pipeline_snapshot=nonce_pipeline_snapshot,
                 execution_plan_snapshot=nonce_execution_plan_snapshot,
                 instance_ref=instance.get_ref(),
+                recon_repo=recon_repo_for_tests,
             )
             operator = DagsterDockerOperator(dagster_operator_parameters)
 

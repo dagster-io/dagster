@@ -5,7 +5,8 @@ from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster import check, seven
-from dagster.cli.api import StepExecutionSkipped
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -250,6 +251,18 @@ class DagsterDockerOperator(DockerOperator):
 
         return _DummyHook()
 
+    def _should_skip(self, pipeline_run):
+        recon_pipeline = self.recon_repo.get_reconstructable_pipeline(self.pipeline_name)
+        execution_plan = create_execution_plan(
+            recon_pipeline.subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute
+            ),
+            run_config=self.run_config,
+            step_keys_to_execute=self.step_keys,
+            mode=self.mode,
+        )
+        return should_skip_step(execution_plan, instance=self.instance, run_id=pipeline_run.run_id)
+
     def execute(self, context):
         if "run_id" in self.params:
             self._run_id = self.params["run_id"]
@@ -259,7 +272,7 @@ class DagsterDockerOperator(DockerOperator):
         try:
             tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
 
-            self.instance.register_managed_run(
+            pipeline_run = self.instance.register_managed_run(
                 pipeline_name=self.pipeline_name,
                 run_id=self.run_id,
                 run_config=self.run_config,
@@ -273,6 +286,10 @@ class DagsterDockerOperator(DockerOperator):
                 execution_plan_snapshot=self.execution_plan_snapshot,
                 parent_pipeline_snapshot=self.parent_pipeline_snapshot,
             )
+            if self._should_skip(pipeline_run):
+                raise AirflowSkipException(
+                    "Dagster emitted skip event, skipping execution in Airflow"
+                )
 
             res = self.execute_raw(context)
             self.log.info("Finished executing container.")
@@ -286,11 +303,6 @@ class DagsterDockerOperator(DockerOperator):
             except Exception:  # pylint: disable=broad-except
                 raise AirflowException(
                     "Could not parse response {response}".format(response=repr(res))
-                )
-
-            if len(events) == 1 and isinstance(events[0], StepExecutionSkipped):
-                raise AirflowSkipException(
-                    "Dagster emitted skip event, skipping execution in Airflow"
                 )
 
             check_events_for_failures(events)

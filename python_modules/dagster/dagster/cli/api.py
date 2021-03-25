@@ -17,7 +17,6 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.selector import PipelineSelector
@@ -51,11 +50,6 @@ from dagster.utils.merger import merge_dicts
 
 @whitelist_for_serdes
 class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
-    pass
-
-
-@whitelist_for_serdes
-class StepExecutionSkipped(namedtuple("_StepExecutionSkipped", "")):
     pass
 
 
@@ -223,11 +217,6 @@ def execute_step_command(input_json):
             )
 
             buff = []
-
-            # Flag that the step execution is skipped
-            if should_skip_step(execution_plan, instance=instance, run_id=pipeline_run.run_id):
-                click.echo(serialize_dagster_namedtuple(StepExecutionSkipped()))
-                return
 
             for event in execute_plan_iterator(
                 execution_plan,
