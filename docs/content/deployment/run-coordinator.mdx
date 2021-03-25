@@ -61,11 +61,27 @@ This run queue will only allow a maximum of 25 runs at once. Additionally, only 
 
 #### Priorities
 
-By default, runs are removed from the queue in the same order that they are submitted. By setting the tag
-`dagster/priority` on a run (either in Dagit or on the pipeline definition in code), you can specify an integer value
-as the run’s priority. By default, all runs have priority 0. Runs with greater priority values will be
-launched first. Negative priorities are permitted, for example to deprioritize a backfill. If multiple
-runs have equal priority, they execute in the order they were submitted.
+The run queue is a first-in-first-out priority queue. By default, all runs have a priority of 0. Dagster will launch runs with higher priority first. If multiple runs have the same priority, Dagster will launch the runs in the order you submitted them to the queue. Negative priorities are also allowed and are useful for de-prioritizing sets of runs such as backfills. Priority values must be integers.
+
+You can specify a custom priority using the dagster/priority tag, which you can set in code on definitions or in the Dagit playground. Note that because both tag keys and values must be strings, so you must specify the priority integer as a string. For example, if you wanted to specify a priority of -1, you would set the dagster/priority tag value to be the string "-1".
+
+```py
+# Attach a priority to a pipeline
+@pipeline(tags={"dagster/priority": "3"})
+def important_pipeline():
+    ...
+
+# Attach a priority to scheduled runs
+@daily_schedule(
+    pipeline_name="my_pipeline",
+    ...
+    tags={"dagster/priority": "-1"}
+)
+def less_important_schedule(date):
+    ...
+```
+
+A priority tag on the pipeline definition can be overriden when launching in the Dagit playground.
 
 #### Queuing semantics
 
