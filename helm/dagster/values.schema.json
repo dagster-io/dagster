@@ -48,6 +48,12 @@
         },
         "migrate": {
             "$ref": "#/definitions/Migrate"
+        },
+        "serviceAccount": {
+            "$ref": "#/definitions/ServiceAccount"
+        },
+        "global": {
+            "$ref": "#/definitions/Global"
         }
     },
     "required": [
@@ -64,7 +70,9 @@
         "runLauncher",
         "dagsterDaemon",
         "busybox",
-        "migrate"
+        "migrate",
+        "serviceAccount",
+        "global"
     ],
     "definitions": {
         "PullPolicy": {
@@ -1744,6 +1752,47 @@
             },
             "required": [
                 "enabled"
+            ]
+        },
+        "ServiceAccount": {
+            "title": "ServiceAccount",
+            "type": "object",
+            "properties": {
+                "create": {
+                    "title": "Create",
+                    "type": "boolean"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "create",
+                "name"
+            ]
+        },
+        "Global": {
+            "title": "Global",
+            "type": "object",
+            "properties": {
+                "postgresqlSecretName": {
+                    "title": "Postgresqlsecretname",
+                    "type": "string"
+                },
+                "dagsterHome": {
+                    "title": "Dagsterhome",
+                    "type": "string"
+                },
+                "serviceAccountName": {
+                    "title": "Serviceaccountname",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "postgresqlSecretName",
+                "dagsterHome",
+                "serviceAccountName"
             ]
         }
     }

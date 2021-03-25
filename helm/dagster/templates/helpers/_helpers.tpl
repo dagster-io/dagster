@@ -112,11 +112,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "dagster.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-    {{ default (include "dagster.fullname" .) .Values.serviceAccount.name }}
-{{- else -}}
-    {{ default "default" .Values.serviceAccount.name }}
-{{- end -}}
+{{- .Values.global.serviceAccountName | default .Values.serviceAccount.name | default (include "dagster.fullname" .) }}
 {{- end -}}
 
 {{/*

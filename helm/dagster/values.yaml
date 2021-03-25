@@ -10,6 +10,10 @@ global:
   # The DAGSTER_HOME env var is set by default on all nodes from this value
   dagsterHome: "/opt/dagster/dagster_home"
 
+  # A service account name to use for this chart and all subcharts. If this is set, then
+  # dagster subcharts will not create their own service accounts.
+  serviceAccountName: ""
+
 nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true
@@ -822,3 +826,7 @@ migrate:
 
 serviceAccount:
   create: true
+
+  # Specifies the name for the service account to reference in the chart. Note that setting
+  # the global service account name will override this field.
+  name: ""
