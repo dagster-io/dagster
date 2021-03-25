@@ -5956,10 +5956,9 @@ next-mdx-remote@^2.1.3:
     "@mdx-js/mdx" "^1.6.22"
     "@mdx-js/react" "^1.6.22"
 
-next-remote-watch@^0.3.0:
+"next-remote-watch@git+https://github.com/hashicorp/next-remote-watch.git#405c803c6b9b19eb8307d66cf5c93fc3a66a1c5":
   version "0.3.0"
-  resolved "https://registry.yarnpkg.com/next-remote-watch/-/next-remote-watch-0.3.0.tgz#bb37c24a527e413756a870d6e5febf99cea0848d"
-  integrity sha512-NWrUv7B74KfkVX48bB/dbgkRfuT/n7eJhayWYAu4DoumxY8NKLkb4xLKYE141FhjMhKrS00iRKdrMvTwphh7HQ==
+  resolved "git+https://github.com/hashicorp/next-remote-watch.git#405c803c6b9b19eb8307d66cf5c93fc3a66a1c5c"
   dependencies:
     body-parser "^1.19.0"
     chalk "^4.0.0"
