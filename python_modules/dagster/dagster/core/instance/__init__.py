@@ -78,7 +78,7 @@ def _dagster_home():
         raise DagsterInvariantViolationError(
             (
                 '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                "environment variable to be set to an existing directory in your filesystem that"
+                "environment variable to be set to an existing directory in your filesystem that "
                 "contains your dagster instance configuration file (dagster.yaml)."
             ).format(dagster_home_path)
         )
