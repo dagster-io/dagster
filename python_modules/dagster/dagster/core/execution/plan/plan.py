@@ -947,7 +947,9 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
             if source_handle in optional_source_handles
             and source_handle not in yielded_step_output_handles
         ]
-        if len(missing_source_handles) == len(step_input.get_step_output_handle_dependencies()):
+        if len(missing_source_handles) > 0 and len(missing_source_handles) == len(
+            step_input.get_step_output_handle_dependencies()
+        ):
             return True
 
     return False

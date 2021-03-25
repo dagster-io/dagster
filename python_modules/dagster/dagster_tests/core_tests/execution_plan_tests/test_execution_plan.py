@@ -6,6 +6,7 @@ from dagster import (
     OutputDefinition,
     check,
     composite_solid,
+    execute_pipeline,
     lambda_solid,
     pipeline,
     solid,
@@ -483,6 +484,49 @@ def test_fan_in_should_skip_step():
         create_execution_plan(
             optional_outputs_composite,
             step_keys_to_execute=["composite_one_upstream_skip.fan_in"],
+        ),
+        instance,
+        pipeline_run.run_id,
+    )
+
+
+def test_configured_input_should_skip_step():
+    called = {}
+
+    @solid(output_defs=[OutputDefinition(is_required=False)])
+    def one(_):
+        yield Output(1)
+
+    @solid
+    def solid_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
+        called["yup"] = True
+
+    @pipeline
+    def my_pipeline():
+        solid_should_not_skip(one())
+
+    run_config = {"solids": {"solid_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}}
+    execute_pipeline(my_pipeline, run_config=run_config)
+    assert called.get("yup")
+
+    # ensure should_skip_step behave the same as execute_pipeline
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = PipelineRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
+    execute_plan(
+        create_execution_plan(
+            my_pipeline,
+            step_keys_to_execute=["one"],
+            run_config=run_config,
+        ),
+        instance,
+        pipeline_run,
+        run_config=run_config,
+    )
+    assert not should_skip_step(
+        create_execution_plan(
+            my_pipeline,
+            step_keys_to_execute=["solid_should_not_skip"],
+            run_config=run_config,
         ),
         instance,
         pipeline_run.run_id,
