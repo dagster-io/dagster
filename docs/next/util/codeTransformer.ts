@@ -12,16 +12,18 @@ const DOCS_SNIPPET = path.join(
   "/examples/docs_snippets/docs_snippets"
 );
 
-export interface Stats {
+export interface SnapshotStats {
   totalSnapshots: number;
   updatedSnapshots: string[];
 }
 
 interface CodeTransformerOptions {
-  setStats?: (newStats: Stats) => void;
+  setSnapshotStats?: (newStats: SnapshotStats) => void;
 }
 
-export default ({ setStats }: CodeTransformerOptions) => async (tree: Node) => {
+export default ({ setSnapshotStats }: CodeTransformerOptions) => async (
+  tree: Node
+) => {
   const codes: [Node, number][] = [];
   visit(tree, "code", (node, index) => {
     codes.push([node, index]);
@@ -29,7 +31,7 @@ export default ({ setStats }: CodeTransformerOptions) => async (tree: Node) => {
 
   const optionKeys = ["lines", "startafter", "endbefore", "dedent", "trim"];
 
-  const stats: Stats = {
+  const stats: SnapshotStats = {
     totalSnapshots: 0,
     updatedSnapshots: [],
   };
@@ -85,7 +87,7 @@ export default ({ setStats }: CodeTransformerOptions) => async (tree: Node) => {
     }
   }
 
-  if (setStats) {
-    setStats(stats);
+  if (setSnapshotStats) {
+    setSnapshotStats(stats);
   }
 };

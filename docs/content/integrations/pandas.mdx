@@ -46,7 +46,12 @@ def load_trip_dataframe(_) -> DataFrame:
 
 By passing in these `PandasColumn` objects, we are expressing the schema and constraints we expect our dataframes to follow when Dagster performs type checks for our solids. Moreover, if we go to the solid viewer, we can follow our schema documented in Dagit:
 
-![tutorial2.png](/images/guides/dagster_pandas/tutorial2.png)
+<Image
+alt="tutorial2.png"
+src="/images/guides/dagster_pandas/tutorial2.png"
+width={440}
+height={543}
+/>
 
 ## Dagster DataFrame Level Validation
 
@@ -102,7 +107,12 @@ SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
 
 Now if we run this pipeline in the Dagit playground:
 
-![tutorial1.png](/images/guides/dagster_pandas/tutorial1.png)
+<Image
+alt="tutorial1.png"
+src="/images/guides/dagster_pandas/tutorial1.png"
+width={2984}
+height={1710}
+/>
 
 # Dagster DataFrame Custom Validation
 

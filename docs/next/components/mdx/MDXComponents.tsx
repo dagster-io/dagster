@@ -10,7 +10,7 @@ import React, { useContext } from "react";
 import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
-
+import Image from 'next/image'
 export const SearchIndexContext = React.createContext(null);
 
 const PyObject: React.FunctionComponent<{
@@ -283,6 +283,11 @@ export default {
   img: ({ children, ...props }) => (
     <div className="mx-auto">
       <img {...(props as any)} />
+    </div>
+  ),
+  Image: ({ children, ...props }) => (
+    <div className="mx-auto">
+      <Image {...(props as any)} />
     </div>
   ),
   PyObject,
