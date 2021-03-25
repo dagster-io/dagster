@@ -16,4 +16,7 @@ module.exports = {
       ...redirectUrls,
     ];
   },
+  // images: {
+  //   domains: ["user-images.githubusercontent.com"],
+  // },
 };

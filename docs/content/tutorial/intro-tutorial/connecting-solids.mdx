@@ -67,7 +67,12 @@ dagit -f serial_pipeline.py
 
 Navigate to <http://127.0.0.1:3000/pipeline/serial_pipeline/> or choose "serial_pipeline" from the left sidebar:
 
-![serial_pipeline_figure_one.png](/images/tutorial/serial_pipeline_figure_one.png)
+<Image
+alt="serial_pipeline_figure_one.png"
+src="/images/tutorial/serial_pipeline_figure_one.png"
+width={1680}
+height={946}
+/>
 
 <br />
 
@@ -125,7 +130,12 @@ Let's visualize this pipeline in Dagit:
 dagit -f complex_pipeline.py
 ```
 
-![complex_pipeline_figure_one.png](/images/tutorial/complex_pipeline_figure_one.png)
+<Image
+alt="complex_pipeline_figure_one.png"
+src="/images/tutorial/complex_pipeline_figure_one.png"
+width={1680}
+height={946}
+/>
 
 When you execute this example from Dagit, you'll see that `load_cereals` executes first, followed by `sort_by_calories` and `sort_by_protein`—in any order—and that `display_results` executes last, only after `sort_by_calories` and `sort_by_protein` have both executed.
 

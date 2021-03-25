@@ -27,6 +27,7 @@
     "dotenv": "^8.2.0",
     "fast-glob": "^3.2.5",
     "gray-matter": "^4.0.2",
+    "image-size": "^0.9.7",
     "mdast-util-toc": "^5.1.0",
     "new-github-issue-url": "^0.2.1",
     "next": "^10.0.9",

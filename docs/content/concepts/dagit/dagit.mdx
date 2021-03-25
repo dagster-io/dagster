@@ -25,31 +25,56 @@ The Pipeline page offers tools to explore a pipeline definition and launch runs 
 
 The Definition tab shows the topology of solids that make up a pipeline. Selecting a solid reveals detailed metadata about it in the pane to the right.
 
-![Dagit Pipeline Definition](/images/concepts/dagit/pipeline-definition.png)
+<Image
+alt="Dagit Pipeline Definition"
+src="/images/concepts/dagit/pipeline-definition.png"
+width={3808}
+height={2414}
+/>
 
 ### Solid Definition
 
 On the Definition tab, clicking a solid, you can find detailed information about the solid definition.
 
-![Dagit Solid Definition](/images/concepts/dagit/solid-definition.png)
+<Image
+alt="Dagit Solid Definition"
+src="/images/concepts/dagit/solid-definition.png"
+width={3808}
+height={2414}
+/>
 
 ### Playground
 
 The Playground tab provides a code editor to let you experiment with configuration and launch runs. You can select from the set of presets for the pipeline, or provide custom configuration in the editor.
 
-![Dagit Playground](/images/concepts/dagit/playground.png)
+<Image
+alt="Dagit Playground"
+src="/images/concepts/dagit/playground.png"
+width={3808}
+height={2414}
+/>
 
 ### Runs Tab
 
 The Runs tab shows the list of recent runs for the pipeline.
 
-![Dagit Pipeline Runs Tab](/images/concepts/dagit/runs-tab.png)
+<Image
+alt="Dagit Pipeline Runs Tab"
+src="/images/concepts/dagit/runs-tab.png"
+width={3808}
+height={2414}
+/>
 
 ## Runs
 
 The Runs page lists all pipeline runs. You can filter the list by pipeline name, run ID, execution status, or pipeline tag. Click a run ID to view details for that run.
 
-![Dagit Runs Page](/images/concepts/dagit/all-runs.png)
+<Image
+alt="Dagit Runs Page"
+src="/images/concepts/dagit/all-runs.png"
+width={3808}
+height={2414}
+/>
 
 ### Viewing a single run
 
@@ -57,13 +82,23 @@ The Run page provides details for a single run, including timing information, er
 
 The upper left pane contains a Gantt chart, indicating how long each solid took to execute. The bottom pane displays filterable events and logs emitted during the course of execution.
 
-![Dagit Pipeline Run](/images/concepts/dagit/single-run.png)
+<Image
+alt="Dagit Pipeline Run"
+src="/images/concepts/dagit/single-run.png"
+width={3808}
+height={2414}
+/>
 
 ### Re-executing a run
 
 The Run page also allows you to re-execute a pipeline run with the same configuration. Click the "Re-execution" dropdown button. There are several re-execution options:
 
-![Dagit Re-execution](/images/concepts/dagit/re-execution.png)
+<Image
+alt="Dagit Re-execution"
+src="/images/concepts/dagit/re-execution.png"
+width={3808}
+height={2414}
+/>
 
 - **All Steps**: Re-execute the pipeline run from scratch.
 - **Selected Steps**: Re-execute the selected steps.
@@ -76,13 +111,23 @@ Related runs (e.g., runs created by re-executing the same previous run) are now 
 
 The Assets page lists all assets. You can filter the list by asset key.
 
-![Dagit Asset Catalog](/images/concepts/dagit/all-assets.png)
+<Image
+alt="Dagit Asset Catalog"
+src="/images/concepts/dagit/all-assets.png"
+width={3808}
+height={2414}
+/>
 
 ### Asset Details
 
 The Asset page lists details about a single asset.
 
-![Dagit Asset Details](/images/concepts/dagit/asset.png)
+<Image
+alt="Dagit Asset Details"
+src="/images/concepts/dagit/asset.png"
+width={3808}
+height={2414}
+/>
 
 ## Schedules and Sensors
 
@@ -90,7 +135,12 @@ The Asset page lists details about a single asset.
 
 The Schedules page lists all schedules defined in your workspace, as well as information about upcoming ticks for anticipated scheduled runs.
 
-![Dagit Schedules](/images/concepts/dagit/schedules.png)
+<Image
+alt="Dagit Schedules"
+src="/images/concepts/dagit/schedules.png"
+width={3808}
+height={2414}
+/>
 
 Clicking each schedule, you can find details about a single schedule, its recent tick history, and recent runs.
 
@@ -98,7 +148,12 @@ Clicking each schedule, you can find details about a single schedule, its recent
 
 The Sensors page lists all sensors defined in your workspace, as well as information about the sensor's frequency and its last tick.
 
-![Dagit Sensors](/images/concepts/dagit/sensors.png)
+<Image
+alt="Dagit Sensors"
+src="/images/concepts/dagit/sensors.png"
+width={3808}
+height={2414}
+/>
 
 Clicking each sensor, you can find details about a single sensor, its recent tick history, and recent runs.
 
@@ -106,4 +161,9 @@ Clicking each sensor, you can find details about a single sensor, its recent tic
 
 The Instance status page includes information about the status of the repositories in your workspace, daemon health, schedules, sensors, and configuration details.
 
-<img src="/images/concepts/dagit/status-instance.png" />
+<Image
+alt="status-instance"
+src="/images/concepts/dagit/status-instance.png"
+width={3808}
+height={2414}
+/>

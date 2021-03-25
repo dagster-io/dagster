@@ -88,7 +88,12 @@ dagit -f configurable_pipeline.py
 
 Notice that the launch execution button is disabled and the solids are red in the bottom right corner of the Playground.
 
-![inputs_figure_one.png](/images/tutorial/inputs_figure_one.png)
+<Image
+alt="inputs_figure_one.png"
+src="/images/tutorial/inputs_figure_one.png"
+width={1680}
+height={946}
+/>
 
 Because Dagit is schema-aware, it knows that this pipeline now requires configuration in order to run without errors. In this case, since the pipeline is relatively trivial, it wouldn't be especially costly to run the pipeline and watch it fail. But when pipelines are complex and slow, it's invaluable to get this kind of feedback up front rather than have an unexpected failure deep inside a pipeline.
 
@@ -96,13 +101,23 @@ Recall that the execution plan, which you will ordinarily see above the log view
 
 Press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
 
-![inputs_figure_two.png](/images/tutorial/inputs_figure_two.png)
+<Image
+alt="inputs_figure_two.png"
+src="/images/tutorial/inputs_figure_two.png"
+width={1680}
+height={946}
+/>
 
 Here you can see all of the sections available in the run config. Don't worry, we'll get to them all later.
 
 Let's enter the config we need in order to execute our pipeline.
 
-![inputs_figure_three.png](/images/tutorial/inputs_figure_three.png)
+<Image
+alt="inputs_figure_three.png"
+src="/images/tutorial/inputs_figure_three.png"
+width={1680}
+height={946}
+/>
 
 Note that as you type and edit the config, the config minimap hovering on the right side of the editor pane changes to provide context—you always know where in the nested config schema you are while making changes.
 

@@ -49,7 +49,12 @@ def demo_pipeline():
 
 When you run the above pipeline in terminal, you'll find the messages have been logged through a built-in logger.
 
-<img src="/images/concepts/logging/cli.png" />
+<Image
+alt="cli"
+src="/images/concepts/logging/cli.png"
+width={1280}
+height={582}
+/>
 
 The `context` object passed to every solid execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
 
@@ -57,11 +62,21 @@ When you run Dagster pipelines in Dagit, you'll notice that log messages are vis
 
 Logs also stream back to the Dagit frontend in real time:
 
-<img src="/images/concepts/logging/log-dagit.png" />
+<Image
+alt="log-dagit"
+src="/images/concepts/logging/log-dagit.png"
+width={4032}
+height={2454}
+/>
 
 Dagit exposes a powerful facility for filtering log messages based on execution steps and log levels.
 
-<img src="/images/concepts/logging/log-dagit-filter.png" />
+<Image
+alt="log-dagit-filter"
+src="/images/concepts/logging/log-dagit-filter.png"
+width={4032}
+height={2454}
+/>
 
 ### Debugging with Logs
 
@@ -82,7 +97,12 @@ Errors in user code are caught by the Dagster machinery to ensure pipelines grac
 
 Messages at level `ERROR` or above are highlighted both in Dagit and in the console logs, so we can easily pick them out of logs even without filtering.
 
-<img src="/images/concepts/logging/log-dagit-error.png" />
+<Image
+alt="log-dagit-error"
+src="/images/concepts/logging/log-dagit-error.png"
+width={4032}
+height={2454}
+/>
 
 In many cases, especially for local development, this log viewer, coupled with solid reexecution, is sufficient to enable a fast debug cycle for data pipelines.
 
@@ -165,7 +185,12 @@ loggers:
 
 When you execute the pipeline, you'll notice that you are no longer using the built-in logger but your custom json logger instead.
 
-<img src="/images/concepts/logging/custom-logger.png" />
+<Image
+alt="custom-logger"
+src="/images/concepts/logging/custom-logger.png"
+width={1280}
+height={330}
+/>
 
 ## Patterns
 
