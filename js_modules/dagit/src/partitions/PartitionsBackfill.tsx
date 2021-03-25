@@ -411,11 +411,15 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             <div style={{display: 'flex'}}>
               <Checkbox
                 checked={options.fromFailure}
-                disabled={partitionsWithLastRunFailure.length === 0 || !options.reexecute}
+                disabled={partitionsWithLastRunFailure.length === 0}
                 onChange={() => {
                   setSelected([]);
                   setQuery('');
-                  setOptions({...options, reexecute: true, fromFailure: !options.fromFailure});
+                  setOptions({
+                    ...options,
+                    reexecute: !options.reexecute,
+                    fromFailure: !options.fromFailure,
+                  });
                 }}
               >
                 {'Re-execute From Failures '}
