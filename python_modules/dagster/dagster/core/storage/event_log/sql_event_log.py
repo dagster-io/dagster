@@ -8,7 +8,7 @@ import pendulum
 import sqlalchemy as db
 from dagster import check, seven
 from dagster.core.assets import AssetDetails
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
@@ -93,22 +93,31 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
-        materialization = event.dagster_event.step_materialization_data.materialization
+        # We switched to storing the entire event record of the last materialization instead of just
+        # the AssetMaterialization object, so that we have access to metadata like timestamp,
+        # pipeline, run_id, etc.
+        #
+        # This should make certain asset queries way more performant, without having to do extra
+        # queries against the event log.
+        #
+        # This should be accompanied by a schema change in 0.12.0, renaming `last_materialization`
+        # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
+        #
+        # https://github.com/dagster-io/dagster/issues/3945
+
         with self.index_connection() as conn:
             try:
                 conn.execute(
                     AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
                         asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
+                        last_materialization=serialize_dagster_namedtuple(event),
                     )
                 )
             except db.exc.IntegrityError:
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
                     .values(
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
+                        last_materialization=serialize_dagster_namedtuple(event),
                     )
                     .where(
                         AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
@@ -739,16 +748,45 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [run_id for (run_id, _timestamp) in results]
 
+    def _asset_materialization_from_json_column(self, json_str):
+        if not json_str:
+            return None
+
+        # We switched to storing the entire event record of the last materialization instead of just
+        # the AssetMaterialization object, so that we have access to metadata like timestamp,
+        # pipeline, run_id, etc.
+        #
+        # This should make certain asset queries way more performant, without having to do extra
+        # queries against the event log.
+        #
+        # This should be accompanied by a schema change in 0.12.0, renaming `last_materialization`
+        # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
+        #
+        # https://github.com/dagster-io/dagster/issues/3945
+
+        event_or_materialization = deserialize_json_to_dagster_namedtuple(json_str)
+        if isinstance(event_or_materialization, AssetMaterialization):
+            return event_or_materialization
+
+        if (
+            not isinstance(event_or_materialization, EventRecord)
+            or not event_or_materialization.is_dagster_event
+            or not event_or_materialization.dagster_event.asset_key
+        ):
+            return None
+
+        return event_or_materialization.dagster_event.step_materialization_data.materialization
+
     def all_asset_tags(self):
         query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.last_materialization])
         tags_by_asset_key = defaultdict(dict)
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
-            for asset_key, materialization_str in rows:
-                if materialization_str:
-                    materialization = deserialize_json_to_dagster_namedtuple(materialization_str)
+            for asset_key, json_str in rows:
+                materialization = self._asset_materialization_from_json_column(json_str)
+                if materialization and materialization.tags:
                     tags_by_asset_key[AssetKey.from_db_string(asset_key)] = {
-                        k: v for k, v in (materialization.tags or {}).items()
+                        k: v for k, v in materialization.tags.items()
                     }
 
         return tags_by_asset_key
@@ -763,8 +801,8 @@ class SqlEventLogStorage(EventLogStorage):
             if not rows or not rows[0] or not rows[0][0]:
                 return {}
 
-            materialization = deserialize_json_to_dagster_namedtuple(rows[0][0])
-            return materialization.tags or {}
+            materialization = self._asset_materialization_from_json_column(rows[0][0])
+            return materialization.tags if materialization and materialization.tags else {}
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
