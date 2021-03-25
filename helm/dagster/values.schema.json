@@ -58,6 +58,7 @@
         "dagit",
         "dagster-user-deployments",
         "postgresql",
+        "generatePostgresqlPasswordSecret",
         "rabbitmq",
         "redis",
         "flower",
