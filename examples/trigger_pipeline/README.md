@@ -1,1 +1,1 @@
-View this example in the Dagster docs at https://docs.dagster.io/docs/examples/trigger_pipeline.
+View this example in the Dagster docs at https://docs.dagster.io/examples/trigger_pipeline.

@@ -1,1 +1,1 @@
-View this example in the Dagster docs at https://docs.dagster.io/docs/examples/{{EXAMPLE_NAME}}.
+View this example in the Dagster docs at https://docs.dagster.io/examples/{{EXAMPLE_NAME}}.

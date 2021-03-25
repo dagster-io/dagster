@@ -1,1 +1,1 @@
-View this example in the Dagster docs at https://docs.dagster.io/docs/examples/conditional_execution.
+View this example in the Dagster docs at https://docs.dagster.io/examples/conditional_execution.
