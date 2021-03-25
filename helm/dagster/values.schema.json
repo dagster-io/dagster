@@ -12,6 +12,10 @@
         "postgresql": {
             "$ref": "#/definitions/PostgreSQL"
         },
+        "generatePostgresqlPasswordSecret": {
+            "title": "Generatepostgresqlpasswordsecret",
+            "type": "boolean"
+        },
         "rabbitmq": {
             "$ref": "#/definitions/RabbitMQ"
         },
