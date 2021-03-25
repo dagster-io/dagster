@@ -62,8 +62,6 @@ class FileManager(ABC):  # pylint: disable=no-init
     access to a file system such as local disk, S3, or other cloud storage.
 
     For examples of usage, see the documentation of the concrete file manager implementations.
-
-    In 0.10.x, this abstraction will be deprecated in favor of the :py:class:`~dagster.IOManager`.
     """
 
     @abstractmethod
