@@ -2,6 +2,7 @@ import os
 import posixpath
 
 import jinja2
+from dagster.version import __version__ as dagster_version
 
 NEW_PROJECT_PLACEHOLDER = "new_project"
 NEW_PROJECT_PATH = os.path.join(os.path.dirname(__file__), NEW_PROJECT_PLACEHOLDER)
@@ -59,7 +60,12 @@ def generate_new_project(path: str):
                 # Jinja template names must use the POSIX path separator "/".
                 template_name = src_relative_file_path.replace(os.sep, posixpath.sep)
                 template = env.get_template(name=template_name)
-                f.write(template.render(repo_name=repo_name))
+                f.write(
+                    template.render(
+                        repo_name=repo_name,
+                        dagster_version=dagster_version,
+                    )
+                )
                 f.write("\n")
 
 
