@@ -5,7 +5,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["{{ repo_name }}_tests"]),
     install_requires=[
         "dagster=={{ dagster_version }}",
-        "dagit=={{ dagit_version }}",
+        "dagit=={{ dagster_version }}",
         "pytest",
     ],
 )

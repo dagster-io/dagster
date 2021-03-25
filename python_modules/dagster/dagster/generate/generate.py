@@ -2,7 +2,6 @@ import os
 import posixpath
 
 import jinja2
-from dagit.version import __version__ as dagit_version
 from dagster.version import __version__ as dagster_version
 
 NEW_PROJECT_PLACEHOLDER = "new_project"
@@ -65,7 +64,6 @@ def generate_new_project(path: str):
                     template.render(
                         repo_name=repo_name,
                         dagster_version=dagster_version,
-                        dagit_version=dagit_version,
                     )
                 )
                 f.write("\n")
