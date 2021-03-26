@@ -86,7 +86,7 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="test_pipeline",
+            pipeline_name="foo",
             run_config={},
         ),
         "partitioned_schedule": partition_set.create_schedule_definition(
