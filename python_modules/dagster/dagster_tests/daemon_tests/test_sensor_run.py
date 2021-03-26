@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import sys
 import threading
 import time
@@ -6,7 +8,7 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import pipeline, repository, solid
+from dagster import Any, Field, pipeline, repository, solid
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -38,6 +40,16 @@ def the_solid(_):
 @pipeline
 def the_pipeline():
     the_solid()
+
+
+@solid(config_schema=Field(Any))
+def config_solid(_):
+    return 1
+
+
+@pipeline
+def config_pipeline():
+    config_solid()
 
 
 @sensor(pipeline_name="the_pipeline")
@@ -73,10 +85,32 @@ def custom_interval_sensor(_context):
     return SkipReason()
 
 
+def _random_string(length):
+    return "".join(random.choice(string.ascii_lowercase) for x in range(length))
+
+
+@sensor(pipeline_name="config_pipeline")
+def large_sensor(_context):
+    # create a gRPC response payload larger than the limit (4194304)
+    REQUEST_COUNT = 25
+    REQUEST_TAG_COUNT = 5000
+    REQUEST_CONFIG_COUNT = 100
+
+    for _ in range(REQUEST_COUNT):
+        tags_garbage = {_random_string(10): _random_string(20) for i in range(REQUEST_TAG_COUNT)}
+        config_garbage = {
+            _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
+        }
+        config = {"solids": {"config_solid": {"config": {"foo": config_garbage}}}}
+        yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
+
+
 @repository
 def the_repo():
     return [
         the_pipeline,
+        config_pipeline,
+        large_sensor,
         simple_sensor,
         error_sensor,
         wrong_config_sensor,
@@ -151,7 +185,8 @@ def validate_tick(
     assert tick_data.job_type == JobType.SENSOR
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
-    assert set(tick_data.run_ids) == set(expected_run_ids if expected_run_ids else [])
+    if expected_run_ids is not None:
+        assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
         assert expected_error in tick_data.error.message
 
@@ -783,3 +818,28 @@ def test_sensor_start_stop(external_repo_context):
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(external_origin_id)
             assert len(ticks) == 2
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_large_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("large_sensor")
+            instance.start_sensor(external_sensor)
+            evaluate_sensors(instance, grpc_server_registry)
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )

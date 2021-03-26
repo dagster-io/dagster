@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import sys
 import time
 from collections import defaultdict
@@ -6,7 +8,7 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import pipeline, repository, solid
+from dagster import Any, Field, pipeline, repository, solid
 from dagster.core.definitions import PartitionSetDefinition
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
@@ -70,6 +72,16 @@ def partial_pipeline():
     always_succeed.alias("step_three")()
 
 
+@solid(config_schema=Field(Any))
+def config_solid(_):
+    return 1
+
+
+@pipeline
+def config_pipeline():
+    config_solid()
+
+
 simple_partition_set = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
@@ -92,15 +104,44 @@ partial_partition_set = PartitionSetDefinition(
 )
 
 
+def _large_partition_config(_):
+    REQUEST_CONFIG_COUNT = 50000
+
+    def _random_string(length):
+        return "".join(random.choice(string.ascii_lowercase) for x in range(length))
+
+    return {
+        "solids": {
+            "config_solid": {
+                "config": {
+                    "foo": {
+                        _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
+                    }
+                }
+            }
+        }
+    }
+
+
+large_partition_set = PartitionSetDefinition(
+    name="large_partition_set",
+    pipeline_name="config_pipeline",
+    partition_fn=lambda: ["one", "two", "three"],
+    run_config_fn_for_partition=_large_partition_config,
+)
+
+
 @repository
 def the_repo():
     return [
         the_pipeline,
         conditional_failure_pipeline,
         partial_pipeline,
+        config_pipeline,
         simple_partition_set,
         conditionally_fail_partition_set,
         partial_partition_set,
+        large_partition_set,
     ]
 
 
@@ -413,3 +454,34 @@ def test_partial_backfill(external_repo_context):
         assert step_succeeded(instance, three, "step_one")
         assert step_did_not_run(instance, three, "step_two")
         assert step_did_not_run(instance, three, "step_three")
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_large_backfill(external_repo_context):
+    with instance_for_context(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
+        external_partition_set = external_repo.get_external_partition_set("large_partition_set")
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="simple",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["one", "two", "three"],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        list(
+            execute_backfill_iteration(
+                instance, grpc_server_registry, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+        assert instance.get_runs_count() == 3

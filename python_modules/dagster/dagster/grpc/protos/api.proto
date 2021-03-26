@@ -14,12 +14,12 @@ service DagsterApi {
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
   rpc ExternalPartitionConfig (ExternalPartitionConfigRequest) returns (ExternalPartitionConfigReply) {}
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
-  rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (ExternalPartitionSetExecutionParamsReply) {}
+  rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (stream StreamingChunkEvent) {}
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
   rpc StreamingExternalRepository (ExternalRepositoryRequest) returns (stream StreamingExternalRepositoryEvent) {}
-  rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
-  rpc ExternalSensorExecution (ExternalSensorExecutionRequest) returns (ExternalSensorExecutionReply) {}
+  rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (stream StreamingChunkEvent) {}
+  rpc ExternalSensorExecution (ExternalSensorExecutionRequest) returns (stream StreamingChunkEvent) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
@@ -87,10 +87,6 @@ message ExternalPartitionSetExecutionParamsRequest {
   string serialized_partition_set_execution_param_args = 1;
 }
 
-message ExternalPartitionSetExecutionParamsReply {
-  string serialized_external_partition_set_execution_param_data_or_external_partition_execution_error = 1;
-}
-
 message ListRepositoriesRequest {
 }
 
@@ -123,16 +119,13 @@ message ExternalScheduleExecutionRequest {
   string serialized_external_schedule_execution_args = 1;
 }
 
-message ExternalScheduleExecutionReply {
-  string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
-}
-
 message ExternalSensorExecutionRequest {
   string serialized_external_sensor_execution_args = 1;
 }
 
-message ExternalSensorExecutionReply {
-  string serialized_external_sensor_execution_data_or_external_sensor_execution_error = 1;
+message StreamingChunkEvent {
+  int32 sequence_number = 1;
+  string serialized_chunk = 2;
 }
 
 message ShutdownServerReply {

@@ -1,5 +1,7 @@
 import datetime
 import os
+import random
+import string
 import sys
 import tempfile
 import time
@@ -8,7 +10,9 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 from dagster import (
+    Any,
     DagsterEventType,
+    Field,
     ScheduleDefinition,
     daily_schedule,
     hourly_schedule,
@@ -266,10 +270,43 @@ def the_other_repo():
     ]
 
 
+@solid(config_schema=Field(Any))
+def config_solid(_):
+    return 1
+
+
+@pipeline
+def config_pipeline():
+    config_solid()
+
+
+@daily_schedule(
+    pipeline_name="config_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC"
+)
+def large_schedule(_):
+    REQUEST_CONFIG_COUNT = 120000
+
+    def _random_string(length):
+        return "".join(random.choice(string.ascii_lowercase) for x in range(length))
+
+    return {
+        "solids": {
+            "config_solid": {
+                "config": {
+                    "foo": {
+                        _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
+                    }
+                }
+            }
+        }
+    }
+
+
 @repository
 def the_repo():
     return [
         the_pipeline,
+        config_pipeline,
         simple_schedule,
         simple_temporary_schedule,
         simple_hourly_schedule,
@@ -288,6 +325,7 @@ def the_repo():
         define_multi_run_schedule(),
         define_multi_run_schedule_with_missing_run_key(),
         partitionless_schedule,
+        large_schedule,
     ]
 
 
@@ -1647,3 +1685,36 @@ def test_run_with_hanging_cron_schedules():
             },
         ):
             pass
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_large_schedule(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        grpc_server_registry,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("large_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            freeze_datetime = freeze_datetime.add(seconds=2)
+
+        with pendulum.test(freeze_datetime):
+            list(
+                launch_scheduled_runs(
+                    instance,
+                    grpc_server_registry,
+                    logger(),
+                    pendulum.now("UTC"),
+                )
+            )
+
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
