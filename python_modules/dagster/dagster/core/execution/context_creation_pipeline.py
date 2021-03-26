@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.errors import DagsterError
@@ -85,12 +86,13 @@ class ContextCreationData(
 
 
 def create_context_creation_data(
+    pipeline,
     execution_plan,
     run_config,
     pipeline_run,
     instance,
 ):
-    pipeline_def = execution_plan.pipeline.get_definition()
+    pipeline_def = pipeline.get_definition()
     environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
 
     mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
@@ -98,7 +100,7 @@ def create_context_creation_data(
     executor_def = executor_def_from_config(mode_def, environment_config)
 
     return ContextCreationData(
-        pipeline=execution_plan.pipeline,
+        pipeline=pipeline,
         environment_config=environment_config,
         pipeline_run=pipeline_run,
         mode_def=mode_def,
@@ -141,6 +143,7 @@ class ExecutionContextManager(ABC):
 
 def execution_context_event_generator(
     construct_context_fn,
+    pipeline,
     execution_plan,
     run_config,
     pipeline_run,
@@ -158,7 +161,7 @@ def execution_context_event_generator(
     )
 
     execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    pipeline_def = execution_plan.pipeline.get_definition()
+    pipeline_def = pipeline.get_definition()
 
     run_config = check.dict_param(run_config, "run_config", key_type=str)
     pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
@@ -177,6 +180,7 @@ def execution_context_event_generator(
 
     try:
         context_creation_data = create_context_creation_data(
+            pipeline,
             execution_plan,
             run_config,
             pipeline_run,
@@ -184,7 +188,7 @@ def execution_context_event_generator(
         )
 
         log_manager = create_log_manager(context_creation_data)
-        resource_defs = execution_plan.pipeline_def.get_mode_definition(
+        resource_defs = pipeline_def.get_mode_definition(
             context_creation_data.environment_config.mode
         ).resource_defs
         resources_manager = scoped_resources_builder_cm(
@@ -197,6 +201,7 @@ def execution_context_event_generator(
             instance=instance,
             resource_instances_to_override=resource_instances_to_override,
             emit_persistent_events=True,
+            pipeline_def_for_backwards_compat=pipeline_def,
         )
         yield from resources_manager.generate_setup_events()
         scoped_resources_builder = check.inst(
@@ -251,6 +256,7 @@ def execution_context_event_generator(
 class PipelineExecutionContextManager(ExecutionContextManager):
     def __init__(
         self,
+        pipeline,
         execution_plan,
         run_config,
         pipeline_run,
@@ -265,6 +271,7 @@ class PipelineExecutionContextManager(ExecutionContextManager):
         super(PipelineExecutionContextManager, self).__init__(
             execution_context_event_generator(
                 self.construct_context,
+                pipeline,
                 execution_plan,
                 run_config,
                 pipeline_run,
@@ -421,6 +428,7 @@ class HostModeRunWorkerExecutionContextManager(ExecutionContextManager):
 class PlanExecutionContextManager(ExecutionContextManager):
     def __init__(
         self,
+        pipeline,
         execution_plan,
         run_config,
         pipeline_run,
@@ -433,6 +441,7 @@ class PlanExecutionContextManager(ExecutionContextManager):
         super(PlanExecutionContextManager, self).__init__(
             execution_context_event_generator(
                 self.construct_context,
+                pipeline,
                 execution_plan,
                 run_config,
                 pipeline_run,
@@ -564,6 +573,7 @@ def construct_execution_context_data(
 @contextmanager
 def scoped_pipeline_context(
     execution_plan,
+    pipeline,
     run_config,
     pipeline_run,
     instance,
@@ -580,6 +590,7 @@ def scoped_pipeline_context(
     events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     check.dict_param(run_config, "run_config", key_type=str)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -588,6 +599,7 @@ def scoped_pipeline_context(
     check.opt_dict_param(resource_instances_to_override, "resource_instances_to_override")
 
     initialization_manager = PipelineExecutionContextManager(
+        pipeline,
         execution_plan,
         run_config,
         pipeline_run,

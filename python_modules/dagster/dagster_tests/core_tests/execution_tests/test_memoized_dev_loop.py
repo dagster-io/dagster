@@ -36,6 +36,7 @@ def get_ephemeral_instance(temp_dir):
 def get_step_keys_to_execute(pipeline, run_config, mode, instance):
     memoized_execution_plan = resolve_memoized_execution_plan(
         create_execution_plan(pipeline, run_config=run_config, mode=mode),
+        pipeline,
         run_config,
         instance,
         EnvironmentConfig.build(pipeline, run_config=run_config, mode=mode),

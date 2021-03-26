@@ -545,7 +545,9 @@ class SolidExecutionResult:
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
         manager = context.get_io_manager(step_output_handle)
-        manager_key = context.execution_plan.get_manager_key(step_output_handle)
+        manager_key = context.execution_plan.get_manager_key(
+            step_output_handle, context.pipeline_def
+        )
         res = manager.load_input(
             context.for_input_manager(
                 name=None,

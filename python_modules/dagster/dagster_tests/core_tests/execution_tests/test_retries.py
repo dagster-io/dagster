@@ -18,6 +18,7 @@ from dagster import (
     reexecute_pipeline,
     solid,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
@@ -190,8 +191,10 @@ def test_step_retry_limit(environment):
 
 def test_retry_deferral():
     with instance_for_test() as instance:
+        pipeline_def = define_retry_limit_pipeline()
         events = execute_plan(
-            create_execution_plan(define_retry_limit_pipeline()),
+            create_execution_plan(pipeline_def),
+            InMemoryPipeline(pipeline_def),
             pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,

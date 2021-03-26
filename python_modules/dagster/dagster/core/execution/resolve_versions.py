@@ -65,7 +65,7 @@ def resolve_resource_versions(environment_config, pipeline_definition):
     return resource_versions
 
 
-def resolve_step_versions_helper(execution_plan, environment_config):
+def resolve_step_versions(pipeline_def, execution_plan, environment_config):
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -90,8 +90,6 @@ def resolve_step_versions_helper(execution_plan, environment_config):
         Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
             If a step has no computed version, then the step key maps to None.
     """
-
-    pipeline_def = execution_plan.pipeline.get_definition()
 
     resource_versions_by_key = resolve_resource_versions(environment_config, pipeline_def)
 
@@ -133,9 +131,8 @@ def resolve_step_versions_helper(execution_plan, environment_config):
     return step_versions
 
 
-def resolve_step_output_versions_helper(execution_plan, environment_config):
-
-    step_versions = execution_plan.resolve_step_versions(environment_config)
+def resolve_step_output_versions(pipeline_def, execution_plan, environment_config):
+    step_versions = resolve_step_versions(pipeline_def, execution_plan, environment_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
         for step in execution_plan.steps
@@ -145,14 +142,15 @@ def resolve_step_output_versions_helper(execution_plan, environment_config):
 
 
 @experimental
-def resolve_memoized_execution_plan(execution_plan, run_config, instance, environment_config):
+def resolve_memoized_execution_plan(
+    execution_plan, pipeline_def, run_config, instance, environment_config
+):
     """
     Returns:
         ExecutionPlan: Execution plan configured to only run unmemoized steps.
     """
     from .build_resources import build_resources, initialize_console_manager
 
-    pipeline_def = execution_plan.pipeline.get_definition()
     mode = environment_config.mode
     mode_def = pipeline_def.get_mode_definition(mode)
 
@@ -164,8 +162,7 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance, enviro
         for output_name in step.step_output_dict.keys():
             step_output_handle = StepOutputHandle(step.key, output_name)
 
-            io_manager_key = execution_plan.get_manager_key(step_output_handle)
-            pipeline_def = execution_plan.pipeline.get_definition()
+            io_manager_key = execution_plan.get_manager_key(step_output_handle, pipeline_def)
 
             # We can do better here by only initializing the io manager and the resources it
             # depends on.
@@ -179,6 +176,7 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance, enviro
                 io_manager = getattr(resources, io_manager_key)
                 context = get_output_context(
                     execution_plan,
+                    pipeline_def,
                     environment_config,
                     step_output_handle,
                     log_manager=log_manager,
@@ -186,4 +184,6 @@ def resolve_memoized_execution_plan(execution_plan, run_config, instance, enviro
                 if not io_manager.has_output(context):
                     step_keys_to_execute.add(step_output_handle.step_key)
 
-    return execution_plan.build_subset_plan(list(step_keys_to_execute), environment_config)
+    return execution_plan.build_subset_plan(
+        list(step_keys_to_execute), pipeline_def, environment_config
+    )

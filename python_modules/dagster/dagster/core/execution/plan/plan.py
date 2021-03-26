@@ -21,10 +21,6 @@ from dagster.core.execution.plan.handle import (
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster.core.execution.resolve_versions import (
-    resolve_step_output_versions_helper,
-    resolve_step_versions_helper,
-)
 from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.mem_io_manager import mem_io_manager
@@ -154,7 +150,6 @@ class _PlanBuilder:
         )
 
         full_plan = ExecutionPlan(
-            self.pipeline,
             step_dict,
             executable_map,
             resolvable_map,
@@ -170,7 +165,9 @@ class _PlanBuilder:
         )
 
         if self.step_keys_to_execute is not None:
-            return full_plan.build_subset_plan(self.step_keys_to_execute, self.environment_config)
+            return full_plan.build_subset_plan(
+                self.step_keys_to_execute, pipeline_def, self.environment_config
+            )
         else:
             return full_plan
 
@@ -484,7 +481,6 @@ class ExecutionPlan(
     NamedTuple(
         "_ExecutionPlan",
         [
-            ("pipeline", IPipeline),
             ("step_dict", Dict[StepHandleUnion, IExecutionStep]),
             ("executable_map", Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]]),
             ("resolvable_map", Dict[str, List[UnresolvedStepHandle]]),
@@ -496,7 +492,6 @@ class ExecutionPlan(
 ):
     def __new__(
         cls,
-        pipeline,
         step_dict,
         executable_map,
         resolvable_map,
@@ -506,7 +501,6 @@ class ExecutionPlan(
     ):
         return super(ExecutionPlan, cls).__new__(
             cls,
-            pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
             step_dict=check.dict_param(
                 step_dict,
                 "step_dict",
@@ -536,16 +530,16 @@ class ExecutionPlan(
     def step_keys_to_execute(self) -> List[str]:
         return [handle.to_key() for handle in self.step_handles_to_execute]
 
-    @property
-    def pipeline_def(self) -> PipelineDefinition:
-        return self.pipeline.get_definition()
-
     def get_step_output(self, step_output_handle: StepOutputHandle) -> StepOutput:
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         return _get_step_output(self.step_dict, step_output_handle)
 
-    def get_manager_key(self, step_output_handle: StepOutputHandle) -> str:
-        return _get_manager_key(self.step_dict, step_output_handle, self.pipeline_def)
+    def get_manager_key(
+        self,
+        step_output_handle: StepOutputHandle,
+        pipeline_def: PipelineDefinition,
+    ) -> str:
+        return _get_manager_key(self.step_dict, step_output_handle, pipeline_def)
 
     def has_step(self, handle: StepHandleUnion) -> bool:
         check.inst_param(handle, "handle", StepHandleTypes)
@@ -620,6 +614,7 @@ class ExecutionPlan(
     def build_subset_plan(
         self,
         step_keys_to_execute: List[str],
+        pipeline_def: PipelineDefinition,
         environment_config: EnvironmentConfig,
     ) -> "ExecutionPlan":
         check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
@@ -643,7 +638,6 @@ class ExecutionPlan(
         )
 
         return ExecutionPlan(
-            self.pipeline,
             self.step_dict,
             executable_map,
             resolvable_map,
@@ -652,19 +646,11 @@ class ExecutionPlan(
             _compute_artifacts_persisted(
                 self.step_dict,
                 step_handles_to_execute,
-                self.pipeline_def,
+                pipeline_def,
                 environment_config,
                 executable_map,
             ),
         )
-
-    def resolve_step_versions(self, environment_config) -> Dict[str, Optional[str]]:
-        return resolve_step_versions_helper(self, environment_config)
-
-    def resolve_step_output_versions(
-        self, environment_config
-    ) -> Dict[StepOutputHandle, Optional[str]]:
-        return resolve_step_output_versions_helper(self, environment_config)
 
     def start(
         self,
@@ -760,11 +746,7 @@ class ExecutionPlan(
             )
 
     @staticmethod
-    def rebuild_from_snapshot(
-        pipeline,
-        pipeline_name,
-        execution_plan_snapshot,
-    ):
+    def rebuild_from_snapshot(pipeline_name, execution_plan_snapshot):
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
                 "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
@@ -831,7 +813,6 @@ class ExecutionPlan(
         )
 
         return ExecutionPlan(
-            pipeline,
             step_dict,
             executable_map,
             resolvable_map,

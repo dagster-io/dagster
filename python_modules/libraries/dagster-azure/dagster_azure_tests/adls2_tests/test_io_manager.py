@@ -101,7 +101,8 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, environment_config),
+            execution_plan.build_subset_plan(step_keys, pipeline_def, environment_config),
+            pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -132,7 +133,8 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], environment_config),
+            execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
+            pipeline=InMemoryPipeline(pipeline_def),
             pipeline_run=pipeline_run,
             run_config=run_config,
             instance=instance,

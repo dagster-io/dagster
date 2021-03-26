@@ -217,7 +217,9 @@ class FromStepOutput(
         return [self.step_output_handle]
 
     def get_load_context(self, step_context: "SystemStepExecutionContext") -> "InputContext":
-        io_manager_key = step_context.execution_plan.get_manager_key(self.step_output_handle)
+        io_manager_key = step_context.execution_plan.get_manager_key(
+            self.step_output_handle, step_context.pipeline_def
+        )
         resource_config = step_context.environment_config.resources[io_manager_key].config
         resources = build_resources_for_manager(io_manager_key, step_context)
 
@@ -243,7 +245,9 @@ class FromStepOutput(
         from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
         source_handle = self.step_output_handle
-        manager_key = step_context.execution_plan.get_manager_key(source_handle)
+        manager_key = step_context.execution_plan.get_manager_key(
+            source_handle, step_context.pipeline_def
+        )
         input_manager = step_context.get_io_manager(source_handle)
         check.invariant(
             isinstance(input_manager, IOManager),

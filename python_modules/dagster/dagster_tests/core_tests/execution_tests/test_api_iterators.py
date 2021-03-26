@@ -261,7 +261,11 @@ def test_execute_plan_iterator():
         )
 
         iterator = execute_plan_iterator(
-            execution_plan, pipeline_run, instance, run_config=run_config
+            execution_plan,
+            InMemoryPipeline(pipeline),
+            pipeline_run,
+            instance,
+            run_config=run_config,
         )
 
         event_type = None

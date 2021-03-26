@@ -28,7 +28,10 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
+from dagster.core.execution.resolve_versions import (
+    resolve_memoized_execution_plan,
+    resolve_step_output_versions,
+)
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
@@ -264,9 +267,11 @@ def execute_list_versions_command(instance, kwargs):
     environment_config = EnvironmentConfig.build(pipeline.get_definition(), run_config, mode=mode)
     execution_plan = ExecutionPlan.build(pipeline, environment_config)
 
-    step_output_versions = execution_plan.resolve_step_output_versions(environment_config)
+    step_output_versions = resolve_step_output_versions(
+        pipeline.get_definition(), execution_plan, environment_config
+    )
     memoized_plan = resolve_memoized_execution_plan(
-        execution_plan, run_config, instance, environment_config
+        execution_plan, pipeline.get_definition(), run_config, instance, environment_config
     )
     # the step keys that we need to execute are those which do not have their inputs populated.
     step_keys_not_stored = set(memoized_plan.step_keys_to_execute)

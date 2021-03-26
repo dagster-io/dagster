@@ -95,6 +95,7 @@ def execute_in_process(
             execution_plan=execution_plan,
             iterator=pipeline_execution_iterator,
             execution_context_manager=PipelineExecutionContextManager(
+                pipeline=pipeline,
                 execution_plan=execution_plan,
                 pipeline_run=pipeline_run,
                 instance=execute_instance,

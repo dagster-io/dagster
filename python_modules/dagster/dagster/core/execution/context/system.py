@@ -495,6 +495,7 @@ class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContex
         self._step = check.inst_param(step, "step", ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(execution_context_data, log_manager)
         self._required_resource_keys = get_required_resource_keys_for_step(
+            execution_context_data.pipeline.get_definition(),
             step,
             execution_context_data.execution_plan,
             execution_context_data.environment_config,
@@ -578,6 +579,7 @@ class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContex
     def get_output_context(self, step_output_handle) -> "OutputContext":
         return get_output_context(
             self.execution_plan,
+            self.pipeline_def,
             self.environment_config,
             step_output_handle,
             self._get_source_run_id(step_output_handle),
@@ -884,11 +886,16 @@ class InputContext(
 
 
 def _step_output_version(
+    pipeline_def: PipelineDefinition,
     execution_plan: "ExecutionPlan",
     environment_config: "EnvironmentConfig",
     step_output_handle: StepOutputHandle,
 ) -> Optional[str]:
-    step_output_versions = execution_plan.resolve_step_output_versions(environment_config)
+    from dagster.core.execution.resolve_versions import resolve_step_output_versions
+
+    step_output_versions = resolve_step_output_versions(
+        pipeline_def, execution_plan, environment_config
+    )
     return (
         step_output_versions[step_output_handle]
         if step_output_handle in step_output_versions
@@ -898,6 +905,7 @@ def _step_output_version(
 
 def get_output_context(
     execution_plan: "ExecutionPlan",
+    pipeline_def: PipelineDefinition,
     environment_config: EnvironmentConfig,
     step_output_handle: StepOutputHandle,
     run_id: Optional[str] = None,
@@ -926,8 +934,6 @@ def get_output_context(
     else:
         output_config = None
 
-    pipeline_def = execution_plan.pipeline.get_definition()
-
     step_output = execution_plan.get_step_output(step_output_handle)
     output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
 
@@ -947,9 +953,13 @@ def get_output_context(
         solid_def=pipeline_def.get_solid(step.solid_handle).definition,
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
-        version=_step_output_version(execution_plan, environment_config, step_output_handle)
-        if MEMOIZED_RUN_TAG in execution_plan.pipeline.get_definition().tags
-        else None,
+        version=(
+            _step_output_version(
+                pipeline_def, execution_plan, environment_config, step_output_handle
+            )
+            if MEMOIZED_RUN_TAG in pipeline_def.tags
+            else None
+        ),
         step_context=step_context,
         resource_config=resource_config,
         resources=resources,

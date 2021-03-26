@@ -258,11 +258,12 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def from_resource(execution_plan, log_manager, message=None, event_specific_data=None):
+    def from_resource(
+        pipeline_name, execution_plan, log_manager, message=None, event_specific_data=None
+    ):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-        pipeline_name = execution_plan.pipeline_def.name
         event = DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             pipeline_name=pipeline_name,
@@ -694,10 +695,11 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def resource_init_start(execution_plan, log_manager, resource_keys):
+    def resource_init_start(pipeline_name, execution_plan, log_manager, resource_keys):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
         return DagsterEvent.from_resource(
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Starting initialization of resources [{}].".format(
@@ -707,7 +709,9 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def resource_init_success(execution_plan, log_manager, resource_instances, resource_init_times):
+    def resource_init_success(
+        pipeline_name, execution_plan, log_manager, resource_instances, resource_init_times
+    ):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
         metadata_entries = []
@@ -721,6 +725,7 @@ class DagsterEvent(
             )
 
         return DagsterEvent.from_resource(
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Finished initialization of resources [{}].".format(
@@ -733,10 +738,11 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def resource_init_failure(execution_plan, log_manager, resource_keys, error):
+    def resource_init_failure(pipeline_name, execution_plan, log_manager, resource_keys, error):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
         return DagsterEvent.from_resource(
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Initialization of resources [{}] failed.".format(", ".join(resource_keys)),
@@ -748,10 +754,11 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def resource_teardown_failure(execution_plan, log_manager, resource_keys, error):
+    def resource_teardown_failure(pipeline_name, execution_plan, log_manager, resource_keys, error):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
         return DagsterEvent.from_resource(
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
             log_manager=check.inst_param(log_manager, "log_manager", DagsterLogManager),
             message="Teardown of resources [{}] failed.".format(", ".join(resource_keys)),

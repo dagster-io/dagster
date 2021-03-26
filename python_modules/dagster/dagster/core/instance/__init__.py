@@ -697,6 +697,7 @@ class DagsterInstance:
 
             subsetted_execution_plan = resolve_memoized_execution_plan(
                 full_execution_plan,
+                pipeline_def,
                 run_config,
                 self,
                 environment_config,
@@ -711,7 +712,7 @@ class DagsterInstance:
             if not environment_config:
                 environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
             subsetted_execution_plan = full_execution_plan.build_subset_plan(
-                step_keys_to_execute, environment_config
+                step_keys_to_execute, pipeline_def, environment_config
             )
         else:
             subsetted_execution_plan = full_execution_plan

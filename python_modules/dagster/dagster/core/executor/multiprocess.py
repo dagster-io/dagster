@@ -77,6 +77,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
             yield from execute_plan_iterator(
                 execution_plan,
+                pipeline,
                 self.pipeline_run,
                 run_config=self.run_config,
                 retry_mode=self.retry_mode.for_inner_plan(),

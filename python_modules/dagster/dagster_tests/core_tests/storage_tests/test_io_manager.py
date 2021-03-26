@@ -17,6 +17,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.system import InputContext, OutputContext
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
@@ -155,7 +156,7 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
             pipeline_def=pipeline_def,
             step_keys_to_execute=step_keys_to_execute,
         )
-        return execute_plan(plan, instance, pipeline_run)
+        return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, pipeline_run)
 
 
 def test_step_subset_with_custom_paths():

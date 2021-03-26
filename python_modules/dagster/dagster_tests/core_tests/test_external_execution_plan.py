@@ -68,7 +68,8 @@ def test_using_file_system_for_subplan():
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one"], environment_config),
+            execution_plan.build_subset_plan(["return_one"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -84,7 +85,8 @@ def test_using_file_system_for_subplan():
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], environment_config),
+            execution_plan.build_subset_plan(["add_one"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -130,7 +132,8 @@ def test_using_intermediates_file_system_for_subplan():
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one"], environment_config),
+            execution_plan.build_subset_plan(["return_one"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -146,7 +149,8 @@ def test_using_intermediates_file_system_for_subplan():
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], environment_config),
+            execution_plan.build_subset_plan(["add_one"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -179,7 +183,8 @@ def test_using_intermediates_to_override():
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one"], environment_config),
+            execution_plan.build_subset_plan(["return_one"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -215,7 +220,10 @@ def test_using_file_system_for_subplan_multiprocessing():
 
         return_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["return_one"], environment_config),
+                execution_plan.build_subset_plan(
+                    ["return_one"], pipeline.get_definition(), environment_config
+                ),
+                pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
@@ -235,7 +243,10 @@ def test_using_file_system_for_subplan_multiprocessing():
 
         add_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["add_one"], environment_config),
+                execution_plan.build_subset_plan(
+                    ["add_one"], pipeline.get_definition(), environment_config
+                ),
+                pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
@@ -272,7 +283,10 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
 
         return_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["return_one"], environment_config),
+                execution_plan.build_subset_plan(
+                    ["return_one"], pipeline.get_definition(), environment_config
+                ),
+                pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
@@ -292,7 +306,10 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
 
         add_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["add_one"], environment_config),
+                execution_plan.build_subset_plan(
+                    ["add_one"], pipeline.get_definition(), environment_config
+                ),
+                pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
@@ -323,7 +340,8 @@ def test_execute_step_wrong_step_key():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan.build_subset_plan(["nope.compute"], environment_config),
+            execution_plan.build_subset_plan(["nope.compute"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             pipeline_run=pipeline_run,
         )
@@ -335,8 +353,9 @@ def test_execute_step_wrong_step_key():
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
             execution_plan.build_subset_plan(
-                ["nope.compute", "nuh_uh.compute"], environment_config
+                ["nope.compute", "nuh_uh.compute"], pipeline, environment_config
             ),
+            InMemoryPipeline(pipeline),
             instance,
             pipeline_run=pipeline_run,
         )
@@ -367,7 +386,8 @@ def test_using_file_system_for_subplan_missing_input():
     )
 
     events = execute_plan(
-        execution_plan.build_subset_plan(["add_one"], environment_config),
+        execution_plan.build_subset_plan(["add_one"], pipeline, environment_config),
+        InMemoryPipeline(pipeline),
         instance,
         run_config=run_config,
         pipeline_run=pipeline_run,
@@ -400,7 +420,8 @@ def test_using_file_system_for_subplan_invalid_step():
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
-            execution_plan.build_subset_plan(["nope.compute"], environment_config),
+            execution_plan.build_subset_plan(["nope.compute"], pipeline, environment_config),
+            InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,

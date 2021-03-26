@@ -128,12 +128,12 @@ def invoke_steps_within_python_operator(
                 parent_pipeline_snapshot=parent_pipeline_snapshot,
             )
 
-            recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
+            recon_pipeline = recon_repo.get_reconstructable_pipeline(
+                pipeline_name
+            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
             execution_plan = create_execution_plan(
-                recon_pipeline.subset_for_execution_from_existing_pipeline(
-                    pipeline_run.solids_to_execute
-                ),
+                recon_pipeline,
                 run_config=run_config,
                 step_keys_to_execute=step_keys,
                 mode=mode,
@@ -142,7 +142,9 @@ def invoke_steps_within_python_operator(
                 raise AirflowSkipException(
                     "Dagster emitted skip event, skipping execution in Airflow"
                 )
-            events = execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
+            events = execute_plan(
+                execution_plan, recon_pipeline, instance, pipeline_run, run_config=run_config
+            )
             check_events_for_failures(events)
             check_events_for_skips(events)
             return events

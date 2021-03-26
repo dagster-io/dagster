@@ -75,6 +75,7 @@ class Manager:
         instance,
         resource_instances_to_override,
         emit_persistent_events,
+        pipeline_def_for_backwards_compat,
     ):
         """
         Drop-in replacement for
@@ -91,6 +92,7 @@ class Manager:
             instance=instance,
             resource_instances_to_override=resource_instances_to_override,
             emit_persistent_events=emit_persistent_events,
+            pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
             generator, ScopedResourcesBuilder
@@ -159,6 +161,7 @@ class Manager:
 
         with scoped_pipeline_context(
             execution_plan,
+            pipeline,
             run_config,
             pipeline_run,
             instance,
@@ -245,10 +248,12 @@ class Manager:
 
         environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode_def.name)
 
-        execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+        pipeline = InMemoryPipeline(pipeline_def)
+        execution_plan = ExecutionPlan.build(pipeline, environment_config)
 
         with scoped_pipeline_context(
             execution_plan,
+            pipeline,
             run_config,
             pipeline_run,
             DagsterInstance.ephemeral(),

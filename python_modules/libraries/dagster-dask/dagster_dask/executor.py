@@ -119,16 +119,20 @@ def query_on_dask_worker(
     """
 
     with DagsterInstance.from_ref(instance_ref) as instance:
+        subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
+            pipeline_run.solids_to_execute
+        )
+
         execution_plan = create_execution_plan(
-            recon_pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
-            ),
+            subset_pipeline,
             run_config=run_config,
             step_keys_to_execute=step_keys,
             mode=mode,
         )
 
-        return execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
+        return execute_plan(
+            execution_plan, subset_pipeline, instance, pipeline_run, run_config=run_config
+        )
 
 
 def get_dask_resource_requirements(tags):

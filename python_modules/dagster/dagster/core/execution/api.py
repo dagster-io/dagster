@@ -107,6 +107,7 @@ def execute_run_iterator(
             execution_plan=execution_plan,
             iterator=pipeline_execution_iterator,
             execution_context_manager=PipelineExecutionContextManager(
+                pipeline=pipeline,
                 execution_plan=execution_plan,
                 pipeline_run=pipeline_run,
                 instance=instance,
@@ -153,7 +154,6 @@ def execute_run_host_mode(
         pipeline_run.execution_plan_snapshot_id
     )
     execution_plan = ExecutionPlan.rebuild_from_snapshot(
-        pipeline,
         pipeline_run.pipeline_name,
         execution_plan_snapshot,
     )
@@ -249,13 +249,18 @@ def execute_run(
         )
 
         execution_plan = resolve_memoized_execution_plan(
-            execution_plan, pipeline_run.run_config, instance, environment_config
+            execution_plan,
+            pipeline.get_definition(),
+            pipeline_run.run_config,
+            instance,
+            environment_config,
         )
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
         iterator=pipeline_execution_iterator,
         execution_context_manager=PipelineExecutionContextManager(
+            pipeline=pipeline,
             execution_plan=execution_plan,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -285,6 +290,7 @@ def execute_run(
         event_list,
         lambda hardcoded_resources_arg: scoped_pipeline_context(
             execution_plan,
+            pipeline,
             pipeline_run.run_config,
             pipeline_run,
             instance,
@@ -685,12 +691,14 @@ def reexecute_pipeline_iterator(
 
 def execute_plan_iterator(
     execution_plan: ExecutionPlan,
+    pipeline: IPipeline,
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[dict] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
@@ -701,6 +709,7 @@ def execute_plan_iterator(
             execution_plan=execution_plan,
             iterator=inner_plan_execution_iterator,
             execution_context_manager=PlanExecutionContextManager(
+                pipeline=pipeline,
                 retry_mode=retry_mode,
                 execution_plan=execution_plan,
                 run_config=run_config,
@@ -714,6 +723,7 @@ def execute_plan_iterator(
 
 def execute_plan(
     execution_plan: ExecutionPlan,
+    pipeline: IPipeline,
     instance: DagsterInstance,
     pipeline_run: PipelineRun,
     run_config: Optional[Dict] = None,
@@ -723,6 +733,7 @@ def execute_plan(
     execute_pipeline() above.
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     run_config = check.opt_dict_param(run_config, "run_config")
@@ -731,6 +742,7 @@ def execute_plan(
     return list(
         execute_plan_iterator(
             execution_plan=execution_plan,
+            pipeline=pipeline,
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -757,7 +769,6 @@ def _get_execution_plan_from_run(
         )
         if execution_plan_snapshot.can_reconstruct_plan:
             return ExecutionPlan.rebuild_from_snapshot(
-                pipeline,
                 pipeline_run.pipeline_name,
                 execution_plan_snapshot,
             )

@@ -163,6 +163,7 @@ def step_run_ref_to_step_context(
 
     initialization_manager = PlanExecutionContextManager(
         retry_mode=step_run_ref.retry_mode.for_inner_plan(),
+        pipeline=pipeline,
         execution_plan=execution_plan,
         run_config=step_run_ref.run_config,
         pipeline_run=step_run_ref.pipeline_run,

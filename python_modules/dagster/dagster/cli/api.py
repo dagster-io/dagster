@@ -204,12 +204,12 @@ def execute_step_command(input_json):
                 if not success:
                     return
 
-            recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+            recon_pipeline = recon_pipeline_from_origin(
+                args.pipeline_origin
+            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
             execution_plan = create_execution_plan(
-                recon_pipeline.subset_for_execution_from_existing_pipeline(
-                    pipeline_run.solids_to_execute
-                ),
+                recon_pipeline,
                 run_config=pipeline_run.run_config,
                 step_keys_to_execute=args.step_keys_to_execute,
                 mode=pipeline_run.mode,
@@ -220,6 +220,7 @@ def execute_step_command(input_json):
 
             for event in execute_plan_iterator(
                 execution_plan,
+                recon_pipeline,
                 pipeline_run,
                 instance,
                 run_config=pipeline_run.run_config,

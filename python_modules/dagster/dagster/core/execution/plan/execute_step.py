@@ -39,6 +39,7 @@ from dagster.core.execution.plan.compute import execute_core_compute
 from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -355,8 +356,8 @@ def _type_check_and_store_output(
         step_context.output_capture[step_output_handle] = output.value
 
     version = (
-        step_context.execution_plan.resolve_step_output_versions(
-            step_context.environment_config
+        resolve_step_output_versions(
+            step_context.pipeline_def, step_context.execution_plan, step_context.environment_config
         ).get(step_output_handle)
         if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
         else None

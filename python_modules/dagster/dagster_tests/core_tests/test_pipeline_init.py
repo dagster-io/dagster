@@ -9,6 +9,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
@@ -26,7 +27,7 @@ def test_generator_exit():
         try:
             yield "A"
         finally:
-            yield "EXIT"
+            yield "EXIT"  # pylint: disable=finally-yield
 
     gen = generator()
     next(gen)
@@ -95,7 +96,7 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    resource_defs = execution_plan.pipeline_def.get_mode_definition(environment_config.mode)
+    resource_defs = pipeline_def.get_mode_definition(environment_config.mode)
 
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -107,11 +108,13 @@ def test_clean_event_generator_exit():
         instance=instance,
         resource_instances_to_override=None,
         emit_persistent_events=True,
+        pipeline_def_for_backwards_compat=pipeline_def,
     )
     next(generator)
     generator.close()
 
     generator = PipelineExecutionContextManager(  # pylint: disable=protected-access
+        InMemoryPipeline(pipeline_def),
         execution_plan,
         {},
         pipeline_run,

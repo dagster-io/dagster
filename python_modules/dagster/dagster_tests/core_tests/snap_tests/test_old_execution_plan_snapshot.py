@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import pytest
 from dagster import pipeline
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
@@ -138,8 +137,4 @@ def test_cant_load_old_snapshot():
         DagsterInvariantViolationError,
         match="Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots had enough information to fully reconstruct the ExecutionPlan",
     ):
-        ExecutionPlan.rebuild_from_snapshot(
-            InMemoryPipeline(noop_pipeline),
-            "noop_pipeline",
-            snapshot,
-        )
+        ExecutionPlan.rebuild_from_snapshot("noop_pipeline", snapshot)

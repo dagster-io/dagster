@@ -143,7 +143,8 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, environment_config),
+            execution_plan.build_subset_plan(step_keys, pipeline_def, environment_config),
+            pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -152,7 +153,8 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one"], environment_config),
+        execution_plan.build_subset_plan(["return_one"], pipeline_def, environment_config),
+        InMemoryPipeline(pipeline_def),
         run_config,
         pipeline_run,
         instance,
@@ -171,7 +173,8 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], environment_config),
+            execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
+            pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -180,7 +183,8 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["add_one"], environment_config),
+        execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
+        InMemoryPipeline(pipeline_def),
         run_config,
         pipeline_run,
         instance,
@@ -373,6 +377,7 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
     execution_plan = create_execution_plan(pipe, run_config)
     with scoped_pipeline_context(
         execution_plan,
+        InMemoryPipeline(pipe),
         run_config,
         pipeline_run,
         instance,
