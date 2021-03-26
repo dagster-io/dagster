@@ -17,6 +17,7 @@
 - Fixed an issue where the `dagster api execute_step` will mistakenly skip a step and output a non-DagsterEvent log. This affected the `celery_k8s_job_executor`.
 - Fixed an issue where NaN floats were not properly handled by Dagit metadata entries.
 - Fixed an issue where Dagit run tags were unclickable.
+- Fixed an issue where backfills from failures were not able to be scheduled from Dagit.
 
 **Integrations**
 
