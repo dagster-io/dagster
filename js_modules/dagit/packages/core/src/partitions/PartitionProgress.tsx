@@ -15,6 +15,7 @@ import {
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
+import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from '../types/globalTypes';
@@ -27,12 +28,15 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {
   PartitionProgressQuery,
   PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill,
+  PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs,
 } from './types/PartitionProgressQuery';
 interface Props {
   pipelineName: string;
   repoAddress: RepoAddress;
   backfillId: string;
 }
+
+type BackfillRun = PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs;
 
 export const PartitionProgress = (props: Props) => {
   const {pipelineName, repoAddress, backfillId} = props;
@@ -67,9 +71,20 @@ export const PartitionProgress = (props: Props) => {
     if (!results) {
       return null;
     }
+    const byPartitionRuns: {[key: string]: BackfillRun} = {};
+    results.runs.forEach((run) => {
+      const [runPartitionName] = run.tags
+        .filter((tag) => tag.key === DagsterTag.Partition)
+        .map((tag) => tag.value);
 
-    const numTotalRuns = results.runs.length;
-    const {numQueued, numInProgress, numSucceeded, numFailed} = results.runs.reduce(
+      if (runPartitionName && !byPartitionRuns[runPartitionName]) {
+        byPartitionRuns[runPartitionName] = run;
+      }
+    });
+
+    const latestPartitionRuns = Object.values(byPartitionRuns);
+
+    const {numQueued, numInProgress, numSucceeded, numFailed} = latestPartitionRuns.reduce(
       (accum, {status}) => {
         return {
           numQueued: accum.numQueued + (queuedStatuses.has(status) ? 1 : 0),
@@ -80,13 +95,20 @@ export const PartitionProgress = (props: Props) => {
       },
       {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
     );
-    return {numQueued, numInProgress, numSucceeded, numFailed, numTotalRuns};
+    return {
+      numQueued,
+      numInProgress,
+      numSucceeded,
+      numFailed,
+      numPartitionRuns: latestPartitionRuns.length,
+      numTotalRuns: results.runs.length,
+    };
   }, [results]);
 
   React.useEffect(() => {
     if (counts) {
-      const {numTotalRuns, numSucceeded, numFailed} = counts;
-      setShouldPoll(numTotalRuns !== numSucceeded + numFailed);
+      const {numPartitionRuns, numSucceeded, numFailed} = counts;
+      setShouldPoll(numPartitionRuns !== numSucceeded + numFailed);
     }
   }, [counts]);
 
@@ -94,11 +116,19 @@ export const PartitionProgress = (props: Props) => {
     return <div />;
   }
 
-  const {numQueued, numInProgress, numSucceeded, numFailed, numTotalRuns} = counts;
+  const {
+    numQueued,
+    numInProgress,
+    numSucceeded,
+    numFailed,
+    numPartitionRuns,
+    numTotalRuns,
+  } = counts;
   const numFinished = numSucceeded + numFailed;
   const unscheduled = results.numTotal - results.numRequested;
-  const skipped = results.numRequested - numTotalRuns;
-  const numTotal = Math.max(numTotalRuns, results.numTotal);
+
+  const skipped = results.numRequested - numPartitionRuns;
+  const numTotal = results.numTotal;
 
   const table = (
     <TooltipTable>
@@ -127,7 +157,7 @@ export const PartitionProgress = (props: Props) => {
           count={numFailed}
           numTotal={numTotal}
         />
-        {numTotalRuns < results.numRequested ? (
+        {skipped > 0 ? (
           <TooltipTableRow humanText="Skipped" count={skipped} numTotal={numTotal} />
         ) : null}
         <TooltipTableRow humanText="To be scheduled" count={unscheduled} numTotal={numTotal} />
@@ -146,21 +176,30 @@ export const PartitionProgress = (props: Props) => {
           <Group direction="row" spacing={8} alignItems="center">
             {numTotalRuns ? (
               <div style={{fontVariantNumeric: 'tabular-nums'}}>
-                <Link
-                  to={workspacePathFromAddress(
-                    repoAddress,
-                    `/pipelines/${pipelineName}/runs?${qs.stringify({
-                      q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfillId}`}]),
-                    })}`,
-                  )}
-                >
-                  {numFinished}/{numTotalRuns} runs
+                <Link to="/instance/backfills">
+                  {numFinished} / {numTotal}
                 </Link>
-                {numTotalRuns && unscheduled ? (
-                  <> completed, </>
-                ) : numTotalRuns ? (
-                  <> completed ({((numFinished / numTotalRuns) * 100).toFixed(1)}%)</>
+                <span> partitions completed</span>
+                {numTotalRuns ? (
+                  <span>
+                    {' '}
+                    (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/pipelines/${pipelineName}/runs?${qs.stringify({
+                          q: stringFromValue([
+                            {token: 'tag', value: `dagster/backfill=${backfillId}`},
+                          ]),
+                        })}`,
+                      )}
+                    >
+                      {numTotalRuns} runs
+                    </Link>
+                    )
+                  </span>
                 ) : null}
+                {unscheduled ? <span>, </span> : null}
               </div>
             ) : null}
             {unscheduled ? (
@@ -243,6 +282,10 @@ const PARTITION_PROGRESS_QUERY = gql`
           id
           canTerminate
           status
+          tags {
+            key
+            value
+          }
         }
       }
       ... on PythonError {

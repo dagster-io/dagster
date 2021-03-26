@@ -10,11 +10,18 @@ import { BulkActionStatus, PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: PartitionProgressQuery
 // ====================================================
 
+export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs {
   __typename: "PipelineRun";
   id: string;
   canTerminate: boolean;
   status: PipelineRunStatus;
+  tags: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill_runs_tags[];
 }
 
 export interface PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill {

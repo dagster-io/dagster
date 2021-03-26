@@ -5,6 +5,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {
   doneStatuses,
@@ -13,6 +14,7 @@ import {
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
+import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -32,10 +34,12 @@ import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
+  InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
 import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
+type BackfillRun = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs;
 
 const PAGE_SIZE = 25;
 
@@ -56,6 +60,7 @@ export const InstanceBackfills = ({queryData}: {queryData: QueryResult<InstanceH
         ? result.partitionBackfillsOrError.results
         : [],
   });
+  useDocumentTitle('Backfills');
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
@@ -305,8 +310,19 @@ const BackfillRow = ({
 };
 
 const getProgressCounts = (backfill: Backfill) => {
-  const numTotalRuns = backfill.runs.length;
-  const {numQueued, numInProgress, numSucceeded, numFailed} = backfill.runs.reduce(
+  const byPartitionRuns: {[key: string]: BackfillRun} = {};
+  backfill.runs.forEach((run) => {
+    const [runPartitionName] = run.tags
+      .filter((tag) => tag.key === DagsterTag.Partition)
+      .map((tag) => tag.value);
+
+    if (runPartitionName && !byPartitionRuns[runPartitionName]) {
+      byPartitionRuns[runPartitionName] = run;
+    }
+  });
+
+  const latestPartitionRuns = Object.values(byPartitionRuns);
+  const {numQueued, numInProgress, numSucceeded, numFailed} = latestPartitionRuns.reduce(
     (accum: any, {status}: {status: PipelineRunStatus}) => {
       return {
         numQueued: accum.numQueued + (queuedStatuses.has(status) ? 1 : 0),
@@ -317,16 +333,15 @@ const getProgressCounts = (backfill: Backfill) => {
     },
     {numQueued: 0, numInProgress: 0, numSucceeded: 0, numFailed: 0},
   );
-  const numTotal = numTotalRuns > backfill.numTotal ? numTotalRuns : backfill.numTotal;
 
   return {
     numQueued,
     numInProgress,
     numSucceeded,
     numFailed,
-    numUnscheduled: (backfill.numTotal || 0) - (backfill.numRequested || 0),
-    numSkipped: (backfill.numRequested || 0) - numTotalRuns,
-    numTotal,
+    numUnscheduled: backfill.numTotal - backfill.numRequested,
+    numSkipped: backfill.numRequested - latestPartitionRuns.length,
+    numTotal: backfill.numTotal,
   };
 };
 
@@ -336,6 +351,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
     [backfill],
   );
   const numCompleted = numSucceeded + numSkipped + numFailed;
+
   return (
     <span
       style={{
@@ -436,6 +452,10 @@ const BACKFILLS_QUERY = gql`
             id
             canTerminate
             status
+            tags {
+              key
+              value
+            }
           }
           timestamp
           partitionSetName
