@@ -221,7 +221,10 @@ def resource(config_schema=None, description=None, required_resource_keys=None, 
 
 
 class Resources:
-    pass
+    """This class functions as a "tag" that we can use to type the namedtuple returned by
+    ScopedResourcesBuilder.build(). The way that we create the namedtuple returned by build() is
+    incompatible with type annotations on its own due to its dynamic attributes, so this tag class
+    provides a workaround."""
 
 
 class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_instance_dict")):
