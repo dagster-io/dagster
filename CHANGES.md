@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.11.2
+
+**Community Contributions**
+
+- `dagster new project` now scaffolds `setup.py` using your local `dagster` pip version (thanks @taljaards!)
+- Fixed an issue where legacy examples were not ported over to the new documentation site (thanks @keypointt!)
+
+**New**
+
+- If a solid-decorated function has a docstring, and no `description` is provided to the solid decorator, the docstring will now be used as the solid’s description.
+
+**Bugfixes**
+
+- In 0.11.0, we introduced the ability to auto-generate Dagster Types from PEP 484 type annotations on solid arguments and return values.  However, when clicked on in Dagit, these types would show “Type Not Found” instead of rendering a description.  This has been fixed.
+- Fixed an issue where the `dagster api execute_step` will mistakenly skip a step and output a non-DagsterEvent log. This affected the `celery_k8s_job_executor`.
+- Fixed an issue where NaN floats were not properly handled by Dagit metadata entries.
+- Fixed an issue where Dagit run tags were unclickable.
+
+**Integrations**
+
+- [Helm] A global service account name can now be specified, which will result in the same service account name to be referenced across all parts of the Dagster Kubernetes deployment.
+- [Helm] Fixed an issue where user deployments did not update, even if their dependent config maps had changed.
+
 ## 0.11.1
 
 **Community Contributions**
