@@ -9,13 +9,13 @@ from dagster.core.host_representation import (
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
-from .utils import get_bar_repo_grpc_repository_location_handle
+from .utils import get_bar_repo_repository_location
 
 
 def test_streaming_external_repositories_api_grpc():
-    with get_bar_repo_grpc_repository_location_handle() as repository_location_handle:
+    with get_bar_repo_repository_location() as repository_location:
         external_repo_datas = sync_get_streaming_external_repositories_data_grpc(
-            repository_location_handle.client, repository_location_handle
+            repository_location.client, repository_location
         )
 
         assert len(external_repo_datas) == 1
@@ -49,7 +49,7 @@ def giant_repo():
 
 
 @contextmanager
-def get_giant_repo_grpc_repository_location_handle():
+def get_giant_repo_grpc_repository_location():
     with ManagedGrpcPythonEnvRepositoryLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -57,15 +57,15 @@ def get_giant_repo_grpc_repository_location_handle():
             module_name="dagster_tests.api_tests.test_api_snapshot_repository",
         ),
         location_name="giant_repo_location",
-    ).create_test_handle() as handle:
-        yield handle
+    ).create_test_location() as location:
+        yield location
 
 
 def test_giant_external_repository_streaming_grpc():
-    with get_giant_repo_grpc_repository_location_handle() as repository_location_handle:
+    with get_giant_repo_grpc_repository_location() as repository_location:
         # Using streaming allows the giant repo to load
         external_repos_data = sync_get_streaming_external_repositories_data_grpc(
-            repository_location_handle.client, repository_location_handle
+            repository_location.client, repository_location
         )
 
         assert len(external_repos_data) == 1

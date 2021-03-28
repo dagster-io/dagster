@@ -1,18 +1,13 @@
 from dagster import check
-from dagster.core.host_representation import ExternalPipeline, RepositoryLocationHandle
+from dagster.core.host_representation import ExternalPipeline, RepositoryLocation
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.core.host_representation.selector import PipelineSelector
 
 
-def external_pipeline_from_location_handle(
-    repository_location_handle, external_pipeline_origin, solid_selection
-):
-    check.inst_param(
-        repository_location_handle, "repository_location_handle", RepositoryLocationHandle
-    )
+def external_pipeline_from_location(repo_location, external_pipeline_origin, solid_selection):
+    check.inst_param(repo_location, "repository_location", RepositoryLocation)
     check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin)
 
-    repo_location = repository_location_handle.create_location()
     repo_name = external_pipeline_origin.external_repository_origin.repository_name
     pipeline_name = external_pipeline_origin.pipeline_name
 

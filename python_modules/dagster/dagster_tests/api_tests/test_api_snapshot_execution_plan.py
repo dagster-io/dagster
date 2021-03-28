@@ -5,12 +5,12 @@ from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
-from .utils import get_foo_grpc_pipeline_handle
+from .utils import get_foo_pipeline_handle
 
 
 def test_execution_plan_error_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location_handle.client
+    with get_foo_pipeline_handle() as pipeline_handle:
+        api_client = pipeline_handle.repository_handle.repository_location.client
 
         with pytest.raises(
             DagsterSubprocessError,
@@ -26,8 +26,8 @@ def test_execution_plan_error_grpc():
 
 
 def test_execution_plan_snapshot_api_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location_handle.client
+    with get_foo_pipeline_handle() as pipeline_handle:
+        api_client = pipeline_handle.repository_handle.repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
@@ -46,8 +46,8 @@ def test_execution_plan_snapshot_api_grpc():
 
 
 def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location_handle.client
+    with get_foo_pipeline_handle() as pipeline_handle:
+        api_client = pipeline_handle.repository_handle.repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
@@ -66,8 +66,8 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
 
 
 def test_execution_plan_with_subset_snapshot_api_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location_handle.client
+    with get_foo_pipeline_handle() as pipeline_handle:
+        api_client = pipeline_handle.repository_handle.repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,

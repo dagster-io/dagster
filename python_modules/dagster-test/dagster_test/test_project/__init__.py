@@ -2,6 +2,7 @@ import base64
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.code_pointer import FileCodePointer
@@ -215,31 +216,28 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         )
 
 
+@contextmanager
 def get_test_project_external_repo(container_image=None):
-    return (
-        InProcessRepositoryLocationOrigin(
-            ReconstructableRepository.for_file(
-                file_relative_path(__file__, "test_pipelines/repo.py"),
-                "define_demo_execution_repo",
-                container_image=container_image,
-            )
+    with InProcessRepositoryLocationOrigin(
+        ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_pipelines/repo.py"),
+            "define_demo_execution_repo",
+            container_image=container_image,
         )
-        .create_handle()
-        .create_location()
-        .get_repository("demo_execution_repo")
-    )
+    ).create_location() as location:
+        yield location.get_repository("demo_execution_repo")
 
 
+@contextmanager
 def get_test_project_external_pipeline(pipeline_name, container_image=None):
-    return get_test_project_external_repo(
-        container_image=container_image
-    ).get_full_external_pipeline(pipeline_name)
+    with get_test_project_external_repo(container_image=container_image) as repo:
+        yield repo.get_full_external_pipeline(pipeline_name)
 
 
+@contextmanager
 def get_test_project_external_schedule(schedule_name, container_image=None):
-    return get_test_project_external_repo(container_image=container_image).get_external_schedule(
-        schedule_name
-    )
+    with get_test_project_external_repo(container_image=container_image) as repo:
+        yield repo.get_external_schedule(schedule_name)
 
 
 def get_test_project_docker_image():

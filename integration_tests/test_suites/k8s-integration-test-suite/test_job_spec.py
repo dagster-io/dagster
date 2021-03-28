@@ -338,15 +338,17 @@ def test_k8s_run_launcher(
         mode="default",
     )
 
-    dagster_instance_for_k8s_run_launcher.launch_run(
-        run.run_id,
-        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
-    )
-    result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
+        result = wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
+
+        assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
 
 
 def test_failing_k8s_run_launcher(
@@ -357,22 +359,26 @@ def test_failing_k8s_run_launcher(
     run = create_run_for_test(
         dagster_instance_for_k8s_run_launcher, pipeline_name=pipeline_name, run_config=run_config
     )
-    dagster_instance_for_k8s_run_launcher.launch_run(
-        run.run_id,
-        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
-    )
-    result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
 
-    assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
+        result = wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
 
-    event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
+        assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
 
-    assert any(
-        [
-            'Received unexpected config entry "blah blah this is wrong"' in str(event)
-            for event in event_records
-        ]
-    )
-    assert any(['Missing required config entry "solids"' in str(event) for event in event_records])
+        event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
+
+        assert any(
+            [
+                'Received unexpected config entry "blah blah this is wrong"' in str(event)
+                for event in event_records
+            ]
+        )
+        assert any(
+            ['Missing required config entry "solids"' in str(event) for event in event_records]
+        )

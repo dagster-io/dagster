@@ -2,7 +2,7 @@ import graphene
 from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
-    GrpcServerRepositoryLocationHandle,
+    GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
@@ -43,17 +43,13 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     def __init__(self, location):
         self._location = check.inst_param(location, "location", RepositoryLocation)
         environment_path = (
-            location.location_handle.origin.loadable_target_origin.executable_path
-            if isinstance(
-                location.location_handle.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin
-            )
+            location.origin.loadable_target_origin.executable_path
+            if isinstance(location.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
             else None
         )
 
         server_id = (
-            location.location_handle.server_id
-            if isinstance(location.location_handle, GrpcServerRepositoryLocationHandle)
-            else None
+            location.server_id if isinstance(location, GrpcServerRepositoryLocation) else None
         )
 
         check.invariant(location.name is not None)

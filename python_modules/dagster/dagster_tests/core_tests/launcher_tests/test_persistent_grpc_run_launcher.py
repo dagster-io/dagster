@@ -8,7 +8,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
@@ -41,9 +40,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
                 port=api_client.port,
                 socket=api_client.socket,
                 host=api_client.host,
-            ).create_handle() as handle:
-                repository_location = GrpcServerRepositoryLocation(handle)
-
+            ).create_location() as repository_location:
                 external_pipeline = repository_location.get_repository(
                     "nope"
                 ).get_full_external_pipeline("slow_pipeline")
@@ -80,8 +77,7 @@ def test_terminate_after_shutdown():
             ),
             location_name="nope",
         )
-        with origin.create_test_handle() as repository_location_handle:
-            repository_location = GrpcServerRepositoryLocation(repository_location_handle)
+        with origin.create_test_location() as repository_location:
 
             external_pipeline = repository_location.get_repository(
                 "nope"
@@ -96,7 +92,7 @@ def test_terminate_after_shutdown():
             poll_for_step_start(instance, pipeline_run.run_id)
 
             # Tell the server to shut down once executions finish
-            repository_location_handle.grpc_server_registry.get_grpc_endpoint(
+            repository_location.grpc_server_registry.get_grpc_endpoint(
                 origin
             ).create_client().shutdown_server()
 
@@ -138,9 +134,7 @@ def test_server_down():
                 port=api_client.port,
                 socket=api_client.socket,
                 host=api_client.host,
-            ).create_handle() as handle:
-                repository_location = GrpcServerRepositoryLocation(handle)
-
+            ).create_location() as repository_location:
                 external_pipeline = repository_location.get_repository(
                     "nope"
                 ).get_full_external_pipeline("sleepy_pipeline")

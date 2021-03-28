@@ -151,38 +151,39 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
     location_origin = InProcessRepositoryLocationOrigin(recon_repo)
-    location_handle = location_origin.create_handle()
-    repo_def = recon_repo.get_definition()
-    repo_handle = RepositoryHandle(
-        repository_name=repo_def.name,
-        repository_location_handle=location_handle,
-    )
-    fake_external_pipeline = external_pipeline_from_recon_pipeline(
-        recon_pipeline,
-        solid_selection=None,
-        repository_handle=repo_handle,
-    )
-
-    # Launch the run in a fake Dagster instance.
-    with instance_for_test() as instance:
-        celery_k8s_run_launcher.register_instance(instance)
-        pipeline_name = "demo_pipeline"
-        run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
-        run = create_run_for_test(
-            instance,
-            pipeline_name=pipeline_name,
-            run_config=run_config,
-            tags=tags,
+    with location_origin.create_location() as location:
+        location = location_origin.create_location()
+        repo_def = recon_repo.get_definition()
+        repo_handle = RepositoryHandle(
+            repository_name=repo_def.name,
+            repository_location=location,
         )
-        celery_k8s_run_launcher.launch_run(run, fake_external_pipeline)
+        fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            recon_pipeline,
+            solid_selection=None,
+            repository_handle=repo_handle,
+        )
 
-    # Check that user defined k8s config was passed down to the k8s job.
-    mock_method_calls = mock_k8s_client_batch_api.method_calls
-    assert len(mock_method_calls) > 0
-    method_name, _args, kwargs = mock_method_calls[0]
-    assert method_name == "create_namespaced_job"
-    job_resources = kwargs["body"].spec.template.spec.containers[0].resources
-    assert job_resources == expected_resources
+        # Launch the run in a fake Dagster instance.
+        with instance_for_test() as instance:
+            celery_k8s_run_launcher.register_instance(instance)
+            pipeline_name = "demo_pipeline"
+            run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                run_config=run_config,
+                tags=tags,
+            )
+            celery_k8s_run_launcher.launch_run(run, fake_external_pipeline)
+
+        # Check that user defined k8s config was passed down to the k8s job.
+        mock_method_calls = mock_k8s_client_batch_api.method_calls
+        assert len(mock_method_calls) > 0
+        method_name, _args, kwargs = mock_method_calls[0]
+        assert method_name == "create_namespaced_job"
+        job_resources = kwargs["body"].spec.template.spec.containers[0].resources
+        assert job_resources == expected_resources
 
 
 def test_k8s_executor_config_override(kubeconfig_file):
@@ -197,38 +198,40 @@ def test_k8s_executor_config_override(kubeconfig_file):
         k8s_client_batch_api=mock_k8s_client_batch_api,
     )
 
-    external_pipeline = get_test_project_external_pipeline("demo_pipeline", "my_image:tag")
+    with get_test_project_external_pipeline("demo_pipeline", "my_image:tag") as external_pipeline:
 
-    # Launch the run in a fake Dagster instance.
-    with instance_for_test() as instance:
-        celery_k8s_run_launcher.register_instance(instance)
-        pipeline_name = "demo_pipeline"
+        # Launch the run in a fake Dagster instance.
+        with instance_for_test() as instance:
+            celery_k8s_run_launcher.register_instance(instance)
+            pipeline_name = "demo_pipeline"
 
-        # Launch without custom job_image
-        run = create_run_for_test(
-            instance,
-            pipeline_name=pipeline_name,
-            run_config={"execution": {"celery-k8s": {}}},
-        )
-        celery_k8s_run_launcher.launch_run(run, external_pipeline)
+            # Launch without custom job_image
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                run_config={"execution": {"celery-k8s": {}}},
+            )
+            celery_k8s_run_launcher.launch_run(run, external_pipeline)
 
-        # Launch with custom job_image
-        run = create_run_for_test(
-            instance,
-            pipeline_name=pipeline_name,
-            run_config={"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}},
-        )
-        celery_k8s_run_launcher.launch_run(run, external_pipeline)
+            # Launch with custom job_image
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                run_config={
+                    "execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}
+                },
+            )
+            celery_k8s_run_launcher.launch_run(run, external_pipeline)
 
-    # Check that user defined k8s config was passed down to the k8s job.
-    mock_method_calls = mock_k8s_client_batch_api.method_calls
-    assert len(mock_method_calls) > 0
+        # Check that user defined k8s config was passed down to the k8s job.
+        mock_method_calls = mock_k8s_client_batch_api.method_calls
+        assert len(mock_method_calls) > 0
 
-    _, _args, kwargs = mock_method_calls[0]
-    assert kwargs["body"].spec.template.spec.containers[0].image == "my_image:tag"
+        _, _args, kwargs = mock_method_calls[0]
+        assert kwargs["body"].spec.template.spec.containers[0].image == "my_image:tag"
 
-    _, _args, kwargs = mock_method_calls[1]
-    assert kwargs["body"].spec.template.spec.containers[0].image == "fake-image-name"
+        _, _args, kwargs = mock_method_calls[1]
+        assert kwargs["body"].spec.template.spec.containers[0].image == "fake-image-name"
 
 
 @pipeline

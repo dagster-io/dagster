@@ -78,7 +78,7 @@ class RepositoryLocationOrigin(ABC):
         pass
 
     @abstractmethod
-    def create_handle(self):
+    def create_location(self):
         pass
 
 
@@ -100,7 +100,7 @@ class RegisteredRepositoryLocationOrigin(
     def get_display_metadata(self):
         return {}
 
-    def create_handle(self):
+    def create_location(self):
         raise DagsterInvariantViolationError(
             "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
             "repository location on its own."
@@ -137,10 +137,10 @@ class InProcessRepositoryLocationOrigin(
             "in_process_code_pointer": self.recon_repo.pointer.describe(),
         }
 
-    def create_handle(self):
-        from dagster.core.host_representation.handle import InProcessRepositoryLocationHandle
+    def create_location(self):
+        from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
 
-        return InProcessRepositoryLocationHandle(self)
+        return InProcessRepositoryLocation(self)
 
 
 @whitelist_for_serdes
@@ -183,21 +183,21 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_handle(self):
+    def create_location(self):
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a RepositoryLocationHandleManager"
+            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a RepositoryLocationManager"
             " in order to create a handle."
         )
 
     @contextmanager
-    def create_test_handle(self):
-        from .handle_manager import RepositoryLocationHandleManager
+    def create_test_location(self):
+        from .location_manager import RepositoryLocationManager
         from .grpc_server_registry import ProcessGrpcServerRegistry
 
         with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-            with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
-                with handle_manager.get_handle(self) as handle:
-                    yield handle
+            with RepositoryLocationManager(grpc_server_registry) as location_manager:
+                with location_manager.get_location(self) as location:
+                    yield location
 
 
 class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
@@ -239,10 +239,12 @@ class GrpcServerRepositoryLocationOrigin(
         metadata = {"host": self.host, "port": self.port, "socket": self.socket}
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_handle(self):
-        from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+    def create_location(self):
+        from dagster.core.host_representation.repository_location import (
+            GrpcServerRepositoryLocation,
+        )
 
-        return GrpcServerRepositoryLocationHandle(self)
+        return GrpcServerRepositoryLocation(self)
 
 
 @whitelist_for_serdes

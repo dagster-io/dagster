@@ -111,8 +111,8 @@ def get_main_external_repo():
         attribute=main_repo_name(),
         working_directory=None,
         location_name=main_repo_location_name(),
-    ).create_test_handle() as handle:
-        yield handle.create_location().get_repository(main_repo_name())
+    ).create_test_location() as location:
+        yield location.get_repository(main_repo_name())
 
 
 @lambda_solid(

@@ -88,8 +88,8 @@ def get_test_external_repo():
             attribute="test_repository",
         ),
         location_name="test_location",
-    ).create_test_handle() as handle:
-        yield handle.create_location().get_repository("test_repository")
+    ).create_test_location() as location:
+        yield location.get_repository("test_repository")
 
 
 @contextmanager

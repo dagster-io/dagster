@@ -39,28 +39,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_location_handles = {
-                    name: stack.enter_context(origin.create_handle())
+                repository_locations = {
+                    name: stack.enter_context(origin.create_location())
                     for name, origin in origins.items()
                 }
-                assert len(repository_location_handles) == 2
+                assert len(repository_locations) == 2
 
                 default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
-                assert repository_location_handles.get(default_location_name)
-                local_port = repository_location_handles.get(default_location_name)
+                assert repository_locations.get(default_location_name)
+                local_port = repository_locations.get(default_location_name)
 
                 assert local_port.socket == first_socket
                 assert local_port.host == "localhost"
                 assert local_port.port is None
 
-                assert repository_location_handles.get("local_port_default_host")
-                local_port_default_host = repository_location_handles.get("local_port_default_host")
+                assert repository_locations.get("local_port_default_host")
+                local_port_default_host = repository_locations.get("local_port_default_host")
 
                 assert local_port_default_host.socket == second_socket
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.port is None
 
-                assert all(map(lambda x: x.location_name, repository_location_handles.values()))
+                assert all(map(lambda x: x.name, repository_locations.values()))
         second_server_process.wait()
     first_server_process.wait()
 
@@ -135,7 +135,7 @@ def test_ssl_grpc_server_workspace():
             # Actually connecting to the server will fail since it's expecting SSL
             # and we didn't set up the server with SSL
             try:
-                with origin.create_handle():
+                with origin.create_location():
                     assert False
             except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
                 pass
@@ -170,28 +170,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_location_handles = {
-                    name: stack.enter_context(origin.create_handle())
+                repository_locations = {
+                    name: stack.enter_context(origin.create_location())
                     for name, origin in origins.items()
                 }
-                assert len(repository_location_handles) == 2
+                assert len(repository_locations) == 2
 
                 default_location_name = "grpc:localhost:{port}".format(port=first_port)
-                assert repository_location_handles.get(default_location_name)
-                local_port = repository_location_handles.get(default_location_name)
+                assert repository_locations.get(default_location_name)
+                local_port = repository_locations.get(default_location_name)
 
                 assert local_port.port == first_port
                 assert local_port.host == "localhost"
                 assert local_port.socket is None
 
-                assert repository_location_handles.get("local_port_default_host")
-                local_port_default_host = repository_location_handles.get("local_port_default_host")
+                assert repository_locations.get("local_port_default_host")
+                local_port_default_host = repository_locations.get("local_port_default_host")
 
                 assert local_port_default_host.port == second_port
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.socket is None
 
-                assert all(map(lambda x: x.location_name, repository_location_handles.values()))
+                assert all(map(lambda x: x.name, repository_locations.values()))
         second_server_process.wait()
     first_server_process.wait()
 

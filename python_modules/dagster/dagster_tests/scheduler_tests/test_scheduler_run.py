@@ -366,8 +366,8 @@ def default_repo():
     with ManagedGrpcPythonEnvRepositoryLocationOrigin(
         loadable_target_origin=loadable_target_origin,
         location_name="test_location",
-    ).create_test_handle() as handle:
-        yield handle.create_location().get_repository("the_repo")
+    ).create_test_location() as location:
+        yield location.get_repository("the_repo")
 
 
 def repos():

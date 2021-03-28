@@ -1,23 +1,21 @@
 import re
-import sys
 
-import pytest
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.host_representation.handle import PipelineHandle
 
-from .utils import get_bar_grpc_repo_handle, get_foo_grpc_pipeline_handle
+from .utils import get_bar_repo_handle, get_foo_pipeline_handle
 
 
 def _test_pipeline_subset_grpc(pipeline_handle, solid_selection=None):
-    api_client = pipeline_handle.repository_handle.repository_location_handle.client
+    api_client = pipeline_handle.repository_handle.repository_location.client
     return sync_get_external_pipeline_subset_grpc(
         api_client, pipeline_handle.get_external_origin(), solid_selection=solid_selection
     )
 
 
 def test_pipeline_snapshot_api_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
+    with get_foo_pipeline_handle() as pipeline_handle:
         external_pipeline_subset_result = _test_pipeline_subset_grpc(pipeline_handle)
         assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
         assert external_pipeline_subset_result.success == True
@@ -25,7 +23,7 @@ def test_pipeline_snapshot_api_grpc():
 
 
 def test_pipeline_with_valid_subset_snapshot_api_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
+    with get_foo_pipeline_handle() as pipeline_handle:
 
         external_pipeline_subset_result = _test_pipeline_subset_grpc(
             pipeline_handle, ["do_something"]
@@ -36,7 +34,7 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc():
 
 
 def test_pipeline_with_invalid_subset_snapshot_api_grpc():
-    with get_foo_grpc_pipeline_handle() as pipeline_handle:
+    with get_foo_pipeline_handle() as pipeline_handle:
 
         external_pipeline_subset_result = _test_pipeline_subset_grpc(
             pipeline_handle, ["invalid_solid"]
@@ -50,7 +48,7 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc():
 
 
 def test_pipeline_with_invalid_definition_snapshot_api_grpc():
-    with get_bar_grpc_repo_handle() as repo_handle:
+    with get_bar_repo_handle() as repo_handle:
         pipeline_handle = PipelineHandle("bar", repo_handle)
 
         external_pipeline_subset_result = _test_pipeline_subset_grpc(

@@ -5,7 +5,7 @@ from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
@@ -34,7 +34,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         self._run_ids = set()
 
-        self._handles_to_wait_for = []
+        self._locations_to_wait_for = []
 
         super().__init__()
 
@@ -56,11 +56,11 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
-        repository_location_handle = external_pipeline.repository_handle.repository_location_handle
+        repository_location = external_pipeline.repository_handle.repository_location
 
         check.inst(
-            repository_location_handle,
-            GrpcServerRepositoryLocationHandle,
+            repository_location,
+            GrpcServerRepositoryLocation,
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
@@ -69,19 +69,19 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             {
                 GRPC_INFO_TAG: seven.json.dumps(
                     merge_dicts(
-                        {"host": repository_location_handle.host},
+                        {"host": repository_location.host},
                         (
-                            {"port": repository_location_handle.port}
-                            if repository_location_handle.port
-                            else {"socket": repository_location_handle.socket}
+                            {"port": repository_location.port}
+                            if repository_location.port
+                            else {"socket": repository_location.socket}
                         ),
-                        ({"use_ssl": True} if repository_location_handle.use_ssl else {}),
+                        ({"use_ssl": True} if repository_location.use_ssl else {}),
                     )
                 )
             },
         )
 
-        res = repository_location_handle.client.start_run(
+        res = repository_location.client.start_run(
             ExecuteExternalPipelineArgs(
                 pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_run_id=run.run_id,
@@ -99,7 +99,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         self._run_ids.add(run.run_id)
 
         if self._wait_for_processes:
-            self._handles_to_wait_for.append(repository_location_handle)
+            self._locations_to_wait_for.append(repository_location)
 
         return run
 
@@ -199,8 +199,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not self._wait_for_processes:
             return
 
-        for handle in self._handles_to_wait_for:
-            if isinstance(handle, GrpcServerRepositoryLocationHandle) and isinstance(
-                handle.grpc_server_registry, ProcessGrpcServerRegistry
+        for location in self._locations_to_wait_for:
+            if isinstance(location, GrpcServerRepositoryLocation) and isinstance(
+                location.grpc_server_registry, ProcessGrpcServerRegistry
             ):
-                handle.grpc_server_registry.wait_for_processes()
+                location.grpc_server_registry.wait_for_processes()

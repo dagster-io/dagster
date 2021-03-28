@@ -14,22 +14,22 @@ from dagster.core.host_representation import (
     ExternalPartitionTagsData,
 )
 
-from .utils import get_bar_grpc_repo_handle
+from .utils import get_bar_repo_handle
 
 
 def test_external_partition_names_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         data = sync_get_external_partition_names_grpc(
-            repository_handle.repository_location_handle.client, repository_handle, "baz_partitions"
+            repository_handle.repository_location.client, repository_handle, "baz_partitions"
         )
         assert isinstance(data, ExternalPartitionNamesData)
         assert data.partition_names == list(string.ascii_lowercase)
 
 
 def test_external_partition_names_error_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         error = sync_get_external_partition_names_grpc(
-            repository_handle.repository_location_handle.client,
+            repository_handle.repository_location.client,
             repository_handle,
             "error_partitions",
         )
@@ -38,9 +38,9 @@ def test_external_partition_names_error_grpc():
 
 
 def test_external_partitions_config_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         data = sync_get_external_partition_config_grpc(
-            repository_handle.repository_location_handle.client,
+            repository_handle.repository_location.client,
             repository_handle,
             "baz_partitions",
             "c",
@@ -51,9 +51,9 @@ def test_external_partitions_config_grpc():
 
 
 def test_external_partitions_config_error_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         error = sync_get_external_partition_config_grpc(
-            repository_handle.repository_location_handle.client,
+            repository_handle.repository_location.client,
             repository_handle,
             "error_partition_config",
             "c",
@@ -62,9 +62,9 @@ def test_external_partitions_config_error_grpc():
 
 
 def test_external_partitions_tags_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         data = sync_get_external_partition_tags_grpc(
-            repository_handle.repository_location_handle.client,
+            repository_handle.repository_location.client,
             repository_handle,
             "baz_partitions",
             "c",
@@ -75,9 +75,9 @@ def test_external_partitions_tags_grpc():
 
 
 def test_external_partitions_tags_error_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         error = sync_get_external_partition_tags_grpc(
-            repository_handle.repository_location_handle.client,
+            repository_handle.repository_location.client,
             repository_handle,
             "error_partition_tags",
             "c",
@@ -86,9 +86,9 @@ def test_external_partitions_tags_error_grpc():
 
 
 def test_external_partition_set_execution_params_grpc():
-    with get_bar_grpc_repo_handle() as repository_handle:
+    with get_bar_repo_handle() as repository_handle:
         data = sync_get_external_partition_set_execution_param_data_grpc(
-            repository_handle.repository_location_handle.client,
+            repository_handle.repository_location.client,
             repository_handle,
             "baz_partitions",
             ["a", "b", "c"],

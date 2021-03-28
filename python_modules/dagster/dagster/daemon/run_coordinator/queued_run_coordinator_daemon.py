@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from dagster import DagsterEvent, DagsterEventType, check
 from dagster.core.events.log import EventRecord
-from dagster.core.host_representation import RepositoryLocationHandleManager
+from dagster.core.host_representation import RepositoryLocationManager
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
@@ -15,7 +15,7 @@ from dagster.core.storage.pipeline_run import (
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.daemon.daemon import DagsterDaemon
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.external import external_pipeline_from_location_handle
+from dagster.utils.external import external_pipeline_from_location
 
 
 class _TagConcurrencyLimitsCounter:
@@ -138,7 +138,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             self._tag_concurrency_limits, in_progress_runs
         )
 
-        with RepositoryLocationHandleManager(grpc_server_registry) as location_manager:
+        with RepositoryLocationManager(grpc_server_registry) as location_manager:
             for run in sorted_runs:
                 if num_dequeued_runs >= max_runs_to_launch:
                     break
@@ -201,10 +201,10 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             run.external_pipeline_origin.external_repository_origin.repository_location_origin
         )
 
-        handle = location_manager.get_handle(repository_location_origin)
+        location = location_manager.get_location(repository_location_origin)
 
-        external_pipeline = external_pipeline_from_location_handle(
-            handle, run.external_pipeline_origin, run.solid_selection
+        external_pipeline = external_pipeline_from_location(
+            location, run.external_pipeline_origin, run.solid_selection
         )
 
         # double check that the run is still queued before dequeing

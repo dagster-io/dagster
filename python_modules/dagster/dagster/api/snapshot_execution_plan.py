@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.host_representation import ExternalPipelineOrigin
+from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,

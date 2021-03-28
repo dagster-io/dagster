@@ -57,27 +57,27 @@ def test_execute_queeud_run_on_celery_k8s(  # pylint: disable=redefined-outer-na
         ),
     )
     pipeline_name = "demo_pipeline_celery"
-    external_pipeline = get_test_project_external_pipeline(pipeline_name)
-    reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
-    run = create_run_for_test(
-        dagster_instance_for_daemon,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-        external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+        run = create_run_for_test(
+            dagster_instance_for_daemon,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+        )
 
-    dagster_instance_for_daemon.submit_run(
-        run.run_id,
-        reoriginated_pipeline,
-    )
+        dagster_instance_for_daemon.submit_run(
+            run.run_id,
+            reoriginated_pipeline,
+        )
 
-    wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_daemon
-    )
+        wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_daemon
+        )
 
-    logs = dagster_instance_for_daemon.all_logs(run.run_id)
-    assert_events_in_order(
-        logs,
-        ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
-    )
+        logs = dagster_instance_for_daemon.all_logs(run.run_id)
+        assert_events_in_order(
+            logs,
+            ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
+        )

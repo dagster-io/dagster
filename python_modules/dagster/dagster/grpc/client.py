@@ -7,7 +7,7 @@ from contextlib import contextmanager
 import grpc
 from dagster import check, seven
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import ExternalRepositoryOrigin
+from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple

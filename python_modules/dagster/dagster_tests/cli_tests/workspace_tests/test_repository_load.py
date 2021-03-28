@@ -9,27 +9,28 @@ from dagster.core.host_representation import ExternalRepository
 from dagster.utils import file_relative_path
 
 
-def load_repository_via_cli_runner(cli_args):
-    capture_result = {"external_repo": None}
-
+def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
     @click.command(name="test_repository_command")
     @repository_target_argument
     def command(**kwargs):
         with get_external_repository_from_kwargs(kwargs) as external_repo:
-            capture_result["external_repo"] = external_repo
+            if repo_assert_fn:
+                repo_assert_fn(external_repo)
 
     runner = CliRunner()
     result = runner.invoke(command, cli_args)
 
-    external_repo = capture_result["external_repo"]
-    return result, external_repo
+    return result
 
 
-def successfully_load_repository_via_cli(cli_args):
-    result, external_repository = load_repository_via_cli_runner(cli_args)
+def successfully_load_repository_via_cli(cli_args, repo_assert_fn=None):
+    def wrapped_repo_assert(external_repo):
+        assert isinstance(external_repo, ExternalRepository)
+        if repo_assert_fn:
+            repo_assert_fn(external_repo)
+
+    result = load_repository_via_cli_runner(cli_args, wrapped_repo_assert)
     assert result.exit_code == 0
-    assert isinstance(external_repository, ExternalRepository)
-    return external_repository
 
 
 PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
@@ -57,13 +58,11 @@ PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
     ),
 )
 def test_valid_repository_target_combos_with_single_repo_single_location(cli_args):
-    external_repository = successfully_load_repository_via_cli(cli_args)
-    assert isinstance(external_repository, ExternalRepository)
-    assert external_repository.name == "hello_world_repository"
+    successfully_load_repository_via_cli(cli_args, lambda er: er.name == "hello_world_repository")
 
 
 def test_repository_target_argument_one_repo_and_specified_wrong():
-    result, _ = load_repository_via_cli_runner(
+    result = load_repository_via_cli_runner(
         ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-r", "not_present"]
     )
 
@@ -76,7 +75,7 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
 
 
 def test_repository_target_argument_one_location_and_specified_wrong():
-    result, _ = load_repository_via_cli_runner(
+    result = load_repository_via_cli_runner(
         ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-l", "location_not_present"]
     )
 
@@ -92,25 +91,27 @@ MULTI_LOCATION_WORKSPACE = file_relative_path(__file__, "multi_location/multi_lo
 
 
 def test_valid_multi_location_from_file():
-    external_repository = successfully_load_repository_via_cli(
-        ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_file"]
+    def the_assert(external_repository):
+        assert external_repository.name == "hello_world_repository"
+        assert external_repository.handle.repository_location.name == "loaded_from_file"
+
+    successfully_load_repository_via_cli(
+        ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_file"], the_assert
     )
-    assert external_repository.name == "hello_world_repository"
-    assert external_repository.handle.repository_location_handle.location_name == "loaded_from_file"
 
 
 def test_valid_multi_location_from_module():
-    external_repository = successfully_load_repository_via_cli(
-        ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_module"]
-    )
-    assert external_repository.name == "hello_world_repository"
-    assert (
-        external_repository.handle.repository_location_handle.location_name == "loaded_from_module"
+    def the_assert(external_repository):
+        assert external_repository.name == "hello_world_repository"
+        assert external_repository.handle.repository_location.name == "loaded_from_module"
+
+    successfully_load_repository_via_cli(
+        ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_module"], the_assert
     )
 
 
 def test_missing_location_name_multi_location():
-    result, _ = load_repository_via_cli_runner(["-w", MULTI_LOCATION_WORKSPACE])
+    result = load_repository_via_cli_runner(["-w", MULTI_LOCATION_WORKSPACE])
 
     assert result.exit_code == 2
 
@@ -124,22 +125,23 @@ SINGLE_LOCATION_MULTI_REPO_WORKSPACE = file_relative_path(__file__, "multi_repo/
 
 
 def test_valid_multi_repo():
-    assert (
-        successfully_load_repository_via_cli(
-            ["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE, "-r", "repo_one"]
-        ).name
-        == "repo_one"
+    def the_assert(external_repository):
+        assert external_repository.name == "repo_one"
+
+    successfully_load_repository_via_cli(
+        ["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE, "-r", "repo_one"], the_assert
     )
-    assert (
-        successfully_load_repository_via_cli(
-            ["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE, "-r", "repo_two"]
-        ).name
-        == "repo_two"
+
+    def the_assert_two(external_repository):
+        assert external_repository.name == "repo_two"
+
+    successfully_load_repository_via_cli(
+        ["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE, "-r", "repo_two"], the_assert_two
     )
 
 
 def test_missing_repo_name_in_multi_repo_location():
-    result, _ = load_repository_via_cli_runner(["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE])
+    result = load_repository_via_cli_runner(["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE])
 
     assert result.exit_code == 2
 
@@ -154,7 +156,7 @@ def test_local_directory_module():
         "-w",
         file_relative_path(__file__, "hello_world_in_module/local_directory_module_workspace.yaml"),
     ]
-    result, _ = load_repository_via_cli_runner(cli_args)
+    result = load_repository_via_cli_runner(cli_args)
 
     # repository loading should fail even though pytest is being run from the current directory
     # because we removed module resolution from the working directory
@@ -188,4 +190,4 @@ def test_local_directory_module():
     ),
 )
 def test_local_directory_file(cli_args):
-    assert successfully_load_repository_via_cli(cli_args)
+    successfully_load_repository_via_cli(cli_args)

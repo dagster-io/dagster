@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
-from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
+from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.serdes import whitelist_for_serdes

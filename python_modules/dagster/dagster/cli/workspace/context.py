@@ -110,7 +110,7 @@ class WorkspaceRequestContext(
 
     def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
         return self.repository_locations_dict[
-            repository_handle.repository_location_handle.location_name
+            repository_handle.repository_location.name
         ].get_external_partition_config(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -119,7 +119,7 @@ class WorkspaceRequestContext(
 
     def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
         return self.repository_locations_dict[
-            repository_handle.repository_location_handle.location_name
+            repository_handle.repository_location.name
         ].get_external_partition_tags(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -128,14 +128,14 @@ class WorkspaceRequestContext(
 
     def get_external_partition_names(self, repository_handle, partition_set_name):
         return self.repository_locations_dict[
-            repository_handle.repository_location_handle.location_name
+            repository_handle.repository_location.name
         ].get_external_partition_names(repository_handle, partition_set_name)
 
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names
     ):
         return self.repository_locations_dict[
-            repository_handle.repository_location_handle.location_name
+            repository_handle.repository_location.name
         ].get_external_partition_set_execution_param_data(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -169,20 +169,20 @@ class WorkspaceProcessContext:
 
         self.version = version
 
-        self._load_repository_locations()
+        self._initialize_repository_locations()
 
-    def _load_repository_locations(self):
+    def _initialize_repository_locations(self):
         self._repository_locations = {}
-        for handle in self._workspace.repository_location_handles:
+        for location in self._workspace.repository_locations:
             check.invariant(
-                self._repository_locations.get(handle.location_name) is None,
+                self._repository_locations.get(location.name) is None,
                 'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
-                    name=handle.location_name,
+                    name=location.name,
                 ),
             )
 
-            handle.add_state_subscriber(self._location_state_subscriber)
-            self._repository_locations[handle.location_name] = handle.create_location()
+            location.add_state_subscriber(self._location_state_subscriber)
+            self._repository_locations[location.name] = location
 
     def create_request_context(self):
         return WorkspaceRequestContext(
@@ -223,10 +223,9 @@ class WorkspaceProcessContext:
     def reload_repository_location(self, name):
         self._workspace.reload_repository_location(name)
 
-        if self._workspace.has_repository_location_handle(name):
-            new_handle = self._workspace.get_repository_location_handle(name)
-            new_handle.add_state_subscriber(self._location_state_subscriber)
-            new_location = new_handle.create_location()
+        if self._workspace.has_repository_location(name):
+            new_location = self._workspace.get_repository_location(name)
+            new_location.add_state_subscriber(self._location_state_subscriber)
             check.invariant(new_location.name == name)
             self._repository_locations[name] = new_location
         elif name in self._repository_locations:
@@ -236,4 +235,4 @@ class WorkspaceProcessContext:
 
     def reload_workspace(self):
         self._workspace.reload_workspace()
-        self._load_repository_locations()
+        self._initialize_repository_locations()

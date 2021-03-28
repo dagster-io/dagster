@@ -1,6 +1,6 @@
 from dagster import check
-from dagster.core.host_representation import ExternalPipelineOrigin
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
+from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.grpc.types import PipelineSubsetSnapshotArgs
 
 

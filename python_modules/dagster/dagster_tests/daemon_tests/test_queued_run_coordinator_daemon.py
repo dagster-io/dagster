@@ -4,12 +4,12 @@ import pytest
 from dagster.core.code_pointer import ModuleCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
 from dagster.core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
+from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -294,7 +294,7 @@ def test_overlapping_tag_limits(instance, grpc_server_registry):
     assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
 
-def test_location_handles_reused(instance, monkeypatch, grpc_server_registry):
+def test_locations_reused(instance, monkeypatch, grpc_server_registry):
     """
     verifies that only one repository location is created when two queued runs from the same
     location are dequeued in the same iteration
@@ -312,11 +312,11 @@ def test_location_handles_reused(instance, monkeypatch, grpc_server_registry):
         status=PipelineRunStatus.QUEUED,
     )
 
-    original_method = GrpcServerRepositoryLocationHandle.__init__
+    original_method = GrpcServerRepositoryLocation.__init__
 
     method_calls = []
 
-    def mocked_handle_init(
+    def mocked_location_init(
         self,
         origin,
         host=None,
@@ -341,9 +341,9 @@ def test_location_handles_reused(instance, monkeypatch, grpc_server_registry):
         )
 
     monkeypatch.setattr(
-        GrpcServerRepositoryLocationHandle,
+        GrpcServerRepositoryLocation,
         "__init__",
-        mocked_handle_init,
+        mocked_location_init,
     )
 
     coordinator = QueuedRunCoordinatorDaemon(

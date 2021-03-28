@@ -1,7 +1,7 @@
 import pendulum
 import pytest
 from dagster.core.definitions.job import JobType
-from dagster.core.host_representation import RepositoryLocationHandleManager
+from dagster.core.host_representation import RepositoryLocationManager
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
@@ -21,12 +21,12 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
             with pendulum.test(execution_datetime), ProcessGrpcServerRegistry(
                 wait_for_processes_on_exit=True
             ) as grpc_server_registry:
-                with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+                with RepositoryLocationManager(grpc_server_registry) as location_manager:
                     list(
                         execute_sensor_iteration(
                             instance,
                             get_default_daemon_logger("SensorDaemon"),
-                            handle_manager,
+                            location_manager,
                             debug_crash_flags=debug_crash_flags,
                         )
                     )

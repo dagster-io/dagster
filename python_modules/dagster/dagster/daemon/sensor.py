@@ -11,7 +11,7 @@ from dagster.core.errors import DagsterError
 from dagster.core.host_representation import (
     ExternalPipeline,
     PipelineSelector,
-    RepositoryLocationHandleManager,
+    RepositoryLocationManager,
 )
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
@@ -131,7 +131,7 @@ def execute_sensor_iteration_loop(instance, grpc_server_registry, logger, until=
     """
     from dagster.daemon.daemon import CompletedIteration
 
-    handle_manager = None
+    location_manager = None
     manager_loaded_time = None
 
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
@@ -145,24 +145,24 @@ def execute_sensor_iteration_loop(instance, grpc_server_registry, logger, until=
                 break
 
             if (
-                not handle_manager
+                not location_manager
                 or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
             ):
                 stack.close()  # remove the previous context
-                handle_manager = stack.enter_context(
-                    RepositoryLocationHandleManager(grpc_server_registry)
+                location_manager = stack.enter_context(
+                    RepositoryLocationManager(grpc_server_registry)
                 )
                 manager_loaded_time = start_time
 
-            yield from execute_sensor_iteration(instance, logger, handle_manager)
+            yield from execute_sensor_iteration(instance, logger, location_manager)
             loop_duration = pendulum.now("UTC").timestamp() - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
             yield CompletedIteration()
             time.sleep(sleep_time)
 
 
-def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags=None):
-    check.inst_param(handle_manager, "handle_manager", RepositoryLocationHandleManager)
+def execute_sensor_iteration(instance, logger, location_manager, debug_crash_flags=None):
+    check.inst_param(location_manager, "location_manager", RepositoryLocationManager)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
         s
@@ -180,8 +180,7 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
         error_info = None
         try:
             origin = job_state.origin.external_repository_origin.repository_location_origin
-            repo_location_handle = handle_manager.get_handle(origin)
-            repo_location = repo_location_handle.create_location()
+            repo_location = location_manager.get_location(origin)
 
             repo_name = job_state.origin.external_repository_origin.repository_name
 

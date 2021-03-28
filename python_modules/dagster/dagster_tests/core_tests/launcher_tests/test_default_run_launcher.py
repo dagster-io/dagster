@@ -12,7 +12,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
     environ,
@@ -114,8 +113,7 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
                 port=api_client.port,
                 socket=api_client.socket,
                 host=api_client.host,
-            ).create_handle() as handle:
-                repository_location = GrpcServerRepositoryLocation(handle)
+            ).create_location() as repository_location:
                 yield repository_location.get_repository("nope").get_full_external_pipeline(
                     pipeline_name
                 )
@@ -132,8 +130,7 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         ),
         location_name="nope",
-    ).create_test_handle() as repository_location_handle:
-        repository_location = GrpcServerRepositoryLocation(repository_location_handle)
+    ).create_test_location() as repository_location:
         yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
 
 

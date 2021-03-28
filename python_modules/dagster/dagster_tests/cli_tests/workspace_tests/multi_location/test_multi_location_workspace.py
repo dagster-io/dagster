@@ -5,18 +5,14 @@ import pytest
 import yaml
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths, location_origins_from_config
-from dagster.core.host_representation import GrpcServerRepositoryLocationHandle
+from dagster.core.host_representation import GrpcServerRepositoryLocation
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils import file_relative_path
 
 
 def _get_single_code_pointer(workspace, location_name):
     return next(
-        iter(
-            workspace.get_repository_location_handle(
-                location_name
-            ).repository_code_pointer_dict.values()
-        )
+        iter(workspace.get_repository_location(location_name).repository_code_pointer_dict.values())
     )
 
 
@@ -25,19 +21,19 @@ def test_multi_location_workspace_foo():
         [file_relative_path(__file__, "multi_location.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, Workspace)
-        assert len(cli_workspace.repository_location_handles) == 3
-        assert cli_workspace.has_repository_location_handle("loaded_from_file")
-        assert cli_workspace.has_repository_location_handle("loaded_from_module")
-        assert cli_workspace.has_repository_location_handle("loaded_from_package")
+        assert len(cli_workspace.repository_locations) == 3
+        assert cli_workspace.has_repository_location("loaded_from_file")
+        assert cli_workspace.has_repository_location("loaded_from_module")
+        assert cli_workspace.has_repository_location("loaded_from_package")
 
         with load_workspace_from_yaml_paths(
             [file_relative_path(__file__, "multi_location.yaml")],
         ) as grpc_workspace:
             assert isinstance(grpc_workspace, Workspace)
-            assert len(grpc_workspace.repository_location_handles) == 3
-            assert grpc_workspace.has_repository_location_handle("loaded_from_file")
-            assert grpc_workspace.has_repository_location_handle("loaded_from_module")
-            assert grpc_workspace.has_repository_location_handle("loaded_from_package")
+            assert len(grpc_workspace.repository_locations) == 3
+            assert grpc_workspace.has_repository_location("loaded_from_file")
+            assert grpc_workspace.has_repository_location("loaded_from_module")
+            assert grpc_workspace.has_repository_location("loaded_from_package")
 
             assert serialize_dagster_namedtuple(
                 _get_single_code_pointer(cli_workspace, "loaded_from_file")
@@ -66,11 +62,11 @@ def test_multi_file_extend_workspace():
         ],
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 4
-        assert workspace.has_repository_location_handle("loaded_from_file")
-        assert workspace.has_repository_location_handle("loaded_from_module")
-        assert workspace.has_repository_location_handle("loaded_from_package")
-        assert workspace.has_repository_location_handle("extra_location")
+        assert len(workspace.repository_locations) == 4
+        assert workspace.has_repository_location("loaded_from_file")
+        assert workspace.has_repository_location("loaded_from_module")
+        assert workspace.has_repository_location("loaded_from_package")
+        assert workspace.has_repository_location("extra_location")
 
 
 def test_multi_file_override_workspace():
@@ -81,14 +77,12 @@ def test_multi_file_override_workspace():
         ],
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 3
-        assert workspace.has_repository_location_handle("loaded_from_file")
-        assert workspace.has_repository_location_handle("loaded_from_module")
-        assert workspace.has_repository_location_handle("loaded_from_package")
+        assert len(workspace.repository_locations) == 3
+        assert workspace.has_repository_location("loaded_from_file")
+        assert workspace.has_repository_location("loaded_from_module")
+        assert workspace.has_repository_location("loaded_from_package")
 
-        loaded_from_file = workspace.get_repository_location_handle(
-            "loaded_from_file"
-        ).create_location()
+        loaded_from_file = workspace.get_repository_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -105,15 +99,13 @@ def test_multi_file_extend_and_override_workspace():
         ],
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 4
-        assert workspace.has_repository_location_handle("loaded_from_file")
-        assert workspace.has_repository_location_handle("loaded_from_module")
-        assert workspace.has_repository_location_handle("loaded_from_package")
-        assert workspace.has_repository_location_handle("extra_location")
+        assert len(workspace.repository_locations) == 4
+        assert workspace.has_repository_location("loaded_from_file")
+        assert workspace.has_repository_location("loaded_from_module")
+        assert workspace.has_repository_location("loaded_from_package")
+        assert workspace.has_repository_location("extra_location")
 
-        loaded_from_file = workspace.get_repository_location_handle(
-            "loaded_from_file"
-        ).create_location()
+        loaded_from_file = workspace.get_repository_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -219,50 +211,44 @@ def test_grpc_multi_location_workspace(config_source):
         file_relative_path(__file__, "not_a_real.yaml"),
     )
     with ExitStack() as stack:
-        repository_location_handles = {
-            name: stack.enter_context(origin.create_test_handle())
+        repository_locations = {
+            name: stack.enter_context(origin.create_test_location())
             for name, origin in origins.items()
         }
 
-        assert len(repository_location_handles) == 6
-        assert "loaded_from_file" in repository_location_handles
-        assert "loaded_from_module" in repository_location_handles
+        assert len(repository_locations) == 6
+        assert "loaded_from_file" in repository_locations
+        assert "loaded_from_module" in repository_locations
 
-        loaded_from_file_handle = repository_location_handles.get("loaded_from_file")
-        assert isinstance(loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
-        assert loaded_from_file_handle.repository_names == {"hello_world_repository"}
+        loaded_from_file_location = repository_locations.get("loaded_from_file")
+        assert isinstance(loaded_from_file_location, GrpcServerRepositoryLocation)
+        assert loaded_from_file_location.repository_names == {"hello_world_repository"}
 
-        loaded_from_module_handle = repository_location_handles.get("loaded_from_module")
-        assert isinstance(loaded_from_module_handle, GrpcServerRepositoryLocationHandle)
+        loaded_from_module_location = repository_locations.get("loaded_from_module")
+        assert isinstance(loaded_from_module_location, GrpcServerRepositoryLocation)
 
-        assert loaded_from_module_handle.repository_names == {"hello_world_repository"}
+        assert loaded_from_module_location.repository_names == {"hello_world_repository"}
 
-        named_loaded_from_file_handle = repository_location_handles.get("named_loaded_from_file")
-        assert named_loaded_from_file_handle.repository_names == {"hello_world_repository_name"}
-        assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
+        named_loaded_from_file_location = repository_locations.get("named_loaded_from_file")
+        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}
+        assert isinstance(named_loaded_from_file_location, GrpcServerRepositoryLocation)
 
-        named_loaded_from_module_handle = repository_location_handles.get(
-            "named_loaded_from_module"
-        )
-        assert named_loaded_from_module_handle.repository_names == {"hello_world_repository_name"}
-        assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
+        named_loaded_from_module_location = repository_locations.get("named_loaded_from_module")
+        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}
+        assert isinstance(named_loaded_from_module_location, GrpcServerRepositoryLocation)
 
-        named_loaded_from_module_attribute_handle = repository_location_handles.get(
+        named_loaded_from_module_attribute_location = repository_locations.get(
             "named_loaded_from_module_attribute"
         )
-        assert named_loaded_from_module_attribute_handle.repository_names == {
+        assert named_loaded_from_module_attribute_location.repository_names == {
             "hello_world_repository_name"
         }
-        assert isinstance(
-            named_loaded_from_module_attribute_handle, GrpcServerRepositoryLocationHandle
-        )
+        assert isinstance(named_loaded_from_module_attribute_location, GrpcServerRepositoryLocation)
 
-        named_loaded_from_file_attribute_handle = repository_location_handles.get(
+        named_loaded_from_file_attribute_location = repository_locations.get(
             "named_loaded_from_file_attribute"
         )
-        assert named_loaded_from_file_attribute_handle.repository_names == {
+        assert named_loaded_from_file_attribute_location.repository_names == {
             "hello_world_repository_name"
         }
-        assert isinstance(
-            named_loaded_from_file_attribute_handle, GrpcServerRepositoryLocationHandle
-        )
+        assert isinstance(named_loaded_from_file_attribute_location, GrpcServerRepositoryLocation)

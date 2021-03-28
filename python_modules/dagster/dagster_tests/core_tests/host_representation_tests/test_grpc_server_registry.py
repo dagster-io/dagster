@@ -4,9 +4,9 @@ import time
 
 from dagster import file_relative_path, pipeline, repository
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
-from dagster.core.host_representation.handle_manager import RepositoryLocationHandleManager
+from dagster.core.host_representation.location_manager import RepositoryLocationManager
 from dagster.core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
@@ -22,7 +22,7 @@ def repo():
 
 def _can_connect(origin, endpoint):
     try:
-        with GrpcServerRepositoryLocationHandle(
+        with GrpcServerRepositoryLocation(
             origin=origin,
             server_id=endpoint.server_id,
             port=endpoint.port,
@@ -49,15 +49,15 @@ def test_process_server_registry():
         wait_for_processes_on_exit=True, reload_interval=5, heartbeat_ttl=10
     ) as registry:
 
-        with RepositoryLocationHandleManager(registry) as handle_manager:
+        with RepositoryLocationManager(registry) as location_manager:
             endpoint_one = registry.get_grpc_endpoint(origin)
-            handle_one = handle_manager.get_handle(origin)
+            location_one = location_manager.get_location(origin)
 
             endpoint_two = registry.get_grpc_endpoint(origin)
-            handle_two = handle_manager.get_handle(origin)
+            location_two = location_manager.get_location(origin)
 
             assert endpoint_two == endpoint_one
-            assert handle_two == handle_one
+            assert location_two == location_one
 
             assert _can_connect(origin, endpoint_one)
             assert _can_connect(origin, endpoint_two)
@@ -70,9 +70,9 @@ def test_process_server_registry():
 
                 if endpoint_three.server_id != endpoint_one.server_id:
 
-                    # Handle manager now produces a new handle as well
-                    handle_three = handle_manager.get_handle(origin)
-                    assert handle_three != handle_one
+                    # Location manager now produces a new location as well
+                    location_three = location_manager.get_location(origin)
+                    assert location_three != location_one
 
                     break
 
@@ -82,7 +82,7 @@ def test_process_server_registry():
                 time.sleep(1)
 
             assert _can_connect(origin, endpoint_three)
-            # Leave handle_manager context, all heartbeats stop
+            # Leave location_manager context, all heartbeats stop
 
         start_time = time.time()
         while True:

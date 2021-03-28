@@ -4,10 +4,7 @@ from collections import OrderedDict, namedtuple
 from contextlib import ExitStack
 
 from dagster import check
-from dagster.core.host_representation import (
-    GrpcServerRepositoryLocationHandle,
-    RepositoryLocationOrigin,
-)
+from dagster.core.host_representation import GrpcServerRepositoryLocation, RepositoryLocationOrigin
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -19,7 +16,7 @@ class WorkspaceSnapshot(
     This class is request-scoped object that stores a reference to all the locaiton origins and errors
     that were on a `Workspace`.
 
-    This object is needed because a workspace and handles/errors on that workspace can be updated
+    This object is needed because a workspace and locations/errors on that workspace can be updated
     (for example, from a thread on the process context). If a request is accessing a repository location
     at the same time the repository location was being cleaned up, we would run into errors.
     """
@@ -75,7 +72,7 @@ class Workspace:
             of_type=RepositoryLocationOrigin,
         )
 
-        self._location_handle_dict = {}
+        self._location_dict = {}
         self._location_error_dict = {}
         for origin in repository_location_origins:
             check.invariant(
@@ -86,18 +83,18 @@ class Workspace:
             )
 
             self._location_origin_dict[origin.location_name] = origin
-            self._load_handle(origin.location_name)
+            self._load_location(origin.location_name)
 
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
-    def create_handle_from_origin(self, origin):
+    def create_location_from_origin(self, origin):
         if not self._grpc_server_registry.supports_origin(origin):  # pylint: disable=no-member
-            return origin.create_handle()
+            return origin.create_location()
         else:
             endpoint = self._grpc_server_registry.reload_grpc_endpoint(  # pylint: disable=no-member
                 origin
             )
-            return GrpcServerRepositoryLocationHandle(
+            return GrpcServerRepositoryLocation(
                 origin=origin,
                 server_id=endpoint.server_id,
                 port=endpoint.port,
@@ -108,17 +105,17 @@ class Workspace:
                 grpc_server_registry=self._grpc_server_registry,
             )
 
-    def _load_handle(self, location_name):
-        if self._location_handle_dict.get(location_name):
-            del self._location_handle_dict[location_name]
+    def _load_location(self, location_name):
+        if self._location_dict.get(location_name):
+            del self._location_dict[location_name]
 
         if self._location_error_dict.get(location_name):
             del self._location_error_dict[location_name]
 
         origin = self._location_origin_dict[location_name]
         try:
-            handle = self.create_handle_from_origin(origin)
-            self._location_handle_dict[location_name] = handle
+            location = self.create_location_from_origin(origin)
+            self._location_dict[location_name] = location
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             self._location_error_dict[location_name] = error_info
@@ -134,33 +131,33 @@ class Workspace:
         )
 
     @property
-    def repository_location_handles(self):
-        return list(self._location_handle_dict.values())
+    def repository_locations(self):
+        return list(self._location_dict.values())
 
-    def has_repository_location_handle(self, location_name):
+    def has_repository_location(self, location_name):
         check.str_param(location_name, "location_name")
-        return location_name in self._location_handle_dict
+        return location_name in self._location_dict
 
-    def get_repository_location_handle(self, location_name):
+    def get_repository_location(self, location_name):
         check.str_param(location_name, "location_name")
-        return self._location_handle_dict[location_name]
+        return self._location_dict[location_name]
 
     def has_repository_location_error(self, location_name):
         check.str_param(location_name, "location_name")
         return location_name in self._location_error_dict
 
     def reload_repository_location(self, location_name):
-        self._load_handle(location_name)
+        self._load_location(location_name)
 
     def reload_workspace(self):
-        for handle in self.repository_location_handles:
-            handle.cleanup()
+        for location in self.repository_locations:
+            location.cleanup()
         self._load_workspace()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        for handle in self.repository_location_handles:
-            handle.cleanup()
+        for location in self.repository_locations:
+            location.cleanup()
         self._stack.close()

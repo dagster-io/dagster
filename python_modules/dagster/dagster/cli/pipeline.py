@@ -883,7 +883,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
 
     repo_handle = RepositoryHandle(
         repository_name=external_repo.name,
-        repository_location_handle=repo_location.location_handle,
+        repository_location=repo_location,
     )
 
     # Resolve partitions to backfill

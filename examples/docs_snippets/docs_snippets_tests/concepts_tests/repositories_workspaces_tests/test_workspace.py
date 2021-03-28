@@ -26,7 +26,7 @@ def test_workspace_yamls():
             )
         ]
     ) as workspace:
-        assert len(workspace.repository_location_handles) == 1
+        assert len(workspace.repository_locations) == 1
 
     with load_workspace_from_yaml_paths(
         [
@@ -36,7 +36,7 @@ def test_workspace_yamls():
             )
         ]
     ) as workspace:
-        assert len(workspace.repository_location_handles) == 1
+        assert len(workspace.repository_locations) == 1
 
     with load_workspace_from_yaml_paths(
         [
@@ -46,7 +46,7 @@ def test_workspace_yamls():
             )
         ]
     ) as workspace:
-        assert len(workspace.repository_location_handles) == 1
+        assert len(workspace.repository_locations) == 1
 
     with load_workspace_from_yaml_paths(
         [
@@ -56,7 +56,7 @@ def test_workspace_yamls():
             )
         ]
     ) as workspace:
-        assert len(workspace.repository_location_handles) == 0
+        assert len(workspace.repository_locations) == 0
 
     with load_workspace_from_yaml_paths(
         [
@@ -66,4 +66,4 @@ def test_workspace_yamls():
             )
         ]
     ) as workspace:
-        assert len(workspace.repository_location_handles) == 0
+        assert len(workspace.repository_locations) == 0

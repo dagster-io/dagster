@@ -44,16 +44,17 @@ def test_k8s_run_launcher_default(
         mode="default",
     )
 
-    dagster_instance_for_k8s_run_launcher.launch_run(
-        run.run_id,
-        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
 
-    result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
-    )
+        result = wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+        assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
 
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -99,35 +100,40 @@ def test_k8s_run_launcher_with_celery_executor_fails(
         mode="default",
     )
 
-    dagster_instance_for_k8s_run_launcher.launch_run(
-        run.run_id,
-        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
 
-    timeout = datetime.timedelta(0, 120)
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
 
-    found_pipeline_failure = False
+        timeout = datetime.timedelta(0, 120)
 
-    start_time = datetime.datetime.now()
+        found_pipeline_failure = False
 
-    while datetime.datetime.now() < start_time + timeout:
-        event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
+        start_time = datetime.datetime.now()
 
-        for event_record in event_records:
-            if event_record.dagster_event:
-                if event_record.dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
-                    found_pipeline_failure = True
+        while datetime.datetime.now() < start_time + timeout:
+            event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
 
-        if found_pipeline_failure:
-            break
+            for event_record in event_records:
+                if event_record.dagster_event:
+                    if (
+                        event_record.dagster_event.event_type
+                        == DagsterEventType.PIPELINE_INIT_FAILURE
+                    ):
+                        found_pipeline_failure = True
 
-        time.sleep(5)
+            if found_pipeline_failure:
+                break
 
-    assert found_pipeline_failure
-    assert (
-        dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id).status
-        == PipelineRunStatus.FAILURE
-    )
+            time.sleep(5)
+
+        assert found_pipeline_failure
+        assert (
+            dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id).status
+            == PipelineRunStatus.FAILURE
+        )
 
 
 @pytest.mark.integration
@@ -140,25 +146,28 @@ def test_failing_k8s_run_launcher(
         dagster_instance_for_k8s_run_launcher, pipeline_name=pipeline_name, run_config=run_config
     )
 
-    dagster_instance_for_k8s_run_launcher.launch_run(
-        run.run_id,
-        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
-    )
-    result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
+        result = wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
 
-    assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
+        assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
 
-    event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
+        event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
 
-    assert any(
-        [
-            'Received unexpected config entry "blah blah this is wrong"' in str(event)
-            for event in event_records
-        ]
-    )
-    assert any(['Missing required config entry "solids"' in str(event) for event in event_records])
+        assert any(
+            [
+                'Received unexpected config entry "blah blah this is wrong"' in str(event)
+                for event in event_records
+            ]
+        )
+        assert any(
+            ['Missing required config entry "solids"' in str(event) for event in event_records]
+        )
 
 
 @pytest.mark.integration
@@ -176,33 +185,34 @@ def test_k8s_run_launcher_terminate(
         mode="default",
     )
 
-    dagster_instance_for_k8s_run_launcher.launch_run(
-        run.run_id,
-        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
-    )
+    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
 
-    wait_for_job(
-        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
-    )
+        wait_for_job(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
 
-    timeout = datetime.timedelta(0, 30)
-    start_time = datetime.datetime.now()
-    while datetime.datetime.now() < start_time + timeout:
-        if dagster_instance_for_k8s_run_launcher.run_launcher.can_terminate(run_id=run.run_id):
-            break
-        time.sleep(5)
+        timeout = datetime.timedelta(0, 30)
+        start_time = datetime.datetime.now()
+        while datetime.datetime.now() < start_time + timeout:
+            if dagster_instance_for_k8s_run_launcher.run_launcher.can_terminate(run_id=run.run_id):
+                break
+            time.sleep(5)
 
-    assert dagster_instance_for_k8s_run_launcher.run_launcher.can_terminate(run_id=run.run_id)
-    assert dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)
+        assert dagster_instance_for_k8s_run_launcher.run_launcher.can_terminate(run_id=run.run_id)
+        assert dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)
 
-    start_time = datetime.datetime.now()
-    pipeline_run = None
-    while datetime.datetime.now() < start_time + timeout:
-        pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
-        if pipeline_run.status == PipelineRunStatus.CANCELED:
-            break
-        time.sleep(5)
+        start_time = datetime.datetime.now()
+        pipeline_run = None
+        while datetime.datetime.now() < start_time + timeout:
+            pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
+            if pipeline_run.status == PipelineRunStatus.CANCELED:
+                break
+            time.sleep(5)
 
-    assert pipeline_run.status == PipelineRunStatus.CANCELED
+        assert pipeline_run.status == PipelineRunStatus.CANCELED
 
-    assert not dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)
+        assert not dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)

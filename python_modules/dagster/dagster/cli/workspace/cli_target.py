@@ -16,7 +16,7 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.handle_manager import RepositoryLocationHandleManager
+from dagster.core.host_representation.location_manager import RepositoryLocationManager
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -593,9 +593,9 @@ def get_repository_python_origin_from_kwargs(kwargs):
 def get_repository_location_from_kwargs(kwargs):
     origin = get_repository_location_origin_from_kwargs(kwargs)
     with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-        with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
-            with handle_manager.get_handle(origin) as handle:
-                yield handle.create_location()
+        with RepositoryLocationManager(grpc_server_registry) as location_manager:
+            with location_manager.get_location(origin) as location:
+                yield location
 
 
 def get_repository_location_origin_from_kwargs(kwargs):

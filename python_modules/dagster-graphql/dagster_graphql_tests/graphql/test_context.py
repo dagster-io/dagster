@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 from dagster import lambda_solid, pipeline, repository
 from dagster.cli.workspace.context import WorkspaceProcessContext
-from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
@@ -41,7 +41,7 @@ def test_can_reload_on_external_repository_error():
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster.core.host_representation.handle.sync_get_streaming_external_repositories_data_grpc"
+                "dagster.core.host_representation.repository_location.sync_get_streaming_external_repositories_data_grpc"
             ) as external_repository_mock:
                 external_repository_mock.side_effect = Exception("get_external_repo_failure")
 
@@ -50,13 +50,13 @@ def test_can_reload_on_external_repository_error():
                         define_out_of_process_workspace(__file__, "get_repo")
                     )
 
-                assert not workspace.has_repository_location_handle(main_repo_location_name())
+                assert not workspace.has_repository_location(main_repo_location_name())
                 assert workspace.has_repository_location_error(main_repo_location_name())
                 process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
                 assert len(process_context.repository_locations) == 0
 
             workspace.reload_repository_location(main_repo_location_name())
-            assert workspace.has_repository_location_handle(main_repo_location_name())
+            assert workspace.has_repository_location(main_repo_location_name())
             process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             assert len(process_context.repository_locations) == 1
 
@@ -162,7 +162,7 @@ def test_reload_on_request_context_2():
 
 
 def test_handle_cleaup_by_workspace_context_exit():
-    with mock.patch.object(GrpcServerRepositoryLocationHandle, "cleanup") as mock_method:
+    with mock.patch.object(GrpcServerRepositoryLocation, "cleanup") as mock_method:
         with define_out_of_process_workspace(__file__, "get_repo") as _:
             pass
 
@@ -181,9 +181,7 @@ def test_handle_cleaup_by_gc_without_request_context():
             # Create a process context
             process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             assert len(process_context.repository_locations) == 1
-            process_context.repository_locations[  # pylint: disable=protected-access
-                0
-            ]._handle.cleanup = call_me
+            process_context.repository_locations[0].cleanup = call_me
 
             # Reload the location from the request context
             assert not called["yup"]
@@ -204,9 +202,7 @@ def test_handle_cleaup_by_gc_with_dangling_request_reference():
         with define_out_of_process_workspace(__file__, "get_repo") as workspace:
             # Create a process context
             process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-            process_context.repository_locations[  # pylint: disable=protected-access
-                0
-            ]._handle.cleanup = call_me
+            process_context.repository_locations[0].cleanup = call_me
 
             assert len(process_context.repository_locations) == 1
 

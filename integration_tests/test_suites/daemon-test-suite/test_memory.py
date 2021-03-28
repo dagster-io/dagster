@@ -45,7 +45,7 @@ def example_repo():
 
 
 @contextmanager
-def get_example_repository_location_handle():
+def get_example_repository_location():
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=__file__,
@@ -54,14 +54,14 @@ def get_example_repository_location_handle():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    with origin.create_test_handle() as handle:
-        yield handle
+    with origin.create_test_location() as location:
+        yield location
 
 
 @contextmanager
 def get_example_repo():
-    with get_example_repository_location_handle() as location_handle:
-        yield location_handle.create_location().get_repository("example_repo")
+    with get_example_repository_location() as location:
+        yield location.get_repository("example_repo")
 
 
 def test_no_memory_leaks():

@@ -1,4 +1,4 @@
-from dagster.core.host_representation import RepositoryLocationHandleManager
+from dagster.core.host_representation import RepositoryLocationManager
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
@@ -34,10 +34,10 @@ query JobQuery($jobSelector: JobSelector!) {
 
 def _create_sensor_tick(instance):
     with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
-        with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+        with RepositoryLocationManager(grpc_server_registry) as location_manager:
             list(
                 execute_sensor_iteration(
-                    instance, get_default_daemon_logger("SensorDaemon"), handle_manager
+                    instance, get_default_daemon_logger("SensorDaemon"), location_manager
                 )
             )
 

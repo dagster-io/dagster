@@ -18,8 +18,8 @@ from dagster.core.definitions.reconstructable import (
     repository_def_from_target_def,
 )
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.host_representation.external_data import external_repository_data_from_def
+from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (

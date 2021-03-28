@@ -12,7 +12,7 @@ from dagster.core.host_representation import (
     ExternalScheduleExecutionErrorData,
     PipelineSelector,
     RepositoryLocation,
-    RepositoryLocationHandleManager,
+    RepositoryLocationManager,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
@@ -85,13 +85,12 @@ def launch_scheduled_runs(
     schedule_names = ", ".join([schedule.job_name for schedule in schedules])
     logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
-    with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+    with RepositoryLocationManager(grpc_server_registry) as location_manager:
         for schedule_state in schedules:
             error_info = None
             try:
                 origin = schedule_state.origin.external_repository_origin.repository_location_origin
-                repo_location_handle = handle_manager.get_handle(origin)
-                repo_location = repo_location_handle.create_location()
+                repo_location = location_manager.get_location(origin)
                 yield from launch_scheduled_runs_for_schedule(
                     instance,
                     logger,

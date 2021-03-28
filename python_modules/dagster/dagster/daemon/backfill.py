@@ -8,7 +8,7 @@ from dagster.core.execution.backfill import (
     PartitionBackfill,
     submit_backfill_runs,
 )
-from dagster.core.host_representation.handle_manager import RepositoryLocationHandleManager
+from dagster.core.host_representation.location_manager import RepositoryLocationManager
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
@@ -42,7 +42,7 @@ def execute_backfill_iteration(instance, grpc_server_registry, logger, debug_cra
         yield
         return
 
-    with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
+    with RepositoryLocationManager(grpc_server_registry) as location_manager:
 
         for backfill_job in backfill_jobs:
             backfill_id = backfill_job.backfill_id
@@ -59,8 +59,7 @@ def execute_backfill_iteration(instance, grpc_server_registry, logger, debug_cra
             )
 
             try:
-                repo_location_handle = handle_manager.get_handle(origin)
-                repo_location = repo_location_handle.create_location()
+                repo_location = location_manager.get_location(origin)
                 has_more = True
                 while has_more:
                     # refetch the backfill job

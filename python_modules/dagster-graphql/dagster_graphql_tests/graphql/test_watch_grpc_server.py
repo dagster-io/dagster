@@ -17,13 +17,13 @@ class TestSubscribeToGrpcServerEvents(
     def test_grpc_server_handle_message_subscription(self, graphql_context):
         events = []
         test_subscriber = LocationStateSubscriber(events.append)
-        handle = next(
+        location = next(
             iter(
-                graphql_context.process_context._workspace.repository_location_handles  # pylint: disable=protected-access
+                graphql_context.process_context._workspace.repository_locations  # pylint: disable=protected-access
             )
         )
-        handle.add_state_subscriber(test_subscriber)
-        handle.client.shutdown_server()
+        location.add_state_subscriber(test_subscriber)
+        location.client.shutdown_server()
 
         # Wait for event
         start_time = time.time()

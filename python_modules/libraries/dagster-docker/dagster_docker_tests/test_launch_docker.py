@@ -72,19 +72,22 @@ def test_launch_docker_image_on_pipeline_config():
             run_config=run_config,
         )
 
-        external_pipeline = ReOriginatedExternalPipelineForTest(
-            get_test_project_external_pipeline("demo_pipeline", container_image=docker_image),
-            container_image=docker_image,
-        )
-        instance.launch_run(run.run_id, external_pipeline)
+        with get_test_project_external_pipeline(
+            "demo_pipeline", container_image=docker_image
+        ) as orig_pipeline:
+            external_pipeline = ReOriginatedExternalPipelineForTest(
+                orig_pipeline,
+                container_image=docker_image,
+            )
+            instance.launch_run(run.run_id, external_pipeline)
 
-        poll_for_finished_run(instance, run.run_id, timeout=60)
+            poll_for_finished_run(instance, run.run_id, timeout=60)
 
-        run = instance.get_run_by_id(run.run_id)
+            run = instance.get_run_by_id(run.run_id)
 
-        assert run.status == PipelineRunStatus.SUCCESS
+            assert run.status == PipelineRunStatus.SUCCESS
 
-        assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):
@@ -137,33 +140,37 @@ def test_terminate_launched_docker_run():
 
         run_id = run.run_id
 
-        external_pipeline = ReOriginatedExternalPipelineForTest(
-            get_test_project_external_pipeline("hanging_pipeline", container_image=docker_image),
-            container_image=docker_image,
-        )
-        instance.launch_run(run_id, external_pipeline)
+        with get_test_project_external_pipeline(
+            "hanging_pipeline", container_image=docker_image
+        ) as orig_pipeline:
 
-        poll_for_step_start(instance, run_id)
+            external_pipeline = ReOriginatedExternalPipelineForTest(
+                orig_pipeline,
+                container_image=docker_image,
+            )
+            instance.launch_run(run_id, external_pipeline)
 
-        assert instance.run_launcher.can_terminate(run_id)
-        assert instance.run_launcher.terminate(run_id)
+            poll_for_step_start(instance, run_id)
 
-        terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
-        terminated_pipeline_run = instance.get_run_by_id(run_id)
-        assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
+            assert instance.run_launcher.can_terminate(run_id)
+            assert instance.run_launcher.terminate(run_id)
 
-        run_logs = instance.all_logs(run_id)
+            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_pipeline_run = instance.get_run_by_id(run_id)
+            assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 
-        _check_event_log_contains(
-            run_logs,
-            [
-                ("PIPELINE_CANCELING", "Sending pipeline termination request"),
-                ("STEP_FAILURE", 'Execution of step "hanging_solid" failed.'),
-                ("PIPELINE_CANCELED", 'Execution of pipeline "hanging_pipeline" canceled.'),
-                ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
-                ("ENGINE_EVENT", "Process for pipeline exited"),
-            ],
-        )
+            run_logs = instance.all_logs(run_id)
+
+            _check_event_log_contains(
+                run_logs,
+                [
+                    ("PIPELINE_CANCELING", "Sending pipeline termination request"),
+                    ("STEP_FAILURE", 'Execution of step "hanging_solid" failed.'),
+                    ("PIPELINE_CANCELED", 'Execution of pipeline "hanging_pipeline" canceled.'),
+                    ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
+                    ("ENGINE_EVENT", "Process for pipeline exited"),
+                ],
+            )
 
 
 def test_launch_docker_invalid_image():
@@ -202,14 +209,16 @@ def test_launch_docker_invalid_image():
             run_config=run_config,
         )
 
-        external_pipeline = ReOriginatedExternalPipelineForTest(
-            get_test_project_external_pipeline("demo_pipeline")
-        )
-        with pytest.raises(
-            Exception,
-            match=re.escape("Docker image name _invalid_format_image is not correctly formatted"),
-        ):
-            instance.launch_run(run.run_id, external_pipeline)
+        with get_test_project_external_pipeline("demo_pipeline") as orig_pipeline:
+
+            external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
+            with pytest.raises(
+                Exception,
+                match=re.escape(
+                    "Docker image name _invalid_format_image is not correctly formatted"
+                ),
+            ):
+                instance.launch_run(run.run_id, external_pipeline)
 
 
 def test_launch_docker_image_on_instance_config():
@@ -250,11 +259,11 @@ def test_launch_docker_image_on_instance_config():
             run_config=run_config,
         )
 
-        external_pipeline = ReOriginatedExternalPipelineForTest(
-            get_test_project_external_pipeline("demo_pipeline")
-        )
-        instance.launch_run(run.run_id, external_pipeline)
+        with get_test_project_external_pipeline("demo_pipeline") as orig_pipeline:
 
-        poll_for_finished_run(instance, run.run_id, timeout=60)
+            external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
+            instance.launch_run(run.run_id, external_pipeline)
 
-        assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            poll_for_finished_run(instance, run.run_id, timeout=60)
+
+            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS

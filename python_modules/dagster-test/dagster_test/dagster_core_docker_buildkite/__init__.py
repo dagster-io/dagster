@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -39,19 +40,17 @@ def build_and_tag_test_image(tag):
     )
 
 
+@contextmanager
 def get_test_project_external_pipeline(pipeline_name):
-    return (
-        InProcessRepositoryLocationOrigin(
-            ReconstructableRepository.for_file(
-                file_relative_path(__file__, "test_pipelines/repo.py"),
-                "define_demo_execution_repo",
-            )
+    with InProcessRepositoryLocationOrigin(
+        ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_pipelines/repo.py"),
+            "define_demo_execution_repo",
         )
-        .create_handle()
-        .create_location()
-        .get_repository("demo_execution_repo")
-        .get_full_external_pipeline(pipeline_name)
-    )
+    ).create_location() as location:
+        yield location.get_repository("demo_execution_repo").get_full_external_pipeline(
+            pipeline_name
+        )
 
 
 def get_default_docker_image_tag():
