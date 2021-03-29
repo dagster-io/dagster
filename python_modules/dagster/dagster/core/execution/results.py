@@ -5,6 +5,7 @@ from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid,
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import StepKind
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
@@ -23,15 +24,17 @@ class GraphExecutionResult:
         container,
         event_list,
         reconstruct_context,
+        pipeline_def,
         handle=None,
-        resource_instances_to_override=None,
+        output_capture=None,
     ):
         self.container = check.inst_param(container, "container", GraphDefinition)
         self.event_list = check.list_param(event_list, "step_event_list", of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
+        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         self.handle = check.opt_inst_param(handle, "handle", SolidHandle)
-        self.resource_instances_to_override = check.opt_dict_param(
-            resource_instances_to_override, "resource_instances_to_override", str
+        self.output_capture = check.opt_dict_param(
+            output_capture, "output_capture", key_type=StepOutputHandle
         )
         self._events_by_step_key = _construct_events_by_step_key(event_list)
 
@@ -112,8 +115,9 @@ class GraphExecutionResult:
                 events,
                 events_by_kind,
                 self.reconstruct_context,
+                self.pipeline_def,
                 handle=handle.with_ancestor(self.handle),
-                resource_instances_to_override=self.resource_instances_to_override,
+                output_capture=self.output_capture,
             )
         else:
             for event in self.event_list:
@@ -125,7 +129,8 @@ class GraphExecutionResult:
                 solid,
                 events_by_kind,
                 self.reconstruct_context,
-                resource_instances_to_override=self.resource_instances_to_override,
+                self.pipeline_def,
+                output_capture=self.output_capture,
             )
 
     def result_for_handle(self, handle):
@@ -163,7 +168,7 @@ class PipelineExecutionResult(GraphExecutionResult):
         run_id,
         event_list,
         reconstruct_context,
-        resource_instances_to_override=None,
+        output_capture=None,
     ):
         self.run_id = check.str_param(run_id, "run_id")
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -172,13 +177,9 @@ class PipelineExecutionResult(GraphExecutionResult):
             container=pipeline_def,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            resource_instances_to_override=resource_instances_to_override,
+            pipeline_def=pipeline_def,
+            output_capture=output_capture,
         )
-
-    @property
-    def pipeline_def(self):
-        """PipelineDefinition: The pipeline of whose execution this is the result."""
-        return self.container
 
 
 class CompositeSolidExecutionResult(GraphExecutionResult):
@@ -193,8 +194,9 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         event_list,
         step_events_by_kind,
         reconstruct_context,
+        pipeline_def,
         handle=None,
-        resource_instances_to_override=None,
+        output_capture=None,
     ):
         check.inst_param(solid, "solid", Solid)
         check.invariant(
@@ -205,15 +207,16 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, "step_events_by_kind", key_type=StepKind, value_type=list
         )
-        self.resource_instances_to_override = check.opt_dict_param(
-            resource_instances_to_override, "resource_instances_to_override", str
+        self.output_capture = check.opt_dict_param(
+            output_capture, "output_capture", key_type=StepOutputHandle
         )
         super(CompositeSolidExecutionResult, self).__init__(
             container=solid.definition,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
+            pipeline_def=pipeline_def,
             handle=handle,
-            resource_instances_to_override=resource_instances_to_override,
+            output_capture=output_capture,
         )
 
     def output_values_for_solid(self, name):
@@ -289,7 +292,7 @@ class SolidExecutionResult:
     """
 
     def __init__(
-        self, solid, step_events_by_kind, reconstruct_context, resource_instances_to_override=None
+        self, solid, step_events_by_kind, reconstruct_context, pipeline_def, output_capture=None
     ):
         check.inst_param(solid, "solid", Solid)
         check.invariant(
@@ -301,9 +304,8 @@ class SolidExecutionResult:
             step_events_by_kind, "step_events_by_kind", key_type=StepKind, value_type=list
         )
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
-        self.resource_instances_to_override = check.opt_dict_param(
-            resource_instances_to_override, "resource_instances_to_override", str
-        )
+        self.output_capture = check.opt_dict_param(output_capture, "output_capture")
+        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
     @property
     def compute_input_event_dict(self):
@@ -458,7 +460,7 @@ class SolidExecutionResult:
             return None
 
         results = {}
-        with self.reconstruct_context(self.resource_instances_to_override) as context:
+        with self.reconstruct_context() as context:
             for compute_step_event in self.compute_step_events:
                 if compute_step_event.is_successful_output:
                     output = compute_step_event.step_output_data
@@ -507,7 +509,7 @@ class SolidExecutionResult:
         if not self.success:
             return None
 
-        with self.reconstruct_context(self.resource_instances_to_override) as context:
+        with self.reconstruct_context() as context:
             found = False
             result = None
             for compute_step_event in self.compute_step_events:
@@ -544,10 +546,12 @@ class SolidExecutionResult:
 
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
+        # output capture dictionary will only have values in the in process case, but will not have
+        # values from steps launched via step launcher.
+        if self.output_capture and step_output_handle in self.output_capture:
+            return self.output_capture[step_output_handle]
         manager = context.get_io_manager(step_output_handle)
-        manager_key = context.execution_plan.get_manager_key(
-            step_output_handle, context.pipeline_def
-        )
+        manager_key = context.execution_plan.get_manager_key(step_output_handle, self.pipeline_def)
         res = manager.load_input(
             context.for_input_manager(
                 name=None,

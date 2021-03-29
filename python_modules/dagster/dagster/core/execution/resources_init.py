@@ -38,7 +38,6 @@ def resource_initialization_manager(
     pipeline_run: Optional[PipelineRun],
     resource_keys_to_init: Optional[Set[str]],
     instance: Optional[DagsterInstance],
-    resource_instances_to_override: Optional[Dict[str, "InitializedResource"]],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
@@ -50,7 +49,6 @@ def resource_initialization_manager(
         pipeline_run=pipeline_run,
         resource_keys_to_init=resource_keys_to_init,
         instance=instance,
-        resource_instances_to_override=resource_instances_to_override,
         emit_persistent_events=emit_persistent_events,
         pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
     )
@@ -101,7 +99,6 @@ def _core_resource_initialization_event_generator(
     pipeline_run: Optional[PipelineRun],
     resource_keys_to_init: Optional[Set[str]],
     instance: Optional[DagsterInstance],
-    resource_instances_to_override: Optional[Dict[str, "InitializedResource"]],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
@@ -113,9 +110,6 @@ def _core_resource_initialization_event_generator(
             "If emit_persistent_events is enabled, then pipeline_run and execution_plan must be provided",
         )
         pipeline_name = cast(PipelineRun, pipeline_run).pipeline_name
-    resource_instances_to_override = check.opt_dict_param(
-        resource_instances_to_override, "resource_instances_to_override"
-    )
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
     resource_instances: Dict[str, "InitializedResource"] = {}
     resource_init_times = {}
@@ -132,14 +126,7 @@ def _core_resource_initialization_event_generator(
 
         for level in toposort(resource_dependencies):
             for resource_name in level:
-
-                if resource_name in resource_instances_to_override:
-                    # use the given resource instances instead of re-initiating it from resource def
-                    resource_def = ResourceDefinition.hardcoded_resource(
-                        resource_instances_to_override[resource_name]
-                    )
-                else:
-                    resource_def = resource_defs[resource_name]
+                resource_def = resource_defs[resource_name]
                 if not resource_name in resource_keys_to_init:
                     continue
 
@@ -199,7 +186,6 @@ def resource_initialization_event_generator(
     pipeline_run: Optional[PipelineRun],
     resource_keys_to_init: Optional[Set[str]],
     instance: Optional[DagsterInstance],
-    resource_instances_to_override: Optional[Dict[str, "InitializedResource"]],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
@@ -210,7 +196,6 @@ def resource_initialization_event_generator(
     check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.opt_inst_param(instance, "instance", DagsterInstance)
-    check.opt_dict_param(resource_instances_to_override, "resource_instances_to_override")
 
     if execution_plan and execution_plan.step_handle_for_single_step_plans():
         step = execution_plan.get_step(
@@ -237,7 +222,6 @@ def resource_initialization_event_generator(
             pipeline_run=pipeline_run,
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
-            resource_instances_to_override=resource_instances_to_override,
             emit_persistent_events=emit_persistent_events,
             pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
         )

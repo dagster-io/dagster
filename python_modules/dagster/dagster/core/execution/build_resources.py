@@ -102,7 +102,6 @@ def build_resources(
             pipeline_run=pipeline_run,
             resource_keys_to_init=set(resource_defs.keys()),
             instance=dagster_instance,
-            resource_instances_to_override=None,
             emit_persistent_events=False,
             pipeline_def_for_backwards_compat=None,
         )

@@ -73,7 +73,6 @@ class Manager:
         pipeline_run,
         resource_keys_to_init,
         instance,
-        resource_instances_to_override,
         emit_persistent_events,
         pipeline_def_for_backwards_compat,
     ):
@@ -90,7 +89,6 @@ class Manager:
             pipeline_run=pipeline_run,
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
-            resource_instances_to_override=resource_instances_to_override,
             emit_persistent_events=emit_persistent_events,
             pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
         )

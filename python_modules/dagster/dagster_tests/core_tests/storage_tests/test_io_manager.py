@@ -48,7 +48,7 @@ def test_io_manager_with_config():
 
     run_config = {"solids": {"my_solid": {"outputs": {"result": {"some_config": "some_value"}}}}}
     result = execute_pipeline(my_pipeline, run_config=run_config)
-    assert result.output_for_solid("my_solid") == 1
+    assert result.success
 
 
 def test_io_manager_with_required_resource_keys():
@@ -89,7 +89,7 @@ def test_io_manager_with_required_resource_keys():
         my_solid()
 
     result = execute_pipeline(my_pipeline)
-    assert result.output_for_solid("my_solid") == "foobar"
+    assert result.success
 
 
 def define_pipeline(manager, metadata_dict):

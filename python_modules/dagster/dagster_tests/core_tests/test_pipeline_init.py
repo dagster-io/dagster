@@ -106,7 +106,6 @@ def test_clean_event_generator_exit():
         pipeline_run=pipeline_run,
         resource_keys_to_init={"a"},
         instance=instance,
-        resource_instances_to_override=None,
         emit_persistent_events=True,
         pipeline_def_for_backwards_compat=pipeline_def,
     )
