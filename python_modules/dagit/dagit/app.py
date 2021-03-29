@@ -94,7 +94,7 @@ def download_log_view(context):
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
         step_key = step_key.split("/")[-1]  # make sure we're not diving deep into
-        out_name = "{}_{}.{}".format(run_id, step_key, file_type)
+        out_name = f"{run_id}_{step_key}.{file_type}"
 
         manager = context.instance.compute_log_manager
         try:
@@ -124,7 +124,7 @@ def download_dump_view(context):
         run = context.instance.get_run_by_id(run_id)
         debug_payload = DebugRunPayload.build(context.instance, run)
         check.invariant(run is not None)
-        out_name = "{}.gzip".format(run_id)
+        out_name = f"{run_id}.gzip"
 
         result = io.BytesIO()
         with gzip.GzipFile(fileobj=result, mode="wb") as file:
@@ -150,16 +150,14 @@ def instantiate_app_with_views(
     # Websocket routes
     sockets = Sockets(app)
     sockets.add_url_rule(
-        "{}/graphql".format(app_path_prefix),
+        f"{app_path_prefix}/graphql",
         "graphql",
         dagster_graphql_subscription_view(subscription_server, context),
     )
 
     # HTTP routes
     bp = Blueprint("routes", __name__, url_prefix=app_path_prefix)
-    bp.add_url_rule(
-        "/graphiql", "graphiql", lambda: redirect("{}/graphql".format(app_path_prefix), 301)
-    )
+    bp.add_url_rule("/graphiql", "graphiql", lambda: redirect(f"{app_path_prefix}/graphql", 301))
     bp.add_url_rule(
         "/graphql",
         "graphql",
@@ -199,11 +197,11 @@ def instantiate_app_with_views(
             with open(index_path) as f:
                 return (
                     f.read()
-                    .replace('href="/', 'href="{}/'.format(app_path_prefix))
-                    .replace('src="/', 'src="{}/'.format(app_path_prefix))
+                    .replace('href="/', 'href=f"{app_path_prefix}/')
+                    .replace('src="/', 'src=f"{app_path_prefix}/')
                     .replace(
                         '<meta name="dagit-path-prefix"',
-                        '<meta name="dagit-path-prefix" content="{}"'.format(app_path_prefix),
+                        f'<meta name="dagit-path-prefix" content="{app_path_prefix}"',
                     )
                 )
         except FileNotFoundError:
