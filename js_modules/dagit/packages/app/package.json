@@ -1,0 +1,49 @@
+{
+  "name": "@dagit/app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@dagit/core": "1.0.0",
+    "react": "^16.11.0",
+    "react-dom": "^16.11.0",
+    "react-scripts": "^4.0.3",
+    "web-vitals": "^1.0.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^12.0.0",
+    "@types/react": "^16.9.12",
+    "@types/react-dom": "^16.9.12",
+    "eslint-plugin-prettier": "^3.3.1",
+    "prettier": "2.2.1",
+    "typescript": "4.1.2"
+  },
+  "scripts": {
+    "build": "react-scripts build",
+    "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
+    "start": "react-scripts start",
+    "test": "react-scripts test",
+    "ts": "tsc -p ."
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
