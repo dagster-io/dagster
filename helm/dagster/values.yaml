@@ -523,6 +523,10 @@ postgresql:
   service:
     port: 5432
 
+# Whether to generate a secret resource for the PostgreSQL password. Useful if
+# global.postgresqlSecretName is managed outside of this helm chart.
+generatePostgresqlPasswordSecret: true
+
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
 ####################################################################################################

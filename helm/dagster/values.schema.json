@@ -12,6 +12,10 @@
         "postgresql": {
             "$ref": "#/definitions/PostgreSQL"
         },
+        "generatePostgresqlPasswordSecret": {
+            "title": "Generatepostgresqlpasswordsecret",
+            "type": "boolean"
+        },
         "rabbitmq": {
             "$ref": "#/definitions/RabbitMQ"
         },
@@ -60,6 +64,7 @@
         "dagit",
         "dagster-user-deployments",
         "postgresql",
+        "generatePostgresqlPasswordSecret",
         "rabbitmq",
         "redis",
         "flower",

@@ -15,6 +15,7 @@ class DagsterHelmValues(BaseModel):
     dagit: subschema.Dagit
     dagsterUserDeployments: UserDeployments = Field(..., alias="dagster-user-deployments")
     postgresql: subschema.PostgreSQL
+    generatePostgresqlPasswordSecret: bool
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis
     flower: subschema.Flower
