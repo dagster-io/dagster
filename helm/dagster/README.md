@@ -48,6 +48,18 @@ To download and install the Dagster charts, use the following command:
 helm repo add dagster https://dagster-io.github.io/helm
 ```
 
+We can check the most recent version of the Dagster chart in our chart repository by searching through it:
+
+```bash
+helm search repo dagster
+```
+
+To use new releases of the Dagster Helm chart, we'll need to update our chart repository cache.
+
+```bash
+helm repo update
+```
+
 ### Using Helm
 
 We can now use the Helm client to install the Dagster chart! Refer to the guide on [Using Helm](https://helm.sh/docs/intro/using_helm/) for an explanation of useful Helm concepts.
@@ -66,40 +78,35 @@ helm install my-release dagster/dagster \
 
 To see the full list of configurable settings, check out the `values.yaml` file. Documentation can be found in the comments.
 
-## Environment Variables
+## Tutorial
 
-We support two ways of setting environment variables: either directly add them to `values.yaml`, or
-provide an external ConfigMap/Secret object to mount using `envFrom:` in the chart pods:
+For a introductory guide on using Dagster on Helm, [check out our documentation](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm).
 
-- `job_runner.env.SOME_ENV_VAR`: Set `SOME_ENV_VAR` in the Celery Worker and Job pods
-- `dagit.env.SOME_ENV_VAR`: Set `SOME_ENV_VAR` in the Dagit pod
-- `job_runner.envConfigMaps`: names of ConfigMaps to use for environment variables in the
-  Celery Worker and Job pods
-- `job_runner.envSecrets`: names of Secrets to use for environment variables in the
-  Celery Worker and Job pods
-- `dagit.envConfigMaps`: names of ConfigMaps to use for environment variables in the Dagit pod
-- `dagit.envSecrets`: names of Secrets to use for environment variables in the Dagit pod
+## Contributing
 
-These will be loaded in the following order, and in the case of conflicts, subsequent loads will
-take priority:
+We cover instructions to get started with developing on our chart.
 
-1. Base environment; custom env vars specified in `values.yaml`
-2. ConfigMap environment variables, loaded in order of the ConfigMaps specified
-3. Secret environment variables, loaded in order of the Secrets specified
+### JSON Schema
 
-Thus, for example, if `CUSTOM_ENV_VAR` appears in `values.yaml`, a ConfigMap, and two secrets, the
-last secret loaded will be the value of `CUSTOM_ENV_VAR` at runtime.
+[JSON Schema](https://helm.sh/docs/topics/charts/#schema-files) can impose a structure on our Dagster chart's values to ensure requirement
+checks, type validation, range validation, and constraint validation. The Dagster chart's JSON Schema is generated through a Pydantic
+model of our values.
 
-### Implementation Notes
+```bash
+# Install the cli to generate the JSON Schema
+pip install -e ./schema
 
-This chart installs a base pair of Kubernetes ConfigMap objects for environment variables. These
-are:
+# Display the resulting schema from the Dagster chart values Pydantic model
+dagster-helm schema show
 
-- `dagster-job-runner-env`: Environment variables for the Celery workers and the spawned Job pod
-- `dagster-dagit-env`: Environment variables for the Dagit Deployment pod
+# Update the existing schema
+dagster-helm schema apply
+```
 
-Each of these ConfigMaps set `DAGSTER_HOME` by default, and also enable user-specification of
-additional environment variables directly in `values.yaml`.
+### Template Testing
 
-Additionally, this Helm chart supports pulling in other external environment variables from external
-Kubernetes ConfigMaps and Secrets.
+We use pytest to assert behaviors about our Helm chart.
+
+Helm values are modelled using Pydantic, and then piped through to `helm template`
+to generate the chart's Kubernetes manifests. Kubernetes manifests are then transformed into their pythonic object representations,
+and assertions are made about these objects to ensure that our templating logic is correct.
