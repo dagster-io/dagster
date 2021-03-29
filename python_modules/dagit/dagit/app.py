@@ -137,11 +137,13 @@ def download_dump_view(context):
     return view
 
 
-def instantiate_app_with_views(context, schema, app_path_prefix):
+def instantiate_app_with_views(
+    context, schema, app_path_prefix, target_dir=os.path.dirname(__file__)
+):
     app = Flask(
         "dagster-ui",
         static_url_path=app_path_prefix,
-        static_folder=os.path.join(os.path.dirname(__file__), "./webapp/build"),
+        static_folder=os.path.join(target_dir, "./webapp/build"),
     )
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
@@ -190,7 +192,7 @@ def instantiate_app_with_views(context, schema, app_path_prefix):
     bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(request.args))
     bp.add_url_rule("/dagit_info", "sanity_view", info_view)
 
-    index_path = os.path.join(os.path.dirname(__file__), "./webapp/build/index.html")
+    index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
     def index_view(_path):
         try:
