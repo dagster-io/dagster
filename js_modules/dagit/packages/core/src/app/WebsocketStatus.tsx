@@ -1,4 +1,5 @@
 import {Colors} from '@blueprintjs/core';
+import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
@@ -14,46 +15,33 @@ const WS_EVENTS = [
   'error',
 ];
 
+// Delay informing listeners of websocket status change so that we don't thrash.
+const DEBOUNCE_TIME = 5000;
+
 interface IWebsocketStatusProviderProps {
   websocket: SubscriptionClient;
 }
 
-interface IWebsocketStatusProviderState {
-  status: number;
-}
+export const WebsocketStatusProvider: React.FC<IWebsocketStatusProviderProps> = (props) => {
+  const {children, websocket} = props;
+  const [status, setStatus] = React.useState(WebSocket.CONNECTING);
 
-export class WebsocketStatusProvider extends React.Component<
-  IWebsocketStatusProviderProps,
-  IWebsocketStatusProviderState
-> {
-  state = {
-    status: WebSocket.CONNECTING,
-  };
+  const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  private unlisteners: Function[] = [];
-
-  componentDidMount() {
-    this.unlisteners = WS_EVENTS.map((eventName) =>
-      this.props.websocket.on(eventName, () =>
-        this.setState({status: this.props.websocket.status}),
-      ),
+  React.useEffect(() => {
+    const unlisteners = WS_EVENTS.map((eventName) =>
+      websocket.on(eventName, () => debouncedSetter(websocket.status)),
     );
-    this.setState({status: this.props.websocket.status});
-  }
 
-  componentWillUnmount() {
-    this.unlisteners.forEach((u) => u());
-  }
+    return () => {
+      unlisteners.forEach((u) => u());
+    };
+  }, [debouncedSetter, websocket]);
 
-  render() {
-    return (
-      <WebsocketStatusContext.Provider value={this.state.status}>
-        {this.props.children}
-      </WebsocketStatusContext.Provider>
-    );
-  }
-}
+  return (
+    <WebsocketStatusContext.Provider value={status}>{children}</WebsocketStatusContext.Provider>
+  );
+};
 
 const Circle = styled.div`
   align-self: center;
