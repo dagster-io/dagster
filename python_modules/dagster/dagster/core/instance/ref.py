@@ -26,9 +26,9 @@ def _schedule_directory(base):
 
 def configurable_class_data(config_field):
     return ConfigurableClassData(
-        config_field["module"],
-        config_field["class"],
-        yaml.dump(config_field.get("config") or {}, default_flow_style=False),
+        check.str_elem(config_field, "module"),
+        check.str_elem(config_field, "class"),
+        yaml.dump(check.opt_dict_elem(config_field, "config"), default_flow_style=False),
     )
 
 
