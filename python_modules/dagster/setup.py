@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "click>=5.0",
             "coloredlogs>=6.1, <=14.0",
             "Jinja2",
-            "PyYAML",
+            "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             "alembic>=1.2.1",
             "croniter>=0.3.34",
