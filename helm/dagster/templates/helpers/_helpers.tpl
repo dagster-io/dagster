@@ -154,6 +154,10 @@ redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backe
 {{- end -}}
 {{- end -}}
 
+{{- define "dagster.rabbitmq.alivenessTest" -}}
+until wget http://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.managerPort }}/api/aliveness-test/%2F; do echo waiting for rabbitmq; sleep 2; done;
+{{- end -}}
+
 {{/*
 This environment shared across all containers.
 

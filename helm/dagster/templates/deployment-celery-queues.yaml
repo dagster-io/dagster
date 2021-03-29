@@ -45,6 +45,14 @@ spec:
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" $ | squote }}]
           securityContext:
             {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
+        {{- if $.Values.rabbitmq.enabled }}
+        - name: check-rabbitmq-ready
+          image: {{ include "image.name" $.Values.busybox.image | quote }}
+          imagePullPolicy: {{ $.Values.busybox.image.pullPolicy | quote }}
+          command: ["sh", "-c", {{ include "dagster.rabbitmq.alivenessTest" $ | quote }}]
+          securityContext:
+            {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
+        {{- end }}
       containers:
         - name: {{ $.Chart.Name }}
           securityContext:
