@@ -2,7 +2,6 @@ import {print} from 'graphql/language/printer';
 import debounce from 'lodash/debounce';
 
 import {DagsterGraphQLError, showGraphQLError} from './AppError';
-import {WEBSOCKET_URI} from './DomUtils';
 
 type FlushCallback<T> = (messages: T[], isFirstResponse: boolean) => void;
 type ErrorCallback = (error: DagsterGraphQLError) => void;
@@ -19,6 +18,7 @@ cursor-aware and does not pick up where it left off - you should use `isFirstRes
 reset state in preparation for receiving messages again.)
 */
 export class DirectGraphQLSubscription<T> {
+  private websocketURI: string;
   private websocket: WebSocket;
   private messageQueue: T[] = [];
   private messagesReceived = false;
@@ -29,11 +29,13 @@ export class DirectGraphQLSubscription<T> {
   private variables: any;
 
   constructor(
+    websocketURI: string,
     query: any,
     variables: any,
     onFlushMessages: FlushCallback<T>,
     onError: ErrorCallback,
   ) {
+    this.websocketURI = websocketURI;
     this.onFlushMessages = onFlushMessages;
     this.onError = onError;
     this.query = query;
@@ -42,7 +44,7 @@ export class DirectGraphQLSubscription<T> {
   }
 
   open() {
-    const ws = new WebSocket(WEBSOCKET_URI);
+    const ws = new WebSocket(this.websocketURI);
     ws.addEventListener('message', (e) => {
       this.handleEvent(JSON.parse(e.data));
     });

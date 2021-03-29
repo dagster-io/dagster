@@ -36,6 +36,7 @@
     "build",
     "coverage",
     "jest",
+    "lib",
     "node_modules",
     "public",
     "scripts",

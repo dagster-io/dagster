@@ -1,6 +1,7 @@
 import {useMutation} from '@apollo/client';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
 import {
   LaunchPipelineExecution,
@@ -21,6 +22,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
+  const {basePath} = React.useContext(AppContext);
 
   const onLaunch = async () => {
     const variables = props.getVariables();
@@ -30,7 +32,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
 
     try {
       const result = await launchPipelineExecution({variables});
-      handleLaunchResult(props.pipelineName, result);
+      handleLaunchResult(basePath, props.pipelineName, result);
     } catch (error) {
       console.error('Error launching run:', error);
     }

@@ -16,11 +16,11 @@ import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppCache} from './AppCache';
+import {AppContext} from './AppContext';
 import {AppErrorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
-import {APP_PATH_PREFIX, WEBSOCKET_URI} from './DomUtils';
 import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
 import {WebsocketStatusProvider} from './WebsocketStatus';
 import {TimezoneProvider} from './time/TimezoneContext';
@@ -66,47 +66,92 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-const websocketClient = new SubscriptionClient(WEBSOCKET_URI, {
-  reconnect: true,
-  lazy: true,
-});
+interface Props {
+  config: {
+    graphqlURI: string;
+    basePath?: string;
+    subscriptionParams?: {[key: string]: string};
+  };
+}
 
-const timeStartLink = new ApolloLink((operation, forward) => {
-  operation.setContext({start: performance.now()});
-  return forward(operation);
-});
+export const AppProvider: React.FC<Props> = (props) => {
+  const {basePath = '', subscriptionParams = {}, graphqlURI} = props.config;
 
-const logLink = new ApolloLink((operation, forward) => {
-  return forward(operation).map((data) => {
-    const time = performance.now() - operation.getContext().start;
-    debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
-    return data;
-  });
-});
+  const websocketURI =
+    graphqlURI ||
+    `${document.location.protocol === 'https:' ? 'wss' : 'ws'}://${
+      document.location.host
+    }${basePath}/graphql`;
 
-const client = new ApolloClient({
-  cache: AppCache,
-  link: ApolloLink.from([
-    logLink,
-    AppErrorLink(),
-    timeStartLink,
-    new WebSocketLink(websocketClient),
-  ]),
-});
+  // The address to the dagit server (eg: http://localhost:5000) based
+  // on our current "GRAPHQL_URI" env var. Note there is no trailing slash.
+  const rootServerURI = React.useMemo(
+    () =>
+      websocketURI
+        .replace('wss://', 'https://')
+        .replace('ws://', 'http://')
+        .replace('/graphql', ''),
+    [websocketURI],
+  );
 
-export const AppProvider: React.FC = (props) => (
-  <WebsocketStatusProvider websocket={websocketClient}>
-    <GlobalStyle />
-    <ApolloProvider client={client}>
-      <BrowserRouter basename={APP_PATH_PREFIX}>
-        <TimezoneProvider>
-          <WorkspaceProvider>
-            <CustomConfirmationProvider>{props.children}</CustomConfirmationProvider>
-            <CustomTooltipProvider />
-            <CustomAlertProvider />
-          </WorkspaceProvider>
-        </TimezoneProvider>
-      </BrowserRouter>
-    </ApolloProvider>
-  </WebsocketStatusProvider>
-);
+  const websocketClient = React.useMemo(() => {
+    return new SubscriptionClient(websocketURI, {
+      reconnect: true,
+      lazy: true,
+      connectionParams: subscriptionParams,
+    });
+  }, [subscriptionParams, websocketURI]);
+
+  const apolloClient = React.useMemo(() => {
+    const logLink = new ApolloLink((operation, forward) =>
+      forward(operation).map((data) => {
+        const time = performance.now() - operation.getContext().start;
+        debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
+        return data;
+      }),
+    );
+
+    const timeStartLink = new ApolloLink((operation, forward) => {
+      operation.setContext({start: performance.now()});
+      return forward(operation);
+    });
+
+    return new ApolloClient({
+      cache: AppCache,
+      link: ApolloLink.from([
+        logLink,
+        AppErrorLink(),
+        timeStartLink,
+        new WebSocketLink(websocketClient),
+      ]),
+    });
+  }, [websocketClient]);
+
+  const appContextValue = React.useMemo(
+    () => ({
+      basePath,
+      rootServerURI,
+      websocketURI,
+    }),
+    [basePath, rootServerURI, websocketURI],
+  );
+
+  return (
+    <AppContext.Provider value={appContextValue}>
+      <WebsocketStatusProvider websocket={websocketClient}>
+        <GlobalStyle />
+        <ApolloProvider client={apolloClient}>
+          <BrowserRouter basename={basePath || ''}>
+            <TimezoneProvider>
+              <WorkspaceProvider>
+                <CustomConfirmationProvider>{props.children}</CustomConfirmationProvider>
+                <CustomTooltipProvider />
+                <CustomAlertProvider />
+              </WorkspaceProvider>
+            </TimezoneProvider>
+          </BrowserRouter>
+        </ApolloProvider>
+      </WebsocketStatusProvider>
+    </AppContext.Provider>
+  );
+};

@@ -4,6 +4,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -51,6 +52,8 @@ export const Run: React.FunctionComponent<RunProps> = (props) => {
     defaults: {selection: ''},
   });
 
+  const {websocketURI} = React.useContext(AppContext);
+
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
       (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
@@ -75,7 +78,7 @@ export const Run: React.FunctionComponent<RunProps> = (props) => {
     <RunContext.Provider value={run}>
       {run && <RunStatusToPageAttributes run={run} />}
 
-      <LogsProvider key={runId} client={client} runId={runId}>
+      <LogsProvider websocketURI={websocketURI} key={runId} client={client} runId={runId}>
         {(logs) => (
           <RunMetadataProvider logs={logs.allNodes}>
             {(metadata) => (
@@ -140,6 +143,8 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const repoMatch = useRepositoryForRun(run);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
+  const {basePath} = React.useContext(AppContext);
+
   const runtimeStepKeys = Object.keys(metadata.steps);
   const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, runtimeStepKeys);
   const selectionStepKeys =
@@ -167,7 +172,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       repositoryName: repoMatch.match.repository.name,
     });
     const result = await launchPipelineReexecution({variables});
-    handleLaunchResult(run.pipeline.name, result);
+    handleLaunchResult(basePath, run.pipeline.name, result);
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {

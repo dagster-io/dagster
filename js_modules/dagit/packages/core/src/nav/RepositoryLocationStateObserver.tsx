@@ -3,6 +3,7 @@ import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
 import {LocationStateChangeEventType} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -35,6 +36,8 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
   const [erroredLocations, setErroredLocations] = useState<string[]>([]);
   const totalMessages = updatedLocations.length + erroredLocations.length;
 
+  const {websocketURI} = React.useContext(AppContext);
+
   useEffect(() => {
     const onHandleMessages = (
       messages: LocationStateChangeSubscription[], //   isFirstResponse: boolean,
@@ -63,6 +66,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
     };
 
     const subscriptionToken = new DirectGraphQLSubscription<LocationStateChangeSubscription>(
+      websocketURI,
       LOCATION_STATE_CHANGE_SUBSCRIPTION,
       {},
       onHandleMessages,
@@ -72,7 +76,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
     return () => {
       subscriptionToken.close();
     };
-  }, [locations, refetch]);
+  }, [locations, refetch, websocketURI]);
 
   return totalMessages > 0 ? (
     <Group background={Colors.GRAY5} direction="column" spacing={0}>

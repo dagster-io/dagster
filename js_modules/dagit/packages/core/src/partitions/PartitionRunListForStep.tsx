@@ -4,6 +4,7 @@ import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
 
+import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
@@ -37,6 +38,7 @@ interface PartitionRunListForStepProps {
 export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListForStepProps> = (
   props,
 ) => {
+  const {basePath} = React.useContext(AppContext);
   const {data, loading} = useQuery<
     PartitionRunListForStepQuery,
     PartitionRunListForStepQueryVariables
@@ -78,6 +80,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
             stats={props.stepStatsByRunId[run.runId] || null}
             onOpenLogs={() =>
               openRunInBrowser(
+                basePath,
                 {runId: run.runId, pipelineName: props.pipelineName},
                 {
                   query: {

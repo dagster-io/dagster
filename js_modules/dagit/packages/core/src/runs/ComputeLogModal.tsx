@@ -3,6 +3,7 @@ import {Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {AppContext} from '../app/AppContext';
 import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
 import {ComputeIOType} from '../types/globalTypes';
 import {Spinner} from '../ui/Spinner';
@@ -75,8 +76,14 @@ interface ComputeLogModalProps {
 }
 
 const ComputeLogModal = ({runId, onRequestClose, stepKey, runState}: ComputeLogModalProps) => {
+  const {rootServerURI, websocketURI} = React.useContext(AppContext);
   return (
-    <ComputeLogsProvider runId={runId} stepKey={stepKey} maxBytes={MAX_STREAMING_LOG_BYTES}>
+    <ComputeLogsProvider
+      websocketURI={websocketURI}
+      runId={runId}
+      stepKey={stepKey}
+      maxBytes={MAX_STREAMING_LOG_BYTES}
+    >
       {({isLoading, stdout, stderr, maxBytes}) => {
         if (isLoading) {
           return (
@@ -88,6 +95,7 @@ const ComputeLogModal = ({runId, onRequestClose, stepKey, runState}: ComputeLogM
 
         return (
           <ComputeLogContent
+            rootServerURI={rootServerURI}
             runState={runState}
             onRequestClose={onRequestClose}
             stdout={stdout}
@@ -110,6 +118,7 @@ interface IComputeLogsProviderProps {
   runId: string;
   stepKey: string;
   maxBytes: number;
+  websocketURI: string;
 }
 interface IComputeLogsProviderState {
   stdout: ComputeLogsSubscriptionFragment | null;
@@ -148,12 +157,14 @@ class ComputeLogsProvider extends React.Component<
     const {runId, stepKey} = this.props;
     this.setState({isLoading: true});
     this._stdout = new DirectGraphQLSubscription<ComputeLogsSubscription>(
+      this.props.websocketURI,
       COMPUTE_LOGS_SUBSCRIPTION,
       {runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null},
       this.onStdout,
       this.onError,
     );
     this._stderr = new DirectGraphQLSubscription<ComputeLogsSubscription>(
+      this.props.websocketURI,
       COMPUTE_LOGS_SUBSCRIPTION,
       {runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null},
       this.onStderr,

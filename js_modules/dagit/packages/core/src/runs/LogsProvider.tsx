@@ -28,6 +28,7 @@ export interface LogsProviderLogs {
 }
 
 interface LogsProviderProps {
+  websocketURI: string;
   client: ApolloClient<any>;
   runId: string;
   children: (result: LogsProviderLogs) => React.ReactChild;
@@ -71,6 +72,7 @@ export class LogsProvider extends React.Component<LogsProviderProps, LogsProvide
     }
 
     this._subscription = new DirectGraphQLSubscription<PipelineRunLogsSubscription>(
+      this.props.websocketURI,
       PIPELINE_RUN_LOGS_SUBSCRIPTION,
       {runId: runId, after: null},
       this.onHandleMessages,

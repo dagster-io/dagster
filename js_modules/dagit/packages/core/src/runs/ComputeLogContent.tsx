@@ -5,7 +5,6 @@ import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
-import {ROOT_SERVER_URI} from '../app/DomUtils';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
@@ -14,6 +13,7 @@ import {IStepState} from './RunMetadataProvider';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 
 interface IComputeLogContentProps {
+  rootServerURI: string;
   runState: IStepState;
   onRequestClose: () => void;
   stdout: ComputeLogContentFileFragment | null;
@@ -88,7 +88,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
       return null;
     }
     const isRelativeUrl = (x?: string) => x && x.startsWith('/');
-    return isRelativeUrl(downloadUrl) ? ROOT_SERVER_URI + downloadUrl : downloadUrl;
+    return isRelativeUrl(downloadUrl) ? this.props.rootServerURI + downloadUrl : downloadUrl;
   }
 
   renderScrollToTop() {

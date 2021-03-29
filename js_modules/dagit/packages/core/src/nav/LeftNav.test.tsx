@@ -3,6 +3,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
+import {TestAppContextProvider} from '../app/TestAppContextProvider';
 import {ApolloTestProvider} from '../testing/ApolloTestProvider';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -35,13 +36,15 @@ describe('LeftNav', () => {
 
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
-      <MemoryRouter>
-        <ApolloTestProvider mocks={mocks}>
-          <WorkspaceProvider>
-            <LeftNav />
-          </WorkspaceProvider>
-        </ApolloTestProvider>
-      </MemoryRouter>
+      <TestAppContextProvider>
+        <MemoryRouter>
+          <ApolloTestProvider mocks={mocks}>
+            <WorkspaceProvider>
+              <LeftNav />
+            </WorkspaceProvider>
+          </ApolloTestProvider>
+        </MemoryRouter>
+      </TestAppContextProvider>
     );
   };
 

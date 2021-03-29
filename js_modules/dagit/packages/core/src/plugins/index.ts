@@ -11,6 +11,7 @@ const plugins = {
 
 export interface IPluginSidebarProps {
   definition: SidebarSolidDefinitionFragment;
+  rootServerURI: string;
 }
 
 interface IPluginInterface {

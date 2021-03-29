@@ -3,6 +3,7 @@ import {Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {breakOnUnderscores} from '../app/Util';
 import {pluginForMetadata} from '../plugins';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
@@ -44,6 +45,8 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
 
+  const {rootServerURI} = React.useContext(AppContext);
+
   const inputMappings: SolidMappingTable = {};
   const outputMappings: SolidMappingTable = {};
 
@@ -82,7 +85,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       )}
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
         <SidebarSection title={'Metadata'}>
-          <Plugin.SidebarComponent definition={definition} />
+          <Plugin.SidebarComponent definition={definition} rootServerURI={rootServerURI} />
         </SidebarSection>
       )}
       {configField && (

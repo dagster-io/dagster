@@ -1,7 +1,6 @@
 import {Button, Classes, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {ROOT_SERVER_URI} from '../app/DomUtils';
 import {IPluginSidebarProps} from '../plugins';
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
@@ -50,7 +49,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           <div className={Classes.DIALOG_BODY} style={{margin: 0}}>
             <iframe
               title={notebookPath.value}
-              src={`${ROOT_SERVER_URI}/dagit/notebook?path=${encodeURIComponent(
+              src={`${this.props.rootServerURI}/dagit/notebook?path=${encodeURIComponent(
                 notebookPath.value,
               )}`}
               style={{border: 0, background: 'white'}}

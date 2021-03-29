@@ -5,7 +5,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ROOT_SERVER_URI} from '../app/DomUtils';
+import {AppContext} from '../app/AppContext';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {WebsocketStatusContext} from '../app/WebsocketStatus';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
@@ -207,6 +207,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
   const {options, metadata, selection} = props;
 
+  const {rootServerURI} = React.useContext(AppContext);
+
   const websocketStatus = React.useContext(WebsocketStatusContext);
   const websocketOpen = websocketStatus === WebSocket.OPEN;
 
@@ -362,7 +364,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagit server.</strong>
                   <span>
-                    {` Verify that your instance is responding to requests at ${ROOT_SERVER_URI} and reload the page.`}
+                    {` Verify that your instance is responding to requests at ${rootServerURI} and reload the page.`}
                   </span>
                 </div>
               </Group>

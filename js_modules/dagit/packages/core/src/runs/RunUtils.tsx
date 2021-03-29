@@ -5,7 +5,6 @@ import * as React from 'react';
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {APP_PATH_PREFIX} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
@@ -30,6 +29,7 @@ export const RunsQueryRefetchContext = React.createContext<{
 }>({refetch: () => {}});
 
 export function handleLaunchResult(
+  basePath: string,
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
 ) {
@@ -46,7 +46,7 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchPipelineRunSuccess') {
-    openRunInBrowser(obj.run);
+    openRunInBrowser(basePath, obj.run);
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -66,10 +66,11 @@ export function handleLaunchResult(
 }
 
 export function openRunInBrowser(
+  basePath: string,
   run: {runId: string; pipelineName: string},
   opts?: {query?: {[key: string]: string}},
 ) {
-  window.location.href = `${APP_PATH_PREFIX}/instance/runs/${run.runId}?${
+  window.location.href = `${basePath}/instance/runs/${run.runId}?${
     opts?.query ? qs.stringify(opts.query) : ''
   }`;
 }

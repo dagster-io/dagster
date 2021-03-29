@@ -3,8 +3,8 @@ import {Button, Menu, MenuDivider, MenuItem, Popover, Position, Tooltip} from '@
 import * as qs from 'query-string';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {ROOT_SERVER_URI} from '../app/DomUtils';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -29,6 +29,8 @@ export const RunActionsMenu: React.FC<{
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+
+  const {basePath, rootServerURI} = React.useContext(AppContext);
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
@@ -115,7 +117,7 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(run.pipelineName, result);
+                      handleLaunchResult(basePath, run.pipelineName, result);
                     }
                   }}
                 />
@@ -133,7 +135,7 @@ export const RunActionsMenu: React.FC<{
               text="Download Debug File"
               icon="download"
               download
-              href={`${ROOT_SERVER_URI}/download_debug/${run.runId}`}
+              href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             <MenuItem icon="trash" text="Delete" onClick={() => setVisibleDialog('delete')} />
           </Menu>
