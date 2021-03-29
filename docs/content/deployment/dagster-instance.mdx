@@ -295,7 +295,7 @@ event_log_storage:
 
 # this config manually sets the Postgres credentials
 event_log_storage:
-  module: dagster_postgres.event_log_storage
+  module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_db:
@@ -307,7 +307,7 @@ event_log_storage:
 
 # and this config grabs the database credentials from environment variables
 event_log_storage:
-  module: dagster_postgres.event_log_storage
+  module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_db:
@@ -323,14 +323,14 @@ event_log_storage:
 
 # and this config sets the credentials via DB connection string / url:
 event_log_storage:
-  module: dagster_postgres.event_log_storage
+  module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_url: { PG_DB_CONN_STRING }
 
 # This config gets the DB connection string / url via environment variables:
 event_log_storage:
-  module: dagster_postgres.event_log_storage
+  module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_url:
