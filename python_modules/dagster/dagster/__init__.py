@@ -28,6 +28,7 @@ from dagster.core.definitions import (
     OutputDefinition,
     OutputMapping,
     Partition,
+    PartitionScheduleDefinition,
     PartitionSetDefinition,
     PathMetadataEntryData,
     PipelineDefinition,
@@ -323,6 +324,7 @@ __all__ = [
     "DagsterInstance",
     # partitions and schedules
     "Partition",
+    "PartitionScheduleDefinition",
     "PartitionSetDefinition",
     "RunRequest",
     "ScheduleDefinition",

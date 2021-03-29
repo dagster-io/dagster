@@ -59,7 +59,7 @@ from .job import JobType, RunRequest, SkipReason
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
-from .partition import Partition, PartitionSetDefinition
+from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .preset import PresetDefinition

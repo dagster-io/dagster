@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.partition import PartitionSetDefinition
+from dagster.core.definitions.partition import PartitionScheduleDefinition, PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
@@ -109,7 +109,7 @@ def monthly_schedule(
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
+) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a schedule that runs monthly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -212,7 +212,7 @@ def my_schedule_definition(_):
         inclusive=(partition_months_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -266,7 +266,7 @@ def weekly_schedule(
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
+) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a schedule that runs weekly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -366,7 +366,7 @@ def my_schedule_definition(_):
         inclusive=(partition_weeks_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -419,7 +419,7 @@ def daily_schedule(
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
+) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a schedule that runs daily.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -509,7 +509,7 @@ def my_schedule_definition(_):
         inclusive=(partition_days_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -562,7 +562,7 @@ def hourly_schedule(
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], ScheduleDefinition]:
+) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a schedule that runs hourly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
@@ -662,7 +662,7 @@ def my_schedule_definition(_):
         inclusive=(partition_hours_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
