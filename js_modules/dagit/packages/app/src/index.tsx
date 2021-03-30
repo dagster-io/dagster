@@ -1,4 +1,4 @@
-import {App, AppProvider} from '@dagit/core';
+import {App, AppProvider, AppTopNav} from '@dagit/core';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -12,6 +12,7 @@ const config = {
 
 ReactDOM.render(
   <AppProvider config={config}>
+    <AppTopNav searchPlaceholder="Search…" />
     <App />
   </AppProvider>,
   document.getElementById('root'),

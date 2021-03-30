@@ -13,7 +13,7 @@ export default {
 
 const Template: Story = (props) => (
   <ApolloTestProvider>
-    <SearchDialog theme="light" {...props} />
+    <SearchDialog theme="light" searchPlaceholder="" {...props} />
   </ApolloTestProvider>
 );
 

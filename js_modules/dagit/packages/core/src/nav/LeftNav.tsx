@@ -4,17 +4,11 @@ import {useHistory, Link, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {WebsocketStatus} from '../app/WebsocketStatus';
 import {DarkTimezonePicker} from '../app/time/DarkTimezonePicker';
-import navBarImage from '../images/nav-logo-icon.png';
-import navTitleImage from '../images/nav-title.png';
-import {SearchDialog} from '../search/SearchDialog';
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
 
 import {InstanceWarningIcon} from './InstanceWarningIcon';
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
-import {VersionNumber} from './VersionNumber';
 
 export const LeftNav = () => {
   const history = useHistory();
@@ -30,26 +24,6 @@ export const LeftNav = () => {
   return (
     <LeftNavContainer>
       <Box padding={{vertical: 8}}>
-        <LogoContainer>
-          <Group direction="row" spacing={16} padding={{horizontal: 12}} margin={{bottom: 8}}>
-            <div style={{position: 'relative'}}>
-              <img
-                alt="logo"
-                src={navBarImage}
-                style={{height: 30}}
-                onClick={() => history.push('/')}
-              />
-              <LogoWebsocketStatus />
-            </div>
-            <div>
-              <img src={navTitleImage} style={{height: 10}} alt="title" />
-              <VersionNumber />
-            </div>
-          </Group>
-        </LogoContainer>
-        <Box padding={{bottom: 8, horizontal: 12}}>
-          <SearchDialog theme="dark" />
-        </Box>
         <Box padding={{horizontal: 12}} margin={{bottom: 4}}>
           <div
             style={{
@@ -102,12 +76,6 @@ export const LeftNav = () => {
   );
 };
 
-const LogoWebsocketStatus = styled(WebsocketStatus)`
-  position: absolute;
-  top: 20px;
-  left: 24px;
-`;
-
 const LeftNavContainer = styled.div`
   width: 235px;
   height: 100%;
@@ -147,13 +115,4 @@ const TabLabel = styled.div`
   text-decoration: none;
   white-space: nowrap;
   text-decoration: none;
-`;
-
-const LogoContainer = styled.div`
-  cursor: pointer;
-  &:hover {
-    img {
-      filter: brightness(110%);
-    }
-  }
 `;

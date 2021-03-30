@@ -54,7 +54,10 @@ const initialState: State = {
   highlight: 0,
 };
 
-export const SearchDialog: React.FC<{theme: 'dark' | 'light'}> = ({theme}) => {
+export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder: string}> = ({
+  theme,
+  searchPlaceholder,
+}) => {
   const location = useLocation();
   const history = useHistory();
   const {loading, performSearch} = useRepoSearch();
@@ -135,10 +138,10 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'}> = ({theme}) => {
         <SearchTrigger onClick={openSearch} $theme={theme}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Group direction="row" alignItems="center" spacing={8}>
-              <Icon icon="search" iconSize={11} color={Colors.GRAY3} style={{display: 'block'}} />
-              <Placeholder>Search…</Placeholder>
+              <Icon icon="search" iconSize={16} color={Colors.GRAY3} style={{display: 'block'}} />
+              <Placeholder>{searchPlaceholder}</Placeholder>
+              <SlashShortcut $theme={theme}>{'/'}</SlashShortcut>
             </Group>
-            <SlashShortcut $theme={theme}>{'/'}</SlashShortcut>
           </Box>
         </SearchTrigger>
       </ShortcutHandler>
@@ -179,17 +182,17 @@ SearchDialog.defaultProps = {
 };
 
 const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? Colors.WHITE : Colors.DARK_GRAY5)};
-  border: 1px solid ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY1 : Colors.GRAY1)};
-  border-radius: ${({$theme}) => ($theme === 'light' ? '5px' : '3px')};
-  color: ${({$theme}) => ($theme === 'light' ? Colors.GRAY1 : Colors.LIGHT_GRAY3)};
-  font-size: 13px;
+  background-color: ${({$theme}) => ($theme === 'light' ? Colors.WHITE : Colors.DARK_GRAY1)};
+  border: none;
+  color: ${({$theme}) => ($theme === 'light' ? Colors.GRAY1 : Colors.GRAY4)};
+  font-size: 15px;
   font-weight: 400;
   cursor: pointer;
-  padding: ${({$theme}) => ($theme === 'light' ? '6px 6px 6px 10px' : '4px 6px 4px 10px')};
+  padding: ${({$theme}) => ($theme === 'light' ? '6px 6px 6px 10px' : '4px 6px 4px 20px')};
   outline: none;
   user-select: none;
   width: 100%;
+  height: 100%;
 
   :focus {
     border-color: ${({$theme}) => ($theme === 'light' ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
