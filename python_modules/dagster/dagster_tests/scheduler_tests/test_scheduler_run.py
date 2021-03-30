@@ -156,12 +156,13 @@ def simple_temporary_schedule(date):
     return _solid_config(date)
 
 
-@daily_schedule(
+# forgot date arg
+@daily_schedule(  # type: ignore
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
-def bad_env_fn_schedule():  # forgot context arg
+def bad_env_fn_schedule():
     return {}
 
 

@@ -59,10 +59,11 @@ def simple_schedule(_context):
     return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
 
 
-@daily_schedule(
+# forgot date arg
+@daily_schedule(  # type: ignore
     pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Eastern"
 )
-def bad_env_fn_schedule():  # forgot context arg
+def bad_env_fn_schedule():
     return {}
 
 

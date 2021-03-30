@@ -109,13 +109,16 @@ def monthly_schedule(
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
-    """Create a schedule that runs monthly.
+) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+    """Create a partitioned schedule that runs monthly.
 
-    The decorated function will be called as the ``run_config_fn`` of the underlying
-    :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
-    dict for the scheduled execution.
+    The decorated function should accept a datetime object as its only argument. The datetime
+    represents the date partition that it's meant to run on.
+
+    The decorated function should return a run configuration dictionary, which will be used as
+    configuration for the scheduled run.
+
+    The decorator produces a :py:class:`~dagster.PartitionScheduleDefinition`.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -212,7 +215,7 @@ def my_schedule_definition(_):
         inclusive=(partition_months_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -266,14 +269,16 @@ def weekly_schedule(
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
-    """Create a schedule that runs weekly.
+) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+    """Create a partitioned schedule that runs daily.
 
-    The decorated function will be called as the ``run_config_fn`` of the underlying
-    :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
-    for the scheduled execution.
+    The decorated function should accept a datetime object as its only argument. The datetime
+    represents the date partition that it's meant to run on.
 
+    The decorated function should return a run configuration dictionary, which will be used as
+    configuration for the scheduled run.
+
+    The decorator produces a :py:class:`~dagster.PartitionScheduleDefinition`.
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         start_date (datetime.datetime): The date from which to run the schedule.
@@ -366,7 +371,7 @@ def my_schedule_definition(_):
         inclusive=(partition_weeks_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -419,13 +424,16 @@ def daily_schedule(
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
-    """Create a schedule that runs daily.
+) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+    """Create a partitioned schedule that runs daily.
 
-    The decorated function will be called as the ``run_config_fn`` of the underlying
-    :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
-    for the scheduled execution.
+    The decorated function should accept a datetime object as its only argument. The datetime
+    represents the date partition that it's meant to run on.
+
+    The decorated function should return a run configuration dictionary, which will be used as
+    configuration for the scheduled run.
+
+    The decorator produces a :py:class:`~dagster.PartitionScheduleDefinition`.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -509,7 +517,7 @@ def my_schedule_definition(_):
         inclusive=(partition_days_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -562,13 +570,16 @@ def hourly_schedule(
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
-) -> Callable[[Callable[..., Dict[str, Any]]], PartitionScheduleDefinition]:
-    """Create a schedule that runs hourly.
+) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
+    """Create a partitioned schedule that runs hourly.
 
-    The decorated function will be called as the ``run_config_fn`` of the underlying
-    :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
-    for the scheduled execution.
+    The decorated function should accept a datetime object as its only argument. The datetime
+    represents the date partition that it's meant to run on.
+
+    The decorated function should return a run configuration dictionary, which will be used as
+    configuration for the scheduled run.
+
+    The decorator produces a :py:class:`~dagster.PartitionScheduleDefinition`.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -662,7 +673,7 @@ def my_schedule_definition(_):
         inclusive=(partition_hours_offset == 0),
     )
 
-    def inner(fn: Callable[..., Dict[str, Any]]) -> PartitionScheduleDefinition:
+    def inner(fn: Callable[[datetime.datetime], Dict[str, Any]]) -> PartitionScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
