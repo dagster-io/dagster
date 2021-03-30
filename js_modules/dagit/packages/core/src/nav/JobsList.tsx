@@ -27,68 +27,89 @@ interface JobsListProps {
 
 export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, selector}) => {
   const client = useApolloClient();
-  const [jobs, setJobs] = React.useState<{schedules: Item[]; sensors: Item[]}>(() => ({
-    schedules: [],
-    sensors: [],
+  const [jobs, setJobs] = React.useState<{
+    schedules: {[key: string]: Item};
+    sensors: {[key: string]: Item};
+  }>(() => ({
+    schedules: {},
+    sensors: {},
   }));
 
   React.useEffect(() => {
-    const fetchJobs = async () => {
-      const promises = repos.map((repo) =>
-        client.query<JobsListQuery>({
-          query: JOBS_LIST_QUERY,
-          variables: {
-            repositorySelector: {
-              repositoryLocationName: repo.repositoryLocation.name,
-              repositoryName: repo.repository.name,
+    const fetchJobs = () => {
+      const subscriptions = repos.map((repo) => {
+        return client
+          .watchQuery<JobsListQuery>({
+            query: JOBS_LIST_QUERY,
+            variables: {
+              repositorySelector: {
+                repositoryLocationName: repo.repositoryLocation.name,
+                repositoryName: repo.repository.name,
+              },
             },
-          },
-        }),
-      );
+          })
+          .subscribe({
+            next: ({data}) => {
+              const {schedulesOrError, sensorsOrError} = data;
 
-      const results = await Promise.all(promises);
-      const schedules: Item[] = [];
-      const sensors: Item[] = [];
+              const scheduleUpdates = {};
+              if (schedulesOrError.__typename === 'Schedules') {
+                schedulesOrError.results.forEach(({name, scheduleState}) => {
+                  const to = workspacePath(
+                    scheduleState.repositoryOrigin.repositoryName,
+                    scheduleState.repositoryOrigin.repositoryLocationName,
+                    `/schedules/${name}`,
+                  );
 
-      results.forEach((result) => {
-        const {schedulesOrError, sensorsOrError} = result?.data;
-        if (schedulesOrError.__typename === 'Schedules') {
-          schedulesOrError.results.forEach(({name, scheduleState}) =>
-            schedules.push({
-              to: workspacePath(
-                scheduleState.repositoryOrigin.repositoryName,
-                scheduleState.repositoryOrigin.repositoryLocationName,
-                `/schedules/${name}`,
-              ),
-              label: name,
-              jobType: JobType.SCHEDULE,
-              status: scheduleState.status,
-            }),
-          );
-        }
-        if (sensorsOrError.__typename === 'Sensors') {
-          sensorsOrError.results.forEach(({name, sensorState}) =>
-            sensors.push({
-              to: workspacePath(
-                sensorState.repositoryOrigin.repositoryName,
-                sensorState.repositoryOrigin.repositoryLocationName,
-                `/sensors/${name}`,
-              ),
-              label: name,
-              jobType: JobType.SENSOR,
-              status: sensorState.status,
-            }),
-          );
-        }
+                  scheduleUpdates[to] = {
+                    to,
+                    label: name,
+                    jobType: JobType.SCHEDULE,
+                    status: scheduleState.status,
+                  };
+                });
+              }
+
+              const sensorUpdates = {};
+              if (sensorsOrError.__typename === 'Sensors') {
+                sensorsOrError.results.forEach(({name, sensorState}) => {
+                  const to = workspacePath(
+                    sensorState.repositoryOrigin.repositoryName,
+                    sensorState.repositoryOrigin.repositoryLocationName,
+                    `/sensors/${name}`,
+                  );
+
+                  sensorUpdates[to] = {
+                    to,
+                    label: name,
+                    jobType: JobType.SENSOR,
+                    status: sensorState.status,
+                  };
+                });
+              }
+
+              setJobs((current) => ({
+                schedules: {...current.schedules, ...scheduleUpdates},
+                sensors: {...current.sensors, ...sensorUpdates},
+              }));
+            },
+          });
       });
 
-      setJobs({schedules, sensors});
+      return subscriptions;
     };
 
-    fetchJobs();
+    const subs = fetchJobs();
+
+    return () => {
+      subs.forEach((s) => s.unsubscribe());
+    };
   }, [client, repos]);
 
-  if (!jobs.schedules.length && !jobs.sensors.length) {
+  const schedules = Object.values(jobs.schedules);
+  const sensors = Object.values(jobs.sensors);
+
+  if (!schedules.length && !sensors.length) {
     return (
       <div style={{flex: 1}}>
         <Box
@@ -102,7 +123,7 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, selecto
     );
   }
 
-  const items = [...jobs.schedules, ...jobs.sensors];
+  const items = [...schedules, ...sensors];
 
   return (
     <div
