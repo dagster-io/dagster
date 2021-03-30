@@ -192,7 +192,7 @@ def instantiate_app_with_views(
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
-    def index_view(_path):
+    def index_view():
         try:
             with open(index_path) as f:
                 return (
@@ -214,9 +214,14 @@ def instantiate_app_with_views(
                 make rebuild_dagit"""
             )
 
+    def error_redirect(_path):
+        return index_view()
+
+    bp.add_url_rule("/", "index_view", index_view)
+
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
-    app.register_error_handler(404, index_view)
+    app.register_error_handler(404, error_redirect)
 
     # if the user asked for a path prefix, handle the naked domain just in case they are not
     # filtering inbound traffic elsewhere and redirect to the path prefix.
@@ -227,7 +232,9 @@ def instantiate_app_with_views(
     return app
 
 
-def create_app_from_workspace(workspace, instance, path_prefix=""):
+def create_app_from_workspace(
+    workspace: Workspace, instance: DagsterInstance, path_prefix: str = ""
+):
     check.inst_param(workspace, "workspace", Workspace)
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(path_prefix, "path_prefix")

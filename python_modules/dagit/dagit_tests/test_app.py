@@ -91,7 +91,7 @@ def test_index_view_at_path_prefix():
             assert res.status_code == 301
 
             # index contains the path meta tag
-            res = client.get("/dagster-path")
+            res = client.get("/dagster-path/")
             assert res.status_code == 200
             assert b"You need to enable JavaScript to run this app" in res.data
             assert b'<meta name="dagit-path-prefix" content="/dagster-path"' in res.data
