@@ -7,8 +7,7 @@ description: Dagster includes a scheduler that enables to run pipelines at regul
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/" />
 
-Dagster includes a scheduler that allows you to run pipelines at regular intervals, e.g. daily or
-hourly.
+Dagster includes a scheduler that allows you to run pipelines at regular intervals, e.g. daily or hourly.
 
 ## Defining schedules
 
@@ -41,16 +40,11 @@ def hello_cereal_pipeline():
     hello_cereal()
 ```
 
-Suppose that we need to run our simple cereal pipeline every morning before breakfast, at
-6:45 AM. To do this, we'll write a <PyObject module="dagster" object="ScheduleDefinition" /> to define our schedule.
-We can either directly construct a `ScheduleDefinition`, or use one of the included schedule
-decorators.
+Suppose that we need to run our simple cereal pipeline every morning before breakfast, at 6:45 AM. To do this, we'll write a <PyObject module="dagster" object="ScheduleDefinition" /> to define our schedule. We can either directly construct a `ScheduleDefinition`, or use one of the included schedule decorators.
 
-In this example, we'll use the <PyObject module="dagster" object="daily_schedule" displayText="@daily_schedule" />
-decorator, which runs a schedule once a day at a specified time.
+In this example, we'll use the <PyObject module="dagster" object="daily_schedule" displayText="@daily_schedule" /> decorator, which runs a schedule once a day at a specified time.
 
-The decorated function should return the `run_config` needed to run the schedule at the
-specified execution time. The function is passed the datetime for which the schedule is running.
+The decorated function should return the `run_config` needed to run the schedule at the specified execution time. The function is passed the datetime for which the schedule is running.
 
 ```python file=/intro_tutorial/advanced/scheduling/scheduler.py startafter=start_scheduler_marker_1 endbefore=end_scheduler_marker_1
 @daily_schedule(
@@ -69,8 +63,7 @@ def good_morning_schedule(date):
     }
 ```
 
-To complete the picture, we'll need to add the schedule definition to the list of definitions returned
-from our repository.
+To complete the picture, we'll need to add the schedule definition to the list of definitions returned from our repository.
 
 ```python file=/intro_tutorial/advanced/scheduling/scheduler.py startafter=start_scheduler_marker_2 endbefore=end_scheduler_marker_2
 @repository
@@ -90,29 +83,23 @@ Our Dagit now displays a Schedules section on the left sidebar.
 
 ![schedules.png](/images/tutorial/schedules.png)
 
-Clicking on `good_morning_schedule` will take us to the Schedules view. From here, we can
-turn on the schedule by pressing the toggle button, at which point dagit will show us that the
-schedule is running and will next execute tomorrow at 6:45 AM.
+Clicking on `good_morning_schedule` will take us to the Schedules view. From here, we can turn on the schedule by pressing the toggle button, at which point dagit will show us that the schedule is running and will next execute tomorrow at 6:45 AM.
 
 ![good_morning_schedule.png](/images/tutorial/good_morning_schedule.png)
 
 ### Running the schedule
 
-Dagster's default scheduler requires you to launch a long-running `dagster-daemon` process in
-addition to Dagit.
+Dagster's default scheduler requires you to launch a long-running `dagster-daemon` process in addition to Dagit.
 
 ```bash
 dagster-daemon run
 ```
 
-This process will periodically check for any running schedules and launch their associated runs. If
-you leave this process running, it will launch a new run for your schedule each day at the expected
-time.
+This process will periodically check for any running schedules and launch their associated runs. If you leave this process running, it will launch a new run for your schedule each day at the expected time.
 
 ### Schedule filters
 
-If you need to customize the times at which the schedule shoule execute, you can pass a function as
-the `should_execute` argument to <PyObject module="dagster" object="ScheduleDefinition" />.
+If you need to customize the times at which the schedule shoule execute, you can pass a function as the `should_execute` argument to <PyObject module="dagster" object="ScheduleDefinition" />.
 
 For example, we can define a filter that only returns _`True`_ on weekdays:
 
@@ -123,9 +110,7 @@ def weekday_filter(_context):
     return weekno < 5
 ```
 
-If we combine this `should_execute` filter with a
-schedule that runs at 6:45am every day, then we'll
-have a schedule that runs at 6:45am only on weekdays.
+If we combine this `should_execute` filter with a schedule that runs at 6:45am every day, then we'll have a schedule that runs at 6:45am only on weekdays.
 
 ```python file=/intro_tutorial/advanced/scheduling/scheduler.py startafter=start_scheduler_marker_4 endbefore=end_scheduler_marker_4
 @daily_schedule(

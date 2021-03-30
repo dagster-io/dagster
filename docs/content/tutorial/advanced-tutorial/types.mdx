@@ -1,8 +1,6 @@
 ---
 title: "Advanced: Dagster Types | Dagster"
-description:
-  Besides Python 3's typing system, Dagster provides a type system that helps users
-  describe what kind of values their solids accept and produce.
+description: Besides Python 3's typing system, Dagster provides a type system that helps users describe what kind of values their solids accept and produce.
 ---
 
 # Advanced: Dagster Types
@@ -11,8 +9,7 @@ description:
 
 ## Verifying Solid Outputs and Inputs
 
-Dagster lets developers express what they expect their solid inputs and outputs to look like through
-[Dagster Types](/\_apidocs/types).
+Dagster lets developers express what they expect their solid inputs and outputs to look like through [Dagster Types](/\_apidocs/types).
 
 The dagster type system is gradual and optional - pipelines can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere.
 
@@ -34,8 +31,7 @@ def read_csv(context, csv_path: str):
     return lines
 ```
 
-The `lines` object returned by Python's built-in `csv.DictReader` is a list of
-`collections.OrderedDict`, each of which represents one row of the dataset:
+The `lines` object returned by Python's built-in `csv.DictReader` is a list of `collections.OrderedDict`, each of which represents one row of the dataset:
 
 ```python
 [
@@ -55,10 +51,7 @@ The `lines` object returned by Python's built-in `csv.DictReader` is a list of
 ]
 ```
 
-This is a simple representation of a "data frame", or a table of data. We'd like to be able to use
-Dagster's type system to type the output of `read_csv`, so that we can do type checking when we
-construct the pipeline, ensuring that any solid consuming the output of `read_csv` expects to
-receive data in this format.
+This is a simple representation of a "data frame", or a table of data. We'd like to be able to use Dagster's type system to type the output of `read_csv`, so that we can do type checking when we construct the pipeline, ensuring that any solid consuming the output of `read_csv` expects to receive data in this format.
 
 ### Constructing a Dagster Type
 
@@ -98,8 +91,7 @@ def sort_by_calories(context, cereals):
     context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 ```
 
-The type metadata now appears in Dagit and the system will ensure the input and output to this solid
-indeed match the criteria for `SimpleDataFrame`. As usual, run:
+The type metadata now appears in Dagit and the system will ensure the input and output to this solid indeed match the criteria for `SimpleDataFrame`. As usual, run:
 
 ```bash
 dagit -f custom_types.py
@@ -107,15 +99,13 @@ dagit -f custom_types.py
 
 ![custom_types_figure_one.png](/images/tutorial/custom_types_figure_one.png)
 
-You can see that the output of `read_csv` (which by default has the name `result`) is marked to be
-of type `SimpleDataFrame`.
+You can see that the output of `read_csv` (which by default has the name `result`) is marked to be of type `SimpleDataFrame`.
 
 <br />
 
 ### When Type Checks Fail
 
-Now, if our solid logic fails to return the right type, we'll see a type check failure, which will
-fai the pipeline. Let's replace our `read_csv` solid with the following bad logic:
+Now, if our solid logic fails to return the right type, we'll see a type check failure, which will fai the pipeline. Let's replace our `read_csv` solid with the following bad logic:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
@@ -144,12 +134,7 @@ We will also see the error message in Dagit:
 
 ### Metadata and Custom Type Checks
 
-Custom types can also yield metadata about the type check. For example, in the case of our data
-frame, we might want to record the number of rows and columns in the dataset when our type checks
-succeed, and provide more information about why type checks failed when they fail. User-defined type
-check functions can optionally return a <PyObject module="dagster" object="TypeCheck" /> object that
-contains metadata about the success or failure of the type check. Let's see how to use this to emit
-some summary statistics about our DataFrame type:
+Custom types can also yield metadata about the type check. For example, in the case of our data frame, we might want to record the number of rows and columns in the dataset when our type checks succeed, and provide more information about why type checks failed when they fail. User-defined type check functions can optionally return a <PyObject module="dagster" object="TypeCheck" /> object that contains metadata about the success or failure of the type check. Let's see how to use this to emit some summary statistics about our DataFrame type:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_4.py startafter=start_custom_types_4_marker_0 endbefore=end_custom_types_4_marker_0
 def less_simple_data_frame_type_check(_, value):
@@ -207,11 +192,7 @@ def less_simple_data_frame_type_check(_, value):
     )
 ```
 
-A <PyObject module="dagster" object="TypeCheck" displayText="TypeCheck" /> must include a `success`
-argument describing whether the check passed or failed, and may include a description and/or a list
-of <PyObject module="dagster" object="EventMetadataEntry" /> objects. You should use the static
-constructors on <PyObject module="dagster" object="EventMetadataEntry" /> to construct these
-objects, which are flexible enough to support arbitrary metadata in JSON or Markdown format.
+A <PyObject module="dagster" object="TypeCheck" displayText="TypeCheck" /> must include a `success` argument describing whether the check passed or failed, and may include a description and/or a list of <PyObject module="dagster" object="EventMetadataEntry" /> objects. You should use the static constructors on <PyObject module="dagster" object="EventMetadataEntry" /> to construct these objects, which are flexible enough to support arbitrary metadata in JSON or Markdown format.
 
 Dagit knows how to display and archive structured metadata of this kind for future review:
 

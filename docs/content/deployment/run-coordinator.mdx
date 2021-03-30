@@ -24,13 +24,11 @@ Dagster offers several options for limiting the number of concurrent pipeline ru
 
 ### Setup
 
-Concurrency limits are supported by the [QueuedRunCoordinator](/deployment/run-coordinator), which uses the [Dagster Daemon](/deployment/dagster-daemon) to coordinate which runs execute.
-To use this run coordinator, configure it on your [Dagster instance](/deployment/dagster-instance) and include the daemon as part of your Dagster deployment.
+Concurrency limits are supported by the [QueuedRunCoordinator](/deployment/run-coordinator), which uses the [Dagster Daemon](/deployment/dagster-daemon) to coordinate which runs execute. To use this run coordinator, configure it on your [Dagster instance](/deployment/dagster-instance) and include the daemon as part of your Dagster deployment.
 
 ### Usage
 
-You can set the following parameters on the QueuedRunCoordinator by modifying its configuration in
-the Dagster instance yaml.
+You can set the following parameters on the QueuedRunCoordinator by modifying its configuration in the Dagster instance yaml.
 
 #### Run limits
 
@@ -140,5 +138,4 @@ If there are runs in progress that are blocking the queue, you have the option o
 
 ### Still stuck?
 
-If these steps didn't help, reach out in Slack or file an
-issue and we'll be happy to help investigate.
+If these steps didn't help, reach out in Slack or file an issue and we'll be happy to help investigate.

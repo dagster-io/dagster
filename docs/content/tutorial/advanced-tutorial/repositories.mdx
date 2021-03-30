@@ -1,27 +1,22 @@
 ---
 title: "Advanced: Organizing Pipelines in Repositories &amp; Workspaces | Dagster"
-description:
-  Dagster provides the concept of a repository, a collection of pipelines (and other definitions)
-  that the Dagster tools can target as a whole.
+description: Dagster provides the concept of a repository, a collection of pipelines (and other definitions) that the Dagster tools can target as a whole.
 ---
 
 # Advanced: Organizing Pipelines in Repositories & Workspaces
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/" />
 
-In all of the examples we've seen so far, we've specified a file (`-f`) or a module (`-m`) in
-order to tell the CLI tools how to load a pipeline, e.g.:
+In all of the examples we've seen so far, we've specified a file (`-f`) or a module (`-m`) in order to tell the CLI tools how to load a pipeline, e.g.:
 
 ```bash
 dagit -f hello_cereal.py
 dagster pipeline execute -f hello_cereal.py
 ```
 
-But most of the time, especially when working on long-running projects with other people, we will
-want to be able to target many pipelines at once with our tools.
+But most of the time, especially when working on long-running projects with other people, we will want to be able to target many pipelines at once with our tools.
 
-Dagster provides the concept of a repository, a collection of pipelines (and other definitions) that
-the Dagster tools can target as a whole. Repositories are declared using the <PyObject
+Dagster provides the concept of a repository, a collection of pipelines (and other definitions) that the Dagster tools can target as a whole. Repositories are declared using the <PyObject
 module="dagster" object="RepositoryDefinition" /> API as follows:
 
 ```python file=/intro_tutorial/advanced/repositories/repos.py startafter=start_repos_marker_0 endbefore=end_repos_marker_0
@@ -34,10 +29,7 @@ This method returns a list of items, each one of which can be a pipeline, a sche
 
 ## Lazy Construction
 
-Notice that this requires eager construction of all its member definitions. In large codebases,
-pipeline construction time can be large. In these cases, it may behoove you to only construct them
-on demand. For that, you can also return a dictionary of function references, which are constructed
-on demand:
+Notice that this requires eager construction of all its member definitions. In large codebases, pipeline construction time can be large. In these cases, it may behoove you to only construct them on demand. For that, you can also return a dictionary of function references, which are constructed on demand:
 
 ```python file=/intro_tutorial/advanced/repositories/lazy_repos.py startafter=start_lazy_repos_marker_0 endbefore=end_lazy_repos_marker_0
 @repository
@@ -53,9 +45,7 @@ def hello_cereal_repository():
     }
 ```
 
-Note that the name of the pipeline in the `RepositoryDefinition` must match the name we declared for
-it in its `pipeline` (the default is the function name). Don't worry, if these names don't match,
-you'll see a helpful error message.
+Note that the name of the pipeline in the `RepositoryDefinition` must match the name we declared for it in its `pipeline` (the default is the function name). Don't worry, if these names don't match, you'll see a helpful error message.
 
 ## Repositories in Dagit
 
@@ -65,20 +55,15 @@ If you save this file as `repos.py`, you can then run the command line tools on 
 dagit -f repos.py
 ```
 
-Now you can see the list of all pipelines in the repo on the left, and you can search a pipeline by
-typing its name:
+Now you can see the list of all pipelines in the repo on the left, and you can search a pipeline by typing its name:
 
 ![repos.png](/images/tutorial/repos.png)
 
 ## Workspaces
 
-Loading repositories via the `-f` or `-m` options is actually just a convenience function. The
-underlying abstraction is the "workspace", which determines all of the available repositories
-available to Dagit.
+Loading repositories via the `-f` or `-m` options is actually just a convenience function. The underlying abstraction is the "workspace", which determines all of the available repositories available to Dagit.
 
-We have a file format for building workspaces called `workspace.yaml`. It is a convenience: it
-prevents you from having to type the same `-f` or `-m` flag repeatedly. But as you'll see below it
-enables more capabilities.
+We have a file format for building workspaces called `workspace.yaml`. It is a convenience: it prevents you from having to type the same `-f` or `-m` flag repeatedly. But as you'll see below it enables more capabilities.
 
 The following config will load pipelines from a file, just like the `-f` CLI option.
 
@@ -87,15 +72,13 @@ load_from:
   - python_file: repos.py
 ```
 
-Dagit will look for `workspace.yaml` in the current directory by default, so now you can launch
-Dagit from that directory with no arguments.
+Dagit will look for `workspace.yaml` in the current directory by default, so now you can launch Dagit from that directory with no arguments.
 
 ```bash
 dagit
 ```
 
-Use the `python_package` config option to load pipelines from explicitly installed Python packages.
-For example, you can `pip install` our tutorial code snippets as a Python package:
+Use the `python_package` config option to load pipelines from explicitly installed Python packages. For example, you can `pip install` our tutorial code snippets as a Python package:
 
 ```bash
 pip install -e docs_snippets  # Run this in the `examples/` directory.
@@ -110,8 +93,7 @@ load_from:
 
 ### Supporting multiple repositories
 
-You can also use `workspace.yaml` to load multiple repositories. This can be useful for organization
-purposes, in order to group pipelines and other artifacts by team.
+You can also use `workspace.yaml` to load multiple repositories. This can be useful for organization purposes, in order to group pipelines and other artifacts by team.
 
 ```yaml file=/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
 load_from:
@@ -129,9 +111,7 @@ And now you can switch between repositories in Dagit.
 
 ### Multi-environment repositories
 
-Sometimes teams desire different Python versions or virtual environments. To support this, Dagster
-repositories each live in completely separate processes from each other, and tools like Dagit
-communicate with those repositories using a cross-process RPC protocol.
+Sometimes teams desire different Python versions or virtual environments. To support this, Dagster repositories each live in completely separate processes from each other, and tools like Dagit communicate with those repositories using a cross-process RPC protocol.
 
 Via the workspace, you can configure a different executable_path for each of your repositories. For example:
 
@@ -145,9 +125,7 @@ load_from:
       executable_path: "/path/to/other_/virtualenv/bin/python"
 ```
 
-For this example to work, you need to change the executable paths to point a virtual environment
-available in your system, and point to a Python file or package that is available and loadable by
-that executable.
+For this example to work, you need to change the executable paths to point a virtual environment available in your system, and point to a Python file or package that is available and loadable by that executable.
 
 <br />
 
