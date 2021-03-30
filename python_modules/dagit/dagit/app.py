@@ -197,8 +197,8 @@ def instantiate_app_with_views(
             with open(index_path) as f:
                 return (
                     f.read()
-                    .replace('href="/', f"href={app_path_prefix}/")
-                    .replace('src="/', f"src={app_path_prefix}/")
+                    .replace('href="/', f'href="{app_path_prefix}/')
+                    .replace('src="/', f'src="{app_path_prefix}/')
                     .replace(
                         '<meta name="dagit-path-prefix"',
                         f'<meta name="dagit-path-prefix" content="{app_path_prefix}"',
