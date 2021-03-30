@@ -19,12 +19,6 @@ class PickledObjectS3IOManager(IOManager):
     def _get_path(self, context):
         return "/".join([self.s3_prefix, "storage", *context.get_run_scoped_output_identifier()])
 
-    def _last_key(self, key):
-        if "/" not in key:
-            return key
-        comps = key.split("/")
-        return comps[-1]
-
     def _rm_object(self, key):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")

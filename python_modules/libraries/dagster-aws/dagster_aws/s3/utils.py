@@ -36,7 +36,7 @@ def construct_s3_client(
     check.opt_str_param(endpoint_url, "endpoint_url")
     check.bool_param(use_unsigned_session, "use_unsigned_session")
 
-    s3_client = boto3.resource(  # pylint:disable=C0103
+    s3_client = boto3.resource(
         "s3",
         region_name=region_name,
         use_ssl=True,
