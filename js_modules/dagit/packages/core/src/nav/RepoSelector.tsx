@@ -1,4 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
+import {Checkbox, Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,7 +6,6 @@ import styled from 'styled-components/macro';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
 import {Caption} from '../ui/Text';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -20,14 +19,13 @@ export type RepoDetails = {
 };
 
 interface Props {
-  onBrowse: () => void;
   onToggle: (repoDetails: RepoDetails) => void;
   options: RepoDetails[];
   selected: Set<RepoDetails>;
 }
 
 export const RepoSelector: React.FC<Props> = (props) => {
-  const {onBrowse, onToggle, options, selected} = props;
+  const {onToggle, options, selected} = props;
 
   return (
     <Group direction="column" spacing={16}>
@@ -36,9 +34,9 @@ export const RepoSelector: React.FC<Props> = (props) => {
         const addressString = repoAddressAsString(repoAddress);
         const checked = selected.has(option);
         return (
-          <Box key={addressString} flex={{direction: 'row', alignItems: 'center'}}>
+          <Box key={addressString} flex={{direction: 'row', alignItems: 'flex-start'}}>
             {options.length > 1 ? (
-              <SwitchWithoutLabel
+              <Checkbox
                 checked={checked}
                 onChange={(e) => {
                   if (e.target instanceof HTMLInputElement) {
@@ -46,7 +44,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                   }
                 }}
                 id={`switch-${addressString}`}
-                style={{marginRight: '12px'}}
+                style={{marginRight: '4px'}}
               />
             ) : null}
             <RepoLabel htmlFor={`switch-${addressString}`}>
@@ -55,15 +53,15 @@ export const RepoSelector: React.FC<Props> = (props) => {
                   <RepoName>{repoAddress.name}</RepoName>
                   <RepoLocation>{`@${repoAddress.location}`}</RepoLocation>
                 </Box>
-                <Caption style={{color: Colors.GRAY3}}>
-                  {metadata.map(({key, value}) => `${key}: ${value}`).join(', ')}
-                </Caption>
+                <Group direction="column" spacing={2}>
+                  {metadata.map(({key, value}) => (
+                    <Caption style={{color: Colors.GRAY3}} key={key}>{`${key}: ${value}`}</Caption>
+                  ))}
+                </Group>
               </Group>
             </RepoLabel>
-            <Box margin={{left: 16}}>
-              <BrowseLink to={workspacePathFromAddress(repoAddress)} onClick={onBrowse}>
-                Browse
-              </BrowseLink>
+            <Box margin={{left: 16, top: 1}} style={{lineHeight: 1}}>
+              <BrowseLink to={workspacePathFromAddress(repoAddress)}>Browse</BrowseLink>
             </Box>
             <ReloadButton repoAddress={repoAddress} />
           </Box>
@@ -106,6 +104,8 @@ const RepoLocation = styled.div`
 `;
 
 const BrowseLink = styled(Link)`
+  line-height: 1;
+
   && {
     color: ${Colors.GRAY5};
   }
@@ -125,9 +125,9 @@ const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
       ) : (
         <Icon
           icon="refresh"
-          iconSize={12}
+          iconSize={11}
           color={Colors.GRAY5}
-          style={{position: 'relative', top: '-2px'}}
+          style={{position: 'relative', top: '-4px'}}
         />
       )}
     </ReloadButtonInner>
@@ -139,7 +139,7 @@ const ReloadButtonInner = styled.button`
   border: 0;
   cursor: pointer;
   padding: 4px;
-  margin: 0 0 0 12px;
+  margin: -2px 0 0 8px;
   outline: none;
 
   :hover .bp3-icon svg {

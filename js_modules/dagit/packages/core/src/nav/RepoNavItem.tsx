@@ -52,7 +52,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       background={Colors.DARK_GRAY1}
       border={{side: 'horizontal', width: 1, color: Colors.DARK_GRAY4}}
       padding={{vertical: 8, horizontal: 12}}
-      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}
     >
       <Group direction="column" spacing={4}>
         <div style={{color: Colors.GRAY3, fontSize: '10.5px', textTransform: 'uppercase'}}>
@@ -70,17 +70,12 @@ export const RepoNavItem: React.FC<Props> = (props) => {
           popoverClassName="bp3-dark"
           content={
             <Box padding={16} style={{maxWidth: '600px', borderRadius: '3px'}}>
-              <RepoSelector
-                options={allRepos}
-                onToggle={onToggle}
-                selected={selected}
-                onBrowse={() => setOpen(false)}
-              />
+              <RepoSelector options={allRepos} onToggle={onToggle} selected={selected} />
             </Box>
           }
         >
           <ButtonLink color={Colors.GRAY5} underline="hover">
-            <span style={{fontSize: '12px'}}>Filter</span>
+            <span style={{fontSize: '11px', position: 'relative', top: '-4px'}}>Filter</span>
           </ButtonLink>
         </Popover>
       ) : null}
