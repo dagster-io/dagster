@@ -6,6 +6,7 @@ import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
 import {SearchBootstrapQuery} from './types/SearchBootstrapQuery';
+import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
 
 const fuseOptions = {
   keys: ['label', 'tags', 'type'],
@@ -13,7 +14,7 @@ const fuseOptions = {
   threshold: 0.3,
 };
 
-const repositoryDataToSearchResults = (data?: SearchBootstrapQuery) => {
+const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
   if (
     !data?.repositoryLocationsOrError ||
     data?.repositoryLocationsOrError?.__typename !== 'RepositoryLocationConnection'
@@ -81,16 +82,61 @@ const repositoryDataToSearchResults = (data?: SearchBootstrapQuery) => {
   return new Fuse(allEntries, fuseOptions);
 };
 
-export const useRepoSearch = () => {
-  const {data} = useQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY, {
-    fetchPolicy: 'cache-and-network',
+const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
+  if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
+    return new Fuse([]);
+  }
+
+  const {nodes} = data.assetsOrError;
+  const allEntries = nodes.map((node) => {
+    const {key, tags} = node;
+    const path = key.path.join(' › ');
+    return {
+      key: path,
+      label: path,
+      description: 'Asset',
+      href: `/instance/assets/${key.path.join('/')}`,
+      type: SearchResultType.Asset,
+      tags: tags.map((tag) => `${tag.key}:${tag.value}`).join(' '),
+    };
   });
 
-  const fuse = React.useMemo(() => repositoryDataToSearchResults(data), [data]);
-  return React.useCallback(
-    (queryString: string): Fuse.FuseResult<SearchResult>[] => fuse.search(queryString),
-    [fuse],
+  return new Fuse(allEntries, fuseOptions);
+};
+
+export const useRepoSearch = () => {
+  const {data: bootstrapData, loading: bootstrapLoading} = useQuery<SearchBootstrapQuery>(
+    SEARCH_BOOTSTRAP_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+    },
   );
+
+  const {data: secondaryData, loading: secondaryLoading} = useQuery<SearchSecondaryQuery>(
+    SEARCH_SECONDARY_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+    },
+  );
+
+  const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults(bootstrapData), [
+    bootstrapData,
+  ]);
+  const secondaryFuse = React.useMemo(() => secondaryDataToSearchResults(secondaryData), [
+    secondaryData,
+  ]);
+
+  const loading = bootstrapLoading || secondaryLoading;
+  const performSearch = React.useCallback(
+    (queryString: string): Fuse.FuseResult<SearchResult>[] => {
+      const bootstrapResults = bootstrapFuse.search(queryString);
+      const secondaryResults = secondaryFuse.search(queryString);
+      return [...bootstrapResults, ...secondaryResults];
+    },
+    [bootstrapFuse, secondaryFuse],
+  );
+
+  return {loading, performSearch};
 };
 
 const SEARCH_BOOTSTRAP_QUERY = gql`
@@ -127,6 +173,25 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                 }
               }
             }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const SEARCH_SECONDARY_QUERY = gql`
+  query SearchSecondaryQuery {
+    assetsOrError {
+      __typename
+      ... on AssetConnection {
+        nodes {
+          key {
+            path
+          }
+          tags {
+            key
+            value
           }
         }
       }

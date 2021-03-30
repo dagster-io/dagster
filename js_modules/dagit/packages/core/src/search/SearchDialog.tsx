@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
+import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
 import {SearchResults} from './SearchResults';
@@ -56,7 +57,7 @@ const initialState: State = {
 export const SearchDialog: React.FC<{theme: 'dark' | 'light'}> = ({theme}) => {
   const location = useLocation();
   const history = useHistory();
-  const performSearch = useRepoSearch();
+  const {loading, performSearch} = useRepoSearch();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight} = state;
@@ -159,6 +160,7 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'}> = ({theme}) => {
               type="text"
               value={queryString}
             />
+            {loading ? <Spinner purpose="body-text" /> : null}
           </SearchBox>
           <SearchResults
             highlight={highlight}
@@ -219,7 +221,7 @@ const SearchBox = styled.div<SearchBoxProps>`
   border-bottom: ${({hasQueryString}) =>
     hasQueryString ? `1px solid ${Colors.LIGHT_GRAY2}` : 'none'};
   display: flex;
-  padding: 12px;
+  padding: 12px 20px 12px 12px;
 `;
 
 const SearchInput = styled.input`
