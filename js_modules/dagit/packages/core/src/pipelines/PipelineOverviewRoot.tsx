@@ -391,6 +391,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           ...RunTimeFragment
           id
           assets {
+            id
             key {
               path
             }

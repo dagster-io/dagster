@@ -138,6 +138,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
 
 export interface AssetQuery_assetOrError_Asset {
   __typename: "Asset";
+  id: string;
   key: AssetQuery_assetOrError_Asset_key;
   assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
 }

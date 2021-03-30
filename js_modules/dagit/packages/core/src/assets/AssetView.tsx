@@ -254,6 +254,7 @@ const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
+        id
         key {
           path
         }

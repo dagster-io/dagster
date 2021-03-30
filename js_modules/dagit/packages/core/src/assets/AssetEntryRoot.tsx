@@ -130,6 +130,7 @@ const ASSET_ENTRY_ROOT_QUERY = gql`
     assetOrError(assetKey: $assetKey) {
       __typename
       ... on Asset {
+        id
         key {
           path
         }

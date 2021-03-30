@@ -286,6 +286,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets {
   __typename: "Asset";
+  id: string;
   key: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets_key;
 }
 

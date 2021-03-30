@@ -25,6 +25,7 @@ export interface SearchSecondaryQuery_assetsOrError_AssetConnection_nodes_tags {
 
 export interface SearchSecondaryQuery_assetsOrError_AssetConnection_nodes {
   __typename: "Asset";
+  id: string;
   key: SearchSecondaryQuery_assetsOrError_AssetConnection_nodes_key;
   tags: SearchSecondaryQuery_assetsOrError_AssetConnection_nodes_tags[];
 }

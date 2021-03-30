@@ -403,6 +403,7 @@ const ASSETS_TABLE_QUERY = gql`
       __typename
       ... on AssetConnection {
         nodes {
+          id
           key {
             path
           }

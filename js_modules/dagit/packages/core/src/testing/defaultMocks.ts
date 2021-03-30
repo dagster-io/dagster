@@ -11,6 +11,9 @@ export const randomId = () => faker.random.uuid();
  * }),
  */
 export const defaultMocks = {
+  Asset: () => ({
+    id: randomId,
+  }),
   Pipeline: () => ({
     id: randomId,
     name: hyphenatedName,

@@ -21,6 +21,7 @@ export interface AssetEntryRootQuery_assetOrError_Asset_key {
 
 export interface AssetEntryRootQuery_assetOrError_Asset {
   __typename: "Asset";
+  id: string;
   key: AssetEntryRootQuery_assetOrError_Asset_key;
 }
 

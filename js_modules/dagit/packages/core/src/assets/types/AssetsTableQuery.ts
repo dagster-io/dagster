@@ -21,6 +21,7 @@ export interface AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags {
 
 export interface AssetsTableQuery_assetsOrError_AssetConnection_nodes {
   __typename: "Asset";
+  id: string;
   key: AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
   tags: AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags[];
 }

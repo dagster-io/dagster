@@ -186,6 +186,7 @@ const SEARCH_SECONDARY_QUERY = gql`
       __typename
       ... on AssetConnection {
         nodes {
+          id
           key {
             path
           }
