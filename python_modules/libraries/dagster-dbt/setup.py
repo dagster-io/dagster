@@ -36,6 +36,11 @@ if __name__ == "__main__":
             "attrs",
             "agate < 1.6.2",
         ],
-        extras_require={"test": ["dbt>=0.17.0"]},
+        extras_require={
+            "test": [
+                "dbt>=0.17.0",
+                "matplotlib",
+            ]
+        },
         zip_safe=False,
     )
