@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
@@ -256,26 +255,6 @@ export const GraphQueryInput = React.memo(
     prevProps.value === nextProps.value &&
     isEqual(prevProps.presets, nextProps.presets),
 );
-
-export const SOLID_QUERY_INPUT_SOLID_FRAGMENT = gql`
-  fragment SolidQueryInputSolidFragment on Solid {
-    name
-    inputs {
-      dependsOn {
-        solid {
-          name
-        }
-      }
-    }
-    outputs {
-      dependedBy {
-        solid {
-          name
-        }
-      }
-    }
-  }
-`;
 
 const GraphQueryInputField = styled(InputGroup)`
   font-size: 14px;

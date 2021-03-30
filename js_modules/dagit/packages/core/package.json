@@ -116,8 +116,7 @@
     "react-test-renderer": "^16.11.0",
     "source-map-explorer": "^2.5.0",
     "ts-node": "9.1.1",
-    "ts-prune": "0.8.8",
-    "tscpaths": "^0.0.9",
+    "ts-prune": "0.8.9",
     "typescript": "4.1.2"
   },
   "peerDependencies": {
@@ -140,7 +139,7 @@
     "build:ts": "yarn tsc -p . --noEmit false --declaration true --emitDeclarationOnly true",
     "start": "concurrently --kill-others --names 'Babel,TypeScript' --prefix-colors 'green,cyan' \"yarn build:js --watch\" \"yarn build:ts --watch\"",
     "eject": "react-scripts eject",
-    "find-dead-code": "yarn ts-prune | grep -v '/types/\\|stories.tsx'",
+    "find-dead-code": "yarn ts-prune | grep -v '/types/\\|stories.tsx\\|src/main.tsx'",
     "test": "yarn ts && yarn jest --watchAll=false && yarn lint",
     "jest": "DISABLE_NEW_JSX_TRANSFORM=true react-scripts test --env=jest-environment-jsdom-sixteen",
     "jest:debug": "react-scripts --inspect-brk test --runInBand --no-cache",

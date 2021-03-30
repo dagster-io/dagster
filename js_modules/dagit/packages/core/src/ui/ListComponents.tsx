@@ -1,12 +1,6 @@
 import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
-export const Header = styled.div`
-  color: ${Colors.BLACK};
-  font-size: 1.1rem;
-  margin-bottom: 10px;
-`;
-
 export const RowContainer = styled.div`
   display: flex;
   color: ${Colors.DARK_GRAY5};

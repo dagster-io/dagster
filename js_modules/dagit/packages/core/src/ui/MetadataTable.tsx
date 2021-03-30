@@ -52,7 +52,7 @@ const StyledTable = styled.table`
   }
 `;
 
-export const MetadataKey = styled.div`
+const MetadataKey = styled.div`
   color: ${Colors.GRAY1};
   font-weight: 400;
 `;

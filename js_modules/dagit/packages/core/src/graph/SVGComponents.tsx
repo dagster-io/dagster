@@ -290,7 +290,7 @@ export class SVGFlowLayoutFiller extends React.PureComponent {
   }
 }
 
-export interface SVGLabeledRectProps {
+export const SVGLabeledRect: React.FC<{
   x: number;
   y: number;
   minified: boolean;
@@ -299,15 +299,7 @@ export interface SVGLabeledRectProps {
   label: string;
   fill: string;
   className?: string;
-}
-
-export const SVGLabeledRect: React.FunctionComponent<SVGLabeledRectProps> = ({
-  minified,
-  label,
-  fill,
-  className,
-  ...rect
-}) => (
+}> = ({minified, label, fill, className, ...rect}) => (
   <g>
     <rect {...rect} fill={fill} stroke="#979797" strokeWidth={1} className={className} />
     <SVGMonospaceText

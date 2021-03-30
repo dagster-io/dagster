@@ -86,7 +86,7 @@ const UNLOADABLES_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-export const ALL_SCHEDULES_QUERY = gql`
+const ALL_SCHEDULES_QUERY = gql`
   query AllSchedulesQuery($jobType: JobType) {
     repositoriesOrError {
       ...AllSchedulesRepositoriesFragment

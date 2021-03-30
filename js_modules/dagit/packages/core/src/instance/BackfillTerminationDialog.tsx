@@ -10,7 +10,7 @@ import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_resu
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 
-export interface Props {
+interface Props {
   backfill?: Backfill;
   onClose: () => void;
   onComplete: () => void;
@@ -81,7 +81,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
   );
 };
 
-export const CANCEL_BACKFILL_MUTATION = gql`
+const CANCEL_BACKFILL_MUTATION = gql`
   mutation CancelBackfill($backfillId: String!) {
     cancelPartitionBackfill(backfillId: $backfillId) {
       __typename

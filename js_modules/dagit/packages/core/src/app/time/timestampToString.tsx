@@ -3,10 +3,6 @@ import moment from 'moment-timezone';
 import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
 import {browserTimezone} from './browserTimezone';
 
-export type TimestampProps = ({ms: number} | {unix: number}) & {
-  timeFormat?: TimeFormat;
-};
-
 type Config = {
   timestamp: {ms: number} | {unix: number};
   locale: string;

@@ -239,7 +239,7 @@ class ComputeLogsProvider extends React.Component<
   }
 }
 
-export const COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT = gql`
+const COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT = gql`
   fragment ComputeLogsSubscriptionFragment on ComputeLogFile {
     data
     cursor

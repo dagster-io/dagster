@@ -85,7 +85,7 @@ const UNLOADABLES_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-export const ALL_SENSORS_QUERY = gql`
+const ALL_SENSORS_QUERY = gql`
   query AllSensorsQuery($jobType: JobType) {
     repositoriesOrError {
       ...AllSensorsRepositoriesFragment

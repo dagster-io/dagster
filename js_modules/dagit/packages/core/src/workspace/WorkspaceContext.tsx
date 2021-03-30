@@ -110,9 +110,6 @@ export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
 export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
-export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOption) =>
-  getRepositoryOptionHash(a) === getRepositoryOptionHash(b);
-
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
