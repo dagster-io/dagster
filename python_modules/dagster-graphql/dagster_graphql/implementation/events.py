@@ -81,10 +81,15 @@ def iterate_metadata_entries(metadata_entries):
                 floatValue=float_val,
             )
         elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
+            # coerce > 32 bit ints to null
+            int_val = None
+            if metadata_entry.entry_data.value.bit_length() <= 32:
+                int_val = metadata_entry.entry_data.value
+
             yield GrapheneEventIntMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
-                intValue=metadata_entry.entry_data.value,
+                intValue=int_val,
                 # make string representation available to allow for > 32bit int
                 intRepr=str(metadata_entry.entry_data.value),
             )
