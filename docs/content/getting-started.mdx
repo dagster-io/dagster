@@ -1,10 +1,20 @@
 # Getting Started with Dagster
 
-<p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">Dagster is a data orchestrator for machine learning, analytics, and ETL</p>
+<p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">
+  Dagster is a data orchestrator for machine learning, analytics, and ETL
+</p>
 
 <div className="md:col-span-3 flex flex-wrap md:flex-nowrap items-center bg-gradient-to-b from-blue-400 to-blue-500 shadow-lg rounded-2xl py-6 md:py-2 px-6 md:pr-5 space-y-4 md:space-y-0 md:space-x-8">
-    <p className="flex-auto text-white text-lg"> New to Dagster? Learn all about the library in a short tutorial.</p>
-    <a href="/tutorial" className="flex-none bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white font-semibold rounded-lg py-3 px-4 no-underline">Take the Tutorial</a>
+  <p className="flex-auto text-white text-lg">
+    {" "}
+    New to Dagster? Learn all about the library in a short tutorial.
+  </p>
+  <a
+    href="/tutorial"
+    className="flex-none bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white font-semibold rounded-lg py-3 px-4 no-underline"
+  >
+    Take the Tutorial
+  </a>
 </div>
 
 Or read about:
@@ -26,8 +36,7 @@ To install Dagster and Dagit into an existing Python environment, run:
 pip install dagster
 ```
 
-This will install the latest stable version of the core Dagster packages in your current Python
-environment.
+This will install the latest stable version of the core Dagster packages in your current Python environment.
 
 ### Writing a Pipeline
 
@@ -63,8 +72,7 @@ You can execute the pipeline in three different ways: [Dagit](/concepts/dagit/da
 
 ### Running the Pipeline in Dagit
 
-It's highly recommended to use Dagit with Dagster. Dagit is a web-based interface for viewing and
-interacting with Dagster objects.
+It's highly recommended to use Dagit with Dagster. Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
 ```bash
 pip install dagit
@@ -76,11 +84,9 @@ To visualize your pipeline in Dagit, run the following command:
 dagit -f hello_world.py
 ```
 
-Then navigate to <http://localhost:3000> to start using Dagit:
-![dagit-def](/images/getting-started/dagit-def.png)
+Then navigate to <http://localhost:3000> to start using Dagit: ![dagit-def](/images/getting-started/dagit-def.png)
 
-Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline. You
-will then see Dagit launches a pipeline run:
+Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline. You will then see Dagit launches a pipeline run:
 
 ![dagit-run](/images/getting-started/dagit-run.png)
 

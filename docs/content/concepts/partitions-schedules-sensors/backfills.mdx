@@ -15,8 +15,7 @@ Dagster supports data backfills for each partition or subsets of partitions.
 
 ## Overview
 
-After defining a [Partition Set](/concepts/partitions-schedules-sensors/partitions#defining-a-partition-set),
-you can use backfills to instigate pipeline runs for each partition in the set.
+After defining a [Partition Set](/concepts/partitions-schedules-sensors/partitions#defining-a-partition-set), you can use backfills to instigate pipeline runs for each partition in the set.
 
 ---
 
@@ -24,12 +23,9 @@ you can use backfills to instigate pipeline runs for each partition in the set.
 
 ### Using Dagit
 
-You can launch and monitor backfills of a pipeline page in Dagit from
-the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#the-partitions-tab).
+You can launch and monitor backfills of a pipeline page in Dagit from the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#the-partitions-tab).
 
-To launch a backfill, click the "Launch backfill" button at the top center of the Partitions tab.
-This opens the "Launch backfill" modal, which lets you select the set of partitions to launch the
-backfill over.
+To launch a backfill, click the "Launch backfill" button at the top center of the Partitions tab. This opens the "Launch backfill" modal, which lets you select the set of partitions to launch the backfill over.
 
 <!-- This was generated with:
     * `dagit -f repo.py` inside docs_snippets/overview/schedules_partitions/ directory
@@ -38,14 +34,9 @@ backfill over.
 
 <img src="/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png" />
 
-You can click the button on the bottom right to submit the runs. What happens when you hit this
-button depends on your [Run Coordinator](/deployment/run-coordinator).
-With the default run coordinator, the modal will exit after all runs have been launched. With the
-queued run coordinator, the modal will exit after all runs have been queued.
+You can click the button on the bottom right to submit the runs. What happens when you hit this button depends on your [Run Coordinator](/deployment/run-coordinator). With the default run coordinator, the modal will exit after all runs have been launched. With the queued run coordinator, the modal will exit after all runs have been queued.
 
-After all the runs have been submitted, you'll be returned to the partitions page, with a filter for
-runs inside the backfill. This refreshes periodically and allows you to see how the backfill is
-progressing. Boxes become green or red as steps in the backfill runs succeed or fail.
+After all the runs have been submitted, you'll be returned to the partitions page, with a filter for runs inside the backfill. This refreshes periodically and allows you to see how the backfill is progressing. Boxes become green or red as steps in the backfill runs succeed or fail.
 
 <img src="/images/concepts/partitions-schedules-sensors/partitions-page.png" />
 
@@ -53,8 +44,7 @@ progressing. Boxes become green or red as steps in the backfill runs succeed or 
 
 You can also launch backfills using the [`backfill`](/\_apidocs/cli#dagster-pipeline-backfill) CLI.
 
-In the [Partitions](/concepts/partitions-schedules-sensors/partitions) section, we defined a pipeline
-and a `date_partition_set` partition set that targeted the pipeline:
+In the [Partitions](/concepts/partitions-schedules-sensors/partitions) section, we defined a pipeline and a `date_partition_set` partition set that targeted the pipeline:
 
 ```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_def endbefore=end_def
 def get_date_partitions():
@@ -75,8 +65,7 @@ date_partition_set = PartitionSetDefinition(
 )
 ```
 
-Let's also setup a <PyObject module="dagster" object="RepositoryDefinition"/> and `workspace.yaml`
-for this pipeline and partition set:
+Let's also setup a <PyObject module="dagster" object="RepositoryDefinition"/> and `workspace.yaml` for this pipeline and partition set:
 
 ```python file=/concepts/partitions_schedules_sensors/repo.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
 @repository
@@ -92,11 +81,9 @@ load_from:
   - python_file: repo.py
 ```
 
-_See details in [Repositories](/concepts/repositories-workspaces/repositories) and [Workspaces](/concepts/repositories-workspaces/workspaces) if you_
-_are not familiar with these Dagster concepts._
+_See details in [Repositories](/concepts/repositories-workspaces/repositories) and [Workspaces](/concepts/repositories-workspaces/workspaces) if you_ _are not familiar with these Dagster concepts._
 
-Now we can run the command `dagster pipeline backfill` to execute the backfill. To run all partitions,
-simply run the command with the arguments to specify the pipeline and partition set.
+Now we can run the command `dagster pipeline backfill` to execute the backfill. To run all partitions, simply run the command with the arguments to specify the pipeline and partition set.
 
 <img src="/images/concepts/partitions-schedules-sensors/backfills-cli.png" />
 
@@ -106,8 +93,7 @@ simply run the command with the arguments to specify the pipeline and partition 
 
 You can also execute subsets of the partition sets.
 
-You can specify the `--partitions` argument and provide a comma-separated list of partition names
-you want to backfill:
+You can specify the `--partitions` argument and provide a comma-separated list of partition names you want to backfill:
 
 ```bash
 $ dagster pipeline backfill -p my_pipeline --partition-set date_partition_set --partitions M,Tu,W

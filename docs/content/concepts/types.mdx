@@ -57,9 +57,7 @@ The type system truly shines once the type check expresses richer behavior, such
 
 ## Dagster Types Inferred from Type Hints
 
-If a Python input or output has a PEP 484 type annotation, and a DagsterType is
-not provided on the corresponding input or output definition, then Dagster will automatically
-generate a DagsterType that corresponds to the annotated Python type.
+If a Python input or output has a PEP 484 type annotation, and a DagsterType is not provided on the corresponding input or output definition, then Dagster will automatically generate a DagsterType that corresponds to the annotated Python type.
 
 In this example, the defined solid will end up with a DagsterType named "MyClass" that:
 
@@ -75,8 +73,7 @@ def my_solid(_) -> MyClass:
     return MyClass()
 ```
 
-If the solid in the above example returned an object that was not an instance of MyClass, Dagster
-would raise an error after executing the solid.
+If the solid in the above example returned an object that was not an instance of MyClass, Dagster would raise an error after executing the solid.
 
 ## Built-in Types
 
@@ -125,9 +122,7 @@ def test_dagster_type():
 
 ### Using Dagster Types with PEP 484 Type Annotations
 
-Dagster types peacefully coexist with Python type annotations. In this example, the inputs and
-outputs of the solid compute function are integers, and the type check function for
-`EvenDagsterType` will be invoked at runtime to verify that they are even.
+Dagster types peacefully coexist with Python type annotations. In this example, the inputs and outputs of the solid compute function are integers, and the type check function for `EvenDagsterType` will be invoked at runtime to verify that they are even.
 
 ```python file=/concepts/types/types.py startafter=start_basic_even_type_with_annotations endbefore=end_basic_even_type_with_annotations
 @solid(
@@ -142,12 +137,9 @@ def double_even_with_annotations(_, num: int) -> int:
 
 ### Associating Dagster Types with Python Types
 
-As mentioned earlier, any Python type used to annotate an argument or return value of solid-decorated
-function has a corresponding Dagster type that will be used for the corresponding input or output
-definition.
+As mentioned earlier, any Python type used to annotate an argument or return value of solid-decorated function has a corresponding Dagster type that will be used for the corresponding input or output definition.
 
-By default, Dagster will generate Dagster types for Python types that it's not aware of, but you can
-also explicitly control the Dagster type that will be used for a particular Python type.
+By default, Dagster will generate Dagster types for Python types that it's not aware of, but you can also explicitly control the Dagster type that will be used for a particular Python type.
 
 There are two APIs:
 

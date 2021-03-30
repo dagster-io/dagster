@@ -5,18 +5,13 @@ description: Contributions are welcome and are greatly appreciated. Here's the c
 
 # Contributing
 
-We love to see our community members get involved!
-If you are planning to contribute to Dagster, you will first need to set
-up a local development environment.
+We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
 ## Environment Setup
 
-1. Install Python. Python 3.6 or above recommended, but our CI/CD
-   pipeline currently tests against up-to-date patch versions of Python
-   3.6, 3.7 and 3.8.
+1. Install Python. Python 3.6 or above recommended, but our CI/CD pipeline currently tests against up-to-date patch versions of Python 3.6, 3.7 and 3.8.
 
-2. Create and activate a virtualenv, using the tool of your choice.
-   On macOS you can install `pyenv` with Homebrew:
+2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
 
    ```bash
    brew install pyenv pyenv-virtualenv
@@ -37,9 +32,7 @@ up a local development environment.
    pyenv activate dagster37
    ```
 
-3. Ensure that you have node installed by running _node -v_, and that you have
-   [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS,
-   you can install yarn with Homebrew:
+3. Ensure that you have node installed by running _node -v_, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
 
    ```bash
    brew install yarn
@@ -51,13 +44,7 @@ up a local development environment.
    git clone git@github.com:dagster-io/dagster.git
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a
-   full Dagster developer environment with all modules and runs tests
-   that do not require heavy external dependencies such as docker. This
-   will take a few minutes. Note that certain sections of the makefile (sanity_check,
-   which is part of rebuild_dagit) require POSIX compliant shells and will fail
-   on CMD and powershell -- if developing on windows, using something like WSL or git-bash
-   is recommended.
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of rebuild_dagit) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended.
 
    ```bash
    make dev_install
@@ -73,30 +60,20 @@ up a local development environment.
 
 Some notes on developing in Dagster:
 
-- **Black/Pylint**: We use [black](https://github.com/python/black) to
-  enforce a consistent code style, along with
-  [pylint](https://www.pylint.org/). We test these in our CI/CD
-  pipeline.
+- **Black/Pylint**: We use [black](https://github.com/python/black) to enforce a consistent code style, along with [pylint](https://www.pylint.org/). We test these in our CI/CD pipeline.
 - **Line Width**: We use a line width of 100.
-- **IDE**: We recommend setting up your IDE to format with black on
-  save and check pylint, but you can always run `make black` and
-  `make pylint` in the root Dagster directory before submitting a pull
-  request. If you're also using VS Code, you can see what we're
-  using for our `settings.json`
-  [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
+- **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 
 ## Developing Dagit
 
-For development, run the Dagit GraphQL server on a different port than
-the webapp, with any pipeline. For example:
+For development, run the Dagit GraphQL server on a different port than the webapp, with any pipeline. For example:
 
 ```bash
 cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality
 dagit -p 3333 -f custom_types_5.py
 ```
 
-Keep this running. Then, in another terminal, run the local development
-(autoreloading, etc.) version of the webapp:
+Keep this running. Then, in another terminal, run the local development (autoreloading, etc.) version of the webapp:
 
 ```bash
 cd dagster/js_modules/dagit
@@ -120,9 +97,7 @@ cd docs
 yarn --cwd next dev  # Serves the docs website on http://localhost:3001
 ```
 
-The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python
-docstrings from the library files. The `.rst` files can be found in the `docs/sections/api/apidocs`
-directory.
+The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python docstrings from the library files. The `.rst` files can be found in the `docs/sections/api/apidocs` directory.
 
 If you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
@@ -132,30 +107,18 @@ make buildnext
 
 ## Picking a Github Issue
 
-We encourage you to start with an issue labeled with the tag
-[`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-on the [Github issue board](https://github.com/dagster-io/dagster/issues),
-to get familiar with our codebase as a first-time contributor.
+We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
-Then, you can work on the issue labeled as [`good second issue`](https://github.com/dagster-io/dagster/labels/good%20second%20issue)
-which is more like a medium task.
+Then, you can work on the issue labeled as [`good second issue`](https://github.com/dagster-io/dagster/labels/good%20second%20issue) which is more like a medium task.
 
-When you are ready for more of a challenge, you can tackle issues with the
-[most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc).
-We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
-Feel free to contact us in our Slack channel [#contributors](https://app.slack.com/client/TCDGQDUKF/C01K91YP0TF) for any questions.
+When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest. Feel free to contact us in our Slack channel [#contributors](https://app.slack.com/client/TCDGQDUKF/C01K91YP0TF) for any questions.
 
 ## Submit Your Code
 
-To submit your code, [fork the Dagster repository](https://help.github.com/en/articles/fork-a-repo),
-create a [new branch](https://help.github.com/en/desktop/contributing-to-projects/creating-a-branch-for-your-work) on your fork,
-and open [a Pull Request (PR)](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork)
-once your work is ready for review.
+To submit your code, [fork the Dagster repository](https://help.github.com/en/articles/fork-a-repo), create a [new branch](https://help.github.com/en/desktop/contributing-to-projects/creating-a-branch-for-your-work) on your fork, and open [a Pull Request (PR)](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork) once your work is ready for review.
 
-In the PR template, please describe the change, including the motivation/context, test coverage, and any other relevant information.
-Please note if the PR is a breaking change or if it is related to an open GitHub issue.
+In the PR template, please describe the change, including the motivation/context, test coverage, and any other relevant information. Please note if the PR is a breaking change or if it is related to an open GitHub issue.
 
-A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved.
-Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in Github 🥳.
+A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in Github 🥳.
 
 Your PR is now merged into Dagster! We’ll shout out your contribution in the weekly release notes.

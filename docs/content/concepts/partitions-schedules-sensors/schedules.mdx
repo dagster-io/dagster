@@ -21,9 +21,7 @@ Dagster includes a scheduler that can be used to launch runs on a fixed interval
 
 ## Overview
 
-A _schedule_ is a definition in Dagster that is used to execute a pipeline at a fixed interval. Each
-time at which a schedule is evaluated is called a _tick_. The schedule definition is
-responsible for generating run configuration for the pipeline on each tick.
+A _schedule_ is a definition in Dagster that is used to execute a pipeline at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition is responsible for generating run configuration for the pipeline on each tick.
 
 Each schedule:
 
@@ -32,9 +30,7 @@ Each schedule:
 - Optionally defines tags, a mode, and a solid selection for the targeted pipeline.
 - Optionally defines a `should_execute` function, which can be used to skip some ticks.
 
-Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have
-defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on
-how to run the daemon in order to execute your schedules.
+Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
 
 ---
 
@@ -45,10 +41,7 @@ There are two tpes of schedules in Dagster:
 - Partition-based
 - Non-partition-based
 
-Partition-based schedules are best when your pipeline operates on data that is partitioned by time
-(for example, a pipeline that fills in a daily partition of a table). Non-partition-based
-schedules are best when you just want to run an operation on a fixed interval (for example, a
-pipeline that rebuilds the same table on each execution)
+Partition-based schedules are best when your pipeline operates on data that is partitioned by time (for example, a pipeline that fills in a daily partition of a table). Non-partition-based schedules are best when you just want to run an operation on a fixed interval (for example, a pipeline that rebuilds the same table on each execution)
 
 ### Partition-based schedules
 
@@ -67,29 +60,15 @@ def my_daily_schedule(date):
     return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
 ```
 
-The decorated schedule function should accept a `datetime` and return the run config for the
-pipeline run associated with that partition. The scheduler will ensure that the schedule function
-is evaluated exactly once for every partition to generate run config, which is then
-used to create and launch a pipeline run.
+The decorated schedule function should accept a `datetime` and return the run config for the pipeline run associated with that partition. The scheduler will ensure that the schedule function is evaluated exactly once for every partition to generate run config, which is then used to create and launch a pipeline run.
 
-Partition-based schedules require a `start_date` that indicates when the set of partitions begins.
-The scheduler will only kick off runs for times after both the `start_date` and the time when
-the schedule was turned on. You can kick off runs for times between the `start_date` and when the schedule is turned on by
-launching a [backfill](/concepts/partitions-schedules-sensors/backfills).
+Partition-based schedules require a `start_date` that indicates when the set of partitions begins. The scheduler will only kick off runs for times after both the `start_date` and the time when the schedule was turned on. You can kick off runs for times between the `start_date` and when the schedule is turned on by launching a [backfill](/concepts/partitions-schedules-sensors/backfills).
 
-By default, the partition that is used for the run will be one partition earlier than the partition
-that includes the current time, to capture a common ETL use case - for example, a daily schedule
-will fill in the previous day's partition, and a monthly schedule will fill in last month's
-partition. You can customize this behavior by changing the `partition_days_offset` parameter for a
-daily schedule. The default value of this parameter is 1, which means that the scheduler goes back one day to determine
-the partition. Setting the value to 0 will cause the schedule to fill in the partition that
-corresponds to the current day, and increasing it above 1 will cause it to fill in an even earlier
-partition. A similarly-named parameter also exists for the other execution intervals.
+By default, the partition that is used for the run will be one partition earlier than the partition that includes the current time, to capture a common ETL use case - for example, a daily schedule will fill in the previous day's partition, and a monthly schedule will fill in last month's partition. You can customize this behavior by changing the `partition_days_offset` parameter for a daily schedule. The default value of this parameter is 1, which means that the scheduler goes back one day to determine the partition. Setting the value to 0 will cause the schedule to fill in the partition that corresponds to the current day, and increasing it above 1 will cause it to fill in an even earlier partition. A similarly-named parameter also exists for the other execution intervals.
 
 ### Non-partition-based schedules
 
-When you want to run a schedule on a fixed interval and don't need partitions, you
-can use the <PyObject object="schedule" decorator /> decorator to define your schedule.
+When you want to run a schedule on a fixed interval and don't need partitions, you can use the <PyObject object="schedule" decorator /> decorator to define your schedule.
 
 For example, this schedule runs at 1:00 AM in US/Central time every day:
 
@@ -110,8 +89,7 @@ def my_execution_time_schedule(context):
 
 ### Timezones
 
-You can customize the timezone in which your schedule executes by setting the `execution_timezone`
-parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
+You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
 
 For example, the following schedule executes daily at 9AM in US/Pacific time:
 
@@ -132,33 +110,19 @@ def my_timezone_schedule(date):
 
 ### Daylight Savings Time
 
-Because of Daylight Savings Time transitions, it's possible to specify an execution time that does
-not exist for every scheduled interval. For example, say you have a daily schedule with an execution
-time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM
-when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
+Because of Daylight Savings Time transitions, it's possible to specify an execution time that does not exist for every scheduled interval. For example, say you have a daily schedule with an execution time of 2:30 AM in the US/Eastern timezone. On 2019/03/10, the time jumps from 2:00 AM to 3:00 AM when Daylight Savings Time begins. Therefore, the time of 2:30 AM did not exist for the day.
 
 If you specify such an execution time, Dagster runs your schedule at the next time that exists. In the previous example, the schedule would run at 3:00 AM.
 
-It's also possible to specify an execution time that exists twice on one day every year. For
-example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute.
-In this case, Dagster will execute your schedule at the latter of the two possible times.
+It's also possible to specify an execution time that exists twice on one day every year. For example, on 2019/11/03 in US/Eastern time, the hour from 1:00 AM to 2:00 AM repeats, so a daily schedule running at 1:30 AM has two possible times in which it could execute. In this case, Dagster will execute your schedule at the latter of the two possible times.
 
-Hourly schedules will be unaffected by daylight savings time transitions - the schedule will
-continue to run exactly once every hour, even as the timezone changes. In the example above where
-the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour
-would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
+Hourly schedules will be unaffected by daylight savings time transitions - the schedule will continue to run exactly once every hour, even as the timezone changes. In the example above where the hour from 1:00 AM to 2:00 AM repeats, an hourly schedule running at 30 minutes past the hour would run at 12:30 AM, both instances of 1:30 AM, and then proceed normally from 2:30 AM on.
 
 ## Running the scheduler
 
-In order for your schedule to run, it must be started. The easiest way to start and stop schedules
-is in Dagit from the Schedules page. You can also start and stop a schedule with the `dagster schedule start`
-and `dagster schedule stop` commands.
+In order for your schedule to run, it must be started. The easiest way to start and stop schedules is in Dagit from the Schedules page. You can also start and stop a schedule with the `dagster schedule start` and `dagster schedule stop` commands.
 
-Once your schedule is started, if you're running the
-[dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will
-begin executing immediately. See
-the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section
-below if your schedule has been started but isn't submitting runs.
+Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
 
 ## Examples
 

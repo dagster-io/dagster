@@ -13,33 +13,25 @@ Dagster exposes a GraphQL API that allows clients to interact with Dagster progr
 
 ## Note about breaking changes
 
-The GraphQL API is still evolving and is subject to breaking changes. A large portion of the API is
-primarily for internal use by Dagit. For any of the queries below, we will be clear about breaking changes
-in release notes.
+The GraphQL API is still evolving and is subject to breaking changes. A large portion of the API is primarily for internal use by Dagit. For any of the queries below, we will be clear about breaking changes in release notes.
 
 ## Using the GraphQL API
 
-The GraphQL API is served alongside the Dagit web server. To start the server, run `dagit` in
-your Dagster workspace.
+The GraphQL API is served alongside the Dagit web server. To start the server, run `dagit` in your Dagster workspace.
 
     dagit
 
-Dagit serves the GraphQL endpoint at the `/graphql` endpoint. If you are running Dagit locally on
-port 3000, you can access the API at `localhost:3000/graphql`
+Dagit serves the GraphQL endpoint at the `/graphql` endpoint. If you are running Dagit locally on port 3000, you can access the API at `localhost:3000/graphql`
 
 ### Using the GraphQL Playground
 
-You can access the GraphQL Playground by navigating to the `/graphql` route in your browser. The
-GraphQL Playground contains the full GraphQL Schema and an interactive playground to write and test
-queries and mutations.
+You can access the GraphQL Playground by navigating to the `/graphql` route in your browser. The GraphQL Playground contains the full GraphQL Schema and an interactive playground to write and test queries and mutations.
 
 ![GraphQL Playground](/images/concepts/dagit/graphql/playground.png)
 
 ### Exploring the GraphQL Schema and Documentation
 
-Clicking on the `Docs` tab on the right edge of the playground opens up interactive documentation
-for the GraphQL API. The interactive documentation is the best way to explore the API and get information about which fields are available
-on the queries and mutations.
+Clicking on the `Docs` tab on the right edge of the playground opens up interactive documentation for the GraphQL API. The interactive documentation is the best way to explore the API and get information about which fields are available on the queries and mutations.
 
 ![GraphQL Docs](/images/concepts/dagit/graphql/docs.png)
 
@@ -72,8 +64,7 @@ To retrieve a list of all pipeline runs, use the `pipelineRunsOrError` query.
 
 #### Pagination
 
-You may eventually accumulate too many runs to return in one query. The `pipelineRunsOrError` query
-takes in optional `cursor` and `limit` arguments for pagination:
+You may eventually accumulate too many runs to return in one query. The `pipelineRunsOrError` query takes in optional `cursor` and `limit` arguments for pagination:
 
     query PaginatedPipelineRuns {
       pipelineRunsOrError(
@@ -186,10 +177,7 @@ For this query, the required arguments are:
 `runConfigData`:
 
 - This is where you define the run config to execute the pipeline with
-- Note that `runConfigData` is of type `RunConfigData`. This type is used when passing in an
-  arbitrary object for run config. This is any-typed in the GraphQL type system but must conform to
-  the constraints of the config schema for this pipeline. If it does not, the mutation returns
-  a `PipelineConfigValidationInvalid` response
+- Note that `runConfigData` is of type `RunConfigData`. This type is used when passing in an arbitrary object for run config. This is any-typed in the GraphQL type system but must conform to the constraints of the config schema for this pipeline. If it does not, the mutation returns a `PipelineConfigValidationInvalid` response
 
 `mode`:
 

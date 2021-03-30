@@ -7,14 +7,11 @@ description: Lakehouse is set of APIs for defining pipelines that puts assets, l
 
 <CodeReferenceLink filePath="examples/simple_lakehouse" />
 
-Lakehouse is set of APIs for defining pipelines that puts "assets", like database tables and ML
-models, at the center.
+Lakehouse is set of APIs for defining pipelines that puts "assets", like database tables and ML models, at the center.
 
 Lakehouse is built on top of Dagster's core abstractions, and is currently an experimental API.
 
-In this example, we'll define some tables and generate a Dagster pipeline that updates them. We
-have a table of temperature samples collected in five-minute increments, and we want to compute a
-table of the highest temperatures for each day.
+In this example, we'll define some tables and generate a Dagster pipeline that updates them. We have a table of temperature samples collected in five-minute increments, and we want to compute a table of the highest temperatures for each day.
 
 ## Data Assets
 
@@ -42,18 +39,11 @@ def daily_temperature_highs_table(sfo_q2_weather_sample: pd.DataFrame) -> pd.Dat
     return sfo_q2_weather_sample.groupby("valid_date").max().rename(columns={"tmpf": "max_tmpf"})
 ```
 
-They're pure functions that describe how the asset is derived from parent assets.
-They intentionally omit code for storing and retrieving the assets, because that code often varies
-across environments - e.g. we might want to store data in a local csv file for easy testing, but
-store data a data warehouse in production.
+They're pure functions that describe how the asset is derived from parent assets. They intentionally omit code for storing and retrieving the assets, because that code often varies across environments - e.g. we might want to store data in a local csv file for easy testing, but store data a data warehouse in production.
 
-`sfo_q2_weather_sample_table` represents our base temperature table. `"filesystem"` is a name we
-have chosen to identify the storage system where this table lives. The `path` argument gives
-the path to the data asset itself within that storage system.
+`sfo_q2_weather_sample_table` represents our base temperature table. `"filesystem"` is a name we have chosen to identify the storage system where this table lives. The `path` argument gives the path to the data asset itself within that storage system.
 
-`daily_temperature_highs_table` represents our computed asset. We explicitly define the dependency
-on the original table by passing `sfo_q2_weather_sample_table` as the value for the `input_deps`
-argument.
+`daily_temperature_highs_table` represents our computed asset. We explicitly define the dependency on the original table by passing `sfo_q2_weather_sample_table` as the value for the `input_deps` argument.
 
 ## Storage
 
@@ -107,21 +97,15 @@ simple_lakehouse = Lakehouse(
 )
 ```
 
-We want to persist the data to disk using csv files. Then, we need to create an `AssetStorage` to
-describe the conversion between pandas dataframes and csv files.
+We want to persist the data to disk using csv files. Then, we need to create an `AssetStorage` to describe the conversion between pandas dataframes and csv files.
 
-The `load` function converts inputs to the required format for an asset. Since our base asset will
-represent a csv file, and our second asset will be processing a pandas dataframe, `load` will
-convert a csv to a dataframe. Likewise, we want to persist the results of our
-second asset as a csv file, so our `save` method converts a pandas dataframe to a csv.
+The `load` function converts inputs to the required format for an asset. Since our base asset will represent a csv file, and our second asset will be processing a pandas dataframe, `load` will convert a csv to a dataframe. Likewise, we want to persist the results of our second asset as a csv file, so our `save` method converts a pandas dataframe to a csv.
 
-Then, we construct our `Lakehouse`, which delegates conversion and storage between assets by
-utilizing the `AssetStorage` we just defined.
+Then, we construct our `Lakehouse`, which delegates conversion and storage between assets by utilizing the `AssetStorage` we just defined.
 
 ## Pipeline
 
-The data assets, combined with the storage for handling conversion between data formats, completely
-define a computation graph. As a result, we can use the assets and storage to construct a pipeline.
+The data assets, combined with the storage for handling conversion between data formats, completely define a computation graph. As a result, we can use the assets and storage to construct a pipeline.
 
 ```python file=../../simple_lakehouse/simple_lakehouse/pipelines.py
 """Pipeline definitions for the simple_lakehouse example.
@@ -136,5 +120,4 @@ simple_lakehouse_pipeline = simple_lakehouse.build_pipeline_definition(
 )
 ```
 
-Note that the assets don't have to be provided in order. Lakehouse is able to determine asset
-ordering by resolving input asset dependencies.
+Note that the assets don't have to be provided in order. Lakehouse is able to determine asset ordering by resolving input asset dependencies.

@@ -133,8 +133,7 @@ class PandasCsvIOManagerWithAsset(IOManager):
         )
 ```
 
-Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
-on they types of event metadata available.
+Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details on they types of event metadata available.
 
 ### Specifying a partition for an AssetMaterialization
 
@@ -167,8 +166,7 @@ In this case, the <PyObject object="AssetMaterialization" /> and the <PyObject o
 
 Just as there are two places in which you can yield runtime <PyObject object="AssetMaterialization" /> events (within a solid body and within an IOManager), we provide two different interfaces for linking a solid output to to an asset. Regardless of which you choose, every time the solid runs and yields that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
 
-If you specified any metadata entries on the <PyObject object="Output" /> event while yielding it (see: [Solid Event Docs](/concepts/solids-pipelines/solid-events#attaching-metadata-to-outputs)),
-these entries will automatically be attached to the materialization event for this asset.
+If you specified any metadata entries on the <PyObject object="Output" /> event while yielding it (see: [Solid Event Docs](/concepts/solids-pipelines/solid-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
 
 ### Linking assets to an Output Definition <Experimental />
 
@@ -184,9 +182,7 @@ def my_constant_asset_solid(context):
     yield Output(df)
 ```
 
-For cases where the asset that you want to link to an output might change based on some context in
-the pipeline (such as the mode), you can pass in a function that takes <PyObject object="OutputContext"/> and returns
-an <PyObject object="AssetKey"/>.
+For cases where the asset that you want to link to an output might change based on some context in the pipeline (such as the mode), you can pass in a function that takes <PyObject object="OutputContext"/> and returns an <PyObject object="AssetKey"/>.
 
 ```python file=/concepts/assets/materialization_solids.py startafter=start_output_def_mat_solid_1 endbefore=end_output_def_mat_solid_1
 def get_asset_key(context: OutputContext):
@@ -203,11 +199,9 @@ def my_variable_asset_solid(context):
 
 ### Linking assets to outputs with an IOManager <Experimental />
 
-If you've defined a custom <PyObject object="IOManager"/> to handle storing your solid's outputs, the <PyObject object="IOManager"/> will likely be the most natural place to define which asset a particular output will be written to. To do this,
-you can implement the `get_output_asset_key` function on your <PyObject object="IOManager"/>.
+If you've defined a custom <PyObject object="IOManager"/> to handle storing your solid's outputs, the <PyObject object="IOManager"/> will likely be the most natural place to define which asset a particular output will be written to. To do this, you can implement the `get_output_asset_key` function on your <PyObject object="IOManager"/>.
 
-Similar to the above interface, this function takes an <PyObject object="OutputContext"/> and returns
-an <PyObject object="AssetKey"/>. The following example functions nearly identically to `PandasCsvIOManagerWithMetadata` from the [runtime example](/concepts/assets/asset-materializations#example-iomanager) above.
+Similar to the above interface, this function takes an <PyObject object="OutputContext"/> and returns an <PyObject object="AssetKey"/>. The following example functions nearly identically to `PandasCsvIOManagerWithMetadata` from the [runtime example](/concepts/assets/asset-materializations#example-iomanager) above.
 
 ```python file=/concepts/assets/materialization_io_managers.py startafter=start_asset_def endbefore=end_asset_def
 class PandasCsvIOManagerWithOutputAsset(IOManager):
