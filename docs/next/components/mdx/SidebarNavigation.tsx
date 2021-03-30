@@ -1,6 +1,42 @@
 import { useEffect, useState } from "react";
 
 import cx from "classnames";
+import visit from "unist-util-visit";
+
+// Travel the tree to get the headings
+export function getItems(node, current) {
+  if (!node) {
+    return {};
+  } else if (node.type === `paragraph`) {
+    visit(node, (item) => {
+      if (item.type === `link`) {
+        const url: string = item.url as any;
+        // workaround for https://github.com/syntax-tree/mdast-util-toc/issues/70
+        // remove ids of HTML elements from the headings, i.e. "experimental", "cross", "check"
+        current.url = url
+          .replace(/^#cross-/, "#")
+          .replace(/^#check-/, "#")
+          .replace(/-experimental-?$/, "");
+      }
+      if (item.type === `text`) {
+        current.title = item.value;
+      }
+    });
+    return current;
+  } else {
+    if (node.type === `list`) {
+      current.items = node.children.map((i) => getItems(i, {}));
+      return current;
+    } else if (node.type === `listItem`) {
+      const heading = getItems(node.children[0], {});
+      if (node.children.length > 1) {
+        getItems(node.children[1], heading);
+      }
+      return heading;
+    }
+  }
+  return {};
+}
 
 // By parsing the AST, we generate a sidebar navigation tree like this:
 //
@@ -23,7 +59,7 @@ import cx from "classnames";
 //   }]}
 
 // Given the tree, get all the IDS
-const getIds = (items) => {
+export const getIds = (items) => {
   return items.reduce((acc, item) => {
     if (item.url) {
       // url has a # as first character, remove it to get the raw CSS-id

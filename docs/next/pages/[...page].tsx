@@ -10,7 +10,7 @@ import { GetStaticProps } from "next";
 import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
-import SidebarNavigation from "components/mdx/SidebarNavigation";
+import SidebarNavigation, { getItems } from "components/mdx/SidebarNavigation";
 import { allPaths } from "util/useNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
@@ -22,7 +22,6 @@ import rehypePlugins from "components/mdx/rehypePlugins";
 import remark from "remark";
 import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
-import visit from "unist-util-visit";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -255,35 +254,6 @@ const basePathForVersion = (version: string) => {
 
   return path.resolve(".versioned_content", version);
 };
-
-// Travel the tree to get the headings
-function getItems(node, current) {
-  if (!node) {
-    return {};
-  } else if (node.type === `paragraph`) {
-    visit(node, (item) => {
-      if (item.type === `link`) {
-        current.url = item.url;
-      }
-      if (item.type === `text`) {
-        current.title = item.value;
-      }
-    });
-    return current;
-  } else {
-    if (node.type === `list`) {
-      current.items = node.children.map((i) => getItems(i, {}));
-      return current;
-    } else if (node.type === `listItem`) {
-      const heading = getItems(node.children[0], {});
-      if (node.children.length > 1) {
-        getItems(node.children[1], heading);
-      }
-      return heading;
-    }
-  }
-  return {};
-}
 
 async function getSphinxData(
   sphinxPrefix: SphinxPrefix,

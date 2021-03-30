@@ -5,6 +5,9 @@ import { Node } from "hast";
 import visit from "unist-util-visit";
 import { flatten } from "../util/useNavigation";
 import masterNavigation from "../../content/_navigation.json";
+import generateToc from "mdast-util-toc";
+import { getItems, getIds } from "../components/mdx/SidebarNavigation";
+import matter from "gray-matter";
 
 // remark
 import mdx from "remark-mdx";
@@ -50,7 +53,9 @@ test("No dead MDX links", async () => {
     allMdxFilePaths.map(async (relativeFilePath) => {
       const absolutePath = path.resolve(DOCS_DIR, relativeFilePath);
       const fileContent = await fs.promises.readFile(absolutePath, "utf-8");
-      astStore[relativeFilePath] = remark().use(mdx).parse(fileContent);
+      // separate content and front matter data
+      const { content, data } = matter(fileContent);
+      astStore[relativeFilePath] = remark().use(mdx).parse(content);
     })
   );
 
@@ -111,15 +116,14 @@ function isLinkLegit(
     );
   }
 
-  // Todo: Validate links with anchors
+  // Validate links with anchors
   const [target, anchor] = rawTarget.split("#");
   const targetFilePath = getMatchCandidates(target).find((name) =>
     allMdxFileSet.has(name)
   );
   if (targetFilePath) {
-    // const allAnchors = collectHeadingsAsAnchors(astStore[targetFilePath]);
-    // return allAnchors.includes(anchor);
-    return true;
+    const allAnchors = collectHeadingsAsAnchors(astStore[targetFilePath]);
+    return allAnchors.includes(anchor);
   }
 
   return false;
@@ -143,10 +147,9 @@ function collectInternalLinks(
       // is a self-referencing anchor link
       result.push(`${currentFilePath.replace(/\.mdx$/, "")}${url}`);
     } else if (!url.startsWith("/")) {
-      // TODO links should all be absolute paths
-      // throw new Error(
-      //   `Do not use relative references ('${url}' in ${currentFilePath}). All links should start with '/'`,
-      // );
+      throw new Error(
+        `Do not use relative references ('${url}' in ${currentFilePath}). All links should start with '/'`
+      );
     } else {
       // remove the leading `/` from the link target
       result.push(url.substr(1));
@@ -163,4 +166,10 @@ function fileExists(filePath: string): boolean {
   } catch (_) {
     return false;
   }
+}
+
+function collectHeadingsAsAnchors(tree: Node): string[] {
+  const node = generateToc(tree, {});
+  const tableOfContents = getItems(node.map, {});
+  return getIds(tableOfContents.items[0].items);
 }
