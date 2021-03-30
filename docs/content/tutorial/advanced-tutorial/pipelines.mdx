@@ -74,7 +74,7 @@ object="resource" displayText="@resource" /> decorator. The decorated function s
 whatever object you wish to make available under the specific resource's slot in
 `context.resources`. Resource constructor functions have access to their own `context` argument,
 which gives access to resource-specific config. (Unlike the contexts we've seen so far, which are
-instances of <PyObject module="dagster" object="SystemComputeExecutionContext" />, this context is
+instances of <PyObject module="dagster" object="SolidExecutionContext" />, this context is
 an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
 ```python file=/intro_tutorial/advanced/pipelines/resources.py startafter=start_resources_marker_0 endbefore=end_resources_marker_0
