@@ -35,9 +35,7 @@ export const AppTopNav: React.FunctionComponent<{searchPlaceholder: string}> = (
           </div>
         </Group>
       </LogoContainer>
-
       <SearchDialog theme="dark" searchPlaceholder={searchPlaceholder} />
-
       {children}
     </AppTopNavContainer>
   );

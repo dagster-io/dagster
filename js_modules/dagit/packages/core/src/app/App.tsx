@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {Route, Switch} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {InstanceRoot} from '../instance/InstanceRoot';
 import {LeftNavBranch} from '../nav/LeftNavBranch';
@@ -13,7 +14,7 @@ import {FeatureFlagsRoot} from './FeatureFlagsRoot';
 import {SettingsRoot} from './SettingsRoot';
 
 export const App = () => (
-  <div style={{display: 'flex', height: '100%'}}>
+  <Container>
     <LeftNavBranch />
     <Switch>
       <Route path="/flags" component={FeatureFlagsRoot} />
@@ -25,5 +26,10 @@ export const App = () => (
       <Route path="/settings" component={SettingsRoot} />
       <Route path="*" component={FallthroughRoot} />
     </Switch>
-  </div>
+  </Container>
 );
+
+const Container = styled.div`
+  display: flex;
+  height: calc(100% - 50px);
+`;
