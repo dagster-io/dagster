@@ -3,7 +3,7 @@ import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';
+import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {Spinner} from '../ui/Spinner';
@@ -219,17 +219,10 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     });
   }
 
-  onScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!this.list.current) {
-      return;
-    }
-
-    const {scrollTop, scrollHeight, clientHeight} = e.target as Element;
+  onScroll = ({scrollTop, scrollHeight, clientHeight}: ScrollParams) => {
     const atTopAndStarting = scrollTop === 0 && scrollHeight <= clientHeight;
     const atBottom = Math.abs(scrollTop - (scrollHeight - clientHeight)) < 5;
     this.isAtBottomOrZero = atTopAndStarting || atBottom;
-
-    (this.list.current as any)._onScroll(e.target as Element);
   };
 
   scrollToTime = (ms: number) => {
@@ -314,7 +307,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
   render() {
     const {filteredNodes, height, loading, width} = this.props;
     return (
-      <div onScroll={this.onScroll}>
+      <div>
         {loading && (
           <ListEmptyState>
             <NonIdealState icon={<Spinner purpose="section" />} title="Fetching logs..." />
@@ -331,6 +324,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
           height={height}
           overscanRowCount={10}
           style={{paddingBottom: 50}}
+          onScroll={this.onScroll}
         />
       </div>
     );
