@@ -1,4 +1,5 @@
 import re
+import string
 import typing
 
 import pytest
@@ -917,3 +918,25 @@ def test_field_is_none():
             pass
 
     assert "Fields cannot be None" in str(exc_info.value)
+
+
+def test_permissive_defaults():
+    @solid(config_schema=Permissive({"four": Field(int, default_value=4)}))
+    def perm_with_defaults(context):
+        assert context.solid_config["four"] == 4
+
+    assert execute_solid(perm_with_defaults).success
+
+
+def test_permissive_ordering():
+    alphabet = {letter: letter for letter in string.ascii_lowercase}
+
+    @solid(config_schema=dict)
+    def test_order(context):
+        alpha = list(context.solid_config.keys())
+        for idx, letter in enumerate(string.ascii_lowercase):
+            assert letter == alpha[idx]  # if this fails dict ordering got messed up
+
+    assert execute_solid(
+        test_order, run_config={"solids": {"test_order": {"config": alphabet}}}
+    ).success

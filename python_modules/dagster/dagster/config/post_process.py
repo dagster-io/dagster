@@ -121,7 +121,7 @@ def _recurse_in_to_shape(context, config_value):
     config_value = check.opt_dict_param(config_value, "config_value", key_type=str)
 
     fields = context.config_type.fields
-    incoming_fields = set(config_value.keys())
+    incoming_fields = config_value.keys()
 
     processed_fields = {}
 
@@ -141,10 +141,9 @@ def _recurse_in_to_shape(context, config_value):
 
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us
-
     if context.config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE:
-        defined_fields = set(fields.keys())
-        extra_fields = incoming_fields - defined_fields
+        defined_fields = fields.keys()
+        extra_fields = [field for field in incoming_fields if field not in defined_fields]
         for extra_field in extra_fields:
             processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
 
