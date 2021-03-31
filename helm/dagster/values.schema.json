@@ -142,6 +142,45 @@
             ],
             "additionalProperties": false
         },
+        "Server": {
+            "title": "Server",
+            "type": "object",
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "host",
+                "port"
+            ]
+        },
+        "Workspace": {
+            "title": "Workspace",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "servers": {
+                    "title": "Servers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Server"
+                    }
+                }
+            },
+            "required": [
+                "enabled",
+                "servers"
+            ]
+        },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
             "type": "object",
@@ -216,6 +255,9 @@
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
+                "workspace": {
+                    "$ref": "#/definitions/Workspace"
+                },
                 "env": {
                     "title": "Env",
                     "type": "object",
@@ -269,6 +311,7 @@
                 "replicaCount",
                 "image",
                 "service",
+                "workspace",
                 "env",
                 "envConfigMaps",
                 "envSecrets",

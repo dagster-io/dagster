@@ -15,12 +15,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  workspace.yaml: |
+  workspace.yaml:
     load_from:
-      {{- range $deployment := $userDeployments.deployments }}
+      {{- $dagitWorkspace := .Values.dagit.workspace }}
+      {{- $deployments := ternary $dagitWorkspace.servers $userDeployments.deployments $dagitWorkspace.enabled }}
+      {{- range $deployment := $deployments }}
+      {{- $deploymentHost := ternary $deployment.host $deployment.name $dagitWorkspace.enabled }}
       - grpc_server:
-          host: {{ $deployment.name }}
+          host: {{ $deploymentHost }}
           port: {{ $deployment.port }}
-          location_name: {{ $deployment.name }}
+          location_name: {{ $deploymentHost }}
       {{- end }}
 {{- end }}

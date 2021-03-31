@@ -5,10 +5,21 @@ from pydantic import BaseModel  # pylint: disable=no-name-in-module
 from ...utils import kubernetes
 
 
+class Server(BaseModel):
+    host: str
+    port: int
+
+
+class Workspace(BaseModel):
+    enabled: bool
+    servers: List[Server]
+
+
 class Dagit(BaseModel):
     replicaCount: int
     image: kubernetes.Image
     service: kubernetes.Service
+    workspace: Workspace
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
