@@ -210,7 +210,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   const {rootServerURI} = React.useContext(AppContext);
 
   const websocketStatus = React.useContext(WebsocketStatusContext);
-  const websocketOpen = websocketStatus === WebSocket.OPEN;
+  const websocketClosed = websocketStatus === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -234,7 +234,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   // Because renders can happen "out of band" of our update interval, we set a timer for
   // "time until the next interval after the current nowMs".
   React.useEffect(() => {
-    if (scale === 0 || !websocketOpen) {
+    if (scale === 0 || websocketClosed) {
       return;
     }
 
@@ -252,7 +252,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
     const timeUntilIntervalElasped = renderInterval - (now - nowMs);
     const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, metadata, nowMs, websocketOpen]);
+  }, [scale, metadata, nowMs, websocketClosed]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.
@@ -345,7 +345,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       </div>
 
       <GraphQueryInputContainer>
-        {!websocketOpen ? (
+        {websocketClosed ? (
           <WebsocketWarning>
             <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
               <Group
