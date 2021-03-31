@@ -12,6 +12,7 @@ import {Table} from '../ui/Table';
 import {Heading} from '../ui/Text';
 
 import {optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext';
+import {buildRepoPath} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from './workspacePath';
 
@@ -88,7 +89,7 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
               repository: {name},
               repositoryLocation: {name: location},
             } = repository;
-            const repoString = `${name}@${location}`;
+            const repoString = buildRepoPath(name, location);
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>

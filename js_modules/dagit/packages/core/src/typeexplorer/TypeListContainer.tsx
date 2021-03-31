@@ -4,18 +4,21 @@ import * as React from 'react';
 import {PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
 
 import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
 import {TypeListContainerQuery} from './types/TypeListContainerQuery';
 
 interface ITypeListContainerProps {
   explorerPath: PipelineExplorerPath;
+  repoAddress?: RepoAddress;
 }
 
 export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps> = ({
   explorerPath,
+  repoAddress,
 }) => {
-  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
+  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<TypeListContainerQuery>(TYPE_LIST_CONTAINER_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {pipelineSelector},

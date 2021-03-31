@@ -8,7 +8,7 @@ import {JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {buildRepoAddress, buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {SensorInfo} from './SensorInfo';
 import {SensorsTable} from './SensorsTable';
@@ -40,7 +40,7 @@ export const AllSensors: React.FC<Props> = (props) => {
       {withSensors.map((repository) =>
         repository.sensors.length ? (
           <Group direction="column" spacing={12} key={repository.name}>
-            <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
+            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
             <SensorsTable
               repoAddress={buildRepoAddress(repository.name, repository.location.name)}
               sensors={repository.sensors}

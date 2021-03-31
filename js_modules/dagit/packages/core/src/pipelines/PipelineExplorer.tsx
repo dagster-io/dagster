@@ -250,6 +250,7 @@ export class PipelineExplorer extends React.Component<
                   getInvocations={this.props.getInvocations}
                   onEnterCompositeSolid={this.handleEnterCompositeSolid}
                   onClickSolid={this.handleClickSolid}
+                  repoAddress={this.props.repoAddress}
                   {...querystring.parse(location.search || '')}
                 />
               )}

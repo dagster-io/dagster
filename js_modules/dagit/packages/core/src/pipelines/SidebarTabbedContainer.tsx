@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerPath} from './PipelinePathUtils';
 import {SidebarPipelineInfo, SIDEBAR_PIPELINE_INFO_FRAGMENT} from './SidebarPipelineInfo';
@@ -23,6 +24,7 @@ interface ISidebarTabbedContainerProps {
   getInvocations?: (definitionName: string) => {handleID: string}[];
   onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
   onClickSolid: (arg: SolidNameOrPath) => void;
+  repoAddress?: RepoAddress;
 }
 
 interface ITabInfo {
@@ -58,6 +60,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     parentSolidHandleID,
     onEnterCompositeSolid,
     onClickSolid,
+    repoAddress,
   } = props;
 
   let content = <div />;
@@ -65,10 +68,16 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
 
   if (typeExplorer) {
     activeTab = 'types';
-    content = <TypeExplorerContainer explorerPath={explorerPath} typeName={typeExplorer} />;
+    content = (
+      <TypeExplorerContainer
+        explorerPath={explorerPath}
+        repoAddress={repoAddress}
+        typeName={typeExplorer}
+      />
+    );
   } else if (types) {
     activeTab = 'types';
-    content = <TypeListContainer explorerPath={explorerPath} />;
+    content = <TypeListContainer repoAddress={repoAddress} explorerPath={explorerPath} />;
   } else if (solidHandleID) {
     content = (
       <SidebarSolidContainer
@@ -79,6 +88,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
         getInvocations={getInvocations}
         onEnterCompositeSolid={onEnterCompositeSolid}
         onClickSolid={onClickSolid}
+        repoAddress={repoAddress}
       />
     );
   } else if (parentSolidHandleID) {
@@ -91,6 +101,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
         getInvocations={getInvocations}
         onEnterCompositeSolid={onEnterCompositeSolid}
         onClickSolid={onClickSolid}
+        repoAddress={repoAddress}
       />
     );
   } else {

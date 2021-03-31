@@ -273,9 +273,10 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
   children,
   explorerPath,
   options,
+  repoAddress,
 }) => {
   const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
-  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
+  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
 
   const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,

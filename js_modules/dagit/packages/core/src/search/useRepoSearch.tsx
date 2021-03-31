@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
+import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
@@ -36,36 +37,36 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
       ...repos.reduce((inner, repo) => {
         const {name, partitionSets, pipelines, schedules, sensors} = repo;
         const {name: locationName} = repoLocation;
-        const repoAddress = `${name}@${locationName}`;
+        const repoPath = buildRepoPath(name, locationName);
 
         const allPipelines = pipelines.map((pipeline) => ({
-          key: `${repoAddress}-${pipeline.name}`,
+          key: `${repoPath}-${pipeline.name}`,
           label: pipeline.name,
-          description: manyRepos ? `Pipeline in ${repoAddress}` : 'Pipeline',
+          description: manyRepos ? `Pipeline in ${repoPath}` : 'Pipeline',
           href: workspacePath(name, locationName, `/pipelines/${pipeline.name}`),
           type: SearchResultType.Pipeline,
         }));
 
         const allSchedules = schedules.map((schedule) => ({
-          key: `${repoAddress}-${schedule.name}`,
+          key: `${repoPath}-${schedule.name}`,
           label: schedule.name,
-          description: manyRepos ? `Schedule in ${repoAddress}` : 'Schedule',
+          description: manyRepos ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(name, locationName, `/schedules/${schedule.name}`),
           type: SearchResultType.Schedule,
         }));
 
         const allSensors = sensors.map((sensor) => ({
-          key: `${repoAddress}-${sensor.name}`,
+          key: `${repoPath}-${sensor.name}`,
           label: sensor.name,
-          description: manyRepos ? `Sensor in ${repoAddress}` : 'Sensor',
+          description: manyRepos ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(name, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
         }));
 
         const allPartitionSets = partitionSets.map((partitionSet) => ({
-          key: `${repoAddress}-${partitionSet.name}`,
+          key: `${repoPath}-${partitionSet.name}`,
           label: partitionSet.name,
-          description: manyRepos ? `Partition set in ${repoAddress}` : 'Partition set',
+          description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
           href: workspacePath(
             name,
             locationName,

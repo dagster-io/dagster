@@ -8,7 +8,7 @@ import {JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {buildRepoAddress, buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {SchedulerTimezoneNote} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
@@ -47,7 +47,7 @@ export const AllSchedules: React.FC<Props> = (props) => {
       </Group>
       {withSchedules.map((repository) => (
         <Group direction="column" spacing={8} key={repository.name}>
-          <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
+          <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
           <SchedulesTable
             repoAddress={buildRepoAddress(repository.name, repository.location.name)}
             schedules={repository.schedules}

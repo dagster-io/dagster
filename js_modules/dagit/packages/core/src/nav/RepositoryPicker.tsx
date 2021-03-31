@@ -7,6 +7,7 @@ import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
 import {RepositoryInformation} from '../workspace/RepositoryInformation';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
@@ -58,7 +59,10 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = (props) => {
               onClick={() => {
                 toggleRepo(option);
                 history.push(
-                  `/workspace/${option.repository.name}@${option.repositoryLocation.name}`,
+                  `/workspace/${buildRepoPath(
+                    option.repository.name,
+                    option.repositoryLocation.name,
+                  )}`,
                 );
               }}
               active={selected.includes(option)}

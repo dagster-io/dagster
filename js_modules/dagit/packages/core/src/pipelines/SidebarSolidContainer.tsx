@@ -4,6 +4,7 @@ import * as React from 'react';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {Loading} from '../ui/Loading';
 import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerPath} from './PipelinePathUtils';
 import {SidebarSolidDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarSolidDefinition';
@@ -18,17 +19,19 @@ interface SidebarSolidContainerProps {
   getInvocations?: (definitionName: string) => {handleID: string}[];
   onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
   onClickSolid: (arg: SolidNameOrPath) => void;
+  repoAddress?: RepoAddress;
 }
 
-export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContainerProps> = ({
+export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
   handleID,
   explorerPath,
   getInvocations,
   showingSubsolids,
   onEnterCompositeSolid,
   onClickSolid,
+  repoAddress,
 }) => {
-  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
+  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
     SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     {

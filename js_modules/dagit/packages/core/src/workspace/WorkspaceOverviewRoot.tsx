@@ -10,6 +10,7 @@ import {Table} from '../ui/Table';
 import {Heading} from '../ui/Text';
 
 import {useRepositoryOptions} from './WorkspaceContext';
+import {buildRepoPath} from './buildRepoAddress';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
@@ -56,7 +57,7 @@ export const WorkspaceOverviewRoot = () => {
               repository: {name},
               repositoryLocation: {name: location},
             } = repository;
-            const repoString = `${name}@${location}`;
+            const repoString = buildRepoPath(name, location);
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>

@@ -191,13 +191,14 @@ export const useActivePipelineForName = (pipelineName: string, snapshotId?: stri
   return null;
 };
 
-export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {
-  const {options} = useRepositoryOptions();
-  const reposWithMatch = findRepoContainingPipeline(options, pipelineName);
-  const first = reposWithMatch[0] || null;
+export const usePipelineSelector = (
+  repoAddress: RepoAddress | null,
+  pipelineName: string,
+  solidSelection?: string[],
+) => {
   const repositorySelector = {
-    repositoryName: first?.repository.name || '',
-    repositoryLocationName: first?.repositoryLocation.name || '',
+    repositoryName: repoAddress?.name || '',
+    repositoryLocationName: repoAddress?.location || '',
   };
 
   return {

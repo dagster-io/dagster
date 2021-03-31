@@ -4,6 +4,7 @@ import * as React from 'react';
 import {PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {usePipelineSelector} from '../workspace/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
 
 import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from './TypeExplorer';
 import {
@@ -14,13 +15,15 @@ import {
 interface ITypeExplorerContainerProps {
   explorerPath: PipelineExplorerPath;
   typeName: string;
+  repoAddress?: RepoAddress;
 }
 
-export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContainerProps> = ({
+export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
   explorerPath,
   typeName,
+  repoAddress,
 }) => {
-  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
+  const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
     TYPE_EXPLORER_CONTAINER_QUERY,
     {

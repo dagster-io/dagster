@@ -9,6 +9,7 @@ import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
+import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {IStepState} from './RunMetadataProvider';
@@ -246,7 +247,10 @@ function usePipelineAvailabilityErrorForRun(
     <Group direction="column" spacing={8}>
       <div>{`"${run.pipeline.name}" is not available in the current workspace.`}</div>
       {repoForRun && repoLocationForRun ? (
-        <div>{`Load repository ${repoForRun}@${repoLocationForRun} and try again.`}</div>
+        <div>{`Load repository ${buildRepoPath(
+          repoForRun,
+          repoLocationForRun,
+        )} and try again.`}</div>
       ) : null}
     </Group>
   );
