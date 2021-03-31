@@ -5,7 +5,10 @@ from contextlib import ExitStack
 
 from dagster import check
 from dagster.core.host_representation import GrpcServerRepositoryLocation, RepositoryLocationOrigin
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.host_representation.grpc_server_registry import (
+    GrpcServerRegistry,
+    ProcessGrpcServerRegistry,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -47,17 +50,24 @@ class WorkspaceSnapshot(
 
 
 class Workspace:
-    def __init__(self, workspace_load_target):
-        from .cli_target import WorkspaceLoadTarget
-
+    def __init__(self, workspace_load_target, grpc_server_registry=None):
         self._stack = ExitStack()
+
+        from .cli_target import WorkspaceLoadTarget
 
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
         )
-        self._grpc_server_registry = self._stack.enter_context(
-            ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30)
-        )
+
+        if grpc_server_registry:
+            self._grpc_server_registry = check.inst_param(
+                grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
+            )
+        else:
+            self._grpc_server_registry = self._stack.enter_context(
+                ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30)
+            )
+
         self._load_workspace()
 
     def _load_workspace(self):
@@ -88,12 +98,15 @@ class Workspace:
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
     def create_location_from_origin(self, origin):
-        if not self._grpc_server_registry.supports_origin(origin):  # pylint: disable=no-member
+        if not self._grpc_server_registry.supports_origin(origin):
             return origin.create_location()
         else:
-            endpoint = self._grpc_server_registry.reload_grpc_endpoint(  # pylint: disable=no-member
-                origin
+            endpoint = (
+                self._grpc_server_registry.reload_grpc_endpoint(origin)
+                if self._grpc_server_registry.supports_reload
+                else self._grpc_server_registry.get_grpc_endpoint(origin)
             )
+
             return GrpcServerRepositoryLocation(
                 origin=origin,
                 server_id=endpoint.server_id,

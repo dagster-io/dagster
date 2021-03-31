@@ -1,7 +1,7 @@
 import sys
 import threading
 import uuid
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from collections import namedtuple
 from contextlib import AbstractContextManager
 
@@ -41,6 +41,10 @@ class GrpcServerRegistry(AbstractContextManager):
 
     @abstractmethod
     def reload_grpc_endpoint(self, repository_location_origin):
+        pass
+
+    @abstractproperty
+    def supports_reload(self):
         pass
 
 
@@ -95,6 +99,10 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
     def supports_origin(self, repository_location_origin):
         return isinstance(repository_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+
+    @property
+    def supports_reload(self):
+        return True
 
     def reload_grpc_endpoint(self, repository_location_origin):
         check.inst_param(
