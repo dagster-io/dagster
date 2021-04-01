@@ -1,5 +1,6 @@
 {
     "title": "DagsterUserDeploymentsHelmValues",
+    "description": "@generated",
     "type": "object",
     "properties": {
         "deployments": {

@@ -8,9 +8,7 @@ from . import subschema
 
 
 class DagsterHelmValues(BaseModel):
-    """
-    Schema for Helm values.
-    """
+    __doc__ = "@" + "generated"
 
     dagit: subschema.Dagit
     dagsterUserDeployments: UserDeployments = Field(..., alias="dagster-user-deployments")

@@ -1,6 +1,6 @@
 {
     "title": "DagsterHelmValues",
-    "description": "Schema for Helm values.",
+    "description": "@generated",
     "type": "object",
     "properties": {
         "dagit": {
