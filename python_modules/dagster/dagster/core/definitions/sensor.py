@@ -83,7 +83,8 @@ class SensorDefinition:
             or one or more RunRequest objects.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
-        mode (Optional[str]): The mode to apply when executing this sensor. (default: 'default')
+        mode (Optional[str]): The mode to apply when executing runs triggered by this sensor.
+            (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
