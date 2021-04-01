@@ -923,10 +923,8 @@ def _check_persistent_storage_requirement(
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes, but your pipeline "
             "includes solid outputs that will not be stored somewhere where other processes can "
-            "retrieve them. "
-            "Please make sure that your pipeline definition includes a ModeDefinition whose "
-            'resource_keys assign the "io_manager" key to an IOManager resource '
-            "that stores outputs outside of the process, such as the fs_io_manager."
+            "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
+            '    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
         )
 
 
