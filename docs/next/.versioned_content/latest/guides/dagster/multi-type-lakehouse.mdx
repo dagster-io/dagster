@@ -7,8 +7,7 @@ description: How to use Lakehouse to construct a Dagster pipeline with multiple 
 
 <CodeReferenceLink filePath="examples/multi_type_lakehouse" />
 
-Lakehouse is an experimental API built on top of Dagster's core abstractions that makes it easy to
-define computations in terms of the data assets that they produce. In the [previous example](/guides/dagster/lakehouse), we demonstrated how to use Lakehouse to transform data assets into a core Dagster pipeline. In this example, we'll be demonstrating how we can use Lakehouse to construct a Dagster pipeline with multiple compute options. Users unfamiliar with lakehouse should first view the first lakehouse guide [here](/guides/dagster/lakehouse).
+Lakehouse is an experimental API built on top of Dagster's core abstractions that makes it easy to define computations in terms of the data assets that they produce. In the [previous example](/guides/dagster/lakehouse), we demonstrated how to use Lakehouse to transform data assets into a core Dagster pipeline. In this example, we'll be demonstrating how we can use Lakehouse to construct a Dagster pipeline with multiple compute options. Users unfamiliar with lakehouse should first view the first lakehouse guide [here](/guides/dagster/lakehouse).
 
 Different computable assets will often ingest data in different ways. Let's say we have a table of temperature samples collected in 5 minute increments, and we want to compute the high temperature for each day represented in the table. In addition, we want to compute the difference between the high temperature of consecutive days. This pipeline will ingest a csv file as a pandas dataframe, and outputted the computed high temperatures again as a csv file. Then, we want to ingest the computed high temperatures as a Spark Dataframe, and then output the differences back to csv files. First, we would need to utilize a storage mechanism that is digestible by Spark. In this case, that means representing tables as _directories_ of csv files as opposed to a single csv file. From these directories of csv files, we must be able to compute both pandas dataframes and spark dataframes. How do we utilize both the pandas conversion and the spark conversion?
 
@@ -62,22 +61,15 @@ def daily_temperature_high_diffs_table(daily_temperature_highs: SparkDF) -> Spar
     )
 ```
 
-`sfo_q2_weather_sample_table` represents our base temperature table. Passing in `"filesystem"` for
-the `storage_key` argument indicates that this asset is stored locally. The `path` argument gives
-the path to the data asset itself.
+`sfo_q2_weather_sample_table` represents our base temperature table. Passing in `"filesystem"` for the `storage_key` argument indicates that this asset is stored locally. The `path` argument gives the path to the data asset itself.
 
-`daily_temperature_highs_table` represents our computed high temperatures. We explicitly define the
-dependency on the original table by passing `sfo_q2_weather_sample_table` as the value for the
-`input_deps` argument.
+`daily_temperature_highs_table` represents our computed high temperatures. We explicitly define the dependency on the original table by passing `sfo_q2_weather_sample_table` as the value for the `input_deps` argument.
 
-We have an additional table `daily_temperature_high_diffs_table` that
-represents the difference between the high temperature of consecutive days. We use the
-`input_assets` parameter to make explicit the dependency on `daily_temperature_highs_table`.
+We have an additional table `daily_temperature_high_diffs_table` that represents the difference between the high temperature of consecutive days. We use the `input_assets` parameter to make explicit the dependency on `daily_temperature_highs_table`.
 
 ## Storage
 
-The ingestion of csv files is a bit different this time, because our specification requires
-ingesting a folder of csv files as opposed to a single csv file.
+The ingestion of csv files is a bit different this time, because our specification requires ingesting a folder of csv files as opposed to a single csv file.
 
 ```python file=../../multi_type_lakehouse/multi_type_lakehouse/lakehouse_def.py startafter=start_lakehouse_def_marker_0 endbefore=end_lakehouse_def_marker_0
 class LocalFileSystem:
@@ -132,9 +124,7 @@ def pandas_df_local_filesystem_storage(init_context):
     return Storage()
 ```
 
-The `load` method takes in all csv files within a given directory, rather than specifying
-a csv file or set of csv files explicitly. Analogously, the `save` method writes csv files to a
-directory in parts.
+The `load` method takes in all csv files within a given directory, rather than specifying a csv file or set of csv files explicitly. Analogously, the `save` method writes csv files to a directory in parts.
 
 We'll do something similar for conversion between a csv and a spark datafarame:
 
@@ -159,8 +149,7 @@ def spark_df_local_filesystem_storage(init_context):
     return Storage()
 ```
 
-To compose these two compute types, we utilize the `multi_type_asset_storage` function
-provided by lakehouse:
+To compose these two compute types, we utilize the `multi_type_asset_storage` function provided by lakehouse:
 
 ```python
 from lakehouse import multi_type_asset_storage
@@ -197,9 +186,7 @@ multi_type_lakehouse = make_multi_type_lakehouse()
 
 ## Pipeline
 
-Once again, using the data assets and storage for handling conversion, we have completely defined
-our computation graph.
-To construct a pipeline from these assets:
+Once again, using the data assets and storage for handling conversion, we have completely defined our computation graph. To construct a pipeline from these assets:
 
 ```python file=../../multi_type_lakehouse/multi_type_lakehouse/pipelines.py
 """Pipeline definitions for the multi_type_lakehouse example.
@@ -217,5 +204,4 @@ multi_type_lakehouse_pipeline = multi_type_lakehouse.build_pipeline_definition(
 )
 ```
 
-Note that the assets don't have to be provided in order. Lakehouse is able to determine asset
-ordering by resolving input asset dependencies.
+Note that the assets don't have to be provided in order. Lakehouse is able to determine asset ordering by resolving input asset dependencies.

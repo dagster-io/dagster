@@ -9,8 +9,8 @@ Dagster includes a system for strongly-typed, self-describing configuration sche
 
 ## Relevant APIs
 
-| Name                                                 | Description                   |
-| ---------------------------------------------------- | ----------------------------- |
+| Name                                                 | Description                                              |
+| ---------------------------------------------------- | -------------------------------------------------------- |
 | <PyObject module="dagster" object="ConfigSchema"  /> | See details with code examples in the API documentation. |
 
 ## Overview
@@ -27,7 +27,8 @@ The config system supports structured types for complex configurations. Notable 
 - <PyObject module="dagster" object="Permissive" /> - for allowing untyped dictionaries.
 - <PyObject module="dagster" object="Selector" /> - to allow choosing one of N.
 - <PyObject module="dagster" object="StringSource" /> - to allow loading from environment.
-- <PyObject module="dagster" object="Enum" /> - for choosing from a well defined set of values.
+- <PyObject module="dagster" object="Enum" /> - for choosing from a well defined
+  set of values.
 
 These are [documented in the API Reference with examples](/\_apidocs/config).
 
@@ -35,8 +36,7 @@ These are [documented in the API Reference with examples](/\_apidocs/config).
 
 ## Configuring a Solid
 
-The most common objects to specify <PyObject module="dagster" object="ConfigSchema" /> for
-are <PyObject module="dagster" object="SolidDefinition" /> and <PyObject module="dagster" object="ResourceDefinition" /> (see example code in [Configuring a Resource](#configuring-a-resource)).
+The most common objects to specify <PyObject module="dagster" object="ConfigSchema" /> for are <PyObject module="dagster" object="SolidDefinition" /> and <PyObject module="dagster" object="ResourceDefinition" /> (see example code in [Configuring a Resource](#configuring-a-resource)).
 
 This example shows how \`config_schema can be used on a solid to control its behavior:
 
@@ -108,7 +108,12 @@ You can use the Dagster CLI <PyObject module="dagster-pipeline-execute" object="
 
 You can also edit the config and execute a run in Dagit's [Playground](/concepts/dagit/dagit#playground):
 
-![Config in Dagit](/images/concepts/config-dagit.png)
+<Image
+alt="Config in Dagit"
+src="/images/concepts/config-dagit.png"
+width={3808}
+height={2414}
+/>
 
 The config editor on the page comes with typeaheads, schema validation, and schema documentation. You can also click the "Scaffold Missing Config" button to generate dummy values based on the config schema.
 

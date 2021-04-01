@@ -1,19 +1,13 @@
 ---
 title: Solids | Dagster
-description:
-  Solids are the functional unit of computation in Dagster and contain the core logic of your
-  orchestration graph.
+description: Solids are the functional unit of computation in Dagster and contain the core logic of your orchestration graph.
 ---
 
 # Solids
 
 Solids are the functional unit of work in Dagster. A solid's responsibility is to read its inputs, perform an action, and emit outputs. Multiple solids can be connected to create a [Pipeline](/concepts/solids-pipelines/pipelines).
 
-<img class="mx-auto" src="/images/solids.png" />
-
-<!-- TODO: center images -->
-
-<!-- ![Solid Diagram](/images/solids.png) -->
+<Image alt="solids" src="/images/solids.png" width={3200} height={1040} />
 
 ## Relevant APIs
 
@@ -36,7 +30,7 @@ Solids are used to organize related computations. Solids can later be assembled 
 Solids have several important properties:
 
 - **Inputs and Outputs**: Solids have defined [inputs and outputs](#inputs-and-outputs), which can be optionally typed. These types are validated at runtime.
-- **Configurable**: Solids can be configured, using a strongly typed [configuration system](#TODO).
+- **Configurable**: Solids can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
 - **Dependencies**: Solids inputs can depend on the outputs from other solids. A solid will not execute until all of its inputs have been resolved successfully. The dependency structure is defined using a [Pipeline](/concepts/solids-pipelines/pipelines).
 - **Emit an Event Stream**: Solids can emit a stream of structured events, such as These events can be viewed in [Dagit](/concepts/dagit/dagit), Dagster's UI tool.
 
@@ -46,7 +40,7 @@ Solids are meant to be **individually testable** and **reusable**. Dagster provi
 
 ## Defining a solid
 
-To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn` and must have `context` as the first argument. The context provides access to important properties and objects, such as [solid configuration](#TODO) and [resources](#TODO)
+To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn` and must have `context` as the first argument. The context provides access to important properties and objects, such as [solid configuration](/concepts/solids-pipelines/solids#solid-configuration) and [resources](/concepts/modes-resources)
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_solid_marker endbefore=end_solid_marker
 @solid
@@ -78,7 +72,7 @@ Both definitions have a few important properties:
 
 - They are named
 - They are optionally typed. These types are validated at runtime.
-- (Advanced) They can be linked to an <PyObject object="IOManager"/>. See [IOManager](...) for more info.
+- (Advanced) They can be linked to an <PyObject object="IOManager"/>. See [IOManager](/concepts/io-management/io-managers) for more info.
 
 #### Inputs
 
@@ -144,7 +138,7 @@ def my_input_output_example_solid(context, a, b):
 
 ### Solid Context
 
-The first parameter of a solids `compute_fn` is the context object, which is an instance of <PyObject object="SystemComputeExecutionContext"/>. The context provides access to:
+The first parameter of a solids `compute_fn` is the context object, which is an instance of <PyObject object="SolidExecutionContext"/>. The context provides access to:
 
 - Solid configuration (`context.solid_config`)
 - Loggers (`context.log`)
@@ -162,7 +156,7 @@ def context_solid(context):
 
 ## Using a solid
 
-Solids are used within a <PyObject object="pipeline" displayText="@pipeline" />. You can see more information on the [Pipelines](...) page. You can also execute a single solid, usually within a test context, using the <PyObject object="execute_solid" /> function. More information can be found at [Testing Pipelines and Solids](...)
+Solids are used within a <PyObject object="pipeline" displayText="@pipeline" />. You can see more information on the [Pipelines](/concepts/solids-pipelines/pipelines) page. You can also execute a single solid, usually within a test context, using the <PyObject object="execute_solid" /> function. More information can be found at [Testing single solid execution](/concepts/testing#testing-single-solid-execution)
 
 ## Examples
 

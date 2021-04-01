@@ -7,7 +7,12 @@ description: A pipeline is a set of solids with explicit data dependencies on ea
 
 A pipeline is a set of solids with explicit data dependencies on each other, creating a directed acyclic graph, or DAG.
 
-![Pipeline Diagram](/images/pipelines.png)
+<Image
+alt="Pipeline Diagram"
+src="/images/pipelines.png"
+width={3200}
+height={1040}
+/>
 
 ## Relevant APIs
 
@@ -15,7 +20,7 @@ A pipeline is a set of solids with explicit data dependencies on each other, cre
 | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> | The decorator used to define a pipeline.                                                                                                                                                                           |
 | <PyObject module="dagster" object="PipelineDefinition" />               | Base class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="pipeline" decorator /> which returns a <PyObject object="PipelineDefinition"  /> |
-| <PyObject module="dagster" object="ModeDefinition" />                   | Modes allow you to vary pipeline behavior between different deployment environments. For more info, see the [Modes](...) section                                                                                   |
+| <PyObject module="dagster" object="ModeDefinition" />                   | Modes allow you to vary pipeline behavior between different deployment environments. For more info, see the [Modes](/concepts/modes-resources) section                                                             |
 | <PyObject module="dagster" object="PresetDefinition" />                 | Presets allow you to predefine pipeline configurations.                                                                                                                                                            |
 
 ## Overview
@@ -124,7 +129,12 @@ def my_presets_pipeline():
 
 In Dagit, You can choose and load a preset in the Playground:
 
-![Pipeline Presets](/images/concepts/pipelines/presets.png)
+<Image
+alt="Pipeline Presets"
+src="/images/concepts/pipelines/presets.png"
+width={3808}
+height={2414}
+/>
 
 To run a pipeline in a script or in a test, You can specify a preset name via `preset` argument to the Python API <PyObject object="execute_pipeline" />:
 
@@ -159,7 +169,12 @@ There are many DAG structures can represent using pipelines. This section covers
 
 The simplest pipeline structure is the linear pipeline. We return one output from the root solid, and pass along data through single inputs and outputs.
 
-![Linear Pipeline](/images/concepts/pipelines/linear.png)
+<Image
+alt="Linear Pipeline"
+src="/images/concepts/pipelines/linear.png"
+width={991}
+height={191}
+/>
 
 ```python file=/concepts/solids_pipelines/linear_pipeline.py startafter=start_marker endbefore=end_marker
 from dagster import InputDefinition, pipeline, solid
@@ -182,7 +197,12 @@ def linear_pipeline():
 
 ### Multiple Inputs and Outputs
 
-![Branching Pipeline](/images/concepts/pipelines/branch.png)
+<Image
+alt="Branching Pipeline"
+src="/images/concepts/pipelines/branch.png"
+width={996}
+height={312}
+/>
 
 A single output can be passed to multiple inputs on downstream solids. In this example, the output from the first solid is passed to two different solids. The outputs of those solids are combined and passed to the final solid.
 
@@ -223,7 +243,12 @@ def inputs_and_outputs_pipeline():
 
 ### Conditional Branching
 
-<img src="/images/concepts/pipelines/branch.png" />
+<Image
+alt="branch"
+src="/images/concepts/pipelines/branch.png"
+width={996}
+height={312}
+/>
 
 A solid only starts to execute once all of its inputs have been resolved. We can use this behavior to model conditional execution of solids.
 
@@ -346,7 +371,12 @@ def process_directory():
 
 ### Order-based Dependencies (Nothing dependencies)
 
-<img src="/images/concepts/pipelines/linear.png" />
+<Image
+alt="linear"
+src="/images/concepts/pipelines/linear.png"
+width={991}
+height={191}
+/>
 
 Dependencies in Dagster are primarily _data dependencies_. Using data dependencies means each input of a solid depends on the output of an upstream solid.
 

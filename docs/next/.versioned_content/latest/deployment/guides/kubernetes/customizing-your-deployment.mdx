@@ -2,21 +2,17 @@
 
 ## Overview
 
-We go over common ways to customize your Dagster Helm deployment. This includes
-adding Kubernetes and Celery configuration at the pipeline and solid level, configuring Celery
-queues, and configuring your Helm release to use external resources.
+We go over common ways to customize your Dagster Helm deployment. This includes adding Kubernetes and Celery configuration at the pipeline and solid level, configuring Celery queues, and configuring your Helm release to use external resources.
 
 ## Prerequsites
 
-We expect familiarity with the [basic guide](/deployment/guides/kubernetes/deploying-with-helm)
-and [advanced guide](/deployment/guides/kubernetes/deploying-with-helm-advanced) on deploying Dagster with Helm.
+We expect familiarity with the [basic guide](/deployment/guides/kubernetes/deploying-with-helm) and [advanced guide](/deployment/guides/kubernetes/deploying-with-helm-advanced) on deploying Dagster with Helm.
 
 ## Walkthrough
 
 ### Solid or Pipeline Kubernetes Configuration
 
-The `dagster-k8s/config` allows users to pass custom configuration to the Kubernetes Job, Job metadata, JobSpec,
-PodSpec, and PodTemplateSpec metadata. We can specify this information in a solid or pipeline's tags.
+The `dagster-k8s/config` allows users to pass custom configuration to the Kubernetes Job, Job metadata, JobSpec, PodSpec, and PodTemplateSpec metadata. We can specify this information in a solid or pipeline's tags.
 
 ```python
 @solid(
@@ -67,9 +63,7 @@ def my_pipeline():
 
 ### Configuring Celery Queues
 
-Users can configure multiple Celery queues (for example, one queue for each resource to be limited)
-and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues`
-section of `values.yaml`.
+Users can configure multiple Celery queues (for example, one queue for each resource to be limited) and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
 
 To use the queues, `dagster-celery/queue` can be set on solid tags.
 
@@ -87,9 +81,7 @@ def my_solid(context):
 
 ### Celery Priority
 
-Users can set `dagster-celery/run_priority` on the pipeline tags to configure the baseline priority of all solids
-from that pipeline. To set priority at the solid level, users can set `dagster-celery/priority` on the solid tags to configure additional priority.
-When priorities are set on both the pipeline and solid, the sum of both priorities will be used.
+Users can set `dagster-celery/run_priority` on the pipeline tags to configure the baseline priority of all solids from that pipeline. To set priority at the solid level, users can set `dagster-celery/priority` on the solid tags to configure additional priority. When priorities are set on both the pipeline and solid, the sum of both priorities will be used.
 
 ```python
 @solid(
@@ -111,8 +103,7 @@ def my_pipeline():
 
 ### Configuring an External Database
 
-In a real deployment, users will likely want to set up an external PostgreSQL database and
-configure the `postgresql` section of `values.yaml`.
+In a real deployment, users will likely want to set up an external PostgreSQL database and configure the `postgresql` section of `values.yaml`.
 
 ```yaml
 postgresql:
@@ -127,8 +118,7 @@ postgresql:
 
 ### Configuring an External Message Broker
 
-In a real deployment, users will likely want to set up an external message broker like Redis, and
-configure `rabbitmq` and `redis` sections of `values.yaml`.
+In a real deployment, users will likely want to set up an external message broker like Redis, and configure `rabbitmq` and `redis` sections of `values.yaml`.
 
 ```yaml
 rabbitmq:
@@ -145,11 +135,9 @@ redis:
 
 ### Security
 
-Users will likely want to permission a ServiceAccount bound to a properly scoped Role to launch Jobs and create other Kubernetes
-resources.
+Users will likely want to permission a ServiceAccount bound to a properly scoped Role to launch Jobs and create other Kubernetes resources.
 
-Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for managing
-secure information such as database logins.
+Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for managing secure information such as database logins.
 
 ## Conclusion
 
