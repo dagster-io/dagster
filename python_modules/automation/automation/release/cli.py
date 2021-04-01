@@ -234,8 +234,9 @@ def after_install(options, home_dir):
 def helm(chart_path, helm_repo, ver, dry_run):
     """Publish the Dagster Helm chart
 
-    See: https://medium.com/containerum/how-to-make-and-share-your-own-helm-package-50ae40f6c221
-    for more info on this process
+    For more info on this process, see:
+    - https://medium.com/containerum/how-to-make-and-share-your-own-helm-package-50ae40f6c221
+    - https://github.com/helm/helm/issues/7363#issuecomment-572369872
     """
 
     helm_path = os.path.join(git_repo_root(), "helm")
@@ -244,36 +245,46 @@ def helm(chart_path, helm_repo, ver, dry_run):
         get_git_repo_branch(helm_repo) == "gh-pages", "helm repo must be on gh-pages branch"
     )
 
-    cmd = [
-        "helm",
-        "package",
-        chart_path,
-        "--dependency-update",
-        "--destination",
-        helm_repo,
-        "--app-version",
-        ver,
-        "--version",
-        ver,
-    ]
-    click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
-    click.echo(subprocess.check_output(cmd, cwd=helm_path))
+    chart_name = os.path.basename(os.path.normpath(chart_path))
+    with tempfile.TemporaryDirectory() as temp_dir:
+        cmd = [
+            "helm",
+            "package",
+            chart_path,
+            "--dependency-update",
+            "--destination",
+            temp_dir,
+            "--app-version",
+            ver,
+            "--version",
+            ver,
+        ]
+        click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
+        click.echo(subprocess.check_output(cmd, cwd=helm_path))
 
-    cmd = [
-        "helm",
-        "repo",
-        "index",
-        ".",
-        "--merge",
-        "index.yaml",
-        "--url",
-        "https://dagster-io.github.io/helm/",
-    ]
-    click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
-    click.echo(subprocess.check_output(cmd, cwd=helm_repo))
+        cmd = [
+            "helm",
+            "repo",
+            "index",
+            temp_dir,
+            "--merge",
+            "index.yaml",
+            "--url",
+            "https://dagster-io.github.io/helm/",
+        ]
+        click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
+        click.echo(subprocess.check_output(cmd, cwd=helm_repo))
+
+        cmd = [
+            "mv",
+            os.path.join(temp_dir, "index.yaml"),
+            os.path.join(temp_dir, f"{chart_name}-{ver}.tgz"),
+            ".",
+        ]
+        click.echo(click.style("Running command: " + " ".join(cmd) + "\n", fg="green"))
+        click.echo(subprocess.check_output(cmd, cwd=helm_repo))
 
     # Commit and push Helm updates for this Dagster release
-    chart_name = os.path.basename(os.path.normpath(chart_path))
     msg = f"Helm release for {chart_name} release {ver}"
     git_commit_updates(helm_repo, msg)
     git_push(cwd=helm_repo, dry_run=dry_run)
