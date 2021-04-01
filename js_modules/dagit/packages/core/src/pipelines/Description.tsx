@@ -87,7 +87,7 @@ export class Description extends React.Component<IDescriptionProps, IDescription
         )}
 
         <div ref={this._container} style={{overflowX: 'auto'}}>
-          <ReactMarkdown source={removeLeadingSpaces(this.props.description)} />
+          <ReactMarkdown>{removeLeadingSpaces(this.props.description)}</ReactMarkdown>
         </div>
       </Container>
     );

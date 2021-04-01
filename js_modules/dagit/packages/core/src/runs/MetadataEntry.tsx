@@ -109,12 +109,12 @@ export const MetadataEntry: React.FC<{
       return <>{entry.text}</>;
     case 'EventMarkdownMetadataEntry':
       return expandSmallValues && entry.mdStr.length < 1000 ? (
-        <ReactMarkdown source={entry.mdStr} />
+        <ReactMarkdown>{entry.mdStr}</ReactMarkdown>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.mdStr}
-          content={() => <ReactMarkdown source={entry.mdStr} />}
+          content={() => <ReactMarkdown>{entry.mdStr}</ReactMarkdown>}
         >
           [Show Markdown]
         </MetadataEntryModalAction>

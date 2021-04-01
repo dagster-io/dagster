@@ -76,6 +76,7 @@
     "workbox-webpack-plugin": "5.1.4"
   },
   "devDependencies": {
+    "@testing-library/dom": "^7.30.3",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -85,9 +86,17 @@
     "@types/react-dom": "^17.0.3",
     "@types/react-router": "^5.1.2",
     "@types/react-router-dom": "^5.1.2",
+    "@typescript-eslint/eslint-plugin": "^4.20.0",
+    "@typescript-eslint/parser": "^4.20.0",
+    "eslint": "^7.23.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-react": "^7.23.1",
+    "eslint-plugin-react-hooks": "^4.2.0",
     "prettier": "2.2.1",
-    "typescript": "4.1.2"
+    "typescript": "4.2.4",
+    "webpack": "4.44.2"
   },
   "scripts": {
     "analyze": "source-map-explorer 'build/static/js/*.js'",
