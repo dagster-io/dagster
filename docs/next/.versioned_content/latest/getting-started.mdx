@@ -1,10 +1,20 @@
 # Getting Started with Dagster
 
-<p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">Dagster is a data orchestrator for machine learning, analytics, and ETL</p>
+<p className="text-2xl mt-0 text-gray-500 tracking-tight font-light">
+  Dagster is a data orchestrator for machine learning, analytics, and ETL
+</p>
 
 <div className="md:col-span-3 flex flex-wrap md:flex-nowrap items-center bg-gradient-to-b from-blue-400 to-blue-500 shadow-lg rounded-2xl py-6 md:py-2 px-6 md:pr-5 space-y-4 md:space-y-0 md:space-x-8">
-    <p className="flex-auto text-white text-lg"> New to Dagster? Learn all about the library in a short tutorial.</p>
-    <a href="/tutorial" className="flex-none bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white font-semibold rounded-lg py-3 px-4 no-underline">Take the Tutorial</a>
+  <p className="flex-auto text-white text-lg">
+    {" "}
+    New to Dagster? Learn all about the library in a short tutorial.
+  </p>
+  <a
+    href="/tutorial"
+    className="flex-none bg-blue-600 hover:bg-blue-700 transition-colors duration-200 text-white font-semibold rounded-lg py-3 px-4 no-underline"
+  >
+    Take the Tutorial
+  </a>
 </div>
 
 Or read about:
@@ -26,8 +36,7 @@ To install Dagster and Dagit into an existing Python environment, run:
 pip install dagster
 ```
 
-This will install the latest stable version of the core Dagster packages in your current Python
-environment.
+This will install the latest stable version of the core Dagster packages in your current Python environment.
 
 ### Writing a Pipeline
 
@@ -54,12 +63,16 @@ def hello_pipeline():
 
 Save the code above in a file named `hello_world.py`.
 
-You can execute the pipeline in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](#), or [Dagster CLI](#).
+<!--
+  TODO: update links once we have pipeline execution concept page
+  https://github.com/dagster-io/dagster/issues/3964
+-->
+
+You can execute the pipeline in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/\_apidocs/execution#dagster.execute_pipeline), or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
 
 ### Running the Pipeline in Dagit
 
-It's highly recommended to use Dagit with Dagster. Dagit is a web-based interface for viewing and
-interacting with Dagster objects.
+It's highly recommended to use Dagit with Dagster. Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
 ```bash
 pip install dagit
@@ -72,12 +85,22 @@ dagit -f hello_world.py
 ```
 
 Then navigate to <http://localhost:3000> to start using Dagit:
-![dagit-def](/images/getting-started/dagit-def.png)
 
-Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline. You
-will then see Dagit launches a pipeline run:
+<Image
+alt="dagit-def"
+src="/images/getting-started/dagit-def.png"
+width={4032}
+height={2454}
+/>
 
-![dagit-run](/images/getting-started/dagit-run.png)
+Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline. You will then see Dagit launches a pipeline run:
+
+<Image
+alt="dagit-run"
+src="/images/getting-started/dagit-run.png"
+width={4032}
+height={2454}
+/>
 
 ### Other Options to Run Dagster Pipelines
 
@@ -104,9 +127,11 @@ If you have questions on getting started, we'd love to hear from you:
 
 <p align="center">
   <a href="https://dagster-slackin.herokuapp.com/" target="_blank">
-    <img
-      src="https://user-images.githubusercontent.com/609349/63558739-f60a7e00-c502-11e9-8434-c8a95b03ce62.png"
-      width="160px"
+    <Image
+      alt="join-us-on-slack"
+      src="/assets/join-us-on-slack.png"
+      width="160"
+      height="40"
     />
   </a>
 </p>

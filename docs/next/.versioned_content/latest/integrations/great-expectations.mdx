@@ -8,8 +8,7 @@ title: Dagster with Great Expectations | Dagster
 
 This example demonstrates how to use the GE solid factory [`dagster-ge`](/\_apidocs/libraries/dagster_ge) to test incoming data against a set of expectations built through [Great Expectations](https://docs.greatexpectations.io/en/latest/)' tooling.
 
-For this example, we'll be using two versions of a dataset of baseball team payroll and wins,
-with one version modified to hold incorrect data.
+For this example, we'll be using two versions of a dataset of baseball team payroll and wins, with one version modified to hold incorrect data.
 
 You can use <PyObject module="dagster_ge" object="ge_validation_solid_factory" /> to generate Dagster solids that integrate with Great Expectations. For example, here we show a basic call to this GE solid factory, with two required arguments: `datasource_name` and expectation `suite_name`.
 
