@@ -2,7 +2,7 @@
 apiVersion: v2
 name: dagster
 version: 0.11.2
-kubeVersion: ">= 1.15.0"
+kubeVersion: ">= 1.15.0-0"
 description: Dagster is a data orchestrator for machine learning, analytics, and ETL.
 type: application
 keywords:
