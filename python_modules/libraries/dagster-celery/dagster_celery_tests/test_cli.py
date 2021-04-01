@@ -9,6 +9,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 from dagster import check
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster_celery.cli import main
 
@@ -165,34 +166,38 @@ def test_start_worker_config_from_yaml(rabbitmq):
 
 @mock.patch("dagster_celery.cli.launch_background_worker")
 def test_mock_start_worker(worker_patch):
-    start_worker("dagster_test_worker")
-    assert_called(worker_patch)
+    with instance_for_test():
+        start_worker("dagster_test_worker")
+        assert_called(worker_patch)
 
 
 @mock.patch("dagster_celery.cli.launch_background_worker")
 def test_mock_start_worker_config_from_empty_yaml(worker_patch):
-    args = ["-y", file_relative_path(__file__, "empty.yaml")]
-    start_worker("dagster_test_worker", args=args)
-    assert_called(worker_patch)
+    with instance_for_test():
+        args = ["-y", file_relative_path(__file__, "empty.yaml")]
+        start_worker("dagster_test_worker", args=args)
+        assert_called(worker_patch)
 
 
 @mock.patch("dagster_celery.cli.launch_background_worker")
 def test_start_mock_worker_config_from_yaml(worker_patch):
-    args = ["-y", file_relative_path(__file__, "engine_config.yaml")]
-    start_worker("dagster_test_worker", args=args)
-    assert_called(worker_patch)
+    with instance_for_test():
+        args = ["-y", file_relative_path(__file__, "engine_config.yaml")]
+        start_worker("dagster_test_worker", args=args)
+        assert_called(worker_patch)
 
 
 @mock.patch("dagster_celery.cli.launch_background_worker")
 def test_mock_start_worker_too_many_queues(_worker_patch):
-    args = ["-q", "1", "-q", "2", "-q", "3", "-q", "4", "-q", "5"]
+    with instance_for_test():
+        args = ["-q", "1", "-q", "2", "-q", "3", "-q", "4", "-q", "5"]
 
-    start_worker(
-        "dagster_test_worker",
-        args=args,
-        exit_code=1,
-        exception_str=(
-            "Can't start a dagster_celery worker that listens on more than four queues, due to a "
-            "bug in Celery 4."
-        ),
-    )
+        start_worker(
+            "dagster_test_worker",
+            args=args,
+            exit_code=1,
+            exception_str=(
+                "Can't start a dagster_celery worker that listens on more than four queues, due to a "
+                "bug in Celery 4."
+            ),
+        )

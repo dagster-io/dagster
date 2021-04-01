@@ -13,7 +13,7 @@ if (!(verMatch != null && verMatch.length >= 2 && parseFloat(verMatch[1]) >= 3.6
 
 // https://github.com/dagster-io/dagster/issues/2623
 const result = execSync(
-  `dagster-graphql --empty-workspace -t '${getIntrospectionQuery({
+  `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery({
     descriptions: false,
   })}'`,
   {cwd: '../../../../examples/docs_snippets/'},

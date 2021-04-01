@@ -179,7 +179,12 @@ PREDEFINED_QUERIES = {
     help="A file path to store the GraphQL response to. This flag is useful when making pipeline "
     "execution queries, since pipeline execution causes logs to print to stdout and stderr.",
 )
-def ui(text, file, predefined, variables, remote, output, **kwargs):
+@click.option(
+    "--ephemeral-instance",
+    is_flag=True,
+    help="Use an ephemeral DagsterInstance instead of resolving via DAGSTER_HOME",
+)
+def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **kwargs):
     query = None
     if text is not None and file is None and predefined is None:
         query = text.strip("'\" \n\t")
@@ -197,7 +202,7 @@ def ui(text, file, predefined, variables, remote, output, **kwargs):
         res = execute_query_against_remote(remote, query, variables)
         print(res)  # pylint: disable=print-call
     else:
-        instance = DagsterInstance.get()
+        instance = DagsterInstance.ephemeral() if ephemeral_instance else DagsterInstance.get()
         with get_workspace_from_kwargs(kwargs) as workspace:
             execute_query_from_cli(
                 workspace,

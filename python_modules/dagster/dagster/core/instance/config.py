@@ -12,6 +12,10 @@ from dagster.utils.yaml_utils import load_yaml_from_globs
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
 
+def is_dagster_home_set():
+    return bool(os.getenv("DAGSTER_HOME"))
+
+
 def dagster_instance_config(
     base_dir,
     config_filename=DAGSTER_CONFIG_YAML_FILENAME,
@@ -23,15 +27,11 @@ def dagster_instance_config(
 
     config_yaml_path = os.path.join(base_dir, config_filename)
 
-    if not os.path.exists(config_yaml_path):
+    if not os.path.exists(config_yaml_path) and is_dagster_home_set():
         warnings.warn(
-            (
-                "The dagster instance configuration file ({config_filename}) is not present at "
-                "{base_dir}. Dagster uses this file to know where and how to store "
-                "local artifacts, information about past runs, and structured events.\n"
-                "If nothing is specified, Dagster will store this information "
-                "in the local filesystem in the {base_dir} directory."
-            ).format(config_filename=config_filename, base_dir=base_dir)
+            f"No dagster instance configuration file ({config_filename}) found at "
+            f"{base_dir}. Defaulting to loading and storing all metadata with {base_dir}."
+            f"If this is the desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
     dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path), overrides)

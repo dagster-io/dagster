@@ -531,3 +531,10 @@ class DagsterObjectStoreError(DagsterError):
 class DagsterInvalidPropertyError(DagsterError):
     """Indicates that an invalid property was accessed. May often happen by accessing a property
     that no longer exists after breaking changes."""
+
+
+class DagsterHomeNotSetError(DagsterError):
+    """
+    The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
+    without setting DAGSTER_HOME env var.
+    """
