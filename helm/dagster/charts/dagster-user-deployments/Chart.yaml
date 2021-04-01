@@ -1,7 +1,21 @@
 ---
 apiVersion: v2
 name: dagster-user-deployments
-description: A Helm subchart to deploy Dagster User Code deployments
+version: 0.11.2
+kubeVersion: ">= 1.15.0"
+description: A chart to deploy Dagster User Code deployments.
 type: application
-version: 0.1.0
-appVersion: 1.16.0
+keywords:
+  - analytics
+  - data-orchestrator
+  - data-pipelines
+  - etl
+  - workflow
+sources:
+  - https://github.com/dagster-io/dagster/tree/master/helm/dagster/charts/dagster-user-deployments
+maintainers:
+  - name: Rex Ledesma
+    email: rex@elementl.com
+    url: https://dagster.io
+icon: https://dagster.io/images/logo.png
+appVersion: 0.11.2

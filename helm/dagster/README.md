@@ -1,5 +1,7 @@
 # Dagster Helm
 
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/dagster)](https://artifacthub.io/packages/search?repo=dagster)
+
 ## TL;DR
 
 ### Installing from remote

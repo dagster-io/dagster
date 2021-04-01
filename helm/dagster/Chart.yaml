@@ -1,9 +1,21 @@
 ---
 apiVersion: v2
-description: Dagster is a system for building modern data applications.
+name: dagster
+version: 0.11.2
+kubeVersion: ">= 1.15.0"
+description: Dagster is a data orchestrator for machine learning, analytics, and ETL.
+type: application
+keywords:
+  - analytics
+  - data-orchestrator
+  - data-pipelines
+  - etl
+  - workflow
+sources:
+  - https://github.com/dagster-io/dagster/tree/master/helm/dagster
 dependencies:
   - name: dagster-user-deployments
-    version: 0.1.0
+    version: 0.11.2
     condition: dagster-user-deployments.enableSubchart
   - name: postgresql
     version: 8.1.0
@@ -17,6 +29,9 @@ dependencies:
     version: 12.7.4
     repository: https://charts.bitnami.com/bitnami
     condition: redis.internal
-name: dagster
-icon: https://raw.githubusercontent.com/dagster-io/dagster/master/assets/Dagster.png
-version: 0.1.0
+maintainers:
+  - name: Rex Ledesma
+    email: rex@elementl.com
+    url: https://dagster.io
+icon: https://dagster.io/images/logo.png
+appVersion: 0.11.2
