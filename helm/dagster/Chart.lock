@@ -1,7 +1,7 @@
 dependencies:
 - name: dagster-user-deployments
   repository: ""
-  version: 0.1.0
+  version: 0.11.2
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 8.1.0
@@ -11,5 +11,5 @@ dependencies:
 - name: redis
   repository: https://charts.bitnami.com/bitnami
   version: 12.7.4
-digest: sha256:61a020d3e5fa52023f6dbce5394b80cdb1fdf2faa98a2a0ba47c1722790725f2
-generated: "2021-03-18T08:59:20.238057-07:00"
+digest: sha256:d4721cb09103a66f8d49870fe9f6f86a2541df9cd396c6017f56b99c36daca41
+generated: "2021-04-01T13:54:47.585898-07:00"
