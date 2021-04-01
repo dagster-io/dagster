@@ -1,5 +1,31 @@
 # Changelog
 
+# 0.11.3
+
+### Breaking Change
+
+- Schedules and sensors that target a `pipeline_name` that is not present in the current repository will now error out when the repository is created.
+
+### New
+
+- Assets are now included in Dagit global search. The search bar has also been moved to the top of the app.
+- [helm] `generatePostgresqlPasswordSecret` toggle was added to allow the Helm chart to reference an external secret containing the Postgresql password (thanks @PenguinToast !)
+- [helm] The Dagster Helm chart is now hosted on [Artifact Hub](https://artifacthub.io/packages/search?page=1&org=dagster).
+- [helm] The workspace can now be specified under `dagit.workspace`, which can be useful if you are managing your user deployments in a separate Helm release.
+
+### Bugfixes
+
+- In Dagit, toggling schedules and sensors on or off will now immediately update the green dot in the left navigation, without requiring a refresh.
+- When evaluating `dict` values in `run_config` targeting `Permissive` / `dict` config schemas, the ordering is now preserved.
+- Integer values for `EventMetadataEntry.int` greater than 32 bits no longer cause `dagit` errors.
+- `PresetDefinition.with_additional_config` no longer errors if the base config was empty (thanks @esztermarton !)
+- Fixed limitation on gRPC message size when evaluating run requests for sensors, schedules, and backfills. Previously, a gRPC error would be thrown with status code `StatusCode.RESOURCE_EXHAUSTED` for a large number of run requests, especially when the requested run configs were large.
+- Changed backfill job status to reflect the number of successful runs against the number of partitions requested instead of the number of runs requested. Normally these two numbers are the same, but they can differ if a pipeline run initiated by the backfill job is re-executed manually.
+
+### Documentation
+
+- Corrections from the community - thanks @mrdavidlaing & @a-cid !
+
 ## 0.11.2
 
 **Community Contributions**
@@ -13,7 +39,7 @@
 
 **Bugfixes**
 
-- In 0.11.0, we introduced the ability to auto-generate Dagster Types from PEP 484 type annotations on solid arguments and return values.  However, when clicked on in Dagit, these types would show “Type Not Found” instead of rendering a description.  This has been fixed.
+- In 0.11.0, we introduced the ability to auto-generate Dagster Types from PEP 484 type annotations on solid arguments and return values. However, when clicked on in Dagit, these types would show “Type Not Found” instead of rendering a description. This has been fixed.
 - Fixed an issue where the `dagster api execute_step` will mistakenly skip a step and output a non-DagsterEvent log. This affected the `celery_k8s_job_executor`.
 - Fixed an issue where NaN floats were not properly handled by Dagit metadata entries.
 - Fixed an issue where Dagit run tags were unclickable.
