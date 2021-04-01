@@ -5,6 +5,7 @@ import time
 
 import pendulum
 from dagster import check
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import (
@@ -12,7 +13,6 @@ from dagster.core.host_representation import (
     ExternalScheduleExecutionErrorData,
     PipelineSelector,
     RepositoryLocation,
-    RepositoryLocationManager,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
@@ -57,21 +57,24 @@ class _ScheduleLaunchContext:
 _SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
-def execute_scheduler_iteration(instance, grpc_server_registry, logger, max_catchup_runs):
+def execute_scheduler_iteration(instance, workspace, logger, max_catchup_runs):
     end_datetime_utc = pendulum.now("UTC")
     yield from launch_scheduled_runs(
-        instance, grpc_server_registry, logger, end_datetime_utc, max_catchup_runs
+        instance, workspace, logger, end_datetime_utc, max_catchup_runs
     )
 
 
 def launch_scheduled_runs(
     instance,
-    grpc_server_registry,
+    workspace,
     logger,
     end_datetime_utc,
     max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
     debug_crash_flags=None,
 ):
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(workspace, "workspace", IWorkspace)
+
     schedules = [
         s
         for s in instance.all_stored_job_state(job_type=JobType.SCHEDULE)
@@ -85,27 +88,26 @@ def launch_scheduled_runs(
     schedule_names = ", ".join([schedule.job_name for schedule in schedules])
     logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
-    with RepositoryLocationManager(grpc_server_registry) as location_manager:
-        for schedule_state in schedules:
-            error_info = None
-            try:
-                origin = schedule_state.origin.external_repository_origin.repository_location_origin
-                repo_location = location_manager.get_location(origin)
-                yield from launch_scheduled_runs_for_schedule(
-                    instance,
-                    logger,
-                    schedule_state,
-                    repo_location,
-                    end_datetime_utc,
-                    max_catchup_runs,
-                    (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
-                )
-            except Exception:  # pylint: disable=broad-except
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                logger.error(
-                    f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
-                )
-            yield error_info
+    for schedule_state in schedules:
+        error_info = None
+        try:
+            origin = schedule_state.origin.external_repository_origin.repository_location_origin
+            repo_location = workspace.get_location(origin)
+            yield from launch_scheduled_runs_for_schedule(
+                instance,
+                logger,
+                schedule_state,
+                repo_location,
+                end_datetime_utc,
+                max_catchup_runs,
+                (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
+            )
+        except Exception:  # pylint: disable=broad-except
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            logger.error(
+                f"Scheduler caught an error for schedule {schedule_state.job_name} : {error_info.to_string()}"
+            )
+        yield error_info
 
 
 def launch_scheduled_runs_for_schedule(

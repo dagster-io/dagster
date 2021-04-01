@@ -371,6 +371,18 @@ class DagsterUserCodeProcessError(DagsterError):
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
 
 
+class DagsterRepositoryLocationLoadError(DagsterError):
+    def __init__(self, *args, **kwargs):
+        from dagster.utils.error import SerializableErrorInfo
+
+        self.load_error_infos = check.list_param(
+            kwargs.pop("load_error_infos"),
+            "load_error_infos",
+            SerializableErrorInfo,
+        )
+        super(DagsterRepositoryLocationLoadError, self).__init__(*args, **kwargs)
+
+
 class DagsterLaunchFailedError(DagsterError):
     """Indicates an error while attempting to launch a pipeline run."""
 

@@ -21,7 +21,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
     # Verify that schedule runs at the expected time in a non-UTC timezone
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         freeze_datetime = to_timezone(
@@ -41,7 +41,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -63,7 +63,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -108,7 +108,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -124,7 +124,7 @@ def test_differing_timezones(external_repo_context):
     # Two schedules, one using US/Central, the other on US/Eastern
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         freeze_datetime = to_timezone(
@@ -152,7 +152,7 @@ def test_differing_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -170,7 +170,7 @@ def test_differing_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -209,7 +209,7 @@ def test_differing_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -245,7 +245,7 @@ def test_differing_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -266,7 +266,7 @@ def test_differing_timezones(external_repo_context):
 def test_different_days_in_different_timezones(external_repo_context):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         freeze_datetime = to_timezone(
@@ -285,7 +285,7 @@ def test_different_days_in_different_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -299,7 +299,7 @@ def test_different_days_in_different_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -332,7 +332,7 @@ def test_different_days_in_different_timezones(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -348,7 +348,7 @@ def test_hourly_dst_spring_forward(external_repo_context):
     # Verify that an hourly schedule still runs hourly during the spring DST transition
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         # 1AM CST
@@ -373,7 +373,7 @@ def test_hourly_dst_spring_forward(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -413,7 +413,7 @@ def test_hourly_dst_spring_forward(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -428,7 +428,7 @@ def test_hourly_dst_fall_back(external_repo_context):
     # Verify that an hourly schedule still runs hourly during the fall DST transition
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         # 12:30 AM CST
@@ -453,7 +453,7 @@ def test_hourly_dst_fall_back(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -506,7 +506,7 @@ def test_hourly_dst_fall_back(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -521,7 +521,7 @@ def test_daily_dst_spring_forward(external_repo_context):
     # Verify that a daily schedule still runs once per day during the spring DST transition
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         # Night before DST
@@ -544,7 +544,7 @@ def test_daily_dst_spring_forward(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -589,7 +589,7 @@ def test_daily_dst_spring_forward(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -604,7 +604,7 @@ def test_daily_dst_fall_back(external_repo_context):
     # Verify that a daily schedule still runs once per day during the fall DST transition
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         # Night before DST
@@ -627,7 +627,7 @@ def test_daily_dst_fall_back(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -672,7 +672,7 @@ def test_daily_dst_fall_back(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -688,7 +688,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
     # by the DST transition does not execute for that day
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         # Day before DST
@@ -713,7 +713,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -765,7 +765,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -779,7 +779,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
 def test_execute_during_dst_transition_fall_back(external_repo_context):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         # A schedule that runs daily during a time that occurs twice during a fall DST transition
@@ -805,7 +805,7 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -848,7 +848,7 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )

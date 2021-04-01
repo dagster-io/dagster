@@ -22,6 +22,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.job import RunRequest
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterScheduleWipeRequired
@@ -352,8 +353,9 @@ def logger():
 def instance_with_schedules(external_repo_context, overrides=None):
     with schedule_instance(overrides) as instance:
         with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with external_repo_context() as external_repo:
-                yield (instance, grpc_server_registry, external_repo)
+            with DynamicWorkspace(grpc_server_registry) as workspace:
+                with external_repo_context() as external_repo:
+                    yield (instance, workspace, external_repo)
 
 
 @contextmanager
@@ -441,7 +443,7 @@ def test_simple_schedule(external_repo_context, capfd):
     )
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -459,7 +461,7 @@ def test_simple_schedule(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -482,7 +484,7 @@ def test_simple_schedule(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -525,7 +527,7 @@ def test_simple_schedule(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -541,7 +543,7 @@ def test_simple_schedule(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -559,7 +561,7 @@ def test_simple_schedule(external_repo_context, capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -586,9 +588,7 @@ def test_simple_schedule(external_repo_context, capfd):
             )
 
             # Check idempotence again
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
@@ -598,13 +598,13 @@ def test_simple_schedule(external_repo_context, capfd):
 def test_no_started_schedules(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         schedule_origin = external_schedule.get_external_origin()
 
-        list(launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC")))
+        list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
         assert instance.get_runs_count() == 0
 
         ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -620,7 +620,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
     with mock_system_timezone("US/Eastern"):
         with instance_with_schedules(external_repo_context) as (
             instance,
-            grpc_server_registry,
+            workspace,
             external_repo,
         ):
             external_schedule = external_repo.get_external_schedule(
@@ -635,11 +635,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
 
                 instance.start_schedule_and_update_storage_state(external_schedule)
 
-                list(
-                    launch_scheduled_runs(
-                        instance, grpc_server_registry, logger(), pendulum.now("UTC")
-                    )
-                )
+                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
                 assert instance.get_runs_count() == 1
 
@@ -672,11 +668,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
                 )
 
                 # Verify idempotence
-                list(
-                    launch_scheduled_runs(
-                        instance, grpc_server_registry, logger(), pendulum.now("UTC")
-                    )
-                )
+                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
                 assert instance.get_runs_count() == 1
                 ticks = instance.get_job_ticks(schedule_origin.get_id())
                 assert len(ticks) == 1
@@ -686,7 +678,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
 def test_bad_env_fn(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("bad_env_fn_schedule")
@@ -697,9 +689,7 @@ def test_bad_env_fn(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -728,7 +718,7 @@ def test_bad_env_fn(external_repo_context, capfd):
 def test_bad_should_execute(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
@@ -744,9 +734,7 @@ def test_bad_should_execute(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -778,7 +766,7 @@ def test_bad_should_execute(external_repo_context, capfd):
 def test_skip(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("skip_schedule")
@@ -790,9 +778,7 @@ def test_skip(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -819,7 +805,7 @@ def test_skip(external_repo_context, capfd):
 def test_wrong_config(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
@@ -830,9 +816,7 @@ def test_wrong_config(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
 
@@ -892,7 +876,7 @@ def _get_unloadable_schedule_origin():
 def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         good_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -925,9 +909,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             )
             instance.add_job_state(unloadable_schedule_state)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
@@ -967,7 +949,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
             new_now = pendulum.now("UTC")
-            list(launch_scheduled_runs(instance, grpc_server_registry, logger(), new_now))
+            list(launch_scheduled_runs(instance, workspace, logger(), new_now))
 
             assert instance.get_runs_count() == 3
             wait_for_all_runs_to_start(instance)
@@ -1024,7 +1006,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
 def test_run_scheduled_on_time_boundary(external_repo_context):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -1042,9 +1024,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
             # Start schedule exactly at midnight
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -1060,7 +1040,7 @@ def test_bad_load_repository(external_repo_context, capfd):
     )
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -1088,9 +1068,7 @@ def test_bad_load_repository(external_repo_context, capfd):
 
         initial_datetime = freeze_datetime.add(seconds=1)
         with pendulum.test(initial_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
 
@@ -1114,7 +1092,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
     )
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -1139,9 +1117,7 @@ def test_bad_load_schedule(external_repo_context, capfd):
 
         initial_datetime = freeze_datetime.add(seconds=1)
         with pendulum.test(initial_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 0
 
@@ -1158,57 +1134,54 @@ def test_bad_load_schedule(external_repo_context, capfd):
 
 def test_bad_load_repository_location(capfd):
     with schedule_instance() as instance, ProcessGrpcServerRegistry() as grpc_server_registry:
-        fake_origin = _get_unloadable_schedule_origin()
-        initial_datetime = create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-        )
-        with pendulum.test(initial_datetime):
-            schedule_state = JobState(
-                fake_origin,
-                JobType.SCHEDULE,
-                JobStatus.RUNNING,
-                ScheduleJobData(
-                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                ),
+        with DynamicWorkspace(grpc_server_registry) as workspace:
+            fake_origin = _get_unloadable_schedule_origin()
+            initial_datetime = create_pendulum_time(
+                year=2019,
+                month=2,
+                day=27,
+                hour=23,
+                minute=59,
+                second=59,
             )
-            instance.add_job_state(schedule_state)
+            with pendulum.test(initial_datetime):
+                schedule_state = JobState(
+                    fake_origin,
+                    JobType.SCHEDULE,
+                    JobStatus.RUNNING,
+                    ScheduleJobData(
+                        "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                    ),
+                )
+                instance.add_job_state(schedule_state)
 
-        initial_datetime = initial_datetime.add(seconds=1)
-        with pendulum.test(initial_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            initial_datetime = initial_datetime.add(seconds=1)
+            with pendulum.test(initial_datetime):
+                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
-            assert instance.get_runs_count() == 0
+                assert instance.get_runs_count() == 0
 
-            ticks = instance.get_job_ticks(fake_origin.get_id())
+                ticks = instance.get_job_ticks(fake_origin.get_id())
 
-            assert len(ticks) == 0
+                assert len(ticks) == 0
 
-            captured = capfd.readouterr()
-            assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
-            assert "doesnt_exist not found at module scope" in captured.out
+                captured = capfd.readouterr()
+                assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
+                assert "doesnt_exist not found at module scope" in captured.out
 
-        initial_datetime = initial_datetime.add(days=1)
-        with pendulum.test(initial_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_job_ticks(fake_origin.get_id())
-            assert len(ticks) == 0
+            initial_datetime = initial_datetime.add(days=1)
+            with pendulum.test(initial_datetime):
+                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+                assert instance.get_runs_count() == 0
+                ticks = instance.get_job_ticks(fake_origin.get_id())
+                assert len(ticks) == 0
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_multiple_schedules_on_different_time_ranges(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -1228,7 +1201,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )
@@ -1257,9 +1230,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
         initial_datetime = initial_datetime.add(hours=1)
         with pendulum.test(initial_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 3
 
@@ -1294,7 +1265,7 @@ def test_launch_failure(external_repo_context, capfd):
                 "class": "ExplodingRunLauncher",
             },
         },
-    ) as (instance, grpc_server_registry, external_repo):
+    ) as (instance, workspace, external_repo):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
 
         schedule_origin = external_schedule.get_external_origin()
@@ -1306,9 +1277,7 @@ def test_launch_failure(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             assert instance.get_runs_count() == 1
 
@@ -1346,7 +1315,7 @@ def test_launch_failure(external_repo_context, capfd):
 
 def test_partitionless_schedule(capfd):
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="US/Central")
-    with instance_with_schedules(default_repo) as (instance, grpc_server_registry, external_repo):
+    with instance_with_schedules(default_repo) as (instance, workspace, external_repo):
         with pendulum.test(initial_datetime):
             external_schedule = external_repo.get_external_schedule("partitionless_schedule")
             schedule_origin = external_schedule.get_external_origin()
@@ -1355,9 +1324,7 @@ def test_partitionless_schedule(capfd):
         # Travel enough in the future that many ticks have passed, but only one run executes
         initial_datetime = initial_datetime.add(days=5)
         with pendulum.test(initial_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 1
 
             wait_for_all_runs_to_start(instance)
@@ -1398,7 +1365,7 @@ def test_max_catchup_runs(capfd):
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
     )
-    with instance_with_schedules(default_repo) as (instance, grpc_server_registry, external_repo):
+    with instance_with_schedules(default_repo) as (instance, workspace, external_repo):
         with pendulum.test(initial_datetime):
             external_schedule = external_repo.get_external_schedule("simple_schedule")
             schedule_origin = external_schedule.get_external_origin()
@@ -1410,7 +1377,7 @@ def test_max_catchup_runs(capfd):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                     max_catchup_runs=2,
@@ -1482,7 +1449,7 @@ def test_multi_runs(external_repo_context, capfd):
     )
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -1495,9 +1462,7 @@ def test_multi_runs(external_repo_context, capfd):
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 0
@@ -1513,9 +1478,7 @@ def test_multi_runs(external_repo_context, capfd):
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -1548,9 +1511,7 @@ def test_multi_runs(external_repo_context, capfd):
             )
 
             # Verify idempotence
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -1561,9 +1522,7 @@ def test_multi_runs(external_repo_context, capfd):
             capfd.readouterr()
 
             # Traveling one more day in the future before running results in a tick
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 4
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 2
@@ -1589,7 +1548,7 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
     )
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -1599,9 +1558,7 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
             schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            list(
-                launch_scheduled_runs(instance, grpc_server_registry, logger(), pendulum.now("UTC"))
-            )
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -1694,7 +1651,7 @@ def test_large_schedule(external_repo_context):
     )
     with instance_with_schedules(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -1708,7 +1665,7 @@ def test_large_schedule(external_repo_context):
             list(
                 launch_scheduled_runs(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     logger(),
                     pendulum.now("UTC"),
                 )

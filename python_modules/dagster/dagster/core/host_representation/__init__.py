@@ -35,7 +35,6 @@ from .external_data import (
 )
 from .handle import PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
-from .location_manager import RepositoryLocationManager
 from .origin import (
     IN_PROCESS_NAME,
     ExternalJobOrigin,

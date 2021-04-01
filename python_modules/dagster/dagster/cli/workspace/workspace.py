@@ -1,15 +1,23 @@
 import sys
 import warnings
+from abc import ABC, abstractmethod
 from collections import OrderedDict, namedtuple
 from contextlib import ExitStack
 
 from dagster import check
+from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
 from dagster.core.host_representation import GrpcServerRepositoryLocation, RepositoryLocationOrigin
 from dagster.core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
     ProcessGrpcServerRegistry,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
+
+
+class IWorkspace(ABC):
+    @abstractmethod
+    def get_location(self, origin):
+        """Return the RepositoryLocation for the given RepositoryLocationOrigin, or raise an error if there is an error loading it."""
 
 
 class WorkspaceSnapshot(
@@ -50,6 +58,9 @@ class WorkspaceSnapshot(
 
 
 class Workspace:
+    """An IWorkspace that maintains a fixed list of origins, loading repositorylocations
+    for all of them on initialization."""
+
     def __init__(self, workspace_load_target, grpc_server_registry=None):
         self._stack = ExitStack()
 
@@ -159,6 +170,10 @@ class Workspace:
         check.str_param(location_name, "location_name")
         return location_name in self._location_error_dict
 
+    def get_repository_location_error(self, location_name):
+        check.str_param(location_name, "location_name")
+        return self._location_error_dict[location_name]
+
     def reload_repository_location(self, location_name):
         self._load_location(location_name)
 
@@ -166,6 +181,21 @@ class Workspace:
         for location in self.repository_locations:
             location.cleanup()
         self._load_workspace()
+
+    def get_location(self, origin):
+        location_name = origin.location_name
+        if self.has_repository_location(location_name):
+            return self.get_repository_location(location_name)
+        elif self.has_repository_location_error(location_name):
+            error_info = self.get_repository_location_error(location_name)
+            raise DagsterRepositoryLocationLoadError(
+                f"Failure loading {location_name}: {error_info.to_string()}",
+                load_error_infos=[error_info],
+            )
+        else:
+            raise DagsterInvariantViolationError(
+                f"Location {location_name} does not exist in workspace"
+            )
 
     def __enter__(self):
         return self

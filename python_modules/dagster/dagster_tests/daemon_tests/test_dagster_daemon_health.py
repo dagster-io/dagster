@@ -76,7 +76,7 @@ def test_thread_die_daemon(monkeypatch):
 
         iteration_ran = {"ran": False}
 
-        def run_iteration_error(_, _instance, _grpc_server_registry):
+        def run_iteration_error(_, _instance, _workspace):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
             yield  # pylint: disable=unreachable
@@ -112,7 +112,7 @@ def test_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster.daemon.daemon import SensorDaemon
 
-        def run_iteration_error(_, _instance, _grpc_server_registry):
+        def run_iteration_error(_, _instance, _workspace):
             raise DagsterInvariantViolationError("foobar")
             yield  # pylint: disable=unreachable
 
@@ -151,7 +151,7 @@ def test_multiple_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster.daemon.daemon import SensorDaemon
 
-        def run_iteration_error(_, _instance, _grpc_server_registry):
+        def run_iteration_error(_, _instance, _workspace):
             # ?message stack cls_name cause"
             yield SerializableErrorInfo("foobar", None, None, None)
             yield SerializableErrorInfo("bizbuz", None, None, None)

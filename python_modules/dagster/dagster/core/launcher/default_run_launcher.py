@@ -3,7 +3,7 @@ import time
 import grpc
 from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.host_representation import ExternalPipeline
+from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun

@@ -9,14 +9,13 @@ from click import UsageError
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
-from dagster.core.host_representation import (
-    ExternalRepository,
+from dagster.core.host_representation.external import ExternalRepository
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
-    RepositoryLocation,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.location_manager import RepositoryLocationManager
+from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -593,8 +592,10 @@ def get_repository_python_origin_from_kwargs(kwargs):
 def get_repository_location_from_kwargs(kwargs):
     origin = get_repository_location_origin_from_kwargs(kwargs)
     with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-        with RepositoryLocationManager(grpc_server_registry) as location_manager:
-            with location_manager.get_location(origin) as location:
+        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+
+        with DynamicWorkspace(grpc_server_registry) as workspace:
+            with workspace.get_location(origin) as location:
                 yield location
 
 

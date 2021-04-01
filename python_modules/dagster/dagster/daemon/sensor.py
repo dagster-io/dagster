@@ -2,17 +2,13 @@ import os
 import sys
 import time
 from collections import namedtuple
-from contextlib import ExitStack
 
 import pendulum
 from dagster import check, seven
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterError
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    PipelineSelector,
-    RepositoryLocationManager,
-)
+from dagster.core.host_representation import ExternalPipeline, PipelineSelector
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
     ExternalSensorExecutionErrorData,
@@ -122,7 +118,7 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_sensor_iteration_loop(instance, grpc_server_registry, logger, until=None):
+def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -131,38 +127,30 @@ def execute_sensor_iteration_loop(instance, grpc_server_registry, logger, until=
     """
     from dagster.daemon.daemon import CompletedIteration
 
-    location_manager = None
-    manager_loaded_time = None
+    manager_loaded_time = pendulum.now("UTC").timestamp()
 
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
 
     start_time = pendulum.now("UTC").timestamp()
-    with ExitStack() as stack:
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            if until and start_time >= until:
-                # provide a way of organically ending the loop to support test environment
-                break
+    while True:
+        start_time = pendulum.now("UTC").timestamp()
+        if until and start_time >= until:
+            # provide a way of organically ending the loop to support test environment
+            break
 
-            if (
-                not location_manager
-                or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
-            ):
-                stack.close()  # remove the previous context
-                location_manager = stack.enter_context(
-                    RepositoryLocationManager(grpc_server_registry)
-                )
-                manager_loaded_time = start_time
+        if start_time - manager_loaded_time > RELOAD_LOCATION_MANAGER_INTERVAL:
+            workspace.cleanup()
+            manager_loaded_time = pendulum.now("UTC").timestamp()
 
-            yield from execute_sensor_iteration(instance, logger, location_manager)
-            loop_duration = pendulum.now("UTC").timestamp() - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            yield CompletedIteration()
-            time.sleep(sleep_time)
+        yield from execute_sensor_iteration(instance, logger, workspace)
+        loop_duration = pendulum.now("UTC").timestamp() - start_time
+        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+        yield CompletedIteration()
+        time.sleep(sleep_time)
 
 
-def execute_sensor_iteration(instance, logger, location_manager, debug_crash_flags=None):
-    check.inst_param(location_manager, "location_manager", RepositoryLocationManager)
+def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None):
+    check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
         s
@@ -180,7 +168,7 @@ def execute_sensor_iteration(instance, logger, location_manager, debug_crash_fla
         error_info = None
         try:
             origin = job_state.origin.external_repository_origin.repository_location_origin
-            repo_location = location_manager.get_location(origin)
+            repo_location = workspace.get_location(origin)
 
             repo_name = job_state.origin.external_repository_origin.repository_name
 

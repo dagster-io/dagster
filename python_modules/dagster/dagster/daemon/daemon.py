@@ -5,6 +5,7 @@ from contextlib import AbstractContextManager
 
 import pendulum
 from dagster import DagsterInstance, check
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
@@ -61,32 +62,39 @@ class DagsterDaemon(AbstractContextManager):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
 
-    def run_loop(self, daemon_uuid, daemon_shutdown_event, grpc_server_registry, until=None):
-        # Each loop runs in its own thread with its own instance
+    def run_loop(self, daemon_uuid, daemon_shutdown_event, gen_workspace, until=None):
+        # Each loop runs in its own thread with its own instance and IWorkspace
         with DagsterInstance.get() as instance:
-            while not daemon_shutdown_event.is_set() and (not until or pendulum.now("UTC") < until):
-                curr_time = pendulum.now("UTC")
-                if (
-                    not self._last_iteration_time
-                    or (curr_time - self._last_iteration_time).total_seconds()
-                    >= self.interval_seconds
+            with gen_workspace(instance) as workspace:
+                check.inst_param(workspace, "workspace", IWorkspace)
+
+                while not daemon_shutdown_event.is_set() and (
+                    not until or pendulum.now("UTC") < until
                 ):
-                    self._last_iteration_time = curr_time
-                    self._run_iteration(
-                        instance, daemon_uuid, daemon_shutdown_event, grpc_server_registry, until
-                    )
+                    curr_time = pendulum.now("UTC")
+                    if (
+                        not self._last_iteration_time
+                        or (curr_time - self._last_iteration_time).total_seconds()
+                        >= self.interval_seconds
+                    ):
+                        self._last_iteration_time = curr_time
+                        self._run_iteration(
+                            instance, daemon_uuid, daemon_shutdown_event, workspace, until
+                        )
 
-                daemon_shutdown_event.wait(0.5)
+                    daemon_shutdown_event.wait(0.5)
 
-    def _run_iteration(
-        self, instance, daemon_uuid, daemon_shutdown_event, grpc_server_registry, until=None
-    ):
+    def _run_iteration(self, instance, daemon_uuid, daemon_shutdown_event, workspace, until=None):
         # Build a list of any exceptions encountered during the iteration.
         # Once the iteration completes, this is copied to last_iteration_exceptions
         # which is used in the heartbeats. This guarantees that heartbeats contain the full
         # list of errors raised.
         self._current_iteration_exceptions = []
-        daemon_generator = self.run_iteration(instance, grpc_server_registry)
+
+        # Clear out the workspace locations after each iteration
+        workspace.cleanup()
+
+        daemon_generator = self.run_iteration(instance, workspace)
 
         try:
             while (not daemon_shutdown_event.is_set()) and (
@@ -164,7 +172,7 @@ class DagsterDaemon(AbstractContextManager):
         )
 
     @abstractmethod
-    def run_iteration(self, instance, grpc_server_registry):
+    def run_iteration(self, instance, workspace):
         """
         Execute the daemon. In order to avoid blocking the controller thread for extended periods,
         daemons can yield control during this method. Yields can be either NoneType or a
@@ -198,9 +206,9 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SCHEDULER"
 
-    def run_iteration(self, instance, grpc_server_registry):
+    def run_iteration(self, instance, workspace):
         yield from execute_scheduler_iteration(
-            instance, grpc_server_registry, self._logger, self._max_catchup_runs
+            instance, workspace, self._logger, self._max_catchup_runs
         )
 
 
@@ -213,8 +221,8 @@ class SensorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SENSOR"
 
-    def run_iteration(self, instance, grpc_server_registry):
-        yield from execute_sensor_iteration_loop(instance, grpc_server_registry, self._logger)
+    def run_iteration(self, instance, workspace):
+        yield from execute_sensor_iteration_loop(instance, workspace, self._logger)
 
 
 class BackfillDaemon(DagsterDaemon):
@@ -228,5 +236,5 @@ class BackfillDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "BACKFILL"
 
-    def run_iteration(self, instance, grpc_server_registry):
-        yield from execute_backfill_iteration(instance, grpc_server_registry, self._logger)
+    def run_iteration(self, instance, workspace):
+        yield from execute_backfill_iteration(instance, workspace, self._logger)

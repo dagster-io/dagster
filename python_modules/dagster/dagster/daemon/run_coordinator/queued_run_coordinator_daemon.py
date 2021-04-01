@@ -4,8 +4,9 @@ import time
 from collections import defaultdict
 
 from dagster import DagsterEvent, DagsterEventType, check
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.events.log import EventRecord
-from dagster.core.host_representation import RepositoryLocationManager
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
@@ -109,7 +110,9 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "QUEUED_RUN_COORDINATOR"
 
-    def run_iteration(self, instance, grpc_server_registry):
+    def run_iteration(self, instance, workspace):
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(workspace, "workspace", IWorkspace)
         in_progress_runs = self._get_in_progress_runs(instance)
         max_runs_to_launch = self._max_concurrent_runs - len(in_progress_runs)
 
@@ -138,38 +141,37 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
             self._tag_concurrency_limits, in_progress_runs
         )
 
-        with RepositoryLocationManager(grpc_server_registry) as location_manager:
-            for run in sorted_runs:
-                if num_dequeued_runs >= max_runs_to_launch:
-                    break
+        for run in sorted_runs:
+            if num_dequeued_runs >= max_runs_to_launch:
+                break
 
-                if tag_concurrency_limits_counter.is_run_blocked(run):
-                    continue
+            if tag_concurrency_limits_counter.is_run_blocked(run):
+                continue
 
-                error_info = None
+            error_info = None
 
-                try:
-                    self._dequeue_run(instance, run, location_manager)
-                except Exception:  # pylint: disable=broad-except
-                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            try:
+                self._dequeue_run(instance, run, workspace)
+            except Exception:  # pylint: disable=broad-except
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-                    message = (
-                        f"Caught an error for run {run.run_id} while removing it from the queue."
-                        " Marking the run as failed and dropping it from the queue"
-                    )
-                    message_with_full_error = f"{message}: {error_info.to_string()}"
+                message = (
+                    f"Caught an error for run {run.run_id} while removing it from the queue."
+                    " Marking the run as failed and dropping it from the queue"
+                )
+                message_with_full_error = f"{message}: {error_info.to_string()}"
 
-                    self._logger.error(message_with_full_error)
-                    instance.report_run_failed(run, message_with_full_error)
+                self._logger.error(message_with_full_error)
+                instance.report_run_failed(run, message_with_full_error)
 
-                    # modify the original error, so that the extra message appears in heartbeats
-                    error_info = error_info._replace(message=f"{message}: {error_info.message}")
+                # modify the original error, so that the extra message appears in heartbeats
+                error_info = error_info._replace(message=f"{message}: {error_info.message}")
 
-                else:
-                    tag_concurrency_limits_counter.update_counters_with_launched_run(run)
-                    num_dequeued_runs += 1
+            else:
+                tag_concurrency_limits_counter.update_counters_with_launched_run(run)
+                num_dequeued_runs += 1
 
-                yield error_info
+            yield error_info
 
         self._logger.info("Launched {} runs.".format(num_dequeued_runs))
 
@@ -196,12 +198,12 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         # sorted is stable, so fifo is maintained
         return sorted(runs, key=get_priority, reverse=True)
 
-    def _dequeue_run(self, instance, run, location_manager):
+    def _dequeue_run(self, instance, run, workspace):
         repository_location_origin = (
             run.external_pipeline_origin.external_repository_origin.repository_location_origin
         )
 
-        location = location_manager.get_location(repository_location_origin)
+        location = workspace.get_location(repository_location_origin)
 
         external_pipeline = external_pipeline_from_location(
             location, run.external_pipeline_origin, run.solid_selection

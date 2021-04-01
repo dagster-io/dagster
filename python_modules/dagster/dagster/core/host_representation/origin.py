@@ -185,18 +185,18 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     def create_location(self):
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a RepositoryLocationManager"
+            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a DynamicWorkspace"
             " in order to create a handle."
         )
 
     @contextmanager
     def create_test_location(self):
-        from .location_manager import RepositoryLocationManager
+        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
         from .grpc_server_registry import ProcessGrpcServerRegistry
 
         with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-            with RepositoryLocationManager(grpc_server_registry) as location_manager:
-                with location_manager.get_location(self) as location:
+            with DynamicWorkspace(grpc_server_registry) as workspace:
+                with workspace.get_location(self) as location:
                     yield location
 
 

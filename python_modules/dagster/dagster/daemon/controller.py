@@ -4,10 +4,8 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 from dagster import check
-from dagster.core.host_representation.grpc_server_registry import (
-    GrpcServerRegistry,
-    ProcessGrpcServerRegistry,
-)
+from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.daemon import (
     DAEMON_HEARTBEAT_INTERVAL_SECONDS,
@@ -42,7 +40,14 @@ def daemon_controller_from_instance(instance, wait_for_processes_on_exit=False):
             daemons = [
                 stack.enter_context(daemon) for daemon in create_daemons_from_instance(instance)
             ]
-            with DagsterDaemonController(instance, daemons, grpc_server_registry) as controller:
+
+            # Create this in each daemon to generate a workspace per-daemon
+            @contextmanager
+            def gen_workspace(_instance):
+                with DynamicWorkspace(grpc_server_registry) as workspace:
+                    yield workspace
+
+            with DagsterDaemonController(instance, daemons, gen_workspace) as controller:
                 yield controller
     finally:
         if wait_for_processes_on_exit and grpc_server_registry:
@@ -50,7 +55,7 @@ def daemon_controller_from_instance(instance, wait_for_processes_on_exit=False):
 
 
 class DagsterDaemonController:
-    def __init__(self, instance, daemons, grpc_server_registry):
+    def __init__(self, instance, daemons, gen_workspace):
 
         self._daemon_uuid = str(uuid.uuid4())
 
@@ -63,9 +68,7 @@ class DagsterDaemonController:
             for daemon in check.list_param(daemons, "daemons", of_type=DagsterDaemon)
         }
 
-        self._grpc_server_registry = check.inst_param(
-            grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
-        )
+        self._gen_workspace = check.callable_param(gen_workspace, "gen_workspace")
 
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
@@ -82,7 +85,7 @@ class DagsterDaemonController:
         for daemon_type, daemon in self._daemons.items():
             self._daemon_threads[daemon_type] = threading.Thread(
                 target=daemon.run_loop,
-                args=(self._daemon_uuid, self._daemon_shutdown_event, self._grpc_server_registry),
+                args=(self._daemon_uuid, self._daemon_shutdown_event, gen_workspace),
                 name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
                 daemon=True,  # Individual daemons should not outlive controller process
             )

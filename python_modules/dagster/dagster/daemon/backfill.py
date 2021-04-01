@@ -2,13 +2,13 @@ import os
 import time
 
 from dagster import check
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.errors import DagsterBackfillFailedError
 from dagster.core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
     submit_backfill_runs,
 )
-from dagster.core.host_representation.location_manager import RepositoryLocationManager
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
@@ -32,8 +32,9 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_backfill_iteration(instance, grpc_server_registry, logger, debug_crash_flags=None):
+def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=None):
     check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(workspace, "workspace", IWorkspace)
 
     backfill_jobs = instance.get_backfills(status=BulkActionStatus.REQUESTED)
 
@@ -42,65 +43,61 @@ def execute_backfill_iteration(instance, grpc_server_registry, logger, debug_cra
         yield
         return
 
-    with RepositoryLocationManager(grpc_server_registry) as location_manager:
+    for backfill_job in backfill_jobs:
+        backfill_id = backfill_job.backfill_id
 
-        for backfill_job in backfill_jobs:
-            backfill_id = backfill_job.backfill_id
-
-            if not backfill_job.last_submitted_partition_name:
-                logger.info(f"Starting backfill for {backfill_id}")
-            else:
-                logger.info(
-                    f"Resuming backfill for {backfill_id} from {backfill_job.last_submitted_partition_name}"
-                )
-
-            origin = (
-                backfill_job.partition_set_origin.external_repository_origin.repository_location_origin
+        if not backfill_job.last_submitted_partition_name:
+            logger.info(f"Starting backfill for {backfill_id}")
+        else:
+            logger.info(
+                f"Resuming backfill for {backfill_id} from {backfill_job.last_submitted_partition_name}"
             )
 
-            try:
-                repo_location = location_manager.get_location(origin)
-                has_more = True
-                while has_more:
-                    # refetch the backfill job
-                    backfill_job = instance.get_backfill(backfill_job.backfill_id)
-                    if backfill_job.status != BulkActionStatus.REQUESTED:
-                        break
+        origin = (
+            backfill_job.partition_set_origin.external_repository_origin.repository_location_origin
+        )
 
-                    chunk, checkpoint, has_more = _get_partitions_chunk(
-                        instance, logger, backfill_job, CHECKPOINT_COUNT
-                    )
-                    _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
+        try:
+            repo_location = workspace.get_location(origin)
+            has_more = True
+            while has_more:
+                # refetch the backfill job
+                backfill_job = instance.get_backfill(backfill_job.backfill_id)
+                if backfill_job.status != BulkActionStatus.REQUESTED:
+                    break
 
-                    if chunk:
-
-                        for _run_id in submit_backfill_runs(
-                            instance, repo_location, backfill_job, chunk
-                        ):
-                            yield
-
-                    _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
-
-                    if has_more:
-                        instance.update_backfill(backfill_job.with_partition_checkpoint(checkpoint))
-                        yield
-                        time.sleep(CHECKPOINT_INTERVAL)
-                    else:
-                        logger.info(
-                            f"Backfill completed for {backfill_id} for {len(backfill_job.partition_names)} partitions"
-                        )
-                        instance.update_backfill(
-                            backfill_job.with_status(BulkActionStatus.COMPLETED)
-                        )
-                        yield
-            except DagsterBackfillFailedError as e:
-                error_info = e.serializable_error_info
-                instance.update_backfill(
-                    backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                chunk, checkpoint, has_more = _get_partitions_chunk(
+                    instance, logger, backfill_job, CHECKPOINT_COUNT
                 )
-                if error_info:
-                    logger.error(f"Backfill failed for {backfill_id}: {error_info.to_string()}")
-                    yield error_info
+                _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
+
+                if chunk:
+
+                    for _run_id in submit_backfill_runs(
+                        instance, repo_location, backfill_job, chunk
+                    ):
+                        yield
+
+                _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
+
+                if has_more:
+                    instance.update_backfill(backfill_job.with_partition_checkpoint(checkpoint))
+                    yield
+                    time.sleep(CHECKPOINT_INTERVAL)
+                else:
+                    logger.info(
+                        f"Backfill completed for {backfill_id} for {len(backfill_job.partition_names)} partitions"
+                    )
+                    instance.update_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
+                    yield
+        except DagsterBackfillFailedError as e:
+            error_info = e.serializable_error_info
+            instance.update_backfill(
+                backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
+            )
+            if error_info:
+                logger.error(f"Backfill failed for {backfill_id}: {error_info.to_string()}")
+                yield error_info
 
 
 def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
