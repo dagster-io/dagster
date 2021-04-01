@@ -15,7 +15,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  workspace.yaml:
+  workspace.yaml: |
     load_from:
       {{- $dagitWorkspace := .Values.dagit.workspace }}
       {{- $deployments := ternary $dagitWorkspace.servers $userDeployments.deployments $dagitWorkspace.enabled }}
