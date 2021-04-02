@@ -2,6 +2,7 @@ import os
 import random
 import string
 import sys
+import tempfile
 import time
 
 import pytest
@@ -18,7 +19,11 @@ from dagster import (
 from dagster.core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster.core.test_utils import (
+    create_run_for_test,
+    instance_for_test,
+    instance_for_test_tempdir,
+)
 from dagster.seven import multiprocessing
 
 HELLO_SOLID = "HELLO SOLID"
@@ -255,6 +260,47 @@ def test_single():
         )
 
         assert normalize_file_content(full_out.data).startswith(expected_outer_prefix())
+
+
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
+def test_compute_log_base_with_spaces():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test_tempdir(
+            temp_dir,
+            {
+                "compute_logs": {
+                    "module": "dagster.core.storage.local_compute_log_manager",
+                    "class": "LocalComputeLogManager",
+                    "config": {"base_dir": os.path.join(temp_dir, "base with spaces")},
+                }
+            },
+        ) as instance:
+            pipeline_name = "foo_pipeline"
+            pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
+
+            step_keys = ["A", "B", "C"]
+
+            with instance.compute_log_manager.watch(pipeline_run):
+                print("outer 1")  # pylint: disable=print-call
+                print("outer 2")  # pylint: disable=print-call
+                print("outer 3")  # pylint: disable=print-call
+
+                for step_key in step_keys:
+                    inner_step(instance, pipeline_run, step_key)
+
+            for step_key in step_keys:
+                stdout = instance.compute_log_manager.read_logs_file(
+                    pipeline_run.run_id, step_key, ComputeIOType.STDOUT
+                )
+                assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
+
+            full_out = instance.compute_log_manager.read_logs_file(
+                pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
+            )
+
+            assert normalize_file_content(full_out.data).startswith(expected_outer_prefix())
 
 
 @pytest.mark.skipif(
