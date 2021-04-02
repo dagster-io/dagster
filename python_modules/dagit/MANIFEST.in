@@ -1,4 +1,5 @@
 include README.rst
 include LICENSE
+recursive-include dagit/graphql-playground *
 recursive-include dagit/webapp/build *
 recursive-include dagit/templates/assets *

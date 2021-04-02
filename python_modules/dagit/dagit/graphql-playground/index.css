@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+#root {
+  height: 100%;
+}
+body {
+  font-family: Open Sans, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: rgba(0, 0, 0, 0.8);
+  line-height: 1.5;
+  height: 100vh;
+  letter-spacing: 0.53px;
+  margin-right: -1px !important;
+}
+a,
+body,
+code,
+h1,
+h2,
+h3,
+h4,
+html,
+p,
+pre,
+ul {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+}
+a:active,
+a:focus,
+button:focus,
+input:focus {
+  outline: none;
+}
+button,
+input,
+submit {
+  border: none;
+}
+button,
+input,
+pre {
+  font-family: Open Sans, sans-serif;
+}
+code {
+  font-family: Consolas, monospace;
+}

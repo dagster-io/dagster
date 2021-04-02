@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build-for-python": "yarn workspace @dagit/core initial && yarn workspace @dagit/app build && cd ../../python_modules/dagit/dagit && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagit/packages/app/build ./webapp/ && mkdir -p webapp/build/vendor/graphql-playground && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/static/css/index.css webapp/build/vendor/graphql-playground/index.css && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/favicon.png webapp/build/vendor/graphql-playground/favicon.png && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/static/js/middleware.js webapp/build/vendor/graphql-playground/middleware.js",
+    "build-for-python": "yarn workspace @dagit/core initial && yarn workspace @dagit/app build && cd ../../python_modules/dagit/dagit && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagit/packages/app/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphql-playground ./webapp/build/vendor",
     "start": "yarn workspace @dagit/core initial && concurrently \"yarn workspace @dagit/app start\" \"yarn workspace @dagit/core start\""
   },
   "workspaces": {
