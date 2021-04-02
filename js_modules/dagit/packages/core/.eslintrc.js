@@ -51,6 +51,10 @@ module.exports = {
             message: 'Please use components in src/ui instead.',
           },
           {
+            name: 'graphql-tag',
+            message: 'Please import from `@apollo/client`.',
+          },
+          {
             name: 'styled-components',
             message: 'Please import from `styled-components/macro`.',
           },
