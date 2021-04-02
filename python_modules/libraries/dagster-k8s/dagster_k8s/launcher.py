@@ -7,6 +7,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -227,6 +228,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             self._get_grpc_job_config(repository_origin.container_image)
             if repository_origin.container_image
             else self.get_static_job_config()
+        )
+
+        self._instance.add_run_tags(
+            run.run_id,
+            {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
         input_json = serialize_dagster_namedtuple(

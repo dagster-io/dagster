@@ -5,6 +5,7 @@ import time
 import pytest
 from dagster import DagsterEventType, check
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
@@ -16,6 +17,7 @@ from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
+    get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_external_pipeline,
 )
@@ -55,6 +57,9 @@ def test_k8s_run_launcher_default(
         )
 
         assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+
+        updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
+        assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
 
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

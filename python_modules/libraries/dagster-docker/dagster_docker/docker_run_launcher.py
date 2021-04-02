@@ -6,12 +6,12 @@ from dagster import Field, StringSource, check
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.launcher.base import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
 from docker_image import reference
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
-DOCKER_IMAGE_TAG = "docker/image"
 
 
 class DockerRunLauncher(RunLauncher, ConfigurableClass):
