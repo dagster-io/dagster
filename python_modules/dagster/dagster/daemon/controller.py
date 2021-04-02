@@ -1,4 +1,5 @@
 import threading
+import time
 import uuid
 from contextlib import ExitStack, contextmanager
 
@@ -17,6 +18,7 @@ from dagster.daemon.daemon import (
 )
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster.utils.interrupts import raise_interrupts_as
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 60
@@ -98,13 +100,12 @@ class DagsterDaemonController:
 
     def _daemon_thread_healthy(self, daemon_type):
         thread = self._daemon_threads[daemon_type]
+        return thread.is_alive()
 
-        if not thread.is_alive():
-            return False
-
+    def _daemon_heartbeat_healthy(self, daemon_type):
         return get_daemon_status(self._instance, daemon_type, ignore_errors=True).healthy
 
-    def check_daemons(self):
+    def check_daemon_threads(self):
         failed_daemons = [
             daemon_type
             for daemon_type in self._daemon_threads
@@ -113,10 +114,40 @@ class DagsterDaemonController:
 
         if failed_daemons:
             raise Exception(
+                "Stopping dagster-daemon process since the following threads are no longer running: {failed_daemons}".format(
+                    failed_daemons=failed_daemons
+                )
+            )
+
+    def check_daemon_heartbeats(self):
+        failed_daemons = [
+            daemon_type
+            for daemon_type in self._daemon_threads
+            if not self._daemon_heartbeat_healthy(daemon_type)
+        ]
+
+        if failed_daemons:
+            raise Exception(
                 "Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}".format(
                     failed_daemons=failed_daemons
                 )
             )
+
+    def check_daemon_loop(self):
+        start_time = pendulum.now("UTC")
+        while True:
+            # Wait until a daemon has been unhealthy for a long period of time
+            # before potentially restarting it due to a hanging or failed daemon
+            with raise_interrupts_as(KeyboardInterrupt):
+                time.sleep(5)
+                self.check_daemon_threads()
+                if (
+                    pendulum.now("UTC") - start_time
+                ).total_seconds() < 2 * DAEMON_HEARTBEAT_TOLERANCE_SECONDS:
+                    continue
+
+                self.check_daemon_heartbeats()
+                start_time = pendulum.now("UTC")
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._daemon_shutdown_event.set()

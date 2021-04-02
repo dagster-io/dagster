@@ -119,7 +119,14 @@ class DagsterDaemon(AbstractContextManager):
                     self._last_iteration_exceptions = self._current_iteration_exceptions
                     break
                 finally:
-                    self._check_add_heartbeat(instance, daemon_uuid)
+                    try:
+                        self._check_add_heartbeat(instance, daemon_uuid)
+                    except Exception:  # pylint: disable=broad-except
+                        self._logger.error(
+                            "Failed to add heartbeat: \n{}".format(
+                                serializable_error_info_from_exc_info(sys.exc_info())
+                            )
+                        )
 
         finally:
             # cleanup the generator if it was stopped part-way through

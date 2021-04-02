@@ -35,7 +35,8 @@ def test_healthy():
                     instance, curr_time_seconds=now.float_timestamp
                 ) and all_daemons_live(instance, curr_time_seconds=now.float_timestamp):
 
-                    controller.check_daemons()
+                    controller.check_daemon_threads()
+                    controller.check_daemon_heartbeats()
 
                     beyond_tolerated_time = now.float_timestamp + 100
 
@@ -94,10 +95,10 @@ def test_thread_die_daemon(monkeypatch):
 
                 if iteration_ran["ran"] and status.healthy:
                     try:
-                        controller.check_daemons()  # Should eventually throw since the sensor thread is interrupted
+                        controller.check_daemon_threads()  # Should eventually throw since the sensor thread is interrupted
                     except Exception as e:  # pylint: disable=broad-except
                         assert (
-                            "Stopping dagster-daemon process since the following threads are no longer sending heartbeats: ['SENSOR']"
+                            "Stopping dagster-daemon process since the following threads are no longer running: ['SENSOR']"
                             in str(e)
                         )
                         break
@@ -125,7 +126,8 @@ def test_error_daemon(monkeypatch):
 
                 if all_daemons_live(instance):
                     # Despite error, daemon should still be running
-                    controller.check_daemons()
+                    controller.check_daemon_threads()
+                    controller.check_daemon_heartbeats()
 
                     status = get_daemon_status(
                         instance, SensorDaemon.daemon_type(), now.float_timestamp
@@ -168,7 +170,8 @@ def test_multiple_error_daemon(monkeypatch):
                 if all_daemons_live(instance):
 
                     # Despite error, daemon should still be running
-                    controller.check_daemons()
+                    controller.check_daemon_threads()
+                    controller.check_daemon_heartbeats()
 
                     status = get_daemon_status(
                         instance, SensorDaemon.daemon_type(), now.float_timestamp

@@ -100,7 +100,8 @@ def test_no_memory_leaks():
             while True:
                 time.sleep(30)
 
-                controller.check_daemons()
+                controller.check_daemon_threads()
+                controller.check_daemon_heartbeats()
 
                 growth = objgraph.growth(
                     limit=10,

@@ -36,20 +36,7 @@ def run_command():
                 )
 
             with daemon_controller_from_instance(instance) as controller:
-                start_time = pendulum.now("UTC")
-                while True:
-                    # Wait until a daemon has been unhealthy for a long period of time
-                    # before potentially restarting it due to a hanging or failed daemon
-                    with raise_interrupts_as(KeyboardInterrupt):
-                        time.sleep(1)
-
-                        if (
-                            pendulum.now("UTC") - start_time
-                        ).total_seconds() < 2 * DAEMON_HEARTBEAT_TOLERANCE_SECONDS:
-                            continue
-
-                    controller.check_daemons()
-                    start_time = pendulum.now("UTC")
+                controller.check_daemon_loop()
 
 
 @click.command(
