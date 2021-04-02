@@ -363,7 +363,7 @@ def target_with_config_option(command_name):
             "\n\nYou can also specify multiple files:"
             "\n\nExample: "
             "dagster pipeline {name} -f hello_world.py -p pandas_hello_world "
-            "-c pandas_hello_world/solids.yaml -e pandas_hello_world/env.yaml"
+            "-c pandas_hello_world/solids.yaml -c pandas_hello_world/env.yaml"
         ).format(name=command_name),
     )
 
