@@ -1,5 +1,16 @@
 from collections import OrderedDict, defaultdict
-from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions import (
@@ -483,7 +494,7 @@ class ExecutionPlan(
         [
             ("step_dict", Dict[StepHandleUnion, IExecutionStep]),
             ("executable_map", Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]]),
-            ("resolvable_map", Dict[str, List[UnresolvedStepHandle]]),
+            ("resolvable_map", Dict[FrozenSet[str], List[UnresolvedStepHandle]]),
             ("step_handles_to_execute", List[StepHandleUnion]),
             ("known_state", KnownExecutionState),
             ("artifacts_persisted", bool),
@@ -591,11 +602,10 @@ class ExecutionPlan(
         )
 
     def resolve(
-        self, resolved_by_step_key: str, mappings: Dict[str, List[str]]
+        self,
+        mappings: Dict[str, Dict[str, List[str]]],
     ) -> Dict[str, Set[str]]:
-        """Resolve UnresolvedMappedExecutionSteps that depend on resolved_by_step_key, with the mapped output results"""
-        check.str_param(resolved_by_step_key, "resolved_by_step_key")
-        check.dict_param(mappings, "mappings", key_type=str, value_type=list)
+        """Resolve any dynamic map or collect steps with the resolved dynamic mappings"""
 
         previous = self.get_executable_step_deps()
 
@@ -604,7 +614,7 @@ class ExecutionPlan(
             self.executable_map,
             self.resolvable_map,
             self.step_handles_to_execute,
-            {resolved_by_step_key: mappings},
+            mappings,
         )
 
         after = self.get_executable_step_deps()
@@ -831,25 +841,39 @@ class ExecutionPlan(
 def _update_from_resolved_dynamic_outputs(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
-    resolvable_map: Dict[str, List[UnresolvedStepHandle]],
+    resolvable_map: Dict[FrozenSet[str], List[UnresolvedStepHandle]],
     step_handles_to_execute: List[StepHandleUnion],
     dynamic_mappings: Dict[str, Dict[str, List[str]]],
 ) -> None:
     resolved_steps = []
-    for resolved_by_step_key, mappings in dynamic_mappings.items():
-        for unresolved_step_handle in resolvable_map[resolved_by_step_key]:
+    key_sets_to_clear = []
+
+    # find entries in the resolvable map whose requirements are now all ready
+    for required_keys, unresolved_step_handles in resolvable_map.items():
+        if not all(key in dynamic_mappings for key in required_keys):
+            continue
+
+        key_sets_to_clear.append(required_keys)
+
+        for unresolved_step_handle in unresolved_step_handles:
             # don't resolve steps we are not executing
-            if unresolved_step_handle in step_handles_to_execute:
-                resolvable_step = step_dict[unresolved_step_handle]
-                if isinstance(resolvable_step, UnresolvedMappedExecutionStep):
-                    resolved_steps += resolvable_step.resolve(resolved_by_step_key, mappings)
-                elif isinstance(resolvable_step, UnresolvedCollectExecutionStep):
-                    resolved_steps.append(resolvable_step.resolve(resolved_by_step_key, mappings))
+            if unresolved_step_handle not in step_handles_to_execute:
+                continue
+
+            resolvable_step = step_dict[unresolved_step_handle]
+
+            if isinstance(resolvable_step, UnresolvedMappedExecutionStep):
+                resolved_steps += resolvable_step.resolve(dynamic_mappings)
+            elif isinstance(resolvable_step, UnresolvedCollectExecutionStep):
+                resolved_steps.append(resolvable_step.resolve(dynamic_mappings))
 
     # update structures
     for step in resolved_steps:
         step_dict[step.handle] = step
         executable_map[step.key] = step.handle
+
+    for key_set in key_sets_to_clear:
+        del resolvable_map[key_set]
 
 
 def check_io_manager_intermediate_storage(
@@ -1079,12 +1103,14 @@ def _compute_step_maps(step_dict, step_handles_to_execute, known_state):
         if isinstance(step, ExecutionStep):
             executable_map[step.key] = step.handle
         elif isinstance(step, (UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep)):
-            if step.resolved_by_step_key not in step_keys_to_execute:
-                raise DagsterInvariantViolationError(
-                    f'Unresolved ExecutionStep "{step.key}" is resolved by "{step.resolved_by_step_key}" '
-                    "which is not part of the current step selection"
-                )
-            resolvable_map[step.resolved_by_step_key].append(step.handle)
+            for key in step.resolved_by_step_keys:
+                if key not in step_keys_to_execute:
+                    raise DagsterInvariantViolationError(
+                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{step.resolved_by_step_key}" '
+                        "which is not part of the current step selection"
+                    )
+
+            resolvable_map[step.resolved_by_step_keys].append(step.handle)
         else:
             check.invariant(
                 step.key in executable_map, "Expect all steps to be executable or resolvable"

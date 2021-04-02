@@ -299,3 +299,19 @@ def test_map_multi_fail():
             raise_on_error=False,
         )
         assert not result.success
+
+
+def test_multi_collect():
+    @solid
+    def fan_in(_, x, y):
+        return x + y
+
+    @pipeline
+    def double():
+        nums_1 = emit()
+        nums_2 = emit()
+        fan_in(nums_1.collect(), nums_2.collect())
+
+    result = execute_pipeline(double)
+    assert result.success
+    assert result.result_for_solid("fan_in").output_value() == [0, 1, 2, 0, 1, 2]

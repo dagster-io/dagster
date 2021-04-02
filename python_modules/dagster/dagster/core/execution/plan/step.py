@@ -1,6 +1,6 @@
 from abc import abstractmethod, abstractproperty
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Set, Type, Union
+from typing import TYPE_CHECKING, Dict, FrozenSet, List, NamedTuple, Optional, Set, Type, Union
 
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
@@ -256,17 +256,14 @@ class UnresolvedMappedExecutionStep(
 
     @property
     def resolved_by_step_key(self) -> str:
-        keys = set()
-        for inp in self.step_inputs:
-            if isinstance(inp, UnresolvedMappedStepInput):
-                keys.add(inp.resolved_by_step_key)
-
+        # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
+        keys = self.resolved_by_step_keys
         check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-
         return list(keys)[0]
 
     @property
     def resolved_by_output_name(self) -> str:
+        # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
@@ -278,23 +275,28 @@ class UnresolvedMappedExecutionStep(
 
         return list(keys)[0]
 
-    def resolve(
-        self, resolved_by_step_key: str, mappings: Dict[str, List[str]]
-    ) -> List[ExecutionStep]:
-        check.invariant(
-            self.resolved_by_step_key == resolved_by_step_key,
-            "resolving dynamic output step key did not match",
-        )
+    @property
+    def resolved_by_step_keys(self) -> FrozenSet[str]:
+        keys = set()
+        for inp in self.step_inputs:
+            if isinstance(inp, UnresolvedMappedStepInput):
+                keys.add(inp.resolved_by_step_key)
 
+        return frozenset(keys)
+
+    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> List[ExecutionStep]:
+        check.invariant(
+            all(key in mappings for key in self.resolved_by_step_keys),
+            "resolving with mappings that do not contain all required step keys",
+        )
         execution_steps = []
 
-        for output_name, mapped_keys in mappings.items():
-            if self.resolved_by_output_name != output_name:
-                continue
-
+        for output_name, mapped_keys in mappings[self.resolved_by_step_key].items():
             for mapped_key in mapped_keys:
                 # handle output_name alignment
-                resolved_inputs = [_resolved_input(inp, mapped_key) for inp in self.step_inputs]
+                resolved_inputs = [
+                    _resolved_input(inp, output_name, mapped_key) for inp in self.step_inputs
+                ]
 
                 execution_steps.append(
                     ExecutionStep(
@@ -309,9 +311,17 @@ class UnresolvedMappedExecutionStep(
         return execution_steps
 
 
-def _resolved_input(step_input: Union[StepInput, UnresolvedMappedStepInput], map_key: str):
+def _resolved_input(
+    step_input: Union[StepInput, UnresolvedMappedStepInput], output_name: str, map_key: str
+):
     if isinstance(step_input, StepInput):
         return step_input
+
+    check.invariant(
+        output_name == step_input.resolved_by_output_name,
+        "unexpected output name in dynamic mapped step resolution",
+    )
+
     return step_input.resolve(map_key)
 
 
@@ -405,40 +415,28 @@ class UnresolvedCollectExecutionStep(
         return deps
 
     @property
-    def resolved_by_step_key(self) -> str:
+    def resolved_by_step_keys(self) -> FrozenSet[str]:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedCollectStepInput):
                 keys.add(inp.resolved_by_step_key)
 
-        check.invariant(len(keys) == 1, "Pending step expects one and only one dynamic step key")
+        return frozenset(keys)
 
-        return list(keys)[0]
-
-    @property
-    def resolved_by_output_name(self) -> str:
-        keys = set()
-        for inp in self.step_inputs:
-            if isinstance(inp, UnresolvedCollectStepInput):
-                keys.add(inp.resolved_by_output_name)
-
-        check.invariant(len(keys) == 1, "Pending step expects one and only one dynamic output name")
-
-        return list(keys)[0]
-
-    def resolve(self, resolved_by_step_key: str, mappings: Dict[str, List[str]]) -> ExecutionStep:
+    def resolve(self, mappings: Dict[str, Dict[str, List[str]]]) -> ExecutionStep:
         check.invariant(
-            self.resolved_by_step_key == resolved_by_step_key,
-            "resolving dynamic output step key did not match",
+            all(key in mappings for key in self.resolved_by_step_keys),
+            "resolving with mappings that do not contain all required step keys",
         )
 
-        mapped_keys = mappings[self.resolved_by_output_name]
         resolved_inputs = []
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
                 resolved_inputs.append(inp)
             else:
-                resolved_inputs.append(inp.resolve(mapped_keys))
+                resolved_inputs.append(
+                    inp.resolve(mappings[inp.resolved_by_step_key][inp.resolved_by_output_name])
+                )
 
         return ExecutionStep(
             handle=self.handle,

@@ -655,8 +655,8 @@ class DependencyStructure:
         # solid_name => dynamic output_handle that this will solid dupe for
         self._dynamic_fan_out_index: dict = {}
 
-        # solid_name => dynamic output_handle this collects over
-        self._collect_index: dict = {}
+        # solid_name => set of dynamic output_handle this collects over
+        self._collect_index: Dict[str, set] = defaultdict(set)
 
         for input_handle, (dep_type, output_handle_or_list) in self._handle_dict.items():
             if dep_type == DependencyType.FAN_IN:
@@ -733,7 +733,7 @@ class DependencyStructure:
             raise DagsterInvalidDefinitionError(
                 f'Solid "{input_handle.solid_name}" cannot be both downstream of dynamic output '
                 f"{output_handle.describe()} and collect over dynamic output "
-                f"{self._collect_index[input_handle.solid_name].describe()}."
+                f"{list(self._collect_index[input_handle.solid_name])[0].describe()}."
             )
 
         if self._dynamic_fan_out_index.get(input_handle.solid_name) is None:
@@ -759,10 +759,7 @@ class DependencyStructure:
                 f"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}."
             )
 
-        if self._collect_index.get(input_handle.solid_name) is None:
-            self._collect_index[input_handle.solid_name] = output_handle
-        else:
-            check.failed("collect index unexpectedly set twice")
+        self._collect_index[input_handle.solid_name].add(output_handle)
 
         # if the output is already fanned out
         if self._dynamic_fan_out_index.get(output_handle.solid_name):

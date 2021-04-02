@@ -59,13 +59,13 @@ class ActiveExecution:
         self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
+        self._new_dynamic_mappings: bool = False
 
         # steps move in to these buckets as a result of _update calls
         self._executable: List[str] = []
         self._pending_skip: List[str] = []
         self._pending_retry: List[str] = []
         self._pending_abandon: List[str] = []
-        self._pending_resolve: List[str] = []
         self._waiting_to_retry: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
@@ -145,15 +145,12 @@ class ActiveExecution:
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
 
-        # make a copy since we are mutating during iteration
-        pending_resolve_snapshot = list(self._pending_resolve)
-        for idx, key in enumerate(pending_resolve_snapshot):
-            new_step_deps = self._plan.resolve(key, self._successful_dynamic_outputs[key])
+        if self._new_dynamic_mappings:
+            new_step_deps = self._plan.resolve(self._successful_dynamic_outputs)
             for step_key, deps in new_step_deps.items():
-                # does this work right with step_keys_to_execute?
                 self._pending[step_key] = deps
 
-            del self._pending_resolve[idx]
+            self._new_dyamic_mappings = False
 
         for step_key, requirements in self._pending.items():
             # If any upstream deps failed - this is not executable
@@ -339,7 +336,7 @@ class ActiveExecution:
         self._success.add(step_key)
         self._mark_complete(step_key)
         if step_key in self._successful_dynamic_outputs:
-            self._pending_resolve.append(step_key)
+            self._new_dynamic_mappings = True
 
     def mark_skipped(self, step_key: str) -> None:
         self._skipped.add(step_key)
