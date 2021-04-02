@@ -24,10 +24,8 @@ Inputs & outputs
 ----------------
 
 .. autoclass:: InputDefinition
-   :members:
 
 .. autoclass:: OutputDefinition
-   :members:
 
 -------
 

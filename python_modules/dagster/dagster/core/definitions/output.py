@@ -164,9 +164,16 @@ class OutputDefinition:
 
 class DynamicOutputDefinition(OutputDefinition):
     """
-    (EXPERIMENTAL) Variant of :py:class:`OutputDefinition` for an output that will dynamically
-    alter the graph at runtime. Each copy of :py:class:`DynamicOutput` corresponding to this
-    definition that is yielded from the solid will create a copy of the downstream graph.
+    (Experimental) Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
+    output that will dynamically alter the graph at runtime.
+
+    When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
+    dynamic outputs must be used with either
+
+    * ``map`` - clone downstream solids for each separate :py:class:`DynamicOutput`
+    * ``collect`` - gather across all :py:class:`DynamicOutput` in to a list
+
+    Uses the same constructor as :py:class:`OutputDefinition <dagster.OutputDefinition>`
 
         .. code-block:: python
 
@@ -181,6 +188,16 @@ class DynamicOutputDefinition(OutputDefinition):
                 dirname, _, filenames = next(os.walk(path))
                 for file in filenames:
                     yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
+
+            @pipeline
+            def process_directory():
+                files = files_in_directory()
+
+                # use map to invoke a solid on each dynamic output
+                file_results = files.map(process_file)
+
+                # use collect to gather the results in to a list
+                summarize_directory(file_results.collect())
     """
 
     @property

@@ -533,19 +533,25 @@ class Output(namedtuple("_Output", "value output_name metadata_entries")):
 
 class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name metadata_entries")):
     """
-    (Experimental) Variant of :py:class:`Output` used to support mapping. Each DynamicOutput
-    produced by a solid will result in the downstream dag being cloned to run on that individual
-    value. Each DynamicOutput must have a unique mapping_key to distinguish it.
+    (Experimental) Variant of :py:class:`Output <dagster.Output>` used to support
+    dynamic mapping & collect. Each ``DynamicOutput`` produced by a solid represents
+    one item in a set that can be processed individually with ``map`` or gathered
+    with ``collect``.
+
+    Each ``DynamicOutput`` must have a unique ``mapping_key`` to distinguish it with it's set.
 
     Args:
         value (Any):
             The value returned by the compute function.
         mapping_key (str):
             The key that uniquely identifies this dynamic value relative to its peers.
+            This key will be used to identify the downstream solids when mapped, ie
+            ``mapped_solid[example_mapping_key]``
         output_name (Optional[str]):
-            Name of the corresponding output definition. (default: "result")
+            Name of the corresponding :py:class:`DynamicOutputDefinition` defined on the solid.
+            (default: "result")
         metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
-            (Experimental) A set of metadata entries to attach to events related to this Output.
+            (Experimental) A set of metadata entries to attach to events related to this output.
     """
 
     def __new__(cls, value, mapping_key, output_name=DEFAULT_OUTPUT, metadata_entries=None):
