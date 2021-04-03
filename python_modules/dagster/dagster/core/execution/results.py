@@ -435,7 +435,7 @@ class SolidExecutionResult:
         """bool: Whether solid execution was skipped."""
         return all(
             step_event.event_type == DagsterEventType.STEP_SKIPPED
-                for step_event in self.compute_step_events
+            for step_event in self.compute_step_events
         )
 
     @property
