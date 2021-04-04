@@ -4,7 +4,7 @@ from .file_manager import S3FileHandle, S3FileManager
 from .intermediate_storage import S3IntermediateStorage
 from .io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
 from .object_store import S3ObjectStore
-from .resources import s3_file_manager, s3_resource
+from .resources import s3_file_manager, s3_resource, s3_resource_for_profile
 from .s3_fake_resource import S3FakeSession, create_s3_fake_resource
 from .solids import S3Coordinate, file_handle_to_s3
 from .system_storage import s3_intermediate_storage, s3_plus_default_intermediate_storage_defs
