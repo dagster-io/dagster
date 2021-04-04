@@ -2,7 +2,7 @@ from dagster import Field, StringSource, resource
 from dagster.utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
-from .utils import construct_s3_client
+from .utils import construct_s3_client, construct_s3_client_for_profile
 
 S3_SESSION_CONFIG = {
     "use_unsigned_session": Field(
@@ -99,6 +99,21 @@ def s3_resource(context):
         profile_name=context.resource_config.get("profile_name"),
     )
 
+@resource(S3_SESSION_CONFIG)
+def s3_resource_for_profile(context):
+    """Resource that gives solids access to S3 for a specific profile.
+
+    The underlying S3 session is created by calling :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
+    The returned resource object is an S3 client fro specified profile_name, an instance of `botocore.client.S3`.
+
+    """
+    return construct_s3_client_for_profile(
+        max_attempts=context.resource_config["max_attempts"],
+        region_name=context.resource_config.get("region_name"),
+        endpoint_url=context.resource_config.get("endpoint_url"),
+        use_unsigned_session=context.resource_config["use_unsigned_session"],
+        profile_name=context.resource_config["profile_name"]
+    )
 
 @resource(
     merge_dicts(

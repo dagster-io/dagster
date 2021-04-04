@@ -50,6 +50,31 @@ def construct_s3_client(
         s3_client.meta.events.register("choose-signer.s3.*", disable_signing)
 
     return s3_client
+    
+    
+def construct_s3_client_for_profile(
+    max_attempts, region_name=None, endpoint_url=None, use_unsigned_session=False, 
+    profile_name='default'
+):
+    check.int_param(max_attempts, "max_attempts")
+    check.opt_str_param(region_name, "region_name")
+    check.opt_str_param(endpoint_url, "endpoint_url")
+    check.bool_param(use_unsigned_session, "use_unsigned_session")
+    check.opt_str_param(profile_name, "profile_name")
+
+    client_session = boto3.session.Session(profile_name=profile_name)
+    s3_client = client_session.resource(  # pylint:disable=C0103
+        "s3",
+        region_name=region_name,
+        use_ssl=True,
+        endpoint_url=endpoint_url,
+        config=construct_boto_client_retry_config(max_attempts),
+    ).meta.client
+
+    if use_unsigned_session:
+        s3_client.meta.events.register("choose-signer.s3.*", disable_signing)
+
+    return s3_client
 
 
 def construct_boto_client_retry_config(max_attempts):
