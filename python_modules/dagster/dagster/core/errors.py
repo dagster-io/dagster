@@ -360,6 +360,15 @@ class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
     was communicating with."""
 
+    @staticmethod
+    def from_error_info(error_info):
+        from dagster.utils.error import SerializableErrorInfo
+
+        check.inst_param(error_info, "error_info", SerializableErrorInfo)
+        return DagsterUserCodeProcessError(
+            error_info.to_string(), user_code_process_error_infos=[error_info]
+        )
+
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo
 

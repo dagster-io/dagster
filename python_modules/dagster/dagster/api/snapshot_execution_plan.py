@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.core.snap.execution_plan_snapshot import (
@@ -46,7 +46,5 @@ def sync_get_external_execution_plan_grpc(
     )
 
     if isinstance(result, ExecutionPlanSnapshotErrorData):
-        raise DagsterSubprocessError(
-            result.error.to_string(), subprocess_error_infos=[result.error]
-        )
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
     return result

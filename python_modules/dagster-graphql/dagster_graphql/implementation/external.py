@@ -1,3 +1,5 @@
+import sys
+
 from dagster import check
 from dagster.cli.workspace.context import WorkspaceRequestContext
 from dagster.config.validate import validate_config_from_snap
@@ -7,6 +9,7 @@ from dagster.core.host_representation import (
     PipelineSelector,
     RepositorySelector,
 )
+from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error
@@ -59,9 +62,10 @@ def get_subset_external_pipeline(context, selector):
     repository_location = context.get_repository_location(selector.location_name)
     external_repository = repository_location.get_repository(selector.repository_name)
 
-    subset_result = repository_location.get_subset_external_pipeline_result(selector)
-    if not subset_result.success:
-        error_info = subset_result.error
+    try:
+        subset_result = repository_location.get_subset_external_pipeline_result(selector)
+    except Exception:  # pylint: disable=broad-except
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise UserFacingGraphQLError(
             GrapheneInvalidSubsetError(
                 message="{message}{cause_message}".format(

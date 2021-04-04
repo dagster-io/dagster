@@ -1,14 +1,15 @@
 import string
 
+import pytest
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation import (
     ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
@@ -28,13 +29,12 @@ def test_external_partition_names_grpc():
 
 def test_external_partition_names_error_grpc():
     with get_bar_repo_handle() as repository_handle:
-        error = sync_get_external_partition_names_grpc(
-            repository_handle.repository_location.client,
-            repository_handle,
-            "error_partitions",
-        )
-        assert isinstance(error, ExternalPartitionExecutionErrorData)
-        assert "womp womp" in error.error.to_string()
+        with pytest.raises(DagsterUserCodeProcessError, match="womp womp"):
+            sync_get_external_partition_names_grpc(
+                repository_handle.repository_location.client,
+                repository_handle,
+                "error_partitions",
+            )
 
 
 def test_external_partitions_config_grpc():
@@ -52,13 +52,13 @@ def test_external_partitions_config_grpc():
 
 def test_external_partitions_config_error_grpc():
     with get_bar_repo_handle() as repository_handle:
-        error = sync_get_external_partition_config_grpc(
-            repository_handle.repository_location.client,
-            repository_handle,
-            "error_partition_config",
-            "c",
-        )
-        assert isinstance(error, ExternalPartitionExecutionErrorData)
+        with pytest.raises(DagsterUserCodeProcessError):
+            sync_get_external_partition_config_grpc(
+                repository_handle.repository_location.client,
+                repository_handle,
+                "error_partition_config",
+                "c",
+            )
 
 
 def test_external_partitions_tags_grpc():
@@ -76,13 +76,13 @@ def test_external_partitions_tags_grpc():
 
 def test_external_partitions_tags_error_grpc():
     with get_bar_repo_handle() as repository_handle:
-        error = sync_get_external_partition_tags_grpc(
-            repository_handle.repository_location.client,
-            repository_handle,
-            "error_partition_tags",
-            "c",
-        )
-        assert isinstance(error, ExternalPartitionExecutionErrorData)
+        with pytest.raises(DagsterUserCodeProcessError):
+            sync_get_external_partition_tags_grpc(
+                repository_handle.repository_location.client,
+                repository_handle,
+                "error_partition_tags",
+                "c",
+            )
 
 
 def test_external_partition_set_execution_params_grpc():

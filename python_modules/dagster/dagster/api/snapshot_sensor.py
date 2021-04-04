@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionData,
     ExternalSensorExecutionErrorData,
@@ -31,7 +32,7 @@ def sync_get_external_sensor_execution_data_grpc(
 
     origin = repository_handle.get_external_origin()
 
-    return check.inst(
+    result = check.inst(
         api_client.external_sensor_execution(
             sensor_execution_args=SensorExecutionArgs(
                 repository_origin=origin,
@@ -43,3 +44,8 @@ def sync_get_external_sensor_execution_data_grpc(
         ),
         (ExternalSensorExecutionData, ExternalSensorExecutionErrorData),
     )
+
+    if isinstance(result, ExternalSensorExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result

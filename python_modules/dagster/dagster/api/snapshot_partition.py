@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -17,7 +18,7 @@ def sync_get_external_partition_names_grpc(api_client, repository_handle, partit
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
     repository_origin = repository_handle.get_external_origin()
-    return check.inst(
+    result = check.inst(
         api_client.external_partition_names(
             partition_names_args=PartitionNamesArgs(
                 repository_origin=repository_origin,
@@ -26,6 +27,10 @@ def sync_get_external_partition_names_grpc(api_client, repository_handle, partit
         ),
         (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
     )
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result
 
 
 def sync_get_external_partition_config_grpc(
@@ -38,7 +43,7 @@ def sync_get_external_partition_config_grpc(
     check.str_param(partition_set_name, "partition_set_name")
     check.str_param(partition_name, "partition_name")
     repository_origin = repository_handle.get_external_origin()
-    return check.inst(
+    result = check.inst(
         api_client.external_partition_config(
             partition_args=PartitionArgs(
                 repository_origin=repository_origin,
@@ -48,6 +53,10 @@ def sync_get_external_partition_config_grpc(
         ),
         (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
     )
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result
 
 
 def sync_get_external_partition_tags_grpc(
@@ -61,7 +70,7 @@ def sync_get_external_partition_tags_grpc(
     check.str_param(partition_name, "partition_name")
 
     repository_origin = repository_handle.get_external_origin()
-    return check.inst(
+    result = check.inst(
         api_client.external_partition_tags(
             partition_args=PartitionArgs(
                 repository_origin=repository_origin,
@@ -71,6 +80,10 @@ def sync_get_external_partition_tags_grpc(
         ),
         (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
     )
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result
 
 
 def sync_get_external_partition_set_execution_param_data_grpc(
@@ -85,7 +98,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
 
     repository_origin = repository_handle.get_external_origin()
 
-    return check.inst(
+    result = check.inst(
         api_client.external_partition_set_execution_params(
             partition_set_execution_param_args=PartitionSetExecutionParamArgs(
                 repository_origin=repository_origin,
@@ -95,3 +108,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
         ),
         (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
     )
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result

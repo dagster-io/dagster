@@ -21,11 +21,7 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.definitions.pipeline_base import IPipeline
-from dagster.core.errors import (
-    DagsterBackfillFailedError,
-    DagsterInvariantViolationError,
-    DagsterLaunchFailedError,
-)
+from dagster.core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resolve_versions import (
@@ -38,14 +34,10 @@ from dagster.core.host_representation import (
     RepositoryHandle,
     RepositoryLocation,
 )
-from dagster.core.host_representation.external_data import (
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionSetExecutionParamData,
-)
+from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
-from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
@@ -489,13 +481,6 @@ def _create_external_pipeline_run(
     )
 
     subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    if subset_pipeline_result.success == False:
-        raise DagsterLaunchFailedError(
-            "Failed to load external pipeline subset: {error_message}".format(
-                error_message=subset_pipeline_result.error.message
-            ),
-            serializable_error_info=subset_pipeline_result.error,
-        )
 
     external_pipeline_subset = ExternalPipeline(
         subset_pipeline_result.external_pipeline_data,
@@ -511,13 +496,7 @@ def _create_external_pipeline_run(
         step_keys_to_execute=None,
         known_state=None,
     )
-    if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
-        raise DagsterLaunchFailedError(
-            "Failed to load external execution plan",
-            serializable_error_info=external_execution_plan.error,
-        )
-    else:
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     return instance.create_run(
         pipeline_name=pipeline_name,
@@ -895,19 +874,19 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
         repository_location=repo_location,
     )
 
-    # Resolve partitions to backfill
-    partition_names_or_error = repo_location.get_external_partition_names(
-        repo_handle,
-        partition_set_name,
-    )
-
-    if isinstance(partition_names_or_error, ExternalPartitionExecutionErrorData):
+    try:
+        partition_names_or_error = repo_location.get_external_partition_names(
+            repo_handle,
+            partition_set_name,
+        )
+    except Exception:  # pylint: disable=broad-except
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
             "Failure fetching partition names for {partition_set_name}: {error_message}".format(
                 partition_set_name=partition_set_name,
-                error_message=partition_names_or_error.error.message,
+                error_message=error_info.message,
             ),
-            serialized_error_info=partition_names_or_error.error,
+            serialized_error_info=error_info,
         )
 
     partition_names = gen_partition_names_from_args(
@@ -937,19 +916,20 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
             tags=run_tags,
             backfill_timestamp=pendulum.now("UTC").timestamp(),
         )
-        partition_execution_data = repo_location.get_external_partition_set_execution_param_data(
-            repository_handle=repo_handle,
-            partition_set_name=partition_set_name,
-            partition_names=partition_names,
-        )
-
-        if isinstance(partition_execution_data, ExternalPartitionExecutionErrorData):
-            instance.add_backfill(
-                backfill_job.with_status(BulkActionStatus.FAILED).with_error(
-                    partition_execution_data.error
+        try:
+            partition_execution_data = (
+                repo_location.get_external_partition_set_execution_param_data(
+                    repository_handle=repo_handle,
+                    partition_set_name=partition_set_name,
+                    partition_names=partition_names,
                 )
             )
-            return print_fn("Backfill failed: {}".format(partition_execution_data.error))
+        except Exception:  # pylint: disable=broad-except
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            instance.add_backfill(
+                backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
+            )
+            return print_fn("Backfill failed: {}".format(error_info))
 
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 

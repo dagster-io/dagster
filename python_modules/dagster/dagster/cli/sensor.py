@@ -1,4 +1,5 @@
 import os
+import sys
 
 import click
 import yaml
@@ -11,9 +12,9 @@ from dagster.cli.workspace.cli_target import (
 )
 from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import ExternalRepository
-from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 
 def create_sensor_cli_group():
@@ -265,17 +266,21 @@ def execute_preview_command(sensor_name, since, last_run_key, cli_args, print_fn
                 )
                 check_repo_and_scheduler(external_repo, instance)
                 external_sensor = external_repo.get_external_sensor(sensor_name)
-                sensor_runtime_data = repo_location.get_external_sensor_execution_data(
-                    instance, external_repo.handle, external_sensor.name, since, last_run_key
-                )
-                if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
+                try:
+                    sensor_runtime_data = repo_location.get_external_sensor_execution_data(
+                        instance, external_repo.handle, external_sensor.name, since, last_run_key
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     print_fn(
                         "Failed to resolve sensor for {sensor_name} : {error_info}".format(
                             sensor_name=external_sensor.name,
-                            error_info=sensor_runtime_data.error.to_string(),
+                            error_info=error_info.to_string(),
                         )
                     )
-                elif not sensor_runtime_data.run_requests:
+                    return
+
+                if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
                             "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(

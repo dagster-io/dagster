@@ -9,10 +9,7 @@ from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector
-from dagster.core.host_representation.external_data import (
-    ExternalSensorExecutionData,
-    ExternalSensorExecutionErrorData,
-)
+from dagster.core.host_representation.external_data import ExternalSensorExecutionData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -243,18 +240,22 @@ def _evaluate_sensor(
     sensor_debug_crash_flags=None,
 ):
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
-    sensor_runtime_data = repo_location.get_external_sensor_execution_data(
-        instance,
-        external_repo.handle,
-        external_sensor.name,
-        job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
-        job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
-    )
-    if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
-        context.logger.error(
-            f"Failed to resolve sensor for {external_sensor.name} : {sensor_runtime_data.error.to_string()}"
+    try:
+        sensor_runtime_data = repo_location.get_external_sensor_execution_data(
+            instance,
+            external_repo.handle,
+            external_sensor.name,
+            job_state.job_specific_data.last_tick_timestamp
+            if job_state.job_specific_data
+            else None,
+            job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
         )
-        context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
+    except Exception:  # pylint:disable=broad-except
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
+        context.logger.error(
+            f"Failed to resolve sensor for {external_sensor.name} : {error_info.to_string()}"
+        )
+        context.update_state(JobTickStatus.FAILURE, error=error_info)
         yield
         return
 

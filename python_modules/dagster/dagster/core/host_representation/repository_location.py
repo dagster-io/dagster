@@ -38,10 +38,7 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
-from dagster.core.snap.execution_plan_snapshot import (
-    ExecutionPlanSnapshotErrorData,
-    snapshot_from_execution_plan,
-)
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
@@ -595,9 +592,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
         )
-
-        if isinstance(execution_plan_snapshot_or_error, ExecutionPlanSnapshotErrorData):
-            return execution_plan_snapshot_or_error
 
         return ExternalExecutionPlan(
             execution_plan_snapshot=execution_plan_snapshot_or_error,

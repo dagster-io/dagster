@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
@@ -42,7 +43,7 @@ def sync_get_external_schedule_execution_data_grpc(
 
     origin = repository_handle.get_external_origin()
 
-    return check.inst(
+    result = check.inst(
         api_client.external_schedule_execution(
             external_schedule_execution_args=ExternalScheduleExecutionArgs(
                 repository_origin=origin,
@@ -58,3 +59,7 @@ def sync_get_external_schedule_execution_data_grpc(
         ),
         (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
     )
+    if isinstance(result, ExternalScheduleExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result

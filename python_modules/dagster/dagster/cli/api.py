@@ -14,11 +14,9 @@ from dagster.cli.workspace.cli_target import (
     python_origin_target_argument,
     repository_target_argument,
 )
-from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.host_representation.external import ExternalPipeline
-from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
@@ -549,12 +547,6 @@ def _launch_scheduled_executions(
         scheduled_execution_time=None,  # No way to know this in general for this scheduler
     )
 
-    if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
-        error = schedule_execution_data.error
-        tick_context.update_state(JobTickStatus.FAILURE, error=error)
-        tick_context.stream.send(ScheduledExecutionFailed(run_id=None, errors=[error]))
-        return
-
     if not schedule_execution_data.run_requests:
         # Update tick to skipped state and return
         tick_context.update_state(JobTickStatus.SKIPPED)
@@ -586,9 +578,7 @@ def _launch_run(
             known_state=None,
         )
         execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except DagsterSubprocessError as e:
-        errors.extend(e.subprocess_error_infos)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}

@@ -2,7 +2,7 @@ import re
 
 import pytest
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 from .utils import get_foo_pipeline_handle
@@ -13,7 +13,7 @@ def test_execution_plan_error_grpc():
         api_client = pipeline_handle.repository_handle.repository_location.client
 
         with pytest.raises(
-            DagsterSubprocessError,
+            DagsterUserCodeProcessError,
             match=re.escape("Could not find mode made_up_mode in pipeline foo"),
         ):
             sync_get_external_execution_plan_grpc(

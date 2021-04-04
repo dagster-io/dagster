@@ -6,14 +6,8 @@ import time
 import pendulum
 from dagster import check
 from dagster.cli.workspace.workspace import IWorkspace
-from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    ExternalScheduleExecutionErrorData,
-    PipelineSelector,
-    RepositoryLocation,
-)
+from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
@@ -259,15 +253,15 @@ def _schedule_runs_at_time(
         external_repo.handle,
     )
 
-    schedule_execution_data = repo_location.get_external_schedule_execution_data(
-        instance=instance,
-        repository_handle=external_repo.handle,
-        schedule_name=external_schedule.name,
-        scheduled_execution_time=schedule_time,
-    )
-
-    if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
-        error = schedule_execution_data.error
+    try:
+        schedule_execution_data = repo_location.get_external_schedule_execution_data(
+            instance=instance,
+            repository_handle=external_repo.handle,
+            schedule_name=external_schedule.name,
+            scheduled_execution_time=schedule_time,
+        )
+    except Exception:  # pylint: disable=broad-except
+        error = serializable_error_info_from_exc_info(sys.exc_info())
         logger.error(
             f"Failed to fetch schedule data for {external_schedule.name}: {error.to_string()}"
         )
@@ -372,9 +366,7 @@ def _create_scheduler_run(
             known_state=None,
         )
         execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except DagsterSubprocessError as e:
-        execution_plan_errors.extend(e.subprocess_error_infos)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         execution_plan_errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}
