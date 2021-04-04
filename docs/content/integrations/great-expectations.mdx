@@ -21,7 +21,7 @@ payroll_expectations = ge_validation_solid_factory(
 The GE validations will happen inside the solids created above. Each of the solids will yield an <PyObject object="ExpectationResult" /> with a structured dict of metadata from the GE suite. The structured metadata contain both summary stats from the suite and expectation by expectation results. The solids will output the full result in case you want to process it differently. Here's how other solids could use the full result, where `expectation` is the result:
 
 ```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_solid endbefore=end_ge_demo_marker_solid
-@solid(input_defs=[InputDefinition(name="numrows"), InputDefinition(name="expectation")])
+@solid
 def postprocess_payroll(_, numrows, expectation):
     if expectation["success"]:
         return numrows

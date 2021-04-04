@@ -1,4 +1,4 @@
-from dagster import InputDefinition, ModeDefinition, PresetDefinition, pipeline, solid
+from dagster import ModeDefinition, PresetDefinition, pipeline, solid
 from dagster.utils import file_relative_path
 from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
 from pandas import read_csv
@@ -9,7 +9,7 @@ def read_in_datafile(_, csv_path):
     return read_csv(csv_path)
 
 
-@solid(input_defs=[InputDefinition(name="df")])
+@solid
 def process_payroll(_, df):
     return len(df)
 
@@ -17,7 +17,7 @@ def process_payroll(_, df):
 # start_ge_demo_marker_solid
 
 
-@solid(input_defs=[InputDefinition(name="numrows"), InputDefinition(name="expectation")])
+@solid
 def postprocess_payroll(_, numrows, expectation):
     if expectation["success"]:
         return numrows
