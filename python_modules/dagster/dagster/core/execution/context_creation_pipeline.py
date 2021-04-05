@@ -4,12 +4,18 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check
+from dagster.config.validate import process_config
 from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions.environment_configs import def_config_field
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.errors import DagsterError
+from dagster.core.errors import (
+    DagsterError,
+    DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.memoization import validate_reexecution_memoization
 from dagster.core.execution.plan.plan import ExecutionPlan
@@ -28,7 +34,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.loggers import default_loggers, default_system_loggers
-from dagster.utils import EventGenerationManager, merge_dicts
+from dagster.utils import EventGenerationManager, ensure_single_item, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .context.logger import InitLoggerContext
@@ -310,8 +316,62 @@ class PipelineExecutionContextManager(ExecutionContextManager):
         )
 
 
+def _default_get_executor_def_fn(executor_name):
+    if executor_name == "in_process":
+        from dagster.core.definitions.executor import in_process_executor
+
+        return in_process_executor
+    elif executor_name == "multiprocess":
+        from dagster.core.definitions.executor import multiprocess_executor
+
+        return multiprocess_executor
+    elif executor_name:
+        raise DagsterInvariantViolationError(f"Unexpected executor {executor_name}")
+    else:
+        from dagster.core.definitions.executor import in_process_executor
+
+        return in_process_executor
+
+
+def _get_executor(recon_pipeline, run_config, get_executor_def_fn, instance):
+    execution_config = run_config.get("execution")
+    if execution_config:
+        executor_name, executor_config = ensure_single_item(execution_config)
+    else:
+        executor_name = None
+        executor_config = {}
+
+    executor_def = get_executor_def_fn(executor_name)
+
+    executor_config_type = def_config_field(executor_def).config_type
+
+    config_evr = process_config(executor_config_type, executor_config)
+    if not config_evr.success:
+        raise DagsterInvalidConfigError(
+            "Error in executor config for executor {}".format(executor_def.name),
+            config_evr.errors,
+            executor_config,
+        )
+    executor_config_value = config_evr.value
+
+    init_context = InitExecutorContext(
+        pipeline=recon_pipeline,
+        executor_def=executor_def,
+        executor_config=executor_config_value["config"],
+        instance=instance,
+    )
+    check_cross_process_constraints(init_context)
+    return executor_def.executor_creation_fn(init_context)
+
+
 def host_mode_execution_context_event_generator(
-    execution_plan, recon_pipeline, run_config, pipeline_run, instance, executor, raise_on_error
+    execution_plan,
+    recon_pipeline,
+    run_config,
+    pipeline_run,
+    instance,
+    get_executor_def_fn,
+    raise_on_error,
 ):
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
@@ -319,15 +379,14 @@ def host_mode_execution_context_event_generator(
     check.dict_param(run_config, "run_config", key_type=str)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(executor, "executor", Executor)
+    get_executor_def_fn = check.opt_callable_param(
+        get_executor_def_fn, "get_executor_def_fn", _default_get_executor_def_fn
+    )
     check.bool_param(raise_on_error, "raise_on_error")
 
     execution_context = None
 
     loggers = []
-
-    # Should these be configurable from the run config (without loading
-    # the full EnvironmentConfig??)
 
     for (logger_def, logger_config) in default_system_loggers():
         loggers.append(
@@ -349,9 +408,8 @@ def host_mode_execution_context_event_generator(
         loggers=loggers,
     )
 
-    # Create an executor (again how do we pull config from run_config
-    # without going through the full EnvironmentConfig.build flow)
     try:
+        executor = _get_executor(recon_pipeline, run_config, get_executor_def_fn, instance)
         execution_context = HostModeRunWorkerExecutionContext(
             execution_context_data=HostModeExecutionContextData(
                 pipeline_run=pipeline_run,
@@ -399,7 +457,7 @@ class HostModeRunWorkerExecutionContextManager(ExecutionContextManager):
         run_config,
         pipeline_run,
         instance,
-        executor,
+        get_executor_def_fn,
         raise_on_error=False,
     ):
         super(HostModeRunWorkerExecutionContextManager, self).__init__(
@@ -409,7 +467,7 @@ class HostModeRunWorkerExecutionContextManager(ExecutionContextManager):
                 run_config,
                 pipeline_run,
                 instance,
-                executor,
+                get_executor_def_fn,
                 raise_on_error,
             )
         )

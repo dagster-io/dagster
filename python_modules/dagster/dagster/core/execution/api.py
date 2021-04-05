@@ -1,9 +1,10 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions import IPipeline, PipelineDefinition
+from dagster.core.definitions.executor import ExecutorDefinition
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
@@ -16,7 +17,6 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.execution.retries import RetryMode
-from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance, is_memoized_run
 from dagster.core.selector import parse_step_selection
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -122,12 +122,13 @@ def execute_run_host_mode(
     pipeline: ReconstructablePipeline,
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
-    executor: Executor,
+    get_executor_def_fn: Callable[[Optional[str]], ExecutorDefinition] = None,
     raise_on_error: bool = False,
 ):
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_callable_param(get_executor_def_fn, "get_executor_def_fn")
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
@@ -167,7 +168,7 @@ def execute_run_host_mode(
             pipeline_run=pipeline_run,
             instance=instance,
             run_config=pipeline_run.run_config,
-            executor=executor,
+            get_executor_def_fn=get_executor_def_fn,
             raise_on_error=raise_on_error,
         ),
     )
