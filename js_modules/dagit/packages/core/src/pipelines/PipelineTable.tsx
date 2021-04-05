@@ -14,7 +14,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {PipelineTableFragment} from './types/PipelineTableFragment';
 
-export type PipelineForTable = {pipeline: PipelineTableFragment; repoAddress: RepoAddress};
+type PipelineForTable = {pipeline: PipelineTableFragment; repoAddress: RepoAddress};
 
 interface Props {
   pipelines: PipelineForTable[];
