@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -516,18 +517,14 @@ def create_intermediate_storage(
 
 def create_executor(context_creation_data):
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
-    return context_creation_data.executor_def.executor_creation_fn(
-        InitExecutorContext(
-            pipeline=context_creation_data.pipeline,
-            mode_def=context_creation_data.mode_def,
-            executor_def=context_creation_data.executor_def,
-            pipeline_run=context_creation_data.pipeline_run,
-            environment_config=context_creation_data.environment_config,
-            executor_config=context_creation_data.environment_config.execution.execution_engine_config,
-            intermediate_storage_def=context_creation_data.intermediate_storage_def,
-            instance=context_creation_data.instance,
-        )
+    init_context = InitExecutorContext(
+        pipeline=context_creation_data.pipeline,
+        executor_def=context_creation_data.executor_def,
+        executor_config=context_creation_data.environment_config.execution.execution_engine_config,
+        instance=context_creation_data.instance,
     )
+    check_cross_process_constraints(init_context)
+    return context_creation_data.executor_def.executor_creation_fn(init_context)
 
 
 def construct_execution_context_data(

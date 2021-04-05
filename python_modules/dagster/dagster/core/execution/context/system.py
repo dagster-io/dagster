@@ -240,7 +240,7 @@ class HostModeRunWorkerExecutionContext(HostModeExecutionContext, RunWorkerExecu
 
     @property
     def reconstructable_pipeline(self) -> ReconstructablePipeline:
-        return self._execution_context_data.pipeline
+        return self._execution_context_data.recon_pipeline
 
     @property
     def executor(self) -> Executor:

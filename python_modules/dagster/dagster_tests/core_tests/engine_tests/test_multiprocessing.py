@@ -19,6 +19,7 @@ from dagster import (
     reconstructable,
     solid,
 )
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import instance_for_test
@@ -133,15 +134,16 @@ def test_error_pipeline_multiprocess():
 
 def test_mem_storage_error_pipeline_multiprocess():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_diamond_pipeline),
-            run_config={"execution": {"multiprocess": {}}},
-            instance=instance,
-            raise_on_error=False,
-        )
-        assert not result.success
-        assert len(result.event_list) == 3
-        assert result.event_list[2].is_failure
+        with pytest.raises(
+            DagsterUnmetExecutorRequirementsError,
+            match="your pipeline includes solid outputs that will not be stored somewhere where other processes can retrieve them.",
+        ):
+            execute_pipeline(
+                reconstructable(define_diamond_pipeline),
+                run_config={"execution": {"multiprocess": {}}},
+                instance=instance,
+                raise_on_error=False,
+            )
 
 
 def test_invalid_instance():

@@ -46,9 +46,11 @@ from .events import (
 )
 from .executor import (
     ExecutorDefinition,
+    ExecutorRequirement,
     default_executors,
     executor,
     in_process_executor,
+    multiple_process_executor_requirements,
     multiprocess_executor,
 )
 from .graph import GraphDefinition

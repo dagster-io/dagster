@@ -24,9 +24,14 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.executor import ExecutorRequirement
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterUnmetExecutorRequirementsError,
+)
 from dagster.core.execution.plan.handle import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
@@ -142,7 +147,13 @@ class _PlanBuilder:
 
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan"""
-        check_io_manager_intermediate_storage(self.mode_definition, self.environment_config)
+
+        _check_io_manager_intermediate_storage(self.mode_definition, self.environment_config)
+        _check_persistent_storage_requirement(
+            self.pipeline,
+            self.mode_definition,
+            self.environment_config,
+        )
 
         pipeline_def = self.pipeline.get_definition()
         # Recursively build the execution plan starting at the root pipeline
@@ -870,7 +881,56 @@ def _update_from_resolved_dynamic_outputs(
         del resolvable_map[key_set]
 
 
-def check_io_manager_intermediate_storage(
+def _all_outputs_non_mem_io_managers(pipeline_def: PipelineDefinition, mode_def: ModeDefinition):
+    """Returns true if every output definition in the pipeline uses an IO manager that's not
+    the mem_io_manager.
+
+    If true, this indicates that it's OK to execute steps in their own processes, because their
+    outputs will be available to other processes.
+    """
+    # pylint: disable=comparison-with-callable
+
+    output_defs = [
+        output_def
+        for solid_def in pipeline_def.all_solid_defs
+        for output_def in solid_def.output_defs
+    ]
+    for output_def in output_defs:
+        if mode_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
+            return False
+
+    return True
+
+
+def _check_persistent_storage_requirement(
+    pipeline: IPipeline,
+    mode_def: ModeDefinition,
+    environment_config: EnvironmentConfig,
+) -> None:
+    from dagster.core.execution.context_creation_pipeline import executor_def_from_config
+
+    pipeline_def = pipeline.get_definition()
+    executor_def = executor_def_from_config(mode_def, environment_config)
+    if ExecutorRequirement.PERSISTENT_OUTPUTS not in executor_def.requirements:
+        return
+
+    intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
+
+    if not (
+        _all_outputs_non_mem_io_managers(pipeline_def, mode_def)
+        or (intermediate_storage_def and intermediate_storage_def.is_persistent)
+    ):
+        raise DagsterUnmetExecutorRequirementsError(
+            "You have attempted to use an executor that uses multiple processes, but your pipeline "
+            "includes solid outputs that will not be stored somewhere where other processes can "
+            "retrieve them. "
+            "Please make sure that your pipeline definition includes a ModeDefinition whose "
+            'resource_keys assign the "io_manager" key to an IOManager resource '
+            "that stores outputs outside of the process, such as the fs_io_manager."
+        )
+
+
+def _check_io_manager_intermediate_storage(
     mode_def: ModeDefinition, environment_config: EnvironmentConfig
 ) -> None:
     """Only one of io_manager and intermediate_storage should be set."""

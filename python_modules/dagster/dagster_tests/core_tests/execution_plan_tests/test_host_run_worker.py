@@ -91,7 +91,6 @@ def test_host_run_worker():
             pipeline_run,
             instance,
             executor=MultiprocessExecutor(
-                pipeline=recon_pipeline,
                 max_concurrent=4,
                 retries=RetryMode.DISABLED,
             ),

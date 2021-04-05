@@ -1,5 +1,13 @@
-from dagster import Executor, Field, Noneable, Permissive, StringSource, check, executor
-from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster import (
+    Executor,
+    Field,
+    Noneable,
+    Permissive,
+    StringSource,
+    check,
+    executor,
+    multiple_process_executor_requirements,
+)
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import pack_value
@@ -35,7 +43,11 @@ CELERY_CONFIG = {
 }
 
 
-@executor(name="celery", config_schema=CELERY_CONFIG)
+@executor(
+    name="celery",
+    config_schema=CELERY_CONFIG,
+    requirements=multiple_process_executor_requirements(),
+)
 def celery_executor(init_context):
     """Celery-based executor.
 
@@ -86,7 +98,6 @@ def celery_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
     """
-    check_cross_process_constraints(init_context)
 
     return CeleryExecutor(
         broker=init_context.executor_config.get("broker"),

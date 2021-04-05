@@ -12,9 +12,9 @@ from dagster import (
     Executor,
     check,
     executor,
+    multiple_process_executor_requirements,
 )
 from dagster.cli.api import ExecuteStepArgs
-from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
 from dagster.core.events.log import EventRecord
@@ -51,7 +51,11 @@ from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 from .launcher import CeleryK8sRunLauncher
 
 
-@executor(name=CELERY_K8S_CONFIG_KEY, config_schema=celery_k8s_config())
+@executor(
+    name=CELERY_K8S_CONFIG_KEY,
+    config_schema=celery_k8s_config(),
+    requirements=multiple_process_executor_requirements(),
+)
 def celery_k8s_job_executor(init_context):
     """Celery-based executor which launches tasks as Kubernetes Jobs.
 
@@ -101,8 +105,6 @@ def celery_k8s_job_executor(init_context):
     In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
     commands must be invoked with the `-A dagster_celery_k8s.app` argument.
     """
-
-    check_cross_process_constraints(init_context)
 
     run_launcher = init_context.instance.run_launcher
     exc_cfg = init_context.executor_config
