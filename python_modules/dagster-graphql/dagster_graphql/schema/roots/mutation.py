@@ -8,7 +8,7 @@ from ...implementation.execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
     terminate_pipeline_execution,
-    wipe_asset,
+    wipe_assets,
 )
 from ...implementation.external import (
     fetch_repository_locations,
@@ -46,6 +46,7 @@ from ..schedules import (
     GrapheneStopRunningScheduleMutation,
 )
 from ..sensors import GrapheneStartSensorMutation, GrapheneStopSensorMutation
+from ..util import non_null_list
 
 
 def create_execution_params(graphene_info, graphql_execution_params):
@@ -353,7 +354,7 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
 
 
 class GrapheneAssetWipeSuccess(graphene.ObjectType):
-    assetKey = graphene.NonNull(GrapheneAssetKey)
+    assetKeys = non_null_list(GrapheneAssetKey)
 
     class Meta:
         name = "AssetWipeSuccess"
@@ -373,13 +374,16 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneAssetWipeMutationResult)
 
     class Arguments:
-        assetKey = graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput))
+        assetKeys = graphene.Argument(non_null_list(GrapheneAssetKeyInput))
 
     class Meta:
         name = "AssetWipeMutation"
 
     def mutate(self, graphene_info, **kwargs):
-        return wipe_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+        return wipe_assets(
+            graphene_info,
+            [AssetKey.from_graphql_input(asset_key) for asset_key in kwargs["assetKeys"]],
+        )
 
 
 class GrapheneMutation(graphene.ObjectType):
@@ -394,7 +398,7 @@ class GrapheneMutation(graphene.ObjectType):
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
     reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
-    wipe_asset = GrapheneAssetWipeMutation.Field()
+    wipe_assets = GrapheneAssetWipeMutation.Field()
     launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
 

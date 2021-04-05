@@ -1014,7 +1014,7 @@ type Mutation {
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   reloadWorkspace: ReloadWorkspaceMutationResult!
-  wipeAsset(assetKey: AssetKeyInput!): AssetWipeMutationResult!
+  wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
@@ -1120,7 +1120,7 @@ union ReloadWorkspaceMutationResult = RepositoryLocationConnection | PythonError
 union AssetWipeMutationResult = AssetNotFoundError | PythonError | AssetWipeSuccess
 
 type AssetWipeSuccess {
-  assetKey: AssetKey!
+  assetKeys: [AssetKey!]!
 }
 
 union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError

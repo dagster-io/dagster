@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Button,
+  Checkbox,
   Menu,
   MenuItem,
   Icon,
@@ -229,6 +230,61 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   );
 };
 
+type State = {
+  checkedAssets: Set<string>;
+  lastCheckedID: string | null;
+};
+const initialState: State = {
+  checkedAssets: new Set(),
+  lastCheckedID: null,
+};
+type Action =
+  | {type: 'toggle-one'; payload: {checked: boolean; assetId: string}}
+  | {
+      type: 'toggle-slice';
+      payload: {checked: boolean; assetId: string; allAssets: string[]};
+    }
+  | {type: 'toggle-all'; payload: {checked: boolean; allAssets: string[]}};
+const reducer = (state: State, action: Action): State => {
+  const copy = new Set(Array.from(state.checkedAssets));
+  switch (action.type) {
+    case 'toggle-one': {
+      const {checked, assetId} = action.payload;
+      checked ? copy.add(assetId) : copy.delete(assetId);
+      return {checkedAssets: copy, lastCheckedID: assetId};
+    }
+
+    case 'toggle-slice': {
+      const {checked, assetId, allAssets} = action.payload;
+      const {lastCheckedID} = state;
+
+      const indexOfLast = allAssets.findIndex((id) => id === lastCheckedID);
+      const indexOfChecked = allAssets.findIndex((id) => id === assetId);
+      if (indexOfLast === undefined || indexOfChecked === undefined) {
+        return state;
+      }
+
+      const [start, end] = [indexOfLast, indexOfChecked].sort();
+      allAssets
+        .slice(start, end + 1)
+        .forEach((assetId) => (checked ? copy.add(assetId) : copy.delete(assetId)));
+
+      return {
+        lastCheckedID: assetId,
+        checkedAssets: copy,
+      };
+    }
+
+    case 'toggle-all': {
+      const {checked, allAssets} = action.payload;
+      return {
+        checkedAssets: checked ? new Set(Array.from(allAssets)) : new Set(),
+        lastCheckedID: null,
+      };
+    }
+  }
+};
+
 const AssetsTable = ({
   assets,
   currentPath,
@@ -240,6 +296,9 @@ const AssetsTable = ({
 }) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
   const [toWipe, setToWipe] = React.useState<AssetKey | undefined>();
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const {checkedAssets} = state;
+
   const sorted = React.useMemo(
     () =>
       [...assets].sort((a, b) =>
@@ -250,9 +309,6 @@ const AssetsTable = ({
       ),
     [assets],
   );
-  const removeAsset = () => {
-    setToWipe(undefined);
-  };
   const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
   const hasTags = !!assets.filter((asset) => asset.tags.length).length;
 
@@ -300,12 +356,52 @@ const AssetsTable = ({
   const onClick = (tag: AssetTag) => {
     setQuery(`tag:${tag.key}=${tag.value}`);
   };
+  const onChangeAll = (e: React.FormEvent<HTMLInputElement>) => {
+    if (e.target instanceof HTMLInputElement) {
+      const checked = checkedAssets.size !== assets.length;
+      onToggleAll(checked);
+    }
+  };
+  const onToggleAll = (checked: boolean) => {
+    dispatch({
+      type: 'toggle-all',
+      payload: {checked, allAssets: sorted.map((asset) => asset.id)},
+    });
+  };
+  const onToggle = (e: React.FormEvent<HTMLInputElement>, assetId: string) => {
+    if (e.target instanceof HTMLInputElement) {
+      const {checked} = e.target;
+      const shiftKey =
+        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+      if (shiftKey && state.lastCheckedID) {
+        dispatch({
+          type: 'toggle-slice',
+          payload: {checked, assetId, allAssets: sorted.map((asset) => asset.id)},
+        });
+      } else {
+        dispatch({type: 'toggle-one', payload: {checked, assetId}});
+      }
+    }
+  };
+
+  const selected = assets.filter((asset) => checkedAssets.has(asset.id));
 
   return (
     <Box margin={{top: 20}}>
       <Table>
         <thead>
           <tr>
+            <th style={{width: 50}}>
+              <div style={{display: 'flex', alignItems: 'center'}}>
+                <Checkbox
+                  style={{marginBottom: 0, marginTop: 1}}
+                  indeterminate={checkedAssets.size > 0 && checkedAssets.size !== assets.length}
+                  checked={checkedAssets.size === assets.length}
+                  onChange={onChangeAll}
+                />
+                <AssetActionsMenu selected={selected} clearSelection={() => onToggleAll(false)} />
+              </div>
+            </th>
             <th>Asset Key</th>
             {hasTags ? (
               <th>
@@ -329,6 +425,12 @@ const AssetsTable = ({
             const linkUrl = `/instance/assets/${asset.key.path.map(encodeURIComponent).join('/')}`;
             return (
               <tr key={idx}>
+                <td style={{paddingRight: '4px'}}>
+                  <Checkbox
+                    checked={checkedAssets.has(asset.id)}
+                    onChange={(e) => onToggle(e, asset.id)}
+                  />
+                </td>
                 <td>
                   <Link to={linkUrl}>
                     <Box flex={{alignItems: 'center'}}>
@@ -378,14 +480,53 @@ const AssetsTable = ({
         </tbody>
       </Table>
       <AssetWipeDialog
-        assetKey={toWipe}
+        assetKeys={toWipe ? [toWipe] : []}
+        isOpen={!!toWipe}
         onClose={() => setToWipe(undefined)}
-        onComplete={removeAsset}
+        onComplete={() => setToWipe(undefined)}
         requery={(_) => [{query: ASSETS_TABLE_QUERY}]}
       />
     </Box>
   );
 };
+
+export const AssetActionsMenu: React.FunctionComponent<{
+  selected: Asset[];
+  clearSelection: () => void;
+}> = React.memo(({selected, clearSelection}) => {
+  const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
+  const disabled = selected.length === 0;
+  const prompt = disabled
+    ? 'Select assets to wipe'
+    : selected.length === 1
+    ? 'Wipe 1 asset'
+    : `Wipe ${selected.length} assets`;
+
+  return (
+    <>
+      <Tooltip position="right" content={prompt}>
+        <Button
+          disabled={disabled}
+          icon="trash"
+          intent={disabled ? undefined : 'danger'}
+          onClick={() => setShowBulkWipeDialog(true)}
+        >
+          {disabled ? null : selected.length}
+        </Button>
+      </Tooltip>
+      <AssetWipeDialog
+        assetKeys={selected.map((asset) => asset.key)}
+        isOpen={showBulkWipeDialog}
+        onClose={() => setShowBulkWipeDialog(false)}
+        onComplete={() => {
+          setShowBulkWipeDialog(false);
+          clearSelection();
+        }}
+        requery={(_) => [{query: ASSETS_TABLE_QUERY}]}
+      />
+    </>
+  );
+});
 
 const Wrapper = styled.div`
   flex: 1 1;
@@ -395,6 +536,9 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
+  table th {
+    vertical-align: middle;
+  }
 `;
 
 const ASSETS_TABLE_QUERY = gql`

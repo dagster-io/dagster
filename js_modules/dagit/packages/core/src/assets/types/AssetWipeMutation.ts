@@ -10,32 +10,32 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL mutation operation: AssetWipeMutation
 // ====================================================
 
-export interface AssetWipeMutation_wipeAsset_AssetNotFoundError {
+export interface AssetWipeMutation_wipeAssets_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface AssetWipeMutation_wipeAsset_AssetWipeSuccess_assetKey {
+export interface AssetWipeMutation_wipeAssets_AssetWipeSuccess_assetKeys {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetWipeMutation_wipeAsset_AssetWipeSuccess {
+export interface AssetWipeMutation_wipeAssets_AssetWipeSuccess {
   __typename: "AssetWipeSuccess";
-  assetKey: AssetWipeMutation_wipeAsset_AssetWipeSuccess_assetKey;
+  assetKeys: AssetWipeMutation_wipeAssets_AssetWipeSuccess_assetKeys[];
 }
 
-export interface AssetWipeMutation_wipeAsset_PythonError {
+export interface AssetWipeMutation_wipeAssets_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export type AssetWipeMutation_wipeAsset = AssetWipeMutation_wipeAsset_AssetNotFoundError | AssetWipeMutation_wipeAsset_AssetWipeSuccess | AssetWipeMutation_wipeAsset_PythonError;
+export type AssetWipeMutation_wipeAssets = AssetWipeMutation_wipeAssets_AssetNotFoundError | AssetWipeMutation_wipeAssets_AssetWipeSuccess | AssetWipeMutation_wipeAssets_PythonError;
 
 export interface AssetWipeMutation {
-  wipeAsset: AssetWipeMutation_wipeAsset;
+  wipeAssets: AssetWipeMutation_wipeAssets;
 }
 
 export interface AssetWipeMutationVariables {
-  assetKey: AssetKeyInput;
+  assetKeys: AssetKeyInput[];
 }

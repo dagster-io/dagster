@@ -7,32 +7,36 @@ interface AssetKey {
 }
 
 export const AssetWipeDialog: React.FC<{
-  assetKey?: AssetKey;
+  assetKeys: AssetKey[];
+  isOpen: boolean;
   onClose: () => void;
-  onComplete: (assetKey: AssetKey) => void;
+  onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
-}> = ({assetKey, onClose, onComplete, requery}) => {
+}> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
   const [requestWipe] = useMutation(ASSET_WIPE_MUTATION, {
-    variables: {assetKey: {path: assetKey?.path || []}},
+    variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
     refetchQueries: requery,
   });
 
   const wipe = async () => {
-    if (!assetKey) {
+    if (!assetKeys.length) {
       return;
     }
     await requestWipe();
-    onComplete(assetKey);
+    onComplete(assetKeys);
   };
 
-  const title = (
-    <>
-      Wipe asset <code>{assetKey?.path.join(' > ')}</code>
-    </>
-  );
+  const title =
+    assetKeys.length == 1 ? (
+      <>
+        Wipe asset <code>{assetKeys[0].path.join(' > ')}</code>
+      </>
+    ) : (
+      <>Wipe {assetKeys.length} assets</>
+    );
   return (
-    <Dialog isOpen={!!assetKey} title={title} onClose={onClose} style={{width: 800}}>
-      <div className={Classes.DIALOG_BODY}>Wiping the asset cannot be undone.</div>
+    <Dialog isOpen={isOpen} title={title} onClose={onClose} style={{width: 800}}>
+      <div className={Classes.DIALOG_BODY}>Wiping assets cannot be undone.</div>
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
           <Button intent="danger" onClick={wipe}>
@@ -48,10 +52,10 @@ export const AssetWipeDialog: React.FC<{
 };
 
 const ASSET_WIPE_MUTATION = gql`
-  mutation AssetWipeMutation($assetKey: AssetKeyInput!) {
-    wipeAsset(assetKey: $assetKey) {
+  mutation AssetWipeMutation($assetKeys: [AssetKeyInput!]!) {
+    wipeAssets(assetKeys: $assetKeys) {
       ... on AssetWipeSuccess {
-        assetKey {
+        assetKeys {
           path
         }
       }

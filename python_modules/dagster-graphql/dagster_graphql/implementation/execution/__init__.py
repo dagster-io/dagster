@@ -163,13 +163,9 @@ def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=
 
 
 @capture_error
-def wipe_asset(graphene_info, asset_key):
-    from ...schema.errors import GrapheneAssetNotFoundError
+def wipe_assets(graphene_info, asset_keys):
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
-    if not instance.has_asset_key(asset_key):
-        return GrapheneAssetNotFoundError(asset_key=asset_key)
-
-    instance.wipe_assets([asset_key])
-    return GrapheneAssetWipeSuccess(assetKey=asset_key)
+    instance.wipe_assets(asset_keys)
+    return GrapheneAssetWipeSuccess(assetKeys=asset_keys)
