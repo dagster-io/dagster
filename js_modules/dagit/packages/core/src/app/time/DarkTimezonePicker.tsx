@@ -4,7 +4,7 @@ import React from 'react';
 import {TimezoneSelect} from './TimezoneSelect';
 import {automaticLabel} from './browserTimezone';
 
-export const DarkTimezonePicker: React.FC = () => {
+export const DarkTimezonePicker = React.memo(() => {
   const trigger = React.useCallback(
     (timezone: string) => (
       <Button small text={timezone === 'Automatic' ? automaticLabel() : timezone} icon="time" />
@@ -17,4 +17,4 @@ export const DarkTimezonePicker: React.FC = () => {
       <TimezoneSelect trigger={trigger} />
     </div>
   );
-};
+});

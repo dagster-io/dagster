@@ -158,7 +158,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
   );
 };
 
-export const LeftNavRepositorySection = () => {
+export const LeftNavRepositorySection = React.memo(() => {
   const {allRepos, loading} = React.useContext(WorkspaceContext);
 
   if (loading) {
@@ -166,4 +166,4 @@ export const LeftNavRepositorySection = () => {
   }
 
   return <LoadedRepositorySection allRepos={allRepos} />;
-};
+});

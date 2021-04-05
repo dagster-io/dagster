@@ -192,7 +192,7 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
 const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
-    z-index: 2;
+    z-index: 1;
     background: ${Colors.WHITE};
     border-left: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
     border-right: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
@@ -201,7 +201,7 @@ const DividerWrapper = {
   `,
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
-    z-index: 2;
+    z-index: 1;
     background: ${Colors.WHITE};
     border-top: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
     border-bottom: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
@@ -214,7 +214,7 @@ const DividerHitArea = {
   horizontal: styled.div`
     width: 17px;
     height: 100%;
-    z-index: 2;
+    z-index: 1;
     cursor: ew-resize;
     position: relative;
     left: -8px;
@@ -222,7 +222,7 @@ const DividerHitArea = {
   vertical: styled.div`
     height: 17px;
     width: 100%;
-    z-index: 2;
+    z-index: 1;
     cursor: ns-resize;
     position: relative;
     top: -8px;

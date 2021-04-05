@@ -21,6 +21,7 @@ import {AppErrorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
+import {LayoutProvider} from './LayoutProvider';
 import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
 import {WebsocketStatusProvider} from './WebsocketStatus';
 import {TimezoneProvider} from './time/TimezoneContext';
@@ -144,7 +145,9 @@ export const AppProvider: React.FC<Props> = (props) => {
           <BrowserRouter basename={basePath || ''}>
             <TimezoneProvider>
               <WorkspaceProvider>
-                <CustomConfirmationProvider>{props.children}</CustomConfirmationProvider>
+                <CustomConfirmationProvider>
+                  <LayoutProvider>{props.children}</LayoutProvider>
+                </CustomConfirmationProvider>
                 <CustomTooltipProvider />
                 <CustomAlertProvider />
               </WorkspaceProvider>

@@ -154,7 +154,7 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, repoPat
       </Box>
       <Box
         padding={{vertical: 8, horizontal: 12}}
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        flex={{alignItems: 'center'}}
         border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
       >
         <Item to="/instance/schedules">
@@ -163,7 +163,9 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, repoPat
             <div>All schedules</div>
           </Group>
         </Item>
-        <Box border={{width: 1, side: 'left', color: Colors.DARK_GRAY4}}>&nbsp;</Box>
+        <Box border={{width: 1, side: 'left', color: Colors.DARK_GRAY4}} margin={{horizontal: 8}}>
+          &nbsp;
+        </Box>
         <Item to="/instance/sensors">
           <Group direction="row" spacing={8} alignItems="center">
             <Icon icon="automatic-updates" iconSize={14} />

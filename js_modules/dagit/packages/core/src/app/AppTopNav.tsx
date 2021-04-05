@@ -1,4 +1,5 @@
-import {Colors} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -9,18 +10,47 @@ import {Group} from '../main';
 import {VersionNumber} from '../nav/VersionNumber';
 import {SearchDialog} from '../search/SearchDialog';
 
+import {LayoutContext} from './LayoutProvider';
+import {ShortcutHandler} from './ShortcutHandler';
 import {WebsocketStatus} from './WebsocketStatus';
 
-export const AppTopNav: React.FunctionComponent<{searchPlaceholder: string}> = ({
-  searchPlaceholder,
-  children,
-}) => {
+interface Props {
+  searchPlaceholder: string;
+}
+
+export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
   const history = useHistory();
+  const {nav} = React.useContext(LayoutContext);
+  const navButton = React.useRef<null | HTMLButtonElement>(null);
+
+  const onToggle = React.useCallback(() => {
+    navButton.current && navButton.current.focus();
+    nav.isOpen ? nav.close() : nav.open();
+  }, [nav]);
+
+  const onKeyDown = React.useCallback(
+    (e) => {
+      if (e.key === 'Escape' && nav.isOpen) {
+        nav.close();
+      }
+    },
+    [nav],
+  );
+
   return (
     <AppTopNavContainer>
       <LogoContainer>
-        <Group direction="row" spacing={16} padding={{horizontal: 12}} margin={{bottom: 8}}>
-          <div style={{position: 'relative'}}>
+        <ShortcutHandler
+          onShortcut={() => onToggle()}
+          shortcutLabel="."
+          shortcutFilter={(e) => e.key === '.'}
+        >
+          <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+            <Icon color={Colors.WHITE} icon={IconNames.MENU} iconSize={16} />
+          </NavButton>
+        </ShortcutHandler>
+        <Group direction="row" alignItems="center" spacing={12} margin={{left: 8}}>
+          <div style={{position: 'relative', top: '1px'}}>
             <img
               alt="logo"
               src={navBarImage}
@@ -44,14 +74,17 @@ export const AppTopNav: React.FunctionComponent<{searchPlaceholder: string}> = (
 const AppTopNavContainer = styled.div`
   background: ${Colors.DARK_GRAY2};
   display: flex;
-  height: 50px;
+  flex-direction: row;
+  height: 48px;
 `;
 
 const LogoContainer = styled.div`
   cursor: pointer;
-  width: 235px;
+  display: flex;
+  align-items: center;
+  width: 280px;
   flex-shrink: 0;
-  padding-top: 10px;
+  padding: 0 0 0 4px;
   &:hover {
     img {
       filter: brightness(110%);
@@ -63,4 +96,38 @@ const LogoWebsocketStatus = styled(WebsocketStatus)`
   position: absolute;
   top: 20px;
   left: 24px;
+`;
+
+const NavButton = styled.button`
+  border-radius: 16px;
+  cursor: pointer;
+  margin-left: 4px;
+  outline: none;
+  padding: 6px;
+  border: none;
+  background: transparent;
+
+  .bp3-icon svg {
+    transition: fill 100ms linear;
+  }
+
+  :hover .bp3-icon svg {
+    fill: ${Colors.GRAY5};
+  }
+
+  :active .bp3-icon svg {
+    fill: ${Colors.BLUE5};
+  }
+
+  :focus {
+    background: ${Colors.DARK_GRAY5};
+  }
+
+  @media (max-width: 2560px) {
+    display: none;
+  }
+
+  @media (max-width: 1440px) {
+    display: block;
+  }
 `;

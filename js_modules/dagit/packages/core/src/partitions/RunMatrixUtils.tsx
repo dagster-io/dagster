@@ -217,7 +217,7 @@ export const GridFloatingContainer = styled.div<{floating: boolean}>`
   border-right: 1px solid ${Colors.GRAY5};
   padding-bottom: 16px;
   width: 330px;
-  z-index: 2;
+  z-index: 1;
   ${({floating}) => (floating ? 'box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15)' : '')};
 `;
 

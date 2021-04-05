@@ -3,6 +3,7 @@ import * as React from 'react';
 import {useHistory, Link, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {LayoutContext} from '../app/LayoutProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {DarkTimezonePicker} from '../app/time/DarkTimezonePicker';
 import {Box} from '../ui/Box';
@@ -12,6 +13,8 @@ import {LeftNavRepositorySection} from './LeftNavRepositorySection';
 
 export const LeftNav = () => {
   const history = useHistory();
+  const {nav} = React.useContext(LayoutContext);
+
   const runsMatch = useRouteMatch('/instance/runs');
   const assetsMatch = useRouteMatch('/instance/assets');
   const statusMatch = useRouteMatch([
@@ -22,8 +25,8 @@ export const LeftNav = () => {
   ]);
 
   return (
-    <LeftNavContainer>
-      <Box padding={{vertical: 8}}>
+    <LeftNavContainer $open={nav.isOpen}>
+      <Box padding={{top: 4}}>
         <Box padding={{horizontal: 12}} margin={{bottom: 4}}>
           <div
             style={{
@@ -76,15 +79,29 @@ export const LeftNav = () => {
   );
 };
 
-const LeftNavContainer = styled.div`
-  width: 235px;
-  height: 100%;
+const LeftNavContainer = styled.div<{$open: boolean}>`
+  position: fixed;
+  z-index: 2;
+  top: 48px;
+  bottom: 0;
+  left: 0;
+  width: 280px;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
   justify-content: start;
   background: ${Colors.DARK_GRAY2};
   border-right: 1px solid ${Colors.DARK_GRAY5};
+
+  @media (max-width: 2560px) {
+    left: 0;
+  }
+
+  @media (max-width: 1440px) {
+    box-shadow: 2px 0px 0px ${Colors.LIGHT_GRAY1};
+    transform: translateX(${({$open}) => ($open ? '0' : '-280px')});
+    transition: transform 150ms ease-in-out;
+  }
 `;
 
 const Tab = styled(Link)`
