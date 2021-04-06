@@ -13,6 +13,7 @@ const fuseOptions = {
   keys: ['label', 'tags', 'type'],
   limit: 10,
   threshold: 0.3,
+  useExtendedSearch: true,
 };
 
 const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
