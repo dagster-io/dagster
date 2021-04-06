@@ -15,7 +15,7 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Blueprint, Flask, jsonify, redirect, request, send_file
+from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -165,7 +165,7 @@ def instantiate_app_with_views(
             "graphql",
             schema=schema,
             graphiql=True,
-            graphiql_template=PLAYGROUND_TEMPLATE.replace("APP_PATH_PREFIX", app_path_prefix),
+            graphiql_template=PLAYGROUND_TEMPLATE,
             executor=Executor(),
             context=context,
         ),
@@ -195,15 +195,10 @@ def instantiate_app_with_views(
     def index_view():
         try:
             with open(index_path) as f:
-                return (
-                    f.read()
-                    .replace('href="/', f'href="{app_path_prefix}/')
-                    .replace('src="/', f'src="{app_path_prefix}/')
-                    .replace(
-                        '<meta name="dagit-path-prefix"',
-                        f'<meta name="dagit-path-prefix" content="{app_path_prefix}"',
-                    )
-                )
+                rendered_template = render_template_string(f.read())
+                return rendered_template.replace(
+                    'src="/static', f'src="/{app_path_prefix}/static'
+                ).replace('href="/static', f'href="/{app_path_prefix}/static')
         except FileNotFoundError:
             raise Exception(
                 """Can't find webapp files. Probably webapp isn't built. If you are using
@@ -218,6 +213,7 @@ def instantiate_app_with_views(
         return index_view()
 
     bp.add_url_rule("/", "index_view", index_view)
+    bp.context_processor(lambda: {"app_path_prefix": app_path_prefix})
 
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
@@ -241,9 +237,9 @@ def create_app_from_workspace(
 
     if path_prefix:
         if not path_prefix.startswith("/"):
-            raise Exception('The path prefix should begin with a leading "/".')
+            raise Exception(f'The path prefix should begin with a leading "/": got {path_prefix}')
         if path_prefix.endswith("/"):
-            raise Exception('The path prefix should not include a trailing "/".')
+            raise Exception(f'The path prefix should not include a trailing "/": got {path_prefix}')
 
     warn_if_compute_logs_disabled()
 

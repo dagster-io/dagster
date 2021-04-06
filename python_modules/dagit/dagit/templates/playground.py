@@ -8,9 +8,10 @@ TEMPLATE = """<!DOCTYPE html>
   <meta charset=utf-8 />
   <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
   <title>GraphQL Playground</title>
-  <link rel="stylesheet" href="APP_PATH_PREFIX/vendor/graphql-playground/index.css" />
-  <link rel="shortcut icon" href="APP_PATH_PREFIX/vendor/graphql-playground/favicon.png" />
-  <script src="APP_PATH_PREFIX/vendor/graphql-playground/middleware.js"></script>
+  <!-- Jinja templating -->
+  <link rel="stylesheet" href="{{ app_path_prefix }}/vendor/graphql-playground/index.css" />
+  <link rel="shortcut icon" href="{{ app_path_prefix }}/vendor/graphql-playground/favicon.png" />
+  <script src="{{ app_path_prefix }}/vendor/graphql-playground/middleware.js"></script>
 
 </head>
 
