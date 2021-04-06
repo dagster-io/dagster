@@ -10,8 +10,9 @@ import React, { useContext } from "react";
 import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
-import Image from 'next/image'
+import Image from "next/image";
 export const SearchIndexContext = React.createContext(null);
+import path from "path";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -220,7 +221,6 @@ const Warning = ({ children }) => {
 const CodeReferenceLink = (props: { filePath: string }) => {
   const filePath = props.filePath;
   const { version } = useVersion();
-  // TODO: versioned github link
   return (
     <div className="bg-blue-50 rounded flex item-center p-4 shadow">
       <div>
@@ -285,11 +285,38 @@ export default {
       <img {...(props as any)} />
     </div>
   ),
-  Image: ({ children, ...props }) => (
-    <div className="mx-auto">
-      <Image {...(props as any)} />
-    </div>
-  ),
+  Image: ({ children, ...props }) => {
+    /* Only version images when all conditions meet:
+     * - use <Image> component in mdx
+     * - on non-master version
+     * - in public/images/ dir
+     */
+    const { version } = useVersion();
+    const { src } = props;
+    if (version === "master" || !src.startsWith("/images/")) {
+      return (
+        <div className="mx-auto">
+          <Image {...(props as any)} />
+        </div>
+      );
+    }
+
+    const resolvedPath = path.resolve(
+      ".versioned_images",
+      version,
+      src.replace("/images/", "")
+    );
+    return (
+      <div className="mx-auto">
+        <Image
+          src={resolvedPath}
+          width={props.width}
+          height={props.height}
+          alt={props.alt}
+        />
+      </div>
+    );
+  },
   PyObject,
   Link,
   Check,
