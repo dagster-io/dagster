@@ -40,3 +40,9 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 
 .. autodata:: slack_resource
   :annotation: ResourceDefinition
+
+.. autodata:: slack_on_failure
+  :annotation: HookDefinition
+
+.. autodata:: slack_on_success
+  :annotation: HookDefinition
