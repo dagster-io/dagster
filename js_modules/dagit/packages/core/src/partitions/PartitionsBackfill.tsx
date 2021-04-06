@@ -1,4 +1,4 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
+import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
 import {
   Checkbox,
   Intent,
@@ -7,9 +7,9 @@ import {
   Colors,
   InputGroup,
   Icon,
-  Tooltip,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -41,6 +41,7 @@ import {
   TopLabelTilted,
 } from './RunMatrixUtils';
 import {LaunchPartitionBackfill} from './types/LaunchPartitionBackfill';
+import {PartitionStatusQuery} from './types/PartitionStatusQuery';
 import {PartitionsBackfillSelectorQuery} from './types/PartitionsBackfillSelectorQuery';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
@@ -163,6 +164,17 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     },
   );
 
+  const [
+    queryStatuses,
+    {loading: statusesLoading, data: statusesData},
+  ] = useLazyQuery<PartitionStatusQuery>(PARTITION_STATUS_QUERY, {
+    variables: {
+      repositorySelector,
+      partitionSetName,
+    },
+    fetchPolicy: 'cache-and-network',
+  });
+
   if (!data || loading) {
     return (
       <Box margin={{vertical: 32}} flex={{justifyContent: 'center'}}>
@@ -215,10 +227,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     );
   }
 
-  if (data.partitionSetOrError.partitionStatusesOrError.__typename === 'PythonError') {
+  if (statusesData?.partitionSetOrError.__typename === 'PythonError') {
     return (
       <Box margin={20}>
-        <PythonErrorInfo error={data.partitionSetOrError.partitionStatusesOrError} />
+        <PythonErrorInfo error={statusesData?.partitionSetOrError} />
       </Box>
     );
   }
@@ -289,18 +301,32 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
   const solids = pipelineSnapshot.solidHandles.map((h: any) => h.solid);
   const runPartitions =
-    partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
-      ? partitionSet.partitionStatusesOrError.results
+    partitionSet.partitionsOrError.__typename === 'Partitions'
+      ? partitionSet.partitionsOrError.results
       : null;
 
   if (!solids || !runPartitions) {
     return <span />;
   }
-  const partitionNames = runPartitions.map((x) => x.partitionName);
-  const partitionsWithLastRunSuccess = runPartitions
+
+  const partitionStatuses = () => {
+    if (
+      statusesData?.partitionSetOrError.__typename === 'PartitionSet' &&
+      statusesData.partitionSetOrError.partitionStatusesOrError.__typename === 'PartitionStatuses'
+    ) {
+      return statusesData.partitionSetOrError.partitionStatusesOrError.results;
+    }
+    return [];
+  };
+
+  const partitionNames = runPartitions.map((x) => x.name);
+  const statuses = partitionStatuses();
+
+  const partitionsWithLastRunSuccess = statuses
     .filter((x) => x.runStatus === PipelineRunStatus.SUCCESS)
     .map((x) => x.partitionName);
-  const partitionsWithLastRunFailure = runPartitions
+
+  const partitionsWithLastRunFailure = statuses
     .filter(
       (x) =>
         x.runStatus === PipelineRunStatus.FAILURE ||
@@ -308,17 +334,20 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         x.runStatus === PipelineRunStatus.CANCELING,
     )
     .map((x) => x.partitionName);
+
   const selectablePartitions = options.reexecute
     ? options.fromFailure
       ? partitionsWithLastRunFailure
       : partitionsWithLastRunSuccess
     : partitionNames;
+
   const solidsFiltered = filterByQuery(solids, query);
   const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
   const stepRows = layout.boxes.map((box) => ({
     x: box.x,
     name: box.node.name,
   }));
+
   const usingDefaultRunLauncher = instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME;
 
   const getRangeSelection = (start: string, end: string) => {
@@ -367,7 +396,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
           <strong style={{display: 'block'}}>Partitions</strong>
           <Checkbox
-            label="Select All"
+            label="Select all"
             disabled={!selectablePartitions.length}
             style={{marginBottom: 0, marginLeft: 10}}
             checked={selected.length === selectablePartitions.length}
@@ -411,8 +440,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             <div style={{display: 'flex'}}>
               <Checkbox
                 checked={options.fromFailure}
-                disabled={partitionsWithLastRunFailure.length === 0}
                 onChange={() => {
+                  if (!statusesData) {
+                    queryStatuses();
+                  }
                   setSelected([]);
                   setQuery('');
                   setOptions({
@@ -422,16 +453,21 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   });
                 }}
               >
-                {'Re-execute From Failures '}
-                <Tooltip
-                  content={
-                    'For each partition, if the most recent run failed, launch a re-execution starting' +
-                    ' from the steps that failed.'
-                  }
-                >
-                  <Icon icon="info-sign" />
+                Re-execute from failures
+                <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
+                  <Icon
+                    icon="info-sign"
+                    iconSize={12}
+                    color={Colors.GRAY3}
+                    style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
+                  />
                 </Tooltip>
               </Checkbox>
+              {statusesLoading ? (
+                <div style={{marginLeft: '8px', marginTop: '3px'}}>
+                  <Spinner purpose="body-text" />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -466,7 +502,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                 <GridColumn
                   key={partitionName}
                   style={{zIndex: partitionNames.length - idx, userSelect: 'none'}}
-                  disabled={!selectablePartitions.includes(partitionName)}
+                  disabled={statusesLoading || !selectablePartitions.includes(partitionName)}
                   focused={selected.includes(partitionName)}
                   multiselectFocused={currentRangeSelection.includes(partitionName)}
                   onMouseDown={() => onPartitionMouseDown(partitionName)}
@@ -713,12 +749,10 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
       ... on PartitionSet {
         id
         name
-        partitionStatusesOrError {
-          ... on PartitionStatuses {
+        partitionsOrError {
+          ... on Partitions {
             results {
-              id
-              partitionName
-              runStatus
+              name
             }
           }
           ...PythonErrorFragment
@@ -777,6 +811,35 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
         }
       }
       runQueuingSupported
+    }
+  }
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const PARTITION_STATUS_QUERY = gql`
+  query PartitionStatusQuery($partitionSetName: String!, $repositorySelector: RepositorySelector!) {
+    partitionSetOrError(
+      partitionSetName: $partitionSetName
+      repositorySelector: $repositorySelector
+    ) {
+      ... on PartitionSet {
+        id
+        name
+        partitionStatusesOrError {
+          ... on PartitionStatuses {
+            results {
+              id
+              partitionName
+              runStatus
+            }
+          }
+          ...PythonErrorFragment
+        }
+      }
+      ... on PartitionSetNotFoundError {
+        message
+      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
