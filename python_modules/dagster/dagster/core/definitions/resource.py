@@ -8,7 +8,12 @@ from dagster.core.definitions.configurable import AnonymousConfigurableDefinitio
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
 from dagster.utils.backcompat import experimental_arg_warning
 
-from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
+from ..decorator_utils import (
+    is_required_param,
+    positional_arg_name_list,
+    split_function_parameters,
+    validate_decorated_fn_positionals,
+)
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
@@ -49,19 +54,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         required_resource_keys=None,
         version=None,
     ):
-        EXPECTED_POSITIONALS = ["*"]
-        fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
-        missing_positional = validate_decorated_fn_positionals(fn_positionals, EXPECTED_POSITIONALS)
-
-        if missing_positional:
-            raise DagsterInvalidDefinitionError(
-                "@resource '{resource_name}' decorated function does not have required "
-                "positional parameter '{missing_param}'. Resource functions should only have keyword "
-                "arguments that match input names and a first positional parameter.".format(
-                    resource_name=resource_fn.__name__, missing_param=missing_positional
-                )
-            )
-
         self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
@@ -166,18 +158,33 @@ class _ResourceDecoratorCallable:
             required_resource_keys, "required_resource_keys"
         )
 
-    def __call__(self, fn):
-        check.callable_param(fn, "fn")
+    def __call__(self, resource_fn):
+        check.callable_param(resource_fn, "resource_fn")
+
+        any_name = ["*"]
+        fn_positionals, extras = split_function_parameters(resource_fn, any_name)
+        missing_positional = validate_decorated_fn_positionals(fn_positionals, any_name)
+
+        if missing_positional:
+            raise DagsterInvalidDefinitionError(
+                f"@resource decorated function '{resource_fn.__name__}' expects a single positional argument."
+            )
+        required_extras = list(filter(is_required_param, extras))
+        if required_extras:
+            raise DagsterInvalidDefinitionError(
+                f"@resource decorated function '{resource_fn.__name__}' expects only a single positional required argument. "
+                f"Got required extra params {', '.join(positional_arg_name_list(required_extras))}"
+            )
 
         resource_def = ResourceDefinition(
-            resource_fn=fn,
+            resource_fn=resource_fn,
             config_schema=self.config_schema,
             description=self.description,
             version=self.version,
             required_resource_keys=self.required_resource_keys,
         )
 
-        update_wrapper(resource_def, wrapped=fn)
+        update_wrapper(resource_def, wrapped=resource_fn)
 
         return resource_def
 

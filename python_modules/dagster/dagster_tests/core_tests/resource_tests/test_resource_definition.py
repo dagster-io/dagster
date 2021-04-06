@@ -580,20 +580,28 @@ def test_stacked_resource_cleanup():
 
 
 def test_incorrect_resource_init_error():
-    try:
+    @resource
+    def _correct_resource(_):
+        pass
 
-        @resource
-        def _correct_resource(_):
-            pass
-
-    except DagsterInvalidDefinitionError:
-        pytest.fail("Correct resource definition threw a DagsterInvalidDefinitionError...")
-
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(DagsterInvalidDefinitionError, match="expects a single positional argument"):
 
         @resource
         def _incorrect_resource():
             pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="expects only a single positional required argument. Got required extra params _b, _c",
+    ):
+
+        @resource
+        def _incorrect_resource_2(_a, _b, _c, _d=4):
+            pass
+
+    @resource
+    def _correct_resource_2(_a, _b=1, _c=2):
+        pass
 
 
 def test_resource_init_failure():

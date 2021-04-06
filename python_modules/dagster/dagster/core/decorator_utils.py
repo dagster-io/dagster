@@ -66,6 +66,10 @@ def validate_decorated_fn_input_args(input_def_names, decorated_fn_input_args):
         )
 
 
+def is_required_param(param):
+    return param.default == funcsigs.Parameter.empty
+
+
 def positional_arg_name_list(params):
     return list(
         map(
