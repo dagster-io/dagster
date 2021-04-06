@@ -37,7 +37,9 @@ def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLo
 def _get_mapped_resource_config(
     resource_defs: Dict[str, ResourceDefinition], run_config: Dict[str, Any]
 ) -> Dict[str, ResourceConfig]:
-    resource_config_schema = define_resource_dictionary_cls(resource_defs)
+    resource_config_schema = define_resource_dictionary_cls(
+        resource_defs, set(resource_defs.keys())
+    )
     config_evr = process_config(resource_config_schema, run_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(

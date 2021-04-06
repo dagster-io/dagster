@@ -198,7 +198,7 @@ class Solid:
         )
 
     @property
-    def hook_defs(self) -> Optional[Set[HookDefinition]]:
+    def hook_defs(self) -> Set[HookDefinition]:
         return self._hook_defs
 
 

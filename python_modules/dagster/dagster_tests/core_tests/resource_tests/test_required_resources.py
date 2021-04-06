@@ -765,3 +765,34 @@ def test_plugin_missing_resource_fails():
 
     # works since storages are not compatible with plugin
     define_plugin_pipeline(mode_defines_resource=False, compatible_storage=False)
+
+
+def test_extra_resources():
+    @resource
+    def resource_a(_):
+        return "a"
+
+    @resource(config_schema=int)
+    def resource_b(_):
+        return "b"
+
+    @solid(required_resource_keys={"A"})
+    def echo(context):
+        return context.resources.A
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "A": resource_a,
+                    "B": resource_b,
+                    "BB": resource_b,
+                }
+            )
+        ]
+    )
+    def extra():
+        echo()
+
+    # should work since B & BB's resources are not needed so missing config should be fine
+    assert execute_pipeline(extra).success

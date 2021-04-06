@@ -725,12 +725,16 @@ def test_list_in_config_error():
 
 
 def test_required_resource_not_given():
+    @solid(required_resource_keys={"required"})
+    def needs_resource(_):
+        pass
+
     @pipeline(
         name="required_resource_not_given",
         mode_defs=[ModeDefinition(resource_defs={"required": dummy_resource(Int)})],
     )
     def pipeline_def():
-        pass
+        needs_resource()
 
     with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
         execute_pipeline(pipeline_def, run_config={"resources": None})
