@@ -344,7 +344,7 @@ def _schedule_tick_context(instance, stream, tick_data):
 def grpc_command(
     port=None,
     socket=None,
-    host="localhost",
+    host=None,
     max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,

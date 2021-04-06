@@ -6,7 +6,7 @@ import uuid
 import pytest
 from dagster import seven
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.test_utils import new_cwd
+from dagster.core.test_utils import environ, new_cwd
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import wait_for_grpc_server
 from dagster.serdes.ipc import DagsterIPCProtocolError
@@ -46,6 +46,34 @@ def test_ping():
         assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
     finally:
         process.terminate()
+
+
+def test_load_via_env_var():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    with environ(
+        {"DAGSTER_CLI_API_GRPC_HOST": "localhost", "DAGSTER_CLI_API_GRPC_PORT": str(port)}
+    ):
+        ipc_output_file = _get_ipc_output_file()
+        process = subprocess.Popen(
+            [
+                "dagster",
+                "api",
+                "grpc",
+                "--python-file",
+                python_file,
+                "--ipc-output-file",
+                ipc_output_file,
+            ],
+            stdout=subprocess.PIPE,
+        )
+
+        try:
+            wait_for_grpc_server(process, ipc_output_file)
+            assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+        finally:
+            process.terminate()
 
 
 def test_load_with_invalid_param(capfd):
@@ -257,6 +285,37 @@ def test_lazy_load_with_error():
         assert "No module named" in list_repositories_response.message
     finally:
         process.terminate()
+
+
+def test_lazy_load_via_env_var():
+    with environ({"DAGSTER_CLI_API_GRPC_LAZY_LOAD_USER_CODE": "1"}):
+        port = find_free_port()
+        python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
+
+        ipc_output_file = _get_ipc_output_file()
+
+        process = subprocess.Popen(
+            [
+                "dagster",
+                "api",
+                "grpc",
+                "--port",
+                str(port),
+                "--python-file",
+                python_file,
+                "--ipc-output-file",
+                ipc_output_file,
+            ],
+            stdout=subprocess.PIPE,
+        )
+
+        try:
+            wait_for_grpc_server(process, ipc_output_file)
+            list_repositories_response = DagsterGrpcClient(port=port).list_repositories()
+            assert isinstance(list_repositories_response, SerializableErrorInfo)
+            assert "No module named" in list_repositories_response.message
+        finally:
+            process.terminate()
 
 
 def test_streaming():
