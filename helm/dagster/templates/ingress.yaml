@@ -11,6 +11,17 @@ metadata:
     {{- end }}
 spec:
   # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml
+  tls:
+    {{- if .Values.ingress.dagit.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.dagit.host }}
+      secretName: {{ .Values.ingress.dagit.tls.secretName }}
+    {{- end }}
+    {{- if .Values.ingress.flower.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.flower.host }}
+      secretName: {{ .Values.ingress.flower.tls.secretName }}
+    {{- end }}
   rules:
     - host: {{ .Values.ingress.dagit.host }}
       http:
@@ -21,7 +32,7 @@ spec:
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
           {{- end }}
-          - path: "/*"
+          - path: {{ .Values.ingress.dagit.path | default "/*" }}
             backend:
               serviceName: {{ include "dagster.dagit.fullname" . }}
               servicePort: {{ .Values.dagit.service.port | default 80 }}
