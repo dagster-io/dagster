@@ -25,6 +25,13 @@ class ConfigurableDefinition(ABC):
     def config_field(self) -> Optional[Field]:
         return None if not self.config_schema else self.config_schema.as_field()
 
+    # getter for typed access
+    def get_config_field(self) -> Field:
+        field = self.config_field
+        if field is None:
+            check.failed("Must check has_config_Field before calling get_config_field")
+        return field
+
     def apply_config_mapping(self, config: Any) -> EvaluateValueResult:
         """
         Applies user-provided config mapping functions to the given configuration and validates the

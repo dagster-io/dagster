@@ -1,10 +1,12 @@
-from collections import namedtuple
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple
 
 from dagster.config import Field, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_optional_type
 from dagster.config.iterate_types import iterate_config_types
-from dagster.core.definitions.executor import in_process_executor
+from dagster.core.definitions.executor import ExecutorDefinition, in_process_executor
+from dagster.core.definitions.input import InputDefinition
+from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.root_input_manager import IInputManagerDefinition
@@ -22,8 +24,7 @@ from .resource import ResourceDefinition
 from .solid import NodeDefinition, SolidDefinition
 
 
-def _is_selector_field_optional(config_type):
-    check.inst_param(config_type, "config_type", ConfigType)
+def _is_selector_field_optional(config_type: Selector) -> bool:
     if len(config_type.fields) > 1:
         return False
     else:
@@ -31,9 +32,7 @@ def _is_selector_field_optional(config_type):
         return not field.is_required
 
 
-def define_resource_dictionary_cls(resource_defs):
-    check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
-
+def define_resource_dictionary_cls(resource_defs: Dict[str, ResourceDefinition]) -> Shape:
     fields = {}
     for resource_name, resource_def in resource_defs.items():
         if resource_def.config_schema:
@@ -42,12 +41,11 @@ def define_resource_dictionary_cls(resource_defs):
     return Shape(fields=fields)
 
 
-def remove_none_entries(ddict):
+def remove_none_entries(ddict: dict) -> dict:
     return {k: v for k, v in ddict.items() if v is not None}
 
 
-def def_config_field(configurable_def, is_required=None):
-    check.inst_param(configurable_def, "configurable_def", ConfigurableDefinition)
+def def_config_field(configurable_def: ConfigurableDefinition, is_required: bool = None) -> Field:
     return Field(
         Shape(
             {"config": configurable_def.config_field} if configurable_def.has_config_field else {}
@@ -56,39 +54,16 @@ def def_config_field(configurable_def, is_required=None):
     )
 
 
-class EnvironmentClassCreationData(
-    namedtuple(
-        "EnvironmentClassCreationData",
-        "pipeline_name solids dependency_structure mode_definition logger_defs ignored_solids",
-    )
-):
-    def __new__(
-        cls,
-        pipeline_name,
-        solids,
-        dependency_structure,
-        mode_definition,
-        logger_defs,
-        ignored_solids,
-    ):
-        return super(EnvironmentClassCreationData, cls).__new__(
-            cls,
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solids=check.list_param(solids, "solids", of_type=Solid),
-            dependency_structure=check.inst_param(
-                dependency_structure, "dependency_structure", DependencyStructure
-            ),
-            mode_definition=check.inst_param(mode_definition, "mode_definition", ModeDefinition),
-            logger_defs=check.dict_param(
-                logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
-            ),
-            ignored_solids=check.list_param(ignored_solids, "ignored_solids", of_type=Solid),
-        )
+class EnvironmentClassCreationData(NamedTuple):
+    pipeline_name: str
+    solids: List[Solid]
+    dependency_structure: DependencyStructure
+    mode_definition: ModeDefinition
+    logger_defs: Dict[str, LoggerDefinition]
+    ignored_solids: List[Solid]
 
 
-def define_logger_dictionary_cls(creation_data):
-    check.inst_param(creation_data, "creation_data", EnvironmentClassCreationData)
-
+def define_logger_dictionary_cls(creation_data: EnvironmentClassCreationData) -> Shape:
     return Shape(
         {
             logger_name: def_config_field(logger_definition, is_required=False)
@@ -97,7 +72,7 @@ def define_logger_dictionary_cls(creation_data):
     )
 
 
-def define_execution_field(executor_defs):
+def define_execution_field(executor_defs: List[ExecutorDefinition]) -> Field:
     default_in_process = False
     for executor_def in executor_defs:
         if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
@@ -111,14 +86,16 @@ def define_execution_field(executor_defs):
     return Field(selector)
 
 
-def define_storage_field(storage_selector, storage_names, defaults):
+def define_storage_field(
+    storage_selector: Selector, storage_names: List[str], defaults: Set[str]
+) -> Field:
     """Define storage field using default options, if additional storage options have been provided."""
     # If no custom storage options have been provided,
     # then users do not need to provide any configuration.
     if set(storage_names) == defaults:
         return Field(storage_selector, is_required=False)
     else:
-        default_storage = FIELD_NO_DEFAULT_PROVIDED
+        default_storage: Any = FIELD_NO_DEFAULT_PROVIDED
         if len(storage_names) > 0:
             def_key = list(storage_names)[0]
             possible_default = storage_selector.fields[def_key]
@@ -127,9 +104,7 @@ def define_storage_field(storage_selector, storage_names, defaults):
         return Field(storage_selector, default_value=default_storage)
 
 
-def define_environment_cls(creation_data):
-    check.inst_param(creation_data, "creation_data", EnvironmentClassCreationData)
-
+def define_environment_cls(creation_data: EnvironmentClassCreationData):
     intermediate_storage_field = define_storage_field(
         selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
@@ -168,15 +143,15 @@ def define_environment_cls(creation_data):
 
 # Common pattern for a set of named definitions (e.g. executors, intermediate storage)
 # to build a selector so that one of them is selected
-def selector_for_named_defs(named_defs):
+def selector_for_named_defs(named_defs) -> Selector:
     return Selector({named_def.name: def_config_field(named_def) for named_def in named_defs})
 
 
-def get_inputs_field(solid, handle, dependency_structure, resource_defs):
-    check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
-    check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
-
+def get_inputs_field(
+    solid: Solid,
+    dependency_structure: DependencyStructure,
+    resource_defs: Dict[str, ResourceDefinition],
+):
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
@@ -197,11 +172,20 @@ def get_inputs_field(solid, handle, dependency_structure, resource_defs):
     return Field(Shape(inputs_field_fields))
 
 
-def input_has_upstream(dependency_structure, input_handle, solid, input_name):
+def input_has_upstream(
+    dependency_structure: DependencyStructure,
+    input_handle: SolidInputHandle,
+    solid: Solid,
+    input_name: str,
+) -> bool:
     return dependency_structure.has_deps(input_handle) or solid.container_maps_input(input_name)
 
 
-def get_input_manager_input_field(solid, input_def, resource_defs):
+def get_input_manager_input_field(
+    solid: Solid,
+    input_def: InputDefinition,
+    resource_defs: Dict[str, ResourceDefinition],
+) -> Optional[Field]:
     if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
             f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
@@ -209,21 +193,22 @@ def get_input_manager_input_field(solid, input_def, resource_defs):
             f"resource definition for that key in the resource_defs of your ModeDefinition."
         )
 
-    if not isinstance(resource_defs[input_def.root_manager_key], IInputManagerDefinition):
+    root_manager = resource_defs[input_def.root_manager_key]
+    if not isinstance(root_manager, IInputManagerDefinition):
         raise DagsterInvalidDefinitionError(
             f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
             f'"{input_def.root_manager_key}", but the resource definition provided is not an '
             "IInputManagerDefinition"
         )
 
-    input_config_schema = resource_defs[input_def.root_manager_key].input_config_schema
+    input_config_schema = root_manager.input_config_schema
     if input_config_schema:
         return input_config_schema.config_type
 
     return None
 
 
-def get_type_loader_input_field(solid, input_name, input_def):
+def get_type_loader_input_field(solid: Solid, input_name: str, input_def: InputDefinition) -> Field:
     return Field(
         input_def.dagster_type.loader.schema_type,
         is_required=(
@@ -232,10 +217,10 @@ def get_type_loader_input_field(solid, input_name, input_def):
     )
 
 
-def get_outputs_field(solid, handle, resource_defs):
-    check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
-    check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
+def get_outputs_field(
+    solid: Solid,
+    resource_defs: Dict[str, ResourceDefinition],
+) -> Optional[Field]:
 
     # if any outputs have configurable output managers, use those for the schema and ignore all type
     # materializers
@@ -263,7 +248,9 @@ def get_outputs_field(solid, handle, resource_defs):
     return None
 
 
-def get_output_manager_output_field(solid, output_def, resource_defs):
+def get_output_manager_output_field(
+    solid: Solid, output_def: OutputDefinition, resource_defs: Dict[str, ResourceDefinition]
+) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
             f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
@@ -287,14 +274,14 @@ def get_output_manager_output_field(solid, output_def, resource_defs):
     return None
 
 
-def get_type_output_field(output_def):
+def get_type_output_field(output_def: OutputDefinition) -> Optional[Field]:
     if output_def.dagster_type.materializer:
         return Field(output_def.dagster_type.materializer.schema_type, is_required=False)
 
     return None
 
 
-def solid_config_field(fields, ignored):
+def solid_config_field(fields: Dict[str, Optional[Field]], ignored: bool) -> Optional[Field]:
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
@@ -311,27 +298,29 @@ def solid_config_field(fields, ignored):
 
 
 def construct_leaf_solid_config(
-    solid, handle, dependency_structure, config_schema, resource_defs, ignored
-):
-    check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
-    check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
-    check.opt_inst_param(config_schema, "config_schema", IDefinitionConfigSchema)
-    check.bool_param(ignored, "ignored")
-
+    solid: Solid,
+    dependency_structure: DependencyStructure,
+    config_schema: Optional[IDefinitionConfigSchema],
+    resource_defs: Dict[str, ResourceDefinition],
+    ignored: bool,
+) -> Optional[Field]:
     return solid_config_field(
         {
-            "inputs": get_inputs_field(solid, handle, dependency_structure, resource_defs),
-            "outputs": get_outputs_field(solid, handle, resource_defs),
+            "inputs": get_inputs_field(solid, dependency_structure, resource_defs),
+            "outputs": get_outputs_field(solid, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
     )
 
 
-def define_isolid_field(solid, handle, dependency_structure, resource_defs, ignored):
-    check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
+def define_isolid_field(
+    solid: Solid,
+    handle: SolidHandle,
+    dependency_structure: DependencyStructure,
+    resource_defs: Dict[str, ResourceDefinition],
+    ignored: bool,
+) -> Optional[Field]:
 
     # All solids regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
@@ -346,7 +335,6 @@ def define_isolid_field(solid, handle, dependency_structure, resource_defs, igno
     if isinstance(solid.definition, SolidDefinition):
         return construct_leaf_solid_config(
             solid,
-            handle,
             dependency_structure,
             solid.definition.config_schema,
             resource_defs,
@@ -360,7 +348,6 @@ def define_isolid_field(solid, handle, dependency_structure, resource_defs, igno
         # be `configured`)...
         return construct_leaf_solid_config(
             solid,
-            handle,
             dependency_structure,
             # ...and in both cases, the correct schema for 'config' key is exposed by this property:
             graph_def.config_schema,
@@ -372,8 +359,8 @@ def define_isolid_field(solid, handle, dependency_structure, resource_defs, igno
     else:
         return solid_config_field(
             {
-                "inputs": get_inputs_field(solid, handle, dependency_structure, resource_defs),
-                "outputs": get_outputs_field(solid, handle, resource_defs),
+                "inputs": get_inputs_field(solid, dependency_structure, resource_defs),
+                "outputs": get_outputs_field(solid, resource_defs),
                 "solids": Field(
                     define_solid_dictionary_cls(
                         solids=graph_def.solids,
@@ -389,16 +376,13 @@ def define_isolid_field(solid, handle, dependency_structure, resource_defs, igno
 
 
 def define_solid_dictionary_cls(
-    solids,
-    ignored_solids,
-    dependency_structure,
-    resource_defs,
-    parent_handle=None,
-):
-    check.list_param(solids, "solids", of_type=Solid)
+    solids: List[Solid],
+    ignored_solids: Optional[List[Solid]],
+    dependency_structure: DependencyStructure,
+    resource_defs: Dict[str, ResourceDefinition],
+    parent_handle: Optional[SolidHandle] = None,
+) -> Shape:
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Solid)
-    check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
-    check.opt_inst_param(parent_handle, "parent_handle", SolidHandle)
 
     fields = {}
     for solid in solids:
@@ -427,12 +411,10 @@ def define_solid_dictionary_cls(
     return Shape(fields)
 
 
-def iterate_node_def_config_types(node_def):
-    check.inst_param(node_def, "node_def", NodeDefinition)
-
+def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
     if isinstance(node_def, SolidDefinition):
         if node_def.has_config_field:
-            yield from iterate_config_types(node_def.config_field.config_type)
+            yield from iterate_config_types(node_def.get_config_field().config_type)
     elif isinstance(node_def, GraphDefinition):
         for solid in node_def.solids:
             yield from iterate_node_def_config_types(solid.definition)
@@ -441,7 +423,7 @@ def iterate_node_def_config_types(node_def):
         check.invariant("Unexpected NodeDefinition type {type}".format(type=type(node_def)))
 
 
-def _gather_all_schemas(node_defs):
+def _gather_all_schemas(node_defs: List[NodeDefinition]) -> Iterator[ConfigType]:
     dagster_types = construct_dagster_type_dictionary(node_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
@@ -450,20 +432,18 @@ def _gather_all_schemas(node_defs):
             yield from iterate_config_types(dagster_type.materializer.schema_type)
 
 
-def _gather_all_config_types(node_defs, environment_type):
-    check.list_param(node_defs, "node_defs", NodeDefinition)
-    check.inst_param(environment_type, "environment_type", ConfigType)
-
+def _gather_all_config_types(
+    node_defs: List[NodeDefinition], environment_type: ConfigType
+) -> Iterator[ConfigType]:
     for node_def in node_defs:
         yield from iterate_node_def_config_types(node_def)
 
     yield from iterate_config_types(environment_type)
 
 
-def construct_config_type_dictionary(node_defs, environment_type):
-    check.list_param(node_defs, "node_defs", NodeDefinition)
-    check.inst_param(environment_type, "environment_type", ConfigType)
-
+def construct_config_type_dictionary(
+    node_defs: List[NodeDefinition], environment_type: ConfigType
+) -> Tuple[Dict[str, ConfigType], Dict[str, ConfigType]]:
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(_gather_all_config_types(node_defs, environment_type)) + list(
