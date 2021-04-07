@@ -151,6 +151,7 @@ def get_inputs_field(
     solid: Solid,
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
+    solid_ignored: bool,
 ):
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
@@ -168,8 +169,15 @@ def get_inputs_field(
 
     if not inputs_field_fields:
         return None
-
-    return Field(Shape(inputs_field_fields))
+    if solid_ignored:
+        return Field(
+            Shape(inputs_field_fields),
+            is_required=False,
+            description="This solid is not present in the current solid selection, "
+            "the input config values are allowed but ignored.",
+        )
+    else:
+        return Field(Shape(inputs_field_fields))
 
 
 def input_has_upstream(
@@ -306,7 +314,12 @@ def construct_leaf_solid_config(
 ) -> Optional[Field]:
     return solid_config_field(
         {
-            "inputs": get_inputs_field(solid, dependency_structure, resource_defs),
+            "inputs": get_inputs_field(
+                solid,
+                dependency_structure,
+                resource_defs,
+                ignored,
+            ),
             "outputs": get_outputs_field(solid, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
@@ -359,7 +372,12 @@ def define_isolid_field(
     else:
         return solid_config_field(
             {
-                "inputs": get_inputs_field(solid, dependency_structure, resource_defs),
+                "inputs": get_inputs_field(
+                    solid,
+                    dependency_structure,
+                    resource_defs,
+                    ignored,
+                ),
                 "outputs": get_outputs_field(solid, resource_defs),
                 "solids": Field(
                     define_solid_dictionary_cls(

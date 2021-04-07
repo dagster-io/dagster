@@ -2,10 +2,13 @@ import pytest
 from dagster import (
     DagsterInvalidConfigError,
     Field,
+    InputDefinition,
+    ModeDefinition,
     String,
     composite_solid,
     execute_pipeline,
     pipeline,
+    root_input_manager,
     solid,
 )
 
@@ -186,4 +189,93 @@ def test_extra_config_ignored_composites():
 
     assert execute_pipeline(
         my_pipeline, run_config=run_config, solid_selection=["composite1"]
+    ).success
+
+
+def test_extra_config_input_bug():
+    @solid
+    def root(_):
+        return "public.table_1"
+
+    @solid(config_schema={"some_config": str})
+    def takes_input(_, input_table):
+        return input_table
+
+    @pipeline
+    def my_pipeline():
+        takes_input(root())
+
+    # Requires passing some config to the solid to bypass the
+    # solid block level optionality
+    run_config = {"solids": {"takes_input": {"config": {"some_config": "a"}}}}
+
+    assert execute_pipeline(my_pipeline, run_config=run_config).success
+
+    # Test against a bug where we generated required input config
+    # for takes_input even though it was not being executed.
+    assert execute_pipeline(
+        my_pipeline,
+        run_config=run_config,
+        solid_selection=["root"],
+    ).success
+
+
+def test_extra_config_unsatisfied_input():
+    @solid
+    def start(_, x):
+        return x
+
+    @solid
+    def end(_, x=1):
+        return x
+
+    @pipeline
+    def testing():
+        end(start())
+
+    assert execute_pipeline(
+        testing, run_config={"solids": {"start": {"inputs": {"x": {"value": 4}}}}}
+    ).success
+
+    # test to ensure that if start is not being executed its
+    # input config is still allowed (and ignored)
+    assert execute_pipeline(
+        testing,
+        run_config={"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
+        solid_selection=["end"],
+    ).success
+
+
+def test_extra_config_unsatisfied_input_io_man():
+    @root_input_manager(input_config_schema=int)
+    def config_io_man(context):
+        return context.config
+
+    @solid(input_defs=[InputDefinition("x", root_manager_key="my_loader")])
+    def start(_, x):
+        return x
+
+    @solid
+    def end(_, x=1):
+        return x
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_loader": config_io_man})])
+    def testing_io():
+        end(start())
+
+    assert execute_pipeline(
+        testing_io,
+        run_config={
+            "solids": {"start": {"inputs": {"x": 3}}},
+        },
+    ).success
+
+    # test to ensure that if start is not being executed its
+    # input config is still allowed (and ignored)
+    assert execute_pipeline(
+        testing_io,
+        run_config={
+            "solids": {"start": {"inputs": {"x": 3}}},
+        },
+        solid_selection=["end"],
     ).success
