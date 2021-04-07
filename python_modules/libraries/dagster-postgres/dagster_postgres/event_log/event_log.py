@@ -55,7 +55,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     """
 
-    def __init__(self, postgres_url, should_autocreate_tables, inst_data=None):
+    def __init__(self, postgres_url, should_autocreate_tables=True, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = check.str_param(postgres_url, "postgres_url")
         self.should_autocreate_tables = check.bool_param(

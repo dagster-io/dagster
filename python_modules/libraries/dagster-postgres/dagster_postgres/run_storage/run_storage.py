@@ -35,7 +35,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, postgres_url, should_autocreate_tables, inst_data=None):
+    def __init__(self, postgres_url, should_autocreate_tables=True, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
