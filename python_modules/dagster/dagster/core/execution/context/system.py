@@ -343,6 +343,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
 
+        self._step_exception = None
+
     @property
     def step(self) -> ExecutionStep:
         return self._step
@@ -458,6 +460,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             return self.pipeline_run.run_id
 
+    def capture_step_exception(self, exception: BaseException):
+        self._step_exception = check.inst_param(exception, "exception", BaseException)
+
+    @property
+    def step_exception(self) -> Optional[BaseException]:
+        return self._step_exception
+
 
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType.
@@ -571,3 +580,13 @@ class HookContext:
     @property
     def log(self) -> DagsterLogManager:
         return self._step_execution_context.log
+
+    @property
+    def solid_exception(self) -> Optional[BaseException]:
+        """The thrown exception in a failed solid.
+
+        Returns:
+            Optional[BaseException]: the exception object, None if the solid execution succeeds.
+        """
+
+        return self._step_execution_context.step_exception

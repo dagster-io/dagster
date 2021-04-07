@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
-from dagster.core.definitions.events import HookExecutionResult
+from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
@@ -236,6 +236,60 @@ def test_failure_hook_on_solid_instance():
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert not result.success
     assert called_hook_to_solids["a_hook"] == {"failed_solid", "solid_with_hook"}
+
+
+def test_failure_hook_solid_exception():
+    called = {}
+
+    @failure_hook
+    def a_hook(context):
+        called[context.solid.name] = context.solid_exception
+
+    @solid
+    def a_solid(_):
+        pass
+
+    @solid
+    def user_code_error_solid(_):
+        raise SomeUserException()
+
+    @solid
+    def failure_solid(_):
+        raise Failure()
+
+    @a_hook
+    @pipeline
+    def a_pipeline():
+        a_solid()
+        user_code_error_solid()
+        failure_solid()
+
+    result = execute_pipeline(a_pipeline, raise_on_error=False)
+    assert not result.success
+    assert "a_solid" not in called
+    assert isinstance(called.get("user_code_error_solid"), SomeUserException)
+    assert isinstance(called.get("failure_solid"), Failure)
+
+
+def test_none_solid_exception_access():
+    called = {}
+
+    @success_hook
+    def a_hook(context):
+        called[context.solid.name] = context.solid_exception
+
+    @solid
+    def a_solid(_):
+        pass
+
+    @a_hook
+    @pipeline
+    def a_pipeline():
+        a_solid()
+
+    result = execute_pipeline(a_pipeline, raise_on_error=False)
+    assert result.success
+    assert called.get("a_solid") is None
 
 
 def test_hook_on_pipeline_def():

@@ -103,7 +103,6 @@ def _trigger_hook(
 
         except HookExecutionError as hook_execution_error:
             # catch hook execution error and field a failure event instead of failing the pipeline run
-            # is_hook_completed = False
             yield DagsterEvent.hook_errored(step_context, hook_execution_error)
             continue
 
@@ -201,6 +200,7 @@ def _dagster_event_sequence_for_step(
                 cls_name=retry_err_info.cls_name,
                 cause=retry_err_info.cause,
             )
+            step_context.capture_step_exception(retry_request)
             yield DagsterEvent.step_failure_event(
                 step_context=step_context,
                 step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
@@ -214,6 +214,7 @@ def _dagster_event_sequence_for_step(
                     cls_name=retry_err_info.cls_name,
                     cause=retry_err_info.cause,
                 )
+                step_context.capture_step_exception(retry_request)
                 yield DagsterEvent.step_failure_event(
                     step_context=step_context,
                     step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
@@ -229,6 +230,7 @@ def _dagster_event_sequence_for_step(
 
     # case (2) in top comment
     except Failure as failure:
+        step_context.capture_step_exception(failure)
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
@@ -243,6 +245,7 @@ def _dagster_event_sequence_for_step(
 
     # case (3) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:
+        step_context.capture_step_exception(dagster_user_error.user_exception)
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
@@ -254,6 +257,7 @@ def _dagster_event_sequence_for_step(
 
     # case (4) in top comment
     except (KeyboardInterrupt, DagsterExecutionInterruptedError) as interrupt_error:
+        step_context.capture_step_exception(interrupt_error)
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
@@ -263,6 +267,7 @@ def _dagster_event_sequence_for_step(
 
     # case (5) in top comment
     except DagsterError as dagster_error:
+        step_context.capture_step_exception(dagster_error)
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
@@ -274,6 +279,7 @@ def _dagster_event_sequence_for_step(
 
     # case (6) in top comment
     except Exception as unexpected_exception:  # pylint: disable=broad-except
+        step_context.capture_step_exception(unexpected_exception)
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
