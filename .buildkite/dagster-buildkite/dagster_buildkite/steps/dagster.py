@@ -292,6 +292,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-sqlite_instance_multi_location",
             "-sqlite_instance_managed_grpc_env",
             "-sqlite_instance_deployed_grpc_env",
+            "-graphql_python_client",
         ],
     ),
     ModuleBuildSpec(

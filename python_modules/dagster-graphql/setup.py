@@ -33,6 +33,7 @@ if __name__ == "__main__":
             "gevent-websocket>=0.10.1",
             "gevent",
             "requests",
+            "gql<3",
         ],
         entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
     )
