@@ -58,21 +58,22 @@ export const AssetView: React.FunctionComponent<{assetKey: AssetKey}> = ({assetK
   );
 };
 
-const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError_Asset}> = ({
-  asset,
-}) => {
+const AssetViewWithData: React.FC<{asset: AssetQuery_assetOrError_Asset}> = ({asset}) => {
   const [xHover, setXHover] = React.useState<string | number | null>(null);
   const [activeTab = 'graphs', setActiveTab] = useQueryPersistedState<'graphs' | 'list'>({
     queryKey: 'tab',
-  });
-  const [xAxis = 'time', setXAxis] = useQueryPersistedState<'partition' | 'time'>({
-    queryKey: 'axis',
   });
 
   // Note: We want to show partition columns / options as soon as the user adds a partition,
   // even if previous materializations have partition=null, so this is determined here and passed
   // down through the component tree.
   const isPartitioned = asset.assetMaterializations.some((m) => m.partition);
+
+  const [xAxis = isPartitioned ? 'partition' : 'time', setXAxis] = useQueryPersistedState<
+    'partition' | 'time'
+  >({
+    queryKey: 'axis',
+  });
 
   const hasLineage = asset.assetMaterializations.some(
     (m) => m.materializationEvent.assetLineage.length > 0,
@@ -189,11 +190,11 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
         <div style={{flex: 1}} />
         {isPartitioned ? (
           <ButtonGroup>
-            <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
-              By Timestamp
-            </Button>
             <Button active={xAxis === 'partition'} onClick={() => setXAxis('partition')}>
               By Partition
+            </Button>
+            <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
+              By Timestamp
             </Button>
           </ButtonGroup>
         ) : null}
