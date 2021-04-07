@@ -11,9 +11,14 @@ class IngressPath(BaseModel):
     serviceName: str
     servicePort: Union[str, int]
 
+class IngressTLSConfiguration(BaseModel):
+    secretName: str
+
 
 class DagitIngressConfiguration(BaseModel):
     host: str
+    path: str
+    tls: IngressTLSConfiguration
     precedingPaths: List[IngressPath]
     succeedingPaths: List[IngressPath]
 
@@ -21,6 +26,7 @@ class DagitIngressConfiguration(BaseModel):
 class FlowerIngressConfiguration(BaseModel):
     host: str
     path: str
+    tls: IngressTLSConfiguration
     precedingPaths: List[IngressPath]
     succeedingPaths: List[IngressPath]
 
