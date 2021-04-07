@@ -93,10 +93,6 @@ const LeftNavContainer = styled.div<{$open: boolean}>`
   background: ${Colors.DARK_GRAY2};
   border-right: 1px solid ${Colors.DARK_GRAY5};
 
-  @media (max-width: 2560px) {
-    left: 0;
-  }
-
   @media (max-width: 1440px) {
     box-shadow: 2px 0px 0px ${Colors.LIGHT_GRAY1};
     transform: translateX(${({$open}) => ($open ? '0' : '-280px')});

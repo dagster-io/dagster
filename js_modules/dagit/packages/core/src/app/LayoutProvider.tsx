@@ -18,7 +18,7 @@ export const LayoutContext = React.createContext<LayoutContextValue>({
 });
 
 export const LayoutProvider: React.FC = (props) => {
-  const [navOpen, setNavOpen] = React.useState(true);
+  const [navOpen, setNavOpen] = React.useState(false);
   const location = useLocation();
 
   React.useEffect(() => {
