@@ -6,7 +6,7 @@ from urllib.parse import quote_plus as urlquote
 import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
-from dagster import Field, IntSource, Selector, StringSource, check
+from dagster import Field, IntSource, StringSource, check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
 
@@ -21,25 +21,37 @@ def get_conn(conn_string):
 
 
 def pg_config():
-    return Selector(
-        {
-            "postgres_url": StringSource,
-            "postgres_db": {
+    return {
+        "postgres_url": Field(StringSource, is_required=False),
+        "postgres_db": Field(
+            {
                 "username": StringSource,
                 "password": StringSource,
                 "hostname": StringSource,
                 "db_name": StringSource,
                 "port": Field(IntSource, is_required=False, default_value=5432),
             },
-        }
-    )
+            is_required=False,
+        ),
+        "should_autocreate_tables": Field(bool, is_required=False, default_value=True),
+    }
 
 
 def pg_url_from_config(config_value):
-    if config_value.get("postgres_url"):
-        return config_value["postgres_url"]
 
-    return get_conn_string(**config_value["postgres_db"])
+    if config_value.get("postgres_url"):
+        check.invariant(
+            not "postgres_db" in config_value,
+            "postgres storage config must have exactly one of `postgres_url` or `postgres_db`",
+        )
+        return config_value["postgres_url"]
+    else:
+        check.invariant(
+            "postgres_db" in config_value,
+            "postgres storage config must have exactly one of `postgres_url` or `postgres_db`",
+        )
+
+        return get_conn_string(**config_value["postgres_db"])
 
 
 def get_conn_string(username, password, hostname, db_name, port="5432"):

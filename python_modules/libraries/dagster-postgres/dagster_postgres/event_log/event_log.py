@@ -55,9 +55,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     """
 
-    def __init__(self, postgres_url, inst_data=None):
+    def __init__(self, postgres_url, should_autocreate_tables, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = check.str_param(postgres_url, "postgres_url")
+        self.should_autocreate_tables = check.bool_param(
+            should_autocreate_tables, "should_autocreate_tables"
+        )
+
         self._disposed = False
 
         self._event_watcher = PostgresEventWatcher(self.postgres_url)
@@ -70,7 +74,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
-        if "event_logs" not in table_names:
+        if self.should_autocreate_tables and "event_logs" not in table_names:
             with self._connect() as conn:
                 alembic_config = pg_alembic_config(__file__)
                 retry_pg_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
@@ -108,14 +112,22 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     @staticmethod
     def from_config_value(inst_data, config_value):
         return PostgresEventLogStorage(
-            inst_data=inst_data, postgres_url=pg_url_from_config(config_value)
+            inst_data=inst_data,
+            postgres_url=pg_url_from_config(config_value),
+            should_autocreate_tables=config_value.get("should_autocreate_tables", True),
         )
 
     @staticmethod
-    def create_clean_storage(conn_string):
-        inst = PostgresEventLogStorage(conn_string)
-        inst.wipe()
-        return inst
+    def create_clean_storage(conn_string, should_autocreate_tables=True):
+        engine = create_engine(
+            conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+        )
+        try:
+            SqlEventLogStorageMetadata.drop_all(engine)
+        finally:
+            engine.dispose()
+
+        return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.

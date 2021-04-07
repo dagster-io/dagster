@@ -84,19 +84,21 @@ class TestPostgresInstance:
         )
 
     @staticmethod
-    def clean_run_storage(conn_string):
+    def clean_run_storage(conn_string, should_autocreate_tables=True):
         check.invariant(
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
         from dagster_postgres.run_storage import PostgresRunStorage  # pylint: disable=import-error
 
-        storage = PostgresRunStorage.create_clean_storage(conn_string)
+        storage = PostgresRunStorage.create_clean_storage(
+            conn_string, should_autocreate_tables=should_autocreate_tables
+        )
         assert storage
         return storage
 
     @staticmethod
-    def clean_event_log_storage(conn_string):
+    def clean_event_log_storage(conn_string, should_autocreate_tables=True):
         check.invariant(
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
@@ -105,12 +107,14 @@ class TestPostgresInstance:
             PostgresEventLogStorage,
         )
 
-        storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+        storage = PostgresEventLogStorage.create_clean_storage(
+            conn_string, should_autocreate_tables=should_autocreate_tables
+        )
         assert storage
         return storage
 
     @staticmethod
-    def clean_schedule_storage(conn_string):
+    def clean_schedule_storage(conn_string, should_autocreate_tables=True):
         check.invariant(
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
@@ -119,7 +123,9 @@ class TestPostgresInstance:
             PostgresScheduleStorage,
         )
 
-        storage = PostgresScheduleStorage.create_clean_storage(conn_string)
+        storage = PostgresScheduleStorage.create_clean_storage(
+            conn_string, should_autocreate_tables=should_autocreate_tables
+        )
         assert storage
         return storage
 
