@@ -106,7 +106,6 @@ from dagster.core.execution.context.system import (
     HookContext,
     InputContext,
     OutputContext,
-    SystemComputeExecutionContext,
     TypeCheckContext,
 )
 from dagster.core.execution.results import (
@@ -235,7 +234,6 @@ __all__ = [
     "PipelineExecutionResult",
     "RetryRequested",
     "SolidExecutionResult",
-    "SystemComputeExecutionContext",
     "SolidExecutionContext",
     "HookContext",
     "TypeCheckContext",

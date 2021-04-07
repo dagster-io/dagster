@@ -242,10 +242,10 @@ def test_resource_logging(capsys):
 def test_io_context_logging(capsys):
     @solid
     def logged_solid(context):
-        context.get_system_context().get_output_context(
+        context.get_step_execution_context().get_output_context(
             StepOutputHandle("logged_solid", "result")
         ).log.debug("test OUTPUT debug logging from logged_solid.")
-        context.get_system_context().for_input_manager(
+        context.get_step_execution_context().for_input_manager(
             "logged_solid", {}, {}, None, source_handle=None
         ).log.debug("test INPUT debug logging from logged_solid.")
 

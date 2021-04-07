@@ -14,7 +14,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.system import SystemComputeExecutionContext
+from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.system_config.objects import EnvironmentConfig
 
 from .outputs import StepOutput, StepOutputProperties
@@ -85,11 +85,11 @@ def _gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
 
 
 def _yield_compute_results(
-    compute_context: SystemComputeExecutionContext, inputs: Dict[str, Any], compute_fn: Callable
+    step_context: StepExecutionContext, inputs: Dict[str, Any], compute_fn: Callable
 ) -> Iterator[SolidOutputUnion]:
-    check.inst_param(compute_context, "compute_context", SystemComputeExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    user_event_generator = compute_fn(SolidExecutionContext(compute_context), inputs)
+    user_event_generator = compute_fn(SolidExecutionContext(step_context), inputs)
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
@@ -97,7 +97,7 @@ def _yield_compute_results(
                 "Compute function for solid {solid_name} returned a Output rather than "
                 "yielding it. The compute_fn of the core SolidDefinition must yield "
                 "its results"
-            ).format(solid_name=str(compute_context.step.solid_handle))
+            ).format(solid_name=str(step_context.step.solid_handle))
         )
 
     if user_event_generator is None:
@@ -107,23 +107,23 @@ def _yield_compute_results(
         user_event_generator = _gen_from_async_gen(user_event_generator)
 
     for event in user_event_generator:
-        yield _validate_event(event, compute_context.step.solid_handle)
+        yield _validate_event(event, step_context.step.solid_handle)
 
 
 def execute_core_compute(
-    compute_context: SystemComputeExecutionContext, inputs: Dict[str, Any], compute_fn
+    step_context: StepExecutionContext, inputs: Dict[str, Any], compute_fn
 ) -> Iterator[SolidOutputUnion]:
     """
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     """
-    check.inst_param(compute_context, "compute_context", SystemComputeExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.dict_param(inputs, "inputs", key_type=str)
 
-    step = compute_context.step
+    step = step_context.step
 
     all_results = []
-    for step_output in _yield_compute_results(compute_context, inputs, compute_fn):
+    for step_output in _yield_compute_results(step_context, inputs, compute_fn):
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
             all_results.append(step_output)
@@ -132,7 +132,7 @@ def execute_core_compute(
     solid_output_names = {output.name for output in step.step_outputs}
     omitted_outputs = solid_output_names.difference(emitted_result_names)
     if omitted_outputs:
-        compute_context.log.info(
+        step_context.log.info(
             "Solid {solid} did not fire outputs {outputs}".format(
                 solid=str(step.solid_handle), outputs=repr(omitted_outputs)
             )

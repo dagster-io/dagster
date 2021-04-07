@@ -20,13 +20,14 @@ from dagster import (
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
+from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
     step_context_to_step_run_ref,
     step_run_ref_to_step_context,
 )
+from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import safe_tempfile_path, send_interrupt
@@ -149,12 +150,13 @@ def initialize_step_context(scratch_dir, instance):
 
     plan = create_execution_plan(recon_pipeline, pipeline_run.run_config, mode="external")
 
-    initialization_manager = PipelineExecutionContextManager(
-        recon_pipeline,
-        plan,
-        pipeline_run.run_config,
-        pipeline_run,
-        instance,
+    initialization_manager = PlanExecutionContextManager(
+        pipeline=recon_pipeline,
+        execution_plan=plan,
+        run_config=pipeline_run.run_config,
+        pipeline_run=pipeline_run,
+        instance=instance,
+        retry_mode=RetryMode.DISABLED,
     )
     for _ in initialization_manager.prepare_context():
         pass
@@ -173,7 +175,6 @@ def test_step_context_to_step_run_ref():
         assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
         rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
-        assert rehydrated_step_context.required_resource_keys == step_context.required_resource_keys
         rehydrated_step = rehydrated_step_context.step
         assert rehydrated_step.pipeline_name == step.pipeline_name
         assert rehydrated_step.step_inputs == step.step_inputs

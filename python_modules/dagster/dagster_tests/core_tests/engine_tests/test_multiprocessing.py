@@ -154,13 +154,13 @@ def test_invalid_instance():
         raise_on_error=False,
     )
     assert not result.success
-    assert len(result.event_list) == 3
-    assert result.event_list[2].is_failure
+    assert len(result.event_list) == 1
+    assert result.event_list[0].is_failure
     assert (
-        result.event_list[2].pipeline_init_failure_data.error.cls_name
+        result.event_list[0].pipeline_init_failure_data.error.cls_name
         == "DagsterUnmetExecutorRequirementsError"
     )
-    assert "non-ephemeral instance" in result.event_list[2].pipeline_init_failure_data.error.message
+    assert "non-ephemeral instance" in result.event_list[0].pipeline_init_failure_data.error.message
 
 
 def test_no_handle():
@@ -171,13 +171,13 @@ def test_no_handle():
         raise_on_error=False,
     )
     assert not result.success
-    assert len(result.event_list) == 3
-    assert result.event_list[2].is_failure
+    assert len(result.event_list) == 1
+    assert result.event_list[0].is_failure
     assert (
-        result.event_list[2].pipeline_init_failure_data.error.cls_name
+        result.event_list[0].pipeline_init_failure_data.error.cls_name
         == "DagsterUnmetExecutorRequirementsError"
     )
-    assert "is not reconstructable" in result.event_list[2].pipeline_init_failure_data.error.message
+    assert "is not reconstructable" in result.event_list[0].pipeline_init_failure_data.error.message
 
 
 def test_solid_selection():

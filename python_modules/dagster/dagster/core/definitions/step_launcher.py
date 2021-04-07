@@ -49,7 +49,7 @@ class StepLauncher(ABC):
     def launch_step(self, step_context, prior_attempts_count):
         """
         Args:
-            step_context (SystemStepExecutionContext): The context that we're executing the step in.
+            step_context (StepExecutionContext): The context that we're executing the step in.
             prior_attempts_count (int): The number of times this step has been attempted in the same run.
 
         Returns:

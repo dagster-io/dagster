@@ -21,7 +21,7 @@ from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.system import SystemComputeExecutionContext
+from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
@@ -88,39 +88,39 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
-def get_papermill_parameters(compute_context, inputs, output_log_path):
-    check.inst_param(compute_context, "compute_context", SystemComputeExecutionContext)
+def get_papermill_parameters(step_context, inputs, output_log_path):
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.param_invariant(
-        isinstance(compute_context.run_config, dict),
-        "compute_context",
-        "SystemComputeExecutionContext must have valid run_config",
+        isinstance(step_context.run_config, dict),
+        "step_context",
+        "StepExecutionContext must have valid run_config",
     )
     check.dict_param(inputs, "inputs", key_type=str)
 
-    run_id = compute_context.run_id
+    run_id = step_context.run_id
 
     marshal_dir = "/tmp/dagstermill/{run_id}/marshal".format(run_id=run_id)
     mkdir_p(marshal_dir)
 
-    if not isinstance(compute_context.pipeline, ReconstructablePipeline):
+    if not isinstance(step_context.pipeline, ReconstructablePipeline):
         raise DagstermillError(
             "Can't execute a dagstermill solid from a pipeline that is not reconstructable. "
             "Use the reconstructable() function if executing from python"
         )
 
-    dm_executable_dict = compute_context.pipeline.to_dict()
+    dm_executable_dict = step_context.pipeline.to_dict()
 
     dm_context_dict = {
         "output_log_path": output_log_path,
         "marshal_dir": marshal_dir,
-        "run_config": compute_context.run_config,
+        "run_config": step_context.run_config,
     }
 
-    dm_solid_handle_kwargs = compute_context.solid_handle._asdict()
+    dm_solid_handle_kwargs = step_context.solid_handle._asdict()
 
     parameters = {}
 
-    input_def_dict = compute_context.solid_def.input_dict
+    input_def_dict = step_context.solid_def.input_dict
     for input_name, input_value in inputs.items():
         assert (
             input_name not in RESERVED_INPUT_NAMES
@@ -133,9 +133,9 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
 
     parameters["__dm_context"] = dm_context_dict
     parameters["__dm_executable_dict"] = dm_executable_dict
-    parameters["__dm_pipeline_run_dict"] = pack_value(compute_context.pipeline_run)
+    parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
     parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
-    parameters["__dm_instance_ref_dict"] = pack_value(compute_context.instance.get_ref())
+    parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
 
     return parameters
 
@@ -146,15 +146,15 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
     check.opt_str_param(output_notebook, "output_notebook")
     check.opt_list_param(asset_key_prefix, "asset_key_prefix")
 
-    def _t_fn(compute_context, inputs):
-        check.inst_param(compute_context, "compute_context", SolidExecutionContext)
+    def _t_fn(step_context, inputs):
+        check.inst_param(step_context, "step_context", SolidExecutionContext)
         check.param_invariant(
-            isinstance(compute_context.run_config, dict),
+            isinstance(step_context.run_config, dict),
             "context",
-            "SystemComputeExecutionContext must have valid run_config",
+            "StepExecutionContext must have valid run_config",
         )
 
-        system_compute_context = compute_context.get_system_context()
+        step_execution_context = step_context.get_step_execution_context()
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
@@ -170,9 +170,9 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                 # Scaffold the registration here
                 nb = load_notebook_node(notebook_path)
                 nb_no_parameters = replace_parameters(
-                    system_compute_context,
+                    step_execution_context,
                     nb,
-                    get_papermill_parameters(system_compute_context, inputs, output_log_path),
+                    get_papermill_parameters(step_execution_context, inputs, output_log_path),
                 )
                 write_ipynb(nb_no_parameters, parameterized_notebook_path)
 
@@ -189,7 +189,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                     try:
                         with open(executed_notebook_path, "rb") as fd:
                             executed_notebook_file_handle = (
-                                compute_context.resources.file_manager.write(
+                                step_context.resources.file_manager.write(
                                     fd, mode="wb", ext="ipynb"
                                 )
                             )
@@ -197,7 +197,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                                 executed_notebook_file_handle.path_desc
                             )
                     except Exception:  # pylint: disable=broad-except
-                        compute_context.log.warning(
+                        step_context.log.warning(
                             "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
                                 exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
                             )
@@ -219,14 +219,14 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                     if isinstance(ex, PapermillExecutionError) and (
                         ex.ename == "RetryRequested" or ex.ename == "Failure"
                     ):
-                        system_compute_context.log.warn(
+                        step_execution_context.log.warn(
                             f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
                             "with RetryRequested or Failure to trigger their behavior."
                         )
 
                     raise
 
-            system_compute_context.log.debug(
+            step_execution_context.log.debug(
                 "Notebook execution complete for {name} at {executed_notebook_path}.".format(
                     name=name,
                     executed_notebook_path=executed_notebook_path,
@@ -238,12 +238,12 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                 # use binary mode when when moving the file since certain file_managers such as S3
                 # may try to hash the contents
                 with open(executed_notebook_path, "rb") as fd:
-                    executed_notebook_file_handle = compute_context.resources.file_manager.write(
+                    executed_notebook_file_handle = step_context.resources.file_manager.write(
                         fd, mode="wb", ext="ipynb"
                     )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
             except Exception:  # pylint: disable=broad-except
-                compute_context.log.warning(
+                step_context.log.warning(
                     "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
                         exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
                     )
@@ -266,7 +266,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
 
             output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-            for (output_name, output_def) in system_compute_context.solid_def.output_dict.items():
+            for (output_name, output_def) in step_execution_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
                     value = read_value(output_def.dagster_type, data_dict[output_name])

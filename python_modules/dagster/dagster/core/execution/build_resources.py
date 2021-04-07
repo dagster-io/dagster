@@ -6,32 +6,15 @@ from dagster.config.validate import process_config
 from dagster.core.definitions.environment_configs import define_resource_dictionary_cls
 from dagster.core.definitions.resource import ResourceDefinition, ScopedResourcesBuilder
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.resources_init import resource_initialization_manager
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import ResourceConfig, config_map_resources
-from dagster.loggers import default_system_loggers
 
 from .api import ephemeral_instance_if_missing
-
-
-def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:
-    # initialize default colored console logger
-    loggers = []
-    for logger_def, logger_config in default_system_loggers():
-        loggers.append(
-            logger_def.logger_fn(
-                InitLoggerContext(
-                    logger_config, logger_def, run_id=pipeline_run.run_id if pipeline_run else None
-                )
-            )
-        )
-    return DagsterLogManager(
-        None, pipeline_run.tags if pipeline_run and pipeline_run.tags else {}, loggers
-    )
+from .context_creation_pipeline import initialize_console_manager
 
 
 def _get_mapped_resource_config(

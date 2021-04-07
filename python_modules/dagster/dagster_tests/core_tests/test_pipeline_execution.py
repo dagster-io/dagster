@@ -690,11 +690,10 @@ def test_pipeline_init_failure():
         raise_on_error=False,
         instance=mem_instance,
     )
-
     assert result.success is False
     event = result.event_list[-1]
-    assert event.event_type_value == "PIPELINE_INIT_FAILURE"
-    assert event.pipeline_init_failure_data
+    assert event.event_type_value == "PIPELINE_FAILURE"
+    assert event.pipeline_failure_data
     assert mem_instance.get_run_by_id(result.run_id).is_failure
 
     with instance_for_test() as fs_instance:
@@ -706,8 +705,8 @@ def test_pipeline_init_failure():
         )
         assert result.success is False
         event = result.event_list[-1]
-        assert event.event_type_value == "PIPELINE_INIT_FAILURE"
-        assert event.pipeline_init_failure_data
+        assert event.event_type_value == "PIPELINE_FAILURE"
+        assert event.pipeline_failure_data
         assert fs_instance.get_run_by_id(result.run_id).is_failure
 
 

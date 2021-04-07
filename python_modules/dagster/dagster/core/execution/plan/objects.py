@@ -8,7 +8,7 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 from dagster.utils.types import ExcInfo
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.system import SystemStepExecutionContext
+    from dagster.core.execution.context.system import StepExecutionContext
 
 
 @whitelist_for_serdes
@@ -110,7 +110,7 @@ class StepFailureData(
 
 
 def step_failure_event_from_exc_info(
-    step_context: "SystemStepExecutionContext",
+    step_context: "StepExecutionContext",
     exc_info: ExcInfo,
     user_failure_data: Optional[UserFailureData] = None,
     error_source: Optional[ErrorSource] = None,

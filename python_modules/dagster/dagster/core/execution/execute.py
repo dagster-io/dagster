@@ -26,7 +26,10 @@ from .api import (
     ephemeral_instance_if_missing,
     pipeline_execution_iterator,
 )
-from .context_creation_pipeline import PipelineExecutionContextManager
+from .context_creation_pipeline import (
+    PlanOrchestrationContextManager,
+    orchestration_context_event_generator,
+)
 from .execution_results import InProcessGraphResult, InProcessSolidResult, NodeExecutionResult
 
 EPHEMERAL_IO_MANAGER_KEY = "system__execute_solid_ephemeral_node_io_manager"
@@ -96,12 +99,14 @@ def execute_in_process(
         _execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
             iterator=pipeline_execution_iterator,
-            execution_context_manager=PipelineExecutionContextManager(
+            execution_context_manager=PlanOrchestrationContextManager(
+                context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
                 execution_plan=execution_plan,
                 pipeline_run=pipeline_run,
                 instance=execute_instance,
                 run_config=run_config,
+                get_executor_def_fn=None,
                 output_capture=recorder if output_capturing_enabled else None,
             ),
         )

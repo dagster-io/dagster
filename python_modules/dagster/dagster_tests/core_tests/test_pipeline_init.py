@@ -12,12 +12,13 @@ from dagster.core.definitions.intermediate_storage import IntermediateStorageDef
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
+from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,
     single_resource_event_generator,
 )
+from dagster.core.execution.retries import RetryMode
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -112,13 +113,14 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    generator = PipelineExecutionContextManager(  # pylint: disable=protected-access
-        InMemoryPipeline(pipeline_def),
-        execution_plan,
-        {},
-        pipeline_run,
-        instance,
-        resource_initialization_manager,
+    generator = PlanExecutionContextManager(  # pylint: disable=protected-access
+        pipeline=InMemoryPipeline(pipeline_def),
+        execution_plan=execution_plan,
+        run_config={},
+        pipeline_run=pipeline_run,
+        instance=instance,
+        retry_mode=RetryMode.DISABLED,
+        scoped_resources_builder_cm=resource_initialization_manager,
     ).get_generator()
     next(generator)
     generator.close()

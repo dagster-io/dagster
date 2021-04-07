@@ -288,7 +288,7 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 
 def test_engine_error():
     with mock.patch(
-        "dagster.core.execution.context.system.SystemExecutionContextData.raise_on_error",
+        "dagster.core.execution.context.system.PlanData.raise_on_error",
         return_value=True,
     ):
         with pytest.raises(DagsterSubprocessError):

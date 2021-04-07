@@ -8,7 +8,7 @@ from dagster.core.errors import (
     DagsterUnknownStepStateError,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.storage.tags import PRIORITY_TAG
@@ -406,9 +406,7 @@ class ActiveExecution:
                     dagster_event.step_output_data.step_output_handle.output_name
                 ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(
-        self, pipeline_context: SystemPipelineExecutionContext, step_key: str
-    ) -> None:
+    def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure"""
         if step_key in self._in_flight:
             pipeline_context.log.error(

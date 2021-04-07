@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper, wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -18,9 +18,6 @@ from ..inference import infer_input_definitions_for_solid, infer_output_definiti
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
-
-if TYPE_CHECKING:
-    from dagster.core.execution.context.system import SystemComputeExecutionContext
 
 
 class _Solid:

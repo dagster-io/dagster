@@ -15,7 +15,12 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.executor import executor
-from dagster.core.errors import DagsterInvalidConfigError, DagsterUnmetExecutorRequirementsError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+    DagsterUnmetExecutorRequirementsError,
+)
+from dagster.core.events import DagsterEventType
 from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
 
@@ -259,3 +264,26 @@ def test_defaulting_behavior():
 
     with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(one_but_needs_config)
+
+
+def test_failing_executor_initialization():
+    with instance_for_test() as instance:
+
+        @executor
+        def executor_failing(_):
+            raise DagsterInvariantViolationError()
+
+        @pipeline(mode_defs=[ModeDefinition(executor_defs=[executor_failing])])
+        def pipeline_executor_failing():
+            pass
+
+        result = execute_pipeline(
+            pipeline_executor_failing, instance=instance, raise_on_error=False
+        )
+        assert not result.success
+        assert result.event_list[-1].event_type == DagsterEventType.PIPELINE_INIT_FAILURE
+
+        # Ensure that error in executor fn is properly persisted.
+        event_records = instance.all_logs(result.run_id)
+        assert len(event_records) == 1
+        assert event_records[0].dagster_event_type == DagsterEventType.PIPELINE_INIT_FAILURE

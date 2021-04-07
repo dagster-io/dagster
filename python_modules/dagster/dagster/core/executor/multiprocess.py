@@ -5,7 +5,7 @@ from dagster import EventMetadataEntry, check
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.context.system import RunWorkerExecutionContext
+from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
@@ -95,7 +95,7 @@ class MultiprocessExecutor(Executor):
         return self._retries
 
     def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, "pipeline_context", RunWorkerExecutionContext)
+        check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         pipeline = pipeline_context.reconstructable_pipeline

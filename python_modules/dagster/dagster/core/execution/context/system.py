@@ -6,7 +6,7 @@ in the user_context module
 """
 from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Set, cast
 
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
@@ -17,7 +17,7 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.plan.utils import build_resources_for_manager
@@ -39,132 +39,27 @@ if TYPE_CHECKING:
     from dagster.core.definitions.resource import Resources
 
 
-class PipelineExecutionContext(ABC):
+class IPlanContext(ABC):
+    """Context interface to represent run information that does not require access to user code.
+
+    The information available via this interface is accessible to the system throughout a run.
     """
-    Context with data that can be used during pipeline or step execution, in both host mode
-    (where the process can't load any user code and has to rely on the ExecutionPlan)
-    and user mode (where the process can load any user code)
-    """
 
     @abstractproperty
-    def pipeline_run(self) -> PipelineRun:
-        pass
-
-    @abstractproperty
-    def run_id(self) -> str:
-        return self.pipeline_run.run_id
-
-    @abstractproperty
-    def run_config(self) -> dict:
-        return self.pipeline_run.run_config
-
-    @abstractproperty
-    def pipeline_name(self) -> str:
-        pass
-
-    @abstractproperty
-    def instance(self) -> "DagsterInstance":
-        pass
-
-    @abstractproperty
-    def raise_on_error(self) -> bool:
-        pass
-
-    @abstractproperty
-    def retry_mode(self) -> RetryMode:
-        pass
-
-    @abstractproperty
-    def execution_plan(self):
-        pass
-
-    @abstractproperty
-    def log(self) -> DagsterLogManager:
-        pass
-
-    @abstractproperty
-    def logging_tags(self) -> Dict[str, str]:
-        pass
+    def plan_data(self) -> "PlanData":
+        raise NotImplementedError()
 
     @abstractmethod
-    def has_tag(self, key: str) -> bool:
-        pass
-
-    @abstractmethod
-    def get_tag(self, key: str) -> Optional[str]:
-        pass
-
-
-class RunWorkerExecutionContext(PipelineExecutionContext):
-    """
-    Context with data that can be used during the run worker process that's responsible
-    for orchestrating individual steps. May not be able to load user code.
-    """
-
-    @abstractproperty
-    def reconstructable_pipeline(self) -> ReconstructablePipeline:
-        pass
-
-    @abstractproperty
-    def executor(self) -> Executor:
-        pass
-
-
-class BaseStepExecutionContext(PipelineExecutionContext):
-    """
-    Context with data that can be used during a single step's execution.
-    """
-
-    @abstractproperty
-    def step(self) -> ExecutionStep:
-        pass
+    def for_step(self, step: ExecutionStep) -> "IStepContext":
+        raise NotImplementedError()
 
     @property
-    def solid_handle(self) -> "SolidHandle":
-        return self.step.solid_handle
-
-
-class HostModeExecutionContextData(
-    NamedTuple(
-        "_HostModeExecutionContextData",
-        [
-            ("pipeline_run", PipelineRun),
-            ("recon_pipeline", ReconstructablePipeline),
-            ("execution_plan", "ExecutionPlan"),
-            ("instance", "DagsterInstance"),
-            ("raise_on_error", bool),
-            ("retry_mode", RetryMode),
-        ],
-    )
-):
-    """
-    HostModeExecutionContextData is the data that remains constant throughout the entire
-    execution of a pipeline in host mode.
-    """
-
-
-class HostModeExecutionContext:
-    """
-    Context with data that can be used during pipeline or step execution, in host mode
-    (where the process can't load any user code and has to rely on the ExecutionPlan).
-    """
-
-    __slots__ = ["_execution_context_data", "_log_manager"]
-
-    def __init__(
-        self,
-        execution_context_data: HostModeExecutionContextData,
-        log_manager: DagsterLogManager,
-    ):
-        self._execution_context_data = check.inst_param(
-            execution_context_data, "execution_context_data", HostModeExecutionContextData
-        )
-
-        self._log_manager = check.inst_param(log_manager, "log_manager", DagsterLogManager)
+    def pipeline(self) -> IPipeline:
+        return self.plan_data.pipeline
 
     @property
     def pipeline_run(self) -> PipelineRun:
-        return self._execution_context_data.pipeline_run
+        return self.plan_data.pipeline_run
 
     @property
     def run_id(self) -> str:
@@ -180,19 +75,27 @@ class HostModeExecutionContext:
 
     @property
     def instance(self) -> "DagsterInstance":
-        return self._execution_context_data.instance
+        return self.plan_data.instance
 
     @property
     def raise_on_error(self) -> bool:
-        return self._execution_context_data.raise_on_error
+        return self.plan_data.raise_on_error
 
     @property
-    def execution_plan(self) -> "ExecutionPlan":
-        return self._execution_context_data.execution_plan
+    def retry_mode(self) -> RetryMode:
+        return self.plan_data.retry_mode
+
+    @property
+    def execution_plan(self):
+        return self.plan_data.execution_plan
+
+    @abstractproperty
+    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+        raise NotImplementedError()
 
     @property
     def log(self) -> DagsterLogManager:
-        return self._log_manager
+        raise NotImplementedError()
 
     @property
     def logging_tags(self) -> Dict[str, str]:
@@ -206,306 +109,226 @@ class HostModeExecutionContext:
         check.str_param(key, "key")
         return self.logging_tags.get(key)
 
-    def for_step(self, step: ExecutionStep) -> "HostModeStepExecutionContext":
-        return HostModeStepExecutionContext(
-            execution_context_data=self._execution_context_data,
-            log_manager=self._log_manager.with_tags(**step.logging_tags),
-            step=step,
-        )
 
-    @property
-    def retry_mode(self) -> RetryMode:
-        return self._execution_context_data.retry_mode
+class PlanData(NamedTuple):
+    """The data about a run that is available during both orchestration and execution.
 
-
-class HostModeRunWorkerExecutionContext(HostModeExecutionContext, RunWorkerExecutionContext):
-    """
-    Context with data that can be used in the run worker in host mode (which can orchestrate
-    steps using the ExecutionPlan but cannot load any user code).
+    This object does not contain any information that requires access to user code, such as the
+    pipeline definition, resources, or intermediate storage.
     """
 
-    __slots__ = ["_executor"]
+    pipeline: IPipeline
+    pipeline_run: PipelineRun
+    instance: "DagsterInstance"
+    execution_plan: "ExecutionPlan"
+    raise_on_error: bool = False
+    retry_mode: RetryMode = RetryMode.DISABLED
+
+
+class ExecutionData(NamedTuple):
+    """The data that is available to the system during execution.
+
+    This object contains information that requires access to user code, such as the pipeline
+    definition, resources, and intermediate storage.
+    """
+
+    scoped_resources_builder: ScopedResourcesBuilder
+    intermediate_storage: "IntermediateStorage"
+    intermediate_storage_def: "IntermediateStorageDefinition"
+    environment_config: EnvironmentConfig
+    pipeline_def: PipelineDefinition
+    mode_def: ModeDefinition
+
+
+class IStepContext(IPlanContext):
+    """Interface to represent data to be available during either step orchestration or execution."""
+
+    @abstractproperty
+    def step(self) -> ExecutionStep:
+        raise NotImplementedError()
+
+    @abstractproperty
+    def solid_handle(self) -> "SolidHandle":
+        raise NotImplementedError()
+
+
+class PlanOrchestrationContext(IPlanContext):
+    """Context for the orchestration of a run.
+
+    This context assumes inability to run user code directly.
+    """
 
     def __init__(
         self,
-        execution_context_data: HostModeExecutionContextData,
+        plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
+        output_capture: Optional[Dict[StepOutputHandle, Any]],
     ):
-        super(HostModeRunWorkerExecutionContext, self).__init__(
-            execution_context_data=execution_context_data,
-            log_manager=log_manager,
-        )
-        self._executor = check.inst_param(executor, "executor", Executor)
-
-    @property
-    def reconstructable_pipeline(self) -> ReconstructablePipeline:
-        return self._execution_context_data.recon_pipeline
-
-    @property
-    def executor(self) -> Executor:
-        return self._executor
-
-
-class HostModeStepExecutionContext(HostModeExecutionContext, BaseStepExecutionContext):
-    """
-    Context for logging events about a single step in host mode (for logging events within a
-    host mode run worker).
-    """
-
-    __slots__ = ["_step"]
-
-    def __init__(
-        self,
-        execution_context_data: HostModeExecutionContextData,
-        log_manager: DagsterLogManager,
-        step: ExecutionStep,
-    ):
-        self._step = check.inst_param(step, "step", ExecutionStep)
-        super(HostModeStepExecutionContext, self).__init__(
-            execution_context_data,
-            log_manager,
-        )
-
-    @property
-    def step(self) -> ExecutionStep:
-        return self._step
-
-
-class SystemExecutionContextData(
-    namedtuple(
-        "_SystemExecutionContextData",
-        (
-            "pipeline_run scoped_resources_builder environment_config pipeline "
-            "mode_def intermediate_storage_def instance intermediate_storage "
-            "raise_on_error retry_mode execution_plan"
-        ),
-    )
-):
-    """
-    SystemExecutionContextData is the data that remains constant throughout the entire
-    execution of a pipeline or plan.
-    """
-
-    def __new__(
-        cls,
-        pipeline_run: PipelineRun,
-        scoped_resources_builder: ScopedResourcesBuilder,
-        environment_config: EnvironmentConfig,
-        pipeline: IPipeline,
-        mode_def: ModeDefinition,
-        intermediate_storage_def: Optional["IntermediateStorageDefinition"],
-        instance: "DagsterInstance",
-        intermediate_storage: "IntermediateStorage",
-        raise_on_error: bool,
-        retry_mode: RetryMode,
-        execution_plan: "ExecutionPlan",
-    ):
-        from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-        from dagster.core.storage.intermediate_storage import IntermediateStorage
-        from dagster.core.instance import DagsterInstance
-        from dagster.core.execution.plan.plan import ExecutionPlan
-
-        return super(SystemExecutionContextData, cls).__new__(
-            cls,
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
-            scoped_resources_builder=check.inst_param(
-                scoped_resources_builder, "scoped_resources_builder", ScopedResourcesBuilder
-            ),
-            environment_config=check.inst_param(
-                environment_config, "environment_config", EnvironmentConfig
-            ),
-            pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
-            mode_def=check.inst_param(mode_def, "mode_def", ModeDefinition),
-            intermediate_storage_def=check.opt_inst_param(
-                intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition
-            ),
-            instance=check.inst_param(instance, "instance", DagsterInstance),
-            intermediate_storage=check.inst_param(
-                intermediate_storage, "intermediate_storage", IntermediateStorage
-            ),
-            raise_on_error=check.bool_param(raise_on_error, "raise_on_error"),
-            retry_mode=check.inst_param(retry_mode, "retry_mode", RetryMode),
-            execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
-        )
-
-    @property
-    def run_id(self) -> str:
-        return self.pipeline_run.run_id
-
-    @property
-    def run_config(self) -> dict:
-        return self.environment_config.original_config_dict
-
-    @property
-    def pipeline_name(self) -> str:
-        return self.pipeline_run.pipeline_name
-
-
-class SystemExecutionContext:
-    __slots__ = ["_execution_context_data", "_log_manager", "_output_capture"]
-
-    def __init__(
-        self,
-        execution_context_data: SystemExecutionContextData,
-        log_manager: DagsterLogManager,
-        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
-    ):
-        self._execution_context_data = check.inst_param(
-            execution_context_data, "execution_context_data", SystemExecutionContextData
-        )
-        self._log_manager = check.inst_param(log_manager, "log_manager", DagsterLogManager)
-
+        self._plan_data = plan_data
+        self._log_manager = log_manager
+        self._executor = executor
         self._output_capture = output_capture
 
     @property
-    def pipeline_run(self) -> PipelineRun:
-        return self._execution_context_data.pipeline_run
+    def plan_data(self) -> PlanData:
+        return self._plan_data
 
     @property
-    def scoped_resources_builder(self) -> ScopedResourcesBuilder:
-        return self._execution_context_data.scoped_resources_builder
-
-    @property
-    def run_id(self) -> str:
-        return self._execution_context_data.run_id
-
-    @property
-    def run_config(self) -> dict:
-        return self._execution_context_data.run_config
-
-    @property
-    def environment_config(self) -> EnvironmentConfig:
-        return self._execution_context_data.environment_config
-
-    @property
-    def pipeline_name(self) -> str:
-        return self._execution_context_data.pipeline_name
-
-    @property
-    def mode_def(self) -> ModeDefinition:
-        return self._execution_context_data.mode_def
-
-    @property
-    def intermediate_storage_def(self) -> "IntermediateStorageDefinition":
-        return self._execution_context_data.intermediate_storage_def
-
-    @property
-    def instance(self) -> "DagsterInstance":
-        return self._execution_context_data.instance
-
-    @property
-    def intermediate_storage(self):
-        return self._execution_context_data.intermediate_storage
-
-    @property
-    def file_manager(self) -> None:
-        raise DagsterInvalidPropertyError(
-            "You have attempted to access the file manager which has been moved to resources in 0.10.0. "
-            "Please access it via `context.resources.file_manager` instead."
-        )
-
-    @property
-    def raise_on_error(self) -> bool:
-        return self._execution_context_data.raise_on_error
-
-    @property
-    def retry_mode(self) -> RetryMode:
-        return self._execution_context_data.retry_mode
+    def reconstructable_pipeline(self) -> ReconstructablePipeline:
+        if not isinstance(self.pipeline, ReconstructablePipeline):
+            raise DagsterInvariantViolationError(
+                "reconstructable_pipeline property must be a ReconstructablePipeline"
+            )
+        return self.pipeline
 
     @property
     def log(self) -> DagsterLogManager:
         return self._log_manager
 
     @property
-    def logging_tags(self) -> Dict[str, str]:
-        return self._log_manager.logging_tags
-
-    @property
-    def execution_plan(self):
-        return self._execution_context_data.execution_plan
+    def executor(self) -> Executor:
+        return self._executor
 
     @property
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
-    def has_tag(self, key: str) -> bool:
-        check.str_param(key, "key")
-        return key in self.logging_tags
-
-    def get_tag(self, key: str) -> Optional[str]:
-        check.str_param(key, "key")
-        return self.logging_tags.get(key)
-
-    def for_step(self, step: ExecutionStep) -> "SystemStepExecutionContext":
-
-        check.inst_param(step, "step", ExecutionStep)
-
-        return SystemStepExecutionContext(
-            self._execution_context_data,
-            self._log_manager.with_tags(**step.logging_tags),
-            step,
-            self.output_capture,
+    def for_step(self, step: ExecutionStep) -> "IStepContext":
+        return StepOrchestrationContext(
+            plan_data=self.plan_data,
+            log_manager=self._log_manager.with_tags(**step.logging_tags),
+            executor=self.executor,
+            step=step,
+            output_capture=self.output_capture,
         )
 
-    def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
-        return TypeCheckContext(self._execution_context_data, self.log, dagster_type)
+
+class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
+    """Context for the orchestration of a step.
+
+    This context assumes inability to run user code directly. Thus, it does not include any resource
+    or intermediate storage information.
+    """
+
+    def __init__(self, plan_data, log_manager, executor, step, output_capture):
+        super(StepOrchestrationContext, self).__init__(
+            plan_data, log_manager, executor, output_capture
+        )
+        self._step = step
+
+    @property
+    def step(self) -> ExecutionStep:
+        return self._step
+
+    @property
+    def solid_handle(self) -> "SolidHandle":
+        return self.step.solid_handle
 
 
-class SystemPipelineExecutionContext(SystemExecutionContext, RunWorkerExecutionContext):
-    __slots__ = ["_executor"]
+class PlanExecutionContext(IPlanContext):
+    """Context for the execution of a plan.
+
+    This context assumes that user code can be run directly, and thus includes resource and
+    intermediate storage information.
+    """
 
     def __init__(
         self,
-        execution_context_data: SystemExecutionContextData,
+        plan_data: PlanData,
+        execution_data: ExecutionData,
         log_manager: DagsterLogManager,
-        executor: Executor,
         output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
     ):
-        super(SystemPipelineExecutionContext, self).__init__(
-            execution_context_data, log_manager, output_capture=output_capture
+        self._plan_data = plan_data
+        self._execution_data = execution_data
+        self._log_manager = log_manager
+        self._output_capture = output_capture
+
+    @property
+    def plan_data(self) -> PlanData:
+        return self._plan_data
+
+    @property
+    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+        return self._output_capture
+
+    def for_step(self, step: ExecutionStep) -> IStepContext:
+        return StepExecutionContext(
+            plan_data=self.plan_data,
+            execution_data=self._execution_data,
+            log_manager=self._log_manager.with_tags(**step.logging_tags),
+            step=step,
+            output_capture=self.output_capture,
         )
-        self._executor = check.inst_param(executor, "executor", Executor)
 
     @property
-    def reconstructable_pipeline(self) -> ReconstructablePipeline:
-        if not isinstance(self._execution_context_data.pipeline, ReconstructablePipeline):
-            raise DagsterInvariantViolationError(
-                "reconstructable_pipeline property must be a ReconstructablePipeline"
-            )
-        return self._execution_context_data.pipeline
+    def pipeline_def(self) -> PipelineDefinition:
+        return self._execution_data.pipeline_def
 
     @property
-    def executor(self) -> Executor:
-        return self._executor
+    def environment_config(self) -> EnvironmentConfig:
+        return self._execution_data.environment_config
+
+    @property
+    def intermediate_storage_def(self) -> "IntermediateStorageDefinition":
+        return self._execution_data.intermediate_storage_def
+
+    @property
+    def intermediate_storage(self) -> "IntermediateStorage":
+        return self._execution_data.intermediate_storage
+
+    @property
+    def scoped_resources_builder(self) -> ScopedResourcesBuilder:
+        return self._execution_data.scoped_resources_builder
+
+    @property
+    def log(self) -> DagsterLogManager:
+        return self._log_manager
+
+    def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
+        return TypeCheckContext(self, dagster_type)
 
 
-class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContext):
-    __slots__ = ["_step", "_resources", "_required_resource_keys", "_step_launcher"]
+class StepExecutionContext(PlanExecutionContext, IStepContext):
+    """Context for the execution of a step.
+
+    This context assumes that user code can be run directly, and thus includes resource and
+    intermediate storage information.
+    """
 
     def __init__(
         self,
-        execution_context_data: SystemExecutionContextData,
+        plan_data: PlanData,
+        execution_data: ExecutionData,
         log_manager: DagsterLogManager,
         step: ExecutionStep,
-        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
+        output_capture: Optional[Dict[StepOutputHandle, Any]],
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
-        self._step = check.inst_param(step, "step", ExecutionStep)
-        super(SystemStepExecutionContext, self).__init__(execution_context_data, log_manager)
-        self._required_resource_keys = get_required_resource_keys_for_step(
-            execution_context_data.pipeline.get_definition(),
-            step,
-            execution_context_data.execution_plan,
-            execution_context_data.environment_config,
-            execution_context_data.intermediate_storage_def,
+        super(StepExecutionContext, self).__init__(
+            plan_data=plan_data,
+            execution_data=execution_data,
+            log_manager=log_manager,
+            output_capture=output_capture,
         )
-        self._resources = self._execution_context_data.scoped_resources_builder.build(
+        self._step = step
+        self._required_resource_keys = get_required_resource_keys_for_step(
+            plan_data.pipeline.get_definition(),
+            step,
+            plan_data.execution_plan,
+            execution_data.environment_config,
+            execution_data.intermediate_storage_def,
+        )
+        self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys
         )
+
+        resources_iter = cast(Iterable, self._resources)
+
         step_launcher_resources = [
-            resource for resource in self._resources if isinstance(resource, StepLauncher)
+            resource for resource in resources_iter if isinstance(resource, StepLauncher)
         ]
 
         self._step_launcher: Optional[StepLauncher] = None
@@ -519,15 +342,21 @@ class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContex
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
 
-        self._log_manager = log_manager
-        self._output_capture = output_capture
-
-    def for_compute(self) -> "SystemComputeExecutionContext":
-        return SystemComputeExecutionContext(self._execution_context_data, self.log, self.step)
-
     @property
     def step(self) -> ExecutionStep:
         return self._step
+
+    @property
+    def solid_handle(self) -> "SolidHandle":
+        return self.step.solid_handle
+
+    @property
+    def required_resource_keys(self) -> Set[str]:
+        return self._required_resource_keys
+
+    @property
+    def resources(self) -> "Resources":
+        return self._resources
 
     @property
     def step_launcher(self) -> Optional[StepLauncher]:
@@ -538,45 +367,43 @@ class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContex
         return self.solid.definition
 
     @property
-    def pipeline(self) -> IPipeline:
-        return self._execution_context_data.pipeline
+    def pipeline_def(self) -> PipelineDefinition:
+        return self._execution_data.pipeline_def
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
-        return self._execution_context_data.pipeline.get_definition()
+    def mode_def(self) -> ModeDefinition:
+        return self._execution_data.mode_def
 
     @property
     def solid(self) -> "Solid":
         return self.pipeline_def.get_solid(self._step.solid_handle)
 
-    @property
-    def resources(self) -> NamedTuple:
-        return self._resources
+    def get_io_manager(self, step_output_handle) -> IOManager:
+        step_output = self.execution_plan.get_step_output(step_output_handle)
+        io_manager_key = (
+            self.pipeline_def.get_solid(step_output.solid_handle)
+            .output_def_named(step_output.name)
+            .io_manager_key
+        )
 
-    @property
-    def required_resource_keys(self) -> Set[str]:
-        return self._required_resource_keys
+        # backcompat: if intermediate storage is specified and the user hasn't overridden
+        # io_manager_key on the output, use the intermediate storage.
+        if io_manager_key == "io_manager" and not self.using_default_intermediate_storage():
+            from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
-    @property
-    def log(self) -> DagsterLogManager:
-        return self._log_manager
-
-    def for_hook(self, hook_def: HookDefinition) -> "HookContext":
-        return HookContext(self._execution_context_data, self.log, hook_def, self.step)
-
-    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> str:
-        # determine if the step is skipped
-        if (
-            # this is re-execution
-            self.pipeline_run.parent_run_id
-            # we are not re-executing the entire pipeline
-            and self.pipeline_run.step_keys_to_execute is not None
-            # this step is not being executed
-            and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
-        ):
-            return self.pipeline_run.parent_run_id
+            output_manager = IntermediateStorageAdapter(self.intermediate_storage)
         else:
-            return self.pipeline_run.run_id
+            output_manager = getattr(self.resources, io_manager_key)
+        return check.inst(output_manager, IOManager)
+
+    def using_default_intermediate_storage(self) -> bool:
+        from dagster.core.storage.system_storage import mem_intermediate_storage
+
+        # pylint: disable=comparison-with-callable
+        return (
+            self.intermediate_storage_def is None
+            or self.intermediate_storage_def == mem_intermediate_storage
+        )
 
     def get_output_context(self, step_output_handle) -> "OutputContext":
         return get_output_context(
@@ -585,7 +412,7 @@ class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContex
             self.environment_config,
             step_output_handle,
             self._get_source_run_id(step_output_handle),
-            log_manager=self._log_manager,
+            log_manager=self.log,
             step_context=self,
         )
 
@@ -607,48 +434,31 @@ class SystemStepExecutionContext(SystemExecutionContext, BaseStepExecutionContex
             metadata=metadata,
             upstream_output=self.get_output_context(source_handle) if source_handle else None,
             dagster_type=dagster_type,
-            log_manager=self._log_manager,
+            log_manager=self.log,
             step_context=self,
             resource_config=resource_config,
             resources=resources,
         )
 
-    def using_default_intermediate_storage(self) -> bool:
-        from dagster.core.storage.system_storage import mem_intermediate_storage
+    def for_hook(self, hook_def: HookDefinition) -> "HookContext":
+        return HookContext(self, hook_def)
 
-        # pylint: disable=comparison-with-callable
-        return (
-            self.intermediate_storage_def is None
-            or self.intermediate_storage_def == mem_intermediate_storage
-        )
-
-    def get_io_manager(self, step_output_handle) -> IOManager:
-        step_output = self.execution_plan.get_step_output(step_output_handle)
-        io_manager_key = (
-            self.pipeline_def.get_solid(step_output.solid_handle)
-            .output_def_named(step_output.name)
-            .io_manager_key
-        )
-
-        # backcompat: if intermediate storage is specified and the user hasn't overridden
-        # io_manager_key on the output, use the intermediate storage.
-        if io_manager_key == "io_manager" and not self.using_default_intermediate_storage():
-            from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
-
-            output_manager = IntermediateStorageAdapter(self.intermediate_storage)
+    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> str:
+        # determine if the step is skipped
+        if (
+            # this is re-execution
+            self.pipeline_run.parent_run_id
+            # we are not re-executing the entire pipeline
+            and self.pipeline_run.step_keys_to_execute is not None
+            # this step is not being executed
+            and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
+        ):
+            return self.pipeline_run.parent_run_id
         else:
-            output_manager = getattr(self.resources, io_manager_key)
-        return check.inst(output_manager, IOManager)
+            return self.pipeline_run.run_id
 
 
-class SystemComputeExecutionContext(SystemStepExecutionContext):
-    @property
-    def solid_config(self) -> Any:
-        solid_config = self.environment_config.solids.get(str(self.solid_handle))
-        return solid_config.config if solid_config else None
-
-
-class TypeCheckContext(SystemExecutionContext):
+class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType.
 
     Attributes:
@@ -659,28 +469,36 @@ class TypeCheckContext(SystemExecutionContext):
 
     def __init__(
         self,
-        execution_context_data: SystemExecutionContextData,
-        log_manager: DagsterLogManager,
+        plan_execution_context: PlanExecutionContext,
         dagster_type: DagsterType,
     ):
-        super(TypeCheckContext, self).__init__(execution_context_data, log_manager)
-        self._resources = self._execution_context_data.scoped_resources_builder.build(
+        self._plan_execution_context = plan_execution_context
+        self._resources = plan_execution_context.scoped_resources_builder.build(
             dagster_type.required_resource_keys
         )
-        self._log_manager = log_manager
 
     @property
-    def resources(self) -> NamedTuple:
+    def resources(self) -> "Resources":
         return self._resources
 
+    @property
+    def run_id(self) -> str:
+        return self._plan_execution_context.run_id
 
-class HookContext(SystemExecutionContext):
+    @property
+    def log(self) -> DagsterLogManager:
+        return self._plan_execution_context.log
+
+
+# HookContext currently uses undocumented attributes that are pulled from the step context for event
+# recording and logging. These should be removed, and the callsites should be changed to use the
+# step context instead.
+class HookContext:
     """The ``context`` object available to a hook function on an DagsterEvent.
 
     Attributes:
         log (DagsterLogManager): Centralized log dispatch from user code.
         hook_def (HookDefinition): The hook that the context object belongs to.
-        step (ExecutionStep): The compute step associated with the hook.
         solid (Solid): The solid instance associated with the hook.
         resources (NamedTuple): Resources available in the hook context.
         solid_config (Any): The parsed config specific to this solid.
@@ -688,19 +506,13 @@ class HookContext(SystemExecutionContext):
 
     def __init__(
         self,
-        execution_context_data: SystemExecutionContextData,
-        log_manager: DagsterLogManager,
+        step_execution_context: StepExecutionContext,
         hook_def: HookDefinition,
-        step: ExecutionStep,
     ):
-
-        super(HookContext, self).__init__(execution_context_data, log_manager)
-        self._log_manager = log_manager
+        self._step_execution_context = step_execution_context
         self._hook_def = check.inst_param(hook_def, "hook_def", HookDefinition)
-        self._step = check.inst_param(step, "step", ExecutionStep)
-
         self._required_resource_keys = hook_def.required_resource_keys
-        self._resources = self._execution_context_data.scoped_resources_builder.build(
+        self._resources = step_execution_context.scoped_resources_builder.build(
             self._required_resource_keys
         )
 
@@ -709,19 +521,15 @@ class HookContext(SystemExecutionContext):
         return self._hook_def
 
     @property
-    def step(self) -> ExecutionStep:
-        return self._step
-
-    @property
-    def pipeline_def(self) -> PipelineDefinition:
-        return self._execution_context_data.pipeline.get_definition()
+    def run_id(self) -> str:
+        return self._step_execution_context.run_id
 
     @property
     def solid(self) -> "Solid":
-        return self.pipeline_def.get_solid(self._step.solid_handle)
+        return self._step_execution_context.solid
 
     @property
-    def resources(self) -> NamedTuple:
+    def resources(self) -> "Resources":
         return self._resources
 
     @property
@@ -730,8 +538,26 @@ class HookContext(SystemExecutionContext):
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self.environment_config.solids.get(str(self._step.solid_handle))
+        solid_config = self._step_execution_context.environment_config.solids.get(
+            str(self._step_execution_context.step.solid_handle)
+        )
         return solid_config.config if solid_config else None
+
+    @property
+    def log(self) -> DagsterLogManager:
+        return self._step_execution_context.log
+
+    @property
+    def pipeline_name(self) -> str:
+        return self._step_execution_context.pipeline_name
+
+    @property
+    def step(self) -> ExecutionStep:
+        return self._step_execution_context.step
+
+    @property
+    def logging_tags(self) -> Dict[str, str]:
+        return self._step_execution_context.logging_tags
 
 
 class OutputContext(
@@ -774,7 +600,7 @@ class OutputContext(
         log_manager: Optional[DagsterLogManager] = None,
         version: Optional[str] = None,
         # This is used internally by the intermediate storage adapter, we don't usually expect users to mock this.
-        step_context: Optional[SystemStepExecutionContext] = None,
+        step_context: Optional[StepExecutionContext] = None,
         resource_config: Optional[Any] = None,
         resources: Optional["Resources"] = None,
     ):
@@ -794,9 +620,7 @@ class OutputContext(
             ),  # this allows the user to mock the context with unresolved dagster type
             log=check.opt_inst_param(log_manager, "log_manager", DagsterLogManager),
             version=check.opt_str_param(version, "version"),
-            step_context=check.opt_inst_param(
-                step_context, "step_context", SystemStepExecutionContext
-            ),
+            step_context=check.opt_inst_param(step_context, "step_context", StepExecutionContext),
             resource_config=resource_config,
             resources=resources,
         )
@@ -862,7 +686,7 @@ class InputContext(
         dagster_type: Optional[DagsterType] = None,
         log_manager: Optional[DagsterLogManager] = None,
         # This is used internally by the intermediate storage adapter, we don't expect users to mock this.
-        step_context: Optional[SystemStepExecutionContext] = None,
+        step_context: Optional[StepExecutionContext] = None,
         resource_config: Any = None,
         resources: Optional["Resources"] = None,
     ):
@@ -879,9 +703,7 @@ class InputContext(
                 resolve_dagster_type(dagster_type), "dagster_type", DagsterType
             ),  # this allows the user to mock the context with unresolved dagster type
             log=check.opt_inst_param(log_manager, "log_manager", DagsterLogManager),
-            step_context=check.opt_inst_param(
-                step_context, "step_context", SystemStepExecutionContext
-            ),
+            step_context=check.opt_inst_param(step_context, "step_context", StepExecutionContext),
             resource_config=resource_config,
             resources=resources,
         )
@@ -912,7 +734,7 @@ def get_output_context(
     step_output_handle: StepOutputHandle,
     run_id: Optional[str] = None,
     log_manager: Optional[DagsterLogManager] = None,
-    step_context: Optional[SystemStepExecutionContext] = None,
+    step_context: Optional[StepExecutionContext] = None,
 ) -> OutputContext:
     """
     Args:

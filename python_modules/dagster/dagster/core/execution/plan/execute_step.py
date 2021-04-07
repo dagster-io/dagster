@@ -32,7 +32,7 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import (
     OutputContext,
-    SystemStepExecutionContext,
+    StepExecutionContext,
     TypeCheckContext,
 )
 from dagster.core.execution.plan.compute import execute_core_compute
@@ -52,7 +52,7 @@ from .compute import SolidOutputUnion
 
 
 def _step_output_error_checked_user_event_sequence(
-    step_context: SystemStepExecutionContext, user_event_sequence: Iterator[SolidOutputUnion]
+    step_context: StepExecutionContext, user_event_sequence: Iterator[SolidOutputUnion]
 ) -> Iterator[SolidOutputUnion]:
     """
     Process the event sequence to check for invariant violations in the event
@@ -60,7 +60,7 @@ def _step_output_error_checked_user_event_sequence(
 
     This consumes and emits an event sequence.
     """
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.generator_param(user_event_sequence, "user_event_sequence")
 
     step = step_context.step
@@ -158,7 +158,7 @@ def _do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: 
 
 
 def _create_step_input_event(
-    step_context: SystemStepExecutionContext, input_name: str, type_check: TypeCheck, success: bool
+    step_context: StepExecutionContext, input_name: str, type_check: TypeCheck, success: bool
 ) -> DagsterEvent:
     return DagsterEvent.step_input_event(
         step_context,
@@ -175,9 +175,9 @@ def _create_step_input_event(
 
 
 def _type_checked_event_sequence_for_input(
-    step_context: SystemStepExecutionContext, input_name: str, input_value: Any
+    step_context: StepExecutionContext, input_name: str, input_value: Any
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
@@ -210,12 +210,12 @@ def _type_checked_event_sequence_for_input(
 
 
 def _type_check_output(
-    step_context: SystemStepExecutionContext,
+    step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Any,
     version: Optional[str],
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
 
     step_output = step_context.step.step_output_named(output.output_name)
@@ -261,7 +261,7 @@ def _type_check_output(
 
 
 def core_dagster_event_sequence_for_step(
-    step_context: SystemStepExecutionContext, prior_attempt_count: int
+    step_context: StepExecutionContext, prior_attempt_count: int
 ) -> Iterator[DagsterEvent]:
     """
     Execute the step within the step_context argument given the in-memory
@@ -269,7 +269,7 @@ def core_dagster_event_sequence_for_step(
     catching any exceptions that have bubbled up during the computation
     of the step.
     """
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.int_param(prior_attempt_count, "prior_attempt_count")
     if prior_attempt_count > 0:
         yield DagsterEvent.step_restarted_event(step_context, prior_attempt_count)
@@ -335,12 +335,12 @@ def core_dagster_event_sequence_for_step(
 
 
 def _type_check_and_store_output(
-    step_context: SystemStepExecutionContext,
+    step_context: StepExecutionContext,
     output: Union[DynamicOutput, Output],
     input_lineage: List[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
 
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
     check.list_param(input_lineage, "input_lineage", AssetLineageInfo)
 
@@ -461,7 +461,7 @@ def _get_output_asset_materializations(
 
 
 def _store_output(
-    step_context: SystemStepExecutionContext,
+    step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
     input_lineage: List[AssetLineageInfo],
@@ -532,7 +532,7 @@ def _store_output(
 
 
 def _create_type_materializations(
-    step_context: SystemStepExecutionContext, output_name: str, value: Any
+    step_context: StepExecutionContext, output_name: str, value: Any
 ) -> Iterator[DagsterEvent]:
     """If the output has any dagster type materializers, runs them."""
 
@@ -585,13 +585,13 @@ def _create_type_materializations(
 
 
 def _user_event_sequence_for_step_compute_fn(
-    step_context: SystemStepExecutionContext, evaluated_inputs: Dict[str, Any]
+    step_context: StepExecutionContext, evaluated_inputs: Dict[str, Any]
 ) -> Iterator[SolidOutputUnion]:
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.dict_param(evaluated_inputs, "evaluated_inputs", key_type=str)
 
     gen = execute_core_compute(
-        step_context.for_compute(),
+        step_context,
         evaluated_inputs,
         step_context.solid_def.compute_fn,
     )

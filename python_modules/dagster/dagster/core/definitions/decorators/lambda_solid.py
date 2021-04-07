@@ -70,7 +70,7 @@ def lambda_solid(
 
     This shortcut allows the creation of simple solids that do not require
     configuration and whose implementations do not require a
-    :py:class:`context <SystemComputeExecutionContext>`.
+    :py:class:`context <SolidExecutionContext>`.
 
     Lambda solids take any number of inputs and produce a single output.
 

@@ -10,7 +10,7 @@ class Executor(abc.ABC):  # pylint: disable=no-init
         For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
 
         Args:
-            pipeline_context (SystemPipelineExecutionContext): The pipeline execution context.
+            pipeline_context (PlanOrchestrationContext): The pipeline orchestration context.
             execution_plan (ExecutionPlan): The plan to execute.
 
         Returns:
