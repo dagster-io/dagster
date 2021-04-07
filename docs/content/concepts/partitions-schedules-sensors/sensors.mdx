@@ -255,7 +255,7 @@ For example, you can write an "alert" pipeline that sends a slack message when i
 @solid(required_resource_keys={"slack"})
 def slack_message_on_failure_solid(context):
     message = f"Solid {context.solid.name} failed"
-    context.resources.slack.chat.post_message(channel="#foo", text=message)
+    context.resources.slack.chat_postMessage(channel="#foo", text=message)
 
 
 @pipeline(
