@@ -5,9 +5,9 @@ import {Line, ChartComponentProps} from 'react-chartjs-2';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 
-import {AssetNumericHistoricalData} from './AssetView';
+import {AssetNumericHistoricalData} from './types';
 
-export const AssetValueGraph: React.FunctionComponent<{
+export const AssetValueGraph: React.FC<{
   label: string;
   width: string;
   data: AssetNumericHistoricalData[0];

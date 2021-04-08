@@ -151,4 +151,5 @@ export interface AssetQuery {
 
 export interface AssetQueryVariables {
   assetKey: AssetKeyInput;
+  limit: number;
 }

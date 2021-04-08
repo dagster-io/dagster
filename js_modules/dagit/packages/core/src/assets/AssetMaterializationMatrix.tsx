@@ -18,8 +18,8 @@ import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {FontFamily} from '../ui/styles';
 
-import {AssetNumericHistoricalData, LABEL_STEP_EXECUTION_TIME} from './AssetView';
 import {Sparkline} from './Sparkline';
+import {AssetNumericHistoricalData} from './types';
 import {
   AssetQuery_assetOrError_Asset_assetMaterializations,
   AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
@@ -28,6 +28,8 @@ import {
 const COL_WIDTH = 120;
 
 const OVERSCROLL = 150;
+
+export const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
 interface AssetMaterializationMatrixProps {
   materializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
@@ -49,7 +51,7 @@ function xForAssetMaterialization(
 
 const EMPTY_CELL_DASH = <span style={{opacity: 0.3}}> - </span>;
 
-export const AssetMaterializationMatrix: React.FunctionComponent<AssetMaterializationMatrixProps> = ({
+export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProps> = ({
   materializations,
   isPartitioned,
   xAxis,

@@ -1,7 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
-import {AssetNumericHistoricalData} from './AssetView';
+import {AssetNumericHistoricalData} from './types';
 
 export const Sparkline: React.FunctionComponent<{
   data: AssetNumericHistoricalData[0];
