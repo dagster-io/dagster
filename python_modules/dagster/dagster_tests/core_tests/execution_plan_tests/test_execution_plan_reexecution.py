@@ -87,6 +87,7 @@ def test_execution_plan_reexecution():
         run_config=run_config,
         parent_run_id=result.run_id,
         root_run_id=result.run_id,
+        step_keys_to_execute=["add_two"],
     )
 
     step_events = execute_plan(

@@ -301,6 +301,30 @@ def test_map_multi_fail():
         assert not result.success
 
 
+def test_map_multi_reexecute_after_fail():
+    with instance_for_test() as instance:
+        result_1 = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            run_config={
+                "execution": {"multiprocess": {}},
+                "solids": {"emit": {"config": {"fail": True}}},
+            },
+            raise_on_error=False,
+        )
+        assert not result_1.success
+
+        result_2 = reexecute_pipeline(
+            reconstructable(dynamic_pipeline),
+            parent_run_id=result_1.run_id,
+            run_config={
+                "execution": {"multiprocess": {}},
+            },
+            instance=instance,
+        )
+        assert result_2.success
+
+
 def test_multi_collect():
     @solid
     def fan_in(_, x, y):

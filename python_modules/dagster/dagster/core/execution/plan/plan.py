@@ -831,12 +831,6 @@ class ExecutionPlan(
             execution_plan_snapshot.artifacts_persisted,
         )
 
-    def plan_executes_step_key(self, step_key: str) -> bool:
-        """
-        Will or did this ExecutionPlan execute the step with the corresponding key
-        """
-        return step_key in self.executable_map
-
 
 def _update_from_resolved_dynamic_outputs(
     step_dict: Dict[StepHandleUnion, IExecutionStep],
