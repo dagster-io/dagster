@@ -896,7 +896,7 @@ class DagsterEvent(
     ):
         check.str_param(output_name, "output_name")
         check.str_param(manager_key, "manager_key")
-        message = f'Handled output "{output_name}" using output manager "{manager_key}"'
+        message = f'Handled output "{output_name}" using IO manager "{manager_key}"'
         return DagsterEvent.from_step(
             event_type=DagsterEventType.HANDLED_OUTPUT,
             step_context=step_context,
