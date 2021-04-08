@@ -197,8 +197,8 @@ def instantiate_app_with_views(
             with open(index_path) as f:
                 rendered_template = render_template_string(f.read())
                 return rendered_template.replace(
-                    'src="/static', f'src="/{app_path_prefix}/static'
-                ).replace('href="/static', f'href="/{app_path_prefix}/static')
+                    'src="/static', f'src="{app_path_prefix}/static'
+                ).replace('href="/static', f'href="{app_path_prefix}/static')
         except FileNotFoundError:
             raise Exception(
                 """Can't find webapp files. Probably webapp isn't built. If you are using
