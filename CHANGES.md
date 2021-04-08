@@ -1,8 +1,30 @@
 # Changelog
 
-# 0.11.3
+## 0.11.4
 
-### Breaking Change
+### Community Contributions
+
+- Fix typo in `--config` help message (thanks [@pawelad](https://github.com/pawelad) !)
+
+### Breaking Changes
+
+- Previously, when retrieving the outputs from a run of `execute_pipeline`, the system would use the io manager that handled each output to perform the retrieval. Now, when using `execute_pipeline` with the default in-process executor, the system directly captures the outputs of solids for use with the result object returned by `execute_pipeline`. This may lead to slightly different behavior when retrieving outputs if switching between executors and using custom IO managers.
+
+### New
+
+- The `K8sRunLauncher` and `CeleryK8sRunLauncher` now add a `dagster/image` tag to pipeline runs to document the image used. The `DockerRunLauncher` has also been modified to use this tag (previously it used `docker/image`).
+-  In Dagit, the left navigation is now collapsible on smaller viewports. You can use the `.` key shortcut to toggle visibility.
+- `@solid` can now decorate async def functions.
+
+### Bugfixes
+
+- In Dagit, a GraphQL error on partition sets related to missing fragment `PartitionGraphFragment` has been fixed.
+- The compute log manager now handles base directories containing spaces in the path.
+- Fixed a bug where re-execution was not working if the initial execution failed, and execution was delegated to other machines/process (e.g. using the multiprocess executor)
+- The same solid can now collect over multiple dynamic outputs
+## 0.11.3
+
+### Breaking Changes
 
 - Schedules and sensors that target a `pipeline_name` that is not present in the current repository will now error out when the repository is created.
 
