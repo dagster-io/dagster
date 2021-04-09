@@ -111,6 +111,24 @@ export const GridColumn = styled.div<{
         background: ${SuccessColorForProps};
       }
     }
+    &.success-skipped {
+      &:before {
+        background: linear-gradient(
+          135deg,
+          ${SuccessColorForProps} 40%,
+          ${STEP_STATUS_COLORS.SKIPPED} 41%
+        );
+      }
+    }
+    &.success-failure {
+      &:before {
+        background: linear-gradient(
+          135deg,
+          ${SuccessColorForProps} 40%,
+          ${STEP_STATUS_COLORS.FAILURE} 41%
+        );
+      }
+    }
     &.failure {
       &:before {
         background: ${STEP_STATUS_COLORS.FAILURE};
@@ -122,6 +140,15 @@ export const GridColumn = styled.div<{
           135deg,
           ${STEP_STATUS_COLORS.FAILURE} 40%,
           ${SuccessColorForProps} 41%
+        );
+      }
+    }
+    &.failure-skipped {
+      &:before {
+        background: linear-gradient(
+          135deg,
+          ${STEP_STATUS_COLORS.FAILURE} 40%,
+          ${STEP_STATUS_COLORS.SKIPPED} 41%
         );
       }
     }
@@ -148,18 +175,18 @@ export const GridColumn = styled.div<{
         );
       }
     }
-    &.missing {
-      &:before {
-        background: ${Colors.WHITE};
-      }
-    }
-    &.missing-success {
+    &.skipped-failure {
       &:before {
         background: linear-gradient(
           135deg,
           ${STEP_STATUS_COLORS.SKIPPED} 40%,
-          ${SuccessColorForProps} 41%
+          ${STEP_STATUS_COLORS.FAILURE} 41%
         );
+      }
+    }
+    &.missing {
+      &:before {
+        background: ${Colors.WHITE};
       }
     }
   }

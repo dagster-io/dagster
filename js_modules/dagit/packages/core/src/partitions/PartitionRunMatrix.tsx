@@ -30,7 +30,13 @@ import {
   PartitionRunMatrixPipelineQueryVariables,
 } from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
-import {useMatrixData, MatrixStep, DisplayOptions, StatusSquareFinalColor} from './useMatrixData';
+import {
+  useMatrixData,
+  MatrixStep,
+  DisplayOptions,
+  StatusSquareFinalColor,
+  isStepKeyForNode,
+} from './useMatrixData';
 
 const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of partitions.';
 
@@ -170,7 +176,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 ...(props.partitions.find((p) => p.name === focused.partitionName)?.runs || []).map(
                   (run) => ({
                     [run.runId]: run.stepStats.find((s) =>
-                      s.stepKey.startsWith(`${focused.stepName}.`),
+                      isStepKeyForNode(focused.stepName, s.stepKey),
                     ),
                   }),
                 ),

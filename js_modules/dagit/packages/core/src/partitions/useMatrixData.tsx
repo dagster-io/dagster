@@ -1,7 +1,7 @@
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
-import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -15,16 +15,22 @@ type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipel
 type StatusSquareColor =
   | 'SUCCESS'
   | 'FAILURE'
-  | 'FAILURE-SUCCESS'
   | 'SKIPPED'
-  | 'SKIPPED-SUCCESS'
   | 'MISSING'
-  | 'MISSING-SUCCESS';
+  | 'FAILURE-SUCCESS'
+  | 'FAILURE-SKIPPED'
+  | 'SUCCESS-FAILURE'
+  | 'SUCCESS-SKIPPED'
+  | 'SKIPPED-SUCCESS'
+  | 'SKIPPED-FAILURE';
 
 export const StatusSquareFinalColor: {[key: string]: StatusSquareColor} = {
   'FAILURE-SUCCESS': 'SUCCESS',
   'SKIPPED-SUCCESS': 'SUCCESS',
-  'MISSING-SUCCESS': 'SUCCESS',
+  'SUCCESS-FAILURE': 'FAILURE',
+  'SKIPPED-FAILURE': 'FAILURE',
+  'FAILURE-SKIPPED': 'SKIPPED',
+  'SUCCESS-SKIPPED': 'SKIPPED',
 };
 
 export interface DisplayOptions {
@@ -52,9 +58,9 @@ function byStartTimeAsc(a: PartitionRunMatrixRunFragment, b: PartitionRunMatrixR
 // BG Note: Dagit 0.10.0 removed the .compute step key suffix, but the Run Matrix takes the current
 // step tree and looks up data for each step in historical runs. For continuity across 0.10.0, we
 // match historical step keys with the .compute format as well. We can remove safely after 120 days?
-function isStepKeyForNode(node: GraphQueryItem, stepKey: string) {
-  const dynamicRegex = new RegExp(node.name + DYNAMIC_STEP_REGEX_SUFFIX);
-  return stepKey === node.name || stepKey === `${node.name}.compute` || stepKey.match(dynamicRegex);
+function isStepKeyForNode(nodeName: string, stepKey: string) {
+  const dynamicRegex = new RegExp(nodeName + DYNAMIC_STEP_REGEX_SUFFIX);
+  return stepKey === nodeName || stepKey === `${nodeName}.compute` || stepKey.match(dynamicRegex);
 }
 
 function buildMatrixData(
@@ -70,47 +76,37 @@ function buildMatrixData(
     name: p.name,
     runs: p.runs,
     steps: layout.boxes.map(({node}) => {
-      const statuses = p.runs.map(
-        (r) => r.stepStats.find((stats) => isStepKeyForNode(node, stats.stepKey))?.status,
-      );
-      // If there was a successful run, calculate age relative to that run since it's the age of materializations.
-      // If there are no sucessful runs, the age of the (red) box is just the last run time.
-      const lastSuccessIdx = statuses.lastIndexOf(StepEventStatus.SUCCESS);
-      const unix =
-        lastSuccessIdx !== -1
-          ? getStartTime(p.runs[lastSuccessIdx])
-          : p.runs.length
-          ? getStartTime(p.runs[p.runs.length - 1])
-          : 0;
+      const datapoints = p.runs
+        .map((r, idx) => ({
+          runIdx: idx,
+          status: r.stepStats.find((stats) => isStepKeyForNode(node.name, stats.stepKey))?.status,
+        }))
+        .filter((s): s is {runIdx: number; status: StepEventStatus} => !!s.status)
+        .reverse();
+
+      if (datapoints.length === 0) {
+        return {
+          name: node.name,
+          color: 'MISSING' as StatusSquareColor,
+          unix: 0,
+        };
+      }
 
       // Calculate the box color for this step. CSS classes are in the "previous-final" format, and we'll
       // strip the "previous" half later if the user has that display option disabled.
       //
-      // Note that the color selection is nuanced because we boil the whole series of statuses into just
-      // two colors to display on the box:
-      // - For [success, failure], we show success - failures after successful completion are ignored.
-      // - For [skipped, failure, success], FAILURE-SUCCESS is more relevant to display than SKIPPED-SUCCESS
-      // - For [skipped, failure, skipped], FAILURE is more relevant than SKIPPED.
-
-      let color: StatusSquareColor = statuses[0] || 'MISSING';
-
-      if (statuses.length > 1 && lastSuccessIdx !== -1) {
-        const prev = statuses.slice(0, lastSuccessIdx);
-        color = prev.includes(StepEventStatus.FAILURE)
-          ? 'FAILURE-SUCCESS'
-          : prev.includes(StepEventStatus.SKIPPED)
-          ? 'SKIPPED-SUCCESS'
-          : prev.includes(undefined)
-          ? 'MISSING-SUCCESS'
-          : 'SUCCESS';
-      } else if (statuses.length > 1) {
-        color = statuses.includes(StepEventStatus.FAILURE) ? 'FAILURE' : color;
-      }
+      // Rules:
+      // - The `final` status is the status of the step the last time it was run
+      // - The `previous` status is the status of the step before that run, if it was different.
+      const prev = datapoints.slice(1).find((dp) => dp.status !== datapoints[0].status);
+      const color = prev
+        ? (`${prev.status}-${datapoints[0].status}` as StatusSquareColor)
+        : datapoints[0].status;
 
       return {
         name: node.name,
+        unix: getStartTime(p.runs[datapoints[0].runIdx]),
         color,
-        unix,
       };
     }),
   }));
