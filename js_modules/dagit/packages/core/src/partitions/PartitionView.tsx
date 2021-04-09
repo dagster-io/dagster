@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
+import {Box} from '../ui/Box';
 import {CursorHistoryControls} from '../ui/CursorControls';
 import {Spinner} from '../ui/Spinner';
 import {RepoAddress} from '../workspace/types';
@@ -91,31 +92,40 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           partitionSets={partitionSets}
           onSelect={onChangePartitionSet}
         />
-        <div style={{width: 10}} />
-        <Button
-          onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-          icon={IconNames.ADD}
-          active={showBackfillSetup}
-        >
-          Launch backfill
-        </Button>
-        {loading && (
-          <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>
-            <Spinner purpose="body-text" value={loadingPercent} />
-            <div style={{width: 5}} />
-            Loading partitions…
-          </div>
-        )}
-        <div style={{flex: 1}} />
-        <PartitionPageSizeSelector
-          value={paginationProps.hasPrevCursor ? undefined : pageSize}
-          onChange={(value) => {
-            setPageSize(value);
-            paginationProps.reset();
-          }}
-        />
-        <div style={{width: 10}} />
-        <CursorHistoryControls {...paginationProps} />
+        <div style={{width: 10, height: 10}} />
+        <Box flex={{justifyContent: 'space-between', alignItems: 'center'}} style={{flex: 1}}>
+          <Button
+            style={{flexShrink: 0}}
+            onClick={() => setShowBackfillSetup(!showBackfillSetup)}
+            icon={IconNames.ADD}
+            active={showBackfillSetup}
+          >
+            Launch&nbsp;backfill
+          </Button>
+          {loading && (
+            <Box
+              margin={{horizontal: 8}}
+              flex={{alignItems: 'center'}}
+              style={{overflow: 'hidden'}}
+            >
+              <Spinner purpose="body-text" value={loadingPercent} />
+              <div style={{width: 5, flexShrink: 0}} />
+              <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                Loading&nbsp;partitions…
+              </div>
+            </Box>
+          )}
+          <div style={{flex: 1}} />
+          <PartitionPageSizeSelector
+            value={paginationProps.hasPrevCursor ? undefined : pageSize}
+            onChange={(value) => {
+              setPageSize(value);
+              paginationProps.reset();
+            }}
+          />
+          <div style={{width: 10}} />
+          <CursorHistoryControls {...paginationProps} />
+        </Box>
       </PartitionPagerContainer>
       <div style={{position: 'relative'}}>
         <PartitionRunMatrix
@@ -138,4 +148,10 @@ const PartitionPagerContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
+  flex-direction: row;
+
+  @media (max-width: 1000px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;

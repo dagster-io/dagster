@@ -1,6 +1,7 @@
-import {Button} from '@blueprintjs/core';
+import {Button, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 export interface CursorPaginationProps {
   hasPrevCursor: boolean;
@@ -49,23 +50,30 @@ export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProp
   advanceCursor,
 }) => {
   return (
-    <div style={{textAlign: 'center'}}>
-      <Button
-        style={{marginRight: 4}}
-        disabled={!hasNextCursor}
-        icon={IconNames.ARROW_LEFT}
-        onClick={advanceCursor}
-      >
-        Older
+    <CursorHistoryControlsContainer>
+      <Button style={{marginRight: 4}} disabled={!hasNextCursor} onClick={advanceCursor}>
+        <Icon icon={IconNames.ARROW_LEFT} />
+        <span className="hideable-button-text" style={{marginLeft: 8}}>
+          Older
+        </span>
       </Button>
-      <Button
-        style={{marginLeft: 4}}
-        disabled={!hasPrevCursor}
-        rightIcon={IconNames.ARROW_RIGHT}
-        onClick={popCursor}
-      >
-        Newer
+      <Button style={{marginLeft: 4}} disabled={!hasPrevCursor} onClick={popCursor}>
+        <span className="hideable-button-text" style={{marginRight: 8}}>
+          Newer
+        </span>
+        <Icon icon={IconNames.ARROW_RIGHT} />
       </Button>
-    </div>
+    </CursorHistoryControlsContainer>
   );
 };
+
+const CursorHistoryControlsContainer = styled.div`
+  text-align: center;
+  white-space: nowrap;
+
+  @media (max-width: 1000px) {
+    & .hideable-button-text {
+      display: none;
+    }
+  }
+`;
