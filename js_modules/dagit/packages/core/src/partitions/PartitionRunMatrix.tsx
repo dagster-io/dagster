@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {useViewport} from '../gantt/useViewport';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
 import {Box} from '../ui/Box';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
@@ -451,6 +452,8 @@ export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
   }
 `;
 
+// add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
+// in the same way we construct the explorer graph
 const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
   query PartitionRunMatrixPipelineQuery($pipelineSelector: PipelineSelector) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
@@ -479,8 +482,10 @@ const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
               }
             }
           }
+          ...PipelineExplorerSolidHandleFragment
         }
       }
     }
   }
+  ${PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;

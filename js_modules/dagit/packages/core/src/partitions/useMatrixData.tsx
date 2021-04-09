@@ -5,13 +5,13 @@ import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
+import {explodeCompositesInHandleGraph} from '../pipelines/PipelineExplorerRoot';
 import {StepEventStatus} from '../types/globalTypes';
 
 import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
 
 type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;
-
 type StatusSquareColor =
   | 'SUCCESS'
   | 'FAILURE'
@@ -33,6 +33,8 @@ export interface DisplayOptions {
   colorizeByAge: boolean;
 }
 
+const DYNAMIC_STEP_REGEX_SUFFIX = '\\[.*\\]';
+
 export interface MatrixStep {
   name: string;
   color: string;
@@ -51,7 +53,8 @@ function byStartTimeAsc(a: PartitionRunMatrixRunFragment, b: PartitionRunMatrixR
 // step tree and looks up data for each step in historical runs. For continuity across 0.10.0, we
 // match historical step keys with the .compute format as well. We can remove safely after 120 days?
 function isStepKeyForNode(node: GraphQueryItem, stepKey: string) {
-  return stepKey === node.name || stepKey === `${node.name}.compute`;
+  const dynamicRegex = new RegExp(node.name + DYNAMIC_STEP_REGEX_SUFFIX);
+  return stepKey === node.name || stepKey === `${node.name}.compute` || stepKey.match(dynamicRegex);
 }
 
 function buildMatrixData(
@@ -179,11 +182,11 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
     return cachedMatrixData.current.result;
   }
 
+  const nodes = explodeCompositesInHandleGraph(inputs.solidHandles).map((h) => h.solid);
+
   // Filter the pipeline's structure and build the flat gantt layout for the left hand side
-  const solidsFiltered = filterByQuery(
-    inputs.solidHandles.map((h) => h.solid),
-    inputs.stepQuery,
-  );
+  const solidsFiltered = filterByQuery(nodes, inputs.stepQuery);
+
   const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
 
   // Build the matrix of step + partition squares - presorted to match the gantt layout
