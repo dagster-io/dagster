@@ -196,9 +196,14 @@ def instantiate_app_with_views(
         try:
             with open(index_path) as f:
                 rendered_template = render_template_string(f.read())
-                return rendered_template.replace(
-                    'src="/static', f'src="{app_path_prefix}/static'
-                ).replace('href="/static', f'href="{app_path_prefix}/static')
+                return (
+                    rendered_template.replace('href="/', f'href="{app_path_prefix}/')
+                    .replace('src="/', f'src="{app_path_prefix}/')
+                    .replace(
+                        '<meta name="dagit-path-prefix"',
+                        f'<meta name="dagit-path-prefix" content="{app_path_prefix}"',
+                    )
+                )
         except FileNotFoundError:
             raise Exception(
                 """Can't find webapp files. Probably webapp isn't built. If you are using
