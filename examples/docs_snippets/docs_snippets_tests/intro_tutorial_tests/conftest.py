@@ -9,7 +9,7 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 def postgres():  # pylint: disable=redefined-outer-name
     with TestPostgresInstance.docker_service_up(
         file_relative_path(
-            __file__, os.path.join("..", "..", "..", "legacy_examples", "docker-compose.yml")
+            __file__, os.path.join("..", "..", "..", "dbt_example", "docker-compose.yml")
         ),
         "test-postgres-db",
     ) as conn_string:

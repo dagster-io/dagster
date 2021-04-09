@@ -1,6 +1,0 @@
-solids:
-  papermill_pandas_hello_world:
-    inputs:
-      df:
-        csv:
-          path: "data/num.csv"

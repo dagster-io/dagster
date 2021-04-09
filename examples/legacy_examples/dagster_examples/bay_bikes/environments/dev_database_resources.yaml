@@ -1,7 +1,0 @@
-resources:
-  postgres_db:
-    config:
-      db_name: test
-      hostname: localhost
-      password: test
-      username: test
