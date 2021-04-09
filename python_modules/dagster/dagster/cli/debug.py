@@ -21,6 +21,13 @@ def _recent_failed_runs_text(instance):
     return "Recently failed runs:\n{}".format("\n".join(lines))
 
 
+def export_run(instance, run, output_file):
+    debug_payload = DebugRunPayload.build(instance, run)
+    with GzipFile(output_file, "wb") as file:
+        click.echo("Exporting run_id '{}' to gzip output file {}.".format(run.run_id, output_file))
+        debug_payload.write(file)
+
+
 def create_debug_cli_group():
     group = click.Group(name="debug")
     group.add_command(export_command)
@@ -41,10 +48,7 @@ def export_command(run_id, output_file):
                 )
             )
 
-        debug_payload = DebugRunPayload.build(instance, run)
-        with GzipFile(output_file, "wb") as file:
-            click.echo("Exporting run_id '{}' to gzip output file {}.".format(run_id, output_file))
-            debug_payload.write(file)
+        export_run(instance, run, output_file)
 
 
 debug_cli = create_debug_cli_group()

@@ -19,7 +19,7 @@ from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_external_pipeline,
+    get_test_project_location_and_external_pipeline,
 )
 
 
@@ -38,15 +38,22 @@ def test_k8s_run_launcher_default(
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
     tags = {"key": "value"}
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        tags=tags,
-        mode="default",
-    )
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+    with get_test_project_location_and_external_pipeline(pipeline_name) as (
+        location,
+        external_pipeline,
+    ):
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            tags=tags,
+            mode="default",
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=location.get_external_execution_plan(
+                external_pipeline, run_config, "default", None, None
+            ).execution_plan_snapshot,
+        )
         dagster_instance_for_k8s_run_launcher.launch_run(
             run.run_id,
             ReOriginatedExternalPipelineForTest(external_pipeline),
@@ -98,15 +105,21 @@ def test_k8s_run_launcher_with_celery_executor_fails(
     )
 
     pipeline_name = "demo_pipeline_celery"
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-
+    with get_test_project_location_and_external_pipeline(pipeline_name) as (
+        location,
+        external_pipeline,
+    ):
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=location.get_external_execution_plan(
+                external_pipeline, run_config, "default", None, None
+            ).execution_plan_snapshot,
+        )
         dagster_instance_for_k8s_run_launcher.launch_run(
             run.run_id,
             ReOriginatedExternalPipelineForTest(external_pipeline),
@@ -147,11 +160,28 @@ def test_failing_k8s_run_launcher(
 ):
     run_config = {"blah blah this is wrong": {}}
     pipeline_name = "demo_pipeline"
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher, pipeline_name=pipeline_name, run_config=run_config
-    )
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+    with get_test_project_location_and_external_pipeline(pipeline_name) as (
+        location,
+        external_pipeline,
+    ):
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=location.get_external_execution_plan(
+                external_pipeline,
+                {
+                    "solids": {
+                        "multiply_the_word": {"config": {"factor": 0}, "inputs": {"word": "..."}}
+                    }
+                },
+                "default",
+                None,
+                None,
+            ).execution_plan_snapshot,
+        )
         dagster_instance_for_k8s_run_launcher.launch_run(
             run.run_id,
             ReOriginatedExternalPipelineForTest(external_pipeline),
@@ -182,15 +212,23 @@ def test_k8s_run_launcher_terminate(
     pipeline_name = "slow_pipeline"
 
     tags = {"key": "value"}
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher,
-        pipeline_name=pipeline_name,
-        run_config=None,
-        tags=tags,
-        mode="default",
-    )
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+    with get_test_project_location_and_external_pipeline(pipeline_name) as (
+        location,
+        external_pipeline,
+    ):
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=None,
+            tags=tags,
+            mode="default",
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=location.get_external_execution_plan(
+                external_pipeline, {}, "default", None, None
+            ).execution_plan_snapshot,
+        )
+
         dagster_instance_for_k8s_run_launcher.launch_run(
             run.run_id,
             ReOriginatedExternalPipelineForTest(external_pipeline),
