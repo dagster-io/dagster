@@ -54,7 +54,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         instance_config_map (str): The ``name`` of an existing Volume to mount into the pod in
             order to provide a ConfigMap for the Dagster instance. This Volume should contain a
             ``dagster.yaml`` with appropriate values for run storage, event log storage, etc.
-        postgres_password_secret (str): The name of the Kubernetes Secret where the postgres
+        postgres_password_secret (Optional[str]): The name of the Kubernetes Secret where the postgres
             password can be retrieved. Will be mounted and supplied as an environment variable to
             the Job Pod.
         dagster_home (str): The location of DAGSTER_HOME in the Job container; this is where the
@@ -93,8 +93,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self,
         service_account_name,
         instance_config_map,
-        postgres_password_secret,
-        dagster_home,
+        postgres_password_secret=None,
+        dagster_home=None,
         job_image=None,
         image_pull_policy="Always",
         image_pull_secrets=None,
@@ -132,7 +132,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         self._service_account_name = check.str_param(service_account_name, "service_account_name")
         self._instance_config_map = check.str_param(instance_config_map, "instance_config_map")
-        self._postgres_password_secret = check.str_param(
+        self._postgres_password_secret = check.opt_str_param(
             postgres_password_secret, "postgres_password_secret"
         )
         self._env_config_maps = check.opt_list_param(
@@ -181,7 +181,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 instance_config_map=check.str_param(
                     self._instance_config_map, "instance_config_map"
                 ),
-                postgres_password_secret=check.str_param(
+                postgres_password_secret=check.opt_str_param(
                     self._postgres_password_secret, "postgres_password_secret"
                 ),
                 env_config_maps=check.opt_list_param(
@@ -203,7 +203,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 self._service_account_name, "service_account_name"
             ),
             instance_config_map=check.str_param(self._instance_config_map, "instance_config_map"),
-            postgres_password_secret=check.str_param(
+            postgres_password_secret=check.opt_str_param(
                 self._postgres_password_secret, "postgres_password_secret"
             ),
             env_config_maps=check.opt_list_param(
