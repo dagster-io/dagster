@@ -52,14 +52,11 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
-  const allStepKeys = {};
+  const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {
-    partition.runs?.forEach((run) => {
-      if (!run) {
-        return;
-      }
+    partition.runs.forEach((run) => {
       run.stepStats.forEach((stat) => {
-        allStepKeys[stat.stepKey] = true;
+        allStepKeys.add(stat.stepKey);
       });
     });
   });
@@ -130,7 +127,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           stepQuery={stepQuery}
           setStepQuery={setStepQuery}
         />
-        <PartitionGraphSet partitions={partitions} allStepKeys={Object.keys(allStepKeys)} />
+        <PartitionGraphSet partitions={partitions} allStepKeys={Array.from(allStepKeys).sort()} />
       </div>
     </div>
   );

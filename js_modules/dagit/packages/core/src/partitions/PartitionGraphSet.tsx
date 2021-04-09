@@ -5,7 +5,6 @@ import styled from 'styled-components/macro';
 
 import {PartitionGraph} from './PartitionGraph';
 import {
-  PIPELINE_LABEL,
   PARTITION_GRAPH_FRAGMENT,
   StepSelector,
   getPipelineDurationForRun,
@@ -25,9 +24,7 @@ export const PartitionGraphSet: React.FunctionComponent<{
   partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];
   allStepKeys: string[];
 }> = ({partitions, allStepKeys}) => {
-  const initial: {[stepKey: string]: boolean} = {[PIPELINE_LABEL]: true};
-  allStepKeys.forEach((stepKey) => (initial[stepKey] = true));
-  const [selectedStepKeys, setSelectedStepKeys] = React.useState(initial);
+  const [hiddenStepKeys, setHiddenStepKeys] = React.useState<string[]>([]);
   const durationGraph = React.useRef<any>(undefined);
   const materializationGraph = React.useRef<any>(undefined);
   const successGraph = React.useRef<any>(undefined);
@@ -35,14 +32,15 @@ export const PartitionGraphSet: React.FunctionComponent<{
   const rateGraph = React.useRef<any>(undefined);
   const graphs = [durationGraph, materializationGraph, successGraph, failureGraph, rateGraph];
 
-  const onStepChange = (selectedKeys: {[stepKey: string]: boolean}) => {
-    setSelectedStepKeys(selectedKeys);
+  const onChangeHiddenStepKeys = (hiddenKeys: string[]) => {
+    setHiddenStepKeys(hiddenKeys);
+
     graphs.forEach((graph) => {
       const chart = graph?.current?.chart?.current?.chartInstance;
       const datasets = chart?.data?.datasets || [];
       datasets.forEach((dataset: any, idx: number) => {
         const meta = chart.getDatasetMeta(idx);
-        meta.hidden = dataset.label in selectedKeys ? !selectedKeys[dataset.label] : false;
+        meta.hidden = hiddenKeys.includes(dataset.label);
       });
     });
   };
@@ -98,7 +96,11 @@ export const PartitionGraphSet: React.FunctionComponent<{
       </div>
       <div style={{width: 450}}>
         <NavContainer>
-          <StepSelector selected={selectedStepKeys} onChange={onStepChange} />
+          <StepSelector
+            all={allStepKeys}
+            hidden={hiddenStepKeys}
+            onChangeHidden={onChangeHiddenStepKeys}
+          />
         </NavContainer>
       </div>
     </PartitionContentContainer>

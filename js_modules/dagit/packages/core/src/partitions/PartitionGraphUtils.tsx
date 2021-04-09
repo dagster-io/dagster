@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
+import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -146,31 +147,27 @@ const _arraySum = (arr: number[]) => {
   return sum;
 };
 
-export const StepSelector = ({
-  selected,
-  onChange,
-}: {
-  selected: {[stepKey: string]: boolean};
-  onChange: (selected: {[stepKey: string]: boolean}) => void;
-}) => {
+export const StepSelector: React.FC<{
+  all: string[];
+  hidden: string[];
+  onChangeHidden: (hidden: string[]) => void;
+}> = ({all, hidden, onChangeHidden}) => {
   const onStepClick = (stepKey: string) => {
     return (evt: React.MouseEvent) => {
       if (evt.shiftKey) {
         // toggle on shift+click
-        onChange({...selected, [stepKey]: !selected[stepKey]});
+        onChangeHidden(
+          hidden.includes(stepKey) ? hidden.filter((s) => s !== stepKey) : [...hidden, stepKey],
+        );
       } else {
         // regular click
-        const newSelected = {};
+        const allButClicked = all.filter((s) => s !== stepKey);
 
-        const alreadySelected = Object.keys(selected).every((key) => {
-          return key === stepKey ? selected[key] : !selected[key];
-        });
-
-        Object.keys(selected).forEach((key) => {
-          newSelected[key] = alreadySelected || key === stepKey;
-        });
-
-        onChange(newSelected);
+        if (isEqual(allButClicked, hidden)) {
+          onChangeHidden([]);
+        } else {
+          onChangeHidden(allButClicked);
+        }
       }
     };
   };
@@ -183,10 +180,10 @@ export const StepSelector = ({
         <span style={{fontSize: 13, opacity: 0.5}}>Tip: Shift-click to multi-select</span>
       </NavSectionHeader>
       <NavSection>
-        {Object.keys(selected).map((stepKey) => (
+        {[PIPELINE_LABEL, ...all].map((stepKey) => (
           <Item
             key={stepKey}
-            shown={selected[stepKey]}
+            shown={!hidden.includes(stepKey)}
             onClick={onStepClick(stepKey)}
             color={stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)}
           >
@@ -197,7 +194,7 @@ export const StepSelector = ({
                 borderRadius: 5,
                 height: 10,
                 width: 10,
-                backgroundColor: selected[stepKey]
+                backgroundColor: !hidden.includes(stepKey)
                   ? stepKey === PIPELINE_LABEL
                     ? Colors.GRAY2
                     : colorHash(stepKey)
