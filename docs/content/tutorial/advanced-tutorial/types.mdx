@@ -158,8 +158,7 @@ def less_simple_data_frame_type_check(_, value):
 
     fields = [field for field in value[0].keys()]
 
-    for i in range(len(value)):
-        row = value[i]
+    for i, row in enumerate(value):
         if not isinstance(row, dict):
             return TypeCheck(
                 success=False,
