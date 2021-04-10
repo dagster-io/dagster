@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.5
+
+### Bugfixes
+
+- Removed dependency constraint of `dagster-pandas` on `pandas`. You can now include any version of pandas. (https://github.com/dagster-io/dagster/issues/3350)
+
 ## 0.11.4
 
 ### Community Contributions
@@ -13,7 +19,7 @@
 ### New
 
 - The `K8sRunLauncher` and `CeleryK8sRunLauncher` now add a `dagster/image` tag to pipeline runs to document the image used. The `DockerRunLauncher` has also been modified to use this tag (previously it used `docker/image`).
--  In Dagit, the left navigation is now collapsible on smaller viewports. You can use the `.` key shortcut to toggle visibility.
+- In Dagit, the left navigation is now collapsible on smaller viewports. You can use the `.` key shortcut to toggle visibility.
 - `@solid` can now decorate async def functions.
 
 ### Bugfixes
@@ -22,6 +28,7 @@
 - The compute log manager now handles base directories containing spaces in the path.
 - Fixed a bug where re-execution was not working if the initial execution failed, and execution was delegated to other machines/process (e.g. using the multiprocess executor)
 - The same solid can now collect over multiple dynamic outputs
+
 ## 0.11.3
 
 ### Breaking Changes
