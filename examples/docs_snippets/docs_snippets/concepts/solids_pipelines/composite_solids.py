@@ -14,13 +14,13 @@ def return_one(context):
 
 
 # start_composite_solid_example_marker
-@solid(config_schema={"hi": str}, input_defs=[InputDefinition("number", int)])
-def add_one(context, number):
+@solid
+def add_one(_, number: int):
     return number + 1
 
 
-@solid(input_defs=[InputDefinition("number", int)])
-def multiply_by_three(context, number):
+@solid
+def multiply_by_three(_, number: int):
     return number * 3
 
 
@@ -34,13 +34,13 @@ def add_one_times_three_solid(number):
 # start_composite_solid_config_marker
 
 
-@solid(config_schema={"n": int}, input_defs=[InputDefinition("number", int)])
-def add_n(context, number):
+@solid(config_schema={"n": int})
+def add_n(context, number: int):
     return number + context.solid_config["n"]
 
 
-@solid(config_schema={"m": int}, input_defs=[InputDefinition("number", int)])
-def multiply_by_m(context, number):
+@solid(config_schema={"m": int})
+def multiply_by_m(context, number: int):
     return number * context.solid_config["m"]
 
 

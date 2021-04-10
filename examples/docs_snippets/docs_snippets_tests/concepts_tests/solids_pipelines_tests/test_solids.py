@@ -1,16 +1,12 @@
 from dagster import SolidDefinition, execute_solid
 from docs_snippets.concepts.solids_pipelines.solids import (
-    adder,
     context_solid,
-    multiple_outputs_solid,
-    my_configured_solid,
-    my_input_example_solid,
-    my_input_output_example_solid,
+    my_configurable_solid,
+    my_input_solid,
+    my_multi_output_solid,
+    my_output_solid,
     my_solid,
-    my_typehints_solid,
-    no_input_defs_solid,
-    single_output_solid,
-    untyped_inputs_solid,
+    my_typed_input_solid,
     x_solid,
 )
 
@@ -22,22 +18,20 @@ def generate_stub_input_values(solid):
 
     input_defs = solid.input_defs
     for input_def in input_defs:
-        input_values[input_def.name] = default_values[str(input_def.dagster_type.display_name)]
+        input_values[input_def.name] = default_values.get(
+            str(input_def.dagster_type.display_name), 2
+        )
 
     return input_values
 
 
 def test_solids_compile_and_execute():
     solids = [
+        my_input_solid,
+        my_typed_input_solid,
+        my_output_solid,
+        my_multi_output_solid,
         my_solid,
-        my_input_example_solid,
-        my_typehints_solid,
-        my_input_output_example_solid,
-        adder,
-        single_output_solid,
-        multiple_outputs_solid,
-        untyped_inputs_solid,
-        no_input_defs_solid,
     ]
 
     for solid in solids:
@@ -56,12 +50,12 @@ def test_context_solid():
     assert result.success
 
 
-def test_my_configured_solid():
+def test_my_configurable_solid():
     result = execute_solid(
-        my_configured_solid,
+        my_configurable_solid,
         run_config={
             "solids": {
-                "my_configured_solid": {"config": {"api_endpoint": "https://localhost:3000"}}
+                "my_configurable_solid": {"config": {"api_endpoint": "https://localhost:3000"}}
             }
         },
     )

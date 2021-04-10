@@ -36,13 +36,13 @@ We use function calls within the decorated function body to indicate the depende
 In this example, the `add_one` solid depends on the `return_one` solid's output. Because this data dependency exists, the `return_one` solid executes after `add_one` runs successfully and emits the required output.
 
 ```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_solid_example_marker endbefore=end_composite_solid_example_marker
-@solid(config_schema={"hi": str}, input_defs=[InputDefinition("number", int)])
-def add_one(context, number):
+@solid
+def add_one(_, number: int):
     return number + 1
 
 
-@solid(input_defs=[InputDefinition("number", int)])
-def multiply_by_three(context, number):
+@solid
+def multiply_by_three(_, number: int):
     return number * 3
 
 
@@ -58,13 +58,13 @@ By default, the config schemas for each solid in a composite solid is hoisted up
 In this example, you have two solids that both take config and are wrapped by a composite solid.
 
 ```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_solid_config_marker endbefore=end_composite_solid_config_marker
-@solid(config_schema={"n": int}, input_defs=[InputDefinition("number", int)])
-def add_n(context, number):
+@solid(config_schema={"n": int})
+def add_n(context, number: int):
     return number + context.solid_config["n"]
 
 
-@solid(config_schema={"m": int}, input_defs=[InputDefinition("number", int)])
-def multiply_by_m(context, number):
+@solid(config_schema={"m": int})
+def multiply_by_m(context, number: int):
     return number * context.solid_config["m"]
 
 

@@ -1,15 +1,17 @@
 # start_marker
 
-from dagster import InputDefinition, List, OutputDefinition, pipeline, solid
+from typing import List
+
+from dagster import pipeline, solid
 
 
-@solid(output_defs=[OutputDefinition(int)])
-def return_one(_):
+@solid
+def return_one(_) -> int:
     return 1
 
 
-@solid(input_defs=[InputDefinition("nums", List[int])], output_defs=[OutputDefinition(int)])
-def sum_fan_in(_, nums):
+@solid
+def sum_fan_in(_, nums: List[int]) -> int:
     return sum(nums)
 
 
@@ -17,7 +19,7 @@ def sum_fan_in(_, nums):
 def fan_in_pipeline():
     fan_outs = []
     for i in range(0, 10):
-        fan_outs.append(return_one.alias("return_one_{}".format(i))())
+        fan_outs.append(return_one.alias(f"return_one_{i}")())
     sum_fan_in(fan_outs)
 
 
