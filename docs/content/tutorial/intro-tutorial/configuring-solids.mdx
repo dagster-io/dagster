@@ -12,11 +12,11 @@ So far, we've seen a solid whose behavior is the same every time it runs:
 ```python file=/intro_tutorial/basics/configuring_solids/read_csv.py startafter=start_load_cereals_marker endbefore=end_load_cereals_marker
 @solid
 def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
-    context.log.info(f"Found {len(cereals)} cereals".format())
+    context.log.info(f"Found {len(cereals)} cereals")
     return cereals
 ```
 
@@ -25,9 +25,7 @@ In many situations, we'd like to be able to configure solids at run time. For ex
 ```python file=/intro_tutorial/basics/configuring_solids/read_csv.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
 @solid(config_schema={"csv_name": str})
 def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
+    csv_path = pathlib.Path(__file__).parent / context.solid_config["csv_name"]
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -41,16 +39,14 @@ Let's rebuild a pipeline we've seen before, but this time using our newly parame
 
 ```python file=/intro_tutorial/basics/configuring_solids/configurable_pipeline.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 import csv
-import os
+import pathlib
 
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid(config_schema={"csv_name": str})
 def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
+    csv_path = pathlib.Path(__file__).parent / context.solid_config["csv_name"]
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 

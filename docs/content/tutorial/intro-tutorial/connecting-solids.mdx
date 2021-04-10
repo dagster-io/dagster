@@ -20,18 +20,18 @@ We'll expand the pipeline we worked with in the first section of the tutorial in
 
 ```python file=/intro_tutorial/basics/connecting_solids/serial_pipeline.py startafter=start_serial_pipeline_marker_0 endbefore=end_serial_pipeline_marker_0
 import csv
-import os
+import pathlib
 
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid
 def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
-    context.log.info(f"Found {len(cereals)} cereals".format())
+    context.log.info(f"Found {len(cereals)} cereals")
     return cereals
 
 
@@ -83,7 +83,7 @@ Solids don't need to be wired together serially. The output of one solid can be 
 ```python file=/intro_tutorial/basics/connecting_solids/complex_pipeline.py startafter=start_complex_pipeline_marker_0 endbefore=end_complex_pipeline_marker_0
 @solid
 def load_cereals(_):
-    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(dataset_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
     return cereals
