@@ -23,7 +23,7 @@ Let's look back at our simple `read_csv` solid.
 ```python file=/intro_tutorial/basics/e04_quality/inputs_typed.py startafter=start_inputs_typed_marker_0 endbefore=end_inputs_typed_marker_0
 @solid
 def read_csv(context, csv_path: str):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -77,7 +77,7 @@ Now we can annotate the rest of our pipeline with our new type:
 ```python file=/intro_tutorial/basics/e04_quality/custom_types.py startafter=start_custom_types_marker_1 endbefore=end_custom_types_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
 def read_csv(context, csv_path: str):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -115,7 +115,7 @@ Now, if our solid logic fails to return the right type, we'll see a type check f
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
 def bad_read_csv(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -152,9 +152,8 @@ def less_simple_data_frame_type_check(_, value):
         return TypeCheck(
             success=False,
             description=(
-                "LessSimpleDataFrame should be a list of dicts, got "
-                "{type_}"
-            ).format(type_=type(value)),
+                f"LessSimpleDataFrame should be a list of dicts, got {type(value)}"
+            ),
         )
 
     fields = [field for field in value[0].keys()]
@@ -166,8 +165,8 @@ def less_simple_data_frame_type_check(_, value):
                 success=False,
                 description=(
                     "LessSimpleDataFrame should be a list of dicts, "
-                    "got {type_} for row {idx}"
-                ).format(type_=type(row), idx=(i + 1)),
+                    f"got {type(row)} for row {i + 1}"
+                ),
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
@@ -175,8 +174,8 @@ def less_simple_data_frame_type_check(_, value):
                 success=False,
                 description=(
                     "Rows in LessSimpleDataFrame should have the same fields, "
-                    "got {actual} for row {idx}, expected {expected}"
-                ).format(actual=row_fields, idx=(i + 1), expected=fields),
+                    f"got {row_fields} for row {i + 1}, expected {fields}"
+                ),
             )
 
     return TypeCheck(
