@@ -1,5 +1,5 @@
 import csv
-import os
+import pathlib
 
 from dagster import solid
 
@@ -7,11 +7,11 @@ from dagster import solid
 # start_load_cereals_marker
 @solid
 def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
-    context.log.info(f"Found {len(cereals)} cereals".format())
+    context.log.info(f"Found {len(cereals)} cereals")
     return cereals
 
 
@@ -21,9 +21,7 @@ def load_cereals(context):
 # start_read_csv_marker
 @solid(config_schema={"csv_name": str})
 def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
+    csv_path = pathlib.Path(__file__).parent / context.solid_config["csv_name"]
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 

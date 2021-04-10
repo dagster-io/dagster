@@ -1,5 +1,5 @@
 import csv
-import os
+import pathlib
 
 from dagster import (
     AssetMaterialization,
@@ -18,7 +18,7 @@ from dagster import (
 
 @dagster_type_loader({"csv_path": Field(String)})
 def less_simple_data_frame_loader(context, config):
-    csv_path = os.path.join(os.path.dirname(__file__), config["csv_path"])
+    csv_path = pathlib.Path(__file__).parent / config["csv_path"]
 
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
@@ -47,10 +47,8 @@ def less_simple_data_frame_loader(context, config):
 )
 def less_simple_data_frame_materializer(context, config, value):
     # Materialize LessSimpleDataFrame into a csv file
-    csv_path = os.path.join(
-        os.path.dirname(__file__), os.path.abspath(config["csv"]["path"])
-    )
-    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+    csv_path = pathlib.Path(__file__).parent.joinpath(config["csv"]["path"]).resolve()
+    csv_path.parent.mkdir(exist_ok=True)
     with open(csv_path, "w") as fd:
         fieldnames = list(value[0].keys())
         writer = csv.DictWriter(
@@ -74,7 +72,7 @@ def less_simple_data_frame_materializer(context, config, value):
         ],
     )
     # Materialize LessSimpleDataFrame into a json file
-    json_path = os.path.abspath(config["json"]["path"])
+    json_path = pathlib.Path(config["json"]["path"]).resolve()
     with open(json_path, "w") as fd:
         json_value = seven.json.dumps([dict(row) for row in value])
         fd.write(json_value)

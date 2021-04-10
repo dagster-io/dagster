@@ -1,5 +1,5 @@
 import csv
-import os
+import pathlib
 
 from dagster import execute_pipeline, pipeline, solid
 
@@ -7,7 +7,7 @@ from dagster import execute_pipeline, pipeline, solid
 # start_complex_pipeline_marker_0
 @solid
 def load_cereals(_):
-    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    dataset_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(dataset_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
     return cereals

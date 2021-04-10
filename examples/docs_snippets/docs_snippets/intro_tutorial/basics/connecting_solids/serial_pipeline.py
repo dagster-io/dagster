@@ -1,17 +1,17 @@
 # start_serial_pipeline_marker_0
 import csv
-import os
+import pathlib
 
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid
 def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(csv_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
-    context.log.info(f"Found {len(cereals)} cereals".format())
+    context.log.info(f"Found {len(cereals)} cereals")
     return cereals
 
 

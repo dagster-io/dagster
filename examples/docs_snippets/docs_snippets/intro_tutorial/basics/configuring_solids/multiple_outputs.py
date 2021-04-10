@@ -1,5 +1,5 @@
 import csv
-import os
+import pathlib
 
 from dagster import (
     Bool,
@@ -15,7 +15,7 @@ from dagster import (
 @solid
 def read_csv(context, csv_path):
     lines = []
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    csv_path = pathlib.Path(__file__).parent / csv_path
     with open(csv_path, "r") as fd:
         for row in csv.DictReader(fd):
             row["calories"] = int(row["calories"])
