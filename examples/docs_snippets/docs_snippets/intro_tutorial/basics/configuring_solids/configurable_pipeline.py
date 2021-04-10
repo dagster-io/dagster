@@ -1,15 +1,13 @@
 # start_pipeline_marker
 import csv
-import os
+import pathlib
 
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid(config_schema={"csv_name": str})
 def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
+    csv_path = pathlib.Path(__file__).parent / context.solid_config["csv_name"]
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 

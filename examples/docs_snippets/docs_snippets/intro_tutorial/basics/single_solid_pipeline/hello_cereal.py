@@ -2,7 +2,7 @@
 
 # start_solid_marker
 import csv
-import os
+import pathlib
 
 from dagster import pipeline, solid
 
@@ -10,7 +10,7 @@ from dagster import pipeline, solid
 @solid
 def hello_cereal(context):
     # Assumes the dataset is in the same directory as this Python file
-    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
+    dataset_path = pathlib.Path(__file__).parent / "cereal.csv"
     with open(dataset_path, "r") as fd:
         # Read the rows in using the standard csv library
         cereals = [row for row in csv.DictReader(fd)]

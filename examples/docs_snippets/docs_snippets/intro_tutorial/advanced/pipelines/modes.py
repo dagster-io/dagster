@@ -1,7 +1,7 @@
 # for NormalizedCereal.__table__.insert().execute(records)
 # pylint: disable=no-member
 import csv
-import os
+import pathlib
 import sqlite3
 from copy import deepcopy
 from typing import Any
@@ -96,7 +96,7 @@ def sqlalchemy_postgres_warehouse_resource(context):
 
 @solid
 def read_csv(context, csv_path):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    csv_path = pathlib.Path(__file__).parent / csv_path
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 

@@ -1,5 +1,5 @@
 import csv
-import os
+import pathlib
 
 from dagster import (
     AssetMaterialization,
@@ -13,7 +13,7 @@ from dagster import (
 
 @solid
 def read_csv(context, csv_path):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
+    csv_path = pathlib.Path(__file__).parent / csv_path
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -38,10 +38,10 @@ def sort_by_calories(context, cereals):
         )
     )
     fieldnames = list(sorted_cereals[0].keys())
-    sorted_cereals_csv_path = os.path.abspath(
-        "output/calories_sorted_{run_id}.csv".format(run_id=context.run_id)
-    )
-    os.makedirs(os.path.dirname(sorted_cereals_csv_path), exist_ok=True)
+    sorted_cereals_csv_path = pathlib.Path(
+        f"output/calories_sorted_{context.run_id}.csv"
+    ).resolve()
+    sorted_cereals_csv_path.parent.mkdir(exist_ok=True)
     with open(sorted_cereals_csv_path, "w") as fd:
         writer = csv.DictWriter(fd, fieldnames)
         writer.writeheader()
