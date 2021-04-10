@@ -22,8 +22,8 @@ Let's look back at our simple `read_csv` solid.
 
 ```python file=/intro_tutorial/basics/e04_quality/inputs_typed.py startafter=start_inputs_typed_marker_0 endbefore=end_inputs_typed_marker_0
 @solid
-def read_csv(context):
-    csv_path = pathlib.Path(__file__).parent / "cereal.csv"
+def read_csv(context, csv_path: str):
+    csv_path = pathlib.Path(__file__).parent / csv_path
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
