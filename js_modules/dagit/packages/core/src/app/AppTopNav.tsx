@@ -106,6 +106,7 @@ const NavButton = styled.button`
   padding: 6px;
   border: none;
   background: transparent;
+  display: none;
 
   .bp3-icon svg {
     transition: fill 100ms linear;
@@ -121,10 +122,6 @@ const NavButton = styled.button`
 
   :focus {
     background: ${Colors.DARK_GRAY5};
-  }
-
-  @media (max-width: 2560px) {
-    display: none;
   }
 
   @media (max-width: 1440px) {
