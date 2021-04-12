@@ -69,7 +69,7 @@ Wrote DAG scaffold to file: $AIRFLOW_HOME/dags/hello_cereal_pipeline.py
 
 Let's take a look at the generated file:
 
-```python file=/intro_tutorial/hello_cereal_pipeline.py
+```python file=/deploying/airflow/generated_airflow.py
 """
 The airflow DAG scaffold for docs_snippets.intro_tutorial.airflow.hello_cereal_pipeline
 
@@ -204,7 +204,7 @@ You'll also need to containerize your Dagster repository.
 
 Make sure you have Docker installed, and write a Dockerfile like the following:
 
-```dockerfile
+```dockerfile file=/deploying/airflow/Dockerfile.yaml
 # You may use any base container with a supported Python runtime: 2.7, 3.5, 3.6, or 3.7
 FROM python:3.7
 
@@ -218,24 +218,16 @@ FROM python:3.7
 # If you would like to set secrets at build time (with --build-arg), set args
 # ARG super_secret
 
-# Install dagster_graphql
-RUN pip install dagster_graphql
-
 # Install any Python requirements that the pipelines in your repository require to run
 ADD /path/to/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Add your workspace.yaml file so that dagster_graphql knows where to look to find your repository,
-# the Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
-# Python files from which your repository definition imports, or local packages that cannot be
-# installed using the requirements.txt).
+# Add the Python file in which your repository is defined, and any local dependencies (e.g.,
+# unpackaged Python files from which your repository definition imports, or local packages that
+# cannot be installed using the requirements.txt).
 ADD /path/to/workspace.yaml .
 ADD /path/to/repository_definition.py .
 # ADD /path/to/additional_file.py .
-
-# The dagster-airflow machinery will use dagster_graphql to execute steps in your pipelines, so we
-# need to run dagster_graphql when the container starts up
-ENTRYPOINT [ "dagster_graphql" ]
 ```
 
 Of course, you may expand on this Dockerfile in any way that suits your needs.
@@ -254,23 +246,18 @@ For most production applications, you'll probably want to use a private Docker r
 
 As in the uncontainerized case, you'll put a new Python file defining your DAG in the directory in which Airflow looks for DAGs.
 
-```python
+```python file=/deploying/airflow/containerized.py
 from dagster_airflow.factory import make_airflow_dag_containerized
 
-from my_package import define_my_pipeline
-
-pipeline = define_my_pipeline()
-
-image = 'dagster-airflow-demo-repository'
-
 dag, steps = make_airflow_dag_containerized(
-    pipeline,
-    image,
-    run_config={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
+    module_name="docs_snippets.intro_tutorial.airflow",
+    pipeline_name="hello_cereal_pipeline",
+    image="dagster-airflow-demo-repository",
+    run_config={"storage": {"filesystem": {"config": {"base_dir": "/tmp"}}}},
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
-    op_kwargs=None
+    op_kwargs=None,
 )
 ```
 
@@ -280,15 +267,17 @@ You can pass `op_kwargs` through to the the **`DagsterDockerOperator`** to use c
 
 By default, the **`DagsterDockerOperator`** will bind-mount `/tmp` on the host into `/tmp` in the Docker container. You can control this by setting the `op_kwargs` in **`make_airflow_dag`**. For instance, if you'd prefer to mount `/host_tmp` on the host into `/container_tmp` in the container, and use this volume for intermediate storage, you can run:
 
-```python
+```python file=/deploying/airflow/mounted.py
+from dagster_airflow.factory import make_airflow_dag
+
 dag, steps = make_airflow_dag(
-    pipeline,
-    image,
-    run_config={'storage': {'filesystem': {'config' : {'base_dir': '/container_tmp'}}}},
+    module_name="docs_snippets.intro_tutorial.airflow",
+    pipeline_name="hello_cereal_pipeline",
+    run_config={"storage": {"filesystem": {"config": {"base_dir": "/container_tmp"}}}},
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
-    op_kwargs={'host_tmp_dir': '/host_tmp', 'tmp_dir': '/container_tmp'}
+    op_kwargs={"host_tmp_dir": "/host_tmp", "tmp_dir": "/container_tmp"},
 )
 ```
 

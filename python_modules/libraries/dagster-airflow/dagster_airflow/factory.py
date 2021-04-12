@@ -388,8 +388,7 @@ def make_airflow_dag_containerized(
 ):
     """Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
 
-    Tasks in the resulting DAG will execute the Dagster logic they encapsulate by calling the
-    dagster-graphql API exposed by a container run using a subclass of
+    Tasks in the resulting DAG will execute the Dagster logic they encapsulate  using a subclass of
     :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`. As a
     consequence, both dagster, any Python dependencies required by your solid logic, and the module
     containing your pipeline definition must be available in the container spun up by this operator.
