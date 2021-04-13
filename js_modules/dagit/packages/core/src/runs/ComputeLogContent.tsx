@@ -8,53 +8,26 @@ import styled, {createGlobalStyle} from 'styled-components/macro';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
-import {ExecutionStateDot} from './ExecutionStateDot';
-import {IStepState} from './RunMetadataProvider';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
-
-interface IComputeLogContentProps {
-  rootServerURI: string;
-  runState: IStepState;
-  onRequestClose: () => void;
-  stdout: ComputeLogContentFileFragment | null;
-  stderr: ComputeLogContentFileFragment | null;
-  maxBytes: number;
-}
 
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
+export const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
-export class ComputeLogContent extends React.Component<IComputeLogContentProps> {
+export class ComputeLogContent extends React.Component<{
+  logData?: ComputeLogContentFileFragment | null;
+  downloadUrl?: string | null;
+  isLoading?: boolean;
+  isVisible: boolean;
+}> {
   private timeout: number;
-  private stdout = React.createRef<ScrollContainer>();
-  private stderr = React.createRef<ScrollContainer>();
+  private contentContainer = React.createRef<ScrollContainer>();
 
   state = {
-    selected: 'stderr',
     showScrollToTop: false,
   };
 
-  close = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    this.props.onRequestClose();
-  };
-
-  onScrollUp = (position: number) => {
-    this.cancelHide();
-
-    if (!position) {
-      this.hide();
-    } else {
-      this.setState({showScrollToTop: true});
-      this.scheduleHide();
-    }
-  };
-
-  onScrollDown = (_position: number) => {
-    this.hide();
-  };
-
-  hide = () => {
+  hideWarning = () => {
     this.setState({showScrollToTop: false});
     if (this.timeout) {
       clearTimeout(this.timeout);
@@ -62,34 +35,35 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
     }
   };
 
-  scheduleHide = () => {
-    this.timeout = window.setTimeout(this.hide, SCROLLER_LINK_TIMEOUT_MS);
+  scheduleHideWarning = () => {
+    this.timeout = window.setTimeout(this.hideWarning, SCROLLER_LINK_TIMEOUT_MS);
   };
 
-  cancelHide = () => {
+  cancelHideWarning = () => {
     if (this.timeout) {
       clearTimeout(this.timeout);
       this.timeout = 0;
     }
   };
 
-  scrollToTop = () => {
-    const {selected} = this.state;
-    const ref = selected === 'stdout' ? this.stdout : this.stderr;
-    ref.current && ref.current.scrollToTop();
+  onScrollUp = (position: number) => {
+    this.cancelHideWarning();
+
+    if (!position) {
+      this.hideWarning();
+    } else {
+      this.setState({showScrollToTop: true});
+      this.scheduleHideWarning();
+    }
   };
 
-  getDownloadUrl() {
-    const {stdout, stderr} = this.props;
-    const {selected} = this.state;
-    const logData = selected === 'stdout' ? stdout : stderr;
-    const downloadUrl = logData?.downloadUrl;
-    if (!downloadUrl) {
-      return null;
-    }
-    const isRelativeUrl = (x?: string) => x && x.startsWith('/');
-    return isRelativeUrl(downloadUrl) ? this.props.rootServerURI + downloadUrl : downloadUrl;
-  }
+  onScrollDown = (_position: number) => {
+    this.hideWarning();
+  };
+
+  scrollToTop = () => {
+    this.contentContainer.current && this.contentContainer.current.scrollToTop();
+  };
 
   renderScrollToTop() {
     const {showScrollToTop} = this.state;
@@ -102,8 +76,8 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
       <ScrollToast>
         <ScrollToTop
           onClick={() => this.scrollToTop()}
-          onMouseOver={this.cancelHide}
-          onMouseOut={this.scheduleHide}
+          onMouseOver={this.cancelHideWarning}
+          onMouseOut={this.scheduleHideWarning}
         >
           <Icon icon={IconNames.ARROW_UP} style={{marginRight: 10}} />
           Scroll to top
@@ -112,28 +86,16 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
     );
   }
 
-  renderStatus() {
-    const {runState} = this.props;
-    if (runState === IStepState.RUNNING) {
-      return <Spinner purpose="body-text" />;
-    }
-    return (
-      <ExecutionStateDot
-        state={runState}
-        title={`${runState[0].toUpperCase()}${runState.substr(1)}`}
-      />
-    );
-  }
-
-  renderContent(ioType: string, content: string | null | undefined) {
-    const isTruncated = content && Buffer.byteLength(content, 'utf8') >= this.props.maxBytes;
+  render() {
+    const {logData, isLoading, isVisible, downloadUrl} = this.props;
+    let content = logData?.data;
+    const isTruncated = content && Buffer.byteLength(content, 'utf8') >= MAX_STREAMING_LOG_BYTES;
 
     if (content && isTruncated) {
       const nextLine = content.indexOf('\n') + 1;
       const truncated = nextLine < content.length ? content.slice(nextLine) : content;
       content = TRUNCATE_PREFIX + truncated;
     }
-    const downloadUrl = this.getDownloadUrl();
     const warning = isTruncated ? (
       <FileWarning>
         <Icon icon={IconNames.WARNING_SIGN} style={{marginRight: 10, color: Colors.ORANGE5}} />
@@ -147,72 +109,30 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
       </FileWarning>
     ) : null;
 
-    const ref = ioType === 'stdout' ? this.stdout : this.stderr;
-    const isSelected = this.state.selected === ioType;
     return (
-      <FileContent isSelected={isSelected}>
-        {warning}
-        <RelativeContainer>
-          <LogContent
-            isSelected={isSelected}
-            content={content}
-            onScrollUp={this.onScrollUp}
-            onScrollDown={this.onScrollDown}
-            ref={ref}
-          />
-        </RelativeContainer>
-      </FileContent>
-    );
-  }
-
-  select = (selected: string) => {
-    this.setState({selected});
-    this.hide();
-  };
-
-  render() {
-    const {stdout, stderr} = this.props;
-    const {selected} = this.state;
-
-    const logData = selected === 'stdout' ? stdout : stderr;
-    const downloadUrl = this.getDownloadUrl();
-
-    return (
-      <Container>
-        <FileContainer>
-          <FileHeader>
-            <Row>
-              <Tab selected={selected === 'stderr'} onClick={() => this.select('stderr')}>
-                stderr
-              </Tab>
-              <Tab selected={selected === 'stdout'} onClick={() => this.select('stdout')}>
-                stdout
-              </Tab>
-            </Row>
-            <Row>
-              {this.renderStatus()}
-              {downloadUrl ? (
-                <Link
-                  aria-label="Download link"
-                  className="bp3-button bp3-minimal bp3-icon-download"
-                  href={downloadUrl}
-                  download
-                >
-                  <LinkText>Download {selected}</LinkText>
-                </Link>
-              ) : null}
-              <button
-                onClick={this.close}
-                className="bp3-dialog-close-button bp3-button bp3-minimal bp3-icon-cross"
-              ></button>
-            </Row>
-          </FileHeader>
+      <>
+        <FileContainer isVisible={isVisible}>
           {this.renderScrollToTop()}
-          {this.renderContent('stdout', stdout?.data)}
-          {this.renderContent('stderr', stderr?.data)}
-          <FileFooter>{logData?.path}</FileFooter>
+          <FileContent>
+            {warning}
+            <RelativeContainer>
+              <LogContent
+                isSelected={true}
+                content={content}
+                onScrollUp={this.onScrollUp}
+                onScrollDown={this.onScrollDown}
+                ref={this.contentContainer}
+              />
+            </RelativeContainer>
+          </FileContent>
+          {isLoading ? (
+            <LoadingContainer>
+              <Spinner purpose="page" />
+            </LoadingContainer>
+          ) : null}
         </FileContainer>
-      </Container>
+        <FileFooter isVisible={isVisible}>{logData?.path}</FileFooter>
+      </>
     );
   }
 }
@@ -352,32 +272,6 @@ const LineNumbers = (props: IScrollContainerProps) => {
   );
 };
 
-const Row = styled.div`
-  display: flex;
-  flex-direction: row;
-  margin-left: 5px;
-  align-items: center;
-`;
-const LinkText = styled.span`
-  height: 1px;
-  width: 1px;
-  position: absolute;
-  overflow: hidden;
-  top: -10px;
-`;
-const Link = styled.a`
-  margin-left: 10px;
-  ::before {
-    margin: 0 !important;
-  }
-`;
-const Container = styled.div`
-  background-color: #333333;
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-`;
 const FileContainer = styled.div`
   flex: 1;
   height: 100%;
@@ -385,44 +279,31 @@ const FileContainer = styled.div`
   &:first-child {
     border-right: 0.5px solid #5c7080;
   }
-`;
-const FileHeader = styled.div`
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px;
-  background-color: #444444;
-  border-bottom: 0.5px solid #5c7080;
-  color: ${({color}) => color || '#ffffff'};
-  font-weight: 600;
-  padding: 0 10px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  flex-direction: column;
+  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
 `;
 const FileFooter = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   height: 30px;
+  background-color: ${Colors.DARK_GRAY2};
   border-top: 0.5px solid #5c7080;
   color: #aaaaaa;
   padding: 2px 5px;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
   font-size: 0.85em;
+  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
 `;
 const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   min-height: 100%;
+  background-color: ${Colors.DARK_GRAY2};
 `;
 const Content = styled.div`
   padding: 10px;
+  background-color: ${Colors.DARK_GRAY2};
 `;
 const LineNumberContainer = styled.div`
   display: flex;
@@ -431,7 +312,7 @@ const LineNumberContainer = styled.div`
   border-right: 1px solid #5c7080;
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
-  background-color: #333333;
+  background-color: ${Colors.DARK_GRAY2};
   opacity: 0.8;
   color: #858585;
   min-height: 100%;
@@ -462,41 +343,10 @@ const SolarizedColors = createGlobalStyle`
     color: #eee8d5;
   }
 `;
-const Tab = styled.div`
-  background-color: ${({selected}: {selected: boolean}) => (selected ? '#333333' : '#444444')};
-  cursor: pointer;
-  height: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 150px;
-  margin-right: 1px;
-  margin-bottom: ${({selected}: {selected: boolean}) => (selected ? '-10px' : '-9px')};
-  border-top-right-radius: 5px;
-  border-top-left-radius: 5px;
-  border-top: 0.5px solid
-    ${({selected}: {selected: boolean}) => (selected ? '#5c7080' : 'transparent')};
-  border-left: 0.5px solid
-    ${({selected}: {selected: boolean}) => (selected ? '#5c7080' : 'transparent')};
-  border-right: 0.5px solid
-    ${({selected}: {selected: boolean}) => (selected ? '#5c7080' : 'transparent')};
-  &:hover {
-    border-top: 0.5px solid #5c7080;
-    border-left: 0.5px solid #5c7080;
-    border-right: 0.5px solid #5c7080;
-    height: ${({selected}: {selected: boolean}) => (selected ? '30px' : '28px')};
-  }
-`;
-
 const FileContent = styled.div`
-  position: absolute;
-  top: 40px;
-  bottom: 30px;
-  left: 0;
-  right: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  ${({isSelected}: {isSelected: boolean}) => (isSelected ? null : 'visibility: hidden;')}
 `;
 const RelativeContainer = styled.div`
   flex: 1;
@@ -521,8 +371,8 @@ const FileWarning = styled.div`
 `;
 const ScrollToast = styled.div`
   position: absolute;
-  top: 40px;
   height: 30px;
+  top: 0;
   left: 0;
   right: 0;
   display: flex;
@@ -544,4 +394,16 @@ const ScrollToTop = styled.div`
   &:hover {
     text-decoration: underline;
   }
+`;
+const LoadingContainer = styled.div`
+  display: flex;
+  justifycontent: center;
+  alignitems: center;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  backgroundcolor: ${Colors.DARK_GRAY3};
+  opacity: 0.3;
 `;

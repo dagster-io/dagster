@@ -1,123 +1,22 @@
 import {gql} from '@apollo/client';
-import {Dialog} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
-import {AppContext} from '../app/AppContext';
 import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
 import {ComputeIOType} from '../types/globalTypes';
-import {Spinner} from '../ui/Spinner';
 
-import {ComputeLogContent, COMPUTE_LOG_CONTENT_FRAGMENT} from './ComputeLogContent';
-import {RunContext} from './RunContext';
-import {IStepState} from './RunMetadataProvider';
+import {COMPUTE_LOG_CONTENT_FRAGMENT, MAX_STREAMING_LOG_BYTES} from './ComputeLogContent';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 import {ComputeLogsSubscription} from './types/ComputeLogsSubscription';
 import {ComputeLogsSubscriptionFragment} from './types/ComputeLogsSubscriptionFragment';
-
-const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
-
-interface IComputeLogLink {
-  children: React.ReactNode;
-  runState: IStepState;
-  stepKey: string;
-}
-
-export const ComputeLogLink = ({runState, stepKey, children}: IComputeLogLink) => {
-  const [isOpen, setOpen] = React.useState(false);
-  const run = React.useContext(RunContext);
-
-  if (!run || !run.runId || runState === IStepState.SKIPPED) {
-    return null;
-  }
-
-  const open = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    setOpen(true);
-  };
-  const close = () => setOpen(false);
-  return (
-    <>
-      <span onClick={open}>{children}</span>
-      <Dialog
-        onClose={close}
-        style={{
-          width: '100vw',
-          height: '100vh',
-          margin: 0,
-          padding: 0,
-          borderRadius: 0,
-        }}
-        usePortal={true}
-        isOpen={isOpen}
-      >
-        {isOpen ? (
-          <ComputeLogModal
-            runId={run.runId}
-            runState={runState}
-            stepKey={stepKey}
-            onRequestClose={close}
-          />
-        ) : (
-          <LoadingContainer>
-            <Spinner purpose="section" />
-          </LoadingContainer>
-        )}
-      </Dialog>
-    </>
-  );
-};
-
-interface ComputeLogModalProps {
-  runId: string;
-  stepKey: string;
-  runState: IStepState;
-  onRequestClose: () => void;
-}
-
-const ComputeLogModal = ({runId, onRequestClose, stepKey, runState}: ComputeLogModalProps) => {
-  const {rootServerURI, websocketURI} = React.useContext(AppContext);
-  return (
-    <ComputeLogsProvider
-      websocketURI={websocketURI}
-      runId={runId}
-      stepKey={stepKey}
-      maxBytes={MAX_STREAMING_LOG_BYTES}
-    >
-      {({isLoading, stdout, stderr, maxBytes}) => {
-        if (isLoading) {
-          return (
-            <LoadingContainer>
-              <Spinner purpose="section" />
-            </LoadingContainer>
-          );
-        }
-
-        return (
-          <ComputeLogContent
-            rootServerURI={rootServerURI}
-            runState={runState}
-            onRequestClose={onRequestClose}
-            stdout={stdout}
-            stderr={stderr}
-            maxBytes={maxBytes}
-          />
-        );
-      }}
-    </ComputeLogsProvider>
-  );
-};
 
 interface IComputeLogsProviderProps {
   children: (props: {
     isLoading: boolean;
     stdout: ComputeLogsSubscriptionFragment | null;
     stderr: ComputeLogsSubscriptionFragment | null;
-    maxBytes: number;
   }) => React.ReactChild;
   runId: string;
   stepKey: string;
-  maxBytes: number;
   websocketURI: string;
 }
 interface IComputeLogsProviderState {
@@ -126,7 +25,7 @@ interface IComputeLogsProviderState {
   isLoading: boolean;
 }
 
-class ComputeLogsProvider extends React.Component<
+export class ComputeLogsProvider extends React.Component<
   IComputeLogsProviderProps,
   IComputeLogsProviderState
 > {
@@ -155,7 +54,7 @@ class ComputeLogsProvider extends React.Component<
 
   subscribe() {
     const {runId, stepKey} = this.props;
-    this.setState({isLoading: true});
+    this.setState({isLoading: true, stdout: null, stderr: null});
     this._stdout = new DirectGraphQLSubscription<ComputeLogsSubscription>(
       this.props.websocketURI,
       COMPUTE_LOGS_SUBSCRIPTION,
@@ -234,8 +133,7 @@ class ComputeLogsProvider extends React.Component<
 
   render() {
     const {isLoading, stdout, stderr} = this.state;
-    const {maxBytes} = this.props;
-    return this.props.children({isLoading, stdout, stderr, maxBytes});
+    return this.props.children({isLoading, stdout, stderr});
   }
 }
 
@@ -260,11 +158,4 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
     }
   }
   ${COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT}
-`;
-
-const LoadingContainer = styled.div`
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 `;
