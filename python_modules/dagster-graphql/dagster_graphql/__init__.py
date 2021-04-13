@@ -3,6 +3,7 @@ from dagster.core.utils import check_dagster_package_version
 from .client import (
     DagsterGraphQLClient,
     DagsterGraphQLClientError,
+    InvalidOutputErrorInfo,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
 )
