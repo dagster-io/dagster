@@ -17,6 +17,7 @@ from dagster import (
     check,
     seven,
 )
+from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -26,6 +27,7 @@ from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
 from dagster.utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
+from papermill.exceptions import PapermillExecutionError
 from papermill.iorw import load_notebook_node, write_ipynb
 from papermill.parameterize import _find_first_tagged_cell_index
 
@@ -183,7 +185,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                         log_output=True,
                     )
 
-                except Exception:  # pylint: disable=broad-except
+                except Exception as ex:  # pylint: disable=broad-except
                     try:
                         with open(executed_notebook_path, "rb") as fd:
                             executed_notebook_file_handle = (
@@ -212,6 +214,16 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                             )
                         ],
                     )
+
+                    # pylint: disable=no-member
+                    if isinstance(ex, PapermillExecutionError) and (
+                        ex.ename == "RetryRequested" or ex.ename == "Failure"
+                    ):
+                        system_compute_context.log.warn(
+                            f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
+                            "with RetryRequested or Failure to trigger their behavior."
+                        )
+
                     raise
 
             system_compute_context.log.debug(
@@ -264,7 +276,11 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
             for key, value in output_nb.scraps.items():
                 if key.startswith("event-"):
                     with open(value.data, "rb") as fd:
-                        yield pickle.loads(fd.read())
+                        event = pickle.loads(fd.read())
+                        if isinstance(event, (Failure, RetryRequested)):
+                            raise event
+                        else:
+                            yield event
 
     return _t_fn
 

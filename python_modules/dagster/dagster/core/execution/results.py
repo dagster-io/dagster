@@ -572,3 +572,12 @@ class SolidExecutionResult:
         for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_FAILURE:
                 return step_event.step_failure_data
+
+    @property
+    def retry_attempts(self) -> int:
+        """Number of times this step retried"""
+        count = 0
+        for step_event in self.compute_step_events:
+            if step_event.event_type == DagsterEventType.STEP_RESTARTED:
+                count += 1
+        return count

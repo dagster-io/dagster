@@ -66,7 +66,11 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     with instance_for_test() as instance:
         try:
             result = execute_pipeline(
-                recon_pipeline, env, instance=instance, raise_on_error=raise_on_error, **kwargs
+                recon_pipeline,
+                env,
+                instance=instance,
+                raise_on_error=raise_on_error,
+                **kwargs,
             )
             yield result
         finally:
@@ -434,3 +438,37 @@ def test_custom_description():
         BACKING_NB_NAME, BACKING_NB_PATH, description=test_description
     )
     assert test_solid.description == test_description
+
+
+@pytest.mark.notebook_test
+def test_retries(capsys):
+    with exec_for_test("retries_pipeline", raise_on_error=False) as result:
+
+        assert result.result_for_solid("yield_retry").retry_attempts == 1
+
+        # the raise_retry solid should trigger a warning to use yield_event
+        warn_found = False
+        captured = capsys.readouterr()
+        for line in captured.err.split("\n"):
+            if "Use dagstermill.yield_event with RetryRequested or Failure" in line:
+                warn_found = True
+
+        assert warn_found
+
+
+@pytest.mark.notebook_test
+def test_failure(capsys):
+    with exec_for_test("failure_pipeline", raise_on_error=False) as result:
+        assert (
+            result.result_for_solid("yield_failure").failure_data.user_failure_data.description
+            == "bad bad notebook"
+        )
+
+        # the raise_failure solid should trigger a warning to use yield_event
+        warn_found = False
+        captured = capsys.readouterr()
+        for line in captured.err.split("\n"):
+            if "Use dagstermill.yield_event with RetryRequested or Failure" in line:
+                warn_found = True
+
+        assert warn_found

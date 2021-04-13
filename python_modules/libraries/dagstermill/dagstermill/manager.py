@@ -15,6 +15,7 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -305,14 +306,21 @@ class Manager:
         When called interactively or in development, returns its input.
 
         Args:
-            dagster_event (Union[:class:`dagster.Materialization`, :class:`dagster.ExpectationResult`, :class:`dagster.TypeCheck`, :class:`dagster.Failure`]):
+            dagster_event (Union[:class:`dagster.AssetMaterialization`, :class:`dagster.ExpectationResult`, :class:`dagster.TypeCheck`, :class:`dagster.Failure`, :class:`dagster.RetryRequested`]):
                 An event to yield back to Dagster.
         """
-        check.inst_param(
-            dagster_event,
-            "dagster_event",
-            (AssetMaterialization, Materialization, ExpectationResult, TypeCheck, Failure),
+        valid_types = (
+            Materialization,
+            AssetMaterialization,
+            ExpectationResult,
+            TypeCheck,
+            Failure,
+            RetryRequested,
         )
+        if not isinstance(dagster_event, valid_types):
+            raise DagstermillError(
+                f"Received invalid type {dagster_event} in yield_event. Expected a Dagster event type, one of {valid_types}."
+            )
 
         if not self.in_pipeline:
             return dagster_event
