@@ -5,11 +5,13 @@ description: Solids can be parameterized with runtime configuration
 
 # Configuring Solids
 
-<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/configuring_solids/" />
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/configuring_solids/" />
 
-So far, we've seen a solid whose behavior is the same every time it runs:
+In many situations, we'd like to be able to configure solids at run time. For example, we may want whomever is running the pipeline to decide what dataset it operates on. Configuration is useful when you want the person or system that is launching a pipeline to be able to make choices about what the pipeline does, without needing to modify the pipeline definition.
 
-```python file=/intro_tutorial/basics/configuring_solids/read_csv.py startafter=start_load_cereals_marker endbefore=end_load_cereals_marker
+We've seen a solid whose behavior is the same every time it runs:
+
+```python file=/intro_tutorial/advanced/configuring_solids/read_csv.py startafter=start_load_cereals_marker endbefore=end_load_cereals_marker
 @solid
 def load_cereals(context):
     csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
@@ -20,9 +22,9 @@ def load_cereals(context):
     return cereals
 ```
 
-In many situations, we'd like to be able to configure solids at run time. For example, we may want whomever is running the pipeline to decide what dataset it operates on. Appropriately parameterized solids are more testable and reusable. Consider the following more generic solid:
+If we want the file to be determined by whomever is launching the pipeline, we might write a more generic version:
 
-```python file=/intro_tutorial/basics/configuring_solids/read_csv.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
+```python file=/intro_tutorial/advanced/configuring_solids/read_csv.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
 @solid(config_schema={"csv_name": str})
 def read_csv(context):
     csv_path = os.path.join(
@@ -39,7 +41,7 @@ Here, rather than hard-coding the value of `dataset_path`, we use a config optio
 
 Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
-```python file=/intro_tutorial/basics/configuring_solids/configurable_pipeline.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+```python file=/intro_tutorial/advanced/configuring_solids/configurable_pipeline.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 import csv
 import os
 
@@ -128,7 +130,7 @@ displayText="execute_pipeline()" />function. Pipeline run config is specified by
 
 This dict contains all of the user-provided configuration with which to execute a pipeline. As such, it can have [a lot of sections](/\_apidocs/execution), but we'll only use one of them here: per-solid configuration, which is specified under the key `solids`:
 
-```python file=/intro_tutorial/basics/configuring_solids/configurable_pipeline.py startafter=start_run_config_marker endbefore=end_run_config_marker
+```python file=/intro_tutorial/advanced/configuring_solids/configurable_pipeline.py startafter=start_run_config_marker endbefore=end_run_config_marker
 run_config = {
         "solids": {"read_csv": {"config": {"csv_name": "cereal.csv"}}}
     }
@@ -139,7 +141,7 @@ The `solids` dict is keyed by solid name, and each solid is configured by a dict
 Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" />:
 
-```python file=/intro_tutorial/basics/configuring_solids/configurable_pipeline.py startafter=start_execute_marker endbefore=end_execute_marker
+```python file=/intro_tutorial/advanced/configuring_solids/configurable_pipeline.py startafter=start_execute_marker endbefore=end_execute_marker
 result = execute_pipeline(configurable_pipeline, run_config=run_config)
 ```
 
@@ -147,7 +149,7 @@ result = execute_pipeline(configurable_pipeline, run_config=run_config)
 
 When executing pipelines with the Dagster CLI, we'll need to provide the run config in a file. We use YAML for the file-based representation of configuration, but the values are the same as before:
 
-```yaml file=/intro_tutorial/basics/configuring_solids/run_config.yaml
+```yaml file=/intro_tutorial/advanced/configuring_solids/run_config.yaml
 solids:
   read_csv:
     config:

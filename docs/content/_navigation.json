@@ -48,10 +48,6 @@
             "path": "/tutorial/intro-tutorial/connecting-solids"
           },
           {
-            "title": "Configuring Solids",
-            "path": "/tutorial/intro-tutorial/configuring-solids"
-          },
-          {
             "title": "Testing Solids and Pipelines",
             "path": "/tutorial/intro-tutorial/testable"
           }
@@ -61,27 +57,27 @@
         "title": "Advanced Tutorials",
         "children": [
           {
-            "title": "Advanced: Dagster Types",
+            "title": "Configuring Solids",
+            "path": "/tutorial/intro-tutorial/configuring-solids"
+          },
+          {
+            "title": "Dagster Types",
             "path": "/tutorial/advanced-tutorial/types"
           },
           {
-            "title": "Advanced: Re-use and Composition",
-            "path": "/tutorial/advanced-tutorial/solids"
-          },
-          {
-            "title": "Advanced: Pipelines",
+            "title": "Modes, Resources, & Presets",
             "path": "/tutorial/advanced-tutorial/pipelines"
           },
           {
-            "title": "Advanced: Materializations",
+            "title": "Materializations",
             "path": "/tutorial/advanced-tutorial/materializations"
           },
           {
-            "title": "Advanced: Organizing Pipelines in Repositories & Workspaces",
+            "title": "Organizing Pipelines in Repositories & Workspaces",
             "path": "/tutorial/advanced-tutorial/repositories"
           },
           {
-            "title": "Advanced: Scheduling Pipeline Runs",
+            "title": "Scheduling Pipeline Runs",
             "path": "/tutorial/advanced-tutorial/scheduling"
           }
         ]

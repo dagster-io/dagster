@@ -1,13 +1,13 @@
 ---
-title: "Advanced: Pipelines | Dagster"
-description: Dagster provides various pipeline-level facilities to avoid hard-coding interactions and therefore improve the development experience.
+title: "Modes, Resources, and Presets | Dagster"
+description: Dagster provides pipeline-level facilities to avoid hard-coding interactions with external systems.
 ---
 
-# Advanced: Pipelines
+# Advanced: Modes, Resources, and Presets
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/" />
 
-Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like Snowflake or BigQuery. Dagster provides various facilities to avoid hard-coding interactions with such systems, so that your business logic can remain the same across different environments (local/test, dev, prod, etc.) Resources represent these external systems, and modes/presets support swapping resource implementations across different environments.
+Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like Snowflake or BigQuery. Dagster provides facilities to avoid hard-coding interactions with such systems, so that your business logic can remain the same across different environments (local/test, dev, prod, etc.) Resources represent these external systems, and modes/presets support swapping resource implementations across different environments.
 
 ## Parametrizing Pipelines with Resources
 
