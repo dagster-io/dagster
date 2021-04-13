@@ -10,6 +10,7 @@ import {
   NonIdealState,
   Tooltip,
   Colors,
+  ButtonGroup,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -17,7 +18,6 @@ import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {featureEnabled, FeatureFlag} from '../app/Util';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
@@ -55,6 +55,7 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}
 }) => {
   const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY);
   const [q, setQ] = React.useState<string>('');
+  const [isFlattened, setIsFlattened] = React.useState<boolean>(true);
 
   return (
     <div style={{flexGrow: 1}}>
@@ -76,7 +77,6 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}
                   prefixPath.every((part: string, i: number) => part === asset.key.path[i]),
               )
             : assetsOrError.nodes;
-          const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
           const matching = isFlattened
             ? filterAssets(assets, q)
             : assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
@@ -110,14 +110,42 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}
             );
           }
 
+          const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
           return (
             <Wrapper>
-              {isFlattened ? (
+              {showSwitcher ? (
+                <Group spacing={8} direction="row">
+                  <ButtonGroup>
+                    <Button
+                      icon="list"
+                      title="Flat"
+                      active={isFlattened}
+                      onClick={() => setIsFlattened(true)}
+                    />
+                    <Button
+                      icon="folder-close"
+                      title="Directory"
+                      active={!isFlattened}
+                      onClick={() => setIsFlattened(false)}
+                    />
+                  </ButtonGroup>
+                  {isFlattened ? (
+                    <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
+                  ) : (
+                    <AssetSearch assets={allAssets} />
+                  )}
+                </Group>
+              ) : isFlattened ? (
                 <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
               ) : (
                 <AssetSearch assets={allAssets} />
               )}
-              <AssetsTable assets={matching} currentPath={prefixPath || []} setQuery={setQ} />
+              <AssetsTable
+                assets={matching}
+                currentPath={prefixPath || []}
+                setQuery={setQ}
+                isFlattened={isFlattened}
+              />
             </Wrapper>
           );
         }}
@@ -186,7 +214,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   };
 
   return (
-    <div style={{marginBottom: 20, maxWidth: 600}}>
+    <div style={{width: 600}}>
       <Popover
         minimal
         fill={true}
@@ -217,7 +245,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
         <InputGroup
           type="text"
           value={q}
-          width={300}
+          width={600}
           fill={false}
           placeholder={`Search all asset_keys...`}
           onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
@@ -231,160 +259,139 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
 };
 
 type State = {
-  checkedAssets: Set<string>;
-  lastCheckedID: string | null;
+  checkedPaths: Set<string>;
+  lastPath?: string[];
 };
 const initialState: State = {
-  checkedAssets: new Set(),
-  lastCheckedID: null,
+  checkedPaths: new Set(),
+  lastPath: undefined,
 };
-type Action =
-  | {type: 'toggle-one'; payload: {checked: boolean; assetId: string}}
-  | {
-      type: 'toggle-slice';
-      payload: {checked: boolean; assetId: string; allAssets: string[]};
-    }
-  | {type: 'toggle-all'; payload: {checked: boolean; allAssets: string[]}};
+enum ActionType {
+  TOGGLE_ONE = 'toggle-one',
+  TOGGLE_SLICE = 'toggle-slice',
+  TOGGLE_ALL = 'toggle-all',
+}
+type Action = {
+  type: ActionType;
+  payload: {
+    checked: boolean;
+    path?: string[];
+    allPaths: string[][];
+  };
+};
 const reducer = (state: State, action: Action): State => {
-  const copy = new Set(Array.from(state.checkedAssets));
+  const copy = new Set(Array.from(state.checkedPaths));
   switch (action.type) {
     case 'toggle-one': {
-      const {checked, assetId} = action.payload;
-      checked ? copy.add(assetId) : copy.delete(assetId);
-      return {checkedAssets: copy, lastCheckedID: assetId};
+      const {checked, path} = action.payload;
+      checked ? copy.add(JSON.stringify(path)) : copy.delete(JSON.stringify(path));
+      return {checkedPaths: copy, lastPath: path};
     }
 
     case 'toggle-slice': {
-      const {checked, assetId, allAssets} = action.payload;
-      const {lastCheckedID} = state;
-
-      const indexOfLast = allAssets.findIndex((id) => id === lastCheckedID);
-      const indexOfChecked = allAssets.findIndex((id) => id === assetId);
+      const {checked, path: actionPath, allPaths} = action.payload;
+      const actionPathKey = JSON.stringify(actionPath);
+      const lastPathKey = JSON.stringify(state.lastPath);
+      const allPathKeys = allPaths.map((path) => JSON.stringify(path));
+      const indexOfLast = allPathKeys.findIndex((key) => key === lastPathKey);
+      const indexOfChecked = allPathKeys.findIndex((key) => key === actionPathKey);
       if (indexOfLast === undefined || indexOfChecked === undefined) {
         return state;
       }
 
       const [start, end] = [indexOfLast, indexOfChecked].sort();
-      allAssets
+      allPathKeys
         .slice(start, end + 1)
-        .forEach((assetId) => (checked ? copy.add(assetId) : copy.delete(assetId)));
-
+        .forEach((pathKey) => (checked ? copy.add(pathKey) : copy.delete(pathKey)));
       return {
-        lastCheckedID: assetId,
-        checkedAssets: copy,
+        lastPath: actionPath,
+        checkedPaths: copy,
       };
     }
 
     case 'toggle-all': {
-      const {checked, allAssets} = action.payload;
+      const {checked, allPaths} = action.payload;
       return {
-        checkedAssets: checked ? new Set(Array.from(allAssets)) : new Set(),
-        lastCheckedID: null,
+        checkedPaths: checked ? new Set(allPaths.map((path) => JSON.stringify(path))) : new Set(),
+        lastPath: undefined,
       };
     }
+    default:
+      return state;
   }
 };
 
 const AssetsTable = ({
   assets,
   currentPath,
+  isFlattened,
   setQuery,
 }: {
   assets: Asset[];
   currentPath: string[];
   setQuery: (q: string) => void;
+  isFlattened: boolean;
 }) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
-  const [toWipe, setToWipe] = React.useState<AssetKey | undefined>();
+  const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {checkedAssets} = state;
+  const {checkedPaths} = state;
 
-  const sorted = React.useMemo(
-    () =>
-      [...assets].sort((a, b) =>
-        a.key.path
-          .join('/')
-          .toLocaleLowerCase()
-          .localeCompare(b.key.path.join('/').toLocaleLowerCase()),
-      ),
-    [assets],
-  );
-  const isFlattened = !featureEnabled(FeatureFlag.DirectoryAssetCatalog);
   const hasTags = !!assets.filter((asset) => asset.tags.length).length;
+  const pathMap: {[key: string]: Asset[]} = {};
+  assets.forEach((asset) => {
+    const path = isFlattened
+      ? asset.key.path
+      : asset.key.path.slice(currentPath.length, currentPath.length + 1);
+    const pathKey = JSON.stringify(path);
+    pathMap[pathKey] = [...(pathMap[pathKey] || []), asset];
+  });
+  const sorted = Object.keys(pathMap)
+    .sort()
+    .map((x) => JSON.parse(x));
 
-  if (!isFlattened) {
-    const pathMap: {[key: string]: Asset} = {};
-    assets.forEach((asset) => {
-      const [pathKey] = isFlattened
-        ? [asset.key.path.join('/')]
-        : asset.key.path.slice(currentPath.length, currentPath.length + 1);
-      pathMap[pathKey] = asset;
-    });
-
-    const pathKeys = Object.keys(pathMap).sort();
-    return (
-      <Table>
-        <thead>
-          <tr>
-            <th>Asset Key</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pathKeys.map((pathKey: string) => {
-            const linkUrl = `/instance/assets/${
-              currentPath.length
-                ? currentPath.map(encodeURIComponent).join('/') + `/${encodeURIComponent(pathKey)}`
-                : encodeURIComponent(pathKey)
-            }`;
-            const assetKeyString = pathMap[pathKey].key.path.join('/');
-            const pathString = [...currentPath, pathKey].join('/');
-            return (
-              <tr key={pathString}>
-                <td>
-                  <Link to={linkUrl}>
-                    {assetKeyString === pathString ? pathKey : `${pathKey}/`}
-                  </Link>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
-    );
-  }
-
-  const onClick = (tag: AssetTag) => {
+  const onTagClick = (tag: AssetTag) => {
     setQuery(`tag:${tag.key}=${tag.value}`);
   };
   const onChangeAll = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
-      const checked = checkedAssets.size !== assets.length;
+      const checked = checkedPaths.size !== sorted.length;
       onToggleAll(checked);
     }
   };
   const onToggleAll = (checked: boolean) => {
     dispatch({
-      type: 'toggle-all',
-      payload: {checked, allAssets: sorted.map((asset) => asset.id)},
+      type: ActionType.TOGGLE_ALL,
+      payload: {checked, allPaths: sorted},
     });
   };
-  const onToggle = (e: React.FormEvent<HTMLInputElement>, assetId: string) => {
+  const onToggle = (e: React.FormEvent<HTMLInputElement>, path: string[]) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
       const shiftKey =
         e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      if (shiftKey && state.lastCheckedID) {
+      if (shiftKey && state.lastPath) {
         dispatch({
-          type: 'toggle-slice',
-          payload: {checked, assetId, allAssets: sorted.map((asset) => asset.id)},
+          type: ActionType.TOGGLE_SLICE,
+          payload: {checked, path, allPaths: sorted},
         });
       } else {
-        dispatch({type: 'toggle-one', payload: {checked, assetId}});
+        dispatch({
+          type: ActionType.TOGGLE_ONE,
+          payload: {checked, path, allPaths: sorted},
+        });
       }
     }
   };
 
-  const selected = assets.filter((asset) => checkedAssets.has(asset.id));
+  const selectedAssets = new Set<Asset>();
+  sorted.forEach((path) => {
+    const key = JSON.stringify(path);
+    if (checkedPaths.has(key)) {
+      const assets = pathMap[key] || [];
+      assets.forEach((asset) => selectedAssets.add(asset));
+    }
+  });
 
   return (
     <Box margin={{top: 20}}>
@@ -395,11 +402,14 @@ const AssetsTable = ({
               <div style={{display: 'flex', alignItems: 'center'}}>
                 <Checkbox
                   style={{marginBottom: 0, marginTop: 1}}
-                  indeterminate={checkedAssets.size > 0 && checkedAssets.size !== assets.length}
-                  checked={checkedAssets.size === assets.length}
+                  indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
+                  checked={checkedPaths.size === sorted.length}
                   onChange={onChangeAll}
                 />
-                <AssetActionsMenu selected={selected} clearSelection={() => onToggleAll(false)} />
+                <AssetActions
+                  selected={Array.from(selectedAssets)}
+                  clearSelection={() => onToggleAll(false)}
+                />
               </div>
             </th>
             <th>Asset Key</th>
@@ -421,66 +431,25 @@ const AssetsTable = ({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((asset: Asset, idx: number) => {
-            const linkUrl = `/instance/assets/${asset.key.path.map(encodeURIComponent).join('/')}`;
+          {sorted.map((path, idx) => {
+            const isSelected = checkedPaths.has(JSON.stringify(path));
             return (
-              <tr key={idx}>
-                <td style={{paddingRight: '4px'}}>
-                  <Checkbox
-                    checked={checkedAssets.has(asset.id)}
-                    onChange={(e) => onToggle(e, asset.id)}
-                  />
-                </td>
-                <td>
-                  <Link to={linkUrl}>
-                    <Box flex={{alignItems: 'center'}}>
-                      {asset.key.path
-                        .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
-                        .reduce((prev, curr, i) => [
-                          prev,
-                          <Box key={`separator_${i}`} padding={{horizontal: 2}}>
-                            <Icon icon={IconNames.CHEVRON_RIGHT} iconSize={12} />
-                          </Box>,
-                          curr,
-                        ])}
-                    </Box>
-                  </Link>
-                </td>
-                {hasTags ? (
-                  <td>
-                    {asset.tags.length ? (
-                      <Box flex={{direction: 'row', wrap: 'wrap'}}>
-                        {asset.tags.map((tag, idx) => (
-                          <Tag tag={tag} key={idx} onClick={() => onClick(tag)} />
-                        ))}
-                      </Box>
-                    ) : null}
-                  </td>
-                ) : null}
-                <td>
-                  <Popover
-                    content={
-                      <Menu>
-                        <MenuItem
-                          text="Wipe asset..."
-                          icon="trash"
-                          target="_blank"
-                          onClick={() => setToWipe(asset.key)}
-                        />
-                      </Menu>
-                    }
-                    position="bottom"
-                  >
-                    <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
-                  </Popover>
-                </td>
-              </tr>
+              <AssetEntryRow
+                key={idx}
+                path={path}
+                assets={pathMap[JSON.stringify(path)] || []}
+                shouldShowTags={hasTags}
+                isSelected={isSelected}
+                onSelectToggle={onToggle}
+                onTagClick={onTagClick}
+                onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
+              />
             );
           })}
         </tbody>
       </Table>
       <AssetWipeDialog
-        assetKeys={toWipe ? [toWipe] : []}
+        assetKeys={toWipe || []}
         isOpen={!!toWipe}
         onClose={() => setToWipe(undefined)}
         onComplete={() => setToWipe(undefined)}
@@ -490,7 +459,79 @@ const AssetsTable = ({
   );
 };
 
-export const AssetActionsMenu: React.FunctionComponent<{
+const AssetEntryRow: React.FunctionComponent<{
+  currentPath?: string[];
+  path: string[];
+  isSelected: boolean;
+  onSelectToggle: (e: React.FormEvent<HTMLInputElement>, path: string[]) => void;
+  shouldShowTags: boolean;
+  assets: Asset[];
+  onTagClick: (tag: AssetTag) => void;
+  onWipe: (assets: Asset[]) => void;
+}> = React.memo(
+  ({currentPath, path, shouldShowTags, assets, onTagClick, isSelected, onSelectToggle, onWipe}) => {
+    const linkUrl = `/instance/assets/${path.map(encodeURIComponent).join('/')}`;
+    const isAssetEntry = assets.length === 1 && path.join('/') === assets[0].key.path.join('/');
+    return (
+      <tr>
+        <td style={{paddingRight: '4px'}}>
+          <Checkbox checked={isSelected} onChange={(e) => onSelectToggle(e, path)} />
+        </td>
+        <td>
+          <Link to={linkUrl}>
+            <Box flex={{alignItems: 'center'}}>
+              {path
+                .slice(currentPath?.length)
+                .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
+                .reduce((prev, curr, i) => [
+                  prev,
+                  <Box key={`separator_${i}`} padding={{horizontal: 2}}>
+                    <Icon icon={IconNames.CHEVRON_RIGHT} iconSize={12} />
+                  </Box>,
+                  curr,
+                ])}
+              {isAssetEntry ? null : '/'}
+            </Box>
+          </Link>
+        </td>
+        {shouldShowTags ? (
+          <td>
+            {isAssetEntry && assets[0].tags.length ? (
+              <Box flex={{direction: 'row', wrap: 'wrap'}}>
+                {assets[0].tags.map((tag, idx) => (
+                  <Tag tag={tag} key={idx} onClick={() => onTagClick(tag)} />
+                ))}
+              </Box>
+            ) : null}
+          </td>
+        ) : null}
+        <td>
+          {isAssetEntry ? (
+            <Popover
+              content={
+                <Menu>
+                  <MenuItem
+                    text="Wipe ..."
+                    icon="trash"
+                    target="_blank"
+                    onClick={() => onWipe(assets)}
+                  />
+                </Menu>
+              }
+              position="bottom"
+            >
+              <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+            </Popover>
+          ) : (
+            <Button small minimal disabled icon="chevron-down" style={{marginLeft: '4px'}} />
+          )}
+        </td>
+      </tr>
+    );
+  },
+);
+
+export const AssetActions: React.FunctionComponent<{
   selected: Asset[];
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
@@ -571,5 +612,4 @@ const InputGroup = styled(BlueprintInputGroup)`
     box-shadow: none;
     border: 1px solid #ececec;
   }
-  margin-bottom: 20px;
 `;

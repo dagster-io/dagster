@@ -211,7 +211,7 @@ const InputGroup = styled(({hasSuggestions, ...props}) => <BlueprintInputGroup {
     outline: none;
     box-shadow: none;
     border: 1px solid ${Colors.LIGHT_GRAY1};
-    margin-left: 4px;
+    margin-left: 0px;
     min-width: 600px;
   }
 
@@ -226,7 +226,7 @@ const Menu = styled.ul`
   margin: 0;
   max-height: 200px;
   max-width: 800px;
-  min-width: 602px;
+  min-width: 600px;
   overflow-y: auto;
   padding: 0;
 `;

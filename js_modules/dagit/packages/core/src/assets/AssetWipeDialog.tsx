@@ -27,7 +27,7 @@ export const AssetWipeDialog: React.FC<{
   };
 
   const title =
-    assetKeys.length == 1 ? (
+    assetKeys.length === 1 ? (
       <>
         Wipe asset <code>{assetKeys[0].path.join(' > ')}</code>
       </>

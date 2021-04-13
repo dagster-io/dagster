@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
 import {Group} from '../ui/Group';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
@@ -19,11 +18,7 @@ export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = (
     <Page>
       <Group direction="column" spacing={12}>
         <PageHeader title={<Heading>Assets</Heading>} />
-        {featureEnabled(FeatureFlag.DirectoryAssetCatalog) ? (
-          <AssetsCatalogTable prefixPath={currentPath} />
-        ) : (
-          <AssetsCatalogTable />
-        )}
+        <AssetsCatalogTable prefixPath={currentPath} />
       </Group>
     </Page>
   );
