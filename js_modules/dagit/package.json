@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build-for-python": "yarn workspace @dagit/core initial && yarn workspace @dagit/app build && cd ../../python_modules/dagit/dagit && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagit/packages/app/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphql-playground ./webapp/build/vendor",
-    "start": "yarn workspace @dagit/core initial && concurrently \"yarn workspace @dagit/app start\" \"yarn workspace @dagit/core start\""
+    "build-for-python": "yarn workspace @dagit/app build && cd ../../python_modules/dagit/dagit && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagit/packages/app/build ./webapp/ && mkdir -p webapp/build/vendor && cp -r graphql-playground ./webapp/build/vendor",
+    "start": "yarn workspace @dagit/app start"
   },
   "workspaces": {
     "packages": [

@@ -1,8 +1,9 @@
 {
   "name": "@dagit/core",
   "version": "1.0.0",
-  "main": "./lib/main.js",
-  "types": "./lib/main.d.ts",
+  "private": true,
+  "description": "Dagit Core Components",
+  "main": "./src/main.tsx",
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.2.5",
@@ -133,12 +134,6 @@
   "scripts": {
     "preinstall": "node src/scripts/yarnCheck.js",
     "prettier": "prettier --write \"./src/**/*.tsx\"",
-    "start:clean": "rm -rf lib",
-    "initial": "yarn start:clean && yarn build:js && yarn build:ts",
-    "build:js": "yarn babel src --out-dir lib --extensions '.ts,.tsx' --copy-files",
-    "build:ts": "yarn tsc -p . --noEmit false --declaration true --emitDeclarationOnly true",
-    "start": "concurrently --kill-others --names 'Babel,TypeScript' --prefix-colors 'green,cyan' \"yarn build:js --watch\" \"yarn build:ts --watch\"",
-    "eject": "react-scripts eject",
     "find-dead-code": "yarn ts-prune | grep -v '/types/\\|stories.tsx\\|src/main.tsx'",
     "test": "yarn ts && yarn jest --watchAll=false && yarn lint",
     "jest": "DISABLE_NEW_JSX_TRANSFORM=true react-scripts test --env=jest-environment-jsdom-sixteen",
