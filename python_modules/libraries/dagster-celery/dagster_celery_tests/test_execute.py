@@ -15,7 +15,7 @@ from dagster import (
     execute_pipeline_iterator,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.utils import send_interrupt
@@ -125,32 +125,21 @@ def test_terminate_pipeline_on_celery(rabbitmq):
                 results = []
                 result_types = []
                 interrupt_thread = None
-                received_interrupt = False
 
-                try:
-                    for result in execute_pipeline_iterator(
-                        pipeline=pipeline_def,
-                        run_config=run_config,
-                        instance=instance,
-                    ):
-                        # Interrupt once the first step starts
-                        if (
-                            result.event_type == DagsterEventType.STEP_START
-                            and not interrupt_thread
-                        ):
-                            interrupt_thread = Thread(target=send_interrupt, args=())
-                            interrupt_thread.start()
+                for result in execute_pipeline_iterator(
+                    pipeline=pipeline_def,
+                    run_config=run_config,
+                    instance=instance,
+                ):
+                    # Interrupt once the first step starts
+                    if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+                        interrupt_thread = Thread(target=send_interrupt, args=())
+                        interrupt_thread.start()
 
-                        results.append(result)
-                        result_types.append(result.event_type)
-
-                    assert False
-                except DagsterExecutionInterruptedError:
-                    received_interrupt = True
+                    results.append(result)
+                    result_types.append(result.event_type)
 
                 interrupt_thread.join()
-
-                assert received_interrupt
 
                 # At least one step succeeded (the one that was running when the interrupt fired)
                 assert DagsterEventType.STEP_SUCCESS in result_types

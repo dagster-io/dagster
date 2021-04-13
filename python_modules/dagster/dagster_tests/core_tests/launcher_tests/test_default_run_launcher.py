@@ -367,7 +367,6 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                             "PIPELINE_CANCELED",
                             'Execution of pipeline "sleepy_pipeline" canceled.',
                         ),
-                        ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
                         ("ENGINE_EVENT", "Process for pipeline exited"),
                     ],
                 )

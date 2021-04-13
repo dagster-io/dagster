@@ -18,7 +18,6 @@ from dagster import (
 )
 from dagster.core.definitions.executor import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import (
     instance_for_test,
@@ -195,33 +194,24 @@ def test_dask_terminate():
 
     interrupt_thread = None
     result_types = []
-    received_interrupt = False
 
     with instance_for_test() as instance:
-        try:
-            for result in execute_pipeline_iterator(
-                pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
-                run_config=run_config,
-                instance=instance,
-            ):
-                # Interrupt once the first step starts
-                if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
-                    interrupt_thread = Thread(target=send_interrupt, args=())
-                    interrupt_thread.start()
+        for result in execute_pipeline_iterator(
+            pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
+            run_config=run_config,
+            instance=instance,
+        ):
+            # Interrupt once the first step starts
+            if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+                interrupt_thread = Thread(target=send_interrupt, args=())
+                interrupt_thread.start()
 
-                if result.event_type == DagsterEventType.STEP_FAILURE:
-                    assert (
-                        "DagsterExecutionInterruptedError"
-                        in result.event_specific_data.error.message
-                    )
+            if result.event_type == DagsterEventType.STEP_FAILURE:
+                assert (
+                    "DagsterExecutionInterruptedError" in result.event_specific_data.error.message
+                )
 
-                result_types.append(result.event_type)
-
-            assert False
-        except DagsterExecutionInterruptedError:
-            received_interrupt = True
-
-        assert received_interrupt
+            result_types.append(result.event_type)
 
         interrupt_thread.join()
 

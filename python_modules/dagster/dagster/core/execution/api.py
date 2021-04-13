@@ -768,13 +768,16 @@ def pipeline_execution_iterator(
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
         pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
-        raise
+        if pipeline_context.raise_on_error:
+            raise
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         pipeline_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
-        raise
+        if pipeline_context.raise_on_error:
+            raise
     except Exception:  # pylint: disable=broad-except
         pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
-        raise  # finally block will run before this is re-raised
+        if pipeline_context.raise_on_error:
+            raise  # finally block will run before this is re-raised
     finally:
         if pipeline_canceled_info:
             reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)

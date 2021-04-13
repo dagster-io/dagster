@@ -167,7 +167,6 @@ def test_terminate_launched_docker_run():
                     ("PIPELINE_CANCELING", "Sending pipeline termination request"),
                     ("STEP_FAILURE", 'Execution of step "hanging_solid" failed.'),
                     ("PIPELINE_CANCELED", 'Execution of pipeline "hanging_pipeline" canceled.'),
-                    ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
                     ("ENGINE_EVENT", "Process for pipeline exited"),
                 ],
             )
