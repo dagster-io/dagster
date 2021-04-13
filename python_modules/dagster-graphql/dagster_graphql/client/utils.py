@@ -1,9 +1,11 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 
 class DagsterGraphQLClientError(Exception):
-    pass
+    def __init__(self, *args, body=None):
+        super().__init__(*args)
+        self.body = body
 
 
 class ReloadRepositoryLocationStatus(Enum):
@@ -30,3 +32,35 @@ class ReloadRepositoryLocationInfo(NamedTuple):
 
     status: ReloadRepositoryLocationStatus
     message: Optional[str] = None
+
+
+class PipelineInfo(NamedTuple):
+    repository_location_name: str
+    repository_name: str
+    pipeline_name: str
+
+    @staticmethod
+    def from_node(node: Dict[str, Any]) -> List["PipelineInfo"]:
+        repo_name = node["name"]
+        repo_location_name = node["location"]["name"]
+        return [
+            PipelineInfo(
+                repository_location_name=repo_location_name,
+                repository_name=repo_name,
+                pipeline_name=pipeline["name"],
+            )
+            for pipeline in node["pipelines"]
+        ]
+
+
+class InvalidOutputErrorInfo(NamedTuple):
+    """This class gives information about an InvalidOutputError from submitting a pipeline for execution
+    from GraphQL.
+
+    Args:
+        step_key (str): key of the step that failed
+        invalid_output_name (str): the name of the invalid output from the given step
+    """
+
+    step_key: str
+    invalid_output_name: str
