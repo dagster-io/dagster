@@ -10,6 +10,7 @@ SupportedPythons = [
     SupportedPython.V3_8,
 ]
 
+ExamplePythons = [SupportedPython.V3_8]
 
 TOX_MAP = {
     SupportedPython.V3_8: "py38",

@@ -1,6 +1,12 @@
 import os
 
-from ..defines import GCP_CREDS_LOCAL_FILE, TOX_MAP, SupportedPython, SupportedPythons
+from ..defines import (
+    GCP_CREDS_LOCAL_FILE,
+    TOX_MAP,
+    ExamplePythons,
+    SupportedPython,
+    SupportedPythons,
+)
 from ..images.versions import COVERAGE_IMAGE_VERSION
 from ..module_build_spec import ModuleBuildSpec
 from ..step_builder import StepBuilder
@@ -244,18 +250,21 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "examples/airline_demo",
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         buildkite_label="airline-demo",
+        supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
         buildkite_label="dbt_example",
         upload_coverage=False,
+        supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
         "examples/deploy_docker",
         extra_cmds_fn=deploy_docker_example_extra_cmds_fn,
         buildkite_label="deploy_docker_example",
         upload_coverage=False,
+        supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec("python_modules/automation"),
@@ -419,7 +428,9 @@ def examples_tests():
 
     tests = []
     for example in examples_packages:
-        tests += ModuleBuildSpec(example, upload_coverage=False).get_tox_build_steps()
+        tests += ModuleBuildSpec(
+            example, upload_coverage=False, supported_pythons=ExamplePythons
+        ).get_tox_build_steps()
     return tests
 
 
