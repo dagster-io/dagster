@@ -114,17 +114,18 @@ def publish(autoclean, dry_run):
 
     parsed_version = packaging.version.parse(checked_version)
     if not parsed_version.is_prerelease and not dry_run:
-        release_notes_url = "https://github.com/dagster-io/dagster/releases/tag/{version}".format(
-            version=checked_version
-        )
+        release_notes_url = f"https://github.com/dagster-io/dagster/releases/tag/{checked_version}"
+        pypi_url = f"https://pypi.org/project/dagster/{checked_version}/"
+        docs_url = f"https://docs.dagster.io/{checked_version}/getting-started"
+
         slack_client = slack.WebClient(os.environ["SLACK_RELEASE_BOT_TOKEN"])
         slack_client.chat_postMessage(
-            channel="#general",
+            channel="#dagster-releases",
             text=(
-                "{git_user} just published a new version: {version}. "
-                "See {release_notes_url} for the release notes."
-            ).format(
-                git_user=git_user(), version=checked_version, release_notes_url=release_notes_url
+                f"{git_user()} just published a new Dagster version: {checked_version}.\n\n"
+                f"📦 *PyPI*: {pypi_url}\n"
+                f"🛠 *Changelog*: {release_notes_url}\n"
+                f"📖 *Docs*: {docs_url}"
             ),
         )
 
