@@ -16,27 +16,13 @@ The `configured` API offers a way to configure a Dagster entity at definition ti
 
 ## Overview
 
-Before we introduce the `configured` API, to configure a Dagster entity, for example the resource `s3_session`:
+The primary purpose of Dagster config is to provide values to solids and resources when running a pipeline. Sometimes, however, you may find yourself with a solid or configuration that requires configuration, and you might not want whoever is running the pipeline to need to provide that configuration. I.e. you may know the values of the config you want to provide at definition time instead of runtime.
 
-```python file=/concepts/configuration/configured_example.py startafter=start_solid_marker endbefore=end_solid_marker
-@resource(config_schema={"region": str, "use_unsigned_session": bool})
-def s3_session(_init_context):
-    """Connect to S3"""
-```
+When is this useful? Often library authors provide very flexible and configurable solids that can be used in a wide variety of operational contexts. For example, in our dbt integration, there is a solid that could allow a user to run arbitrary dbt commands on a deployed instance, and leverage our config editor to make this easier.
 
-you will need to specify the configurations at runtime via a run config like:
+However, typically you do not want this level of flexibility in a deployed pipeline. You want most configuration options set in code and fixed for deployed. `configured` provides the bridge between these worlds by offering a way to provide configuration at definition time. When invoked on a Dagster entity, it returns an interchangeable object with the given configuration "baked in".
 
-```python file=/concepts/configuration/configured_example.yaml
-resources:
-  key:
-    config:
-      region: us-east-1
-      use_unsigned_session: False
-```
-
-However, in many cases, the option to configure an entity at runtime is more distracting than helpful, and it's preferable to supply the entity's configuration at definition time.
-
-The `configured` API offers a way to do this. When invoked on a Dagster entity, it returns an interchangeable object with the given configuration "baked in". It is available with the following definitions:
+`configured` is available with the following definitions:
 
 - <PyObject module="dagster" object="ResourceDefinition" />
 - <PyObject module="dagster" object="ExecutorDefinition" />
