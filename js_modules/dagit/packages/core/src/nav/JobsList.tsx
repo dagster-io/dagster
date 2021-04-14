@@ -28,7 +28,7 @@ interface JobsListProps {
   repoPath?: string;
 }
 
-export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, repoPath, selector}) => {
+export const JobsList: React.FC<JobsListProps> = ({repos, repoPath, selector}) => {
   const client = useApolloClient();
   const [jobs, setJobs] = React.useState<{
     schedules: {[key: string]: Item};
@@ -37,6 +37,10 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, repoPat
     schedules: {},
     sensors: {},
   }));
+
+  const activeRepos = new Set(
+    repos.map((repo) => buildRepoPath(repo.repository.name, repo.repositoryLocation.name)),
+  );
 
   React.useEffect(() => {
     const fetchJobs = () => {
@@ -117,8 +121,8 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repos, repoPat
     };
   }, [client, repos]);
 
-  const schedules = Object.values(jobs.schedules);
-  const sensors = Object.values(jobs.sensors);
+  const schedules = Object.values(jobs.schedules).filter(({repoPath}) => activeRepos.has(repoPath));
+  const sensors = Object.values(jobs.sensors).filter(({repoPath}) => activeRepos.has(repoPath));
 
   if (!schedules.length && !sensors.length) {
     return (
