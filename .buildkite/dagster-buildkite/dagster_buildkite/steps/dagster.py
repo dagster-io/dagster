@@ -528,6 +528,19 @@ def schema_checks(version=SupportedPython.V3_8):
     ]
 
 
+def graphql_python_client_backcompat_checks(version=SupportedPython.V3_8):
+    return [
+        StepBuilder("Backwards compat checks for the GraphQL Python Client")
+        .on_integration_image(version)
+        .run(
+            "pip install -e python_modules/dagster-graphql",
+            "pip install -e python_modules/automation",
+            "dagster-graphql-client query check",
+        )
+        .build()
+    ]
+
+
 def manifest_checks(version=SupportedPython.V3_7):
     library_path = os.path.join(GIT_REPO_ROOT, "python_modules", "libraries")
     library_packages = [
@@ -580,5 +593,6 @@ def dagster_steps():
     steps += examples_tests()
     steps += helm_steps()
     steps += schema_checks()
+    steps += graphql_python_client_backcompat_checks()
 
     return steps

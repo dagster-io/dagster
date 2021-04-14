@@ -20,6 +20,7 @@ setup(
         "boto3",
         "click>=6.7",
         "dagster",
+        "dagster-graphql",
         "packaging==18.0",
         "pandas",
         "pytablereader",
@@ -40,6 +41,7 @@ setup(
             "dagster-image = automation.docker.cli:main",
             "dagster-release = automation.release.cli:main",
             "dagster-scaffold = automation.scaffold.cli:main",
+            "dagster-graphql-client = automation.graphql.python_client.cli:main",
         ]
     },
 )
