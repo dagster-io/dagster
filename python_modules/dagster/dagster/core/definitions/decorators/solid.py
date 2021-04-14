@@ -126,8 +126,9 @@ def solid(
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
-        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
-            available as context.solid_config.
+        config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
+            that config provided for the solid matches this schema and fail if it does not. If not
+            set, Dagster will accept any config provided for the solid.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally

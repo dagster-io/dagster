@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 from dagster import check
-from dagster.config.config_type import ConfigType
+from dagster.config.config_type import ConfigAnyInstance, ConfigType
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field import Field
 from dagster.config.field_utils import convert_potential_field
@@ -11,13 +11,12 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_err
 
 
 def convert_user_facing_definition_config_schema(potential_schema):
-    return (
-        None
-        if potential_schema is None
-        else potential_schema
-        if isinstance(potential_schema, IDefinitionConfigSchema)
-        else DefinitionConfigSchema(convert_potential_field(potential_schema))
-    )
+    if potential_schema is None:
+        return DefinitionConfigSchema(Field(ConfigAnyInstance, is_required=False))
+    elif isinstance(potential_schema, IDefinitionConfigSchema):
+        return potential_schema
+    else:
+        return DefinitionConfigSchema(convert_potential_field(potential_schema))
 
 
 # This structure is used to represent the config schema attached to a definition
@@ -92,10 +91,6 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         self._current_field = config_schema.as_field() if config_schema else None
 
         if not callable(config_or_config_fn):
-            check.invariant(
-                config_schema is None,
-                "When non-callable config is given, config_schema must be None",
-            )
             self._config_fn = lambda _: config_or_config_fn
         else:
             self._config_fn = config_or_config_fn

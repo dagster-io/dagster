@@ -1,6 +1,7 @@
 import pytest
 from dagster import Field, composite_solid, solid
 from dagster.check import CheckError
+from dagster.config.config_type import ConfigAnyInstance
 
 
 def test_solid_field_backcompat():
@@ -8,7 +9,9 @@ def test_solid_field_backcompat():
     def solid_without_schema(_):
         pass
 
-    assert solid_without_schema.config_schema is None
+    field = solid_without_schema.config_schema.as_field()
+    assert field.config_type == ConfigAnyInstance
+    assert not field.is_required
 
     @solid(config_schema=Field(str))
     def solid_with_schema(_):

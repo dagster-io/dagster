@@ -45,7 +45,8 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     Args:
         name (str): The name of the executor.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
-            available in `init_context.executor_config`.
+            available in `init_context.executor_config`. If not set, Dagster will accept any config
+            provided.
         requirements (Optional[List[ExecutorRequirement]]): Any requirements that must
             be met in order for the executor to be usable for a particular pipeline execution.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
@@ -123,8 +124,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             name (Optional[str]): Name of the new definition. If not provided, the emitted
                 definition will inherit the name of the `ExecutorDefinition` upon which this
                 function is called.
-            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
-                that its input must satisfy.
+            config_schema (Optional[ConfigSchema]): If config_or_config_fn is a function, the config
+                schema that its input must satisfy. If not set, Dagster will accept any config
+                provided.
             description (Optional[str]): Description of the new definition. If not specified,
                 inherits the description of the definition being configured.
 
@@ -155,7 +157,7 @@ def executor(
     Args:
         name (Optional[str]): The name of the executor.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
-            `init_context.executor_config`.
+            `init_context.executor_config`. If not set, Dagster will accept any config provided for.
         requirements (Optional[List[ExecutorRequirement]]): Any requirements that must
             be met in order for the executor to be usable for a particular pipeline execution.
     """

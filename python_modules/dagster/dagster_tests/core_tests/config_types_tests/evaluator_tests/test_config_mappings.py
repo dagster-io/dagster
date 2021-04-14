@@ -777,14 +777,19 @@ def test_bad_solid_def():
         def config_only():  # pylint: disable=unused-variable
             scalar_config_solid()
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=re.escape(
-            "@composite_solid 'config_fn_only' defines a configuration function <lambda> but does not "
-            "define a configuration schema."
-        ),
-    ):
 
-        @composite_solid(config_fn=lambda _cfg: {})
-        def config_fn_only():  # pylint: disable=unused-variable
-            scalar_config_solid()
+def test_default_config_schema():
+    @composite_solid(config_fn=lambda _cfg: {})
+    def config_fn_only():
+        scalar_config_solid()
+
+    @pipeline
+    def wrap_pipeline():
+        config_fn_only()
+
+    result = execute_pipeline(
+        wrap_pipeline,
+        {"solids": {"config_fn_only": {"config": {"override_str": "override"}}}},
+    )
+
+    assert result.success

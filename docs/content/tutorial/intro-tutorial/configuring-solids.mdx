@@ -25,7 +25,7 @@ def load_cereals(context):
 If we want the file to be determined by whomever is launching the pipeline, we might write a more generic version:
 
 ```python file=/intro_tutorial/advanced/configuring_solids/read_csv.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
-@solid(config_schema={"csv_name": str})
+@solid
 def read_csv(context):
     csv_path = os.path.join(
         os.path.dirname(__file__), context.solid_config["csv_name"]
@@ -48,7 +48,7 @@ import os
 from dagster import execute_pipeline, pipeline, solid
 
 
-@solid(config_schema={"csv_name": str})
+@solid
 def read_csv(context):
     csv_path = os.path.join(
         os.path.dirname(__file__), context.solid_config["csv_name"]
@@ -97,21 +97,6 @@ width={1680}
 height={946}
 />
 
-Because Dagit is schema-aware, it knows that this pipeline now requires configuration in order to run without errors. In this case, since the pipeline is relatively trivial, it wouldn't be especially costly to run the pipeline and watch it fail. But when pipelines are complex and slow, it's invaluable to get this kind of feedback up front rather than have an unexpected failure deep inside a pipeline.
-
-Recall that the execution plan, which you will ordinarily see above the log viewer in the **Execute** tab, is the concrete pipeline that Dagster will actually execute. Without a valid config, Dagster can't construct a parametrization of the logical pipeline—so no execution plan is available for us to preview.
-
-Press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
-
-<Image
-alt="inputs_figure_two.png"
-src="/images/tutorial/inputs_figure_two.png"
-width={1680}
-height={946}
-/>
-
-Here you can see all of the sections available in the run config. Don't worry, we'll get to them all later.
-
 Let's enter the config we need in order to execute our pipeline.
 
 <Image
@@ -120,8 +105,6 @@ src="/images/tutorial/inputs_figure_three.png"
 width={1680}
 height={946}
 />
-
-Note that as you type and edit the config, the config minimap hovering on the right side of the editor pane changes to provide context—you always know where in the nested config schema you are while making changes.
 
 ### Config in Python API
 
@@ -163,3 +146,39 @@ dagster pipeline execute -f configurable_pipeline.py -c run_config.yaml
 ```
 
 In practice, you might have different sections of your run config in different yaml files—if, for instance, some sections change more often (e.g. in test and prod) while other are more static. In this case, you can set multiple instances of the `-c` flag on CLI invocations, and the CLI tools will assemble the YAML fragments into a single run config.
+
+## Putting Schema on a Config
+
+The implementation of the `read_csv` solid we wrote above expects the provided configuration will look a particular way. I.e. that it will include a key called "csv_name" and an accompanying value that is a string. If someone running the pipeline were to neglect to provide config, the solid would fail with a `KeyError` when it tried to fetch the value for "csv_name" from `context.solid_config`. If the provided value were an integer and not a string, the solid would also fail, because paths are strings.
+
+Dagster allows specifying a "config schema" on any configurable object to help catch these kinds of errors early. Here's a version of `read_csv` that includes a `config_schema`. With this version, if we try to pass config that doesn't match the expected schema, Dagster can tell us immediately.
+
+```python file=/intro_tutorial/advanced/configuring_solids/config_schema.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
+@solid(config_schema={"csv_name": str})
+def read_csv(context):
+    csv_path = os.path.join(
+        os.path.dirname(__file__), context.solid_config["csv_name"]
+    )
+    with open(csv_path, "r") as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info(f"Read {len(lines)} lines")
+    return lines
+```
+
+The <PyObject module="dagster" object="ConfigSchema" /> documentation describes all the ways that you can provide config schema, including optional config fields, default values, and collections.
+
+In addition to catching errors early, config schemas are also useful for documenting pipelines and learning how to use them. This is particularly useful when launching pipelines from inside Dagit.
+
+Because of the config schema we've provided, Dagit knows that this pipeline requires configuration in order to run without errors.
+
+Go back to the Playground and press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
+
+<Image
+alt="inputs_figure_two.png"
+src="/images/tutorial/inputs_figure_two.png"
+width={1680}
+height={946}
+/>
+
+Here you can see all of the valid config fields for your pipeline.
