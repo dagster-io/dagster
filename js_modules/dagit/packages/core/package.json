@@ -29,7 +29,7 @@
     "graphql": "^15.0.0",
     "highlight.js": "^10.4.0",
     "lodash": "^4.17.15",
-    "lru-cache": "^5.1.1",
+    "lru-cache": "^6.0.0",
     "moment-timezone": "^0.5.31",
     "query-string": "^6.8.3",
     "react-chartjs-2": "^2.9.0",

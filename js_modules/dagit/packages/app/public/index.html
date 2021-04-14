@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Note: This base tag is modified by Dagit's Python web server -->
-    <meta name="dagit-path-prefix" />
-
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="theme-color" content="#000000" />
+
+    <!-- A target element to insert a custom path prefix, replaced server-side. -->
+    <script type="application/json" id="path-prefix">
+      {"pathPrefix": "__PATH_PREFIX__"}
+    </script>
 
     <!--
       manifest.json provides metadata used when your web app is added to the

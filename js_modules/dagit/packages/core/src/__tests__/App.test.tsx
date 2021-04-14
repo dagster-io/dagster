@@ -9,6 +9,11 @@ import {breakOnUnderscores} from '../app/Util';
 import {ApolloTestProvider} from '../testing/ApolloTestProvider';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
+// Import lazy routes up front so that they don't slow down the tests.
+import '../app/FeatureFlagsRoot';
+import '../instance/InstanceRoot';
+import '../workspace/WorkspaceRoot';
+
 describe('App', () => {
   const defaultMocks = {
     Repository: () => ({
@@ -96,12 +101,10 @@ describe('App', () => {
     await waitFor(() => {
       const instanceHeader = screen.getByText(/instance/i);
       expect(instanceHeader).toBeVisible();
-
       const [runsLink] = screen.getAllByText('Runs');
       expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
       expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
-
       expect(screen.getByText('my_repository')).toBeVisible();
     });
   });

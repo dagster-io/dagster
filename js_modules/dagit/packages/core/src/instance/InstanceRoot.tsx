@@ -28,3 +28,7 @@ export const InstanceRoot = () => {
     </MainContent>
   );
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default InstanceRoot;

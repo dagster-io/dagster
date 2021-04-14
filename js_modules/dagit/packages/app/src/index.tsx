@@ -1,12 +1,16 @@
+// Before anything else, set the webpack public path.
+import './publicPath';
+
 import {App, AppProvider, AppTopNav} from '@dagit/core';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 
-const APP_PATH_PREFIX =
-  document.querySelector('meta[name=dagit-path-prefix]')?.getAttribute('content') || '';
+import {extractPathPrefix} from './extractPathPrefix';
+
+const pathPrefix = extractPathPrefix();
 
 const config = {
-  basePath: APP_PATH_PREFIX,
+  basePath: pathPrefix,
   graphqlURI: process.env.REACT_APP_GRAPHQL_URI || '',
 };
 

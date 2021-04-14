@@ -199,10 +199,7 @@ def instantiate_app_with_views(
                 return (
                     rendered_template.replace('href="/', f'href="{app_path_prefix}/')
                     .replace('src="/', f'src="{app_path_prefix}/')
-                    .replace(
-                        '<meta name="dagit-path-prefix"',
-                        f'<meta name="dagit-path-prefix" content="{app_path_prefix}"',
-                    )
+                    .replace("__PATH_PREFIX__", app_path_prefix)
                 )
         except FileNotFoundError:
             raise Exception(
