@@ -803,23 +803,12 @@ def do_composition(
 
 
 def _get_validated_config_mapping(name, config_schema, config_fn):
-    """Config mapping must set composite config_schema and config_fn or neither."""
-
     if config_fn is None and config_schema is None:
         return None
-    elif config_fn is not None and config_schema is not None:
+    elif config_fn is not None:
         return ConfigMapping(config_fn=config_fn, config_schema=config_schema)
     else:
-        if config_fn is not None:
-            raise DagsterInvalidDefinitionError(
-                "@composite_solid '{solid_name}' defines a configuration function {config_fn} "
-                "but does not define a configuration schema. If you intend this composite to take "
-                "no config_schema, you must explicitly specify config_schema={{}}.".format(
-                    solid_name=name, config_fn=config_fn.__name__
-                )
-            )
-        else:
-            raise DagsterInvalidDefinitionError(
-                "@composite_solid '{solid_name}' defines a configuration schema but does not "
-                "define a configuration function.".format(solid_name=name)
-            )
+        raise DagsterInvalidDefinitionError(
+            f"@composite_solid '{name}' defines a configuration schema but does not "
+            "define a configuration function."
+        )

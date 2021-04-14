@@ -5,7 +5,7 @@ import os
 from dagster import execute_pipeline, pipeline, solid
 
 
-@solid(config_schema={"csv_name": str})
+@solid
 def read_csv(context):
     csv_path = os.path.join(
         os.path.dirname(__file__), context.solid_config["csv_name"]

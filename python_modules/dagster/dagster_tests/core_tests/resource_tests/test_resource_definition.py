@@ -1089,3 +1089,19 @@ def test_resource_needs_resource():
         )
         def _fail():
             pass
+
+
+def test_config_with_no_schema():
+    @resource
+    def my_resource(init_context):
+        return init_context.resource_config
+
+    @solid(required_resource_keys={"resource"})
+    def my_solid(context):
+        assert context.resources.resource == 5
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"resource": my_resource})])
+    def my_pipeline():
+        my_solid()
+
+    execute_pipeline(my_pipeline, run_config={"resources": {"resource": {"config": 5}}})

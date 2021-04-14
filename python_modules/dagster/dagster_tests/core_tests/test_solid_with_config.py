@@ -73,21 +73,6 @@ def test_solid_not_found():
         execute_pipeline(pipeline_def, {"solids": {"not_found": {"config": {"some_config": 1}}}})
 
 
-def test_config_for_no_config():
-    @solid(name="no_config_solid", input_defs=[], output_defs=[])
-    def no_config_solid(_):
-        raise Exception("should not reach")
-
-    @pipeline
-    def pipeline_def():
-        return no_config_solid()
-
-    with pytest.raises(DagsterInvalidConfigError):
-        execute_pipeline(
-            pipeline_def, {"solids": {"no_config_solid": {"config": {"some_config": 1}}}}
-        )
-
-
 def test_extra_config_ignored_default_input():
     @solid(config_schema={"some_config": str})
     def solid1(_):
@@ -279,3 +264,15 @@ def test_extra_config_unsatisfied_input_io_man():
         },
         solid_selection=["end"],
     ).success
+
+
+def test_config_with_no_schema():
+    @solid
+    def my_solid(context):
+        assert context.solid_config == 5
+
+    @pipeline
+    def my_pipeline():
+        my_solid()
+
+    execute_pipeline(my_pipeline, run_config={"solids": {"my_solid": {"config": 5}}})
