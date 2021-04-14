@@ -1,16 +1,21 @@
-from typing import Tuple
+from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_arg_warning
 
 from .config import ConfigMapping
-from .definition_config_schema import convert_user_facing_definition_config_schema
+from .definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
+from .dependency import IDependencyDefinition, SolidHandle, SolidInvocation
 from .graph import GraphDefinition
 from .i_solid_definition import NodeDefinition
-from .input import InputDefinition
-from .output import OutputDefinition
+from .input import InputDefinition, InputMapping
+from .output import OutputDefinition, OutputMapping
 
 
 class SolidDefinition(NodeDefinition):
@@ -69,16 +74,16 @@ class SolidDefinition(NodeDefinition):
 
     def __init__(
         self,
-        name,
-        input_defs,
-        compute_fn,
-        output_defs,
-        config_schema=None,
-        description=None,
-        tags=None,
-        required_resource_keys=None,
-        positional_inputs=None,
-        version=None,
+        name: str,
+        input_defs: List[InputDefinition],
+        compute_fn: Callable[..., Any],
+        output_defs: List[OutputDefinition],
+        config_schema: Optional[Union[Dict[str, Any], IDefinitionConfigSchema]] = None,
+        description: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        required_resource_keys: Optional[Union[Set[str], FrozenSet[str]]] = None,
+        positional_inputs: Optional[List[str]] = None,
+        version: Optional[str] = None,
     ):
         self._compute_fn = check.callable_param(compute_fn, "compute_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
@@ -99,40 +104,48 @@ class SolidDefinition(NodeDefinition):
         )
 
     @property
-    def compute_fn(self):
+    def compute_fn(self) -> Callable[..., Any]:
         return self._compute_fn
 
     @property
-    def config_schema(self):
+    def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
     @property
-    def required_resource_keys(self):
+    def required_resource_keys(self) -> Optional[FrozenSet[str]]:
         return frozenset(self._required_resource_keys)
 
     @property
-    def version(self):
+    def version(self) -> Optional[str]:
         return self._version
 
-    def all_dagster_types(self):
+    def all_dagster_types(self) -> Iterator[DagsterType]:
         yield from self.all_input_output_types()
 
-    def iterate_node_defs(self):
+    def iterate_node_defs(self) -> Iterator["SolidDefinition"]:
         yield self
 
-    def resolve_output_to_origin(self, output_name, handle) -> Tuple[OutputDefinition, SolidHandle]:
+    def resolve_output_to_origin(
+        self, output_name: str, handle: SolidHandle
+    ) -> Tuple[OutputDefinition, SolidHandle]:
         return self.output_def_named(output_name), handle
 
-    def input_has_default(self, input_name):
+    def input_has_default(self, input_name: str) -> InputDefinition:
         return self.input_def_named(input_name).has_default_value
 
-    def default_value_for_input(self, input_name):
+    def default_value_for_input(self, input_name: str) -> InputDefinition:
         return self.input_def_named(input_name).default_value
 
-    def input_supports_dynamic_output_dep(self, input_name):
+    def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
         return True
 
-    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+    def copy_for_configured(
+        self,
+        name: str,
+        description: Optional[str],
+        config_schema: IDefinitionConfigSchema,
+        config_or_config_fn: Any,
+    ) -> "SolidDefinition":
         return SolidDefinition(
             name=name,
             input_defs=self.input_defs,
@@ -204,15 +217,17 @@ class CompositeSolidDefinition(GraphDefinition):
 
     def __init__(
         self,
-        name,
-        solid_defs,
-        input_mappings=None,
-        output_mappings=None,
-        config_mapping=None,
-        dependencies=None,
-        description=None,
-        tags=None,
-        positional_inputs=None,
+        name: str,
+        solid_defs: List[NodeDefinition],
+        input_mappings: Optional[List[InputMapping]] = None,
+        output_mappings: Optional[List[OutputMapping]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
+        dependencies: Optional[
+            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+        ] = None,
+        description: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        positional_inputs: Optional[List[str]] = None,
     ):
         super(CompositeSolidDefinition, self).__init__(
             name=name,
@@ -226,13 +241,19 @@ class CompositeSolidDefinition(GraphDefinition):
             config_mapping=config_mapping,
         )
 
-    def all_dagster_types(self):
+    def all_dagster_types(self) -> Iterator[DagsterType]:
         yield from self.all_input_output_types()
 
         for node_def in self._node_defs:
             yield from node_def.all_dagster_types()
 
-    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+    def copy_for_configured(
+        self,
+        name: str,
+        description: Optional[str],
+        config_schema: IDefinitionConfigSchema,
+        config_or_config_fn: Any,
+    ) -> "CompositeSolidDefinition":
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only composite solids utilizing config mapping can be pre-configured. The solid "
