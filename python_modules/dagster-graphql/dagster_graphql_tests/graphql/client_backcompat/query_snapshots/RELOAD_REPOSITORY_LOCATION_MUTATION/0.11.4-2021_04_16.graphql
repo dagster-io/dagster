@@ -1,0 +1,18 @@
+mutation ($repositoryLocationName: String!) {
+   reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
+      __typename
+      ... on RepositoryLocation {
+        name
+        repositories {
+            name
+        }
+        isReloadSupported
+      }
+      ... on RepositoryLocationLoadFailure {
+          name
+          error {
+              message
+          }
+      }
+   }
+}
