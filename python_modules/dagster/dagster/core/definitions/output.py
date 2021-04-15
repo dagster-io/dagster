@@ -20,10 +20,10 @@ class OutputDefinition:
     Output definitions may be typed using the Dagster type system.
 
     Args:
-        dagster_type (Optional[Any]): The type of this output. Users should provide one of the
-            :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
-            :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type`, or
-            :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
+        dagster_type (Optional[Union[Type, DagsterType]]]): The type of this output.
+            Users should provide the Python type of the objects that they expect the solid to yield
+            for this output, or a :py:class:`DagsterType` that defines a runtime check that they
+            want to be run on this output. Defaults to :py:class:`Any`.
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)

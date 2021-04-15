@@ -54,10 +54,10 @@ class InputDefinition:
 
     Args:
         name (str): Name of the input.
-        dagster_type (Optional[Any]):  The type of this input. Users should provide one of the
-            :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
-            :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type`, or
-            :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
+        dagster_type (Optional[Union[Type, DagsterType]]]): The type of this input.
+            Users should provide the Python type of the objects that they expect to be passed for
+            this input, or a :py:class:`DagsterType` that defines a runtime check that they want
+            to be run on this input. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
         root_manager_key (Optional[str]): (Experimental) The resource key for the
