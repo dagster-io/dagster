@@ -1,4 +1,7 @@
+from typing import Tuple
+
 from dagster import check
+from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -117,7 +120,7 @@ class SolidDefinition(NodeDefinition):
     def iterate_node_defs(self):
         yield self
 
-    def resolve_output_to_origin(self, output_name, handle):
+    def resolve_output_to_origin(self, output_name, handle) -> Tuple[OutputDefinition, SolidHandle]:
         return self.output_def_named(output_name), handle
 
     def input_has_default(self, input_name):

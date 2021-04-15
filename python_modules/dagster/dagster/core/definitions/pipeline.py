@@ -1,7 +1,9 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Dict, List, Set
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional, Set, Union
 
 from dagster import check
+from dagster.core.definitions.input import InputMapping
+from dagster.core.definitions.output import OutputMapping
 from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
@@ -16,7 +18,9 @@ from dagster.utils.backcompat import experimental_arg_warning
 from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,
+    DependencyStructure,
     DynamicCollectDependencyDefinition,
+    IDependencyDefinition,
     MultiDependencyDefinition,
     Solid,
     SolidHandle,
@@ -31,6 +35,8 @@ from .utils import validate_tags
 
 if TYPE_CHECKING:
     from .run_config_schema import RunConfigSchema
+    from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
+    from dagster.core.host_representation import PipelineIndex
 
 
 class PipelineDefinition(GraphDefinition):
@@ -121,19 +127,23 @@ class PipelineDefinition(GraphDefinition):
 
     def __init__(
         self,
-        solid_defs,
-        name,
-        description=None,
-        dependencies=None,
-        mode_defs=None,
-        preset_defs=None,
-        tags=None,
-        hook_defs=None,
-        input_mappings=None,
-        output_mappings=None,
-        config_mapping=None,
-        positional_inputs=None,
-        _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
+        solid_defs: List[NodeDefinition],
+        name: str,
+        description: Optional[str] = None,
+        dependencies: Optional[
+            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+        ] = None,
+        mode_defs: Optional[List[ModeDefinition]] = None,
+        preset_defs: Optional[List[PresetDefinition]] = None,
+        tags: Dict[str, Any] = None,
+        hook_defs: Optional[Set[HookDefinition]] = None,
+        input_mappings: Optional[List[InputMapping]] = None,
+        output_mappings: Optional[List[OutputMapping]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
+        positional_inputs: List[str] = None,
+        _parent_pipeline_def: Optional[
+            "PipelineDefinition"
+        ] = None,  # https://github.com/dagster-io/dagster/issues/2115
     ):
         # For these warnings they check truthiness because they get changed to [] higher
         # in the stack for the decorator case
@@ -186,7 +196,7 @@ class PipelineDefinition(GraphDefinition):
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         self._preset_defs = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
-        self._preset_dict = {}
+        self._preset_dict: Dict[str, PresetDefinition] = {}
         for preset in self._preset_defs:
             if preset.name in self._preset_dict:
                 raise DagsterInvalidDefinitionError(
@@ -223,10 +233,16 @@ class PipelineDefinition(GraphDefinition):
         self._parent_pipeline_def = check.opt_inst_param(
             _parent_pipeline_def, "_parent_pipeline_def", PipelineDefinition
         )
-        self._cached_run_config_schemas = {}
+        self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
         self._cached_external_pipeline = None
 
-    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+    def copy_for_configured(
+        self,
+        name: str,
+        description: Optional[str],
+        config_schema: Any,
+        config_or_config_fn,
+    ) -> "PipelineDefinition":
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only pipelines utilizing config mapping can be pre-configured. The pipeline "
@@ -251,7 +267,7 @@ class PipelineDefinition(GraphDefinition):
             _parent_pipeline_def=self._parent_pipeline_def,
         )
 
-    def get_run_config_schema(self, mode=None):
+    def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
         check.str_param(mode, "mode")
 
         mode_def = self.get_mode_definition(mode)
@@ -265,14 +281,14 @@ class PipelineDefinition(GraphDefinition):
         return self._cached_run_config_schemas[mode_def.name]
 
     @property
-    def mode_definitions(self):
+    def mode_definitions(self) -> List[ModeDefinition]:
         return self._mode_definitions
 
     @property
-    def preset_defs(self):
+    def preset_defs(self) -> List[PresetDefinition]:
         return self._preset_defs
 
-    def _get_mode_definition(self, mode):
+    def _get_mode_definition(self, mode: str) -> Optional[ModeDefinition]:
         check.str_param(mode, "mode")
         for mode_definition in self._mode_definitions:
             if mode_definition.name == mode:
@@ -280,25 +296,25 @@ class PipelineDefinition(GraphDefinition):
 
         return None
 
-    def get_default_mode(self):
+    def get_default_mode(self) -> ModeDefinition:
         return self._mode_definitions[0]
 
     @property
-    def is_single_mode(self):
+    def is_single_mode(self) -> bool:
         return len(self._mode_definitions) == 1
 
     @property
-    def is_multi_mode(self):
+    def is_multi_mode(self) -> bool:
         return len(self._mode_definitions) > 1
 
-    def has_mode_definition(self, mode):
+    def has_mode_definition(self, mode: str) -> bool:
         check.str_param(mode, "mode")
         return bool(self._get_mode_definition(mode))
 
-    def get_default_mode_name(self):
+    def get_default_mode_name(self) -> str:
         return self._mode_definitions[0].name
 
-    def get_mode_definition(self, mode=None):
+    def get_mode_definition(self, mode: Optional[str] = None) -> ModeDefinition:
         check.opt_str_param(mode, "mode")
         if mode is None:
             check.invariant(self.is_single_mode)
@@ -306,60 +322,57 @@ class PipelineDefinition(GraphDefinition):
 
         mode_def = self._get_mode_definition(mode)
 
-        check.invariant(
-            mode_def is not None,
-            "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self._name),
-        )
+        if mode_def is None:
+            check.failed(
+                "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self._name),
+            )
 
         return mode_def
 
     @property
-    def available_modes(self):
+    def available_modes(self) -> List[str]:
         return [mode_def.name for mode_def in self._mode_definitions]
 
     @property
-    def tags(self):
+    def tags(self) -> Dict[str, Any]:
         return self._tags
 
-    def has_dagster_type(self, name):
+    def has_dagster_type(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._dagster_type_dict
 
-    def dagster_type_named(self, name):
+    def dagster_type_named(self, name: str) -> DagsterType:
         check.str_param(name, "name")
         return self._dagster_type_dict[name]
 
     @property
-    def all_solid_defs(self):
+    def all_solid_defs(self) -> List[NodeDefinition]:
         return list(self._all_node_defs.values())
 
     @property
-    def top_level_solid_defs(self):
+    def top_level_solid_defs(self) -> List[NodeDefinition]:
         return self._current_level_node_defs
 
-    def solid_def_named(self, name):
+    def solid_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
 
         check.invariant(name in self._all_node_defs, "{} not found".format(name))
         return self._all_node_defs[name]
 
-    def has_solid_def(self, name):
+    def has_solid_def(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._all_node_defs
 
-    def get_pipeline_subset_def(self, solids_to_execute):
+    def get_pipeline_subset_def(self, solids_to_execute: Set[str]) -> "PipelineDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
         )
 
-    def get_presets(self):
-        return list(self._preset_dict.values())
-
-    def has_preset(self, name):
+    def has_preset(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._preset_dict
 
-    def get_preset(self, name):
+    def get_preset(self, name: str) -> PresetDefinition:
         check.str_param(name, "name")
         if name not in self._preset_dict:
             raise DagsterInvariantViolationError(
@@ -373,13 +386,13 @@ class PipelineDefinition(GraphDefinition):
 
         return self._preset_dict[name]
 
-    def get_pipeline_snapshot(self):
+    def get_pipeline_snapshot(self) -> "PipelineSnapshot":
         return self.get_pipeline_index().pipeline_snapshot
 
-    def get_pipeline_snapshot_id(self):
+    def get_pipeline_snapshot_id(self) -> str:
         return self.get_pipeline_index().pipeline_snapshot_id
 
-    def get_pipeline_index(self):
+    def get_pipeline_index(self) -> "PipelineIndex":
         from dagster.core.snap import PipelineSnapshot
         from dagster.core.host_representation import PipelineIndex
 
@@ -387,29 +400,29 @@ class PipelineDefinition(GraphDefinition):
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
         )
 
-    def get_config_schema_snapshot(self):
+    def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_pipeline_snapshot().config_schema_snapshot
 
     @property
-    def is_subset_pipeline(self):
+    def is_subset_pipeline(self) -> bool:
         return False
 
     @property
-    def parent_pipeline_def(self):
+    def parent_pipeline_def(self) -> Optional["PipelineDefinition"]:
         return None
 
-    def get_parent_pipeline_snapshot(self):
-        return None
-
-    @property
-    def solids_to_execute(self):
+    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
         return None
 
     @property
-    def hook_defs(self):
+    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
+        return None
+
+    @property
+    def hook_defs(self) -> Set[HookDefinition]:
         return self._hook_defs
 
-    def get_all_hooks_for_handle(self, handle):
+    def get_all_hooks_for_handle(self, handle: SolidHandle) -> Set[HookDefinition]:
         """Gather all the hooks for the given solid from all places possibly attached with a hook.
 
         A hook can be attached to any of the following objects
@@ -423,7 +436,7 @@ class PipelineDefinition(GraphDefinition):
             FrozeSet[HookDefinition]
         """
         check.inst_param(handle, "handle", SolidHandle)
-        hook_defs = set()
+        hook_defs: Set[HookDefinition] = set()
 
         current = handle
         lineage = []
@@ -447,7 +460,7 @@ class PipelineDefinition(GraphDefinition):
 
         return frozenset(hook_defs)
 
-    def with_hooks(self, hook_defs):
+    def with_hooks(self, hook_defs: Set[HookDefinition]) -> "PipelineDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
 
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
@@ -471,36 +484,38 @@ class PipelineDefinition(GraphDefinition):
 
 class PipelineSubsetDefinition(PipelineDefinition):
     @property
-    def solids_to_execute(self):
+    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
         return frozenset(self._solid_dict.keys())
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> List[str]:
         # we currently don't pass the real solid_selection (the solid query list) down here.
         # so in the short-term, to make the call sites cleaner, we will convert the solids to execute
         # to a list
         return list(self._solid_dict.keys())
 
     @property
-    def parent_pipeline_def(self):
+    def parent_pipeline_def(self) -> Optional["PipelineDefinition"]:
         return self._parent_pipeline_def
 
-    def get_parent_pipeline_snapshot(self):
+    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
         return self._parent_pipeline_def.get_pipeline_snapshot()
 
     @property
-    def is_subset_pipeline(self):
+    def is_subset_pipeline(self) -> bool:
         return True
 
-    def get_pipeline_subset_def(self, solids_to_execute):
+    def get_pipeline_subset_def(self, solids_to_execute: Set[str]) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
-def _dep_key_of(solid):
+def _dep_key_of(solid: Solid) -> SolidInvocation:
     return SolidInvocation(solid.definition.name, solid.name)
 
 
-def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
+def _get_pipeline_subset_def(
+    pipeline_def, solids_to_execute: Set[str]
+) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
@@ -518,7 +533,10 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
             )
 
     solids = list(map(pipeline_def.solid_named, solids_to_execute))
-    deps = {_dep_key_of(solid): {} for solid in solids}
+    deps: Dict[
+        Union[str, SolidInvocation],
+        Dict[str, IDependencyDefinition],
+    ] = {_dep_key_of(solid): {} for solid in solids}
 
     for solid in solids:
         for input_handle in solid.input_handles():
@@ -536,7 +554,8 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
                     deps[_dep_key_of(solid)][
                         input_handle.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                        solid_name=output_handle.solid.name,
+                        output_name=output_handle.output_def.name,
                     )
             elif pipeline_def.dependency_structure.has_fan_in_deps(input_handle):
                 output_handles = pipeline_def.dependency_structure.get_fan_in_deps(input_handle)
@@ -759,7 +778,11 @@ def _checked_type_resource_reqs_for_mode(
     return resource_reqs
 
 
-def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
+def _validate_inputs(
+    dependency_structure: DependencyStructure,
+    solid_dict: Dict[str, Solid],
+    mode_definitions: List[ModeDefinition],
+) -> None:
     for solid in solid_dict.values():
         for handle in solid.input_handles():
             if dependency_structure.has_deps(handle):
@@ -812,8 +835,8 @@ def _validate_inputs(dependency_structure, solid_dict, mode_definitions):
                         )
 
 
-def _build_all_node_defs(node_defs):
-    all_defs = {}
+def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefinition]:
+    all_defs: Dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():
             if node_def.name in all_defs:
@@ -845,6 +868,9 @@ def _create_run_config_schema(
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
     if pipeline_def.is_subset_pipeline:
+        if pipeline_def.parent_pipeline_def is None:
+            check.failed("Unexpected subset pipeline state")
+
         ignored_solids = [
             solid
             for solid in pipeline_def.parent_pipeline_def.solids

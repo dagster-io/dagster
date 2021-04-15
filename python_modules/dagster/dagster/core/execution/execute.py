@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from dagster import check
 from dagster.core.definitions import (
@@ -13,7 +13,7 @@ from dagster.core.definitions import (
     SolidDefinition,
 )
 from dagster.core.definitions.decorators.solid import solid
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import IDependencyDefinition, SolidHandle, SolidInvocation
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
@@ -59,7 +59,9 @@ def execute_in_process(
 
     node_defs = [node]
 
-    dependencies: Dict[str, Dict[str, DependencyDefinition]] = defaultdict(dict)
+    dependencies: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]] = defaultdict(
+        dict
+    )
 
     for input_name, input_value in input_values.items():
         dependencies[node.name][input_name] = DependencyDefinition(input_name)

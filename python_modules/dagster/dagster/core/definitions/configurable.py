@@ -14,7 +14,7 @@ from .definition_config_schema import (
 
 class ConfigurableDefinition(ABC):
     @abstractproperty
-    def config_schema(self) -> IDefinitionConfigSchema:
+    def config_schema(self) -> Optional[IDefinitionConfigSchema]:
         raise NotImplementedError()
 
     @property
