@@ -50,6 +50,10 @@ class ExternalRepository:
             + external_repository_data.external_sensor_datas
         )
         self._job_map = OrderedDict((job_data.name, job_data) for job_data in jobs_list)
+        self._partition_set_map = OrderedDict(
+            (external_partition_set_data.name, external_partition_set_data)
+            for external_partition_set_data in external_repository_data.external_partition_set_datas
+        )
 
     @property
     def name(self):
@@ -94,6 +98,9 @@ class ExternalRepository:
 
     def has_external_sensor(self, sensor_name):
         return isinstance(self._job_map.get(sensor_name), ExternalSensorData)
+
+    def has_external_partition_set(self, partition_set_name):
+        return partition_set_name in self._partition_set_map
 
     def get_external_partition_set(self, partition_set_name):
         return ExternalPartitionSet(

@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 from dagster import check
@@ -12,6 +13,7 @@ from dagster.core.execution.backfill import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -59,6 +61,19 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
 
         try:
             repo_location = workspace.get_location(origin)
+            repo_name = backfill_job.partition_set_origin.external_repository_origin.repository_name
+            partition_set_name = backfill_job.partition_set_origin.partition_set_name
+            if not repo_location.has_repository(repo_name):
+                raise DagsterBackfillFailedError(
+                    f"Could not find repository {repo_name} in location {repo_location.name} to "
+                    f"run backfill {backfill_id}."
+                )
+            external_repo = repo_location.get_repository(repo_name)
+            if not external_repo.has_external_partition_set(partition_set_name):
+                raise DagsterBackfillFailedError(
+                    f"Could not find partition set {partition_set_name} in repository {repo_name}. "
+                )
+
             has_more = True
             while has_more:
                 # refetch the backfill job
@@ -90,14 +105,13 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                     )
                     instance.update_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
                     yield
-        except DagsterBackfillFailedError as e:
-            error_info = e.serializable_error_info
+        except Exception:  # pylint: disable=broad-except
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
             instance.update_backfill(
                 backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
             )
-            if error_info:
-                logger.error(f"Backfill failed for {backfill_id}: {error_info.to_string()}")
-                yield error_info
+            logger.error(f"Backfill failed for {backfill_id}: {error_info.to_string()}")
+            yield error_info
 
 
 def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):

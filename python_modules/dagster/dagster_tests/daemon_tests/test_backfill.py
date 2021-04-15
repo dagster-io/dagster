@@ -11,8 +11,13 @@ import pytest
 from dagster import Any, Field, pipeline, repository, solid
 from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions import PartitionSetDefinition
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    InProcessRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
@@ -22,6 +27,7 @@ from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import get_system_temp_directory
 from dagster.utils import touch_file
+from dagster.utils.error import SerializableErrorInfo
 
 
 def _failure_flag_file():
@@ -130,6 +136,14 @@ large_partition_set = PartitionSetDefinition(
     partition_fn=lambda: ["one", "two", "three"],
     run_config_fn_for_partition=_large_partition_config,
 )
+
+
+def _unloadable_partition_set_origin():
+    working_directory = os.path.dirname(__file__)
+    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    return ExternalRepositoryOrigin(
+        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+    ).get_partition_set_origin("doesnt_exist")
 
 
 @repository
@@ -487,3 +501,37 @@ def test_large_backfill(external_repo_context):
         )
 
         assert instance.get_runs_count() == 3
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_unloadable_backfill(external_repo_context):
+    with instance_for_context(external_repo_context) as (
+        instance,
+        workspace,
+        _external_repo,
+    ):
+        unloadable_origin = _unloadable_partition_set_origin()
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="simple",
+                partition_set_origin=unloadable_origin,
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["one", "two", "three"],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        list(
+            execute_backfill_iteration(
+                instance, workspace, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+        assert instance.get_runs_count() == 0
+        backfill = instance.get_backfill("simple")
+        assert backfill.status == BulkActionStatus.FAILED
+        assert isinstance(backfill.error, SerializableErrorInfo)
