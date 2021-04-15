@@ -104,7 +104,7 @@ def _trigger_hook(
         except HookExecutionError as hook_execution_error:
             # catch hook execution error and field a failure event instead of failing the pipeline run
             # is_hook_completed = False
-            yield DagsterEvent.hook_errored(hook_context, hook_execution_error)
+            yield DagsterEvent.hook_errored(step_context, hook_execution_error)
             continue
 
         check.invariant(
@@ -122,10 +122,10 @@ def _trigger_hook(
             # when the triggering condition didn't meet in the hook_fn, for instance,
             # a @success_hook decorated user-defined function won't run on a failed solid
             # but internally the hook_fn still runs, so we yield HOOK_SKIPPED event instead
-            yield DagsterEvent.hook_skipped(hook_context, hook_def)
+            yield DagsterEvent.hook_skipped(step_context, hook_def)
         else:
             # hook_fn finishes successfully
-            yield DagsterEvent.hook_completed(hook_context, hook_def)
+            yield DagsterEvent.hook_completed(step_context, hook_def)
 
 
 def _dagster_event_sequence_for_step(

@@ -11,10 +11,12 @@ from dagster.core.definitions import (
     AssetMaterialization,
     EventMetadataEntry,
     ExpectationResult,
+    HookDefinition,
     Materialization,
     SolidHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster.core.errors import HookExecutionError
 from dagster.core.execution.context.system import (
     HookContext,
     IStepContext,
@@ -943,42 +945,44 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def hook_completed(hook_context, hook_def):
+    def hook_completed(
+        step_context: StepExecutionContext, hook_def: HookDefinition
+    ) -> "DagsterEvent":
         event_type = DagsterEventType.HOOK_COMPLETED
-        check.inst_param(hook_context, "hook_context", HookContext)
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=hook_context.pipeline_name,
-            step_handle=hook_context.step.handle,
-            solid_handle=hook_context.step.solid_handle,
-            step_kind_value=hook_context.step.kind.value,
-            logging_tags=hook_context.logging_tags,
+            pipeline_name=step_context.pipeline_name,
+            step_handle=step_context.step.handle,
+            solid_handle=step_context.step.solid_handle,
+            step_kind_value=step_context.step.kind.value,
+            logging_tags=step_context.logging_tags,
             message=(
                 'Finished the execution of hook "{hook_name}" triggered for solid "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=hook_context.solid.name),
+            ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
         )
 
-        hook_context.log.debug(
+        step_context.log.debug(
             event.message,
             dagster_event=event,
-            pipeline_name=hook_context.pipeline_name,
+            pipeline_name=step_context.pipeline_name,
         )
 
         return event
 
     @staticmethod
-    def hook_errored(hook_context, error):
+    def hook_errored(
+        step_context: StepExecutionContext, error: HookExecutionError
+    ) -> "DagsterEvent":
         event_type = DagsterEventType.HOOK_ERRORED
-        check.inst_param(hook_context, "hook_context", HookContext)
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=hook_context.pipeline_name,
-            step_handle=hook_context.step.handle,
-            solid_handle=hook_context.step.solid_handle,
-            step_kind_value=hook_context.step.kind.value,
-            logging_tags=hook_context.logging_tags,
+            pipeline_name=step_context.pipeline_name,
+            step_handle=step_context.step.handle,
+            solid_handle=step_context.step.solid_handle,
+            step_kind_value=step_context.step.kind.value,
+            logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(
                 event_type,
                 HookErroredData(
@@ -987,36 +991,37 @@ class DagsterEvent(
             ),
         )
 
-        hook_context.log.error(
+        step_context.log.error(
             str(error),
             dagster_event=event,
-            pipeline_name=hook_context.pipeline_name,
+            pipeline_name=step_context.pipeline_name,
         )
 
         return event
 
     @staticmethod
-    def hook_skipped(hook_context, hook_def):
+    def hook_skipped(
+        step_context: StepExecutionContext, hook_def: HookDefinition
+    ) -> "DagsterEvent":
         event_type = DagsterEventType.HOOK_SKIPPED
-        check.inst_param(hook_context, "hook_context", HookContext)
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=hook_context.pipeline_name,
-            step_handle=hook_context.step.handle,
-            solid_handle=hook_context.step.solid_handle,
-            step_kind_value=hook_context.step.kind.value,
-            logging_tags=hook_context.logging_tags,
+            pipeline_name=step_context.pipeline_name,
+            step_handle=step_context.step.handle,
+            solid_handle=step_context.step.solid_handle,
+            step_kind_value=step_context.step.kind.value,
+            logging_tags=step_context.logging_tags,
             message=(
                 'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
                 'condition during the execution of solid "{solid_name}".'
-            ).format(hook_name=hook_def.name, solid_name=hook_context.solid.name),
+            ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
         )
 
-        hook_context.log.debug(
+        step_context.log.debug(
             event.message,
             dagster_event=event,
-            pipeline_name=hook_context.pipeline_name,
+            pipeline_name=step_context.pipeline_name,
         )
 
         return event

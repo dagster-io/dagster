@@ -490,9 +490,6 @@ class TypeCheckContext:
         return self._plan_execution_context.log
 
 
-# HookContext currently uses undocumented attributes that are pulled from the step context for event
-# recording and logging. These should be removed, and the callsites should be changed to use the
-# step context instead.
 class HookContext:
     """The ``context`` object available to a hook function on an DagsterEvent.
 
@@ -502,6 +499,8 @@ class HookContext:
         solid (Solid): The solid instance associated with the hook.
         resources (NamedTuple): Resources available in the hook context.
         solid_config (Any): The parsed config specific to this solid.
+        pipeline_name (str): The name of the pipeline where this hook is being triggered.
+        run_id (str): The id of the run where this hook is being triggered.
     """
 
     def __init__(
@@ -517,24 +516,28 @@ class HookContext:
         )
 
     @property
-    def hook_def(self) -> HookDefinition:
-        return self._hook_def
+    def pipeline_name(self) -> str:
+        return self._step_execution_context.pipeline_name
 
     @property
     def run_id(self) -> str:
         return self._step_execution_context.run_id
 
     @property
+    def hook_def(self) -> HookDefinition:
+        return self._hook_def
+
+    @property
     def solid(self) -> "Solid":
         return self._step_execution_context.solid
 
     @property
-    def resources(self) -> "Resources":
-        return self._resources
-
-    @property
     def required_resource_keys(self) -> Set[str]:
         return self._required_resource_keys
+
+    @property
+    def resources(self) -> "Resources":
+        return self._resources
 
     @property
     def solid_config(self) -> Any:
@@ -543,18 +546,9 @@ class HookContext:
         )
         return solid_config.config if solid_config else None
 
+    # Because of the fact that we directly use the log manager of the step, if a user calls
+    # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
+    # This is not problematic because the hook only runs after the step has been completed.
     @property
     def log(self) -> DagsterLogManager:
         return self._step_execution_context.log
-
-    @property
-    def pipeline_name(self) -> str:
-        return self._step_execution_context.pipeline_name
-
-    @property
-    def step(self) -> ExecutionStep:
-        return self._step_execution_context.step
-
-    @property
-    def logging_tags(self) -> Dict[str, str]:
-        return self._step_execution_context.logging_tags
