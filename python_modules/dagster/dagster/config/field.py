@@ -1,3 +1,5 @@
+import typing
+
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
@@ -306,11 +308,11 @@ class Field:
         self._is_required = is_required
 
     @property
-    def is_required(self):
+    def is_required(self) -> bool:
         return self._is_required
 
     @property
-    def default_provided(self):
+    def default_provided(self) -> bool:
         """Was a default value provided
 
         Returns:
@@ -319,12 +321,12 @@ class Field:
         return self._default_value != FIELD_NO_DEFAULT_PROVIDED
 
     @property
-    def default_value(self):
+    def default_value(self) -> typing.Any:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
 
     @property
-    def default_value_as_json_str(self):
+    def default_value_as_json_str(self) -> str:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return serialize_value(self.default_value)
 

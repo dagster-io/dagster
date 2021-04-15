@@ -1,4 +1,5 @@
 import sys
+from typing import Any
 
 from dagster import check
 from dagster.utils import ensure_single_item, frozendict, frozenlist
@@ -11,7 +12,7 @@ from .stack import EvaluationStack
 from .traversal_context import TraversalContext, TraversalType
 
 
-def post_process_config(config_type, config_value):
+def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
@@ -20,7 +21,7 @@ def post_process_config(config_type, config_value):
     return _recursively_process_config(ctx, config_value)
 
 
-def resolve_defaults(config_type, config_value):
+def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValueResult:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
@@ -30,7 +31,9 @@ def resolve_defaults(config_type, config_value):
     return _recursively_process_config(ctx, config_value)
 
 
-def _recursively_process_config(context, config_value):
+def _recursively_process_config(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult:
     evr = _recursively_resolve_defaults(context, config_value)
 
     if evr.success:
@@ -41,7 +44,9 @@ def _recursively_process_config(context, config_value):
         return evr
 
 
-def _recursively_resolve_defaults(context, config_value):
+def _recursively_resolve_defaults(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult:
     kind = context.config_type.kind
 
     if kind == ConfigTypeKind.SCALAR:
@@ -67,7 +72,7 @@ def _recursively_resolve_defaults(context, config_value):
         check.failed("Unsupported type {name}".format(name=context.config_type.name))
 
 
-def _post_process(context, config_value):
+def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
     try:
         new_value = context.config_type.post_process(config_value)
         return EvaluateValueResult.for_value(new_value)
@@ -78,7 +83,9 @@ def _post_process(context, config_value):
         )
 
 
-def _recurse_in_to_scalar_union(context, config_value):
+def _recurse_in_to_scalar_union(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult:
     if isinstance(config_value, dict) or isinstance(config_value, list):
         return _recursively_process_config(
             context.for_new_config_type(context.config_type.non_scalar_type), config_value
@@ -89,7 +96,7 @@ def _recurse_in_to_scalar_union(context, config_value):
         )
 
 
-def _recurse_in_to_selector(context, config_value):
+def _recurse_in_to_selector(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
     check.invariant(
         context.config_type.kind == ConfigTypeKind.SELECTOR,
         "Non-selector not caught in validation",
@@ -116,7 +123,7 @@ def _recurse_in_to_selector(context, config_value):
     return field_evr
 
 
-def _recurse_in_to_shape(context, config_value):
+def _recurse_in_to_shape(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
     check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), "Unexpected non shape type")
     config_value = check.opt_dict_param(config_value, "config_value", key_type=str)
 
@@ -161,7 +168,7 @@ def _recurse_in_to_shape(context, config_value):
     )
 
 
-def _recurse_in_to_array(context, config_value):
+def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
     check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, "Unexpected non array type")
 
     if not config_value:
