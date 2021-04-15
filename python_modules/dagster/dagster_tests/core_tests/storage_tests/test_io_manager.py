@@ -19,7 +19,8 @@ from dagster import (
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.system import InputContext, OutputContext
+from dagster.core.execution.context.input import InputContext
+from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager

@@ -101,13 +101,10 @@ from dagster.core.execution.api import (
 )
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
+from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.execution.context.system import (
-    HookContext,
-    InputContext,
-    OutputContext,
-    TypeCheckContext,
-)
+from dagster.core.execution.context.output import OutputContext
+from dagster.core.execution.context.system import HookContext, TypeCheckContext
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,

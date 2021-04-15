@@ -5,8 +5,7 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
 from abc import ABC, abstractmethod, abstractproperty
-from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Set, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
 
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
@@ -20,15 +19,16 @@ from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
-from dagster.core.execution.plan.utils import build_resources_for_manager
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster.core.types.dagster_type import DagsterType
+
+from .input import InputContext
+from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
@@ -405,7 +405,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             or self.intermediate_storage_def == mem_intermediate_storage
         )
 
-    def get_output_context(self, step_output_handle) -> "OutputContext":
+    def get_output_context(self, step_output_handle) -> OutputContext:
         return get_output_context(
             self.execution_plan,
             self.pipeline_def,
@@ -425,7 +425,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         source_handle: Optional[StepOutputHandle] = None,
         resource_config: Any = None,
         resources: Optional["Resources"] = None,
-    ) -> "InputContext":
+    ) -> InputContext:
         return InputContext(
             pipeline_name=self.pipeline_def.name,
             name=name,
@@ -558,233 +558,3 @@ class HookContext:
     @property
     def logging_tags(self) -> Dict[str, str]:
         return self._step_execution_context.logging_tags
-
-
-class OutputContext(
-    namedtuple(
-        "_OutputContext",
-        "step_key name pipeline_name run_id metadata mapping_key config solid_def dagster_type log version step_context resource_config resources",
-    )
-):
-    """
-    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
-
-    Attributes:
-        step_key (str): The step_key for the compute step that produced the output.
-        name (str): The name of the output that produced the output.
-        pipeline_name (str): The name of the pipeline definition.
-        run_id (Optional[str]): The id of the run that produced the output.
-        metadata (Optional[Dict[str, Any]]): A dict of the metadata that is assigned to the
-            OutputDefinition that produced the output.
-        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
-        config (Optional[Any]): The configuration for the output.
-        solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
-        dagster_type (Optional[DagsterType]): The type of this output.
-        log (Optional[DagsterLogManager]): The log manager to use for this output.
-        version (Optional[str]): (Experimental) The version of the output.
-        resources (Optional[ScopedResources]): The resources required by the output manager, specified by the
-            `required_resource_keys` parameter.
-    """
-
-    def __new__(
-        cls,
-        step_key: str,
-        name: str,
-        pipeline_name: Optional[str] = None,
-        run_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        mapping_key: Optional[str] = None,
-        config: Any = None,
-        solid_def: Optional[SolidDefinition] = None,
-        dagster_type: Optional[DagsterType] = None,
-        log_manager: Optional[DagsterLogManager] = None,
-        version: Optional[str] = None,
-        # This is used internally by the intermediate storage adapter, we don't usually expect users to mock this.
-        step_context: Optional[StepExecutionContext] = None,
-        resource_config: Optional[Any] = None,
-        resources: Optional["Resources"] = None,
-    ):
-
-        return super(OutputContext, cls).__new__(
-            cls,
-            step_key=check.str_param(step_key, "step_key"),
-            name=check.str_param(name, "name"),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
-            run_id=check.opt_str_param(run_id, "run_id"),
-            metadata=check.opt_dict_param(metadata, "metadata"),
-            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
-            config=config,
-            solid_def=check.opt_inst_param(solid_def, "solid_def", SolidDefinition),
-            dagster_type=check.inst_param(
-                resolve_dagster_type(dagster_type), "dagster_type", DagsterType
-            ),  # this allows the user to mock the context with unresolved dagster type
-            log=check.opt_inst_param(log_manager, "log_manager", DagsterLogManager),
-            version=check.opt_str_param(version, "version"),
-            step_context=check.opt_inst_param(step_context, "step_context", StepExecutionContext),
-            resource_config=resource_config,
-            resources=resources,
-        )
-
-    def get_run_scoped_output_identifier(self) -> List[str]:
-        """Utility method to get a collection of identifiers that as a whole represent a unique
-        step output.
-
-        The unique identifier collection consists of
-
-        - ``run_id``: the id of the run which generates the output.
-            Note: This method also handles the re-execution memoization logic. If the step that
-            generates the output is skipped in the re-execution, the ``run_id`` will be the id
-            of its parent run.
-        - ``step_key``: the key for a compute step.
-        - ``name``: the name of the output. (default: 'result').
-
-        Returns:
-            List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
-        """
-        if self.mapping_key:
-            return [self.run_id, self.step_key, self.name, self.mapping_key]
-
-        return [self.run_id, self.step_key, self.name]
-
-
-class InputContext(
-    namedtuple(
-        "_InputContext",
-        "name pipeline_name solid_def config metadata upstream_output dagster_type log step_context resource_config resources",
-    )
-):
-    """
-    The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
-
-    Attributes:
-        name (Optional[str]): The name of the input that we're loading.
-        pipeline_name (Optional[str]): The name of the pipeline.
-        solid_def (Optional[SolidDefinition]): The definition of the solid that's loading the input.
-        config (Optional[Any]): The config attached to the input that we're loading.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
-            InputDefinition that we're loading for.
-        upstream_output (Optional[OutputContext]): Info about the output that produced the object
-            we're loading.
-        dagster_type (Optional[DagsterType]): The type of this input.
-        log (Optional[DagsterLogManager]): The log manager to use for this input.
-        resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (ScopedResources): The resources required by the resource that initializes the
-            input manager. If using the :py:func:`@root_input_manager` decorator, these resources
-            correspond to those requested with the `required_resource_keys` parameter.
-    """
-
-    def __new__(
-        cls,
-        pipeline_name: Optional[str] = None,
-        # This will be None when called from calling SolidExecutionResult.output_value
-        name: Optional[str] = None,
-        solid_def: Optional[SolidDefinition] = None,
-        config: Any = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        upstream_output: Optional[OutputContext] = None,
-        dagster_type: Optional[DagsterType] = None,
-        log_manager: Optional[DagsterLogManager] = None,
-        # This is used internally by the intermediate storage adapter, we don't expect users to mock this.
-        step_context: Optional[StepExecutionContext] = None,
-        resource_config: Any = None,
-        resources: Optional["Resources"] = None,
-    ):
-
-        return super(InputContext, cls).__new__(
-            cls,
-            name=check.opt_str_param(name, "name"),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
-            solid_def=check.opt_inst_param(solid_def, "solid_def", SolidDefinition),
-            config=config,
-            metadata=metadata,
-            upstream_output=check.opt_inst_param(upstream_output, "upstream_output", OutputContext),
-            dagster_type=check.inst_param(
-                resolve_dagster_type(dagster_type), "dagster_type", DagsterType
-            ),  # this allows the user to mock the context with unresolved dagster type
-            log=check.opt_inst_param(log_manager, "log_manager", DagsterLogManager),
-            step_context=check.opt_inst_param(step_context, "step_context", StepExecutionContext),
-            resource_config=resource_config,
-            resources=resources,
-        )
-
-
-def _step_output_version(
-    pipeline_def: PipelineDefinition,
-    execution_plan: "ExecutionPlan",
-    environment_config: "EnvironmentConfig",
-    step_output_handle: StepOutputHandle,
-) -> Optional[str]:
-    from dagster.core.execution.resolve_versions import resolve_step_output_versions
-
-    step_output_versions = resolve_step_output_versions(
-        pipeline_def, execution_plan, environment_config
-    )
-    return (
-        step_output_versions[step_output_handle]
-        if step_output_handle in step_output_versions
-        else None
-    )
-
-
-def get_output_context(
-    execution_plan: "ExecutionPlan",
-    pipeline_def: PipelineDefinition,
-    environment_config: EnvironmentConfig,
-    step_output_handle: StepOutputHandle,
-    run_id: Optional[str] = None,
-    log_manager: Optional[DagsterLogManager] = None,
-    step_context: Optional[StepExecutionContext] = None,
-) -> OutputContext:
-    """
-    Args:
-        run_id (str): The run ID of the run that produced the output, not necessarily the run that
-            the context will be used in.
-    """
-    from dagster.core.execution.plan.plan import ExecutionPlan
-
-    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(environment_config, "environment_config", EnvironmentConfig)
-    check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-    check.opt_str_param(run_id, "run_id")
-
-    step = execution_plan.get_step_by_key(step_output_handle.step_key)
-    # get config
-    solid_config = environment_config.solids.get(step.solid_handle.to_string())
-    outputs_config = solid_config.outputs
-
-    if outputs_config:
-        output_config = outputs_config.get_output_manager_config(step_output_handle.output_name)
-    else:
-        output_config = None
-
-    step_output = execution_plan.get_step_output(step_output_handle)
-    output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
-
-    io_manager_key = output_def.io_manager_key
-    resource_config = environment_config.resources[io_manager_key].config
-
-    resources = build_resources_for_manager(io_manager_key, step_context) if step_context else None
-
-    return OutputContext(
-        step_key=step_output_handle.step_key,
-        name=step_output_handle.output_name,
-        pipeline_name=pipeline_def.name,
-        run_id=run_id,
-        metadata=output_def.metadata,
-        mapping_key=step_output_handle.mapping_key,
-        config=output_config,
-        solid_def=pipeline_def.get_solid(step.solid_handle).definition,
-        dagster_type=output_def.dagster_type,
-        log_manager=log_manager,
-        version=(
-            _step_output_version(
-                pipeline_def, execution_plan, environment_config, step_output_handle
-            )
-            if MEMOIZED_RUN_TAG in pipeline_def.tags
-            else None
-        ),
-        step_context=step_context,
-        resource_config=resource_config,
-        resources=resources,
-    )

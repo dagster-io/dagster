@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
 from dagster import check
 from dagster.core.definitions import (
@@ -11,6 +11,7 @@ from dagster.core.definitions import (
     Output,
     OutputDefinition,
     RetryRequested,
+    SolidDefinition,
     TypeCheck,
 )
 from dagster.core.definitions.events import (
@@ -30,11 +31,8 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import (
-    OutputContext,
-    StepExecutionContext,
-    TypeCheckContext,
-)
+from dagster.core.execution.context.output import OutputContext
+from dagster.core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster.core.execution.plan.compute import execute_core_compute
 from dagster.core.execution.plan.inputs import StepInputData
 from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
@@ -383,9 +381,10 @@ def _asset_key_and_partitions_for_output(
 
     if output_def.is_asset:
         if manager_asset_key is not None:
+            solid_def = cast(SolidDefinition, output_context.solid_def)
             raise DagsterInvariantViolationError(
                 f'Both the OutputDefinition and the IOManager of output "{output_def.name}" on '
-                f'solid "{output_context.solid_def.name}" associate it with an asset. Either remove '
+                f'solid "{solid_def.name}" associate it with an asset. Either remove '
                 "the asset_key parameter on the OutputDefinition or use an IOManager that does not "
                 "specify an AssetKey in its get_output_asset_key() function."
             )
