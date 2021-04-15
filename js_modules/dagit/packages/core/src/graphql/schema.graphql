@@ -987,6 +987,7 @@ type PartitionBackfill {
   timestamp: Float!
   partitionSet: PartitionSet
   runs(limit: Int): [PipelineRun!]!
+  error: PythonError
 }
 
 enum BulkActionStatus {

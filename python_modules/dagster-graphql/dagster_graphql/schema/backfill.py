@@ -82,6 +82,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun"),
         limit=graphene.Int(),
     )
+    error = graphene.Field(GraphenePythonError)
 
     def __init__(self, backfill_job):
         self._backfill_job = check.opt_inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -149,6 +150,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             external_repository_handle=repository.handle,
             external_partition_set=partition_set,
         )
+
+    def resolve_error(self, _):
+        if self._backfill_job.error:
+            return GraphenePythonError(self._backfill_job.error)
+        return None
 
 
 class GraphenePartitionBackfillOrError(graphene.Union):

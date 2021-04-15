@@ -40,6 +40,19 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   repositoryOrigin: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet_repositoryOrigin;
 }
 
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_cause | null;
+}
+
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results {
   __typename: "PartitionBackfill";
   backfillId: string;
@@ -50,6 +63,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   timestamp: number;
   partitionSetName: string;
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;
+  error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills {

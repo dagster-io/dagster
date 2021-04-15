@@ -4,6 +4,7 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -260,10 +261,18 @@ const BackfillRow = ({
         <BackfillProgress backfill={backfill} />
       </td>
       <td>
-        {backfill.status === BulkActionStatus.CANCELED ? (
+        {[BulkActionStatus.CANCELED, BulkActionStatus.FAILED].includes(backfill.status) ? (
           <Box margin={{bottom: 12}}>
-            <Tag minimal intent="danger">
-              CANCELED
+            <Tag
+              minimal
+              intent="danger"
+              onClick={() =>
+                backfill.error &&
+                showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
+              }
+              style={{cursor: backfill.error ? 'pointer' : 'default'}}
+            >
+              {backfill.status}
             </Tag>
           </Box>
         ) : null}
@@ -469,6 +478,9 @@ const BACKFILLS_QUERY = gql`
               repositoryName
               repositoryLocationName
             }
+          }
+          error {
+            ...PythonErrorFragment
           }
         }
       }
