@@ -22,6 +22,7 @@ import {LaunchButton} from '../execute/LaunchButton';
 import {TagContainer, TagEditor} from '../execute/TagEditor';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
+import {useViewport} from '../gantt/useViewport';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
@@ -137,11 +138,17 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     reexecute: false,
     fromFailure: false,
   });
+
+  const {containerProps} = useViewport({
+    initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
+  });
+
   React.useEffect(() => {
     const resetSelectionRange = () => setCurrentSelectionRange(undefined);
     window.addEventListener('mouseup', resetSelectionRange);
     return () => window.removeEventListener('mouseup', resetSelectionRange);
   });
+
   const mounted = React.useRef(true);
   React.useEffect(() => {
     mounted.current = true;
@@ -149,6 +156,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       mounted.current = false;
     };
   }, [onLaunch]);
+
   const {loading, data} = useQuery<PartitionsBackfillSelectorQuery>(
     PARTITIONS_BACKFILL_SELECTOR_QUERY,
     {
@@ -496,7 +504,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
               </GridColumn>
             </GridFloatingContainer>
           )}
-          <GridScrollContainer>
+          <GridScrollContainer {...containerProps}>
             <div style={{display: 'flex', paddingLeft: 10}}>
               {partitionNames.map((partitionName, idx) => (
                 <GridColumn
