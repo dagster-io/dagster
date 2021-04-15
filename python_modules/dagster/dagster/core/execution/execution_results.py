@@ -1,5 +1,5 @@
 from abc import abstractproperty
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from dagster import DagsterEvent
 from dagster.core.definitions import GraphDefinition, Solid, SolidDefinition, SolidHandle
@@ -16,10 +16,11 @@ def _filter_step_events_by_handle(
     event_list: List[DagsterEvent], ancestor_handle: SolidHandle, current_handle: SolidHandle
 ) -> List[DagsterEvent]:
     events = []
-    handle_with_ancestor = current_handle.with_ancestor(ancestor_handle)
+    handle_with_ancestor = cast(SolidHandle, current_handle.with_ancestor(ancestor_handle))
     for event in event_list:
         if event.is_step_event:
-            if event.solid_handle.is_or_descends_from(handle_with_ancestor):
+            solid_handle = cast(SolidHandle, event.solid_handle)
+            if solid_handle.is_or_descends_from(handle_with_ancestor):
                 events.append(event)
 
     return events
