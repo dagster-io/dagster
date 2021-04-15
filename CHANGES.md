@@ -5,6 +5,7 @@
 ### Bugfixes
 
 - Removed dependency constraint of `dagster-pandas` on `pandas`. You can now include any version of pandas. (https://github.com/dagster-io/dagster/issues/3350)
+- Removed dependency on `requests` in `dagster`. Now only `dagit` depends on `requests.`
 
 ## 0.11.4
 

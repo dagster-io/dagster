@@ -1,27 +1,20 @@
 import json
-import logging
 import os
 import tempfile
 from difflib import SequenceMatcher
 
-import mock
-import pytest
-import responses
 from click.testing import CliRunner
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.telemetry import (
-    DAGSTER_TELEMETRY_URL,
     UPDATE_REPO_STATS,
-    cleanup_telemetry_logger,
     get_dir_from_dagster_home,
     hash_name,
     log_workspace_stats,
-    upload_logs,
 )
-from dagster.core.test_utils import environ, instance_for_test, instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
@@ -170,60 +163,6 @@ def test_log_workspace_stats(caplog):
                 assert set(message.keys()) == EXPECTED_KEYS
 
             assert len(caplog.records) == 2
-
-
-# Note that both environment must be set together. Otherwise, if env={"BUILDKITE": None} ran in the
-# azure pipeline, then this test would fail, because TF_BUILD would be set implicitly, resulting in
-# no logs being uploaded. The same applies in the reverse way, if only TF_BUILD is set to None.
-@pytest.mark.parametrize("env", [{"BUILDKITE": None, "TF_BUILD": None}])
-@responses.activate
-def test_dagster_telemetry_upload(env):
-    logger = logging.getLogger("dagster_telemetry_logger")
-    for handler in logger.handlers:
-        logger.removeHandler(handler)
-
-    responses.add(responses.POST, DAGSTER_TELEMETRY_URL)
-
-    with environ(env):
-        with instance_for_test():
-            runner = CliRunner()
-            with pushd(path_to_file("")):
-                pipeline_attribute = "foo_pipeline"
-                runner.invoke(
-                    pipeline_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_attribute],
-                )
-
-            mock_stop_event = mock.MagicMock()
-            mock_stop_event.is_set.return_value = False
-
-            def side_effect(_):
-                mock_stop_event.is_set.return_value = True
-
-            mock_stop_event.wait.side_effect = side_effect
-
-            # Needed to avoid file contention issues on windows with the telemetry log file
-            cleanup_telemetry_logger()
-
-            upload_logs(mock_stop_event, raise_errors=True)
-            assert responses.assert_call_count(DAGSTER_TELEMETRY_URL, 1)
-
-
-@pytest.mark.parametrize("env", [{"BUILDKITE": "True"}, {"TF_BUILD": "True"}])
-@responses.activate
-def test_dagster_telemetry_no_test_env_upload(env):
-    with environ(env):
-        with instance_for_test():
-            runner = CliRunner()
-            with pushd(path_to_file("")):
-                pipeline_attribute = "foo_pipeline"
-                runner.invoke(
-                    pipeline_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_attribute],
-                )
-
-            upload_logs(mock.MagicMock())
-            assert responses.assert_call_count(DAGSTER_TELEMETRY_URL, 0)
 
 
 # Sanity check that the hash function maps these similar names to sufficiently dissimilar strings

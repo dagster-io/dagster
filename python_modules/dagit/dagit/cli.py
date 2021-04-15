@@ -9,12 +9,13 @@ from dagster import check
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance
-from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, upload_logs
+from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
 from .app import create_app_from_workspace
+from .telemetry import upload_logs
 from .version import __version__
 
 

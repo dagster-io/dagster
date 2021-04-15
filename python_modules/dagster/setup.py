@@ -71,7 +71,6 @@ if __name__ == "__main__":
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "pyrsistent>=0.14.8",
             "python-dateutil",
-            "requests",
             "rx<=1.6.1",  # 3.0 was a breaking change.
             "tabulate",
             "tqdm",
