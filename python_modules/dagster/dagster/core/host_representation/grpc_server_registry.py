@@ -8,7 +8,10 @@ from contextlib import AbstractContextManager
 import pendulum
 from dagster import check
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster.core.host_representation.origin import (
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    RepositoryLocationOrigin,
+)
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -106,9 +109,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
     def reload_grpc_endpoint(self, repository_location_origin):
         check.inst_param(
-            repository_location_origin,
-            "repository_location_origin",
-            ManagedGrpcPythonEnvRepositoryLocationOrigin,
+            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
         )
         with self._lock:
             origin_id = repository_location_origin.get_id()
@@ -121,21 +122,43 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
     def get_grpc_endpoint(self, repository_location_origin):
         check.inst_param(
-            repository_location_origin,
-            "repository_location_origin",
-            ManagedGrpcPythonEnvRepositoryLocationOrigin,
+            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
         )
 
         with self._lock:
             return self._get_grpc_endpoint(repository_location_origin)
 
+    def _get_loadable_target_origin(self, repository_location_origin):
+        check.inst_param(
+            repository_location_origin,
+            "repository_location_origin",
+            ManagedGrpcPythonEnvRepositoryLocationOrigin,
+        )
+        return repository_location_origin.loadable_target_origin
+
     def _get_grpc_endpoint(self, repository_location_origin):
         origin_id = repository_location_origin.get_id()
+        loadable_target_origin = self._get_loadable_target_origin(repository_location_origin)
+        if not loadable_target_origin:
+            raise Exception(
+                f"No Python file/module information available for location {repository_location_origin.location_name}"
+            )
+
         if not origin_id in self._active_grpc_processes_or_errors:
+            refresh_server = True
+        else:
+            process, _creation_timestamp, server_id = self._active_grpc_processes_or_errors[
+                origin_id
+            ]
+            refresh_server = loadable_target_origin != process.loadable_target_origin
+
+        # Handle when loadable_target_origin is None
+        # Detect when the loadable target origin has changed???
+        if refresh_server:
             try:
                 new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
-                    loadable_target_origin=repository_location_origin.loadable_target_origin,
+                    loadable_target_origin=loadable_target_origin,
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,
                     fixed_server_id=new_server_id,

@@ -1043,7 +1043,9 @@ class GrpcServerProcess:
         self.socket = None
         self.server_process = None
 
-        check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
+        self.loadable_target_origin = check.opt_inst_param(
+            loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+        )
         check.bool_param(force_port, "force_port")
         check.int_param(max_retries, "max_retries")
         check.opt_int_param(max_workers, "max_workers")

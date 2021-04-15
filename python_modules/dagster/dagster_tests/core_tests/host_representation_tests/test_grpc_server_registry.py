@@ -5,7 +5,10 @@ import time
 from dagster import file_relative_path, pipeline, repository
 from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster.core.host_representation.origin import (
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    RegisteredRepositoryLocationOrigin,
+)
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -17,6 +20,11 @@ def noop_pipeline():
 
 @repository
 def repo():
+    return [noop_pipeline]
+
+
+@repository
+def other_repo():
     return [noop_pipeline]
 
 
@@ -143,3 +151,60 @@ def test_registry_multithreading():
 
     registry.wait_for_processes()
     assert not _can_connect(origin, endpoint)
+
+
+class TestMockProcessGrpcServerRegistry(ProcessGrpcServerRegistry):
+    def __init__(self):
+        self.mocked_loadable_target_origin = None
+        super(TestMockProcessGrpcServerRegistry, self).__init__(
+            reload_interval=300, heartbeat_ttl=600
+        )
+
+    def supports_origin(self, repository_location_origin):
+        return isinstance(repository_location_origin, RegisteredRepositoryLocationOrigin)
+
+    def _get_loadable_target_origin(self, repository_location_origin):
+        return self.mocked_loadable_target_origin
+
+
+def test_custom_loadable_target_origin():
+    # Verifies that you can swap out the LoadableTargetOrigin for the same
+    # repository location origin
+    first_loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        attribute="repo",
+        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+    )
+
+    second_loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        attribute="other_repo",
+        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+    )
+
+    origin = RegisteredRepositoryLocationOrigin("test_location")
+
+    with TestMockProcessGrpcServerRegistry() as registry:
+        with DynamicWorkspace(registry) as workspace:
+            registry.mocked_loadable_target_origin = first_loadable_target_origin
+
+            endpoint_one = registry.get_grpc_endpoint(origin)
+            assert registry.get_grpc_endpoint(origin).server_id == endpoint_one.server_id
+
+            location_one = workspace.get_location(origin)
+            assert location_one.has_repository("repo")
+
+            # Swap in a new LoadableTargetOrigin - the same origin new returns a different
+            # endpoint and repository
+            registry.mocked_loadable_target_origin = second_loadable_target_origin
+
+            endpoint_two = registry.get_grpc_endpoint(origin)
+
+            assert endpoint_two.server_id != endpoint_one.server_id
+            location_two = workspace.get_location(origin)
+
+            assert location_two.has_repository("other_repo")
+
+    registry.wait_for_processes()
+    assert not _can_connect(origin, endpoint_one)
+    assert not _can_connect(origin, endpoint_two)
