@@ -7,6 +7,7 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    Field,
     IOManagerDefinition,
     InputDefinition,
     ModeDefinition,
@@ -49,6 +50,30 @@ def test_io_manager_with_config():
 
     run_config = {"solids": {"my_solid": {"outputs": {"result": {"some_config": "some_value"}}}}}
     result = execute_pipeline(my_pipeline, run_config=run_config)
+    assert result.success
+
+
+def test_io_manager_with_optional_config():
+    @solid
+    def my_solid(_):
+        pass
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            pass
+
+        def handle_output(self, context, obj):
+            pass
+
+    @io_manager(output_config_schema={"some_config": Field(str, is_required=False)})
+    def configurable_io_manager(_):
+        return MyIOManager()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": configurable_io_manager})])
+    def my_pipeline():
+        my_solid()
+
+    result = execute_pipeline(my_pipeline)
     assert result.success
 
 

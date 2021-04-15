@@ -219,7 +219,7 @@ def get_input_manager_input_field(
 
     input_config_schema = root_manager.input_config_schema
     if input_config_schema:
-        return input_config_schema.config_type
+        return input_config_schema.as_field()
 
     return None
 
@@ -285,7 +285,7 @@ def get_output_manager_output_field(
         and isinstance(output_manager_def, IOutputManagerDefinition)
         and output_manager_def.output_config_schema
     ):
-        return output_manager_def.output_config_schema.config_type
+        return output_manager_def.output_config_schema.as_field()
 
     return None
 
