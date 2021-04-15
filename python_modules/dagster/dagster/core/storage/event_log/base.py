@@ -2,7 +2,6 @@ import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
-import pyrsistent
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import (
@@ -12,10 +11,6 @@ from dagster.core.execution.stats import (
 )
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
-
-
-class EventLogSequence(pyrsistent.CheckedPVector):
-    __type__ = EventRecord
 
 
 class EventLogStorage(ABC, MayHaveInstanceWeakref):
