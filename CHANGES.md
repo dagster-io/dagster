@@ -2,11 +2,26 @@
 
 ## 0.11.5
 
+### New
+- Resources in a `ModeDefinition` that are not required by a pipeline no longer require runtime configuration. This should make it easier to share modes or resources among multiple pipelines.
+- Dagstermill solids now support retries when a `RetryRequested` is yielded from a notebook using `dagstermill.yield_event`.
+- In Dagit, the asset catalog now supports both a flattened view of all assets as well as a hierarchical directory view.
+- In Dagit, the asset catalog now supports bulk wiping of assets.
+
 ### Bugfixes
 
+- In the Dagit left nav, schedules and sensors accurately reflect the filtered repositories.
+- When executing a pipeline with a subset of solids, the config for solids not included in the subset is correctly made optional in more cases.
+- URLs were sometimes not prefixed correctly when running Dagit using the `--path-prefix` option, leading to failed GraphQL requests and broken pages. This bug was introduced in 0.11.4, and is now fixed.
+*  The `update_timestamp` column in the runs table is now updated with a UTC timezone, making it consistent with the `create_timestamp` column.
+*  In Dagit, the main content pane now renders correctly on ultra-wide displays.
+*  The partition run matrix on the pipeline partition tab now shows step results for composite solids and dynamically mapped solids.  Previously, the step status was not shown at all for these solids.
 - Removed dependency constraint of `dagster-pandas` on `pandas`. You can now include any version of pandas. (https://github.com/dagster-io/dagster/issues/3350)
 - Removed dependency on `requests` in `dagster`. Now only `dagit` depends on `requests.`
-- Removed dependency on `pyrsistent` in in `dagster`
+- Removed dependency on `pyrsistent` in `dagster`.
+
+### Documentation
+- Updated the “Deploying to Airflow” documentation to reflect the current state of the system.
 
 ## 0.11.4
 
