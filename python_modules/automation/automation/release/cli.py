@@ -152,7 +152,8 @@ def release(ver, dry_run):
 
 
 @cli.command()
-def version():
+@click.option("--short", is_flag=True)
+def version(short):
     """Gets the most recent tagged version."""
     dmp = DagsterModulePublisher()
 
@@ -171,11 +172,14 @@ def version():
             )
         )
     else:
-        click.echo(
-            "All modules in lockstep with most recent tagged version: {git_tag}".format(
-                git_tag=git_tag
+        if short:
+            click.echo(git_tag)
+        else:
+            click.echo(
+                "All modules in lockstep with most recent tagged version: {git_tag}".format(
+                    git_tag=git_tag
+                )
             )
-        )
 
 
 @cli.command()
