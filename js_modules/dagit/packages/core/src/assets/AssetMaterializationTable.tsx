@@ -1,3 +1,4 @@
+import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -6,24 +7,67 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntries} from '../runs/MetadataEntry';
 import {RunStatusTagWithStats} from '../runs/RunStatusTag';
 import {titleForRun} from '../runs/RunUtils';
+import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {FontFamily} from '../ui/styles';
 
 import {AssetLineageInfoElement} from './AssetLineageInfoElement';
-import {AssetQuery_assetOrError_Asset_assetMaterializations} from './types/AssetQuery';
+import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
 
-export const AssetMaterializationTable: React.FunctionComponent<{
+type HistoricalMaterizalization = {
+  latest: Materialization;
+  predecessors?: Materialization[];
+};
+
+const NO_PARTITION_KEY = '__NO_PARTITION__';
+
+export const AssetMaterializationTable: React.FC<{
   isPartitioned: boolean;
   hasLineage: boolean;
-  materializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
-}> = ({isPartitioned, hasLineage, materializations}) => {
+  materializations: Materialization[];
+  shouldBucketPartitions?: boolean;
+}> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
+  const bucketed = React.useMemo(() => {
+    if (!isPartitioned || !shouldBucketPartitions) {
+      return materializations.map((materialization) => ({
+        latest: materialization,
+      }));
+    }
+
+    const buckets: {[key: string]: Materialization[]} = materializations.reduce(
+      (accum, materialization) => {
+        const partition = materialization.partition;
+        const key = partition || NO_PARTITION_KEY;
+        const materializationsForKey = accum[key] || [];
+        return {...accum, [key]: [...materializationsForKey, materialization]};
+      },
+      {},
+    );
+
+    const separate = (key: string) => {
+      const materializationsForKey = [...buckets[key]].sort(
+        (a, b) =>
+          Number(b.materializationEvent?.timestamp) - Number(a.materializationEvent?.timestamp),
+      );
+      const [latest, ...predecessors] = materializationsForKey;
+      return {latest, predecessors};
+    };
+
+    return Object.keys(buckets)
+      .sort()
+      .reverse()
+      .filter((key) => key !== NO_PARTITION_KEY)
+      .map(separate)
+      .concat(buckets.hasOwnProperty(NO_PARTITION_KEY) ? [separate(NO_PARTITION_KEY)] : []);
+  }, [isPartitioned, materializations, shouldBucketPartitions]);
+
   return (
     <Table>
       <thead>
         <tr>
-          <th style={{paddingLeft: 0}}>Materialization Metadata</th>
           {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
+          <th style={{paddingLeft: 0}}>Materialization Metadata</th>
           {hasLineage && <th style={{minWidth: 100}}>Parent Assets</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
           <th style={{minWidth: 150}}>Pipeline</th>
@@ -31,9 +75,9 @@ export const AssetMaterializationTable: React.FunctionComponent<{
         </tr>
       </thead>
       <tbody>
-        {materializations.map((m) => (
+        {bucketed.map((m) => (
           <AssetMaterializationRow
-            key={m.materializationEvent.timestamp}
+            key={m.latest.materializationEvent.timestamp}
             isPartitioned={isPartitioned}
             hasLineage={hasLineage}
             assetMaterialization={m}
@@ -44,24 +88,25 @@ export const AssetMaterializationTable: React.FunctionComponent<{
   );
 };
 
-const AssetMaterializationRow: React.FunctionComponent<{
-  assetMaterialization: AssetQuery_assetOrError_Asset_assetMaterializations;
+const AssetMaterializationRow: React.FC<{
+  assetMaterialization: HistoricalMaterizalization;
   isPartitioned: boolean;
   hasLineage: boolean;
 }> = ({assetMaterialization, isPartitioned, hasLineage}) => {
-  const run =
-    assetMaterialization.runOrError.__typename === 'PipelineRun'
-      ? assetMaterialization.runOrError
-      : undefined;
+  const {latest, predecessors} = assetMaterialization;
+  const run = latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : undefined;
   if (!run) {
     return <span />;
   }
-  const {materialization, assetLineage, timestamp} = assetMaterialization.materializationEvent;
+  const {materialization, assetLineage, timestamp} = latest.materializationEvent;
   const metadataEntries = materialization.metadataEntries;
 
   return (
     <tr>
-      <td style={{fontSize: 12, padding: 5, paddingTop: 3}}>
+      {isPartitioned && (
+        <td>{latest.partition || <span style={{color: Colors.GRAY3}}>None</span>}</td>
+      )}
+      <td style={{fontSize: 12, padding: '4px 12px 0 0'}}>
         {materialization.description ? (
           <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
         ) : null}
@@ -69,22 +114,28 @@ const AssetMaterializationRow: React.FunctionComponent<{
           <MetadataEntries entries={metadataEntries} />
         ) : null}
       </td>
-      {isPartitioned && <td>{assetMaterialization.partition}</td>}
       {hasLineage && (
         <td>
-          {
-            <Group direction={'column'} spacing={0}>
-              {assetLineage.map((lineage_info) => (
-                <>
-                  <AssetLineageInfoElement lineage_info={lineage_info} />
-                </>
-              ))}
-            </Group>
-          }
+          <Group direction={'column'} spacing={0}>
+            {assetLineage.map((lineage_info) => (
+              <>
+                <AssetLineageInfoElement lineage_info={lineage_info} />
+              </>
+            ))}
+          </Group>
         </td>
       )}
       <td>
-        <Timestamp timestamp={{ms: Number(timestamp)}} />
+        <Group direction="column" spacing={4}>
+          <Timestamp timestamp={{ms: Number(timestamp)}} />
+          {predecessors?.length ? (
+            <AssetPredecessorLink
+              isPartitioned={isPartitioned}
+              hasLineage={hasLineage}
+              predecessors={predecessors}
+            />
+          ) : null}
+        </Group>
       </td>
       <td>
         <PipelineReference
@@ -104,5 +155,59 @@ const AssetMaterializationRow: React.FunctionComponent<{
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
     </tr>
+  );
+};
+
+interface PredecessorDialogProps {
+  hasLineage: boolean;
+  isPartitioned: boolean;
+  predecessors: Materialization[];
+}
+
+const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
+  hasLineage,
+  isPartitioned,
+  predecessors,
+}) => {
+  const [open, setOpen] = React.useState(false);
+  const count = predecessors.length;
+  const title = () => {
+    if (isPartitioned) {
+      const partition = predecessors[0].partition;
+      if (partition) {
+        return `Previous materializations for ${partition}`;
+      }
+    }
+    return `Previous materializations`;
+  };
+
+  return (
+    <>
+      <ButtonLink onClick={() => setOpen(true)}>{`View ${count} previous`}</ButtonLink>
+      <Dialog
+        isOpen={open}
+        canEscapeKeyClose
+        canOutsideClickClose
+        onClose={() => setOpen(false)}
+        style={{width: '80%', minWidth: '800px'}}
+        title={title()}
+      >
+        <div className={Classes.DIALOG_BODY}>
+          <AssetMaterializationTable
+            hasLineage={hasLineage}
+            isPartitioned={isPartitioned}
+            materializations={predecessors}
+            shouldBucketPartitions={false}
+          />
+        </div>
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <Button intent="primary" onClick={() => setOpen(false)}>
+              OK
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
   );
 };
