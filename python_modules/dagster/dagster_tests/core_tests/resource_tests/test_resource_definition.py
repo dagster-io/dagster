@@ -22,6 +22,7 @@ from dagster import (
 )
 from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.definitions.resource import make_values_resource
 from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
@@ -360,6 +361,45 @@ def test_string_resource():
 
     assert result.success
     assert called["yup"]
+
+
+def test_variables_resource():
+    any_variable = 1
+    single_variable = {"foo": "my_string"}
+    multi_variables = {"foo": "my_string", "bar": 1}
+
+    @solid(required_resource_keys={"any_variable", "single_variable", "multi_variables"})
+    def my_solid(context):
+        assert context.resources.any_variable == any_variable
+        assert context.resources.single_variable == single_variable
+        assert context.resources.multi_variables == multi_variables
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "any_variable": make_values_resource(),
+                    "single_variable": make_values_resource(foo=str),
+                    "multi_variables": make_values_resource(foo=str, bar=int),
+                },
+            )
+        ]
+    )
+    def my_pipeline():
+        my_solid()
+
+    result = execute_pipeline(
+        my_pipeline,
+        run_config={
+            "resources": {
+                "any_variable": {"config": any_variable},
+                "single_variable": {"config": single_variable},
+                "multi_variables": {"config": multi_variables},
+            }
+        },
+    )
+
+    assert result.success
 
 
 def test_hardcoded_resource():

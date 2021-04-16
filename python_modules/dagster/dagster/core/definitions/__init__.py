@@ -71,7 +71,7 @@ from .reconstructable import (
     reconstructable,
 )
 from .repository import RepositoryDefinition
-from .resource import ResourceDefinition, resource
+from .resource import ResourceDefinition, make_values_resource, resource
 from .run_config_schema import RunConfigSchema, create_environment_type, create_run_config_schema
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .sensor import SensorDefinition, SensorExecutionContext

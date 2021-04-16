@@ -58,6 +58,7 @@ from dagster.core.definitions import (
     intermediate_storage,
     lambda_solid,
     logger,
+    make_values_resource,
     monthly_schedule,
     multiple_process_executor_requirements,
     multiprocess_executor,
@@ -204,6 +205,7 @@ __all__ = [
     "SolidInvocation",
     "TextMetadataEntryData",
     "UrlMetadataEntryData",
+    "make_values_resource",
     # Decorators
     "composite_solid",
     "executor",

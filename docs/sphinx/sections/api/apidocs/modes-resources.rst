@@ -20,3 +20,5 @@ Resources
 
 .. autoclass:: InitResourceContext
     :members:
+
+.. autofunction:: make_values_resource

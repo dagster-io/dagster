@@ -1,6 +1,6 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Any, Optional
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -282,3 +282,41 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
                 raise DagsterUnknownResourceError(attr)
 
         return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
+
+
+def make_values_resource(**kwargs: Any) -> ResourceDefinition:
+    """A helper function that creates a ``ResourceDefinition`` to take in user-defined values.
+
+        This is useful for sharing values between solids.
+
+    Args:
+        **kwargs: Arbitrary keyword arguments that will be passed to the config schema of the
+            returned resource definition. If not set, Dagster will accept any config provided for
+            the resource.
+
+    For example:
+
+    .. code-block:: python
+
+        @solid(required_resource_keys={"globals"})
+        def my_solid_a(context):
+            print(context.resources.globals["my_str_var"])
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"globals": make_values_resource(my_str_var=str, my_int_var=int)}
+                )
+            ]
+        )
+        def my_pipeline():
+            my_solid()
+
+    Returns:
+        ResourceDefinition: A resource that passes in user-defined values.
+    """
+
+    return ResourceDefinition(
+        resource_fn=lambda init_context: init_context.resource_config,
+        config_schema=kwargs or Any,
+    )
