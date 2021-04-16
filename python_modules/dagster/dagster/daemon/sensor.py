@@ -122,8 +122,6 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-    from dagster.daemon.daemon import CompletedIteration
-
     manager_loaded_time = pendulum.now("UTC").timestamp()
 
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
@@ -142,8 +140,8 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
         yield from execute_sensor_iteration(instance, logger, workspace)
         loop_duration = pendulum.now("UTC").timestamp() - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-        yield CompletedIteration()
         time.sleep(sleep_time)
+        yield
 
 
 def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None):

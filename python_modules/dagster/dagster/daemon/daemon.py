@@ -14,9 +14,6 @@ from dagster.scheduler import execute_scheduler_iteration
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.log import default_format_string
 
-# Interval at which heartbeats are posted
-DAEMON_HEARTBEAT_INTERVAL_SECONDS = 30
-
 
 def _mockable_localtime(_):
     now_time = pendulum.now()
@@ -37,8 +34,7 @@ def get_default_daemon_logger(daemon_name):
     return logger
 
 
-class CompletedIteration(object):
-    pass
+DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors
 
 
 class DagsterDaemon(AbstractContextManager):
@@ -48,8 +44,8 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
-        self._current_iteration_exceptions = None
-        self._last_iteration_exceptions = None
+        self._start_loop_time = None
+        self._errors = []  # (SerializableErrorInfo, timestamp) tuples
 
         self._first_error_logged = False
 
@@ -62,11 +58,21 @@ class DagsterDaemon(AbstractContextManager):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
 
-    def run_loop(self, daemon_uuid, daemon_shutdown_event, gen_workspace, until=None):
+    def run_loop(
+        self,
+        daemon_uuid,
+        daemon_shutdown_event,
+        gen_workspace,
+        heartbeat_interval_seconds,
+        error_interval_seconds,
+        until=None,
+    ):
         # Each loop runs in its own thread with its own instance and IWorkspace
         with DagsterInstance.get() as instance:
             with gen_workspace(instance) as workspace:
                 check.inst_param(workspace, "workspace", IWorkspace)
+
+                self._start_loop_time = pendulum.now("UTC")
 
                 while not daemon_shutdown_event.is_set() and (
                     not until or pendulum.now("UTC") < until
@@ -79,18 +85,30 @@ class DagsterDaemon(AbstractContextManager):
                     ):
                         self._last_iteration_time = curr_time
                         self._run_iteration(
-                            instance, daemon_uuid, daemon_shutdown_event, workspace, until
+                            instance,
+                            daemon_uuid,
+                            daemon_shutdown_event,
+                            workspace,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                            until,
                         )
 
+                    self._check_add_heartbeat(
+                        instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
+                    )
                     daemon_shutdown_event.wait(0.5)
 
-    def _run_iteration(self, instance, daemon_uuid, daemon_shutdown_event, workspace, until=None):
-        # Build a list of any exceptions encountered during the iteration.
-        # Once the iteration completes, this is copied to last_iteration_exceptions
-        # which is used in the heartbeats. This guarantees that heartbeats contain the full
-        # list of errors raised.
-        self._current_iteration_exceptions = []
-
+    def _run_iteration(
+        self,
+        instance,
+        daemon_uuid,
+        daemon_shutdown_event,
+        workspace,
+        heartbeat_interval_seconds,
+        error_interval_seconds,
+        until=None,
+    ):
         # Clear out the workspace locations after each iteration
         workspace.cleanup()
 
@@ -101,26 +119,24 @@ class DagsterDaemon(AbstractContextManager):
                 not until or pendulum.now("UTC") < until
             ):
                 try:
-                    result = check.opt_inst(
-                        next(daemon_generator), tuple([SerializableErrorInfo, CompletedIteration])
-                    )
-                    if isinstance(result, CompletedIteration):
-                        self._last_iteration_exceptions = self._current_iteration_exceptions
-                        self._current_iteration_exceptions = []
-                    elif result:
-                        self._current_iteration_exceptions.append(result)
+                    result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
+                    if result:
+                        self._errors.append((result, pendulum.now("UTC")))
                 except StopIteration:
-                    self._last_iteration_exceptions = self._current_iteration_exceptions
                     break
                 except Exception:  # pylint: disable=broad-except
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     self._logger.error("Caught error:\n{}".format(error_info))
-                    self._current_iteration_exceptions.append(error_info)
-                    self._last_iteration_exceptions = self._current_iteration_exceptions
+                    self._errors.append((error_info, pendulum.now("UTC")))
                     break
                 finally:
                     try:
-                        self._check_add_heartbeat(instance, daemon_uuid)
+                        self._check_add_heartbeat(
+                            instance,
+                            daemon_uuid,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                        )
                     except Exception:  # pylint: disable=broad-except
                         self._logger.error(
                             "Failed to add heartbeat: \n{}".format(
@@ -132,27 +148,31 @@ class DagsterDaemon(AbstractContextManager):
             # cleanup the generator if it was stopped part-way through
             daemon_generator.close()
 
-    def _check_add_heartbeat(self, instance, daemon_uuid):
-        # Always log a heartbeat after the first time an iteration returns an error to make sure we
-        # don't incorrectly say the daemon is healthy
-        first_time_logging_error = self._last_iteration_exceptions and not self._first_error_logged
+    def _check_add_heartbeat(
+        self, instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
+    ):
+        error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
+
+        self._errors = self._errors[:DAEMON_HEARTBEAT_ERROR_LIMIT]
+
+        self._errors = [
+            (error, timestamp) for (error, timestamp) in self._errors if timestamp >= error_max_time
+        ]
 
         curr_time = pendulum.now("UTC")
-        if not first_time_logging_error and (
-            self._last_heartbeat_time
-            and (curr_time - self._last_heartbeat_time).total_seconds()
-            < DAEMON_HEARTBEAT_INTERVAL_SECONDS
-        ):
-            return
 
-        if first_time_logging_error:
-            self._first_error_logged = True
+        heartbeat_compare_time = (
+            self._last_heartbeat_time if self._last_heartbeat_time else self._start_loop_time
+        )
+
+        if (curr_time - heartbeat_compare_time).total_seconds() < heartbeat_interval_seconds:
+            return
 
         daemon_type = self.daemon_type()
 
         last_stored_heartbeat = instance.get_daemon_heartbeats().get(daemon_type)
         if (
-            self._last_heartbeat_time  # not the first heartbeat
+            self._last_heartbeat_time
             and last_stored_heartbeat
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
@@ -174,7 +194,7 @@ class DagsterDaemon(AbstractContextManager):
                 curr_time.float_timestamp,
                 daemon_type,
                 daemon_uuid,
-                errors=self._last_iteration_exceptions,
+                errors=[error for (error, timestamp) in self._errors],
             )
         )
 

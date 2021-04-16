@@ -27,7 +27,11 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.daemon import SensorDaemon
+from dagster.daemon.controller import (
+    DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+    DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+)
+from dagster.daemon.daemon import DAEMON_HEARTBEAT_ERROR_LIMIT, SensorDaemon
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven import create_pendulum_time, to_timezone
 
@@ -755,6 +759,8 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
                 "my_uuid",
                 daemon_shutdown_event,
                 _gen_workspace,
+                heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+                error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
                 until=freeze_datetime.add(seconds=65),
             )
 
@@ -762,7 +768,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             heartbeat = heartbeats["SENSOR"]
             assert heartbeat
             assert heartbeat.errors
-            assert len(heartbeat.errors) == 1
+            assert len(heartbeat.errors) == DAEMON_HEARTBEAT_ERROR_LIMIT
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

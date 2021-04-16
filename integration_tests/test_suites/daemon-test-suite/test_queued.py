@@ -1,8 +1,7 @@
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster.utils import merge_dicts
-
-from .utils import setup_instance, start_daemon
+from utils import setup_instance, start_daemon
 
 
 def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefined-outer-name
