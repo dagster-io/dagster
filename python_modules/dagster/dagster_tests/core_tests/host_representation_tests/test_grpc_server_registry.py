@@ -2,8 +2,10 @@ import sys
 import threading
 import time
 
+import pytest
 from dagster import file_relative_path, pipeline, repository
 from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -41,6 +43,24 @@ def _can_connect(origin, endpoint):
             return True
     except Exception:  # pylint: disable=broad-except
         return False
+
+
+def test_error_repo_in_registry():
+    error_origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="error_repo",
+            python_file=file_relative_path(__file__, "error_repo.py"),
+        ),
+    )
+    with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
+        # Repository with a loading error raises an exception with the reason why
+        with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
+            registry.get_grpc_endpoint(error_origin)
+
+        # the exception is idempotent
+        with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
+            registry.get_grpc_endpoint(error_origin)
 
 
 def test_process_server_registry():
