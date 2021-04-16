@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 
-from dagster import StringSource, check
+from dagster import Field, Float, StringSource, check
 from dagster.core.execution.compute_logs import mirror_stream_to_file
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -20,7 +20,7 @@ from .compute_log_manager import (
     ComputeLogSubscription,
 )
 
-WATCHDOG_POLLING_TIMEOUT = 2.5
+DEFAULT_WATCHDOG_POLLING_TIMEOUT = 2.5
 
 IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: "out", ComputeIOType.STDERR: "err"}
 
@@ -30,8 +30,11 @@ MAX_FILENAME_LENGTH = 255
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
-    def __init__(self, base_dir, inst_data=None):
+    def __init__(self, base_dir, polling_timeout=None, inst_data=None):
         self._base_dir = base_dir
+        self._polling_timeout = check.opt_float_param(
+            polling_timeout, "polling_timeout", DEFAULT_WATCHDOG_POLLING_TIMEOUT
+        )
         self._subscription_manager = LocalComputeLogSubscriptionManager(self)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -51,9 +54,16 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def polling_timeout(self):
+        return self._polling_timeout
+
     @classmethod
     def config_type(cls):
-        return {"base_dir": StringSource}
+        return {
+            "base_dir": StringSource,
+            "polling_timeout": Field(Float, is_required=False),
+        }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -167,7 +177,7 @@ class LocalComputeLogSubscriptionManager:
         )
 
         if not self._observer:
-            self._observer = PollingObserver(WATCHDOG_POLLING_TIMEOUT)
+            self._observer = PollingObserver(self._manager.polling_timeout)
             self._observer.start()
 
         ensure_dir(directory)
