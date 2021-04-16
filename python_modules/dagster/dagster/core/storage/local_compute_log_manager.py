@@ -134,52 +134,61 @@ class LocalComputeLogSubscriptionManager:
         self._watchers = {}
         self._observer = None
 
-    def _key(self, run_id, key):
+    def _watch_key(self, run_id, key):
         return "{}:{}".format(run_id, key)
 
     def add_subscription(self, subscription):
         check.inst_param(subscription, "subscription", ComputeLogSubscription)
-        key = self._key(subscription.run_id, subscription.key)
-        self._subscriptions[key].append(subscription)
-        self.watch(subscription.run_id, subscription.key)
+        if self._manager.is_watch_completed(subscription.run_id, subscription.key):
+            subscription.fetch()
+            subscription.complete()
+        else:
+            watch_key = self._watch_key(subscription.run_id, subscription.key)
+            self._subscriptions[watch_key].append(subscription)
+            self.watch(subscription.run_id, subscription.key)
 
-    def remove_all_subscriptions(self, run_id, key):
-        key = self._key(run_id, key)
-        for subscription in self._subscriptions.pop(key, []):
+    def remove_all_subscriptions(self, run_id, step_key):
+        watch_key = self._watch_key(run_id, step_key)
+        for subscription in self._subscriptions.pop(watch_key, []):
             subscription.complete()
 
-    def watch(self, run_id, key):
-        key = self._key(run_id, key)
-        if key in self._watchers:
+    def watch(self, run_id, step_key):
+        watch_key = self._watch_key(run_id, step_key)
+        if watch_key in self._watchers:
             return
 
         update_paths = [
-            self._manager.get_local_path(run_id, key, ComputeIOType.STDOUT),
-            self._manager.get_local_path(run_id, key, ComputeIOType.STDERR),
+            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDOUT),
+            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR),
         ]
-        complete_paths = [self._manager.complete_artifact_path(run_id, key)]
-        directory = os.path.dirname(self._manager.get_local_path(run_id, key, ComputeIOType.STDERR))
+        complete_paths = [self._manager.complete_artifact_path(run_id, step_key)]
+        directory = os.path.dirname(
+            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR)
+        )
 
         if not self._observer:
             self._observer = PollingObserver(WATCHDOG_POLLING_TIMEOUT)
             self._observer.start()
 
         ensure_dir(directory)
-        self._watchers[key] = self._observer.schedule(
-            LocalComputeLogFilesystemEventHandler(self, run_id, key, update_paths, complete_paths),
+
+        self._watchers[watch_key] = self._observer.schedule(
+            LocalComputeLogFilesystemEventHandler(
+                self, run_id, step_key, update_paths, complete_paths
+            ),
             str(directory),
         )
 
-    def notify_subscriptions(self, run_id, key):
-        key = self._key(run_id, key)
-        for subscription in self._subscriptions[key]:
+    def notify_subscriptions(self, run_id, step_key):
+        watch_key = self._watch_key(run_id, step_key)
+        for subscription in self._subscriptions[watch_key]:
             subscription.fetch()
 
-    def unwatch(self, run_id, key, handler):
-        key = self._key(run_id, key)
-        if key in self._watchers:
-            self._observer.remove_handler_for_watch(handler, self._watchers[key])
-        del self._watchers[key]
+    def unwatch(self, run_id, step_key, handler):
+        watch_key = self._watch_key(run_id, step_key)
+        if watch_key in self._watchers:
+            self._observer.remove_handler_for_watch(handler, self._watchers[watch_key])
+        del self._watchers[watch_key]
 
     def dispose(self):
         if self._observer:

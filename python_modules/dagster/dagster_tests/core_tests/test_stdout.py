@@ -25,6 +25,7 @@ from dagster.core.test_utils import (
     instance_for_test_tempdir,
 )
 from dagster.seven import multiprocessing
+from dagster.utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
 HELLO_RESOURCE = "HELLO RESOURCE"
@@ -167,6 +168,42 @@ def test_compute_log_manager_subscriptions():
         assert len(stderr) == 1
         assert stderr[0].cursor == len(stderr[0].data)
         assert stderr[0].cursor > 400
+
+
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
+def test_compute_log_manager_subscription_updates():
+    with instance_for_test() as instance:
+        run_id = "fake_run_id"
+        step_key = "spew"
+        stdout_path = instance.compute_log_manager.get_local_path(
+            run_id, step_key, ComputeIOType.STDOUT
+        )
+
+        # make sure the parent directory to be watched exists, file exists
+        ensure_dir(os.path.dirname(stdout_path))
+        touch_file(stdout_path)
+
+        # set up the subscription
+        messages = []
+        observable = instance.compute_log_manager.observable(run_id, step_key, ComputeIOType.STDOUT)
+        observable.subscribe(messages.append)
+
+        # returns a single update, with 0 data
+        assert len(messages) == 1
+        last_chunk = messages[-1]
+        assert not last_chunk.data
+        assert last_chunk.cursor == 0
+
+        with open(stdout_path, "a+") as f:
+            print(HELLO_SOLID, file=f)  # pylint:disable=print-call
+
+        time.sleep(2.5)
+        assert len(messages) == 2
+        last_chunk = messages[-1]
+        assert last_chunk.data
+        assert last_chunk.cursor > 0
 
 
 def gen_solid_name(length):
