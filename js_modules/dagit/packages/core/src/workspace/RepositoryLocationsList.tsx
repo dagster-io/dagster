@@ -1,12 +1,12 @@
 import {Button, Classes, Colors, Dialog, NonIdealState, Tag} from '@blueprintjs/core';
 import React from 'react';
 
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useRepositoryLocationReload} from '../nav/ReloadRepositoryLocationButton';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
-import {Trace} from '../ui/Trace';
 
 import {WorkspaceContext} from './WorkspaceContext';
 import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from './types/RootRepositoriesQuery';
@@ -47,7 +47,7 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boo
               Error loading <strong>{locationOrError.name}</strong>. Try reloading the repository
               location after resolving the issue.
             </div>
-            <Trace>{locationOrError.error.message}</Trace>
+            <PythonErrorInfo error={locationOrError.error} />
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>

@@ -69,7 +69,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
             id
             name
             error {
-              message
+              ...PythonErrorFragment
             }
           }
         }
