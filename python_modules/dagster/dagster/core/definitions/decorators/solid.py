@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper, wraps
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -13,7 +13,7 @@ from ...decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
-from ..inference import infer_input_definitions_for_solid, infer_output_definitions
+from ..inference import infer_input_definitions, infer_output_definitions
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
@@ -32,7 +32,7 @@ class _Solid:
         version: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", OutputDefinition
         )
@@ -53,23 +53,25 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
-        input_defs = (
-            self.input_defs
-            if self.input_defs is not None
-            else infer_input_definitions_for_solid(self.name, fn)
-        )
         output_defs = (
             self.output_defs
             if self.output_defs is not None
             else infer_output_definitions("@solid", self.name, fn)
         )
 
-        positional_inputs = validate_solid_fn("@solid", self.name, fn, input_defs, ["context"])
-        compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
+        resolved_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+            decorator_name="@solid",
+            fn_name=self.name,
+            compute_fn=fn,
+            explicit_input_defs=self.input_defs,
+            has_context_arg=True,
+            exclude_nothing=True,
+        )
+        compute_fn = _create_solid_compute_wrapper(fn, resolved_input_defs, output_defs)
 
         solid_def = SolidDefinition(
             name=self.name,
-            input_defs=input_defs,
+            input_defs=resolved_input_defs,
             output_defs=output_defs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
@@ -312,30 +314,34 @@ def _create_solid_compute_wrapper(
     return compute
 
 
-def validate_solid_fn(
+def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: Callable[..., Any],
-    input_defs: List[InputDefinition],
-    expected_positionals: Optional[List[str]] = None,
-    exclude_nothing: Optional[bool] = True,
-) -> List[str]:
-    check.str_param(decorator_name, "decorator_name")
-    check.str_param(fn_name, "fn_name")
-    check.callable_param(compute_fn, "compute_fn")
-    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
-    expected_positionals = check.opt_list_param(
-        expected_positionals, "expected_positionals", of_type=str
-    )
+    explicit_input_defs: List[InputDefinition],
+    has_context_arg: bool,
+    exclude_nothing: bool,  # should Nothing type inputs be excluded from compute_fn args
+) -> Tuple[List[InputDefinition], List[str]]:
+    """
+    Validate provided input definitions and infer the remaining from the type signature of the compute_fn
+    Returns the resolved set of InputDefinitions and the positions of input names (which is used
+    during graph composition).
+    """
+    expected_positionals = ["context"] if has_context_arg else []
+
     if exclude_nothing:
-        names = set(
-            inp.name for inp in input_defs if not inp.dagster_type.kind == DagsterTypeKind.NOTHING
+        explicit_names = set(
+            inp.name
+            for inp in explicit_input_defs
+            if not inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
         nothing_names = set(
-            inp.name for inp in input_defs if inp.dagster_type.kind == DagsterTypeKind.NOTHING
+            inp.name
+            for inp in explicit_input_defs
+            if inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
     else:
-        names = set(inp.name for inp in input_defs)
+        explicit_names = set(inp.name for inp in explicit_input_defs)
         nothing_names = set()
 
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
@@ -353,9 +359,8 @@ def validate_solid_fn(
         )
 
     # Validate non positional parameters
-    # invalid_function_info = validate_decorated_fn_input_args(names, input_args)
-    # def validate_decorated_fn_input_args(input_def_names, decorated_fn_input_args):
     used_inputs = set()
+    inputs_to_infer = set()
     has_kwargs = False
 
     for param in input_args:
@@ -369,7 +374,7 @@ def validate_solid_fn(
             )
 
         else:
-            if param.name not in names:
+            if param.name not in explicit_names:
                 if param.name in nothing_names:
                     raise DagsterInvalidDefinitionError(
                         f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
@@ -377,16 +382,12 @@ def validate_solid_fn(
                         "no data will be passed for it. "
                     )
                 else:
-                    raise DagsterInvalidDefinitionError(
-                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is not "
-                        "one of the solid input_defs. Solid functions should only have keyword arguments "
-                        "that match input names and a first positional parameter named 'context'."
-                    )
+                    inputs_to_infer.add(param.name)
 
             else:
                 used_inputs.add(param.name)
 
-    undeclared_inputs = names - used_inputs
+    undeclared_inputs = explicit_names - used_inputs
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
         raise DagsterInvalidDefinitionError(
@@ -396,4 +397,12 @@ def validate_solid_fn(
             "parameter named 'context'."
         )
 
-    return positional_arg_name_list(input_args)
+    input_defs = list(explicit_input_defs)
+    if inputs_to_infer:
+        for inferred_input in infer_input_definitions(
+            decorator_name, fn_name, compute_fn, has_context_arg
+        ):
+            if inferred_input.name in inputs_to_infer:
+                input_defs.append(inferred_input)
+
+    return input_defs, positional_arg_name_list(input_args)

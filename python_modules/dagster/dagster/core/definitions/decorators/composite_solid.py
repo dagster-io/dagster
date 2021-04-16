@@ -20,7 +20,7 @@ class _CompositeSolid:
         config_fn: Optional[Callable[[dict], dict]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(output_defs, "output", OutputDefinition)
         self.description = check.opt_str_param(description, "description")
 

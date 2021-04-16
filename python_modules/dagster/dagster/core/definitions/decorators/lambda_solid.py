@@ -5,11 +5,11 @@ from dagster import check
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 from ..events import Output
-from ..inference import infer_input_definitions_for_lambda_solid, infer_output_definitions
+from ..inference import infer_output_definitions
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
-from .solid import validate_solid_fn
+from .solid import resolve_checked_solid_fn_inputs
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.compute import SolidExecutionContext
@@ -24,7 +24,7 @@ class _LambdaSolid:
         description: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_def = check.opt_inst_param(output_def, "output_def", OutputDefinition)
         self.description = check.opt_str_param(description, "description")
 
@@ -34,23 +34,25 @@ class _LambdaSolid:
         if not self.name:
             self.name = fn.__name__
 
-        input_defs = (
-            self.input_defs
-            if self.input_defs is not None
-            else infer_input_definitions_for_lambda_solid(self.name, fn)
-        )
         output_def = (
             self.output_def
             if self.output_def is not None
             else infer_output_definitions("@lambda_solid", self.name, fn)[0]
         )
 
-        positional_inputs = validate_solid_fn("@lambda_solid", self.name, fn, input_defs)
-        compute_fn = _create_lambda_solid_compute_wrapper(fn, input_defs, output_def)
+        resolved_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+            decorator_name="@lambda_solid",
+            fn_name=self.name,
+            compute_fn=fn,
+            explicit_input_defs=self.input_defs,
+            has_context_arg=False,
+            exclude_nothing=True,
+        )
+        compute_fn = _create_lambda_solid_compute_wrapper(fn, resolved_input_defs, output_def)
 
         solid_def = SolidDefinition(
             name=self.name,
-            input_defs=input_defs,
+            input_defs=resolved_input_defs,
             output_defs=[output_def],
             compute_fn=compute_fn,
             description=self.description,

@@ -265,7 +265,9 @@ def test_infer_input_description_from_docstring_rest():
         """
         return hello + str(optional)
 
-    defs = inference.infer_input_definitions_for_solid(rest.name, rest.compute_fn)
+    defs = inference.infer_input_definitions(
+        "@solid", rest.name, rest.compute_fn, has_context_arg=True
+    )
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -293,7 +295,9 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = inference.infer_input_definitions_for_solid(good_numpy.name, good_numpy.compute_fn)
+    defs = inference.infer_input_definitions(
+        "@solid", good_numpy.name, good_numpy.compute_fn, has_context_arg=True
+    )
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -320,7 +324,9 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = inference.infer_input_definitions_for_solid(good_google.name, good_google.compute_fn)
+    defs = inference.infer_input_definitions(
+        "@solid", good_google.name, good_google.compute_fn, has_context_arg=True
+    )
     assert len(defs) == 2
 
     hello_param = defs[0]

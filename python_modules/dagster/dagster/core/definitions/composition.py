@@ -7,7 +7,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import frozentags
 
 from .config import ConfigMapping
-from .decorators.solid import validate_solid_fn
+from .decorators.solid import resolve_checked_solid_fn_inputs
 from .dependency import (
     DependencyDefinition,
     DynamicCollectDependencyDefinition,
@@ -15,11 +15,7 @@ from .dependency import (
     SolidInvocation,
 )
 from .hook import HookDefinition
-from .inference import (
-    has_explicit_return_type,
-    infer_input_definitions_for_graph,
-    infer_output_definitions,
-)
+from .inference import has_explicit_return_type, infer_output_definitions
 from .output import OutputDefinition
 from .solid import NodeDefinition
 from .utils import check_valid_name, validate_tags
@@ -704,12 +700,6 @@ def do_composition(
             This should be removed in 0.11.0.
     """
 
-    actual_input_defs = (
-        provided_input_defs
-        if provided_input_defs is not None
-        else infer_input_definitions_for_graph(decorator_name, graph_name, fn)
-    )
-
     actual_output_defs, outputs_are_explicit = (
         (provided_output_defs, True)
         if provided_output_defs is not None
@@ -719,8 +709,13 @@ def do_composition(
         )
     )
 
-    positional_inputs = validate_solid_fn(
-        decorator_name, graph_name, fn, actual_input_defs, exclude_nothing=False
+    actual_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+        decorator_name,
+        graph_name,
+        fn,
+        provided_input_defs,
+        has_context_arg=False,
+        exclude_nothing=False,
     )
 
     kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs}

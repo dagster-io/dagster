@@ -226,12 +226,6 @@ def test_solid_definition_errors():
         def no_context(foo):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
-        def extras(_context, foo, bar):
-            pass
-
     @solid(
         input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
         output_defs=[OutputDefinition()],

@@ -1,4 +1,5 @@
 import inspect
+from typing import Callable, List
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -59,14 +60,6 @@ def _input_param_type(type_annotation):
     return None
 
 
-def infer_input_definitions_for_lambda_solid(solid_name, fn):
-    signature = funcsigs.signature(fn)
-    params = list(signature.parameters.values())
-    descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params, "@lambda_solid", solid_name, descriptions=descriptions)
-    return defs
-
-
 def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=None):
     descriptions = descriptions or {}
     input_defs = []
@@ -98,17 +91,14 @@ def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=N
     return input_defs
 
 
-def infer_input_definitions_for_graph(decorator_name, solid_name, fn):
+def infer_input_definitions(
+    decorator_name: str, fn_name: str, fn: Callable, has_context_arg: bool
+) -> List[InputDefinition]:
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=descriptions)
-    return defs
-
-
-def infer_input_definitions_for_solid(solid_name, fn):
-    signature = funcsigs.signature(fn)
-    params = list(signature.parameters.values())
-    descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params[1:], "@solid", solid_name, descriptions=descriptions)
+    params_to_infer = params[1:] if has_context_arg else params
+    defs = _infer_inputs_from_params(
+        params_to_infer, decorator_name, fn_name, descriptions=descriptions
+    )
     return defs
