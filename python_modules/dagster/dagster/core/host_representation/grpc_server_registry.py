@@ -12,6 +12,7 @@ from dagster.core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocationOrigin,
 )
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -54,6 +55,27 @@ class GrpcServerRegistry(AbstractContextManager):
 DEFAULT_PROCESS_CLEANUP_INTERVAL = 60
 DEFAULT_PROCESS_HEARTBEAT_INTERVAL = 120
 
+
+class ProcessRegistryEntry(
+    namedtuple(
+        "_ProcessRegistryEntry",
+        "process_or_error loadable_target_origin creation_timestamp server_id",
+    )
+):
+    def __new__(cls, process_or_error, loadable_target_origin, creation_timestamp, server_id):
+        return super(ProcessRegistryEntry, cls).__new__(
+            cls,
+            check.inst_param(
+                process_or_error, "process_or_error", (GrpcServerProcess, SerializableErrorInfo)
+            ),
+            check.inst_param(
+                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+            ),
+            check.float_param(creation_timestamp, "creation_timestamp"),
+            check.opt_str_param(server_id, "server_id"),
+        )
+
+
 # GrpcServerRegistry that creates local gRPC python processes from
 # ManagedGrpcPythonEnvRepositoryLocationOrigins and shares them between threads.
 class ProcessGrpcServerRegistry(GrpcServerRegistry):
@@ -68,9 +90,8 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         # server with a heartbeat while you want the process to stay running.
         heartbeat_ttl=DEFAULT_PROCESS_HEARTBEAT_INTERVAL,
     ):
-        # (GrpcServerProcess or SerializableErrorInfo, creation timestamp, server ID) tuples, keyed
-        # by origin ID
-        self._active_grpc_processes_or_errors = {}
+        # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
+        self._active_entries = {}
 
         self._waited_for_processes = False
 
@@ -113,10 +134,10 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         )
         with self._lock:
             origin_id = repository_location_origin.get_id()
-            if origin_id in self._active_grpc_processes_or_errors:
+            if origin_id in self._active_entries:
                 # Free the map entry for this origin so that _get_grpc_endpoint will create
                 # a new process
-                del self._active_grpc_processes_or_errors[origin_id]
+                del self._active_entries[origin_id]
 
             return self._get_grpc_endpoint(repository_location_origin)
 
@@ -144,16 +165,12 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                 f"No Python file/module information available for location {repository_location_origin.location_name}"
             )
 
-        if not origin_id in self._active_grpc_processes_or_errors:
+        if not origin_id in self._active_entries:
             refresh_server = True
         else:
-            process, _creation_timestamp, server_id = self._active_grpc_processes_or_errors[
-                origin_id
-            ]
-            refresh_server = loadable_target_origin != process.loadable_target_origin
+            active_entry = self._active_entries[origin_id]
+            refresh_server = loadable_target_origin != active_entry.loadable_target_origin
 
-        # Handle when loadable_target_origin is None
-        # Detect when the loadable target origin has changed???
         if refresh_server:
             try:
                 new_server_id = str(uuid.uuid4())
@@ -168,21 +185,26 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                 server_process = serializable_error_info_from_exc_info(sys.exc_info())
                 new_server_id = None
 
-            self._active_grpc_processes_or_errors[origin_id] = (
-                server_process,
-                pendulum.now("UTC").timestamp(),
-                new_server_id,
+            self._active_entries[origin_id] = ProcessRegistryEntry(
+                process_or_error=server_process,
+                loadable_target_origin=loadable_target_origin,
+                creation_timestamp=pendulum.now("UTC").timestamp(),
+                server_id=new_server_id,
             )
 
-        process, _creation_timestamp, server_id = self._active_grpc_processes_or_errors[origin_id]
+        active_entry = self._active_entries[origin_id]
 
-        if isinstance(process, SerializableErrorInfo):
+        if isinstance(active_entry.process_or_error, SerializableErrorInfo):
             raise DagsterUserCodeProcessError(
-                process.to_string(), user_code_process_error_infos=[process]
+                active_entry.process_or_error.to_string(),
+                user_code_process_error_infos=[active_entry.process_or_error],
             )
 
         return GrpcServerEndpoint(
-            server_id=server_id, host="localhost", port=process.port, socket=process.socket
+            server_id=active_entry.server_id,
+            host="localhost",
+            port=active_entry.process_or_error.port,
+            socket=active_entry.process_or_error.socket,
         )
 
     # Clear out processes from the map periodically so that they'll be re-created the next
@@ -198,16 +220,14 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
             with self._lock:
                 origin_ids_to_clear = []
 
-                for origin_id, entry in self._active_grpc_processes_or_errors.items():
-                    _process_or_error, creation_timestamp, _server_id = entry
-
+                for origin_id, entry in self._active_entries.items():
                     if (
-                        current_time - creation_timestamp > reload_interval
+                        current_time - entry.creation_timestamp > reload_interval
                     ):  # Use a different threshold for errors so they aren't cached as long?
                         origin_ids_to_clear.append(origin_id)
 
                 for origin_id in origin_ids_to_clear:
-                    del self._active_grpc_processes_or_errors[origin_id]
+                    del self._active_entries[origin_id]
 
                 # Remove any dead processes from the all_processes map
                 dead_process_indexes = []
