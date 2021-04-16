@@ -5,12 +5,11 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Set, Union
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.seven import funcsigs
 
 from ...decorator_utils import (
-    InvalidDecoratedFunctionInfo,
     positional_arg_name_list,
     split_function_parameters,
-    validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
 from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
@@ -353,50 +352,47 @@ def validate_solid_fn(
         )
 
     # Validate non positional parameters
-    invalid_function_info = validate_decorated_fn_input_args(names, input_args)
-    if invalid_function_info:
-        if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["vararg"]:
+    # invalid_function_info = validate_decorated_fn_input_args(names, input_args)
+    # def validate_decorated_fn_input_args(input_def_names, decorated_fn_input_args):
+    used_inputs = set()
+    has_kwargs = False
+
+    for param in input_args:
+        if param.kind == funcsigs.Parameter.VAR_KEYWORD:
+            has_kwargs = True
+        elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
             raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{solid_name}' decorated function has positional vararg parameter "
-                "'{param}'. Solid functions should only have keyword arguments that match "
-                "input names and a first positional parameter named 'context'.".format(
-                    decorator_name=decorator_name,
-                    solid_name=fn_name,
-                    param=invalid_function_info.param,
-                )
+                f"{decorator_name} '{fn_name}' decorated function has positional vararg parameter "
+                f"'{param}'. Solid functions should only have keyword arguments that match "
+                "input names and a first positional parameter named 'context'."
             )
-        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["missing_name"]:
-            if invalid_function_info.param in nothing_names:
-                raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is "
-                    "one of the solid input_defs of type 'Nothing' which should not be included since "
-                    "no data will be passed for it. ".format(
-                        decorator_name=decorator_name,
-                        solid_name=fn_name,
-                        param=invalid_function_info.param,
+
+        else:
+            if param.name not in names:
+                if param.name in nothing_names:
+                    raise DagsterInvalidDefinitionError(
+                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
+                        "one of the solid input_defs of type 'Nothing' which should not be included since "
+                        "no data will be passed for it. "
                     )
-                )
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is not "
+                        "one of the solid input_defs. Solid functions should only have keyword arguments "
+                        "that match input names and a first positional parameter named 'context'."
+                    )
+
             else:
-                raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is not "
-                    "one of the solid input_defs. Solid functions should only have keyword arguments "
-                    "that match input names and a first positional parameter named 'context'.".format(
-                        decorator_name=decorator_name,
-                        solid_name=fn_name,
-                        param=invalid_function_info.param,
-                    )
-                )
-        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["extra"]:
-            undeclared_inputs_printed = ", '".join(invalid_function_info.missing_names)
-            raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{solid_name}' decorated function does not have parameter(s) "
-                "'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
-                "should only have keyword arguments that match input names and a first positional "
-                "parameter named 'context'.".format(
-                    decorator_name=decorator_name,
-                    solid_name=fn_name,
-                    undeclared_inputs_printed=undeclared_inputs_printed,
-                )
-            )
+                used_inputs.add(param.name)
+
+    undeclared_inputs = names - used_inputs
+    if not has_kwargs and undeclared_inputs:
+        undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        raise DagsterInvalidDefinitionError(
+            f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
+            f"'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
+            "should only have keyword arguments that match input names and a first positional "
+            "parameter named 'context'."
+        )
 
     return positional_arg_name_list(input_args)

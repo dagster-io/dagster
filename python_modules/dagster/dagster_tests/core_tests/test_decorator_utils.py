@@ -1,7 +1,5 @@
 from dagster.core.decorator_utils import (
-    InvalidDecoratedFunctionInfo,
     split_function_parameters,
-    validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
 
@@ -25,7 +23,6 @@ def test_get_function_positional_parameters_ok():
         decorated_function_one_positional(), ["bar"]
     )
     validate_decorated_fn_positionals(positionals, ["bar"])
-    validate_decorated_fn_input_args(set(), non_positionals)
     assert "bar" in {positional.name for positional in positionals}
     assert not non_positionals
 
@@ -35,7 +32,6 @@ def test_get_function_positional_parameters_multiple():
         decorated_function_two_positionals_one_kwarg(), ["bar", "baz"]
     )
     validate_decorated_fn_positionals(positionals, ["bar", "baz"])
-    validate_decorated_fn_input_args({"qux"}, non_positionals)
     assert {positional.name for positional in positionals} == {"bar", "baz"}
     assert {non_positional.name for non_positional in non_positionals} == {"qux"}
 
@@ -43,11 +39,3 @@ def test_get_function_positional_parameters_multiple():
 def test_get_function_positional_parameters_invalid():
     positionals, _ = split_function_parameters(decorated_function_one_positional(), ["bat"])
     assert validate_decorated_fn_positionals(positionals, ["bat"]) == "bat"
-
-
-def test_get_function_non_positional_parameters_invalid():
-    _, non_positionals = split_function_parameters(
-        decorated_function_two_positionals_one_kwarg(), ["bar", "baz"]
-    )
-    invalid_function_info = validate_decorated_fn_input_args(set(), non_positionals)
-    assert invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["missing_name"]
