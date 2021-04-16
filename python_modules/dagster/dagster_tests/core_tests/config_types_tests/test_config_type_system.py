@@ -620,7 +620,9 @@ def test_no_env_missing_required_error_handling():
     assert mfe.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
     assert len(pe.errors) == 1
 
-    assert pe.errors[0].message == 'Missing required config entry "solids" at the root.'
+    expected_suggested_config = {"solids": {"required_int_solid": {"config": 0}}}
+    assert pe.errors[0].message.startswith('Missing required config entry "solids" at the root.')
+    assert str(expected_suggested_config) in pe.errors[0].message
 
 
 def test_root_extra_field():
@@ -750,7 +752,12 @@ def test_required_resource_not_given():
     pe = pe_info.value
     error = pe.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert error.message == 'Missing required config entry "required" at path root:resources.'
+
+    expected_suggested_config = {"required": {"config": 0}}
+    assert error.message.startswith(
+        'Missing required config entry "required" at path root:resources.'
+    )
+    assert str(expected_suggested_config) in error.message
 
 
 def test_multilevel_good_error_handling_solids():
@@ -772,9 +779,12 @@ def test_multilevel_good_error_handling_solids():
         execute_pipeline(pipeline_def, run_config={"solids": {}})
 
     assert len(missing_field_pe_info.value.errors) == 1
-    assert missing_field_pe_info.value.errors[0].message == (
+
+    expected_suggested_config = {"good_error_handling": {"config": 0}}
+    assert missing_field_pe_info.value.errors[0].message.startswith(
         """Missing required config entry "good_error_handling" at path root:solids."""
     )
+    assert str(expected_suggested_config) in missing_field_pe_info.value.errors[0].message
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
@@ -790,9 +800,12 @@ def test_multilevel_good_error_handling_solid_name_solids():
         execute_pipeline(pipeline_def, run_config={"solids": {"good_error_handling": {}}})
 
     assert len(pe_info.value.errors) == 1
-    assert pe_info.value.errors[0].message == (
+
+    expected_suggested_config = {"config": 0}
+    assert pe_info.value.errors[0].message.startswith(
         """Missing required config entry "config" at path root:solids:good_error_handling."""
     )
+    assert str(expected_suggested_config) in pe_info.value.errors[0].message
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
