@@ -169,7 +169,7 @@ def resolve_memoized_execution_plan(
             with build_resources(
                 resources=mode_def.resource_defs,
                 instance=instance,
-                run_config=run_config.get("resources", {}),
+                resource_config=run_config.get("resources", {}),
                 log_manager=log_manager,
             ) as resources:
 

@@ -27,7 +27,7 @@ def test_resource_with_config():
 
     with build_resources(
         resources={"basic_resource": basic_resource},
-        run_config={"basic_resource": {"config": {"plant": "maple tree"}}},
+        resource_config={"basic_resource": {"config": {"plant": "maple tree"}}},
     ) as resources:
         assert resources.basic_resource == "plant: maple tree, animal: dog"
 
@@ -43,7 +43,7 @@ def test_resource_with_dependencies():
 
     with build_resources(
         resources={"no_deps": no_deps, "has_deps": has_deps},
-        run_config={"no_deps": {"config": {"animal": "dog"}}},
+        resource_config={"no_deps": {"config": {"animal": "dog"}}},
     ) as resources:
         assert resources.no_deps == "dog"
         assert resources.has_deps == "dog is an animal."
