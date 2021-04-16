@@ -17,7 +17,7 @@ from dagster.utils.backcompat import (
 
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
-from .run_request import JobType, RunRequest, SkipReason
+from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
@@ -211,18 +211,28 @@ class SensorDefinition:
 
         if not result or result == [None]:
             run_requests = []
+            pipeline_run_reactions = []
             skip_message = None
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest))
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
             run_requests = [item] if isinstance(item, RunRequest) else []
+            pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
-        else:
+        elif isinstance(result[0], RunRequest):
             check.is_list(result, of_type=RunRequest)
             run_requests = result
+            pipeline_run_reactions = []
+            skip_message = None
+        else:
+            run_requests = []
+            check.is_list(result, of_type=PipelineRunReaction)
+            pipeline_run_reactions = result
             skip_message = None
 
-        return SensorExecutionData(run_requests, skip_message, context.cursor)
+        return SensorExecutionData(
+            run_requests, skip_message, context.cursor, pipeline_run_reactions
+        )
 
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
@@ -246,6 +256,7 @@ class SensorExecutionData(
             ("run_requests", Optional[List[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
+            ("pipeline_run_reactions", Optional[List[PipelineRunReaction]]),
         ],
     )
 ):
@@ -254,10 +265,12 @@ class SensorExecutionData(
         run_requests: Optional[List[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
+        pipeline_run_reactions: Optional[List[PipelineRunReaction]] = None,
     ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
+        check.opt_list_param(pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -266,6 +279,7 @@ class SensorExecutionData(
             run_requests=run_requests,
             skip_message=skip_message,
             cursor=cursor,
+            pipeline_run_reactions=pipeline_run_reactions,
         )
 
 
@@ -277,13 +291,13 @@ def wrap_sensor_evaluation(
         for item in result:
             yield item
 
-    elif isinstance(result, (SkipReason, RunRequest)):
+    elif isinstance(result, (SkipReason, RunRequest, PipelineRunReaction)):
         yield result
 
     elif result is not None:
         raise DagsterInvariantViolationError(
             f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-            f"{result} of type {type(result)}.  Should only return SkipReason or "
+            f"{result} of type {type(result)}.  Should only return SkipReason, PipelineRunReaction, or "
             "RunRequest objects."
         )
 

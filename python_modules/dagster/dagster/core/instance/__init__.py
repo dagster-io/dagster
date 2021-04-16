@@ -7,9 +7,8 @@ import time
 import warnings
 import weakref
 from collections import defaultdict
-from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Iterable, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Union
 
 import yaml
 from dagster import check
@@ -982,6 +981,15 @@ class DagsterInstance:
         self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+
+    def get_run_rows(
+        self,
+        filters: PipelineRunsFilter = None,
+        limit: int = None,
+        order_by: str = None,
+        ascending: bool = False,
+    ) -> List[Dict[str, Any]]:
+        return self._run_storage.get_run_rows(filters, limit, order_by, ascending)
 
     def wipe(self):
         self._run_storage.wipe()

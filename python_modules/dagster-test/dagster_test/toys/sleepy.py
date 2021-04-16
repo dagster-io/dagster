@@ -50,16 +50,26 @@ def giver(context):
 
 
 @solid(
+    config_schema={"fail": Field(bool, is_required=False, default_value=False)},
     input_defs=[
         InputDefinition("in_1", Int),
         InputDefinition("in_2", Int),
         InputDefinition("in_3", Int),
         InputDefinition("in_4", Int),
     ],
-    output_defs=[OutputDefinition(Int)],
+    output_defs=[OutputDefinition(Int, is_required=False)],
 )
-def total(_, in_1, in_2, in_3, in_4):
-    return in_1 + in_2 + in_3 + in_4
+def total(context, in_1, in_2, in_3, in_4):
+    result = in_1 + in_2 + in_3 + in_4
+    if context.solid_config["fail"]:
+        yield Output(result, "result")
+    # skip the failing solid
+    context.log.info(str(result))
+
+
+@solid
+def will_fail(_, i):
+    raise Exception(i)
 
 
 @pipeline(
@@ -81,9 +91,11 @@ def total(_, in_1, in_2, in_3, in_4):
 def sleepy_pipeline():
     giver_res = giver()
 
-    total(
-        in_1=sleeper(units=giver_res.out_1),
-        in_2=sleeper(units=giver_res.out_2),
-        in_3=sleeper(units=giver_res.out_3),
-        in_4=sleeper(units=giver_res.out_4),
+    will_fail(
+        total(
+            in_1=sleeper(units=giver_res.out_1),
+            in_2=sleeper(units=giver_res.out_2),
+            in_3=sleeper(units=giver_res.out_3),
+            in_4=sleeper(units=giver_res.out_4),
+        )
     )
