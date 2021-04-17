@@ -1,4 +1,5 @@
 import string
+import time
 
 from dagster import (
     InputDefinition,
@@ -6,9 +7,11 @@ from dagster import (
     OutputDefinition,
     PartitionSetDefinition,
     ScheduleDefinition,
+    SkipReason,
     lambda_solid,
     pipeline,
     repository,
+    sensor,
     solid,
     usable_as_dagster_type,
 )
@@ -69,6 +72,12 @@ def define_bar_schedules():
     }
 
 
+@sensor(pipeline_name="bar")
+def slow_sensor(_):
+    time.sleep(5)
+    yield SkipReason("Oops fell asleep")
+
+
 def error_partition_fn():
     raise Exception("womp womp")
 
@@ -123,5 +132,8 @@ def bar_repo():
             "baz": lambda: baz_pipeline,
         },
         "schedules": define_bar_schedules(),
+        "sensors": {
+            "slow_sensor": lambda: slow_sensor,
+        },
         "partition_sets": define_baz_partitions(),
     }

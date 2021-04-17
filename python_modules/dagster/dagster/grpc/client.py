@@ -32,6 +32,8 @@ from .types import (
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
+DEFAULT_GRPC_TIMEOUT = 60
+
 
 def client_heartbeat_thread(client, shutdown_event):
     while True:
@@ -81,17 +83,17 @@ class DagsterGrpcClient:
         ) as channel:
             yield channel
 
-    def _query(self, method, request_type, timeout=None, **kwargs):
+    def _query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
         # TODO need error handling here
         return response
 
-    def _streaming_query(self, method, request_type, **kwargs):
+    def _streaming_query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
-            response_stream = getattr(stub, method)(request_type(**kwargs))
+            response_stream = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
             yield from response_stream
 
     def ping(self, echo):
@@ -276,7 +278,7 @@ class DagsterGrpcClient:
             "".join([chunk.serialized_chunk for chunk in chunks])
         )
 
-    def external_sensor_execution(self, sensor_execution_args):
+    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_GRPC_TIMEOUT):
         check.inst_param(
             sensor_execution_args,
             "sensor_execution_args",
@@ -287,6 +289,7 @@ class DagsterGrpcClient:
             self._streaming_query(
                 "ExternalSensorExecution",
                 api_pb2.ExternalSensorExecutionRequest,
+                timeout=timeout,
                 serialized_external_sensor_execution_args=serialize_dagster_namedtuple(
                     sensor_execution_args
                 ),
