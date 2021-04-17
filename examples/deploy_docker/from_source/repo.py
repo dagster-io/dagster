@@ -1,9 +1,22 @@
+import time
+
 from dagster import pipeline, repository, schedule, solid
 
 
 @solid
 def hello(_):
     return 1
+
+
+@solid
+def hanging_solid(_):
+    while True:
+        time.sleep(5)
+
+
+@pipeline
+def hanging_pipeline():
+    hanging_solid()
 
 
 @pipeline
@@ -18,4 +31,4 @@ def my_schedule(_context):
 
 @repository
 def deploy_docker_repository():
-    return [my_pipeline, my_schedule]
+    return [my_pipeline, hanging_pipeline, my_schedule]
