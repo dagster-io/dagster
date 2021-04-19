@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Set, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class _Hook:
     def __init__(
-        self, name: Optional[str] = None, required_resource_keys: Optional[Set[str]] = None
+        self, name: Optional[str] = None, required_resource_keys: Optional[AbstractSet[str]] = None
     ):
         self.name = check.opt_str_param(name, "name")
         self.required_resource_keys = check.opt_set_param(
@@ -53,7 +53,7 @@ class _Hook:
 
 def event_list_hook(
     name: Union[Optional[str], Callable[..., Any]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
 ) -> Union[HookDefinition, _Hook]:
     """Create a generic hook with the specified parameters from the decorated function.
 
@@ -70,7 +70,7 @@ def event_list_hook(
 
     Args:
         name (Optional[str]): The name of this hook.
-        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
+        required_resource_keys (Optional[AbstractSet[str]]): Keys for the resources required by the
             hook.
 
     Examples:
@@ -101,7 +101,7 @@ def event_list_hook(
 
 def success_hook(
     name: Union[Optional[str], Callable[..., Any]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
 ) -> Union[
     Union[HookDefinition, _Hook],
     Callable[[Callable[["HookContext"], Any]], Union[HookDefinition, _Hook]],
@@ -110,7 +110,7 @@ def success_hook(
 
     Args:
         name (Optional[str]): The name of this hook.
-        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
+        required_resource_keys (Optional[AbstractSet[str]]): Keys for the resources required by the
             hook.
 
     Examples:
@@ -173,7 +173,7 @@ def success_hook(
 
 
 def failure_hook(
-    name: Optional[str] = None, required_resource_keys: Optional[Set[str]] = None
+    name: Optional[str] = None, required_resource_keys: Optional[AbstractSet[str]] = None
 ) -> Union[
     Union[HookDefinition, _Hook],
     Callable[[Callable[["HookContext"], Any]], Union[HookDefinition, _Hook]],
@@ -182,7 +182,7 @@ def failure_hook(
 
     Args:
         name (Optional[str]): The name of this hook.
-        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
+        required_resource_keys (Optional[AbstractSet[str]]): Keys for the resources required by the
             hook.
 
     Examples:

@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Callable, Optional, Set
+from typing import AbstractSet, Any, Callable, Optional
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -14,7 +14,7 @@ class HookDefinition(namedtuple("_HookDefinition", "name hook_fn required_resour
     Args:
         name (str): The name of this hook.
         hook_fn (Callable): The callback function that will be triggered.
-        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
+        required_resource_keys (Optional[AbstractSet[str]]): Keys for the resources required by the
             hook.
     """
 
@@ -22,7 +22,7 @@ class HookDefinition(namedtuple("_HookDefinition", "name hook_fn required_resour
         cls,
         name: str,
         hook_fn: Callable[..., Any],
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
     ):
         return super(HookDefinition, cls).__new__(
             cls,

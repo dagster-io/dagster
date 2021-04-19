@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Deque, Dict, Optional, Set, cast
+from typing import AbstractSet, Deque, Dict, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -36,7 +36,7 @@ def resource_initialization_manager(
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
-    resource_keys_to_init: Optional[Set[str]],
+    resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
@@ -97,7 +97,7 @@ def _core_resource_initialization_event_generator(
     resource_managers: Deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
-    resource_keys_to_init: Optional[Set[str]],
+    resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
@@ -184,7 +184,7 @@ def resource_initialization_event_generator(
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
-    resource_keys_to_init: Optional[Set[str]],
+    resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],

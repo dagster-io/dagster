@@ -3,13 +3,12 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
-    FrozenSet,
     List,
     NamedTuple,
     Optional,
-    Set,
     Tuple,
     Type,
     Union,
@@ -41,7 +40,7 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
             multiple instances of the same solid.
         tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
             set on the solid definition.
-        hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
+        hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
             solid instance.
 
     Examples:
@@ -78,7 +77,7 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
         name: str,
         alias: Optional[str] = None,
         tags: Dict[str, str] = None,
-        hook_defs: FrozenSet[HookDefinition] = None,
+        hook_defs: AbstractSet[HookDefinition] = None,
     ):
         name = check.str_param(name, "name")
         alias = check.opt_str_param(alias, "alias")
@@ -104,7 +103,7 @@ class Solid:
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
         tags: Dict[str, str] = None,
-        hook_defs: Optional[Set[HookDefinition]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ):
         from .graph import GraphDefinition
         from .solid import NodeDefinition
@@ -198,7 +197,7 @@ class Solid:
         )
 
     @property
-    def hook_defs(self) -> Set[HookDefinition]:
+    def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
 
 

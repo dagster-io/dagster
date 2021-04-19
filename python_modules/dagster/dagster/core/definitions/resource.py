@@ -1,6 +1,6 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import Optional, Set
+from typing import AbstractSet, Optional
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -249,7 +249,7 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             ),
         )
 
-    def build(self, required_resource_keys: Optional[Set[str]]) -> Resources:
+    def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
 
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
