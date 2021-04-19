@@ -531,7 +531,7 @@ const AssetEntryRow: React.FunctionComponent<{
   },
 );
 
-export const AssetActions: React.FunctionComponent<{
+const AssetActions: React.FC<{
   selected: Asset[];
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {

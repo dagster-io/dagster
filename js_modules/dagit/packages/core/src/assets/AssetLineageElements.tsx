@@ -5,7 +5,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 
 import {AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage} from './types/AssetQuery';
 
-export const AssetLineageInfoElement: React.FunctionComponent<{
+const AssetLineageInfoElement: React.FC<{
   lineage_info: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage;
 }> = ({lineage_info}) => {
   const partition_list_label = lineage_info.partitions.length == 1 ? 'Partition' : 'Partitions';
