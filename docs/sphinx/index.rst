@@ -52,3 +52,4 @@
    sections/api/apidocs/libraries/dagster-twilio
    sections/api/apidocs/libraries/dagstermill
    sections/api/apidocs/libraries/lakehouse
+   sections/api/apidocs/libraries/dagster-graphql

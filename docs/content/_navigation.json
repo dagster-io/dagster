@@ -177,6 +177,10 @@
           {
             "title": "GraphQL API",
             "path": "/concepts/dagit/graphql"
+          },
+          {
+            "title": "GraphQL Python Client",
+            "path": "/concepts/dagit/graphql-client"
           }
         ]
       },
