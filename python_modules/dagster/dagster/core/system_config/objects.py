@@ -360,7 +360,7 @@ class IntermediateStorageConfig(
         if config:
             warnings.warn(
                 (
-                    'The "storage" and "intermediate_storage" entries in the run config are deprecated in 0.10.0, '
+                    'The "storage" and "intermediate_storage" entries in the run config are deprecated as of 0.10.0, '
                     "and will removed in a future release. Loading inputs and storing outputs are now handled "
                     'by "IO managers", which are resources that can be configured via '
                     'the "io_manager" resource key.'
