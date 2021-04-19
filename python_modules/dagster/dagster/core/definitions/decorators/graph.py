@@ -81,12 +81,13 @@ def graph(
         description (Optional[str]):
             A human-readable description of the graph.
         input_defs (Optional[List[InputDefinition]]):
-            Input definitions for the graph.
-            If not provided explicitly, these will be inferred from typehints.
+            Information about the inputs that this graph maps. Information provided here
+            will be combined with what can be inferred from the function signature, with these
+            explicit InputDefinitions taking precedence.
 
-            Uses of these inputs in the body of the decorated composition function will be used to
-            infer the appropriate set of :py:class:`InputMappings <InputMapping>` passed to the
-            underlying :py:class:`GraphDefinition`.
+            Uses of inputs in the body of the decorated composition function will determine
+            the :py:class:`InputMappings <InputMapping>` passed to the underlying
+            :py:class:`GraphDefinition`.
         output_defs (Optional[List[OutputDefinition]]):
             Output definitions for the graph. If not provided explicitly, these will be inferred from typehints.
 

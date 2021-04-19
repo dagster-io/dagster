@@ -85,12 +85,14 @@ def composite_solid(
         name (Optional[str]): Name for the new composite solid. Must be unique within any
             :py:class:`PipelineDefinition` using the solid.
         description (Optional[str]): Human-readable description of the new composite solid.
-        input_defs (Optional[List[InputDefinition]]): Input definitions for the composite solid.
-            If not provided explicitly, these will be inferred from typehints.
+        input_defs (Optional[List[InputDefinition]]):
+            Information about the inputs that this composite solid maps. Information provided here
+            will be combined with what can be inferred from the function signature, with these
+            explicit InputDefinitions taking precedence.
 
-            Uses of these inputs in the body of the decorated composition function will be used to
-            infer the appropriate set of :py:class:`InputMappings <InputMapping>` passed to the
-            underlying :py:class:`CompositeSolidDefinition`.
+            Uses of inputs in the body of the decorated composition function will determine
+            the :py:class:`InputMappings <InputMapping>` passed to the underlying
+            :py:class:`CompositeSolidDefinition`.
         output_defs (Optional[List[OutputDefinition]]): Output definitions for the composite solid.
             If not provided explicitly, these will be inferred from typehints.
 

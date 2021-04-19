@@ -1,15 +1,24 @@
 import inspect
-from typing import Callable, List
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Type
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.seven import funcsigs, is_module_available
 
-from .input import InputDefinition
 from .output import OutputDefinition
+from .utils import NoValueSentinel
 
 
-def _infer_input_description_from_docstring(fn):
+class InferredInputProps(NamedTuple):
+    """The information about an input that can be inferred from the function signature"""
+
+    name: str
+    python_type: Optional[Type]
+    description: Optional[str]
+    default_value: Any = NoValueSentinel
+
+
+def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[str]]:
     if not is_module_available("docstring_parser"):
         return {}
 
@@ -19,19 +28,21 @@ def _infer_input_description_from_docstring(fn):
     return {p.arg_name: p.description for p in docstring.params}
 
 
-def _infer_output_description_from_docstring(fn):
+def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
     if not is_module_available("docstring_parser"):
-        return
+        return None
     from docstring_parser import parse
 
     docstring = parse(fn.__doc__)
     if docstring.returns is None:
-        return
+        return None
 
     return docstring.returns.description
 
 
-def infer_output_definitions(decorator_name, solid_name, fn):
+def infer_output_definitions(
+    decorator_name: str, solid_name: str, fn: Callable
+) -> List[OutputDefinition]:
     signature = funcsigs.signature(fn)
     try:
         description = _infer_output_description_from_docstring(fn)
@@ -49,31 +60,36 @@ def infer_output_definitions(decorator_name, solid_name, fn):
         ) from type_error
 
 
-def has_explicit_return_type(fn):
+def has_explicit_return_type(fn: Callable) -> bool:
     signature = funcsigs.signature(fn)
     return not signature.return_annotation is funcsigs.Signature.empty
 
 
-def _input_param_type(type_annotation):
+def _input_param_type(type_annotation: Type) -> Optional[Type]:
     if type_annotation is not inspect.Parameter.empty:
         return type_annotation
     return None
 
 
-def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=None):
-    descriptions = descriptions or {}
+def _infer_inputs_from_params(
+    params: List[funcsigs.Parameter],
+    decorator_name: str,
+    solid_name: str,
+    descriptions: Optional[Dict[str, Optional[str]]] = None,
+) -> List[InferredInputProps]:
+    descriptions: Dict[str, Optional[str]] = descriptions or {}
     input_defs = []
     for param in params:
         try:
             if param.default is not funcsigs.Parameter.empty:
-                input_def = InputDefinition(
+                input_def = InferredInputProps(
                     param.name,
                     _input_param_type(param.annotation),
                     default_value=param.default,
                     description=descriptions.get(param.name),
                 )
             else:
-                input_def = InputDefinition(
+                input_def = InferredInputProps(
                     param.name,
                     _input_param_type(param.annotation),
                     description=descriptions.get(param.name),
@@ -91,9 +107,9 @@ def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=N
     return input_defs
 
 
-def infer_input_definitions(
+def infer_input_props(
     decorator_name: str, fn_name: str, fn: Callable, has_context_arg: bool
-) -> List[InputDefinition]:
+) -> List[InferredInputProps]:
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)

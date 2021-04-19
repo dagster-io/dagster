@@ -11,17 +11,14 @@ from dagster.core.types.dagster_type import (
 )
 from dagster.utils.backcompat import experimental_arg_warning
 
-from .utils import check_valid_name
-
-
-class _NoValueSentinel:
-    pass
+from .inference import InferredInputProps
+from .utils import NoValueSentinel, check_valid_name
 
 
 # unfortunately since type_check functions need TypeCheckContext which is only available
 # at runtime, we can only check basic types before runtime
 def _check_default_value(input_name, dagster_type, default_value):
-    if default_value is not _NoValueSentinel:
+    if default_value is not NoValueSentinel:
         if dagster_type.is_nothing:
             raise DagsterInvalidDefinitionError(
                 "Setting a default_value is invalid on InputDefinitions of type Nothing"
@@ -77,14 +74,16 @@ class InputDefinition:
         name,
         dagster_type=None,
         description=None,
-        default_value=_NoValueSentinel,
+        default_value=NoValueSentinel,
         root_manager_key=None,
         metadata=None,
         asset_key=None,
         asset_partitions=None,
+        # when adding new params, make sure to update update_from_inferred below
     ):
         self._name = check_valid_name(name)
 
+        self._type_not_set = dagster_type is None
         self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
 
         self._description = check.opt_str_param(description, "description")
@@ -139,7 +138,7 @@ class InputDefinition:
 
     @property
     def has_default_value(self):
-        return self._default_value is not _NoValueSentinel
+        return self._default_value is not NoValueSentinel
 
     @property
     def default_value(self):
@@ -206,6 +205,49 @@ class InputDefinition:
         else:
             maps_to = InputPointer(solid_name, input_name)
         return InputMapping(self, maps_to)
+
+    @staticmethod
+    def create_from_inferred(inferred: InferredInputProps) -> "InputDefinition":
+        return InputDefinition(
+            name=inferred.name,
+            dagster_type=inferred.python_type,
+            description=inferred.description,
+            default_value=inferred.default_value,
+        )
+
+    def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
+        """
+        Return a new InputDefinition that merges this ones properties with those inferred from type signature.
+        This can update: dagster_type, description, and default_value if they are not set.
+        """
+
+        check.invariant(
+            self.name == inferred.name,
+            f"InferredInputProps name {inferred.name} did not align with InputDefinition name {self.name}",
+        )
+
+        dagster_type = self._dagster_type
+        if self._type_not_set:
+            dagster_type = inferred.python_type
+
+        description = self._description
+        if description is None and inferred.description is not None:
+            description = inferred.description
+
+        default_value = self._default_value
+        if not self.has_default_value:
+            default_value = inferred.default_value
+
+        return InputDefinition(
+            name=self.name,
+            dagster_type=dagster_type,
+            description=description,
+            default_value=default_value,
+            root_manager_key=self._root_manager_key,
+            metadata=self._metadata,
+            asset_key=self._asset_key_fn,
+            asset_partitions=self._asset_partitions_fn,
+        )
 
 
 class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
