@@ -4,3 +4,10 @@ from .utils import (
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
 )
+
+__all__ = [
+    "DagsterGraphQLClient",
+    "DagsterGraphQLClientError",
+    "ReloadRepositoryLocationInfo",
+    "ReloadRepositoryLocationStatus",
+]

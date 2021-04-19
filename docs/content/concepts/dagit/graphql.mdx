@@ -45,6 +45,20 @@ width={3122}
 height={2028}
 />
 
+## Python Client (Experimental)
+
+Dagster also provides the <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental/> to interface with a Dagster GraphQL server from Python.
+
+The snippet below shows example instantiation of the client:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_setup_marker endbefore=end_setup_marker
+from dagster_graphql import DagsterGraphQLClient
+
+client = DagsterGraphQLClient("localhost", port_number=3000)
+```
+
+Where relevant, the python client alternative to a raw GraphQL query is included below. On error, the <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental/> will raise a <PyObject module="dagster_graphql" object="DagsterGraphQLClientError"/>.
+
 ## Example Queries
 
 ### Get a list of pipelines runs
@@ -232,6 +246,44 @@ For this query, the required arguments are:
       }
     }
 
+#### Launch a Pipeline Run using the GraphQL client
+
+Alternatively, you can use the <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental /> as follows:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_default endbefore=end_submit_marker_default
+from dagster_graphql import DagsterGraphQLClientError
+
+    try:
+        new_run_id: str = client.submit_pipeline_execution(
+            PIPELINE_NAME,
+            repository_location_name=REPO_LOCATION_NAME,
+            repository_name=REPO_NAME,
+            run_config_data={},
+            mode="default",
+        )
+        do_something_on_success(new_run_id)
+    except DagsterGraphQLClientError as exc:
+        do_something_with_exc(exc)
+        raise exc
+```
+
+Note that specifying the repository location name and repository name are not always necessary; the GraphQL client will **infer the repository name & repository location name** if the pipeline name is unique.
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_pipeline_name_only endbefore=end_submit_marker_pipeline_name_only
+from dagster_graphql import DagsterGraphQLClientError
+
+    try:
+        new_run_id: str = client.submit_pipeline_execution(
+            PIPELINE_NAME,
+            run_config_data={},
+            mode="default",
+        )
+        do_something_on_success(new_run_id)
+    except DagsterGraphQLClientError as exc:
+        do_something_with_exc(exc)
+        raise exc
+```
+
 ### Launch a pipeline run with preset
 
 If you want to use a preset instead of defining the run config, use the `preset` argument instead.:
@@ -260,3 +312,59 @@ If you want to use a preset instead of defining the run config, use the `preset`
         }
       }
     }
+
+#### Use a preset with the GraphQL client
+
+You can launch a pipeline from a preset with the <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental /> as well:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_submit_marker_preset endbefore=end_submit_marker_preset
+from dagster_graphql import DagsterGraphQLClientError
+
+    try:
+        new_run_id: str = client.submit_pipeline_execution(
+            PIPELINE_NAME,
+            repository_location_name=REPO_LOCATION_NAME,
+            repository_name=REPO_NAME,
+            preset_name=PRESET_NAME,
+        )
+        do_something_on_success(new_run_id)
+    except DagsterGraphQLClientError as exc:
+        do_something_with_exc(exc)
+        raise exc
+```
+
+### Reload a Repository Location using the GraphQL Client
+
+You can also reload a repository location in a Dagster deployment using the <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental />. This is useful in a variety of contexts, including refreshing Dagit without restarting the server. Example usage is as follows:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_reload_repo_location_marker endbefore=end_reload_repo_location_marker
+from dagster_graphql import (
+        ReloadRepositoryLocationInfo,
+        ReloadRepositoryLocationStatus,
+    )
+
+    reload_info: ReloadRepositoryLocationInfo = client.reload_repository_location(REPO_NAME)
+    if reload_info.status == ReloadRepositoryLocationStatus.SUCCESS:
+        do_something_on_success()
+    else:
+        raise Exception(f"Repository location reload failed with message: {reload_info.message}")
+```
+
+### Get the status of a Pipeline Run using the GraphQL Client
+
+You can also use the <PyObject module="dagster_graphql" object="DagsterGraphQLClient"/> <Experimental /> to get the status of a pipeline run:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_run_status_marker endbefore=end_run_status_marker
+from dagster_graphql import DagsterGraphQLClientError
+    from dagster.core.storage.pipeline_run import PipelineRunStatus
+
+    try:
+        status: PipelineRunStatus = client.get_run_status(RUN_ID)
+        if status == PipelineRunStatus.SUCCESS:
+            do_something_on_success()
+        else:
+            do_something_else()
+    except DagsterGraphQLClientError as exc:
+        do_something_with_exc(exc)
+        raise exc
+```
