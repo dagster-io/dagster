@@ -215,16 +215,14 @@ class DagsterGraphQLClient:
     ) -> ReloadRepositoryLocationInfo:
         """Reloads a Dagster Repository Location, which reloads all repositories in that repository location.
 
-            This is useful in a variety of contexts, including refreshing Dagit without restarting
-            the server.
+        This is useful in a variety of contexts, including refreshing Dagit without restarting
+        the server.
 
         Args:
             repository_location_name (str): The name of the repository location
 
         Returns:
-            ReloadRepositoryLocationInfo: Object with a `.status` attribute of `ReloadRepositoryLocationStatus.SUCCESS` if successful.
-              Otherwise, returns an object with a `.status` attribute of `ReloadRepositoryLocationStatus.FAILURE`
-              if the reload failed, and a `.message` attribute with the attached error message
+            ReloadRepositoryLocationInfo: Object with information about the result of the reload request
         """
         check.str_param(repository_location_name, "repository_location_name")
 

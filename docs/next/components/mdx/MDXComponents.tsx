@@ -17,12 +17,14 @@ import path from "path";
 const PyObject: React.FunctionComponent<{
   module: string;
   object: string;
+  method?: string;
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
 }> = ({
   module = "dagster",
   object,
+  method,
   displayText,
   pluralize = false,
   decorator = false,
@@ -43,6 +45,9 @@ const PyObject: React.FunctionComponent<{
   if (decorator) {
     textValue = "@" + textValue;
   }
+  if (method) {
+    textValue += "." + method;
+  }
 
   if (!moduleObjects || !objectData) {
     // TODO: broken link
@@ -59,9 +64,10 @@ const PyObject: React.FunctionComponent<{
   // https://github.com/dagster-io/dagster/issues/3568
   const doc = value.docnames[fileIndex];
   const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
+  const methodSuffix = method ? "." + method : "";
 
   return (
-    <Link href={link + "#" + module + "." + object}>
+    <Link href={link + "#" + module + "." + object + methodSuffix}>
       <a className="no-underline hover:underline">
         <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
       </a>
