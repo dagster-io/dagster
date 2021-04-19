@@ -1,12 +1,9 @@
-import csv
-import os
-import sqlite3
 from copy import deepcopy
-
+import requests
+import io
+import pandas
 from dagster import (
-    Field,
     ModeDefinition,
-    String,
     execute_pipeline,
     pipeline,
     resource,
@@ -15,49 +12,31 @@ from dagster import (
 
 
 # start_resources_marker_0
-class LocalSQLiteWarehouse:
-    def __init__(self, conn_str):
-        self._conn_str = conn_str
-
-    # In practice, you'll probably want to write more generic, reusable logic on your resources
-    # than this tutorial example
-    def update_normalized_cereals(self, records):
-        conn = sqlite3.connect(self._conn_str)
-        curs = conn.cursor()
-        try:
-            curs.execute("DROP TABLE IF EXISTS normalized_cereals")
-            curs.execute(
-                """CREATE TABLE IF NOT EXISTS normalized_cereals
-                (name text, mfr text, type text, calories real,
-                 protein real, fat real, sodium real, fiber real,
-                 carbo real, sugars real, potass real, vitamins real,
-                 shelf real, weight real, cups real, rating real)"""
-            )
-            curs.executemany(
-                """INSERT INTO normalized_cereals VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                [tuple(record.values()) for record in records],
-            )
-        finally:
-            curs.close()
+class MockRequester:
+    def get_content(self, url):
+        pass
 
 
-@resource(config_schema={"conn_str": Field(String)})
-def local_sqlite_warehouse_resource(context):
-    return LocalSQLiteWarehouse(context.resource_config["conn_str"])
+@resource
+def mock_requester():
+    return MockRequester()
 
 
 # end_resources_marker_0
 
 
-@solid
-def read_csv(context, csv_path):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
+class Requester:
+    def get_content(self, url):
+        response = requests.get(url)
+        return response.content
 
-    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
-    return lines
+
+@solid(required_resource_keys={"requester"})
+def download_cereals(context):
+    content = context.resources.requester.get_content(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
+    return pandas.read_csv(io.BytesIO(content))
 
 
 # start_resources_marker_1
@@ -91,25 +70,15 @@ def normalize_calories(context, cereals):
 
 # start_resources_marker_2
 @pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"warehouse": local_sqlite_warehouse_resource}
-        )
-    ]
+    mode_defs=[ModeDefinition(resource_defs={"requester": mock_requester})]
 )
 def resources_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_cereals())
 
 
 # end_resources_marker_2
 
 
 if __name__ == "__main__":
-    run_config = {
-        "solids": {
-            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
-        },
-        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
-    }
-    result = execute_pipeline(resources_pipeline, run_config=run_config)
+    result = execute_pipeline(resources_pipeline)
     assert result.success

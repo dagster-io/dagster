@@ -19,36 +19,28 @@ In this section, we'll cover how to define a simple pipeline with a single solid
 
 Our pipeline will operate on a simple but scary CSV dataset, cereal.csv, which contains nutritional facts about 80 breakfast cereals.
 
-If you haven't already, grab the dataset for this tutorial from Github:
-
-```shell
-curl -O https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv
-```
-
 ## Hello, Solid!
 
 Let's write our first Dagster solid and save it as `hello_cereal.py`.
 
 A solid is a unit of computation in a data pipeline. Typically, you'll define solids by annotating ordinary Python functions with the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator.
 
-The logic in our first solid is very straightforward: it just reads in the csv from a hardcoded path and logs the number of rows it finds.
+Our first solid does three things: downloads a csv of cereal data, reads it into a [Pandas DataFrame](https://pandas.pydata.org/pandas-docs/stable/user_guide/dsintro.html#dataframe), and logs the number of rows it finds.
 
 ```python file=/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py startafter=start_solid_marker endbefore=end_solid_marker
-import csv
-import os
-
+import requests
+import pandas
+import io
 from dagster import pipeline, solid
 
 
 @solid
 def hello_cereal(context):
-    # Assumes the dataset is in the same directory as this Python file
-    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
-    with open(dataset_path, "r") as fd:
-        # Read the rows in using the standard csv library
-        cereals = [row for row in csv.DictReader(fd)]
-
-    context.log.info(f"Found {len(cereals)} cereals")
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
+    dataframe = pandas.read_csv(io.BytesIO(response.content))
+    context.log.info(f"Found {len(dataframe)} cereals")
 ```
 
 In this simple case, our solid takes no arguments except for the <PyObject module="dagster"

@@ -52,50 +52,22 @@ To implement a resource and specify its config schema, we use the <PyObject modu
 object="resource" displayText="@resource" /> decorator. The decorated function should return whatever object you wish to make available under the specific resource's slot in `context.resources`. Resource constructor functions have access to their own `context` argument, which gives access to resource-specific config. (Unlike the contexts we've seen so far, which are instances of <PyObject module="dagster" object="SolidExecutionContext" />, this context is an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
 ```python file=/intro_tutorial/advanced/pipelines/resources.py startafter=start_resources_marker_0 endbefore=end_resources_marker_0
-class LocalSQLiteWarehouse:
-    def __init__(self, conn_str):
-        self._conn_str = conn_str
-
-    # In practice, you'll probably want to write more generic, reusable logic on your resources
-    # than this tutorial example
-    def update_normalized_cereals(self, records):
-        conn = sqlite3.connect(self._conn_str)
-        curs = conn.cursor()
-        try:
-            curs.execute("DROP TABLE IF EXISTS normalized_cereals")
-            curs.execute(
-                """CREATE TABLE IF NOT EXISTS normalized_cereals
-                (name text, mfr text, type text, calories real,
-                 protein real, fat real, sodium real, fiber real,
-                 carbo real, sugars real, potass real, vitamins real,
-                 shelf real, weight real, cups real, rating real)"""
-            )
-            curs.executemany(
-                """INSERT INTO normalized_cereals VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                [tuple(record.values()) for record in records],
-            )
-        finally:
-            curs.close()
+class MockRequester:
+    def get_content(self, url):
+        pass
 
 
-@resource(config_schema={"conn_str": Field(String)})
-def local_sqlite_warehouse_resource(context):
-    return LocalSQLiteWarehouse(context.resource_config["conn_str"])
+@resource
+def mock_requester():
+    return MockRequester()
 ```
 
 The last thing we need to do is to attach the resource to our pipeline, so that it's properly initialized when the pipeline run begins and made available to our solid logic as `context.resources.warehouse`.
 
 ```python file=/intro_tutorial/advanced/pipelines/resources.py startafter=start_resources_marker_2 endbefore=end_resources_marker_2
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"warehouse": local_sqlite_warehouse_resource}
-        )
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"requester": mock_requester})])
 def resources_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_cereals())
 ```
 
 All resources are associated with a <PyObject module="dagster" object="ModeDefinition" /> So far, all of our pipelines have had only a single, system default mode, so we haven't had to tell Dagster what mode to run them in. Even in this case, where we provide a single anonymous mode to the <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> decorator, we won't have to specify which mode to use (it will take the place of the `default` mode).

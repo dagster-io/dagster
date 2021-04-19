@@ -36,7 +36,7 @@ def configurable_pipeline():
 if __name__ == "__main__":
     # start_run_config_marker
     run_config = {
-        "solids": {"read_csv": {"config": {"csv_name": "cereal.csv"}}}
+        "solids": {"download_csv": {"config": {"url": "cereal.csv"}}}
     }
     # end_run_config_marker
     # start_execute_marker

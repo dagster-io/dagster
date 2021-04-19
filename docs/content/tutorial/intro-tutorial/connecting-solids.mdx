@@ -7,7 +7,16 @@ description: A Dagster pipeline is a set of solids which have data dependencies 
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/" />
 
-Our pipelines wouldn't be very interesting if they were limited to solids acting in isolation from each other. Pipelines are useful because they let us connect solids into arbitrary [DAGs](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation.
+Our pipelines wouldn't be very interesting if they were limited to single solids. Pipelines connect solids into arbitrary [DAGs](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation.
+
+Splitting up code into solids is similar to splitting up code into functions, with a couple differences:
+
+- Dagster can materialize the output of a solid to persistent storage. [IOManagers](/concepts/io-management/io-managers) give full control over where the outputs go.
+- Dagster can execute each solid in a separate process.
+
+These differences mean that we can re-execute some of the solids without needing to re-execute all our code from the beginning. This is useful when dealing with failures in production, as well as when experimenting with a subset of a pipeline in development.
+
+These differences also mean that we can separate business logic from IO. We can use our solids like regular Python functions when we want to test our business logic, and we can use them to build data assets, like data warehouse tables, in production.
 
 Dagster pipelines model a _dataflow_ graph. In data pipelines, the reason that a later step comes after an earlier step is almost always that it uses data produced by the earlier step. Dagster models these dataflow dependencies with _inputs_ and _outputs_.
 
@@ -15,49 +24,46 @@ Dagster pipelines model a _dataflow_ graph. In data pipelines, the reason that a
 
 We'll expand the pipeline we worked with in the first section of the tutorial into two solids:
 
-- The first solid will read the cereal dataset from the CSV and return it as an output.
-- The second solid will consume the cereals produced by the first solid and find the most caloric cereal.
+- The first solid will download the cereal data and return it as an output.
+- The second solid will consume the cereal data produced by the first solid and find the cereal with the most sugar.
 
 ```python file=/intro_tutorial/basics/connecting_solids/serial_pipeline.py startafter=start_serial_pipeline_marker_0 endbefore=end_serial_pipeline_marker_0
-import csv
-import os
+import requests
+import pandas
+import io
 
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid
-def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
-    with open(csv_path, "r") as fd:
-        cereals = [row for row in csv.DictReader(fd)]
-
-    context.log.info(f"Found {len(cereals)} cereals".format())
-    return cereals
+def download_cereals(_):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
+    return pandas.read_csv(io.BytesIO(response.content))
 
 
 @solid
-def sort_by_calories(context, cereals):
-    sorted_cereals = list(
-        sorted(cereals, key=lambda cereal: cereal["calories"])
-    )
-
-    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
+def find_sugariest(context, cereals):
+    sugariest_index = cereals["sugars"].argmax()
+    sugariest_name = cereals["name"][sugariest_index]
+    context.log.info(f"{sugariest_name} is the sugariest cereal")
 
 
 @pipeline
 def serial_pipeline():
-    sort_by_calories(load_cereals())
+    find_sugariest(download_cereals())
 ```
 
-You'll see that we've modified our existing `load_cereals` solid to return an output, in this case the list of dicts representing the cereals dataset.
+You'll see that we've modified our existing `download_cereals` solid to return an output, in this case the data frame representing the cereals dataset.
 
-We've defined our new solid, `sort_by_calories`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
+We've defined our new solid, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
 displayText="context" /> object.
 
 We can use inputs and outputs to connect solids to each other. Here we tell Dagster that:
 
-- `load_cereals` doesn't depend on the output of any other solid.
-- `sort_by_calories` depends on the output of `load_cereals`.
+- `download_cereals` doesn't depend on the output of any other solid.
+- `find_sugariest` depends on the output of `download_cereals`.
 
 Let's visualize this pipeline in Dagit:
 

@@ -1,32 +1,29 @@
 # start_serial_pipeline_marker_0
-import csv
-import os
+import requests
+import pandas
+import io
 
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid
-def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
-    with open(csv_path, "r") as fd:
-        cereals = [row for row in csv.DictReader(fd)]
-
-    context.log.info(f"Found {len(cereals)} cereals".format())
-    return cereals
+def download_cereals(_):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
+    return pandas.read_csv(io.BytesIO(response.content))
 
 
 @solid
-def sort_by_calories(context, cereals):
-    sorted_cereals = list(
-        sorted(cereals, key=lambda cereal: cereal["calories"])
-    )
-
-    context.log.info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
+def find_sugariest(context, cereals):
+    sugariest_index = cereals["sugars"].argmax()
+    sugariest_name = cereals["name"][sugariest_index]
+    context.log.info(f"{sugariest_name} is the sugariest cereal")
 
 
 @pipeline
 def serial_pipeline():
-    sort_by_calories(load_cereals())
+    find_sugariest(download_cereals())
 
 
 # end_serial_pipeline_marker_0
