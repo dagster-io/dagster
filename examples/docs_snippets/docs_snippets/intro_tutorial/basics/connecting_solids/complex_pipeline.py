@@ -1,34 +1,33 @@
 import csv
-import os
 
+import requests
 from dagster import execute_pipeline, pipeline, solid
 
 
 # start_complex_pipeline_marker_0
 @solid
-def load_cereals(_):
-    dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
-    with open(dataset_path, "r") as fd:
-        cereals = [row for row in csv.DictReader(fd)]
-    return cereals
+def download_cereals(_):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
 
 
 @solid
-def sort_by_calories(_, cereals):
+def find_highest_calorie_cereal(_, cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["calories"])
     )
-    most_calories = sorted_cereals[-1]["name"]
-    return most_calories
+    return sorted_cereals[-1]["name"]
 
 
 @solid
-def sort_by_protein(_, cereals):
+def find_highest_protein_cereal(_, cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["protein"])
     )
-    most_protein = sorted_cereals[-1]["name"]
-    return most_protein
+    return sorted_cereals[-1]["name"]
 
 
 @solid
@@ -39,18 +38,14 @@ def display_results(context, most_calories, most_protein):
 
 @pipeline
 def complex_pipeline():
-    cereals = load_cereals()
+    cereals = download_cereals()
     display_results(
-        most_calories=sort_by_calories(cereals),
-        most_protein=sort_by_protein(cereals),
+        most_calories=find_highest_calorie_cereal(cereals),
+        most_protein=find_highest_protein_cereal(cereals),
     )
 
 
 # end_complex_pipeline_marker_0
-
-if __name__ == "__main__":
-    result = execute_pipeline(complex_pipeline)
-    assert result.success
 
 # start_complex_pipeline_marker_1
 def test_complex_pipeline():

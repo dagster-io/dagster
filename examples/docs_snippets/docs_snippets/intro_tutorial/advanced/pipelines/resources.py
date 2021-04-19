@@ -1,17 +1,9 @@
 import csv
-import os
 import sqlite3
 from copy import deepcopy
 
-from dagster import (
-    Field,
-    ModeDefinition,
-    String,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+import requests
+from dagster import Field, ModeDefinition, String, pipeline, resource, solid
 
 
 # start_resources_marker_0
@@ -51,13 +43,11 @@ def local_sqlite_warehouse_resource(context):
 
 
 @solid
-def read_csv(context, csv_path):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
-
+def download_csv(context, url):
+    response = requests.get(url)
+    lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
-    return lines
+    return [row for row in csv.DictReader(lines)]
 
 
 # start_resources_marker_1
@@ -98,18 +88,7 @@ def normalize_calories(context, cereals):
     ]
 )
 def resources_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_csv())
 
 
 # end_resources_marker_2
-
-
-if __name__ == "__main__":
-    run_config = {
-        "solids": {
-            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
-        },
-        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
-    }
-    result = execute_pipeline(resources_pipeline, run_config=run_config)
-    assert result.success

@@ -16,12 +16,13 @@ We’ll assume that you have some familiarity with Python, but you should be abl
 If you haven't already, please read about our [Installation](/getting-started/install) page.
 
 ```bash
-pip install dagster dagit
+pip install dagster dagit requests
 ```
 
-This installs two modules:
+This installs a few modules:
 
 - **Dagster**: the core programming model and abstraction stack; stateless, single-node, single-process and multi-process execution engines; and a CLI tool for driving those engines.
 - **Dagit**: the UI for developing and operating Dagster pipelines, including a DAG browser, a type-aware config editor, and a live execution interface.
+- **Requests**: not part of Dagster. Our examples will use it to download data from the internet.
 
 You can also follow the [Quick Start](/getting-started#quick-start) section to make sure you have installed the packages and set up the environment properly.

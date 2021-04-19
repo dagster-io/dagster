@@ -95,7 +95,7 @@ The last thing we need to do is to attach the resource to our pipeline, so that 
     ]
 )
 def resources_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_csv())
 ```
 
 All resources are associated with a <PyObject module="dagster" object="ModeDefinition" /> So far, all of our pipelines have had only a single, system default mode, so we haven't had to tell Dagster what mode to run them in. Even in this case, where we provide a single anonymous mode to the <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> decorator, we won't have to specify which mode to use (it will take the place of the `default` mode).
@@ -108,10 +108,10 @@ resources:
     config:
       conn_str: ":memory:"
 solids:
-  read_csv:
+  download_csv:
     inputs:
-      csv_path:
-        value: "cereal.csv"
+      url:
+        value: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
 ```
 
 Here we pass the special string `":memory:"` in config as the connection string for our database—this is how SQLite designates an in-memory database.
@@ -190,7 +190,7 @@ Even if you're not familiar with SQLAlchemy, it's enough to note that this is a 
     ]
 )
 def modes_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_csv())
 ```
 
 Each of the ways we can invoke a Dagster pipeline lets us select which mode we'd like to run it in.
@@ -206,7 +206,13 @@ Or, from the Python API:
 ```python file=/intro_tutorial/advanced/pipelines/modes.py startafter=start_modes_main endbefore=end_modes_main
 run_config = {
         "solids": {
-            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
+            "download_csv": {
+                "inputs": {
+                    "url": {
+                        "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+                    }
+                }
+            }
         },
         "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
     }
@@ -255,8 +261,12 @@ Dagster calls this a config preset:
             "unittest",
             run_config={
                 "solids": {
-                    "read_csv": {
-                        "inputs": {"csv_path": {"value": "cereal.csv"}}
+                    "download_csv": {
+                        "inputs": {
+                            "url": {
+                                "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+                            }
+                        }
                     }
                 },
                 "resources": {
@@ -276,7 +286,7 @@ Dagster calls this a config preset:
     ],
 )
 def presets_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_csv())
 ```
 
 The config above illustrates two ways of defining a preset.

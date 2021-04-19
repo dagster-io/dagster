@@ -1,11 +1,11 @@
 # for NormalizedCereal.__table__.insert().execute(records)
 # pylint: disable=no-member
 import csv
-import os
 import sqlite3
 from copy import deepcopy
 from typing import Any
 
+import requests
 import sqlalchemy
 import sqlalchemy.ext.declarative
 from dagster import (
@@ -95,13 +95,11 @@ def sqlalchemy_postgres_warehouse_resource(context):
 
 
 @solid
-def read_csv(context, csv_path):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
-
+def download_csv(context, url):
+    response = requests.get(url)
+    lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
-    return lines
+    return [row for row in csv.DictReader(lines)]
 
 
 @solid(required_resource_keys={"warehouse"})
@@ -146,7 +144,7 @@ def normalize_calories(context, cereals):
     ]
 )
 def modes_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_csv())
 
 
 # end_modes_marker_1
@@ -156,7 +154,13 @@ if __name__ == "__main__":
     # start_modes_main
     run_config = {
         "solids": {
-            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
+            "download_csv": {
+                "inputs": {
+                    "url": {
+                        "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+                    }
+                }
+            }
         },
         "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
     }

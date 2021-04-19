@@ -1,9 +1,10 @@
 import csv
 
 import requests
-from dagster import pipeline, solid
+from dagster import solid
 
 
+# start_download_cereals_marker
 @solid
 def download_cereals(_):
     response = requests.get(
@@ -13,12 +14,15 @@ def download_cereals(_):
     return [row for row in csv.DictReader(lines)]
 
 
+# end_download_cereals_marker
+
+
+# start_download_csv_marker
 @solid
-def find_sugariest(context, cereals):
-    sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
-    context.log.info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
+def download_csv(context):
+    response = requests.get(context.solid_config["url"])
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
 
 
-@pipeline
-def serial_pipeline():
-    find_sugariest(download_cereals())
+# end_download_csv_marker

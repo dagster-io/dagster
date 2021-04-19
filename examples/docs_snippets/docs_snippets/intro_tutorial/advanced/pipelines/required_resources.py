@@ -1,8 +1,8 @@
 import csv
-import os
 import sqlite3
 from copy import deepcopy
 
+import requests
 from dagster import (
     Field,
     ModeDefinition,
@@ -45,13 +45,11 @@ def local_sqlite_warehouse_resource(context):
 
 
 @solid
-def read_csv(context, csv_path):
-    csv_path = os.path.join(os.path.dirname(__file__), csv_path)
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
-
+def download_csv(context, url):
+    response = requests.get(url)
+    lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
-    return lines
+    return [row for row in csv.DictReader(lines)]
 
 
 # start_required_resources_marker_0
@@ -92,13 +90,19 @@ def normalize_calories(context, cereals):
     ]
 )
 def resources_pipeline():
-    normalize_calories(read_csv())
+    normalize_calories(download_csv())
 
 
 if __name__ == "__main__":
     run_config = {
         "solids": {
-            "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
+            "download_csv": {
+                "inputs": {
+                    "url": {
+                        "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+                    }
+                }
+            }
         },
         "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
     }
