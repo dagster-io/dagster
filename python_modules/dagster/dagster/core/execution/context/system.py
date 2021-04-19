@@ -497,6 +497,7 @@ class HookContext:
         log (DagsterLogManager): Centralized log dispatch from user code.
         hook_def (HookDefinition): The hook that the context object belongs to.
         solid (Solid): The solid instance associated with the hook.
+        step_key (str): The key for the step where this hook is being triggered.
         resources (NamedTuple): Resources available in the hook context.
         solid_config (Any): The parsed config specific to this solid.
         pipeline_name (str): The name of the pipeline where this hook is being triggered.
@@ -530,6 +531,10 @@ class HookContext:
     @property
     def solid(self) -> "Solid":
         return self._step_execution_context.solid
+
+    @property
+    def step_key(self) -> str:
+        return self._step_execution_context.step.key
 
     @property
     def required_resource_keys(self) -> Set[str]:
