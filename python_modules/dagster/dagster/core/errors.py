@@ -157,7 +157,7 @@ def raise_execution_interrupts():
 def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **kwargs):
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
-    policy around an user code invoked by the framework. This ensures that all user
+    policy around any user code invoked by the framework. This ensures that all user
     errors are wrapped in an exception derived from DagsterUserCodeExecutionError,
     and that the original stack trace of the user error is preserved, so that it
     can be reported without confusing framework code in the stack trace, if a
