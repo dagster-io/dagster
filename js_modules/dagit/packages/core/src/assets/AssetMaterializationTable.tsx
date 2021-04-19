@@ -14,53 +14,20 @@ import {FontFamily} from '../ui/styles';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
-
-type HistoricalMaterizalization = {
-  latest: Materialization;
-  predecessors?: Materialization[];
-};
-
-const NO_PARTITION_KEY = '__NO_PARTITION__';
+import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{
   isPartitioned: boolean;
   hasLineage: boolean;
-  materializations: Materialization[];
+  materializations: HistoricalMaterialization[];
   shouldBucketPartitions?: boolean;
 }> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
-  const bucketed = React.useMemo(() => {
-    if (!isPartitioned || !shouldBucketPartitions) {
-      return materializations.map((materialization) => ({
-        latest: materialization,
-      }));
+  const list = React.useMemo(() => {
+    if (shouldBucketPartitions) {
+      return materializations;
     }
-
-    const buckets: {[key: string]: Materialization[]} = materializations.reduce(
-      (accum, materialization) => {
-        const partition = materialization.partition;
-        const key = partition || NO_PARTITION_KEY;
-        const materializationsForKey = accum[key] || [];
-        return {...accum, [key]: [...materializationsForKey, materialization]};
-      },
-      {},
-    );
-
-    const separate = (key: string) => {
-      const materializationsForKey = [...buckets[key]].sort(
-        (a, b) =>
-          Number(b.materializationEvent?.timestamp) - Number(a.materializationEvent?.timestamp),
-      );
-      const [latest, ...predecessors] = materializationsForKey;
-      return {latest, predecessors};
-    };
-
-    return Object.keys(buckets)
-      .sort()
-      .reverse()
-      .filter((key) => key !== NO_PARTITION_KEY)
-      .map(separate)
-      .concat(buckets.hasOwnProperty(NO_PARTITION_KEY) ? [separate(NO_PARTITION_KEY)] : []);
-  }, [isPartitioned, materializations, shouldBucketPartitions]);
+    return materializations.map((m) => ({latest: m.latest}));
+  }, [materializations, shouldBucketPartitions]);
 
   return (
     <Table>
@@ -75,7 +42,7 @@ export const AssetMaterializationTable: React.FC<{
         </tr>
       </thead>
       <tbody>
-        {bucketed.map((m) => (
+        {list.map((m) => (
           <AssetMaterializationRow
             key={m.latest.materializationEvent.timestamp}
             isPartitioned={isPartitioned}
@@ -89,7 +56,7 @@ export const AssetMaterializationTable: React.FC<{
 };
 
 const AssetMaterializationRow: React.FC<{
-  assetMaterialization: HistoricalMaterizalization;
+  assetMaterialization: HistoricalMaterialization;
   isPartitioned: boolean;
   hasLineage: boolean;
 }> = ({assetMaterialization, isPartitioned, hasLineage}) => {
@@ -154,7 +121,7 @@ interface PredecessorDialogProps {
   predecessors: Materialization[];
 }
 
-const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
+export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
   hasLineage,
   isPartitioned,
   predecessors,
@@ -186,7 +153,7 @@ const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
           <AssetMaterializationTable
             hasLineage={hasLineage}
             isPartitioned={isPartitioned}
-            materializations={predecessors}
+            materializations={predecessors.map((p) => ({latest: p}))}
             shouldBucketPartitions={false}
           />
         </div>

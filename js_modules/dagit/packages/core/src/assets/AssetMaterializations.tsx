@@ -19,6 +19,7 @@ import {
   AssetQueryVariables,
   AssetQuery_assetOrError_Asset_assetMaterializations,
 } from './types/AssetQuery';
+import {HistoricalMaterialization, useMaterializationBuckets} from './useMaterializationBuckets';
 
 export const AssetMaterializations: React.FC<{assetKey: AssetKey}> = ({assetKey}) => {
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
@@ -43,6 +44,14 @@ export const AssetMaterializations: React.FC<{assetKey: AssetKey}> = ({assetKey}
     (m) => m.materializationEvent.assetLineage.length > 0,
   );
 
+  const bucketed = useMaterializationBuckets({
+    materializations: assetMaterializations,
+    isPartitioned,
+    shouldBucketPartitions: true,
+  });
+
+  const reversed = React.useMemo(() => [...bucketed].reverse(), [bucketed]);
+
   const content = () => {
     if (loading) {
       return (
@@ -57,14 +66,14 @@ export const AssetMaterializations: React.FC<{assetKey: AssetKey}> = ({assetKey}
         <AssetMaterializationTable
           isPartitioned={isPartitioned}
           hasLineage={hasLineage}
-          materializations={[...assetMaterializations].reverse()}
+          materializations={bucketed}
         />
       );
     }
 
     return (
       <AssetMaterializationMatrixAndGraph
-        assetMaterializations={assetMaterializations}
+        assetMaterializations={reversed}
         isPartitioned={isPartitioned}
         xAxis={xAxis}
       />
@@ -102,14 +111,15 @@ export const AssetMaterializations: React.FC<{assetKey: AssetKey}> = ({assetKey}
 };
 
 const AssetMaterializationMatrixAndGraph: React.FC<{
-  assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
+  assetMaterializations: HistoricalMaterialization[];
   isPartitioned: boolean;
   xAxis: 'partition' | 'time';
 }> = (props) => {
   const {assetMaterializations, isPartitioned, xAxis} = props;
   const [xHover, setXHover] = React.useState<string | number | null>(null);
+  const latest = assetMaterializations.map((m) => m.latest);
 
-  const graphDataByMetadataLabel = extractNumericData(assetMaterializations, xAxis);
+  const graphDataByMetadataLabel = extractNumericData(latest, xAxis);
   const [graphedLabels, setGraphedLabels] = React.useState(() =>
     Object.keys(graphDataByMetadataLabel).slice(0, 4),
   );

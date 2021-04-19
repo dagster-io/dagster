@@ -18,12 +18,14 @@ import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {FontFamily} from '../ui/styles';
 
+import {AssetPredecessorLink} from './AssetMaterializationTable';
 import {Sparkline} from './Sparkline';
 import {AssetNumericHistoricalData} from './types';
 import {
   AssetQuery_assetOrError_Asset_assetMaterializations,
   AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
 } from './types/AssetQuery';
+import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 const COL_WIDTH = 120;
 
@@ -32,7 +34,7 @@ const OVERSCROLL = 150;
 export const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
 interface AssetMaterializationMatrixProps {
-  materializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
+  materializations: HistoricalMaterialization[];
   isPartitioned: boolean;
   xAxis: 'time' | 'partition';
   xHover: number | string | null;
@@ -66,6 +68,8 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
     initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
   });
 
+  const anyPredecessors = materializations.some(({predecessors}) => !!predecessors?.length);
+
   const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / COL_WIDTH));
   const visibleCount = Math.ceil((viewport.width + OVERSCROLL * 2) / COL_WIDTH);
   const visible = materializations.slice(visibleRangeStart, visibleRangeStart + visibleCount);
@@ -76,7 +80,9 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
       return;
     }
     if (xHover !== null) {
-      const idx = materializations.findIndex((m) => xForAssetMaterialization(m, xAxis) === xHover);
+      const idx = materializations.findIndex(
+        (m) => xForAssetMaterialization(m.latest, xAxis) === xHover,
+      );
       if ((idx !== -1 && idx < visibleRangeStart) || idx > visibleRangeStart + visibleCount) {
         onMoveToViewport({left: idx * COL_WIDTH - (viewport.width - COL_WIDTH) / 2, top: 0}, false);
       }
@@ -86,7 +92,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
 
   const metadataLabels = uniq(
     flatMap(materializations, (m) =>
-      m.materializationEvent.materialization.metadataEntries.map((e) => e.label),
+      m.latest.materializationEvent.materialization.metadataEntries.map((e) => e.label),
     ),
   );
 
@@ -95,9 +101,10 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
       <div style={{position: 'relative', display: 'flex', border: `1px solid ${Colors.GRAY5}`}}>
         <GridFloatingContainer floating={true} style={{width: 300}}>
           <GridColumn disabled style={{width: 300, overflow: 'hidden'}}>
-            <HeaderRowLabel>Run</HeaderRowLabel>
             {isPartitioned && <HeaderRowLabel>Partition</HeaderRowLabel>}
+            <HeaderRowLabel>Run</HeaderRowLabel>
             <HeaderRowLabel>Timestamp</HeaderRowLabel>
+            {anyPredecessors ? <HeaderRowLabel>Previous materializations</HeaderRowLabel> : null}
             {[...metadataLabels, LABEL_STEP_EXECUTION_TIME].map((label, idx) => (
               <MetadataRowLabel
                 bordered={idx === 0 || label === LABEL_STEP_EXECUTION_TIME}
@@ -125,7 +132,8 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
               height: 80,
             }}
           >
-            {visible.map((assetMaterialization, visibleIdx) => {
+            {visible.map((historicalMaterialization, visibleIdx) => {
+              const {latest: assetMaterialization, predecessors} = historicalMaterialization;
               const {materializationEvent, partition} = assetMaterialization;
               const x = xForAssetMaterialization(assetMaterialization, xAxis);
               const {startTime, endTime} = materializationEvent.stepStats || {};
@@ -147,7 +155,8 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                     left: (visibleIdx + visibleRangeStart) * COL_WIDTH,
                   }}
                 >
-                  <div className={`cell`} style={{fontFamily: FontFamily.monospace}}>
+                  {isPartitioned && <div className="cell">{partition}</div>}
+                  <div className="cell" style={{fontFamily: FontFamily.monospace}}>
                     <Link
                       style={{marginRight: 5}}
                       to={`/instance/runs/${runId}?timestamp=${materializationEvent.timestamp}`}
@@ -155,10 +164,23 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                       {titleForRun({runId})}
                     </Link>
                   </div>
-                  {isPartitioned && <div className={`cell`}>{partition}</div>}
-                  <div className={`cell`} style={{borderBottom: `1px solid ${Colors.LIGHT_GRAY1}`}}>
+                  <div
+                    className="cell"
+                    style={anyPredecessors ? {} : {borderBottom: `1px solid ${Colors.LIGHT_GRAY1}`}}
+                  >
                     <Timestamp timestamp={{ms: Number(materializationEvent.timestamp)}} />
                   </div>
+                  {anyPredecessors ? (
+                    <div className="cell" style={{borderBottom: `1px solid ${Colors.LIGHT_GRAY1}`}}>
+                      {predecessors?.length ? (
+                        <AssetPredecessorLink
+                          isPartitioned={isPartitioned}
+                          hasLineage={false}
+                          predecessors={predecessors}
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
                   {metadataLabels.map((label) => {
                     const entry = materializationEvent.materialization.metadataEntries.find(
                       (m) => m.label === label,
@@ -166,7 +188,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                     return (
                       <div
                         key={label}
-                        className={`cell`}
+                        className="cell"
                         style={{width: COL_WIDTH}}
                         data-tooltip={plaintextFor(entry) || undefined}
                         onMouseEnter={() => setHoveredLabel(label)}
@@ -177,7 +199,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                     );
                   })}
                   <div
-                    className={`cell`}
+                    className="cell"
                     style={{borderTop: `1px solid ${Colors.LIGHT_GRAY1}`}}
                     onMouseEnter={() => setHoveredLabel(LABEL_STEP_EXECUTION_TIME)}
                     onMouseLeave={() => setHoveredLabel('')}
