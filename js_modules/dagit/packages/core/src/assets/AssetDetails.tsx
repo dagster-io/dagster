@@ -15,7 +15,7 @@ import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 
-import {AssetLineageInfoElement} from './AssetLineageInfoElement';
+import {AssetLineageElements} from './AssetLineageElements';
 import {ASSET_QUERY} from './queries';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
@@ -114,15 +114,7 @@ export const AssetDetails: React.FC<{assetKey: AssetKey}> = ({assetKey}) => {
           latestAssetLineage.length > 0
             ? {
                 key: 'Latest parent assets',
-                value: (
-                  <Group direction={'column'} spacing={0}>
-                    {latestAssetLineage.map((lineage_info) => (
-                      <>
-                        <AssetLineageInfoElement lineage_info={lineage_info} />
-                      </>
-                    ))}
-                  </Group>
-                ),
+                value: <AssetLineageElements elements={latestAssetLineage} />,
               }
             : undefined,
           ...latestEvent?.materialization.metadataEntries.map((entry) => ({

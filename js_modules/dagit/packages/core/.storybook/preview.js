@@ -4,7 +4,7 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {FontFamily} from 'src/ui/styles';
+import {FontFamily} from '../src/ui/styles';
 
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';

@@ -12,7 +12,7 @@ import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {FontFamily} from '../ui/styles';
 
-import {AssetLineageInfoElement} from './AssetLineageInfoElement';
+import {AssetLineageElements} from './AssetLineageElements';
 import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
 
 type HistoricalMaterizalization = {
@@ -114,17 +114,7 @@ const AssetMaterializationRow: React.FC<{
           <MetadataEntries entries={metadataEntries} />
         ) : null}
       </td>
-      {hasLineage && (
-        <td>
-          <Group direction={'column'} spacing={0}>
-            {assetLineage.map((lineage_info) => (
-              <>
-                <AssetLineageInfoElement lineage_info={lineage_info} />
-              </>
-            ))}
-          </Group>
-        </td>
-      )}
+      {hasLineage && <td>{<AssetLineageElements elements={assetLineage} />}</td>}
       <td>
         <Group direction="column" spacing={4}>
           <Timestamp timestamp={{ms: Number(timestamp)}} />
