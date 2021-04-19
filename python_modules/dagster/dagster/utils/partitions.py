@@ -2,6 +2,7 @@ import datetime
 
 import pendulum
 from dagster import check
+from dagster.core.definitions.job import SkipReason
 from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import DagsterInvariantViolationError
@@ -241,23 +242,42 @@ def create_offset_partition_selector(execution_time_to_partition_fn):
         check.inst_param(context, "context", ScheduleExecutionContext)
         check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
 
+        no_partitions_skip_reason = SkipReason(
+            "Partition selector did not return a partition. Make sure that the timezone "
+            "on your partition set matches your execution timezone."
+        )
+
+        earliest_possible_partition = next(iter(partition_set_def.get_partitions(None)), None)
+        if not earliest_possible_partition:
+            return no_partitions_skip_reason
+
+        valid_partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
+
         if not context.scheduled_execution_time:
-            partitions = partition_set_def.get_partitions()
-            if not partitions:
-                return None
-            return partitions[-1]
+            if not valid_partitions:
+                return no_partitions_skip_reason
+            return valid_partitions[-1]
 
         partition_time = execution_time_to_partition_fn(context.scheduled_execution_time)
 
-        for partition in reversed(
-            partition_set_def.get_partitions(context.scheduled_execution_time)
-        ):
+        if partition_time < earliest_possible_partition.value:
+            return SkipReason(
+                f"Your partition ({partition_time.isoformat()}) is before the beginning of "
+                f"the partition set ({earliest_possible_partition.value.isoformat()}). "
+                "Verify your schedule's start_date is correct."
+            )
+
+        if partition_time > valid_partitions[-1].value:
+            return SkipReason(
+                f"Your partition ({partition_time.isoformat()}) is after the end of "
+                f"the partition set ({valid_partitions[-1].value.isoformat()}). "
+                "Verify your schedule's end_date is correct."
+            )
+
+        for partition in valid_partitions:
             if partition.value.isoformat() == partition_time.isoformat():
                 return partition
 
-            if partition.value < partition_time:
-                break
-
-        return None
+        return no_partitions_skip_reason
 
     return offset_partition_selector
