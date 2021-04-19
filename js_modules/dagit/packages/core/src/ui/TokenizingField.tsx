@@ -6,6 +6,8 @@ import styled from 'styled-components/macro';
 import {Box} from './Box';
 import {Spinner} from './Spinner';
 
+const MAX_SUGGESTIONS = 100;
+
 export interface SuggestionProvider {
   token: string;
   values: () => string[];
@@ -133,7 +135,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
         .filter(suggestionNotUsed)
         .map((v) => ({text: `${provider.token}:${v}`, final: true}))
         .filter(suggestionMatchesTypedText)
-        .slice(0, 6); // never show too many suggestions for one provider
+        .slice(0, MAX_SUGGESTIONS); // never show too many suggestions for one provider
     };
 
     if (parts.length === 1) {
@@ -287,6 +289,16 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     }
   };
 
+  const menuRef = React.createRef<HTMLDivElement>();
+  React.useEffect(() => {
+    if (menuRef.current && active) {
+      const el = menuRef.current.querySelector(`[data-idx='${active.idx}']`);
+      if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {
+        el.scrollIntoView({block: 'nearest'});
+      }
+    }
+  }, [menuRef, active]);
+
   return (
     <Popover
       minimal={true}
@@ -294,22 +306,25 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       position={'bottom-left'}
       content={
         suggestions.length > 0 ? (
-          <StyledMenu>
-            {suggestions.slice(0, 20).map((suggestion, idx) => (
-              <StyledMenuItem
-                key={suggestion.text}
-                text={suggestion.text}
-                shouldDismissPopover={false}
-                active={active ? active.idx === idx : false}
-                onMouseDown={(e: React.MouseEvent<any>) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onConfirmSuggestion(suggestion);
-                  setActive(null);
-                }}
-              />
-            ))}
-          </StyledMenu>
+          <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>
+            <StyledMenu>
+              {suggestions.map((suggestion, idx) => (
+                <StyledMenuItem
+                  data-idx={idx}
+                  key={suggestion.text}
+                  text={suggestion.text}
+                  shouldDismissPopover={false}
+                  active={active ? active.idx === idx : false}
+                  onMouseDown={(e: React.MouseEvent<any>) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onConfirmSuggestion(suggestion);
+                    setActive(null);
+                  }}
+                />
+              ))}
+            </StyledMenu>
+          </div>
         ) : (
           <div />
         )
