@@ -413,8 +413,6 @@ def test_error_sensor(external_repo_context, capfd):
             )
 
             captured = capfd.readouterr()
-            assert ("Failed to resolve sensor for error_sensor : ") in captured.out
-
             assert (
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor"
             ) in captured.out
