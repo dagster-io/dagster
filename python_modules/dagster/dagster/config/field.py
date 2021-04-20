@@ -5,7 +5,7 @@ from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.serdes import serialize_value
 from dagster.utils import is_enum_value
-from dagster.utils.typing_api import is_typing_type
+from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
@@ -66,9 +66,9 @@ def resolve_to_config_type(dagster_type):
         check.param_invariant(
             False,
             "dagster_type",
-            "Cannot pass a config type class to resolve_to_config_type. Got {dagster_type}".format(
-                dagster_type=dagster_type
-            ),
+            f"Cannot pass config type class {dagster_type} to resolve_to_config_type. "
+            "This error usually occurs when you pass a dagster config type class instead of a class instance into "
+            'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
         )
 
     if isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType):
@@ -79,6 +79,13 @@ def resolve_to_config_type(dagster_type):
                 dagster_type=repr(dagster_type),
                 desc=VALID_CONFIG_DESC,
             )
+        )
+
+    if is_closed_python_optional_type(dagster_type):
+        raise DagsterInvalidDefinitionError(
+            "Cannot use typing.Optional as a config type. If you want this field to be "
+            "optional, please use Field(<type>, is_required=False), and if you want this field to "
+            "be required, but accept a value of None, use dagster.Noneable(<type>)."
         )
 
     if is_typing_type(dagster_type):
