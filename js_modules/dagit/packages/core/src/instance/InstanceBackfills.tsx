@@ -2,7 +2,7 @@ import {gql, QueryResult} from '@apollo/client';
 import {Colors, Icon, NonIdealState, Popover, Button, Menu, MenuItem, Tag} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {useHistory, Link} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -189,6 +189,7 @@ const BackfillRow = ({
   backfill: Backfill;
   onTerminateBackfill: (backfill: Backfill) => void;
 }) => {
+  const history = useHistory();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
   const runsUrl = `/instance/runs?${qs.stringify({
     q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
@@ -303,10 +304,14 @@ const BackfillRow = ({
                 <MenuItem
                   text="View Partition Matrix"
                   icon="multi-select"
-                  href={partitionSetBackfillUrl}
+                  onClick={() => history.push(partitionSetBackfillUrl)}
                 />
               ) : null}
-              <MenuItem text="View Backfill Runs" icon="history" href={runsUrl} />
+              <MenuItem
+                text="View Backfill Runs"
+                icon="history"
+                onClick={() => history.push(runsUrl)}
+              />
             </Menu>
           }
           position="bottom"
