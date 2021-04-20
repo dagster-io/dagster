@@ -145,6 +145,7 @@ def celery_k8s_job_executor(init_context):
         load_incluster_config=exc_cfg.get("load_incluster_config"),
         kubeconfig_file=exc_cfg.get("kubeconfig_file"),
         repo_location_name=exc_cfg.get("repo_location_name"),
+        job_wait_timeout=exc_cfg.get("job_wait_timeout"),
     )
 
 
@@ -161,6 +162,7 @@ class CeleryK8sJobExecutor(Executor):
         load_incluster_config=False,
         kubeconfig_file=None,
         repo_location_name=None,
+        job_wait_timeout=None,
     ):
 
         if load_incluster_config:
@@ -187,6 +189,7 @@ class CeleryK8sJobExecutor(Executor):
 
         self.kubeconfig_file = check.opt_str_param(kubeconfig_file, "kubeconfig_file")
         self.repo_location_name = check.str_param(repo_location_name, "repo_location_name")
+        self.job_wait_timeout = check.float_param(job_wait_timeout, "job_wait_timeout")
 
     @property
     def retries(self):
@@ -440,6 +443,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 namespace=job_namespace,
                 instance=instance,
                 run_id=execute_step_args.pipeline_run_id,
+                wait_timeout=self.job_wait_timeout,
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:
             step_failure_event = construct_step_failure_event_and_handle(
