@@ -241,7 +241,7 @@ def test_load_from_grpc_server_env():
             location_name: 'my_grpc_server'
     """
 
-        validation_result = _validate_yaml_contents(valid_yaml)
+        assert _validate_yaml_contents(valid_yaml).success
 
         valid_socket_yaml = """
     load_from:
@@ -253,6 +253,4 @@ def test_load_from_grpc_server_env():
             location_name: 'my_grpc_server'
     """
 
-        validation_result = _validate_yaml_contents(valid_socket_yaml)
-
-        assert validation_result.success
+        assert _validate_yaml_contents(valid_socket_yaml).success
