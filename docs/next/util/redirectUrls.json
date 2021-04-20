@@ -406,5 +406,25 @@
     "source": "/examples/memoized_development",
     "destination": "/guides/dagster/memoization",
     "permanent": true
+  },
+  {
+    "source": "/deployment/custom-infra/celery",
+    "destination": "/deployment/guides/celery",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/custom-infra/dask",
+    "destination": "/deployment/guides/dask",
+    "permanent": true
+  },
+  {
+    "source": "/deployment/custom-infra/airflow",
+    "destination": "/deployment/guides/airflow",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/executors",
+    "destination": "/deployment/executors",
+    "permanent": true
   }
 ]
