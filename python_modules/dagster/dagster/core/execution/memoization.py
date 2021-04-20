@@ -29,8 +29,6 @@ def validate_reexecution_memoization(plan_context, execution_plan):
 
     raise DagsterInvariantViolationError(
         "Cannot perform reexecution with in-memory io managers.\n"
-        "You may have configured non persistent intermediate storage `{}` for reexecution. "
-        "Intermediate Storage is deprecated in 0.10.0 and will be removed in a future release.".format(
-            plan_context.intermediate_storage.__class__.__name__
-        )
+        "To enable reexecution, you can set a persistent io manager, such as the "
+        'fs_io_manager, in the resource_defs argument on your ModeDefinition: resource_defs={"io_manager": fs_io_manager}'
     )
