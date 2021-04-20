@@ -86,7 +86,7 @@ spec:
             {{- end }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: {{ .Values.dagit.service.port }}
               protocol: TCP
           resources:
             {{- toYaml .Values.dagit.resources | nindent 12 }}

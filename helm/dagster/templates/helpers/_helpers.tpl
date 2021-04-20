@@ -32,9 +32,9 @@ If release name contains chart name it will be used as a full name.
 {{- define "dagster.dagit.dagitCommand" -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
 {{- if $userDeployments.enabled }}
-dagit -h 0.0.0.0 -p 80 -w /dagster-workspace/workspace.yaml
+dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }} -w /dagster-workspace/workspace.yaml
 {{- else -}}
-dagit -h 0.0.0.0 -p 80
+dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- end -}}
 {{- end -}}
 
