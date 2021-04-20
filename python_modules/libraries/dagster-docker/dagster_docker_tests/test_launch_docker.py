@@ -43,6 +43,9 @@ def test_launch_docker_image_on_pipeline_config():
             "AWS_SECRET_ACCESS_KEY",
         ],
         "network": "container:test-postgres-db-docker",
+        "container_kwargs": {
+            "auto_remove": True,
+        },
     }
 
     if IS_BUILDKITE:
