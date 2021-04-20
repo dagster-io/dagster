@@ -30,12 +30,12 @@ The Dagster core team will do its best to respond to every message but cannot gu
 
 Community members are expected to follow guidelines for discussion in the Dagster community. Please make an effort to contribute quality content so that our community can spend more time hanging out and talking about issues rather than cleaning and filtering our communication channels.
 
-- Start discussions in the [right channels](https://app.slack.com/client/TCDGQDUKF/browse-channels).
-- Craft questions with sufficient detail to reproduce issues or address any concerns.
-- Use threads for discussions.
-- Create new discussions, rather than diverting discussions to new directions midstream.
-- Do not demand attention by cross-posting discussions, sending messages outside threads to bump conversations, or explicitly mentioning @channel, @here, or community members.
-- Do not solicit community members about your products and services.
+- Start discussions in the [right channels](https://app.slack.com/client/TCDGQDUKF/browse-channels)
+- Craft questions with sufficient detail to reproduce issues or address any concerns
+- Use threads for discussions
+- Create new discussions, rather than diverting discussions to new directions midstream
+- Do not demand attention by cross-posting discussions, sending messages outside threads to bump conversations, or explicitly mentioning @channel, @here, or community members
+- Do not solicit community members about your products and services
 
 ## Enforcement Responsibilities
 
@@ -55,11 +55,11 @@ Instances of abusive, harassing, or otherwise unacceptable behavior may be repor
 
 The Dagster core team will follow these Community Impact Guidelines in determining the consequences for any action they deem in violation of this Code of Conduct:
 
-### 1. Correction
+### 1. Reminder
 
 **Community Impact**: Use of inappropriate language or other behavior deemed unprofessional or unwelcome in the community.
 
-**Consequence**: A private, written warning from the Dagster core team, providing clarity around the nature of the violation and an explanation of why the behavior was inappropriate.
+**Consequence**: A private, written reminder from the Dagster core team, providing clarity around the nature of the violation and an explanation of why the behavior was inappropriate.
 
 ### 2. Warning
 
