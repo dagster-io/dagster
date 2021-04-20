@@ -49,6 +49,12 @@ export interface IStepMetadata {
   markers: IMarker[];
 }
 
+export interface ILogCaptureInfo {
+  logKey: string;
+  stepKeys: string[];
+  pid?: string;
+}
+
 export interface IRunMetadataDict {
   firstLogAt: number;
   mostRecentLogAt: number;
@@ -62,6 +68,9 @@ export interface IRunMetadataDict {
   steps: {
     [stepKey: string]: IStepMetadata;
   };
+  logCaptureSteps?: {
+    [logKey: string]: ILogCaptureInfo;
+  };
 }
 
 export const EMPTY_RUN_METADATA: IRunMetadataDict = {
@@ -69,6 +78,14 @@ export const EMPTY_RUN_METADATA: IRunMetadataDict = {
   mostRecentLogAt: 0,
   globalMarkers: [],
   steps: {},
+};
+
+export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
+  const logCaptureSteps = {};
+  stepKeys.forEach(
+    (stepKey) => (logCaptureSteps[stepKey] = {logKey: stepKey, stepKeys: [stepKey]}),
+  );
+  return logCaptureSteps;
 };
 
 export function extractMetadataFromLogs(
@@ -132,6 +149,17 @@ export function extractMetadataFromLogs(
       if (log.markerEnd) {
         upsertMarker(metadata.globalMarkers, log.markerEnd).end = timestamp;
       }
+    }
+
+    if (log.__typename === 'LogsCapturedEvent') {
+      if (!metadata.logCaptureSteps) {
+        metadata.logCaptureSteps = {};
+      }
+      metadata.logCaptureSteps[log.logKey] = {
+        logKey: log.logKey,
+        stepKeys: log.stepKeys,
+        pid: String(log.pid),
+      };
     }
 
     if (log.stepKey) {
@@ -243,6 +271,11 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
           ...MetadataEntryFragment
         }
       }
+    }
+    ... on LogsCapturedEvent {
+      logKey
+      stepKeys
+      pid
     }
   }
 `;

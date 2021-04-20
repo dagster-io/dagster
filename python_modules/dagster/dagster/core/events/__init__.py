@@ -33,7 +33,7 @@ from dagster.utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster.core.execution.plan.plan import ExecutionPlan
-    from dagster.core.execution.plan.step import StepKind
+    from dagster.core.execution.plan.step import ExecutionStep, StepKind
     from dagster.core.execution.plan.inputs import StepInputData
     from dagster.core.execution.plan.objects import (
         StepSuccessData,
@@ -58,6 +58,7 @@ if TYPE_CHECKING:
         "HandledOutputData",
         "PipelineInitFailureData",
         "LoadedInputData",
+        "ComputeLogsCaptureData",
     ]
 
 
@@ -103,6 +104,7 @@ class DagsterEventType(Enum):
 
     ALERT_START = "ALERT_START"
     ALERT_SUCCESS = "ALERT_SUCCESS"
+    LOGS_CAPTURED = "LOGS_CAPTURED"
 
 
 STEP_EVENTS = {
@@ -566,6 +568,11 @@ class DagsterEvent(
     @property
     def hook_skipped_data(self) -> Optional["EventSpecificData"]:
         _assert_type("hook_skipped_data", DagsterEventType.HOOK_SKIPPED, self.event_type)
+        return self.event_specific_data
+
+    @property
+    def logs_captured_data(self):
+        _assert_type("logs_captured_data", DagsterEventType.LOGS_CAPTURED, self.event_type)
         return self.event_specific_data
 
     @staticmethod
@@ -1122,6 +1129,35 @@ class DagsterEvent(
 
         return event
 
+    @staticmethod
+    def capture_logs(pipeline_context: IPlanContext, log_key: str, steps: List["ExecutionStep"]):
+        step_keys = [step.key for step in steps]
+        if len(step_keys) == 1:
+            message = f"Started capturing logs for solid: {step_keys[0]}."
+        else:
+            message = f"Started capturing logs in process (pid: {os.getpid()})."
+
+        if isinstance(pipeline_context, StepExecutionContext):
+            return DagsterEvent.from_step(
+                DagsterEventType.LOGS_CAPTURED,
+                pipeline_context,
+                message=message,
+                event_specific_data=ComputeLogsCaptureData(
+                    step_keys=step_keys,
+                    log_key=log_key,
+                ),
+            )
+
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.LOGS_CAPTURED,
+            pipeline_context,
+            message=message,
+            event_specific_data=ComputeLogsCaptureData(
+                step_keys=step_keys,
+                log_key=log_key,
+            ),
+        )
+
 
 def get_step_output_event(
     events: List[DagsterEvent], step_key: str, output_name: Optional[str] = "result"
@@ -1402,6 +1438,24 @@ class LoadedInputData(
             manager_key=check.str_param(manager_key, "manager_key"),
             upstream_output_name=check.opt_str_param(upstream_output_name, "upstream_output_name"),
             upstream_step_key=check.opt_str_param(upstream_step_key, "upstream_step_key"),
+        )
+
+
+@whitelist_for_serdes
+class ComputeLogsCaptureData(
+    NamedTuple(
+        "_ComputeLogsCaptureData",
+        [
+            ("log_key", str),
+            ("step_keys", List[str]),
+        ],
+    )
+):
+    def __new__(cls, log_key, step_keys):
+        return super(ComputeLogsCaptureData, cls).__new__(
+            cls,
+            log_key=check.str_param(log_key, "log_key"),
+            step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
         )
 
 

@@ -119,4 +119,14 @@ export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent {
   operationResult: RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_EngineEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent;
+export interface RunMetadataProviderMessageFragment_LogsCapturedEvent {
+  __typename: "LogsCapturedEvent";
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+  logKey: string;
+  stepKeys: (string | null)[] | null;
+  pid: number | null;
+}
+
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_EngineEvent | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent | RunMetadataProviderMessageFragment_LogsCapturedEvent;

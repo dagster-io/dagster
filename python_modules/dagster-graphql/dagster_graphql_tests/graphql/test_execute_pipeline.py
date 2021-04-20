@@ -258,11 +258,13 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         expected_non_engine_event_types = [
             "PipelineStartingEvent",
             "PipelineStartEvent",
+            "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
+            "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",

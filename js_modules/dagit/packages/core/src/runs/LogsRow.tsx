@@ -208,6 +208,10 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         ...PythonErrorFragment
       }
     }
+    ... on LogsCapturedEvent {
+      logKey
+      stepKeys
+    }
   }
   ${METADATA_ENTRY_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}

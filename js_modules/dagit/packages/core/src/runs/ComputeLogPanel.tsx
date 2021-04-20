@@ -10,7 +10,7 @@ import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragme
 interface RunComputeLogs {
   runId: string;
   stepKeys: string[];
-  selectedStepKey?: string;
+  computeLogKey?: string;
   ioType: string;
   setComputeLogUrl: (url: string | null) => void;
 }
@@ -28,10 +28,10 @@ const resolveDownloadUrl = (
 };
 
 export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
-  ({runId, stepKeys, selectedStepKey, ioType, setComputeLogUrl}) => {
+  ({runId, stepKeys, computeLogKey, ioType, setComputeLogUrl}) => {
     const {rootServerURI, websocketURI} = React.useContext(AppContext);
 
-    if (!stepKeys.length || !selectedStepKey) {
+    if (!stepKeys.length || !computeLogKey) {
       return (
         <Box
           flex={{justifyContent: 'center', alignItems: 'center'}}
@@ -44,7 +44,7 @@ export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
 
     return (
       <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
-        <ComputeLogsProvider websocketURI={websocketURI} runId={runId} stepKey={selectedStepKey}>
+        <ComputeLogsProvider websocketURI={websocketURI} runId={runId} stepKey={computeLogKey}>
           {({isLoading, stdout, stderr}) => {
             const logData = ioType === 'stdout' ? stdout : stderr;
             const downloadUrl = resolveDownloadUrl(rootServerURI, logData);

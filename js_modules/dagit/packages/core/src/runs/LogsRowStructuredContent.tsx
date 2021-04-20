@@ -23,7 +23,7 @@ interface IStructuredContentProps {
   metadata: IRunMetadataDict;
 }
 
-export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node}) => {
+export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({node, metadata}) => {
   const location = useLocation();
   const eventType = node.eventType as string;
   switch (node.__typename) {
@@ -44,11 +44,16 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
 
     case 'ExecutionStepStartEvent':
-      if (!node.stepKey) {
+      if (!node.stepKey || metadata.logCaptureSteps) {
         return <DefaultContent message={node.message} eventType={eventType} />;
       } else {
         const currentQuery = querystring.parse(location.search);
-        const updatedQuery = {...currentQuery, logType: 'stdout'};
+        const updatedQuery = {
+          ...currentQuery,
+          logType: 'stdout',
+          logs: `query:${node.stepKey}`,
+          selection: node.stepKey,
+        };
         const href = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
         return (
           <DefaultContent message={node.message} eventType={eventType}>
@@ -195,6 +200,37 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       );
     case 'LogMessageEvent':
       return <DefaultContent message={node.message} />;
+    case 'LogsCapturedEvent':
+      const currentQuery = querystring.parse(location.search);
+      const updatedQuery = {...currentQuery, logType: 'stdout'};
+      const rawLogsUrl = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
+      const rawLogsLink = (
+        <Link to={rawLogsUrl} style={{color: 'inherit'}}>
+          View stdout / stderr
+        </Link>
+      );
+      const rows = node.stepKey
+        ? [
+            {
+              label: 'captured_logs',
+              item: rawLogsLink,
+            },
+          ]
+        : [
+            {
+              label: 'step_keys',
+              item: <>{JSON.stringify(node.stepKeys)}</>,
+            },
+            {
+              label: 'captured_logs',
+              item: rawLogsLink,
+            },
+          ];
+      return (
+        <DefaultContent eventType={eventType} message={node.message}>
+          <LogRowStructuredContentTable rows={rows} />
+        </DefaultContent>
+      );
     default:
       // This allows us to check that the switch is exhaustive because the union type should
       // have been narrowed following each successive case to `never` at this point.

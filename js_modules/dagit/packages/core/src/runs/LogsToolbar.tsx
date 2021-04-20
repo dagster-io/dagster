@@ -23,7 +23,12 @@ import {ExecutionStateDot} from './ExecutionStateDot';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
-import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
+import {
+  extractLogCaptureStepsFromLegacySteps,
+  ILogCaptureInfo,
+  IRunMetadataDict,
+  IStepState,
+} from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
 
 export enum LogType {
@@ -40,8 +45,8 @@ interface ILogsToolbarProps {
   onSetFilter: (filter: LogFilter) => void;
   logType: LogType;
   onSetLogType: (logType: LogType) => void;
-  computeLogStep?: string;
-  onSetComputeLogStep: (step: string) => void;
+  computeLogKey?: string;
+  onSetComputeLogKey: (key: string) => void;
   computeLogUrl: string | null;
 }
 
@@ -56,8 +61,8 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     onSetFilter,
     logType,
     onSetLogType,
-    computeLogStep,
-    onSetComputeLogStep,
+    computeLogKey,
+    onSetComputeLogKey,
     computeLogUrl,
   } = props;
   return (
@@ -85,8 +90,8 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           metadata={metadata}
           logType={logType}
           onSetLogType={onSetLogType}
-          computeLogStep={computeLogStep}
-          onSetComputeLogStep={onSetComputeLogStep}
+          computeLogKey={computeLogKey}
+          onSetComputeLogKey={onSetComputeLogKey}
           computeLogUrl={computeLogUrl}
         />
       )}
@@ -94,24 +99,58 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   );
 };
 
+const resolveState = (metadata: IRunMetadataDict, logCapture: ILogCaptureInfo) => {
+  // resolves the state of potentially many steps into a single state so that we can show the
+  // execution dot representing the status of this log capture group (potentially at the process
+  // level)
+  if (logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey].state === IStepState.RUNNING)) {
+    return IStepState.RUNNING;
+  }
+  if (logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey].state === IStepState.SKIPPED)) {
+    return IStepState.SKIPPED;
+  }
+  if (
+    logCapture.stepKeys.every((stepKey) => metadata.steps[stepKey].state === IStepState.SUCCEEDED)
+  ) {
+    return IStepState.SUCCEEDED;
+  }
+  return IStepState.FAILED;
+};
+
 const ComputeLogToolbar = ({
   steps,
   metadata,
-  computeLogStep,
-  onSetComputeLogStep,
+  computeLogKey,
+  onSetComputeLogKey,
   logType,
   onSetLogType,
   computeLogUrl,
 }: {
   steps: string[];
   metadata: IRunMetadataDict;
-  computeLogStep?: string;
-  onSetComputeLogStep: (step: string) => void;
+  computeLogKey?: string;
+  onSetComputeLogKey: (step: string) => void;
   logType: LogType;
   onSetLogType: (type: LogType) => void;
   computeLogUrl: string | null;
 }) => {
-  const isValidStepSelection = steps.length && computeLogStep && metadata.steps[computeLogStep];
+  const logCaptureSteps =
+    metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
+  const isValidStepSelection = computeLogKey && logCaptureSteps[computeLogKey];
+  const logKeyText = (logKey?: string) => {
+    if (!logKey || !logCaptureSteps[logKey]) {
+      return null;
+    }
+    const captureInfo = logCaptureSteps[logKey];
+    if (captureInfo.stepKeys.length === 1 && logKey === captureInfo.stepKeys[0]) {
+      return logKey;
+    }
+    if (captureInfo.pid) {
+      return `pid: ${captureInfo.pid} (${captureInfo.stepKeys.length} steps)`;
+    }
+    return `${logKey} (${captureInfo.stepKeys.length} steps)`;
+  };
+
   return (
     <Box
       flex={{justifyContent: 'space-between', alignItems: 'center', direction: 'row'}}
@@ -120,23 +159,23 @@ const ComputeLogToolbar = ({
       <Group direction="row" spacing={24} alignItems="center">
         <Select
           disabled={!steps.length}
-          items={steps}
+          items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
             <MenuItem
               key={item}
               onClick={options.handleClick}
-              text={item}
+              text={logKeyText(item)}
               active={options.modifiers.active}
             />
           )}
-          activeItem={computeLogStep}
+          activeItem={computeLogKey}
           filterable={false}
-          onItemSelect={(stepKey) => {
-            onSetComputeLogStep(stepKey);
+          onItemSelect={(logKey) => {
+            onSetComputeLogKey(logKey);
           }}
         >
           <Button
-            text={computeLogStep || 'Select a step...'}
+            text={logKeyText(computeLogKey) || 'Select a step...'}
             disabled={!steps.length}
             rightIcon="caret-down"
             style={{minHeight: 25}}
@@ -181,16 +220,11 @@ const ComputeLogToolbar = ({
       </Group>
       {isValidStepSelection ? (
         <Group direction="row" spacing={12} alignItems="center">
-          {computeLogStep && metadata.steps[computeLogStep] ? (
-            metadata.steps[computeLogStep].state === IStepState.RUNNING ? (
+          {computeLogKey && logCaptureSteps[computeLogKey] ? (
+            resolveState(metadata, logCaptureSteps[computeLogKey]) === IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
             ) : (
-              <ExecutionStateDot
-                state={metadata.steps[computeLogStep].state}
-                title={`${metadata.steps[computeLogStep].state[0].toUpperCase()}${metadata.steps[
-                  computeLogStep
-                ].state.substr(1)}`}
-              />
+              <ExecutionStateDot state={resolveState(metadata, logCaptureSteps[computeLogKey])} />
             )
           ) : null}
           {computeLogUrl ? (
@@ -198,7 +232,11 @@ const ComputeLogToolbar = ({
               aria-label="Download link"
               className="bp3-button bp3-minimal bp3-icon-download"
               href={computeLogUrl}
-              title={`Download ${computeLogStep}`}
+              title={
+                computeLogKey && logCaptureSteps[computeLogKey]?.stepKeys.length === 1
+                  ? `Download ${logCaptureSteps[computeLogKey]?.stepKeys[0]} compute logs`
+                  : `Download compute logs`
+              }
               download
             ></a>
           ) : null}

@@ -495,6 +495,7 @@ enum DagsterEventType {
   HOOK_SKIPPED
   ALERT_START
   ALERT_SUCCESS
+  LOGS_CAPTURED
 }
 
 interface StepEvent {
@@ -1205,7 +1206,7 @@ type PipelineRunLogsSubscriptionSuccess {
   messages: [PipelineRunEvent!]!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -1461,6 +1462,19 @@ type LoadedInputEvent implements MessageEvent & StepEvent {
   managerKey: String!
   upstreamOutputName: String
   upstreamStepKey: String
+}
+
+type LogsCapturedEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  logKey: String!
+  stepKeys: [String]
+  pid: Int
 }
 
 type ObjectStoreOperationEvent implements MessageEvent & StepEvent {

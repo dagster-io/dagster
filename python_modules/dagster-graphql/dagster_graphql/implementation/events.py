@@ -137,6 +137,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneHookErroredEvent,
         GrapheneHookSkippedEvent,
         GrapheneLoadedInputEvent,
+        GrapheneLogsCapturedEvent,
         GrapheneObjectStoreOperationEvent,
         GraphenePipelineCanceledEvent,
         GraphenePipelineCancelingEvent,
@@ -279,6 +280,13 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.HOOK_ERRORED:
         return GrapheneHookErroredEvent(
             error=GraphenePythonError(dagster_event.hook_errored_data.error), **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.LOGS_CAPTURED:
+        return GrapheneLogsCapturedEvent(
+            logKey=dagster_event.logs_captured_data.log_key,
+            stepKeys=dagster_event.logs_captured_data.step_keys,
+            pid=dagster_event.pid,
+            **basic_params,
         )
     else:
         raise Exception(
