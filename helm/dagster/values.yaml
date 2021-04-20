@@ -529,6 +529,10 @@ postgresql:
 
   postgresqlDatabase: test
 
+  # set postgresql parameter keywords for the connection string.
+  # see: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+  postgresqlParams: {}
+
   service:
     port: 5432
 
