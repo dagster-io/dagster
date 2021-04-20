@@ -75,11 +75,13 @@ class GrapheneDaemonHealth(graphene.ObjectType):
 
     def resolve_daemonStatus(self, _graphene_info, daemon_type):
         check.str_param(daemon_type, "daemon_type")
-        return GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type))
+        return GrapheneDaemonStatus(
+            get_daemon_status(self._instance, daemon_type, ignore_errors=True)
+        )
 
     def resolve_allDaemonStatuses(self, _graphene_info):
         return [
-            GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type))
+            GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type, ignore_errors=True))
             for daemon_type in self._instance.get_required_daemon_types()
         ]
 
