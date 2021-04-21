@@ -186,7 +186,9 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
                     yield ClusterConfig(cluster_name, kubeconfig_file)
 
                 finally:
-                    cluster_info_dump()
+                    IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+                    if IS_BUILDKITE:
+                        cluster_info_dump()
 
 
 def cluster_info_dump():
@@ -212,20 +214,17 @@ def cluster_info_dump():
     print("Cluster info dumped with stderr: ", stderr)
     assert p.returncode == 0
 
-    IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-    if IS_BUILDKITE:
-        p = subprocess.Popen(
-            [
-                "buildkite-agent",
-                "artifact",
-                "upload",
-                "{output_directory}/**/*".format(output_directory=CLUSTER_INFO_DUMP_DIR),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        stdout, stderr = p.communicate()
-        print("Buildkite artifact added with stdout: ", stdout)
-        print("Buildkite artifact added with stderr: ", stderr)
-        assert p.returncode == 0
+    p = subprocess.Popen(
+        [
+            "buildkite-agent",
+            "artifact",
+            "upload",
+            "{output_directory}/**/*".format(output_directory=CLUSTER_INFO_DUMP_DIR),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    stdout, stderr = p.communicate()
+    print("Buildkite artifact added with stdout: ", stdout)
+    print("Buildkite artifact added with stderr: ", stderr)
+    assert p.returncode == 0
