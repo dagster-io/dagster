@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
 
 from dagster import check
 from dagster.core.definitions.input import InputMapping
@@ -78,7 +78,7 @@ class PipelineDefinition(GraphDefinition):
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
-        hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
+        hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
             pipeline. When a hook is applied to a pipeline, it will be attached to all solid
             instances within the pipeline.
 
@@ -136,7 +136,7 @@ class PipelineDefinition(GraphDefinition):
         mode_defs: Optional[List[ModeDefinition]] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Dict[str, Any] = None,
-        hook_defs: Optional[Set[HookDefinition]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         input_mappings: Optional[List[InputMapping]] = None,
         output_mappings: Optional[List[OutputMapping]] = None,
         config_mapping: Optional[ConfigMapping] = None,
@@ -363,7 +363,7 @@ class PipelineDefinition(GraphDefinition):
         check.str_param(name, "name")
         return name in self._all_node_defs
 
-    def get_pipeline_subset_def(self, solids_to_execute: Set[str]) -> "PipelineDefinition":
+    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> "PipelineDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
         )
@@ -419,10 +419,10 @@ class PipelineDefinition(GraphDefinition):
         return None
 
     @property
-    def hook_defs(self) -> Set[HookDefinition]:
+    def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
 
-    def get_all_hooks_for_handle(self, handle: SolidHandle) -> Set[HookDefinition]:
+    def get_all_hooks_for_handle(self, handle: SolidHandle) -> FrozenSet[HookDefinition]:
         """Gather all the hooks for the given solid from all places possibly attached with a hook.
 
         A hook can be attached to any of the following objects
@@ -433,10 +433,10 @@ class PipelineDefinition(GraphDefinition):
             handle (SolidHandle): The solid's handle
 
         Returns:
-            FrozeSet[HookDefinition]
+            FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", SolidHandle)
-        hook_defs: Set[HookDefinition] = set()
+        hook_defs: AbstractSet[HookDefinition] = set()
 
         current = handle
         lineage = []
@@ -460,7 +460,7 @@ class PipelineDefinition(GraphDefinition):
 
         return frozenset(hook_defs)
 
-    def with_hooks(self, hook_defs: Set[HookDefinition]) -> "PipelineDefinition":
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
 
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
@@ -473,7 +473,7 @@ class PipelineDefinition(GraphDefinition):
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_defs,
             tags=self.tags,
-            hook_defs=hook_defs.union(self.hook_defs),
+            hook_defs=hook_defs | self.hook_defs,
             _parent_pipeline_def=self._parent_pipeline_def,
         )
 
@@ -505,7 +505,9 @@ class PipelineSubsetDefinition(PipelineDefinition):
     def is_subset_pipeline(self) -> bool:
         return True
 
-    def get_pipeline_subset_def(self, solids_to_execute: Set[str]) -> "PipelineSubsetDefinition":
+    def get_pipeline_subset_def(
+        self, solids_to_execute: AbstractSet[str]
+    ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
@@ -514,7 +516,7 @@ def _dep_key_of(solid: Solid) -> SolidInvocation:
 
 
 def _get_pipeline_subset_def(
-    pipeline_def, solids_to_execute: Set[str]
+    pipeline_def, solids_to_execute: AbstractSet[str]
 ) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
@@ -596,7 +598,7 @@ def _checked_resource_reqs_for_mode(
     node_defs: List[NodeDefinition],
     dagster_type_dict: Dict[str, DagsterType],
     solid_dict: Dict[str, Solid],
-    pipeline_hook_defs: Set[HookDefinition],
+    pipeline_hook_defs: AbstractSet[HookDefinition],
 ) -> Set[str]:
     """
     Calculate the resource requirements for the pipeline in this mode and ensure they are
@@ -698,7 +700,7 @@ def _checked_resource_reqs_for_mode(
 def _checked_type_resource_reqs_for_mode(
     mode_def: ModeDefinition,
     dagster_type_dict: Dict[str, DagsterType],
-) -> Set[str]:
+) -> AbstractSet[str]:
     """
     Calculate all the resource requirements related to DagsterTypes for this mode and ensure the
     mode provides those resources.
