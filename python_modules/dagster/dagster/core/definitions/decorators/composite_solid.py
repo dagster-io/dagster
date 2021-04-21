@@ -93,8 +93,10 @@ def composite_solid(
             Uses of inputs in the body of the decorated composition function will determine
             the :py:class:`InputMappings <InputMapping>` passed to the underlying
             :py:class:`CompositeSolidDefinition`.
-        output_defs (Optional[List[OutputDefinition]]): Output definitions for the composite solid.
-            If not provided explicitly, these will be inferred from typehints.
+        output_defs (Optional[List[OutputDefinition]]):
+            Information about the outputs this composite solid maps. Information provided here
+            will be combined with what can be inferred from the return type signature if there
+            is only one OutputDefinition.
 
             Uses of these outputs in the body of the decorated composition function, as well as the
             return value of the decorated function, will be used to infer the appropriate set of

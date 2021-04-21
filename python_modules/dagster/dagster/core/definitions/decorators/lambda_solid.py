@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 from ..events import Output
-from ..inference import infer_output_definitions
+from ..inference import infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
@@ -34,11 +34,11 @@ class _LambdaSolid:
         if not self.name:
             self.name = fn.__name__
 
-        output_def = (
-            self.output_def
-            if self.output_def is not None
-            else infer_output_definitions("@lambda_solid", self.name, fn)[0]
-        )
+        inferred = infer_output_props(fn)
+        if self.output_def is None:
+            output_def = OutputDefinition.create_from_inferred(inferred)
+        else:
+            output_def = self.output_def.combine_with_inferred(inferred)
 
         resolved_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
             decorator_name="@lambda_solid",
