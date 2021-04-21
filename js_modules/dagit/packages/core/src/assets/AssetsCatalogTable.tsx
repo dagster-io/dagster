@@ -50,12 +50,21 @@ const EXPERIMENTAL_TAGS_WARNING = (
     for more about adding asset tags.
   </Box>
 );
-export const AssetsCatalogTable: React.FunctionComponent<{prefixPath?: string[]}> = ({
-  prefixPath,
-}) => {
+export const AssetsCatalogTable: React.FunctionComponent<{
+  prefixPath?: string[];
+  view: string;
+  setView: (view: string) => void;
+}> = ({prefixPath, view, setView}) => {
   const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY);
   const [q, setQ] = React.useState<string>('');
-  const [isFlattened, setIsFlattened] = React.useState<boolean>(true);
+  const isFlattened = view !== 'directory';
+  const history = useHistory();
+  const setIsFlattened = (flat: boolean) => {
+    setView(flat ? 'flat' : 'directory');
+    if (flat && prefixPath) {
+      history.push('/instance/assets');
+    }
+  };
 
   return (
     <div style={{flexGrow: 1}}>
@@ -436,9 +445,11 @@ const AssetsTable = ({
             return (
               <AssetEntryRow
                 key={idx}
+                currentPath={currentPath}
                 path={path}
                 assets={pathMap[JSON.stringify(path)] || []}
                 shouldShowTags={hasTags}
+                isFlattened={isFlattened}
                 isSelected={isSelected}
                 onSelectToggle={onToggle}
                 onTagClick={onTagClick}
@@ -463,15 +474,30 @@ const AssetEntryRow: React.FunctionComponent<{
   currentPath?: string[];
   path: string[];
   isSelected: boolean;
+  isFlattened: boolean;
   onSelectToggle: (e: React.FormEvent<HTMLInputElement>, path: string[]) => void;
   shouldShowTags: boolean;
   assets: Asset[];
   onTagClick: (tag: AssetTag) => void;
   onWipe: (assets: Asset[]) => void;
 }> = React.memo(
-  ({currentPath, path, shouldShowTags, assets, onTagClick, isSelected, onSelectToggle, onWipe}) => {
-    const linkUrl = `/instance/assets/${path.map(encodeURIComponent).join('/')}`;
-    const isAssetEntry = assets.length === 1 && path.join('/') === assets[0].key.path.join('/');
+  ({
+    currentPath,
+    path,
+    shouldShowTags,
+    assets,
+    onTagClick,
+    isSelected,
+    isFlattened,
+    onSelectToggle,
+    onWipe,
+  }) => {
+    const view = isFlattened ? 'flat' : 'directory';
+    const fullPath = [...(currentPath || []), ...path];
+    const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
+    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}${
+      isAssetEntry ? '' : `?view=${view}`
+    }`;
     return (
       <tr>
         <td style={{paddingRight: '4px'}}>
@@ -481,7 +507,6 @@ const AssetEntryRow: React.FunctionComponent<{
           <Link to={linkUrl}>
             <Box flex={{alignItems: 'center'}}>
               {path
-                .slice(currentPath?.length)
                 .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
                 .reduce((prev, curr, i) => [
                   prev,
@@ -490,7 +515,7 @@ const AssetEntryRow: React.FunctionComponent<{
                   </Box>,
                   curr,
                 ])}
-              {isAssetEntry ? null : '/'}
+              {isAssetEntry || isFlattened ? null : '/'}
             </Box>
           </Link>
         </td>
