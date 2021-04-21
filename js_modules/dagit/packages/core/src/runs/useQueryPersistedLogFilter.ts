@@ -34,10 +34,13 @@ export const DefaultQuerystring: {[key: string]: string} = {
  * `levels`
  *   - string (comma-separated values)
  *   - Initializes levels in log filter
+ * `focusedTime`
+ *   - string (unix timestamp with msec)
+ *   - Scrolls directly to log with specified time, if no `logs` filter
  */
 export const decodeRunPageFilters = (qs: {[key: string]: string}) => {
   const logValues = qs['logs'].split(DELIMITER);
-  const focusedTime = qs['timestamp'] ? Number(qs['timestamp']) : null;
+  const focusedTime = qs['focusedTime'] && !qs['logs'] ? Number(qs['focusedTime']) : null;
   const hideNonMatches = qs['hideNonMatches'] === 'true' ? true : false;
 
   const providers = getRunFilterProviders();

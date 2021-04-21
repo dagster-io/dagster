@@ -152,6 +152,11 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
 
   componentDidMount() {
     this.attachScrollToBottomObserver();
+    if (this.props.focusedTime) {
+      window.requestAnimationFrame(() => {
+        this.scrollToTime(this.props.focusedTime);
+      });
+    }
   }
 
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
