@@ -1,6 +1,7 @@
 import time
 
 import pendulum
+import pytest
 from dagster import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
 from dagster.daemon.controller import (
@@ -138,6 +139,32 @@ def test_thread_die_daemon(monkeypatch):
                     raise Exception("timed out waiting for check_daemons to fail")
 
                 time.sleep(0.5)
+
+
+def test_transient_heartbeat_failure(mocker):
+    with instance_for_test() as instance:
+        mocker.patch(
+            "dagster.daemon.controller.get_daemon_status",
+            side_effect=Exception("Transient heartbeat failure"),
+        )
+
+        heartbeat_interval_seconds = 1
+        heartbeat_tolerance_seconds = 5
+
+        with daemon_controller_from_instance(
+            instance,
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
+            heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
+        ) as controller:
+            controller.check_daemon_heartbeats()  # doesn't immediately fail despite transient error
+
+            time.sleep(2 * heartbeat_tolerance_seconds)
+
+            with pytest.raises(
+                Exception,
+                match="Stopping dagster-daemon process since the following threads are no longer sending heartbeats",
+            ):
+                controller.check_daemon_heartbeats()
 
 
 def test_error_daemon(monkeypatch):
