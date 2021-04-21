@@ -1,3 +1,4 @@
+import sys
 import threading
 import time
 import uuid
@@ -20,7 +21,7 @@ from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
-DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 60
+DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 60
 
 # Default interval at which daemons run
 DEFAULT_DAEMON_INTERVAL_SECONDS = 30
@@ -30,6 +31,11 @@ DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 30
 
 # How long after an error is raised in a daemon that it's still included in the status for that daemon
 DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS = 300
+
+
+THREAD_CHECK_INTERVAL = 5
+
+HEARTBEAT_CHECK_INTERVAL = 15
 
 
 def _sorted_quoted(strings):
@@ -46,6 +52,7 @@ def create_daemons_from_instance(instance):
 def daemon_controller_from_instance(
     instance,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     wait_for_processes_on_exit=False,
     gen_daemons=create_daemons_from_instance,
     error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -69,6 +76,7 @@ def daemon_controller_from_instance(
                 daemons,
                 gen_workspace,
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
+                heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
             ) as controller:
                 yield controller
@@ -84,6 +92,7 @@ class DagsterDaemonController:
         daemons,
         gen_workspace,
         heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+        heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
     ):
 
@@ -104,6 +113,10 @@ class DagsterDaemonController:
             heartbeat_interval_seconds, "heartbeat_interval_seconds"
         )
 
+        self._heartbeat_tolerance_seconds = check.numeric_param(
+            heartbeat_tolerance_seconds, "heartbeat_tolerance_seconds"
+        )
+
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
 
@@ -115,6 +128,8 @@ class DagsterDaemonController:
                 _sorted_quoted(type(daemon).__name__ for daemon in self.daemons)
             )
         )
+
+        self._last_healthy_heartbeat_times = {}
 
         for daemon_type, daemon in self._daemons.items():
             self._daemon_threads[daemon_type] = threading.Thread(
@@ -129,6 +144,7 @@ class DagsterDaemonController:
                 name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
                 daemon=True,  # Individual daemons should not outlive controller process
             )
+            self._last_healthy_heartbeat_times[daemon_type] = time.time()
             self._daemon_threads[daemon_type].start()
 
         self._start_time = pendulum.now("UTC")
@@ -141,12 +157,30 @@ class DagsterDaemonController:
         return thread.is_alive()
 
     def _daemon_heartbeat_healthy(self, daemon_type):
-        return get_daemon_status(
-            self._instance,
-            daemon_type,
-            heartbeat_interval_seconds=self._heartbeat_interval_seconds,
-            ignore_errors=True,
-        ).healthy
+        now = time.time()
+        try:
+            is_healthy = get_daemon_status(
+                self._instance,
+                daemon_type,
+                heartbeat_interval_seconds=self._heartbeat_interval_seconds,
+                heartbeat_tolerance_seconds=self._heartbeat_tolerance_seconds,
+                ignore_errors=True,
+            ).healthy
+            if is_healthy:
+                self._last_healthy_heartbeat_times[daemon_type] = now
+            return is_healthy
+        except Exception:  # pylint: disable=broad-except
+            self._logger.warning(
+                "Error attempting to check {daemon_type} heartbeat:".format(
+                    daemon_type=daemon_type,
+                ),
+                exc_info=sys.exc_info,
+            )
+
+            return (
+                self._last_healthy_heartbeat_times[daemon_type]
+                > now - self._heartbeat_tolerance_seconds
+            )
 
     def check_daemon_threads(self):
         failed_daemons = [
@@ -177,20 +211,25 @@ class DagsterDaemonController:
             )
 
     def check_daemon_loop(self):
-        start_time = pendulum.now("UTC")
+        start_time = time.time()
+        last_heartbeat_check_time = start_time
         while True:
             # Wait until a daemon has been unhealthy for a long period of time
             # before potentially restarting it due to a hanging or failed daemon
             with raise_interrupts_as(KeyboardInterrupt):
-                time.sleep(5)
+                time.sleep(THREAD_CHECK_INTERVAL)
                 self.check_daemon_threads()
+
+                now = time.time()
+                # Give the daemon enough time to send an initial heartbeat before checking
                 if (
-                    pendulum.now("UTC") - start_time
-                ).total_seconds() < 2 * DAEMON_HEARTBEAT_TOLERANCE_SECONDS:
+                    (now - start_time) < 2 * self._heartbeat_interval_seconds
+                    or now - last_heartbeat_check_time < HEARTBEAT_CHECK_INTERVAL
+                ):
                     continue
 
                 self.check_daemon_heartbeats()
-                start_time = pendulum.now("UTC")
+                last_heartbeat_check_time = time.time()
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._daemon_shutdown_event.set()
@@ -279,6 +318,7 @@ def get_daemon_status(
     curr_time_seconds=None,
     ignore_errors=False,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ):
     curr_time_seconds = check.opt_float_param(
         curr_time_seconds, "curr_time_seconds", default=pendulum.now("UTC").float_timestamp
@@ -301,7 +341,7 @@ def get_daemon_status(
     latest_heartbeat = heartbeats[daemon_type]
     hearbeat_timestamp = latest_heartbeat.timestamp
     maximum_tolerated_time = (
-        hearbeat_timestamp + heartbeat_interval_seconds + DAEMON_HEARTBEAT_TOLERANCE_SECONDS
+        hearbeat_timestamp + heartbeat_interval_seconds + heartbeat_tolerance_seconds
     )
     healthy = curr_time_seconds <= maximum_tolerated_time
 
