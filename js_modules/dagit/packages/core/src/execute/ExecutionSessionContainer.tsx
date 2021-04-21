@@ -460,7 +460,13 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     tagEditorOpen,
   } = state;
 
-  const tags = currentSession.tags || [];
+  const permanentTags: PipelineRunTag[] = React.useMemo(() => pipeline.tags || [], [pipeline]);
+  const sessionTags = React.useMemo(() => currentSession.tags || [], [currentSession]);
+  const allTags = React.useMemo(() => permanentTags.concat(sessionTags), [
+    permanentTags,
+    sessionTags,
+  ]);
+
   return (
     <SplitPanelContainer
       axis={'vertical'}
@@ -504,7 +510,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               onModeChange={onModeChange}
               modeName={currentSession.mode}
             />
-            {tags.length ? null : (
+            {sessionTags.length ? null : (
               <Box margin={{left: 12}}>
                 <ShortcutHandler
                   shortcutLabel={'⌥T'}
@@ -522,7 +528,8 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               </Box>
             )}
             <TagEditor
-              tags={tags}
+              permanentTags={permanentTags}
+              editableTags={sessionTags}
               onChange={saveTags}
               open={tagEditorOpen}
               onRequestClose={closeTagEditor}
@@ -538,7 +545,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
             <SessionSettingsSpacer />
             <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
           </SessionSettingsBar>
-          {tags.length ? <TagContainer tags={tags} onRequestEdit={openTagEditor} /> : null}
+          {allTags.length ? <TagContainer tags={allTags} onRequestEdit={openTagEditor} /> : null}
           {currentSession.base !== null && currentSession.needsRefresh ? (
             <Box
               padding={{vertical: 8, horizontal: 12}}
