@@ -30,7 +30,7 @@ def dagster_instance_config(
     if not os.path.exists(config_yaml_path) and is_dagster_home_set():
         warnings.warn(
             f"No dagster instance configuration file ({config_filename}) found at "
-            f"{base_dir}. Defaulting to loading and storing all metadata with {base_dir}."
+            f"{base_dir}. Defaulting to loading and storing all metadata with {base_dir}. "
             f"If this is the desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
