@@ -57,7 +57,7 @@ class WorkspaceSnapshot(
         return self.location_error_dict[location_name]
 
 
-class Workspace:
+class Workspace(IWorkspace):
     """An IWorkspace that maintains a fixed list of origins, loading repositorylocations
     for all of them on initialization."""
 
