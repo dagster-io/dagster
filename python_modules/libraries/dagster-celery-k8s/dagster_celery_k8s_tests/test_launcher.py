@@ -14,7 +14,6 @@ from dagster_celery_k8s.launcher import (
     CeleryK8sRunLauncher,
     _get_validated_celery_k8s_executor_config,
 )
-from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 from dagster_test.test_project import get_test_project_external_pipeline
 
@@ -32,7 +31,6 @@ def test_get_validated_celery_k8s_executor_config():
         "load_incluster_config": True,
         "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
-        "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
     }
 
     with pytest.raises(
@@ -60,7 +58,6 @@ def test_get_validated_celery_k8s_executor_config():
             "load_incluster_config": True,
             "job_namespace": "default",
             "repo_location_name": "<<in_process>>",
-            "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
         }
 
     # Test setting all possible config fields
@@ -103,7 +100,6 @@ def test_get_validated_celery_k8s_executor_config():
                         "service_account_name": {"env": "TEST_SERVICE_ACCOUNT_NAME"},
                         "env_config_maps": [{"env": "TEST_PIPELINE_RUN_ENV_CONFIGMAP"}],
                         "env_secrets": [{"env": "TEST_SECRET"}],
-                        "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
                     }
                 }
             }
@@ -126,7 +122,6 @@ def test_get_validated_celery_k8s_executor_config():
             "service_account_name": "my-cool-service-acccount",
             "env_config_maps": ["config-pipeline-env"],
             "env_secrets": ["config-secret-env"],
-            "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
         }
 
 
