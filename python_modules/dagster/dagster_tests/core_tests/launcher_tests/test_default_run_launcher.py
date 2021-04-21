@@ -285,7 +285,7 @@ def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redef
                     "step crashy_solid unexpectedly exited"
                 )
             else:
-                message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
+                message = "Pipeline execution process for {run_id} unexpectedly exited".format(
                     run_id=run_id
                 )
 

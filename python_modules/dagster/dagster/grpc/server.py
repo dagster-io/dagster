@@ -271,10 +271,10 @@ class DagsterApiServer(DagsterApiServicer):
 
                         # the process died in an unexpected manner. inform the system
                         message = (
-                            "Pipeline execution process for {run_id} unexpectedly exited.".format(
-                                run_id=run.run_id
-                            )
+                            f"Pipeline execution process for {run.run_id} unexpectedly "
+                            f"exited with exit code {process.exitcode}."
                         )
+
                         instance.report_engine_event(message, run, cls=self.__class__)
                         instance.report_run_failed(run)
 
