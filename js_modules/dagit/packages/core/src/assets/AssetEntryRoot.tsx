@@ -5,7 +5,7 @@ import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -26,10 +26,11 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
   const queryResult = useQuery<AssetEntryRootQuery>(ASSET_ENTRY_ROOT_QUERY, {
     variables: {assetKey: {path: currentPath}},
   });
+  const [view, setView] = useQueryPersistedState<string>({queryKey: 'view', defaults: {view: ''}});
 
   const pathDetails = () => {
-    if (currentPath.length === 1 || !featureEnabled(FeatureFlag.DirectoryAssetCatalog)) {
-      return <Link to="/instance/assets">Asset</Link>;
+    if (currentPath.length === 1 || view !== 'directory') {
+      return <Link to="/instance/assets">Assets</Link>;
     }
 
     const breadcrumbs: IBreadcrumbProps[] = [];
@@ -42,7 +43,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     return (
       <Box flex={{direction: 'row', alignItems: 'center'}} style={{maxWidth: 500}}>
         <div style={{marginRight: '5px'}}>
-          <Link to="/instance/assets">Asset</Link> in
+          <Link to="/instance/assets?view=directory">Assets</Link>
         </div>
         <Breadcrumbs
           breadcrumbRenderer={({text, href}) => (
@@ -61,7 +62,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
       <Group direction="column" spacing={20}>
         <PageHeader
           title={
-            featureEnabled(FeatureFlag.DirectoryAssetCatalog) ? (
+            view !== 'directory' ? (
               <Heading>{currentPath[currentPath.length - 1]}</Heading>
             ) : (
               <Box flex={{alignItems: 'center'}}>
@@ -83,10 +84,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetNotFoundError') {
-              if (featureEnabled(FeatureFlag.DirectoryAssetCatalog)) {
-                return <AssetsCatalogTable prefixPath={currentPath} />;
-              }
-              return <AssetsCatalogTable />;
+              return <AssetsCatalogTable prefixPath={currentPath} view={view} setView={setView} />;
             }
 
             return (
