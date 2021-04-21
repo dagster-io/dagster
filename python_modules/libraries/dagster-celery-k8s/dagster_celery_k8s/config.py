@@ -1,8 +1,9 @@
-from dagster import Field, Noneable, StringSource
+from dagster import Field, Float, Noneable, StringSource
 from dagster.core.host_representation import IN_PROCESS_NAME
 from dagster.utils import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
 from dagster_k8s import DagsterK8sJobConfig
+from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 
 CELERY_K8S_CONFIG_KEY = "celery-k8s"
 
@@ -41,6 +42,12 @@ def celery_k8s_config():
             is_required=False,
             default_value=IN_PROCESS_NAME,
             description="The repository location name to use for execution.",
+        ),
+        "job_wait_timeout": Field(
+            Float,
+            is_required=False,
+            default_value=DEFAULT_WAIT_TIMEOUT,
+            description=f"Wait this many seconds for a job to complete before marking the run as failed. Defaults to {DEFAULT_WAIT_TIMEOUT} seconds.",
         ),
     }
 
