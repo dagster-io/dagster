@@ -15,7 +15,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
-from dagster.core.definitions.inference import infer_input_props, infer_output_definitions
+from dagster.core.definitions.inference import infer_input_props, infer_output_props
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 
@@ -265,16 +265,16 @@ def test_infer_input_description_from_docstring_rest():
         """
         return hello + str(optional)
 
-    defs = infer_input_props("@solid", rest.name, rest.compute_fn, has_context_arg=True)
+    defs = infer_input_props(rest.compute_fn, has_context_arg=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
     assert hello_param.name == "hello"
-    assert hello_param.python_type == str
+    assert hello_param.annotation == str
 
     optional_param = defs[1]
     assert optional_param.name == "optional"
-    assert optional_param.python_type == int
+    assert optional_param.annotation == int
     assert optional_param.default_value == 5
 
 
@@ -293,17 +293,17 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = infer_input_props("@solid", good_numpy.name, good_numpy.compute_fn, has_context_arg=True)
+    defs = infer_input_props(good_numpy.compute_fn, has_context_arg=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
     assert hello_param.name == "hello"
-    assert hello_param.python_type == str
+    assert hello_param.annotation == str
     assert hello_param.description == "hello world param"
 
     optional_param = defs[1]
     assert optional_param.name == "optional"
-    assert optional_param.python_type == int
+    assert optional_param.annotation == int
     assert optional_param.default_value == 5
     assert optional_param.description == "optional param, default 5"
 
@@ -320,19 +320,17 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(
-        "@solid", good_google.name, good_google.compute_fn, has_context_arg=True
-    )
+    defs = infer_input_props(good_google.compute_fn, has_context_arg=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
     assert hello_param.name == "hello"
-    assert hello_param.python_type == str
+    assert hello_param.annotation == str
     assert hello_param.description == "hello world param"
 
     optional_param = defs[1]
     assert optional_param.name == "optional"
-    assert optional_param.python_type == int
+    assert optional_param.annotation == int
     assert optional_param.default_value == 5
     assert optional_param.description == "optional param. Defaults to 5."
 
@@ -348,11 +346,9 @@ def test_infer_output_description_from_docstring_numpy():
             a number
         """
 
-    defs = infer_output_definitions("@solid", numpy.name, numpy.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].name == "result"
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.unique_name == "Int"
+    props = infer_output_props(numpy.compute_fn)
+    assert props.description == "a number"
+    assert props.annotation == int
 
 
 def test_infer_output_description_from_docstring_rest():
@@ -362,10 +358,9 @@ def test_infer_output_description_from_docstring_rest():
         :return int: a number
         """
 
-    defs = infer_output_definitions("@solid", rest.name, rest.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.unique_name == "Int"
+    props = infer_output_props(rest.compute_fn)
+    assert props.description == "a number"
+    assert props.annotation == int
 
 
 def test_infer_output_description_from_docstring_google():
@@ -376,10 +371,10 @@ def test_infer_output_description_from_docstring_google():
             int: a number
         """
 
-    defs = infer_output_definitions("@solid", google.name, google.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.unique_name == "Int"
+    props = infer_output_props(google.compute_fn)
+
+    assert props.description == "a number"
+    assert props.annotation == int
 
 
 def test_pipeline_api_stability():

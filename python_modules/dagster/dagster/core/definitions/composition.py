@@ -15,7 +15,7 @@ from .dependency import (
     SolidInvocation,
 )
 from .hook import HookDefinition
-from .inference import has_explicit_return_type, infer_output_definitions
+from .inference import infer_output_props
 from .output import OutputDefinition
 from .solid import NodeDefinition
 from .utils import check_valid_name, validate_tags
@@ -700,14 +700,15 @@ def do_composition(
             This should be removed in 0.11.0.
     """
 
-    actual_output_defs, outputs_are_explicit = (
-        (provided_output_defs, True)
-        if provided_output_defs is not None
-        else (
-            infer_output_definitions(decorator_name, graph_name, fn),
-            has_explicit_return_type(fn),
-        )
-    )
+    if provided_output_defs is None:
+        outputs_are_explicit = False
+        actual_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
+    elif len(provided_output_defs) == 1:
+        outputs_are_explicit = True
+        actual_output_defs = [provided_output_defs[0].combine_with_inferred(infer_output_props(fn))]
+    else:
+        outputs_are_explicit = True
+        actual_output_defs = provided_output_defs
 
     actual_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
         decorator_name,

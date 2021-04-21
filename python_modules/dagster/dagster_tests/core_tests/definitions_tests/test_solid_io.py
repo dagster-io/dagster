@@ -1,4 +1,10 @@
-from dagster import AssetKey, InputDefinition, solid
+import sys
+from typing import Generator, Iterable, Iterator
+
+import pytest
+from dagster import AssetKey, InputDefinition, Output, OutputDefinition, solid
+from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 def test_flex_inputs():
@@ -85,3 +91,86 @@ def test_precedence():
     assert precedence.input_defs[0].root_manager_key == "rudy"
     assert precedence.input_defs[0].get_asset_key(None) is not None
     assert precedence.input_defs[0].get_asset_partitions(None) is not None
+
+
+def test_output_merge():
+    @solid(output_defs=[OutputDefinition(name="four")])
+    def foo(_) -> int:
+        return 4
+
+    assert foo.output_defs[0].name == "four"
+    assert foo.output_defs[0].dagster_type == OutputDefinition(int).dagster_type
+
+
+def test_iter_out():
+    @solid(output_defs=[OutputDefinition(name="A")])
+    def _ok(_) -> Iterator[Output]:
+        yield Output("a", output_name="A")
+
+    @solid
+    def _also_ok(_) -> Iterator[Output]:
+        yield Output("a", output_name="A")
+
+    @solid
+    def _gen_too(_) -> Generator[Output, None, None]:
+        yield Output("a", output_name="A")
+
+    @solid(output_defs=[OutputDefinition(name="A"), OutputDefinition(name="B")])
+    def _multi_fine(_) -> Iterator[Output]:
+        yield Output("a", output_name="A")
+        yield Output("b", output_name="B")
+
+
+def test_dynamic():
+    @solid(output_defs=[DynamicOutputDefinition(dagster_type=int)])
+    def dyn_desc(_) -> Iterator[DynamicOutput]:
+        """
+        Returns:
+            numbers
+        """
+        yield DynamicOutput(4, "4")
+
+    assert dyn_desc.output_defs[0].description == "numbers"
+    assert dyn_desc.output_defs[0].is_dynamic
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 7),
+    reason="typing types isinstance of type in py3.6, https://github.com/dagster-io/dagster/issues/4077",
+)
+def test_not_type_input():
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type on your InputDefinition.",
+    ):
+
+        @solid
+        def _create(
+            _context,
+            # invalid since Iterator is not a python type or DagsterType
+            arg_b: Iterator[int],
+        ):
+            return arg_b
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type on your InputDefinition.",
+    ):
+
+        @solid(input_defs=[InputDefinition("arg_b")])
+        def _combine(
+            _context,
+            # invalid since Iterator is not a python type or DagsterType
+            arg_b: Iterator[int],
+        ):
+            return arg_b
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Problem using type '.*' from return type annotation, correct the issue or explicitly set the dagster_type on your OutputDefinition.",
+    ):
+
+        @solid
+        def _out(_context) -> Iterable[int]:
+            return [1]

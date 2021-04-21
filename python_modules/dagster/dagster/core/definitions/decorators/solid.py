@@ -13,7 +13,7 @@ from ...decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
-from ..inference import infer_input_props, infer_output_definitions
+from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
@@ -53,11 +53,12 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
-        output_defs = (
-            self.output_defs
-            if self.output_defs is not None
-            else infer_output_definitions("@solid", self.name, fn)
-        )
+        if self.output_defs is None:
+            output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
+        elif len(self.output_defs) == 1:
+            output_defs = [self.output_defs[0].combine_with_inferred(infer_output_props(fn))]
+        else:
+            output_defs = self.output_defs
 
         resolved_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
             decorator_name="@solid",
@@ -129,7 +130,9 @@ def solid(
             with what can be inferred from the function signature, with these explicit InputDefinitions
             taking precedence.
         output_defs (Optional[List[OutputDefinition]]):
-            List of output definitions. Inferred from typehints if not provided.
+            Information about the solids outputs. Information provided here will be combined with
+            what can be inferred from the return type signature if there is only one OutputDefinition
+            and the function does not use yield.
         config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
             that config provided for the solid matches this schema and fail if it does not. If not
             set, Dagster will accept any config provided for the solid.
@@ -400,8 +403,7 @@ def resolve_checked_solid_fn_inputs(
         )
 
     inferred_props = {
-        inferred.name: inferred
-        for inferred in infer_input_props(decorator_name, fn_name, compute_fn, has_context_arg)
+        inferred.name: inferred for inferred in infer_input_props(compute_fn, has_context_arg)
     }
     input_defs = []
     for input_def in explicit_input_defs:

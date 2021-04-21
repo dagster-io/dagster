@@ -3,7 +3,7 @@ from typing import Optional, Set
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
     DagsterType,
@@ -79,7 +79,7 @@ class InputDefinition:
         metadata=None,
         asset_key=None,
         asset_partitions=None,
-        # when adding new params, make sure to update update_from_inferred below
+        # when adding new params, make sure to update combine_with_inferred below
     ):
         self._name = check_valid_name(name)
 
@@ -103,13 +103,13 @@ class InputDefinition:
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
 
-        self._is_asset = asset_key is not None
-
         if callable(asset_key):
             self._asset_key_fn = asset_key
-        else:
+        elif asset_key is not None:
             asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
             self._asset_key_fn = lambda _: asset_key
+        else:
+            self._asset_key_fn = None
 
         if asset_partitions:
             experimental_arg_warning("asset_partitions", "InputDefinition.__init__")
@@ -120,9 +120,11 @@ class InputDefinition:
             )
         if callable(asset_partitions):
             self._asset_partitions_fn = asset_partitions
-        else:
+        elif asset_partitions is not None:
             asset_partitions = check.opt_set_param(asset_partitions, "asset_partitions", str)
             self._asset_partitions_fn = lambda _: asset_partitions
+        else:
+            self._asset_partitions_fn = None
 
     @property
     def name(self):
@@ -155,7 +157,7 @@ class InputDefinition:
 
     @property
     def is_asset(self):
-        return self._is_asset
+        return self._asset_key_fn is not None
 
     def get_asset_key(self, context) -> Optional[AssetKey]:
         """Get the AssetKey associated with this InputDefinition for the given
@@ -165,6 +167,9 @@ class InputDefinition:
             context (InputContext): The InputContext that this OutputDefinition is being evaluated
                 in
         """
+        if self._asset_key_fn is None:
+            return None
+
         return self._asset_key_fn(context)
 
     def get_asset_partitions(self, context) -> Optional[Set[str]]:
@@ -175,6 +180,9 @@ class InputDefinition:
             context (InputContext): The InputContext that this InputDefinition is being evaluated
                 in
         """
+        if self._asset_partitions_fn is None:
+            return None
+
         return self._asset_partitions_fn(context)
 
     def mapping_to(self, solid_name, input_name, fan_in_index=None):
@@ -210,7 +218,7 @@ class InputDefinition:
     def create_from_inferred(inferred: InferredInputProps) -> "InputDefinition":
         return InputDefinition(
             name=inferred.name,
-            dagster_type=inferred.python_type,
+            dagster_type=_checked_inferred_type(inferred),
             description=inferred.description,
             default_value=inferred.default_value,
         )
@@ -228,7 +236,7 @@ class InputDefinition:
 
         dagster_type = self._dagster_type
         if self._type_not_set:
-            dagster_type = inferred.python_type
+            dagster_type = _checked_inferred_type(inferred)
 
         description = self._description
         if description is None and inferred.description is not None:
@@ -248,6 +256,17 @@ class InputDefinition:
             asset_key=self._asset_key_fn,
             asset_partitions=self._asset_partitions_fn,
         )
+
+
+def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
+    try:
+        return resolve_dagster_type(inferred.annotation)
+    except DagsterError as e:
+        raise DagsterInvalidDefinitionError(
+            f"Problem using type '{inferred.annotation}' from type annotation for argument "
+            f"'{inferred.name}', correct the issue or explicitly set the dagster_type on "
+            "your InputDefinition."
+        ) from e
 
 
 class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
