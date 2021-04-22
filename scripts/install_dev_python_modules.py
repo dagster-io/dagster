@@ -84,13 +84,11 @@ def main(quiet):
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
         "-e python_modules/libraries/lakehouse",
+        "-e python_modules/libraries/dagster-airflow",
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
         "-e python_modules/libraries/dagster-azure",
-        "-e helm/dagster/schema[test]"
-        #
-        # https://github.com/dagster-io/dagster/issues/3488
-        # "-e python_modules/libraries/dagster-airflow",
+        "-e helm/dagster/schema[test]",
     ]
 
     # dagster-ge depends on a great_expectations version that does not install on Windows
