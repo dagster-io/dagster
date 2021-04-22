@@ -602,6 +602,8 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
+  position: relative;
+  z-index: 0;
   table th {
     vertical-align: middle;
   }
