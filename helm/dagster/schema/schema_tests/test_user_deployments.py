@@ -6,6 +6,7 @@ import pytest
 from kubernetes.client import models
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
+from schema.charts.utils import kubernetes
 
 from .helm_template import HelmTemplate
 from .utils import create_complex_user_deployment, create_simple_user_deployment
@@ -342,3 +343,66 @@ def test_user_deployment_checksum_changes(template: HelmTemplate):
         ]
 
         assert pre_upgrade_checksum != post_upgrade_checksum
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
+    deployment = create_simple_user_deployment("foo")
+    deployment.startupProbe = kubernetes.StartupProbe.construct(enabled=enabled)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert (container.startup_probe is not None) == enabled
+
+
+def test_startup_probe_exec(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.startupProbe = kubernetes.StartupProbe.construct(
+        enabled=True, exec=dict(command=["my", "command"])
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe._exec.command == [  # pylint:disable=protected-access
+        "my",
+        "command",
+    ]
+
+
+def test_startup_probe_default_exec(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.startupProbe = kubernetes.StartupProbe.construct(enabled=True)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe._exec.command == [  # pylint: disable=protected-access
+        "dagster",
+        "api",
+        "grpc-health-check",
+        "-p",
+        str(deployment.port),
+    ]

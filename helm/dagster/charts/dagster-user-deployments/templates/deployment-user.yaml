@@ -87,34 +87,17 @@ spec:
           {{- end }}
         {{- end }}
         {{- if $deployment.startupProbe }}
-          {{- if not $deployment.startupProbe.exec }}
+        {{- if $deployment.startupProbe.enabled }}
           startupProbe:
+          {{- $startupProbe := omit $deployment.startupProbe "enabled" }}
+            {{- if $startupProbe }}
+              {{- $startupProbe | toYaml | nindent 12 }}
+            {{- end }}
+          {{- if not $deployment.startupProbe.exec }}
             exec:
               command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-            {{- if hasKey $deployment.startupProbe "initialDelaySeconds" }}
-            initialDelaySeconds:
-              {{- toYaml $deployment.startupProbe.initialDelaySeconds | nindent 14 }}
-            {{- end }}
-            {{- if hasKey $deployment.startupProbe "periodSeconds" }}
-            periodSeconds:
-              {{- toYaml $deployment.startupProbe.periodSeconds | nindent 14 }}
-            {{- end }}
-            {{- if hasKey $deployment.startupProbe "timeoutSeconds" }}
-            timeoutSeconds:
-              {{- toYaml $deployment.startupProbe.timeoutSeconds | nindent 14 }}
-            {{- end }}
-            {{- if hasKey $deployment.startupProbe "successThreshold" }}
-            successThreshold:
-              {{- toYaml $deployment.startupProbe.successThreshold | nindent 14 }}
-            {{- end }}
-            {{- if hasKey $deployment.startupProbe "failureThreshold" }}
-            failureThreshold:
-              {{- toYaml $deployment.startupProbe.failureThreshold | nindent 14 }}
-            {{- end }}
-          {{- else}}
-          startupProbe:
-            {{- toYaml $deployment.startupProbe | nindent 12 }}
           {{- end }}
+        {{- end }}
         {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}

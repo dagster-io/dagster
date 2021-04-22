@@ -259,8 +259,14 @@ dagster-user-deployments:
         timeoutSeconds: 3
         successThreshold: 1
         failureThreshold: 3
+
+      # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+      # then liveness probe takes over.
+      # If on kubernetes < v1.16, then disable `startupProbe` and comment in
+      # `initialDelaySeconds: 60` under `livenessProbe`
       startupProbe:
-        # If `livenessProbe` has no `exec` field, then the following default will be used:
+        enabled: true
+        # If `startupProbe` has no `exec` field, then the following default will be used:
         # exec:
         #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
         initialDelaySeconds: 0
@@ -778,6 +784,7 @@ dagsterDaemon:
     periodSeconds: 30
     failureThreshold: 3
     timeoutSeconds: 3
+
   # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
