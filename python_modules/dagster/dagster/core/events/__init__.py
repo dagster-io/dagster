@@ -2,7 +2,7 @@
 import logging
 import os
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions import (
@@ -776,7 +776,7 @@ class DagsterEvent(
         pipeline_name: str,
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
-        resource_keys: Set[str],
+        resource_keys: AbstractSet[str],
     ) -> "DagsterEvent":
 
         return DagsterEvent.from_resource(
@@ -826,7 +826,7 @@ class DagsterEvent(
         pipeline_name: str,
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
-        resource_keys: Set[str],
+        resource_keys: AbstractSet[str],
         error: SerializableErrorInfo,
     ) -> "DagsterEvent":
 
@@ -847,7 +847,7 @@ class DagsterEvent(
         pipeline_name: str,
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
-        resource_keys: Set[str],
+        resource_keys: AbstractSet[str],
         error: SerializableErrorInfo,
     ) -> "DagsterEvent":
 
