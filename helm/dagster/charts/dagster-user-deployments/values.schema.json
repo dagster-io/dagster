@@ -112,7 +112,13 @@
         "StartupProbe": {
             "title": "StartupProbe",
             "type": "object",
-            "properties": {},
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "default": true,
+                    "type": "boolean"
+                }
+            },
             "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "UserDeployment": {
