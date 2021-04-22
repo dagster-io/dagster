@@ -75,7 +75,7 @@ def _validate_event(event: Any, solid_handle: SolidHandle) -> SolidOutputUnion:
     return event
 
 
-def _gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
+def gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
     loop = asyncio.get_event_loop()
     while True:
         try:
@@ -104,7 +104,7 @@ def _yield_compute_results(
         return
 
     if inspect.isasyncgen(user_event_generator):
-        user_event_generator = _gen_from_async_gen(user_event_generator)
+        user_event_generator = gen_from_async_gen(user_event_generator)
 
     for event in user_event_generator:
         yield _validate_event(event, step_context.step.solid_handle)

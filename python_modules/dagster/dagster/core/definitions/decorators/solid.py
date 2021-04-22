@@ -91,6 +91,7 @@ class _Solid:
             tags=self.tags,
             positional_inputs=positional_inputs,
             version=self.version,
+            context_arg_provided=context_arg_provided,
         )
         update_wrapper(solid_def, fn)
         return solid_def

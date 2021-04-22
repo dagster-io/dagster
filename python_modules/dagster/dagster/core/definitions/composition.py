@@ -70,17 +70,8 @@ def current_context() -> "InProgressCompositionContext":
     return _composition_stack[-1]
 
 
-def assert_in_composition(solid_name: str) -> None:
-    if len(_composition_stack) < 1:
-        raise DagsterInvariantViolationError(
-            'Attempted to call solid "{solid_name}" outside of a composition function. '
-            "Calling solids is only valid in a function decorated with "
-            "@pipeline or @composite_solid.".format(solid_name=solid_name)
-        )
-
-
-def _is_in_composition() -> bool:
-    return len(_composition_stack) > 0
+def is_in_composition() -> bool:
+    return bool(_composition_stack)
 
 
 class InProgressCompositionContext:
@@ -255,12 +246,11 @@ class PendingNodeInvocation:
         if self.given_alias is not None:
             check_valid_name(self.given_alias)
 
-        if _is_in_composition():
+        if is_in_composition():
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
         node_name = self.given_alias if self.given_alias else self.node_def.name
-        assert_in_composition(node_name)
 
         input_bindings = {}
 

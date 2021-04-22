@@ -264,6 +264,13 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
         super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
 
 
+class DagsterSolidInvocationError(DagsterUserCodeExecutionError):
+    """
+    Indicates an error occurred while executing the body of the ``compute_fn`` of a
+    :py:class:`~dagster.SolidDefinition` after it was directly invoked.
+    """
+
+
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     """
     Indicates an error occurred while executing the body of the ``resource_fn`` in a
@@ -308,6 +315,13 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
             "on the compute / config function that accessed it."
         ).format(resource_name=resource_name)
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
+
+
+class DagsterInvalidInvocationError(DagsterError):
+    """
+    Indicates that an error has occurred when a solid has been invoked, but before the actual
+    core compute has been reached.
+    """
 
 
 class DagsterInvalidConfigError(DagsterError):

@@ -523,12 +523,6 @@ def test_unused_mapping():
             return_one()
 
 
-def test_calling_solid_outside_fn():
-    with pytest.raises(DagsterInvariantViolationError, match="outside of a composition function"):
-
-        return_one()
-
-
 @lambda_solid
 def single_input_solid():
     return
