@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Checkbox, NonIdealState} from '@blueprintjs/core';
+import {Checkbox, Icon, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -226,12 +226,17 @@ const RunRow: React.FC<{
         <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
       </td>
       <td>
-        <Group direction="column" spacing={4}>
-          <PipelineReference
-            mode={run.mode}
-            pipelineName={run.pipelineName}
-            pipelineHrefContext="no-link"
-          />
+        <Group direction="column" spacing={8}>
+          <Group direction="row" spacing={8}>
+            <PipelineReference
+              mode={run.mode}
+              pipelineName={run.pipelineName}
+              pipelineHrefContext="no-link"
+            />
+            <Link to={`/workspace/pipelines/${run.pipelineName}`}>
+              <Icon icon="diagram-tree" iconSize={11} style={{position: 'relative', top: '-2px'}} />
+            </Link>
+          </Group>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
         </Group>
       </td>
