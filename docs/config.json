@@ -37,12 +37,12 @@
         "selector": "",
         "default_value": "API"
       },
-      "lvl1": ".section h1",
-      "lvl2": ".section h2",
-      "lvl3": ".section h3",
-      "lvl4": ".section h4",
-      "lvl5": ".section h5, .section .rubric, .section dt",
-      "text": ".section p, .section li"
+      "lvl1": "section h1",
+      "lvl2": "section h2",
+      "lvl3": "section h3",
+      "lvl4": "section h4",
+      "lvl5": "section h5, section .rubric, section dt",
+      "text": "section p, section li"
     }
   },
   "js_render": true,
