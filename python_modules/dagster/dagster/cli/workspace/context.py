@@ -1,20 +1,35 @@
-from collections import namedtuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Union
 
 from dagster import check
-from dagster.core.host_representation import PipelineSelector
+from dagster.cli.workspace.workspace import Workspace, WorkspaceSnapshot
+from dagster.core.execution.plan.state import KnownExecutionState
+from dagster.core.host_representation import (
+    ExternalExecutionPlan,
+    ExternalPipeline,
+    PipelineSelector,
+    RepositoryHandle,
+    RepositoryLocation,
+)
 from dagster.core.host_representation.grpc_server_state_subscriber import (
+    LocationStateChangeEvent,
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
 from dagster.core.instance import DagsterInstance
 
-
-class WorkspaceRequestContext(
-    namedtuple(
-        "WorkspaceRequestContext",
-        "instance workspace_snapshot repository_locations_dict process_context version",
+if TYPE_CHECKING:
+    from rx.subjects import Subject
+    from dagster.core.host_representation import (
+        ExternalPartitionSetExecutionParamData,
+        ExternalPartitionExecutionErrorData,
+        ExternalPartitionNamesData,
+        ExternalPartitionConfigData,
+        ExternalPartitionTagsData,
     )
-):
+    from dagster.utils.error import SerializableErrorInfo
+
+
+class WorkspaceRequestContext(NamedTuple):
     """
     This class is request-scoped object that stores (1) a reference to all repository locations
     that exist on the `WorkspaceProcessContext` at the start of the request and (2) a snapshot of the
@@ -26,64 +41,60 @@ class WorkspaceRequestContext(
     into errors.
     """
 
-    def __new__(
-        cls, instance, workspace_snapshot, repository_locations_dict, process_context, version
-    ):
-        return super(WorkspaceRequestContext, cls).__new__(
-            cls,
-            instance,
-            workspace_snapshot,
-            repository_locations_dict,
-            process_context,
-            version,
-        )
+    instance: DagsterInstance
+    workspace_snapshot: WorkspaceSnapshot
+    repository_locations_dict: Dict[str, RepositoryLocation]
+    process_context: "WorkspaceProcessContext"
+    version: Optional[str] = None
 
     @property
-    def repository_locations(self):
+    def repository_locations(self) -> List[RepositoryLocation]:
         return list(self.repository_locations_dict.values())
 
     @property
-    def repository_location_names(self):
+    def repository_location_names(self) -> List[str]:
         return self.workspace_snapshot.repository_location_names
 
-    def repository_location_errors(self):
+    def repository_location_errors(self) -> List["SerializableErrorInfo"]:
         return self.workspace_snapshot.repository_location_errors
 
-    def get_repository_location(self, name):
+    def get_repository_location(self, name: str) -> RepositoryLocation:
         return self.repository_locations_dict[name]
 
-    def has_repository_location_error(self, name):
+    def has_repository_location_error(self, name: str) -> bool:
         return self.workspace_snapshot.has_repository_location_error(name)
 
-    def get_repository_location_error(self, name):
+    def get_repository_location_error(self, name: str) -> "SerializableErrorInfo":
         return self.workspace_snapshot.get_repository_location_error(name)
 
-    def has_repository_location(self, name):
+    def has_repository_location(self, name: str) -> bool:
         return name in self.repository_locations_dict
 
-    def is_reload_supported(self, name):
+    def is_reload_supported(self, name: str) -> bool:
         return self.workspace_snapshot.is_reload_supported(name)
 
-    def reload_repository_location(self, name):
+    def reload_repository_location(self, name: str) -> "WorkspaceRequestContext":
         # This method reloads the location on the process context, and returns a new
         # request context created from the updated process context
         updated_process_context = self.process_context.reload_repository_location(name)
         return updated_process_context.create_request_context()
 
-    def reload_workspace(self):
+    def reload_workspace(self) -> "WorkspaceRequestContext":
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_pipeline(self, selector):
+    def has_external_pipeline(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
-        if selector.location_name in self.repository_locations_dict:
-            loc = self.repository_locations_dict[selector.location_name]
-            if loc.has_repository(selector.repository_name):
-                return loc.get_repository(selector.repository_name).has_external_pipeline(
-                    selector.pipeline_name
-                )
+        loc = self.repository_locations_dict.get(selector.location_name)
+        return (
+            loc is not None
+            and loc.has_repository(selector.repository_name)
+            and loc.get_repository(selector.repository_name).has_external_pipeline(
+                selector.pipeline_name
+            )
+        )
 
-    def get_full_external_pipeline(self, selector):
+    def get_full_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
         return (
             self.repository_locations_dict[selector.location_name]
             .get_repository(selector.repository_name)
@@ -92,12 +103,12 @@ class WorkspaceRequestContext(
 
     def get_external_execution_plan(
         self,
-        external_pipeline,
-        run_config,
-        mode,
-        step_keys_to_execute,
-        known_state,
-    ):
+        external_pipeline: ExternalPipeline,
+        run_config: dict,
+        mode: str,
+        step_keys_to_execute: List[str],
+        known_state: KnownExecutionState,
+    ) -> ExternalExecutionPlan:
         return self.repository_locations_dict[
             external_pipeline.handle.location_name
         ].get_external_execution_plan(
@@ -108,7 +119,9 @@ class WorkspaceRequestContext(
             known_state=known_state,
         )
 
-    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_config(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         return self.repository_locations_dict[
             repository_handle.repository_location.name
         ].get_external_partition_config(
@@ -117,7 +130,9 @@ class WorkspaceRequestContext(
             partition_name=partition_name,
         )
 
-    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_tags(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         return self.repository_locations_dict[
             repository_handle.repository_location.name
         ].get_external_partition_tags(
@@ -126,14 +141,19 @@ class WorkspaceRequestContext(
             partition_name=partition_name,
         )
 
-    def get_external_partition_names(self, repository_handle, partition_set_name):
+    def get_external_partition_names(
+        self, repository_handle: RepositoryHandle, partition_set_name: str
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.repository_locations_dict[
             repository_handle.repository_location.name
         ].get_external_partition_names(repository_handle, partition_set_name)
 
     def get_external_partition_set_execution_param_data(
-        self, repository_handle, partition_set_name, partition_names
-    ):
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_names: List[str],
+    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         return self.repository_locations_dict[
             repository_handle.repository_location.name
         ].get_external_partition_set_execution_param_data(
@@ -155,7 +175,9 @@ class WorkspaceProcessContext:
     In most cases, you will want to create a `WorkspaceRequestContext` to make use of this class.
     """
 
-    def __init__(self, instance, workspace, version=None):
+    def __init__(
+        self, instance: DagsterInstance, workspace: Workspace, version: Optional[str] = None
+    ):
         # lazy import for perf
         from rx.subjects import Subject
 
@@ -171,8 +193,8 @@ class WorkspaceProcessContext:
 
         self._initialize_repository_locations()
 
-    def _initialize_repository_locations(self):
-        self._repository_locations = {}
+    def _initialize_repository_locations(self) -> None:
+        self._repository_locations: Dict[str, RepositoryLocation] = {}
         for location in self._workspace.repository_locations:
             check.invariant(
                 self._repository_locations.get(location.name) is None,
@@ -184,7 +206,7 @@ class WorkspaceProcessContext:
             location.add_state_subscriber(self._location_state_subscriber)
             self._repository_locations[location.name] = location
 
-    def create_request_context(self):
+    def create_request_context(self) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self.instance,
             workspace_snapshot=self._workspace.create_snapshot(),
@@ -194,18 +216,18 @@ class WorkspaceProcessContext:
         )
 
     @property
-    def instance(self):
+    def instance(self) -> DagsterInstance:
         return self._instance
 
     @property
-    def repository_locations(self):
+    def repository_locations(self) -> List[RepositoryLocation]:
         return list(self._repository_locations.values())
 
     @property
-    def location_state_events(self):
+    def location_state_events(self) -> "Subject":
         return self._location_state_events
 
-    def _location_state_events_handler(self, event):
+    def _location_state_events_handler(self, event: LocationStateChangeEvent) -> None:
         # If the server was updated or we were not able to reconnect, we immediately reload the
         # location handle
         if event.event_type in (
@@ -220,7 +242,7 @@ class WorkspaceProcessContext:
 
         self._location_state_events.on_next(event)
 
-    def reload_repository_location(self, name):
+    def reload_repository_location(self, name: str) -> "WorkspaceProcessContext":
         self._workspace.reload_repository_location(name)
 
         if self._workspace.has_repository_location(name):
@@ -233,6 +255,6 @@ class WorkspaceProcessContext:
 
         return self
 
-    def reload_workspace(self):
+    def reload_workspace(self) -> None:
         self._workspace.reload_workspace()
         self._initialize_repository_locations()
