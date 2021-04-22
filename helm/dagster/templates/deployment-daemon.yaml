@@ -75,9 +75,10 @@ spec:
           livenessProbe:
             {{- toYaml .Values.dagsterDaemon.livenessProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.dagsterDaemon.startupProbe }}
+          {{- if .Values.dagsterDaemon.startupProbe.enabled}}
+          {{- $startupProbe := omit .Values.dagsterDaemon.startupProbe "enabled" }}
           startupProbe:
-            {{- toYaml .Values.dagsterDaemon.startupProbe | nindent 12 }}
+            {{- toYaml $startupProbe | nindent 12 }}
           {{- end }}
       nodeSelector:
         {{- toYaml .Values.dagsterDaemon.nodeSelector | nindent 8 }}
