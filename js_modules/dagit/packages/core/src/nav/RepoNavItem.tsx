@@ -1,4 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
+import {Button, Colors, Icon} from '@blueprintjs/core';
 import {Popover2 as Popover, Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -69,9 +69,21 @@ export const RepoNavItem: React.FC<Props> = (props) => {
           placement="right"
           popoverClassName="bp3-dark"
           content={
-            <Box padding={16} style={{maxWidth: '600px', borderRadius: '3px'}}>
-              <RepoSelector options={allRepos} onToggle={onToggle} selected={selected} />
-            </Box>
+            <div style={{maxWidth: '600px', borderRadius: '3px'}}>
+              <Box
+                padding={{vertical: 2, left: 8, right: 4}}
+                background={Colors.DARK_GRAY3}
+                flex={{alignItems: 'center', justifyContent: 'space-between'}}
+              >
+                <div style={{fontSize: '12px', color: Colors.GRAY3}}>
+                  {`Repositories (${selected.size} of ${allRepos.length} selected)`}
+                </div>
+                <Button icon="cross" small minimal onClick={() => setOpen(false)} />
+              </Box>
+              <Box padding={16}>
+                <RepoSelector options={allRepos} onToggle={onToggle} selected={selected} />
+              </Box>
+            </div>
           }
         >
           <ButtonLink color={Colors.GRAY5} underline="hover">
