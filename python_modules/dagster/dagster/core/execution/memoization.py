@@ -4,9 +4,9 @@ from dagster.core.execution.context.system import IPlanContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 
 
-def validate_reexecution_memoization(plan_context, execution_plan):
-    check.inst_param(plan_context, "plan_context", IPlanContext)
-    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+def validate_reexecution_memoization(
+    plan_context: IPlanContext, execution_plan: ExecutionPlan
+) -> None:
 
     parent_run_id = plan_context.pipeline_run.parent_run_id
     check.opt_str_param(parent_run_id, "parent_run_id")

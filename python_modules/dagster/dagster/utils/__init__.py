@@ -14,7 +14,7 @@ import threading
 from collections import namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import Iterator
+from typing import TYPE_CHECKING, Generator, Generic, Iterator, Optional, Type, TypeVar, Union, cast
 from warnings import warn
 
 import _thread as thread
@@ -31,6 +31,10 @@ if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error
 else:
     from pathlib2 import Path  # pylint: disable=import-error
+
+if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
+
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -389,7 +393,10 @@ class frozentags(frozendict):
         return frozentags(updated)
 
 
-class EventGenerationManager:
+GeneratedContext = TypeVar("GeneratedContext")
+
+
+class EventGenerationManager(Generic[GeneratedContext]):
     """Utility class that wraps an event generator function, that also yields a single instance of
     a typed object.  All events yielded before the typed object are yielded through the method
     `generate_setup_events` and all events yielded after the typed object are yielded through the
@@ -403,15 +410,20 @@ class EventGenerationManager:
     get the typed object.
     """
 
-    def __init__(self, generator, object_cls, require_object=True):
+    def __init__(
+        self,
+        generator: Generator[Union["DagsterEvent", GeneratedContext], None, None],
+        object_cls: Type[GeneratedContext],
+        require_object: Optional[bool] = True,
+    ):
         self.generator = check.generator(generator)
-        self.object_cls = check.type_param(object_cls, "object_cls")
+        self.object_cls: Type[GeneratedContext] = check.type_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
-        self.object = None
+        self.object: Optional[GeneratedContext] = None
         self.did_setup = False
         self.did_teardown = False
 
-    def generate_setup_events(self):
+    def generate_setup_events(self) -> Iterator["DagsterEvent"]:
         self.did_setup = True
         try:
             while self.object is None:
@@ -429,12 +441,12 @@ class EventGenerationManager:
                     "generator never yielded object of type {}".format(self.object_cls.__name__),
                 )
 
-    def get_object(self):
+    def get_object(self) -> GeneratedContext:
         if not self.did_setup:
             check.failed("Called `get_object` before `generate_setup_events`")
-        return self.object
+        return cast(GeneratedContext, self.object)
 
-    def generate_teardown_events(self):
+    def generate_teardown_events(self) -> Iterator["DagsterEvent"]:
         self.did_teardown = True
         if self.object:
             yield from self.generator

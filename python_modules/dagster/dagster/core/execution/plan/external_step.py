@@ -2,7 +2,7 @@ import os
 import pickle
 import subprocess
 import sys
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, cast
 
 from dagster import Field, StringSource, check, resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
@@ -22,6 +22,9 @@ from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
+
+if TYPE_CHECKING:
+    from dagster.core.execution.plan.step import ExecutionStep
 
 
 @resource(
@@ -175,7 +178,14 @@ def step_run_ref_to_step_context(
         pass
     execution_context = initialization_manager.get_context()
 
-    return execution_context.for_step(execution_plan.get_step_by_key(step_run_ref.step_key))
+    execution_step = cast("ExecutionStep", execution_plan.get_step_by_key(step_run_ref.step_key))
+
+    step_execution_context = execution_context.for_step(execution_step)
+    # Since for_step is abstract for IPlanContext, its return type is IStepContext.
+    # Since we are launching from a PlanExecutionContext, the type will always be
+    # StepExecutionContext.
+    step_execution_context = cast(StepExecutionContext, step_execution_context)
+    return step_execution_context
 
 
 def run_step_from_ref(
