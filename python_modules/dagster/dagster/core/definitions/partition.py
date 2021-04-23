@@ -18,10 +18,6 @@ from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
 
 
-def by_name(partition):
-    return partition.name
-
-
 class Partition(namedtuple("_Partition", ("value name"))):
     """
     Partition is the representation of a logical slice across an axis of a pipeline's work
@@ -54,19 +50,6 @@ def last_empty_partition(context, partition_set_def):
             selected = partition
             break
     return selected
-
-
-def first_partition(context, partition_set_def=None):
-    check.inst_param(context, "context", ScheduleExecutionContext)
-    partition_set_def = check.inst_param(
-        partition_set_def, "partition_set_def", PartitionSetDefinition
-    )
-
-    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
-    if not partitions:
-        return None
-
-    return partitions[0]
 
 
 class PartitionSetDefinition(
