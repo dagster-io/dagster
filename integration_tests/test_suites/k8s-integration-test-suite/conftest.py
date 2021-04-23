@@ -14,9 +14,11 @@ from dagster_k8s_test_infra.cluster import (
     define_cluster_provider_fixture,
     helm_postgres_url_for_k8s_run_launcher,
 )
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME, helm_namespace_for_k8s_run_launcher
+from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
+
+pytest_plugins = ["dagster_k8s_test_infra.helm"]
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
