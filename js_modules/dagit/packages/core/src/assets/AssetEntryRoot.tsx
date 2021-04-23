@@ -5,7 +5,6 @@ import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -16,6 +15,7 @@ import {Heading} from '../ui/Text';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
+import {useAssetView} from './useAssetView';
 
 export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
   const currentPath: string[] = (match.params['0'] || '')
@@ -23,10 +23,11 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     .filter((x: string) => x)
     .map(decodeURIComponent);
 
+  const [view] = useAssetView();
+
   const queryResult = useQuery<AssetEntryRootQuery>(ASSET_ENTRY_ROOT_QUERY, {
     variables: {assetKey: {path: currentPath}},
   });
-  const [view, setView] = useQueryPersistedState<string>({queryKey: 'view', defaults: {view: ''}});
 
   const pathDetails = () => {
     if (currentPath.length === 1 || view !== 'directory') {
@@ -42,9 +43,9 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
 
     return (
       <Box flex={{direction: 'row', alignItems: 'center'}} style={{maxWidth: 500}}>
-        <div style={{marginRight: '5px'}}>
-          <Link to="/instance/assets?view=directory">Assets</Link>
-        </div>
+        <Box margin={{right: 4}}>
+          <Link to="/instance/assets">Assets</Link>:
+        </Box>
         <Breadcrumbs
           breadcrumbRenderer={({text, href}) => (
             <Link to={href || '#'}>
@@ -84,7 +85,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetNotFoundError') {
-              return <AssetsCatalogTable prefixPath={currentPath} view={view} setView={setView} />;
+              return <AssetsCatalogTable prefixPath={currentPath} />;
             }
 
             return (

@@ -33,6 +33,7 @@ import {
   AssetsTableQuery_assetsOrError_AssetConnection_nodes_key,
   AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags,
 } from './types/AssetsTableQuery';
+import {useAssetView} from './useAssetView';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 type AssetKey = AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
@@ -50,13 +51,14 @@ const EXPERIMENTAL_TAGS_WARNING = (
     for more about adding asset tags.
   </Box>
 );
+
 export const AssetsCatalogTable: React.FunctionComponent<{
   prefixPath?: string[];
-  view: string;
-  setView: (view: string) => void;
-}> = ({prefixPath, view, setView}) => {
+}> = ({prefixPath}) => {
   const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY);
   const [q, setQ] = React.useState<string>('');
+  const [view, setView] = useAssetView();
+
   const isFlattened = view !== 'directory';
   const history = useHistory();
   const setIsFlattened = (flat: boolean) => {
@@ -492,12 +494,9 @@ const AssetEntryRow: React.FunctionComponent<{
     onSelectToggle,
     onWipe,
   }) => {
-    const view = isFlattened ? 'flat' : 'directory';
     const fullPath = [...(currentPath || []), ...path];
     const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
-    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}${
-      isAssetEntry ? '' : `?view=${view}`
-    }`;
+    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
     return (
       <tr>
         <td style={{paddingRight: '4px'}}>
