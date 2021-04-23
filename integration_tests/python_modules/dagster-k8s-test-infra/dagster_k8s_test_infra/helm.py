@@ -42,10 +42,27 @@ def namespace(pytestconfig, should_cleanup):
     existing_helm_namespace = pytestconfig.getoption("--existing-helm-namespace")
 
     if existing_helm_namespace:
-        yield existing_helm_namespace
+        namespace = existing_helm_namespace
     else:
-        with get_helm_test_namespace(should_cleanup) as namespace:
-            yield namespace
+        # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
+        namespace = get_test_namespace()
+
+        print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
+        kube_api = kubernetes.client.CoreV1Api()
+
+        print("Creating namespace %s" % namespace)
+        kube_namespace = kubernetes.client.V1Namespace(
+            metadata=kubernetes.client.V1ObjectMeta(name=namespace)
+        )
+        kube_api.create_namespace(kube_namespace)
+
+    yield namespace
+
+    # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
+    # w/ a kind cluster
+    if should_cleanup:
+        print("Deleting namespace %s" % namespace)
+        kube_api.delete_namespace(name=namespace)
 
 
 @pytest.fixture(scope="session")
@@ -206,30 +223,6 @@ def helm_namespace_for_k8s_run_launcher(
 ):  # pylint: disable=unused-argument
     with helm_chart_for_k8s_run_launcher(namespace, dagster_docker_image, should_cleanup):
         yield namespace
-
-
-@contextmanager
-def get_helm_test_namespace(should_cleanup=True):
-    # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
-    namespace = get_test_namespace()
-
-    print("--- \033[32m:k8s: Creating test namespace %s\033[0m" % namespace)
-    kube_api = kubernetes.client.CoreV1Api()
-
-    try:
-        print("Creating namespace %s" % namespace)
-        kube_namespace = kubernetes.client.V1Namespace(
-            metadata=kubernetes.client.V1ObjectMeta(name=namespace)
-        )
-        kube_api.create_namespace(kube_namespace)
-        yield namespace
-
-    finally:
-        # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
-        # w/ a kind cluster
-        if should_cleanup:
-            print("Deleting namespace %s" % namespace)
-            kube_api.delete_namespace(name=namespace)
 
 
 @contextmanager
