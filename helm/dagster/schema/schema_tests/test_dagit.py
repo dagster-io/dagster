@@ -25,22 +25,11 @@ def helm_template() -> HelmTemplate:
 )
 def test_dagit_port(template: HelmTemplate, service_port: int):
     helm_values = DagsterHelmValues.construct(
-        dagit=Dagit(
+        dagit=Dagit.construct(
             service=Service(
                 type="ClusterIP",
                 port=service_port,
             ),
-            image=Image(
-                repository="docker.io/dagster/dagster-celery-k8s",
-                tag="latest",
-                pullPolicy=PullPolicy.ALWAYS,
-            ),
-            workspace=Workspace(
-                enabled=False,
-                servers=[Server(host="k8s-example-user-code-1", port=3030)],
-            ),
-            livenessProbe=LivenessProbe(),
-            startupProbe=StartupProbe(),
         )
     )
 
