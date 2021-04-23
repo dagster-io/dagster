@@ -16,9 +16,10 @@ class IntermediateStorageDefinition(AnonymousConfigurableDefinition):
             boundaries. Re-execution with, for example, the multiprocess executor, or with
             dagster-airflow, requires a persistent storage mode.
         required_resource_keys(Optional[Set[str]]): The resources that this storage needs at runtime to function.
-        config_schema (Optional[ConfigSchema]): The schema for the storage's configuration schema.
+        config_schema (Optional[ConfigSchema]): The schema for the storage's configuration.
             Configuration data passed in this schema will be made available to the
             ``intermediate_storage_creation_fn`` under ``init_context.intermediate_storage_config``.
+            If not set, Dagster will accept any config provided.
         intermediate_storage_creation_fn: (Callable[[InitIntermediateStorageContext], IntermediateStorage])
             Called to construct the storage. This function should consume the init context and emit
             a :py:class:`IntermediateStorage`.

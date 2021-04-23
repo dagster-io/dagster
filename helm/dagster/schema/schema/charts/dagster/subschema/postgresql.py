@@ -14,4 +14,5 @@ class PostgreSQL(BaseModel):
     postgresqlUsername: str
     postgresqlPassword: str
     postgresqlDatabase: str
+    postgresqlParams: dict
     service: Service

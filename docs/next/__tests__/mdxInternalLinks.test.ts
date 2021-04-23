@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs, { link } from "fs";
 import path from "path";
 import fg from "fast-glob";
 import { Node } from "hast";
@@ -134,7 +134,7 @@ function collectInternalLinks(
   tree: Node,
   currentFilePath: string
 ): Array<string> {
-  const externalLinkRegex = /^https?:\/\//;
+  const externalLinkRegex = /^(https?:\/\/|mailto:)/;
   const result: Array<string> = [];
 
   visit(tree, ["link", "image"], (node: LinkElement, index) => {

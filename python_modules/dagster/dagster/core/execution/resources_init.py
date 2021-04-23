@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Deque, Dict, Optional, Set, cast
+from typing import AbstractSet, Deque, Dict, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -36,7 +36,7 @@ def resource_initialization_manager(
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
-    resource_keys_to_init: Optional[Set[str]],
+    resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
@@ -97,7 +97,7 @@ def _core_resource_initialization_event_generator(
     resource_managers: Deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
-    resource_keys_to_init: Optional[Set[str]],
+    resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
@@ -116,8 +116,8 @@ def _core_resource_initialization_event_generator(
     try:
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                pipeline_name,
-                execution_plan,
+                cast(str, pipeline_name),
+                cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
             )
@@ -157,8 +157,8 @@ def _core_resource_initialization_event_generator(
 
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                pipeline_name,
-                execution_plan,
+                cast(str, pipeline_name),
+                cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_instances,
                 resource_init_times,
@@ -169,8 +169,8 @@ def _core_resource_initialization_event_generator(
         # resource_keys_to_init cannot be empty
         if emit_persistent_events:
             yield DagsterEvent.resource_init_failure(
-                pipeline_name,
-                execution_plan,
+                cast(str, pipeline_name),
+                cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
                 serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
@@ -184,7 +184,7 @@ def resource_initialization_event_generator(
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
-    resource_keys_to_init: Optional[Set[str]],
+    resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
@@ -242,7 +242,7 @@ def resource_initialization_event_generator(
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
                     cast(PipelineRun, pipeline_run).pipeline_name,
-                    execution_plan,
+                    cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,
                     serializable_error_info_from_exc_info(error.original_exc_info),

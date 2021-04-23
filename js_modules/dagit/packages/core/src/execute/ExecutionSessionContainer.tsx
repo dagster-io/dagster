@@ -124,7 +124,7 @@ const initialState: IExecutionSessionContainerState = {
   tagEditorOpen: false,
 };
 
-export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
+const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (props) => {
   const {
     currentSession,
     onCreateSession,
@@ -460,7 +460,13 @@ export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps
     tagEditorOpen,
   } = state;
 
-  const tags = currentSession.tags || [];
+  const permanentTags: PipelineRunTag[] = React.useMemo(() => pipeline.tags || [], [pipeline]);
+  const sessionTags = React.useMemo(() => currentSession.tags || [], [currentSession]);
+  const allTags = React.useMemo(() => permanentTags.concat(sessionTags), [
+    permanentTags,
+    sessionTags,
+  ]);
+
   return (
     <SplitPanelContainer
       axis={'vertical'}
@@ -504,7 +510,7 @@ export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps
               onModeChange={onModeChange}
               modeName={currentSession.mode}
             />
-            {tags.length ? null : (
+            {sessionTags.length ? null : (
               <Box margin={{left: 12}}>
                 <ShortcutHandler
                   shortcutLabel={'⌥T'}
@@ -522,7 +528,8 @@ export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps
               </Box>
             )}
             <TagEditor
-              tags={tags}
+              permanentTags={permanentTags}
+              editableTags={sessionTags}
               onChange={saveTags}
               open={tagEditorOpen}
               onRequestClose={closeTagEditor}
@@ -538,7 +545,7 @@ export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps
             <SessionSettingsSpacer />
             <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
           </SessionSettingsBar>
-          {tags.length ? <TagContainer tags={tags} onRequestEdit={openTagEditor} /> : null}
+          {allTags.length ? <TagContainer tags={allTags} onRequestEdit={openTagEditor} /> : null}
           {currentSession.base !== null && currentSession.needsRefresh ? (
             <Box
               padding={{vertical: 8, horizontal: 12}}
@@ -624,6 +631,10 @@ export const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps
     />
   );
 };
+
+// Imported via React.lazy, which requires a default export.
+// eslint-disable-next-line import/no-default-export
+export default ExecutionSessionContainer;
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

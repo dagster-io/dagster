@@ -14,9 +14,10 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
+import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
-import {LogsToolbar} from './LogsToolbar';
+import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, IStepState, RunMetadataProvider} from './RunMetadataProvider';
@@ -51,7 +52,6 @@ export const Run: React.FunctionComponent<RunProps> = (props) => {
     queryKey: 'selection',
     defaults: {selection: ''},
   });
-
   const {websocketURI} = React.useContext(AppContext);
 
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
@@ -113,6 +113,17 @@ interface RunWithDataProps {
   onShowStateDetails: (stepKey: string, logs: RunPipelineRunEventFragment[]) => void;
 }
 
+const logTypeFromQuery = (queryLogType: string) => {
+  switch (queryLogType) {
+    case 'stdout':
+      return LogType.stdout;
+    case 'stderr':
+      return LogType.stderr;
+    default:
+      return LogType.structured;
+  }
+};
+
 /**
  * Note: There are two places we keep a "step query string" in the Run view:
  * selectionQuery and logsFilter.logsQuery.
@@ -144,13 +155,41 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
   const {basePath} = React.useContext(AppContext);
+  const [computeLogStep, setComputeLogStep] = React.useState<string>();
+  const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
+    queryKey: 'logType',
+    defaults: {logType: 'structured'},
+  });
+  const logType = logTypeFromQuery(queryLogType);
+  const setLogType = (lt: LogType) => setQueryLogType(LogType[lt]);
+  const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
+  const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
+  const stepKeys = React.useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
 
   const runtimeStepKeys = Object.keys(metadata.steps);
   const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, runtimeStepKeys);
-  const selectionStepKeys =
-    runtimeGraph && selectionQuery && selectionQuery !== '*'
+  const selectionStepKeys = React.useMemo(() => {
+    return runtimeGraph && selectionQuery && selectionQuery !== '*'
       ? filterByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
       : [];
+  }, [runtimeGraph, selectionQuery]);
+
+  React.useEffect(() => {
+    if (!stepKeys) {
+      return;
+    }
+    if (!computeLogStep || !stepKeys.includes(computeLogStep)) {
+      const stepKey = selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0];
+      setComputeLogStep(stepKey);
+    } else if (selectionStepKeys.length === 1 && computeLogStep !== selectionStepKeys[0]) {
+      setComputeLogStep(selectionStepKeys[0]);
+    }
+  }, [stepKeys, computeLogStep, selectionStepKeys]);
+
+  const onComputeLogStepSelect = (stepKey: string) => {
+    setComputeLogStep(stepKey);
+    onSetSelectionQuery(stepKey);
+  };
 
   const logsFilterStepKeys = runtimeGraph
     ? logsFilter.logQuery
@@ -249,7 +288,6 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
   return (
     <>
-      {/* <RunDetails loading={logs.loading} run={run} /> */}
       <SplitPanelContainer
         ref={splitPanelContainer}
         axis={'vertical'}
@@ -260,18 +298,33 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         second={
           <LogsContainer>
             <LogsToolbar
+              logType={logType}
+              onSetLogType={setLogType}
               filter={logsFilter}
               onSetFilter={onSetLogsFilter}
-              steps={Object.keys(metadata.steps)}
+              steps={stepKeys}
               metadata={metadata}
+              computeLogStep={computeLogStep}
+              onSetComputeLogStep={onComputeLogStepSelect}
+              computeLogUrl={computeLogUrl}
             />
-            <LogsScrollingTable
-              logs={logs}
-              filter={logsFilter}
-              filterStepKeys={logsFilterStepKeys}
-              filterKey={`${JSON.stringify(logsFilter)}`}
-              metadata={metadata}
-            />
+            {logType !== LogType.structured ? (
+              <ComputeLogPanel
+                runId={runId}
+                stepKeys={stepKeys}
+                selectedStepKey={computeLogStep}
+                ioType={LogType[logType]}
+                setComputeLogUrl={setComputeLogUrl}
+              />
+            ) : (
+              <LogsScrollingTable
+                logs={logs}
+                filter={logsFilter}
+                filterStepKeys={logsFilterStepKeys}
+                filterKey={`${JSON.stringify(logsFilter)}`}
+                metadata={metadata}
+              />
+            )}
           </LogsContainer>
         }
       />

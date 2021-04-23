@@ -8,7 +8,7 @@ import click
 from dagster import check
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from gevent import pywsgi
@@ -74,12 +74,6 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     show_default=True,
 )
 @click.option(
-    "--storage-fallback",
-    help="Base directory for dagster storage if $DAGSTER_HOME is not set",
-    default=None,
-    type=click.Path(),
-)
-@click.option(
     "--db-statement-timeout",
     help="The timeout in milliseconds to set on database statements sent "
     "to the DagsterInstance. Not respected in all configurations.",
@@ -88,7 +82,7 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     show_default=True,
 )
 @click.version_option(version=__version__, prog_name="dagit")
-def ui(host, port, path_prefix, storage_fallback, db_statement_timeout, **kwargs):
+def ui(host, port, path_prefix, db_statement_timeout, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -98,27 +92,27 @@ def ui(host, port, path_prefix, storage_fallback, db_statement_timeout, **kwargs
     else:
         port_lookup = False
 
-    if storage_fallback is None:
-        with tempfile.TemporaryDirectory() as storage_fallback:
-            host_dagit_ui(
-                host,
-                port,
-                path_prefix,
-                storage_fallback,
-                db_statement_timeout,
-                port_lookup,
-                **kwargs,
-            )
+    host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup, **kwargs)
+
+
+@contextmanager
+def _get_instance():
+    if is_dagster_home_set():
+        with DagsterInstance.get() as instance:
+            yield instance
     else:
-        host_dagit_ui(
-            host, port, path_prefix, storage_fallback, db_statement_timeout, port_lookup, **kwargs
-        )
+        with tempfile.TemporaryDirectory() as tempdir:
+            click.echo(
+                f"Using temporary directory {tempdir} for storage. This will be removed when dagit exits.\n"
+                "To persist information across sessions, set the environment variable DAGSTER_HOME to a directory to use.\n"
+            )
+            with DagsterInstance.local_temp(tempdir) as instance:
+                yield instance
 
 
-def host_dagit_ui(
-    host, port, path_prefix, storage_fallback, db_statement_timeout, port_lookup=True, **kwargs
-):
-    with DagsterInstance.get(storage_fallback) as instance:
+def host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup=True, **kwargs):
+
+    with _get_instance() as instance:
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout)
 
@@ -155,7 +149,7 @@ def uploading_logging_thread():
 def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
-    print(  # pylint: disable=print-call
+    click.echo(
         "Serving on http://{host}:{port}{path_prefix} in process {pid}".format(
             host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
         )

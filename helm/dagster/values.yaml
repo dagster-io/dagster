@@ -110,9 +110,10 @@ dagit:
   # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
-  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
   # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
+    enabled: true
     httpGet:
       path: "/dagit_info"
       port: 80
@@ -531,6 +532,10 @@ postgresql:
 
   postgresqlDatabase: test
 
+  # set postgresql parameter keywords for the connection string.
+  # see: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+  postgresqlParams: {}
+
   service:
     port: 5432
 
@@ -776,9 +781,10 @@ dagsterDaemon:
   # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
-  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
   # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
+    enabled: true
     exec:
       command:
         - "dagster-daemon"

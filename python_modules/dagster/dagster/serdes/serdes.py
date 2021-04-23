@@ -216,9 +216,15 @@ def _pack_value(val: Any, whitelist_map: WhitelistMap) -> Any:
         )
         return {"__enum__": str(val)}
     if isinstance(val, set):
-        return {"__set__": [_pack_value(item, whitelist_map) for item in val]}
+        return {
+            "__set__": [_pack_value(item, whitelist_map) for item in sorted(list(val), key=str)]
+        }
     if isinstance(val, frozenset):
-        return {"__frozenset__": [_pack_value(item, whitelist_map) for item in val]}
+        return {
+            "__frozenset__": [
+                _pack_value(item, whitelist_map) for item in sorted(list(val), key=str)
+            ]
+        }
     if isinstance(val, dict):
         return {key: _pack_value(value, whitelist_map) for key, value in val.items()}
 

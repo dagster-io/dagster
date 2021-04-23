@@ -17,7 +17,6 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
 
         cli_args = {
             "fn_name": pipeline_name,
-            "pipeline_name": pipeline_name,
             "module_name": module_name,
         }
         pipeline = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)

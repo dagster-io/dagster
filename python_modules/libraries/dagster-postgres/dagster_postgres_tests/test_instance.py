@@ -84,6 +84,57 @@ def skip_autocreate_pg_config(hostname):
     )
 
 
+def params_specified_pg_config(hostname):
+    return """
+      run_storage:
+        module: dagster_postgres.run_storage
+        class: PostgresRunStorage
+        config:
+          should_autocreate_tables: false
+          postgres_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
+            params:
+              connect_timeout: 10
+              application_name: myapp
+              options: -c synchronous_commit=off
+
+      event_log_storage:
+        module: dagster_postgres.event_log
+        class: PostgresEventLogStorage
+        config:
+            should_autocreate_tables: false
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+              params:
+                connect_timeout: 10
+                application_name: myapp
+                options: -c synchronous_commit=off
+
+      schedule_storage:
+        module: dagster_postgres.schedule_storage
+        class: PostgresScheduleStorage
+        config:
+            should_autocreate_tables: false
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+              params:
+                connect_timeout: 10
+                application_name: myapp
+                options: -c synchronous_commit=off
+    """.format(
+        hostname=hostname
+    )
+
+
 def test_connection_leak(hostname, conn_string):
     num_instances = 20
 
@@ -158,3 +209,15 @@ def test_skip_autocreate(hostname, conn_string):
     TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
     TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
     TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
+
+
+def test_specify_pg_params(hostname):
+    with instance_for_test(
+        overrides=yaml.safe_load(params_specified_pg_config(hostname))
+    ) as instance:
+        postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
+        # pylint: disable=protected-access
+        assert instance._event_storage.postgres_url == postgres_url
+        assert instance._run_storage.postgres_url == postgres_url
+        assert instance._schedule_storage.postgres_url == postgres_url
+        # pylint: enable=protected-access

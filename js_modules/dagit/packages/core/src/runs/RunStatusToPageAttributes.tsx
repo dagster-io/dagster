@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {PipelineRunStatus} from '../types/globalTypes';
 
 import {RunStatusPipelineRunFragment} from './types/RunStatusPipelineRunFragment';
@@ -24,33 +25,22 @@ const FaviconsForStatus = {
   [PipelineRunStatus.SUCCESS]: '/favicon_success.ico',
 };
 
-export class RunStatusToPageAttributes extends React.Component<{
-  run: RunStatusPipelineRunFragment;
-}> {
-  componentDidMount() {
-    this.updatePageAttributes();
-  }
+export const RunStatusToPageAttributes: React.FC<{run: RunStatusPipelineRunFragment}> = ({run}) => {
+  const {basePath} = React.useContext(AppContext);
 
-  componentDidUpdate() {
-    this.updatePageAttributes();
-  }
-
-  componentWillUnmount() {
-    link.href = '/favicon.ico';
-    title.textContent = 'Dagit';
-  }
-
-  updatePageAttributes() {
-    const {status, pipeline, runId} = this.props.run;
-
+  React.useEffect(() => {
+    const {status, pipeline, runId} = run;
     title.textContent = `${pipeline.name} ${runId} [${status}]`;
-    link.href = FaviconsForStatus[status] || '/favicon.ico';
-  }
+    link.href = `${basePath}${FaviconsForStatus[status] || '/favicon.ico'}`;
 
-  render() {
-    return <span />;
-  }
-}
+    () => {
+      link.href = '/favicon.ico';
+      title.textContent = 'Dagit';
+    };
+  }, [basePath, run]);
+
+  return <span />;
+};
 
 export const RUN_STATUS_PIPELINE_RUN_FRAGMENT = gql`
   fragment RunStatusPipelineRunFragment on PipelineRun {

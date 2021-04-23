@@ -238,7 +238,13 @@
         "StartupProbe": {
             "title": "StartupProbe",
             "type": "object",
-            "properties": {},
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "default": true,
+                    "type": "boolean"
+                }
+            },
             "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "Dagit": {
@@ -502,6 +508,10 @@
                     "title": "Postgresqldatabase",
                     "type": "string"
                 },
+                "postgresqlParams": {
+                    "title": "Postgresqlparams",
+                    "type": "object"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__dagster__subschema__postgresql__Service"
                 }
@@ -513,6 +523,7 @@
                 "postgresqlUsername",
                 "postgresqlPassword",
                 "postgresqlDatabase",
+                "postgresqlParams",
                 "service"
             ]
         },

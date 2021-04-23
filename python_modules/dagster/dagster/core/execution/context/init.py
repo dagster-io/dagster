@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Dict, Optional, Set
+from typing import AbstractSet, Any, Dict, Optional
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -43,7 +43,7 @@ class InitResourceContext(
         pipeline_run: Optional[PipelineRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
         resource_instance_dict: Optional[Dict[str, Any]] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         instance: Optional[DagsterInstance] = None,
         pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
     ):

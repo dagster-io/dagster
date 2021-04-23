@@ -225,18 +225,24 @@ def get_test_project_external_repo(container_image=None):
             container_image=container_image,
         )
     ).create_location() as location:
-        yield location.get_repository("demo_execution_repo")
+        yield location, location.get_repository("demo_execution_repo")
 
 
 @contextmanager
 def get_test_project_external_pipeline(pipeline_name, container_image=None):
-    with get_test_project_external_repo(container_image=container_image) as repo:
+    with get_test_project_external_repo(container_image=container_image) as (_, repo):
         yield repo.get_full_external_pipeline(pipeline_name)
 
 
 @contextmanager
+def get_test_project_location_and_external_pipeline(pipeline_name, container_image=None):
+    with get_test_project_external_repo(container_image=container_image) as (location, repo):
+        yield location, repo.get_full_external_pipeline(pipeline_name)
+
+
+@contextmanager
 def get_test_project_external_schedule(schedule_name, container_image=None):
-    with get_test_project_external_repo(container_image=container_image) as repo:
+    with get_test_project_external_repo(container_image=container_image) as (_, repo):
         yield repo.get_external_schedule(schedule_name)
 
 

@@ -3,9 +3,13 @@ import re
 import pytest
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.config import Field
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterHomeNotSetError,
+    DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance, _dagster_home
+from dagster.core.instance import DagsterInstance
 from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
@@ -126,10 +130,10 @@ def test_submit_run():
 def test_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
         with pytest.raises(
-            DagsterInvariantViolationError,
+            DagsterHomeNotSetError,
             match=r"The environment variable \$DAGSTER_HOME is not set\.",
         ):
-            _dagster_home()
+            DagsterInstance.get()
 
 
 def test_invalid_configurable_class():
@@ -167,7 +171,7 @@ def test_dagster_home_not_abspath(dirname):
             DagsterInvariantViolationError,
             match=re.escape('$DAGSTER_HOME "{}" must be an absolute path.'.format(dirname)),
         ):
-            _dagster_home()
+            DagsterInstance.get()
 
 
 def test_dagster_home_not_dir():
@@ -180,7 +184,7 @@ def test_dagster_home_not_dir():
                 '$DAGSTER_HOME "{}" is not a directory or does not exist.'.format(dirname)
             ),
         ):
-            _dagster_home()
+            DagsterInstance.get()
 
 
 class TestInstanceSubclass(DagsterInstance):

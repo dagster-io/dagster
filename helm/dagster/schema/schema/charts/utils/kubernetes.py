@@ -110,12 +110,14 @@ class LivenessProbe(BaseModel):
 
 
 class StartupProbe(BaseModel):
+    enabled: bool = True
+
     class Config:
         schema_extra = {
             "$ref": create_definition_ref(
                 "io.k8s.api.core.v1.Probe",
                 version=SupportedKubernetes.V1_16,
-            )
+            ),
         }
 
 

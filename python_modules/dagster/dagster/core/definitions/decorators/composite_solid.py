@@ -2,9 +2,6 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
-from dagster.core.definitions.definition_config_schema import (
-    convert_user_facing_definition_config_schema,
-)
 
 from ..composition import do_composition
 from ..input import InputDefinition
@@ -23,11 +20,11 @@ class _CompositeSolid:
         config_fn: Optional[Callable[[dict], dict]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(output_defs, "output", OutputDefinition)
         self.description = check.opt_str_param(description, "description")
 
-        self.config_schema = convert_user_facing_definition_config_schema(config_schema)
+        self.config_schema = config_schema  # gets validated in do_composition
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
 
     def __call__(self, fn: Callable[..., Any]):
@@ -88,14 +85,18 @@ def composite_solid(
         name (Optional[str]): Name for the new composite solid. Must be unique within any
             :py:class:`PipelineDefinition` using the solid.
         description (Optional[str]): Human-readable description of the new composite solid.
-        input_defs (Optional[List[InputDefinition]]): Input definitions for the composite solid.
-            If not provided explicitly, these will be inferred from typehints.
+        input_defs (Optional[List[InputDefinition]]):
+            Information about the inputs that this composite solid maps. Information provided here
+            will be combined with what can be inferred from the function signature, with these
+            explicit InputDefinitions taking precedence.
 
-            Uses of these inputs in the body of the decorated composition function will be used to
-            infer the appropriate set of :py:class:`InputMappings <InputMapping>` passed to the
-            underlying :py:class:`CompositeSolidDefinition`.
-        output_defs (Optional[List[OutputDefinition]]): Output definitions for the composite solid.
-            If not provided explicitly, these will be inferred from typehints.
+            Uses of inputs in the body of the decorated composition function will determine
+            the :py:class:`InputMappings <InputMapping>` passed to the underlying
+            :py:class:`CompositeSolidDefinition`.
+        output_defs (Optional[List[OutputDefinition]]):
+            Information about the outputs this composite solid maps. Information provided here
+            will be combined with what can be inferred from the return type signature if there
+            is only one OutputDefinition.
 
             Uses of these outputs in the body of the decorated composition function, as well as the
             return value of the decorated function, will be used to infer the appropriate set of
@@ -103,17 +104,17 @@ def composite_solid(
             :py:class:`CompositeSolidDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
-        config_schema (Optional[ConfigSchema]): The schema for the config. Must be combined with the
-            `config_fn` argument in order to transform this config into the config for the contained
-            solids.
+        config_schema (Optional[ConfigSchema]): If the `config_fn` argument is provided, this
+            argument can be provided to set the schema for outer config that is passed to the
+            `config_fn`. If `config_fn` is provided, but this argument is not provided, any config
+            will be accepted.
         config_fn (Callable[[dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
-            composite solid.
-
-            Config mappings require the configuration field to be specified as ``config_schema``, which
-            will be exposed as the configuration field for the composite solid, as well as a
-            configuration mapping function, ``config_fn``, which maps the config provided to the
+            composite solid.  ``config_fn``, maps the config provided to the
             composite solid to the config that will be provided to the child solids.
+
+            If this argument is provided, the `config_schema` argument can also be provided to limit
+            what config values can be passed to the composite solid.
 
     Examples:
 

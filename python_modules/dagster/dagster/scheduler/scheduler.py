@@ -41,9 +41,6 @@ class _ScheduleLaunchContext:
         if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             self.update_state(JobTickStatus.FAILURE, error=error_data)
-            self._write()
-            self._logger.error(f"Error launching scheduled run: {error_data.to_string()}")
-            return True  # Swallow the exception after logging in the tick DB
 
         self._write()
 
@@ -253,21 +250,12 @@ def _schedule_runs_at_time(
         external_repo.handle,
     )
 
-    try:
-        schedule_execution_data = repo_location.get_external_schedule_execution_data(
-            instance=instance,
-            repository_handle=external_repo.handle,
-            schedule_name=external_schedule.name,
-            scheduled_execution_time=schedule_time,
-        )
-    except Exception:  # pylint: disable=broad-except
-        error = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(
-            f"Failed to fetch schedule data for {external_schedule.name}: {error.to_string()}"
-        )
-        tick_context.update_state(JobTickStatus.FAILURE, error=error)
-        yield
-        return
+    schedule_execution_data = repo_location.get_external_schedule_execution_data(
+        instance=instance,
+        repository_handle=external_repo.handle,
+        schedule_name=external_schedule.name,
+        scheduled_execution_time=schedule_time,
+    )
 
     if not schedule_execution_data.run_requests:
         logger.info(f"No run requests returned for {external_schedule.name}, skipping")
@@ -296,7 +284,7 @@ def _schedule_runs_at_time(
                     f"Run {run.run_id} already created for this execution of {external_schedule.name}"
                 )
         else:
-            run = _create_scheduler_run(
+            run, errors = _create_scheduler_run(
                 instance,
                 logger,
                 schedule_time,
@@ -305,7 +293,8 @@ def _schedule_runs_at_time(
                 external_pipeline,
                 run_request,
             )
-            yield
+            for error in errors:
+                yield error
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
@@ -314,9 +303,11 @@ def _schedule_runs_at_time(
                 instance.submit_run(run.run_id, external_pipeline)
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:  # pylint: disable=broad-except
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
                 logger.error(
                     f"Run {run.run_id} created successfully but failed to launch: {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
                 )
+                yield error_info
 
         _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
         tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
@@ -411,4 +402,4 @@ def _create_scheduler_run(
         instance.report_run_failed(possibly_invalid_pipeline_run)
         error_string = "\n".join([error.to_string() for error in execution_plan_errors])
         logger.error(f"Failed to fetch execution plan for {external_schedule.name}: {error_string}")
-    return possibly_invalid_pipeline_run
+    return (possibly_invalid_pipeline_run, execution_plan_errors)

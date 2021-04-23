@@ -38,6 +38,7 @@ snapshots['test_basic_solids_config 1'] = {
             }
         },
         'in_memory': {
+            'config': 'AnyType'
         }
     },
     'loggers': {
@@ -49,6 +50,9 @@ snapshots['test_basic_solids_config 1'] = {
         }
     },
     'resources': {
+        'io_manager': {
+            'config': 'AnyType'
+        }
     },
     'solids': {
         'required_field_solid': {
@@ -64,6 +68,7 @@ snapshots['test_basic_solids_config 1'] = {
             }
         },
         'in_memory': {
+            'config': 'AnyType'
         }
     }
 }
@@ -103,6 +108,7 @@ snapshots['test_two_modes 2'] = {
             }
         },
         'in_memory': {
+            'config': 'AnyType'
         }
     },
     'loggers': {
@@ -114,6 +120,9 @@ snapshots['test_two_modes 2'] = {
         }
     },
     'resources': {
+        'io_manager': {
+            'config': 'AnyType'
+        },
         'value': {
             'config': {
                 'mode_one_field': ''
@@ -129,6 +138,7 @@ snapshots['test_two_modes 2'] = {
             }
         },
         'in_memory': {
+            'config': 'AnyType'
         }
     }
 }
@@ -168,6 +178,7 @@ snapshots['test_two_modes 4'] = {
             }
         },
         'in_memory': {
+            'config': 'AnyType'
         }
     },
     'loggers': {
@@ -179,6 +190,9 @@ snapshots['test_two_modes 4'] = {
         }
     },
     'resources': {
+        'io_manager': {
+            'config': 'AnyType'
+        },
         'value': {
             'config': {
                 'mode_two_field': 0
@@ -194,6 +208,7 @@ snapshots['test_two_modes 4'] = {
             }
         },
         'in_memory': {
+            'config': 'AnyType'
         }
     }
 }

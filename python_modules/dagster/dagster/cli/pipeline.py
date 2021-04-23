@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import textwrap
+import warnings
 
 import click
 import pendulum
@@ -37,6 +38,7 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
+from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
@@ -76,12 +78,10 @@ def apply_click_params(command, *click_params):
 )
 @repository_target_argument
 def pipeline_list_command(**kwargs):
-    with DagsterInstance.get() as instance:
-        return execute_list_command(kwargs, click.echo, instance)
+    return execute_list_command(kwargs, click.echo)
 
 
-def execute_list_command(cli_args, print_fn, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
+def execute_list_command(cli_args, print_fn):
     with get_external_repository_from_kwargs(cli_args) as external_repository:
         title = "Repository {name}".format(name=external_repository.name)
         print_fn(title)
@@ -321,8 +321,14 @@ def execute_list_versions_command(instance, kwargs):
 )
 def pipeline_execute_command(**kwargs):
     with capture_interrupts():
-        with DagsterInstance.get() as instance:
-            execute_execute_command(instance, kwargs)
+        if is_dagster_home_set():
+            with DagsterInstance.get() as instance:
+                execute_execute_command(instance, kwargs)
+        else:
+            warnings.warn(
+                "DAGSTER_HOME is not set, no metadata will be recorded for this execution.\n",
+            )
+            execute_execute_command(DagsterInstance.ephemeral(), kwargs)
 
 
 @telemetry_wrapper

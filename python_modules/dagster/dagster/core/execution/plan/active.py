@@ -14,7 +14,7 @@ from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.utils.interrupts import pop_captured_interrupt
 
-from .outputs import StepOutputHandle
+from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan
 from .step import ExecutionStep
 
@@ -386,23 +386,25 @@ class ActiveExecution:
     def handle_event(self, dagster_event: DagsterEvent) -> None:
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
+        step_key = cast(str, dagster_event.step_key)
         if dagster_event.is_step_failure:
-            self.mark_failed(dagster_event.step_key)
+            self.mark_failed(step_key)
         elif dagster_event.is_step_success:
-            self.mark_success(dagster_event.step_key)
+            self.mark_success(step_key)
         elif dagster_event.is_step_skipped:
-            self.mark_skipped(dagster_event.step_key)
+            self.mark_skipped(step_key)
         elif dagster_event.is_step_up_for_retry:
             self.mark_up_for_retry(
-                dagster_event.step_key,
+                step_key,
                 time.time() + dagster_event.step_retry_data.seconds_to_wait
                 if dagster_event.step_retry_data.seconds_to_wait
                 else None,
             )
         elif dagster_event.is_successful_output:
-            self.mark_step_produced_output(dagster_event.event_specific_data.step_output_handle)
+            event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
+            self.mark_step_produced_output(event_specific_data.step_output_handle)
             if dagster_event.step_output_data.step_output_handle.mapping_key:
-                self._successful_dynamic_outputs[dagster_event.step_key][
+                self._successful_dynamic_outputs[step_key][
                     dagster_event.step_output_data.step_output_handle.output_name
                 ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 

@@ -16,7 +16,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
             instantiate the logger. This logger will be automatically invoked whenever the methods
             on ``context.log`` are called from within solid compute logic.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
-            `init_context.logger_config`.
+            `init_context.logger_config`. If not set, Dagster will accept any config provided.
         description (Optional[str]): A human-readable description of this logger.
     """
 
@@ -59,7 +59,7 @@ def logger(config_schema=None, description=None):
 
     Args:
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
-            `init_context.logger_config`.
+            `init_context.logger_config`. If not set, Dagster will accept any config provided.
         description (Optional[str]): A human-readable description of the logger.
     """
     # This case is for when decorator is used bare, without arguments.

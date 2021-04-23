@@ -4,6 +4,7 @@ Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
+import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
 
@@ -502,6 +503,7 @@ class HookContext:
         solid_config (Any): The parsed config specific to this solid.
         pipeline_name (str): The name of the pipeline where this hook is being triggered.
         run_id (str): The id of the run where this hook is being triggered.
+        mode_def (ModeDefinition): The mode with which the pipeline is being run.
     """
 
     def __init__(
@@ -533,8 +535,20 @@ class HookContext:
         return self._step_execution_context.solid
 
     @property
+    def step(self) -> ExecutionStep:
+        warnings.warn(
+            "The step property of HookContext has been deprecated, and will be removed "
+            "in a future release."
+        )
+        return self._step_execution_context.step
+
+    @property
     def step_key(self) -> str:
         return self._step_execution_context.step.key
+
+    @property
+    def mode_def(self) -> ModeDefinition:
+        return self._step_execution_context.mode_def
 
     @property
     def required_resource_keys(self) -> Set[str]:

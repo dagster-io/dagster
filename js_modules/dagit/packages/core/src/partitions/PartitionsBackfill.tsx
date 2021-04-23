@@ -601,7 +601,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       <div className={Classes.DIALOG_FOOTER}>
         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
           <TagEditor
-            tags={tags}
+            editableTags={tags}
             onChange={setTags}
             open={tagEditorOpen}
             onRequestClose={() => setTagEditorOpen(false)}

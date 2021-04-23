@@ -37,7 +37,6 @@ def _instance_wrapper(instance):
 def execute_pipeline_on_celery(
     pipeline_name, instance=None, run_config=None, tempdir=None, tags=None, subset=None
 ):
-
     with tempdir_wrapper(tempdir) as tempdir:
         pipeline_def = ReconstructablePipeline.for_file(
             REPO_FILE, pipeline_name

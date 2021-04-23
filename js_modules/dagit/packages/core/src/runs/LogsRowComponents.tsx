@@ -1,5 +1,7 @@
 import {Colors} from '@blueprintjs/core';
+import qs from 'qs';
 import * as React from 'react';
+import {useLocation, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
@@ -119,6 +121,7 @@ const SolidColumnTooltipStyle = JSON.stringify({
 // Timestamp Column
 
 export const TimestampColumn: React.FC<{time: string | null}> = React.memo((props) => {
+  const location = useLocation();
   const widths = React.useContext(ColumnWidthsContext);
   const [timezone] = React.useContext(TimezoneContext);
   const timeString = () => {
@@ -144,9 +147,11 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
     return '';
   };
 
+  const href = `${location.pathname}?${qs.stringify({focusedTime: props.time})}`;
+
   return (
     <TimestampColumnContainer style={{width: widths.timestamp}}>
-      {timeString()}
+      <Link to={href}>{timeString()}</Link>
     </TimestampColumnContainer>
   );
 });
@@ -154,7 +159,18 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
 const TimestampColumnContainer = styled.div`
   flex-shrink: 0;
   text-align: right;
-  color: ${Colors.GRAY3};
+
+  a:link,
+  a:visited,
+  a:hover,
+  a:active {
+    color: ${Colors.GRAY3};
+  }
+
+  a:hover,
+  a:active {
+    text-decoration: underline;
+  }
 `;
 
 export const EventTypeColumn: React.FC = (props) => {

@@ -2,7 +2,7 @@ import json
 import os
 
 import docker
-from dagster import Field, StringSource, check
+from dagster import Field, Permissive, StringSource, check
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.launcher.base import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -25,14 +25,43 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             docker container.
         network (Optional[str]): Name of the network this container to which to connect the
             launched container at creation time.
+        container_kwargs(Optional[Dict[str, Any]]): Additional kwargs to pass into
+            containers.create. See https://docker-py.readthedocs.io/en/stable/containers.html
+            for the full list of available options.
     """
 
-    def __init__(self, inst_data=None, image=None, registry=None, env_vars=None, network=None):
+    def __init__(
+        self,
+        inst_data=None,
+        image=None,
+        registry=None,
+        env_vars=None,
+        network=None,
+        container_kwargs=None,
+    ):
         self._inst_data = inst_data
         self._image = image
         self._registry = registry
         self._env_vars = env_vars
         self._network = network
+        self._container_kwargs = check.opt_dict_param(
+            container_kwargs, "container_kwargs", key_type=str
+        )
+
+        if "image" in self._container_kwargs:
+            raise Exception(
+                "'image' cannot be used in 'container_kwargs'. Use the 'image' config key instead."
+            )
+
+        if "environment" in self._container_kwargs and env_vars:
+            raise Exception(
+                "Cannot specify both `env_vars` in DockerRunLauncher config and `environment` in `container_kwargs`. Choose one or the other."
+            )
+
+        if "network" in self._container_kwargs and network:
+            raise Exception(
+                "Cannot specify both `network` in DockerRunLauncher config and `network` in `container_kwargs`. Choose one or the other."
+            )
 
         super().__init__()
 
@@ -66,6 +95,13 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 str,
                 is_required=False,
                 description="Name of the network this container to which to connect the launched container at creation time",
+            ),
+            "container_kwargs": Field(
+                Permissive(),
+                is_required=False,
+                description="key-value pairs that can be passed into containers.create. See "
+                "https://docker-py.readthedocs.io/en/stable/containers.html for the full list "
+                "of available options.",
             ),
         }
 
@@ -128,6 +164,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=self._network,
+                **self._container_kwargs,
             )
 
         except docker.errors.ImageNotFound:
@@ -138,6 +175,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=self._network,
+                **self._container_kwargs,
             )
 
         self._instance.report_engine_event(

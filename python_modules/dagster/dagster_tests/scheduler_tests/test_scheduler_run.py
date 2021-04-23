@@ -706,8 +706,6 @@ def test_bad_env_fn(external_repo_context, capfd):
 
             captured = capfd.readouterr()
 
-            assert "Failed to fetch schedule data for bad_env_fn_schedule: " in captured.out
-
             assert (
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule"
                 in captured.out
@@ -750,9 +748,6 @@ def test_bad_should_execute(external_repo_context, capfd):
             )
 
             captured = capfd.readouterr()
-            assert (
-                "Failed to fetch schedule data for bad_should_execute_schedule: "
-            ) in captured.out
 
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
@@ -1574,11 +1569,6 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
             )
 
             captured = capfd.readouterr()
-
-            assert (
-                "Failed to fetch schedule data for multi_run_schedule_with_missing_run_key: "
-                in captured.out
-            )
 
             assert (
                 "Error occurred during the execution function for schedule "

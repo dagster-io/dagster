@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, Optional, Union
 
 from dagster import Field, check
 from dagster.config.evaluate_value_result import EvaluateValueResult
-from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 
 from .definition_config_schema import (
     ConfiguredDefinitionConfigSchema,

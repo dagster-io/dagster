@@ -7,7 +7,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import frozentags
 
 from .config import ConfigMapping
-from .decorators.solid import validate_solid_fn
+from .decorators.solid import resolve_checked_solid_fn_inputs
 from .dependency import (
     DependencyDefinition,
     DynamicCollectDependencyDefinition,
@@ -15,11 +15,7 @@ from .dependency import (
     SolidInvocation,
 )
 from .hook import HookDefinition
-from .inference import (
-    has_explicit_return_type,
-    infer_input_definitions_for_graph,
-    infer_output_definitions,
-)
+from .inference import infer_output_props
 from .output import OutputDefinition
 from .solid import NodeDefinition
 from .utils import check_valid_name, validate_tags
@@ -704,23 +700,23 @@ def do_composition(
             This should be removed in 0.11.0.
     """
 
-    actual_input_defs = (
-        provided_input_defs
-        if provided_input_defs is not None
-        else infer_input_definitions_for_graph(decorator_name, graph_name, fn)
-    )
+    if provided_output_defs is None:
+        outputs_are_explicit = False
+        actual_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
+    elif len(provided_output_defs) == 1:
+        outputs_are_explicit = True
+        actual_output_defs = [provided_output_defs[0].combine_with_inferred(infer_output_props(fn))]
+    else:
+        outputs_are_explicit = True
+        actual_output_defs = provided_output_defs
 
-    actual_output_defs, outputs_are_explicit = (
-        (provided_output_defs, True)
-        if provided_output_defs is not None
-        else (
-            infer_output_definitions(decorator_name, graph_name, fn),
-            has_explicit_return_type(fn),
-        )
-    )
-
-    positional_inputs = validate_solid_fn(
-        decorator_name, graph_name, fn, actual_input_defs, exclude_nothing=False
+    actual_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+        decorator_name,
+        graph_name,
+        fn,
+        provided_input_defs,
+        has_context_arg=False,
+        exclude_nothing=False,
     )
 
     kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs}
@@ -803,23 +799,12 @@ def do_composition(
 
 
 def _get_validated_config_mapping(name, config_schema, config_fn):
-    """Config mapping must set composite config_schema and config_fn or neither."""
-
     if config_fn is None and config_schema is None:
         return None
-    elif config_fn is not None and config_schema is not None:
+    elif config_fn is not None:
         return ConfigMapping(config_fn=config_fn, config_schema=config_schema)
     else:
-        if config_fn is not None:
-            raise DagsterInvalidDefinitionError(
-                "@composite_solid '{solid_name}' defines a configuration function {config_fn} "
-                "but does not define a configuration schema. If you intend this composite to take "
-                "no config_schema, you must explicitly specify config_schema={{}}.".format(
-                    solid_name=name, config_fn=config_fn.__name__
-                )
-            )
-        else:
-            raise DagsterInvalidDefinitionError(
-                "@composite_solid '{solid_name}' defines a configuration schema but does not "
-                "define a configuration function.".format(solid_name=name)
-            )
+        raise DagsterInvalidDefinitionError(
+            f"@composite_solid '{name}' defines a configuration schema but does not "
+            "define a configuration function."
+        )

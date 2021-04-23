@@ -10,7 +10,6 @@ import pendulum
 from dagster import __version__
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.controller import (
-    DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
     all_daemons_live,

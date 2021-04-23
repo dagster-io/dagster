@@ -1,8 +1,18 @@
 import inspect
 import sys
-from typing import Any, Callable, Dict, Generator, List, NoReturn, Optional, Set, Tuple, Union
-
-from future.utils import raise_with_traceback
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    NoReturn,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 Type = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
@@ -101,33 +111,33 @@ def _param_invariant_exception(param_name: str, desc: str = None) -> ParameterCh
 
 def failed(desc: str) -> NoReturn:  # type: ignore[misc]
     if not isinstance(desc, str):
-        raise_with_traceback(CheckError("desc argument must be a string"))
+        raise CheckError("desc argument must be a string")
 
-    raise_with_traceback(CheckError("Failure condition: {desc}".format(desc=desc)))
+    raise CheckError("Failure condition: {desc}".format(desc=desc))
 
 
 def not_implemented(desc: str):
     if not isinstance(desc, str):
-        raise_with_traceback(CheckError("desc argument must be a string"))
+        raise CheckError("desc argument must be a string")
 
-    raise_with_traceback(NotImplementedCheckError("Not implemented: {desc}".format(desc=desc)))
+    raise NotImplementedCheckError(f"Not implemented: {desc}")
 
 
 def inst(obj: Any, ttype: Type, desc: str = None) -> Any:
     if not isinstance(obj, ttype):
-        raise_with_traceback(_type_mismatch_error(obj, ttype, desc))
+        raise _type_mismatch_error(obj, ttype, desc)
     return obj
 
 
 def opt_inst(obj: Any, ttype: Type, desc: str = None, default: Any = None) -> Any:
     if obj is not None and not isinstance(obj, ttype):
-        raise_with_traceback(_type_mismatch_error(obj, ttype, desc))
+        raise _type_mismatch_error(obj, ttype, desc)
     return default if obj is None else obj
 
 
 def subclass(obj: Any, superclass: Type, desc: str = None) -> Any:
     if not issubclass(obj, superclass):
-        raise_with_traceback(_type_mismatch_error(obj, superclass, desc))
+        raise _type_mismatch_error(obj, superclass, desc)
 
     return obj
 
@@ -135,157 +145,141 @@ def subclass(obj: Any, superclass: Type, desc: str = None) -> Any:
 def is_callable(obj: Any, desc: str = None) -> Callable:
     if not callable(obj):
         if desc:
-            raise_with_traceback(
-                CheckError(
-                    "Must be callable. Got {obj}. Description: {desc}".format(
-                        obj=repr(obj), desc=desc
-                    )
-                )
+            raise CheckError(
+                "Must be callable. Got {obj}. Description: {desc}".format(obj=repr(obj), desc=desc)
             )
         else:
-            raise_with_traceback(
-                CheckError(
-                    "Must be callable. Got {obj}. Description: {desc}".format(obj=obj, desc=desc)
-                )
+            raise CheckError(
+                "Must be callable. Got {obj}. Description: {desc}".format(obj=obj, desc=desc)
             )
-
     return obj
 
 
 def not_none_param(obj: Any, param_name: str) -> Any:
     if obj is None:
-        raise_with_traceback(
-            _param_invariant_exception(
-                param_name, "Param {param_name} cannot be none".format(param_name=param_name)
-            )
-        )
+        raise _param_invariant_exception(param_name, f"Param {param_name} cannot be none")
     return obj
 
 
 def invariant(condition: Any, desc: str = None) -> bool:
     if not condition:
         if desc:
-            raise_with_traceback(
-                CheckError("Invariant failed. Description: {desc}".format(desc=desc))
-            )
+            raise CheckError(f"Invariant failed. Description: {desc}")
         else:
-            raise_with_traceback(CheckError("Invariant failed."))
+            raise CheckError("Invariant failed.")
 
     return True
 
 
 def param_invariant(condition: Any, param_name: str, desc: str = None):
     if not condition:
-        raise_with_traceback(_param_invariant_exception(param_name, desc))
+        raise _param_invariant_exception(param_name, desc)
 
 
 def inst_param(obj: Any, param_name: str, ttype: Type, additional_message: str = None) -> Any:
     if not isinstance(obj, ttype):
-        raise_with_traceback(
-            _param_type_mismatch_exception(
-                obj, ttype, param_name, additional_message=additional_message
-            )
+        raise _param_type_mismatch_exception(
+            obj, ttype, param_name, additional_message=additional_message
         )
     return obj
 
 
 def opt_inst_param(obj: Any, param_name: str, ttype: Type, default: Any = None) -> Any:
     if obj is not None and not isinstance(obj, ttype):
-        raise_with_traceback(_param_type_mismatch_exception(obj, ttype, param_name))
+        raise _param_type_mismatch_exception(obj, ttype, param_name)
     return default if obj is None else obj
 
 
 def callable_param(obj: Any, param_name: str) -> Callable:
     if not callable(obj):
-        raise_with_traceback(_not_callable_exception(obj, param_name))
+        raise _not_callable_exception(obj, param_name)
     return obj
 
 
 def opt_callable_param(obj: Any, param_name: str, default: Callable = None) -> Optional[Callable]:
     if obj is not None and not callable(obj):
-        raise_with_traceback(_not_callable_exception(obj, param_name))
+        raise _not_callable_exception(obj, param_name)
     return default if obj is None else obj
 
 
 def int_param(obj: Any, param_name: str) -> int:
     if not isinstance(obj, int):
-        raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
+        raise _param_type_mismatch_exception(obj, int, param_name)
     return obj
 
 
 def int_value_param(obj: Any, value: int, param_name: str) -> int:
     if not isinstance(obj, int):
-        raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
+        raise _param_type_mismatch_exception(obj, int, param_name)
     if obj != value:
-        raise_with_traceback(
-            _param_invariant_exception(param_name, "Should be equal to {value}".format(value=value))
-        )
+        raise _param_invariant_exception(param_name, f"Should be equal to {value}")
+
     return obj
 
 
 def opt_int_param(obj: Any, param_name: str, default: int = None) -> Optional[int]:
     if obj is not None and not isinstance(obj, int):
-        raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
+        raise _param_type_mismatch_exception(obj, int, param_name)
     return default if obj is None else obj
 
 
 def float_param(obj: Any, param_name: str) -> float:
     if not isinstance(obj, float):
-        raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
+        raise _param_type_mismatch_exception(obj, float, param_name)
     return obj
 
 
 def opt_numeric_param(obj: Any, param_name: str, default: Numeric = None) -> Optional[Numeric]:
     if obj is not None and not isinstance(obj, (int, float)):
-        raise_with_traceback(_param_type_mismatch_exception(obj, (int, float), param_name))
+        raise _param_type_mismatch_exception(obj, (int, float), param_name)
     return default if obj is None else obj
 
 
 def numeric_param(obj: Any, param_name: str) -> Numeric:
     if not isinstance(obj, (int, float)):
-        raise_with_traceback(_param_type_mismatch_exception(obj, (int, float), param_name))
+        raise _param_type_mismatch_exception(obj, (int, float), param_name)
     return obj
 
 
 def opt_float_param(obj: Any, param_name: str, default: float = None) -> Optional[float]:
     if obj is not None and not isinstance(obj, float):
-        raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
+        raise _param_type_mismatch_exception(obj, float, param_name)
     return default if obj is None else obj
 
 
 def str_param(obj: Any, param_name: str) -> str:
     if not isinstance(obj, str):
-        raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
+        raise _param_type_mismatch_exception(obj, str, param_name)
     return obj
 
 
 def opt_str_param(obj: Any, param_name: str, default: str = None) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
-        raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
+        raise _param_type_mismatch_exception(obj, str, param_name)
     return default if obj is None else obj
 
 
 def opt_nonempty_str_param(obj: Any, param_name: str, default: str = None) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
-        raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
+        raise _param_type_mismatch_exception(obj, str, param_name)
     return default if obj is None or obj == "" else obj
 
 
 def bool_param(obj: Any, param_name: str) -> bool:
     if not isinstance(obj, bool):
-        raise_with_traceback(_param_type_mismatch_exception(obj, bool, param_name))
+        raise _param_type_mismatch_exception(obj, bool, param_name)
     return obj
 
 
 def opt_bool_param(obj: Any, param_name: str, default: bool = None) -> Optional[bool]:
     if obj is not None and not isinstance(obj, bool):
-        raise_with_traceback(_param_type_mismatch_exception(obj, bool, param_name))
+        raise _param_type_mismatch_exception(obj, bool, param_name)
     return default if obj is None else obj
 
 
 def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:
     if not isinstance(obj_list, list):
-        raise_with_traceback(_type_mismatch_error(obj_list, list, desc))
+        raise _type_mismatch_error(obj_list, list, desc)
 
     if not of_type:
         return obj_list
@@ -295,7 +289,7 @@ def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:
 
 def is_tuple(obj_tuple: Any, of_type: Type = None, desc: str = None) -> Tuple:
     if not isinstance(obj_tuple, tuple):
-        raise_with_traceback(_type_mismatch_error(obj_tuple, tuple, desc))
+        raise _type_mismatch_error(obj_tuple, tuple, desc)
 
     if not of_type:
         return obj_tuple
@@ -307,9 +301,7 @@ def list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List:
     from dagster.utils import frozenlist
 
     if not isinstance(obj_list, (frozenlist, list)):
-        raise_with_traceback(
-            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
-        )
+        raise _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
 
     if not of_type:
         return obj_list
@@ -317,9 +309,9 @@ def list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List:
     return _check_list_items(obj_list, of_type)
 
 
-def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> Set:
+def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> AbstractSet:
     if not isinstance(obj_set, (frozenset, set)):
-        raise_with_traceback(_param_type_mismatch_exception(obj_set, (frozenset, set), param_name))
+        raise _param_type_mismatch_exception(obj_set, (frozenset, set), param_name)
 
     if not of_type:
         return obj_set
@@ -329,7 +321,7 @@ def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> Set:
 
 def tuple_param(obj: Any, param_name: str, of_type: Type = None) -> Tuple:
     if not isinstance(obj, tuple):
-        raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
+        raise _param_type_mismatch_exception(obj, tuple, param_name)
 
     if of_type is None:
         return obj
@@ -340,11 +332,11 @@ def tuple_param(obj: Any, param_name: str, of_type: Type = None) -> Tuple:
 def matrix_param(matrix: Any, param_name: str, of_type: Type = None) -> List[List]:
     matrix = list_param(matrix, param_name, of_type=list)
     if not matrix:
-        raise_with_traceback(CheckError("You must pass a list of lists. Received an empty list."))
+        raise CheckError("You must pass a list of lists. Received an empty list.")
     for sublist in matrix:
         sublist = list_param(sublist, "sublist_{}".format(param_name), of_type=of_type)
         if len(sublist) != len(matrix[0]):
-            raise_with_traceback(CheckError("All sublists in matrix must have the same length"))
+            raise CheckError("All sublists in matrix must have the same length")
     return matrix
 
 
@@ -352,7 +344,7 @@ def opt_tuple_param(
     obj: Any, param_name: str, default: Tuple = None, of_type: Type = None
 ) -> Optional[Tuple]:
     if obj is not None and not isinstance(obj, tuple):
-        raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
+        raise _param_type_mismatch_exception(obj, tuple, param_name)
 
     if obj is None:
         return default
@@ -372,17 +364,16 @@ def _check_list_items(obj_list: Any, of_type: Type) -> List:
                 )
             else:
                 additional_message = ""
-            raise_with_traceback(
-                CheckError(
-                    "Member of list mismatches type. Expected {of_type}. Got {obj_repr} of type "
-                    "{obj_type}.{additional_message}".format(
-                        of_type=of_type,
-                        obj_repr=repr(obj),
-                        obj_type=type(obj),
-                        additional_message=additional_message,
-                    )
+            raise CheckError(
+                "Member of list mismatches type. Expected {of_type}. Got {obj_repr} of type "
+                "{obj_type}.{additional_message}".format(
+                    of_type=of_type,
+                    obj_repr=repr(obj),
+                    obj_type=type(obj),
+                    additional_message=additional_message,
                 )
             )
+
     return obj_list
 
 
@@ -396,17 +387,16 @@ def _check_set_items(obj_set: Any, of_type: Type) -> Set:
                 )
             else:
                 additional_message = ""
-            raise_with_traceback(
-                CheckError(
-                    "Member of set mismatches type. Expected {of_type}. Got {obj_repr} of type "
-                    "{obj_type}.{additional_message}".format(
-                        of_type=of_type,
-                        obj_repr=repr(obj),
-                        obj_type=type(obj),
-                        additional_message=additional_message,
-                    )
+            raise CheckError(
+                "Member of set mismatches type. Expected {of_type}. Got {obj_repr} of type "
+                "{obj_type}.{additional_message}".format(
+                    of_type=of_type,
+                    obj_repr=repr(obj),
+                    obj_type=type(obj),
+                    additional_message=additional_message,
                 )
             )
+
     return obj_set
 
 
@@ -415,12 +405,11 @@ def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
         len_tuple = len(obj_tuple)
         len_type = len(of_type)
         if not len_tuple == len_type:
-            raise_with_traceback(
-                CheckError(
-                    "Tuple mismatches type: tuple had {len_tuple} members but type had "
-                    "{len_type}".format(len_tuple=len_tuple, len_type=len_type)
-                )
+            raise CheckError(
+                "Tuple mismatches type: tuple had {len_tuple} members but type had "
+                "{len_type}".format(len_tuple=len_tuple, len_type=len_type)
             )
+
         for (i, obj) in enumerate(obj_tuple):
             of_type_i = of_type[i]
             if not isinstance(obj, of_type_i):
@@ -430,18 +419,17 @@ def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
                     )
                 else:
                     additional_message = ""
-                raise_with_traceback(
-                    CheckError(
-                        "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
-                        "{obj_repr} of type {obj_type}.{additional_message}".format(
-                            index=i,
-                            of_type=of_type_i,
-                            obj_repr=repr(obj),
-                            obj_type=type(obj),
-                            additional_message=additional_message,
-                        )
+                raise CheckError(
+                    "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
+                    "{obj_repr} of type {obj_type}.{additional_message}".format(
+                        index=i,
+                        of_type=of_type_i,
+                        obj_repr=repr(obj),
+                        obj_type=type(obj),
+                        additional_message=additional_message,
                     )
                 )
+
     else:
         for (i, obj) in enumerate(obj_tuple):
             if not isinstance(obj, of_type):
@@ -451,16 +439,14 @@ def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
                     )
                 else:
                     additional_message = ""
-                raise_with_traceback(
-                    CheckError(
-                        "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
-                        "{obj_repr} of type {obj_type}.{additional_message}".format(
-                            index=i,
-                            of_type=of_type,
-                            obj_repr=repr(obj),
-                            obj_type=type(obj),
-                            additional_message=additional_message,
-                        )
+                raise CheckError(
+                    "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
+                    "{obj_repr} of type {obj_type}.{additional_message}".format(
+                        index=i,
+                        of_type=of_type,
+                        obj_repr=repr(obj),
+                        obj_type=type(obj),
+                        additional_message=additional_message,
                     )
                 )
 
@@ -477,9 +463,8 @@ def opt_list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List
     from dagster.utils import frozenlist
 
     if obj_list is not None and not isinstance(obj_list, (frozenlist, list)):
-        raise_with_traceback(
-            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
-        )
+        raise _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+
     if not obj_list:
         return []
     if not of_type:
@@ -488,7 +473,7 @@ def opt_list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List
     return _check_list_items(obj_list, of_type)
 
 
-def opt_set_param(obj_set: Any, param_name: str, of_type: Type = None) -> Set:
+def opt_set_param(obj_set: Any, param_name: str, of_type: Type = None) -> AbstractSet:
     """Ensures argument obj_set is a set or None; in the latter case, instantiates an empty set
     and returns it.
 
@@ -496,7 +481,7 @@ def opt_set_param(obj_set: Any, param_name: str, of_type: Type = None) -> Set:
     by of_type.
     """
     if obj_set is not None and not isinstance(obj_set, (frozenset, set)):
-        raise_with_traceback(_param_type_mismatch_exception(obj_set, (frozenset, set), param_name))
+        raise _param_type_mismatch_exception(obj_set, (frozenset, set), param_name)
     if not obj_set:
         return set()
     if not of_type:
@@ -514,9 +499,8 @@ def opt_nullable_list_param(obj_list: Any, param_name: str, of_type: Type = None
     from dagster.utils import frozenlist
 
     if obj_list is not None and not isinstance(obj_list, (frozenlist, list)):
-        raise_with_traceback(
-            _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
-        )
+        raise _param_type_mismatch_exception(obj_list, (frozenlist, list), param_name)
+
     if not obj_list:
         return None if obj_list is None else []
     if not of_type:
@@ -536,26 +520,24 @@ def _check_key_value_types(
     specified by key_type, value_type.
     """
     if not isinstance(obj, dict):
-        raise_with_traceback(_type_mismatch_error(obj, dict))
+        raise _type_mismatch_error(obj, dict)
 
     for key, value in obj.items():
         if key_type and not key_check(key, key_type):
-            raise_with_traceback(
-                CheckError(
-                    "Key in dictionary mismatches type. Expected {key_type}. Got {obj_repr}".format(
-                        key_type=repr(key_type), obj_repr=repr(key)
-                    )
+            raise CheckError(
+                "Key in dictionary mismatches type. Expected {key_type}. Got {obj_repr}".format(
+                    key_type=repr(key_type), obj_repr=repr(key)
                 )
             )
+
         if value_type and not value_check(value, value_type):
-            raise_with_traceback(
-                CheckError(
-                    "Value in dictionary mismatches expected type for key {key}. Expected value "
-                    "of type {vtype}. Got value {value} of type {obj_type}.".format(
-                        vtype=repr(value_type), obj_type=type(value), key=key, value=value
-                    )
+            raise CheckError(
+                "Value in dictionary mismatches expected type for key {key}. Expected value "
+                "of type {vtype}. Got value {value} of type {obj_type}.".format(
+                    vtype=repr(value_type), obj_type=type(value), key=key, value=value
                 )
             )
+
     return obj
 
 
@@ -572,10 +554,8 @@ def dict_param(
     from dagster.utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
-        raise_with_traceback(
-            _param_type_mismatch_exception(
-                obj, (frozendict, dict), param_name, additional_message=additional_message
-            )
+        raise _param_type_mismatch_exception(
+            obj, (frozendict, dict), param_name, additional_message=additional_message
         )
 
     if not (key_type or value_type):
@@ -597,7 +577,7 @@ def opt_dict_param(
     from dagster.utils import frozendict
 
     if obj is not None and not isinstance(obj, (frozendict, dict)):
-        raise_with_traceback(_param_type_mismatch_exception(obj, (frozendict, dict), param_name))
+        raise _param_type_mismatch_exception(obj, (frozendict, dict), param_name)
 
     if not obj:
         return {}
@@ -618,7 +598,7 @@ def opt_nullable_dict_param(
     from dagster.utils import frozendict
 
     if obj is not None and not isinstance(obj, (frozendict, dict)):
-        raise_with_traceback(_param_type_mismatch_exception(obj, (frozendict, dict), param_name))
+        raise _param_type_mismatch_exception(obj, (frozendict, dict), param_name)
 
     if not obj:
         return None if obj is None else {}
@@ -643,7 +623,7 @@ def two_dim_dict_param(
     obj: Any, param_name: str, key_type: Type = str, value_type: Type = None
 ) -> Dict:
     if not isinstance(obj, dict):
-        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+        raise _param_type_mismatch_exception(obj, dict, param_name)
 
     return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
 
@@ -652,7 +632,7 @@ def opt_two_dim_dict_param(
     obj: Any, param_name: str, key_type: Type = str, value_type: Type = None
 ) -> Dict:
     if obj is not None and not isinstance(obj, dict):
-        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+        raise _param_type_mismatch_exception(obj, dict, param_name)
 
     if not obj:
         return {}
@@ -662,20 +642,20 @@ def opt_two_dim_dict_param(
 
 def type_param(obj: Any, param_name: str) -> type:
     if not isinstance(obj, type):
-        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
+        raise _not_type_param_subclass_mismatch_exception(obj, param_name)
     return obj
 
 
-def opt_type_param(obj: Any, param_name: str, default: type = None) -> type:
+def opt_type_param(obj: Any, param_name: str, default: type = None) -> Optional[type]:
     if obj is not None and not isinstance(obj, type):
-        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
+        raise _not_type_param_subclass_mismatch_exception(obj, param_name)
     return obj if obj is not None else default
 
 
 def subclass_param(obj: Any, param_name: str, superclass: type) -> type:
     type_param(obj, param_name)
     if not issubclass(obj, superclass):
-        raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
+        raise _param_subclass_mismatch_exception(obj, superclass, param_name)
 
     return obj
 
@@ -683,7 +663,7 @@ def subclass_param(obj: Any, param_name: str, superclass: type) -> type:
 def opt_subclass_param(obj: Any, param_name: str, superclass: type) -> Optional[type]:
     opt_type_param(obj, param_name)
     if obj is not None and not issubclass(obj, superclass):
-        raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
+        raise _param_subclass_mismatch_exception(obj, superclass, param_name)
 
     return obj
 
@@ -699,9 +679,7 @@ def _element_check_error(key: Any, value: Any, ddict: Dict, ttype: Type) -> Elem
 def generator(obj: Any) -> Generator:
     if not inspect.isgenerator(obj):
         raise ParameterCheckError(
-            "Not a generator (return value of function that yields) Got {obj} instead".format(
-                obj=obj
-            )
+            f"Not a generator (return value of function that yields) Got {obj} instead"
         )
     return obj
 
@@ -709,9 +687,7 @@ def generator(obj: Any) -> Generator:
 def opt_generator(obj: Any) -> Optional[Generator]:
     if obj is not None and not inspect.isgenerator(obj):
         raise ParameterCheckError(
-            "Not a generator (return value of function that yields) Got {obj} instead".format(
-                obj=obj
-            )
+            f"Not a generator (return value of function that yields) Got {obj} instead"
         )
     return obj
 
@@ -719,10 +695,8 @@ def opt_generator(obj: Any) -> Optional[Generator]:
 def generator_param(obj: Any, param_name: str) -> Generator:
     if not inspect.isgenerator(obj):
         raise ParameterCheckError(
-            (
-                'Param "{name}" is not a generator (return value of function that yields) Got '
-                "{obj} instead"
-            ).format(name=param_name, obj=obj)
+            f'Param "{param_name}" is not a generator (return value of function that yields) Got '
+            f"{obj} instead"
         )
     return obj
 
@@ -730,10 +704,8 @@ def generator_param(obj: Any, param_name: str) -> Generator:
 def opt_generator_param(obj: Any, param_name: str) -> Optional[Generator]:
     if obj is not None and not inspect.isgenerator(obj):
         raise ParameterCheckError(
-            (
-                'Param "{name}" is not a generator (return value of function that yields) Got '
-                "{obj} instead"
-            ).format(name=param_name, obj=obj)
+            f'Param "{param_name}" is not a generator (return value of function that yields) Got '
+            f"{obj} instead"
         )
     return obj
 
@@ -751,7 +723,7 @@ def list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:  # type: ign
 
         return _check_list_items(value, of_type)
 
-    raise_with_traceback(_element_check_error(key, value, ddict, list))
+    raise _element_check_error(key, value, ddict, list)
 
 
 def opt_list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:
@@ -765,7 +737,7 @@ def opt_list_elem(ddict: Dict, key: str, of_type: Type = None) -> List:
         return []
 
     if not isinstance(value, list):
-        raise_with_traceback(_element_check_error(key, value, ddict, list))
+        raise _element_check_error(key, value, ddict, list)
 
     if not of_type:
         return value
@@ -780,13 +752,11 @@ def dict_elem(ddict: Dict, key: str) -> Dict:
     str_param(key, "key")
 
     if key not in ddict:
-        raise_with_traceback(
-            CheckError("{key} not present in dictionary {ddict}".format(key=key, ddict=ddict))
-        )
+        raise CheckError(f"{key} not present in dictionary {ddict}")
 
     value = ddict[key]
     if not isinstance(value, (frozendict, dict)):
-        raise_with_traceback(_element_check_error(key, value, ddict, (frozendict, dict)))
+        raise _element_check_error(key, value, ddict, (frozendict, dict))
     return value
 
 
@@ -802,7 +772,7 @@ def opt_dict_elem(ddict: Dict, key: str) -> Dict:
         return {}
 
     if not isinstance(value, (frozendict, dict)):
-        raise_with_traceback(_element_check_error(key, value, ddict, list))
+        raise _element_check_error(key, value, ddict, list)
 
     return value
 
@@ -813,7 +783,7 @@ def bool_elem(ddict: Dict, key: str) -> bool:
 
     value = ddict[key]
     if not isinstance(value, bool):
-        raise_with_traceback(_element_check_error(key, value, ddict, bool))
+        raise _element_check_error(key, value, ddict, bool)
     return value
 
 
@@ -825,7 +795,7 @@ def opt_float_elem(ddict: Dict, key: str) -> Optional[float]:
     if value is None:
         return None
     if not isinstance(value, float):
-        raise_with_traceback(_element_check_error(key, value, ddict, float))
+        raise _element_check_error(key, value, ddict, float)
     return value
 
 
@@ -835,7 +805,7 @@ def float_elem(ddict: Dict, key: str) -> float:
 
     value = ddict[key]
     if not isinstance(value, float):
-        raise_with_traceback(_element_check_error(key, value, ddict, float))
+        raise _element_check_error(key, value, ddict, float)
     return value
 
 
@@ -847,7 +817,7 @@ def opt_int_elem(ddict: Dict, key: str) -> Optional[int]:
     if value is None:
         return None
     if not isinstance(value, int):
-        raise_with_traceback(_element_check_error(key, value, ddict, int))
+        raise _element_check_error(key, value, ddict, int)
     return value
 
 
@@ -857,7 +827,7 @@ def int_elem(ddict: Dict, key: str) -> int:
 
     value = ddict[key]
     if not isinstance(value, int):
-        raise_with_traceback(_element_check_error(key, value, ddict, int))
+        raise _element_check_error(key, value, ddict, int)
     return value
 
 
@@ -869,7 +839,7 @@ def opt_str_elem(ddict: Dict, key: str) -> Optional[str]:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise_with_traceback(_element_check_error(key, value, ddict, str))
+        raise _element_check_error(key, value, ddict, str)
     return value
 
 
@@ -879,17 +849,13 @@ def str_elem(ddict: Dict, key: str) -> str:
 
     value = ddict[key]
     if not isinstance(value, str):
-        raise_with_traceback(_element_check_error(key, value, ddict, str))
+        raise _element_check_error(key, value, ddict, str)
     return value
 
 
 def class_param(obj: Any, param_name: str) -> Union[ParameterCheckError, type]:
     if not inspect.isclass(obj):
         return ParameterCheckError(
-            'Param "{name}" is not a class. Got {obj} which is type {obj_type}.'.format(
-                name=param_name,
-                obj=repr(obj),
-                obj_type=type(obj),
-            )
+            f'Param "{param_name}" is not a class. Got {repr(obj)} which is type {type(obj)}.'
         )
     return obj

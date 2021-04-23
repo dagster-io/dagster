@@ -18,9 +18,7 @@ class _Graph:
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
-        self.input_defs = check.opt_nullable_list_param(
-            input_defs, "input_defs", of_type=InputDefinition
-        )
+        self.input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
         self.did_pass_outputs = output_defs is not None
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", of_type=OutputDefinition
@@ -83,12 +81,13 @@ def graph(
         description (Optional[str]):
             A human-readable description of the graph.
         input_defs (Optional[List[InputDefinition]]):
-            Input definitions for the graph.
-            If not provided explicitly, these will be inferred from typehints.
+            Information about the inputs that this graph maps. Information provided here
+            will be combined with what can be inferred from the function signature, with these
+            explicit InputDefinitions taking precedence.
 
-            Uses of these inputs in the body of the decorated composition function will be used to
-            infer the appropriate set of :py:class:`InputMappings <InputMapping>` passed to the
-            underlying :py:class:`GraphDefinition`.
+            Uses of inputs in the body of the decorated composition function will determine
+            the :py:class:`InputMappings <InputMapping>` passed to the underlying
+            :py:class:`GraphDefinition`.
         output_defs (Optional[List[OutputDefinition]]):
             Output definitions for the graph. If not provided explicitly, these will be inferred from typehints.
 

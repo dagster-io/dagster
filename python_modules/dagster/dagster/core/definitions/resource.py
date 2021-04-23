@@ -1,6 +1,6 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import Optional, Set
+from typing import AbstractSet, Optional
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -35,8 +35,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         resource_fn (Callable[[InitResourceContext], Any]): User-provided function to instantiate
             the resource, which will be made available to solid executions keyed on the
             ``context.resources`` object.
-        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
-            available in `init_context.resource_config`.
+        config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
+            that config provided for the resource matches this schema and fail if it does not. If
+            not set, Dagster will accept any config provided for the resource.
         description (Optional[str]): A human-readable description of the resource.
         required_resource_keys: (Optional[Set[str]]) Keys for the resources required by this
             resource. A DagsterInvariantViolationError will be raised during initialization if
@@ -203,7 +204,7 @@ def resource(config_schema=None, description=None, required_resource_keys=None, 
 
     Args:
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
-            `init_context.resource_config`.
+            `init_context.resource_config`. If not set, Dagster will accept any config provided.
         description(Optional[str]): A human-readable description of the resource.
         version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
@@ -248,7 +249,7 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             ),
         )
 
-    def build(self, required_resource_keys: Optional[Set[str]]) -> Resources:
+    def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
 
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.

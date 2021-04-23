@@ -21,7 +21,6 @@ import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
 } from './ConfigEditorConfigPicker';
-import {ExecutionSessionContainer} from './ExecutionSessionContainer';
 import {ExecutionSessionContainerError} from './ExecutionSessionContainerError';
 import {ExecutionSessionContainerLoading} from './ExecutionSessionContainerLoading';
 import {ExecutionTabs} from './ExecutionTabs';
@@ -33,6 +32,8 @@ import {
   PipelineExecutionRootQuery,
   PipelineExecutionRootQueryVariables,
 } from './types/PipelineExecutionRootQuery';
+
+const ExecutionSessionContainer = React.lazy(() => import('./ExecutionSessionContainer'));
 
 interface Props {
   pipelinePath: string;
@@ -150,17 +151,19 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
               }
 
               return (
-                <ExecutionSessionContainer
-                  data={data}
-                  onSaveSession={(changes) => onSaveSession(data.current, changes)}
-                  onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
-                  pipeline={pipelineOrError}
-                  partitionSets={partitionSetsOrError}
-                  runConfigSchemaOrError={configSchemaOrError}
-                  currentSession={session}
-                  pipelineSelector={pipelineSelector}
-                  repoAddress={repoAddress}
-                />
+                <React.Suspense fallback={<div />}>
+                  <ExecutionSessionContainer
+                    data={data}
+                    onSaveSession={(changes) => onSaveSession(data.current, changes)}
+                    onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
+                    pipeline={pipelineOrError}
+                    partitionSets={partitionSetsOrError}
+                    runConfigSchemaOrError={configSchemaOrError}
+                    currentSession={session}
+                    pipelineSelector={pipelineSelector}
+                    repoAddress={repoAddress}
+                  />
+                </React.Suspense>
               );
             }}
           </Query>

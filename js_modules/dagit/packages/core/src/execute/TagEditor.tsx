@@ -6,31 +6,39 @@ import styled from 'styled-components/macro';
 import {PipelineRunTag} from '../app/LocalStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
+import {Group} from '../ui/Group';
 
 interface ITagEditorProps {
-  tags: PipelineRunTag[];
+  permanentTags?: PipelineRunTag[];
+  editableTags: PipelineRunTag[];
   open: boolean;
   onChange: (tags: PipelineRunTag[]) => void;
   onRequestClose: () => void;
 }
+
 interface ITagContainerProps {
   tags: PipelineRunTag[];
   onRequestEdit: () => void;
 }
 
-export const TagEditor = ({tags: propTags, open, onChange, onRequestClose}: ITagEditorProps) => {
-  const [tags, setTags] = React.useState(propTags.length ? propTags : [{key: '', value: ''}]);
-  React.useEffect(() => {
-    setTags(propTags.length ? propTags : [{key: '', value: ''}]);
-  }, [propTags]);
+export const TagEditor: React.FC<ITagEditorProps> = ({
+  permanentTags = [],
+  editableTags = [],
+  open,
+  onChange,
+  onRequestClose,
+}) => {
+  const [editState, setEditState] = React.useState(() =>
+    editableTags.length ? editableTags : [{key: '', value: ''}],
+  );
 
-  const toSave: PipelineRunTag[] = tags
+  const toSave: PipelineRunTag[] = editState
     .map((tag: PipelineRunTag) => ({
       key: tag.key.trim(),
       value: tag.value.trim(),
     }))
     .filter((tag) => tag.key && tag.value);
-  const toError = tags
+  const toError = editState
     .map((tag: PipelineRunTag) => ({
       key: tag.key.trim(),
       value: tag.value.trim(),
@@ -44,18 +52,20 @@ export const TagEditor = ({tags: propTags, open, onChange, onRequestClose}: ITag
     }
   };
 
-  const disabled = tags === propTags || !!toError.length;
+  const disabled = editState === editableTags || !!toError.length;
 
   const onTagEdit = (key: string, value: string, idx: number) => {
-    const newTags = [...tags.slice(0, idx), {key, value}, ...tags.slice(idx + 1)];
-    setTags(newTags);
+    setEditState((current) => [...current.slice(0, idx), {key, value}, ...current.slice(idx + 1)]);
   };
+
   const onRemove = (idx: number) => {
-    setTags([...tags.slice(0, idx), ...tags.slice(idx + 1)]);
+    setEditState((current) => [...current.slice(0, idx), ...current.slice(idx + 1)]);
   };
+
   const addTagEntry = () => {
-    setTags([...tags, {key: '', value: ''}]);
+    setEditState((current) => [...current, {key: '', value: ''}]);
   };
+
   return (
     <Dialog
       icon="info-sign"
@@ -74,36 +84,45 @@ export const TagEditor = ({tags: propTags, open, onChange, onRequestClose}: ITag
           position: 'relative',
         }}
       >
-        <Form>
-          {tags.map((tag, idx) => {
-            const {key, value} = tag;
-            return (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  marginBottom: 10,
-                }}
-              >
-                <Input
-                  type="text"
-                  placeholder="Tag Key"
-                  value={key}
-                  onChange={(e) => onTagEdit(e.target.value, value, idx)}
-                />
-                <Input
-                  type="text"
-                  placeholder="Tag Value"
-                  value={value}
-                  onChange={(e) => onTagEdit(key, e.target.value, idx)}
-                />
-                <Remove onClick={() => onRemove(idx)} />
-              </div>
-            );
-          })}
-          <LinkButton onClick={addTagEntry}>+ Add another tag</LinkButton>
-        </Form>
+        <Group padding={16} spacing={16} direction="column">
+          {permanentTags.length ? (
+            <TagList>
+              {permanentTags.map((tag, idx) => (
+                <RunTag tag={tag} key={idx} />
+              ))}
+            </TagList>
+          ) : null}
+          <div>
+            {editState.map((tag, idx) => {
+              const {key, value} = tag;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    marginBottom: 10,
+                  }}
+                >
+                  <Input
+                    type="text"
+                    placeholder="Tag Key"
+                    value={key}
+                    onChange={(e) => onTagEdit(e.target.value, value, idx)}
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Tag Value"
+                    value={value}
+                    onChange={(e) => onTagEdit(key, e.target.value, idx)}
+                  />
+                  <Remove onClick={() => onRemove(idx)} />
+                </div>
+              );
+            })}
+            <LinkButton onClick={addTagEntry}>+ Add another tag</LinkButton>
+          </div>
+        </Group>
       </div>
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
@@ -167,9 +186,7 @@ const Remove = styled(Icon).attrs({icon: IconNames.CROSS})`
     border-radius: 1px;
   }
 `;
-const Form = styled.div`
-  margin: 30px;
-`;
+
 const Input = styled.input`
   flex: 1;
   margin-right: 10px;
