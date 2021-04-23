@@ -45,13 +45,89 @@ def namespace(pytestconfig, should_cleanup):
         yield existing_helm_namespace
     else:
         with get_helm_test_namespace(should_cleanup) as namespace:
-            with helm_test_resources(namespace, should_cleanup):
-                yield namespace
+            yield namespace
+
+
+@pytest.fixture(scope="session")
+def configmap(namespace, should_cleanup):
+    print("Creating k8s test object ConfigMap %s" % (TEST_CONFIGMAP_NAME))
+    kube_api = kubernetes.client.CoreV1Api()
+
+    configmap = kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data={"TEST_ENV_VAR": "foobar"},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_CONFIGMAP_NAME),
+    )
+    kube_api.create_namespaced_config_map(namespace=namespace, body=configmap)
+
+    yield TEST_CONFIGMAP_NAME
+
+    if should_cleanup:
+        kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
+
+
+@pytest.fixture(scope="session")
+def aws_configmap(namespace, should_cleanup):
+    if not IS_BUILDKITE:
+        kube_api = kubernetes.client.CoreV1Api()
+        aws_data = {
+            "AWS_ACCOUNT_ID": os.getenv("AWS_ACCOUNT_ID"),
+            "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
+            "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
+        }
+
+        if not aws_data["AWS_ACCESS_KEY_ID"] or not aws_data["AWS_SECRET_ACCESS_KEY"]:
+            raise Exception(
+                "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+                "to be able to run Helm tests locally"
+            )
+
+        print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
+        aws_configmap = kubernetes.client.V1ConfigMap(
+            api_version="v1",
+            kind="ConfigMap",
+            data=aws_data,
+            metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
+        )
+        kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
+
+    yield TEST_AWS_CONFIGMAP_NAME
+
+    if should_cleanup and not IS_BUILDKITE:
+        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)
+
+
+@pytest.fixture(scope="session")
+def secret(namespace, should_cleanup):
+    print("Creating k8s test object Secret %s" % (TEST_SECRET_NAME))
+    kube_api = kubernetes.client.CoreV1Api()
+
+    # Secret values are expected to be base64 encoded
+    secret_val = base64.b64encode(b"foobar").decode("utf-8")
+    secret = kubernetes.client.V1Secret(
+        api_version="v1",
+        kind="Secret",
+        data={"TEST_SECRET_ENV_VAR": secret_val},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_SECRET_NAME),
+    )
+    kube_api.create_namespaced_secret(namespace=namespace, body=secret)
+
+    yield TEST_SECRET_NAME
+
+    if should_cleanup:
+        kube_api.delete_namespaced_secret(name=TEST_SECRET_NAME, namespace=namespace)
 
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_user_deployments(
-    dagster_docker_image, cluster_provider, namespace, should_cleanup
+    dagster_docker_image,
+    cluster_provider,
+    namespace,
+    should_cleanup,
+    configmap,
+    aws_configmap,
+    secret,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_user_deployments(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -59,10 +135,13 @@ def helm_namespace_for_user_deployments(
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_user_deployments_subchart_disabled(
-    helm_namespace_for_user_deployments_subchart,
     dagster_docker_image,
     cluster_provider,
+    helm_namespace_for_user_deployments_subchart,
     should_cleanup,
+    configmap,
+    aws_configmap,
+    secret,
 ):  # pylint: disable=unused-argument
     namespace = helm_namespace_for_user_deployments_subchart
 
@@ -75,7 +154,13 @@ def helm_namespace_for_user_deployments_subchart_disabled(
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_user_deployments_subchart(
-    dagster_docker_image, cluster_provider, namespace, should_cleanup
+    dagster_docker_image,
+    cluster_provider,
+    namespace,
+    should_cleanup,
+    configmap,
+    aws_configmap,
+    secret,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -83,7 +168,13 @@ def helm_namespace_for_user_deployments_subchart(
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_daemon(
-    dagster_docker_image, cluster_provider, namespace, should_cleanup
+    dagster_docker_image,
+    cluster_provider,
+    namespace,
+    should_cleanup,
+    configmap,
+    aws_configmap,
+    secret,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_daemon(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -91,7 +182,13 @@ def helm_namespace_for_daemon(
 
 @pytest.fixture(scope="session")
 def helm_namespace(
-    dagster_docker_image, cluster_provider, namespace, should_cleanup
+    dagster_docker_image,
+    cluster_provider,
+    namespace,
+    should_cleanup,
+    configmap,
+    aws_configmap,
+    secret,
 ):  # pylint: disable=unused-argument
     with helm_chart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -99,7 +196,13 @@ def helm_namespace(
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_k8s_run_launcher(
-    dagster_docker_image, cluster_provider, namespace, should_cleanup
+    dagster_docker_image,
+    cluster_provider,
+    namespace,
+    should_cleanup,
+    configmap,
+    aws_configmap,
+    secret,
 ):  # pylint: disable=unused-argument
     with helm_chart_for_k8s_run_launcher(namespace, dagster_docker_image, should_cleanup):
         yield namespace
@@ -127,69 +230,6 @@ def get_helm_test_namespace(should_cleanup=True):
         if should_cleanup:
             print("Deleting namespace %s" % namespace)
             kube_api.delete_namespace(name=namespace)
-
-
-@contextmanager
-def helm_test_resources(namespace, should_cleanup=True):
-    """Create a couple of resources to test Helm interaction w/ pre-existing resources."""
-    check.str_param(namespace, "namespace")
-    check.bool_param(should_cleanup, "should_cleanup")
-
-    try:
-        print(
-            "Creating k8s test objects ConfigMap %s and Secret %s"
-            % (TEST_CONFIGMAP_NAME, TEST_SECRET_NAME)
-        )
-        kube_api = kubernetes.client.CoreV1Api()
-
-        configmap = kubernetes.client.V1ConfigMap(
-            api_version="v1",
-            kind="ConfigMap",
-            data={"TEST_ENV_VAR": "foobar"},
-            metadata=kubernetes.client.V1ObjectMeta(name=TEST_CONFIGMAP_NAME),
-        )
-        kube_api.create_namespaced_config_map(namespace=namespace, body=configmap)
-
-        if not IS_BUILDKITE:
-            aws_data = {
-                "AWS_ACCOUNT_ID": os.getenv("AWS_ACCOUNT_ID"),
-                "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
-                "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            }
-
-            if not aws_data["AWS_ACCESS_KEY_ID"] or not aws_data["AWS_SECRET_ACCESS_KEY"]:
-                raise Exception(
-                    "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
-                    "to be able to run Helm tests locally"
-                )
-
-            print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
-            aws_configmap = kubernetes.client.V1ConfigMap(
-                api_version="v1",
-                kind="ConfigMap",
-                data=aws_data,
-                metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
-            )
-            kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
-
-        # Secret values are expected to be base64 encoded
-        secret_val = base64.b64encode(b"foobar").decode("utf-8")
-        secret = kubernetes.client.V1Secret(
-            api_version="v1",
-            kind="Secret",
-            data={"TEST_SECRET_ENV_VAR": secret_val},
-            metadata=kubernetes.client.V1ObjectMeta(name=TEST_SECRET_NAME),
-        )
-        kube_api.create_namespaced_secret(namespace=namespace, body=secret)
-
-        yield
-
-    finally:
-        # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
-        # w/ a kind cluster
-        if should_cleanup:
-            kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
-            kube_api.delete_namespaced_secret(name=TEST_SECRET_NAME, namespace=namespace)
 
 
 @contextmanager
