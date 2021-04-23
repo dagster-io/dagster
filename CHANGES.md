@@ -20,7 +20,8 @@
 * The Status page in Dagit will now display errors that were surfaced in the `dagster-daemon` process within the last 5 minutes. Previously, it would only display errors from the last 30 seconds.
 * Hanging sensors and schedule functions will now raise a timeout exception after 60 seconds, instead of crashing the `dagster-daemon` process.
 * The `DockerRunLauncher` now accepts a `container_kwargs` config parameter, allowing you to specify any argument to the run container that can be passed into the Docker containers.run method. See https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run for the full list of available options.
-
+* Added clearer error messages for when a Partition cannot be found in a Partition Set.
+* The `celery_k8s_job_executor` now accepts a `job_wait_timeout` allowing you to override the default of 24 hours.
 ### Bugfixes
 
 * Fixed the raw compute logs in Dagit, which were not live updating as the selected step was executing.
