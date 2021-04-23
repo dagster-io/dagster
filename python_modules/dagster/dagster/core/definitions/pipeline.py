@@ -512,7 +512,12 @@ class PipelineSubsetDefinition(PipelineDefinition):
 
 
 def _dep_key_of(solid: Solid) -> SolidInvocation:
-    return SolidInvocation(solid.definition.name, solid.name)
+    return SolidInvocation(
+        name=solid.definition.name,
+        alias=solid.name,
+        tags=solid.tags,
+        hook_defs=solid.hook_defs,
+    )
 
 
 def _get_pipeline_subset_def(

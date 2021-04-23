@@ -178,6 +178,37 @@ def test_success_hook_on_solid_instance():
     assert called_hook_to_solids["a_hook"] == {"a_solid", "solid_with_hook"}
 
 
+def test_success_hook_on_solid_instance_subset():
+
+    called_hook_to_solids = defaultdict(set)
+
+    @success_hook(required_resource_keys={"resource_a"})
+    def a_hook(context):
+        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        assert context.resources.resource_a == 1
+
+    @solid
+    def a_solid(_):
+        pass
+
+    @solid
+    def failed_solid(_):
+        raise SomeUserException()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})])
+    def a_pipeline():
+        a_solid.with_hooks(hook_defs={a_hook})()
+        a_solid.alias("solid_with_hook").with_hooks(hook_defs={a_hook})()
+        a_solid.alias("solid_without_hook")()
+        failed_solid.with_hooks(hook_defs={a_hook})()
+
+    result = execute_pipeline(
+        a_pipeline, raise_on_error=False, solid_selection=["a_solid", "solid_with_hook"]
+    )
+    assert result.success
+    assert called_hook_to_solids["a_hook"] == {"a_solid", "solid_with_hook"}
+
+
 def test_failure_hook_on_solid_instance():
 
     called_hook_to_solids = defaultdict(set)
