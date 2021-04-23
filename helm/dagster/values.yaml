@@ -34,6 +34,8 @@ dagit:
 
   service:
     type: ClusterIP
+    # Defines the port where Dagit will serve requests; if changed, don't forget to update the
+    # livenessProbe and startupProbe entries below as well.
     port: 80
     annotations: {}
 
