@@ -18,6 +18,7 @@ import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
@@ -52,10 +53,14 @@ const EXPERIMENTAL_TAGS_WARNING = (
   </Box>
 );
 
-export const AssetsCatalogTable: React.FunctionComponent<{
-  prefixPath?: string[];
-}> = ({prefixPath}) => {
-  const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY);
+const POLL_INTERVAL = 15000;
+
+export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPath}) => {
+  const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    pollInterval: POLL_INTERVAL,
+  });
+
   const [q, setQ] = React.useState<string>('');
   const [view, setView] = useAssetView();
 
@@ -70,7 +75,7 @@ export const AssetsCatalogTable: React.FunctionComponent<{
 
   return (
     <div style={{flexGrow: 1}}>
-      <Loading queryResult={queryResult}>
+      <Loading allowStaleData queryResult={queryResult}>
         {({assetsOrError}) => {
           if (assetsOrError.__typename === 'PythonError') {
             return (
@@ -88,6 +93,7 @@ export const AssetsCatalogTable: React.FunctionComponent<{
                   prefixPath.every((part: string, i: number) => part === asset.key.path[i]),
               )
             : assetsOrError.nodes;
+
           const matching = isFlattened
             ? filterAssets(assets, q)
             : assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
@@ -124,33 +130,38 @@ export const AssetsCatalogTable: React.FunctionComponent<{
           const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
           return (
             <Wrapper>
-              {showSwitcher ? (
-                <Group spacing={8} direction="row">
-                  <ButtonGroup>
-                    <Button
-                      icon="list"
-                      title="Flat"
-                      active={isFlattened}
-                      onClick={() => setIsFlattened(true)}
-                    />
-                    <Button
-                      icon="folder-close"
-                      title="Directory"
-                      active={!isFlattened}
-                      onClick={() => setIsFlattened(false)}
-                    />
-                  </ButtonGroup>
-                  {isFlattened ? (
+              <Box flex={{justifyContent: 'space-between'}}>
+                <div>
+                  {showSwitcher ? (
+                    <Group spacing={8} direction="row">
+                      <ButtonGroup>
+                        <Button
+                          icon="list"
+                          title="Flat"
+                          active={isFlattened}
+                          onClick={() => setIsFlattened(true)}
+                        />
+                        <Button
+                          icon="folder-close"
+                          title="Directory"
+                          active={!isFlattened}
+                          onClick={() => setIsFlattened(false)}
+                        />
+                      </ButtonGroup>
+                      {isFlattened ? (
+                        <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
+                      ) : (
+                        <AssetSearch assets={allAssets} />
+                      )}
+                    </Group>
+                  ) : isFlattened ? (
                     <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
                   ) : (
                     <AssetSearch assets={allAssets} />
                   )}
-                </Group>
-              ) : isFlattened ? (
-                <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
-              ) : (
-                <AssetSearch assets={allAssets} />
-              )}
+                </div>
+                <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+              </Box>
               <AssetsTable
                 assets={matching}
                 currentPath={prefixPath || []}
