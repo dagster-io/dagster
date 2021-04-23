@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
 
 from dagster import check
 from dagster.config.config_type import ConfigAnyInstance, ConfigType
@@ -9,8 +9,13 @@ from dagster.config.field_utils import convert_potential_field
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
 
+if TYPE_CHECKING:
+    from dagster.core.definitions.configurable import ConfigurableDefinition
 
-def convert_user_facing_definition_config_schema(potential_schema):
+
+def convert_user_facing_definition_config_schema(
+    potential_schema: Union["IDefinitionConfigSchema", Dict[str, Any], None],
+) -> "IDefinitionConfigSchema":
     if potential_schema is None:
         return DefinitionConfigSchema(Field(ConfigAnyInstance, is_required=False))
     elif isinstance(potential_schema, IDefinitionConfigSchema):
@@ -65,14 +70,16 @@ class IDefinitionConfigSchema(ABC):
 
 
 class DefinitionConfigSchema(IDefinitionConfigSchema):
-    def __init__(self, config_field):
+    def __init__(self, config_field: Field):
         self._config_field = check.inst_param(config_field, "config_field", Field)
 
     def as_field(self) -> Field:
         return self._config_field
 
 
-def _get_user_code_error_str_lambda(configured_definition):
+def _get_user_code_error_str_lambda(
+    configured_definition: "ConfigurableDefinition",
+) -> Callable[[], str]:
     return lambda: (
         "The config mapping function on a `configured` {} has thrown an unexpected "
         "error during its execution."
