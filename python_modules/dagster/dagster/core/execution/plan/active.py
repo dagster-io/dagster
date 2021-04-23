@@ -100,23 +100,28 @@ class ActiveExecution:
             pending_action = (
                 self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
             )
-            raise DagsterInvariantViolationError(
-                "Execution of pipeline finished without completing the execution plan,."
-                "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
-                    in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
-                    if self._in_flight
-                    else "",
-                    pending_str="\nSteps pending processing: {}".format(self._pending.keys())
-                    if self._pending
-                    else "",
-                    action_str="\nSteps pending action: {}".format(pending_action)
-                    if pending_action
-                    else "",
-                    retry_str="\nSteps waiting to retry: {}".format(self._waiting_to_retry.keys())
-                    if self._waiting_to_retry
-                    else "",
-                )
+            state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
+                in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
+                if self._in_flight
+                else "",
+                pending_str="\nSteps pending processing: {}".format(self._pending.keys())
+                if self._pending
+                else "",
+                action_str="\nSteps pending action: {}".format(pending_action)
+                if pending_action
+                else "",
+                retry_str="\nSteps waiting to retry: {}".format(self._waiting_to_retry.keys())
+                if self._waiting_to_retry
+                else "",
             )
+            if self._interrupted:
+                raise DagsterExecutionInterruptedError(
+                    f"Execution of pipeline was interrupted before completing the execution plan. {state_str}"
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    f"Execution of pipeline finished without completing the execution plan. {state_str}"
+                )
 
         # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
         # state so we raise to ensure pipeline failure.
