@@ -281,6 +281,7 @@ class DagsterModulePublisher:
 
     def publish_all(self, dry_run=True):
         for module in self.all_publishable_modules:
+            click.echo(f'Publishing {module.name}...')
             module.publish(dry_run=dry_run)
 
 
