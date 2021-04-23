@@ -4,6 +4,8 @@ import pytest
 from dagster import (
     Int,
     ModeDefinition,
+    Output,
+    OutputDefinition,
     composite_solid,
     execute_pipeline,
     pipeline,
@@ -14,6 +16,7 @@ from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 class SomeUserException(Exception):
@@ -290,6 +293,66 @@ def test_none_solid_exception_access():
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert result.success
     assert called.get("a_solid") is None
+
+
+def test_solid_outputs_access():
+    called = {}
+
+    @success_hook
+    def my_success_hook(context):
+        called[context.step_key] = context.solid_output_values
+
+    @failure_hook
+    def my_failure_hook(context):
+        called[context.step_key] = context.solid_output_values
+
+    @solid(
+        output_defs=[
+            OutputDefinition(name="one"),
+            OutputDefinition(name="two"),
+            OutputDefinition(name="three"),
+        ]
+    )
+    def a_solid(_):
+        yield Output(1, "one")
+        yield Output(2, "two")
+        yield Output(3, "three")
+
+    @solid(
+        output_defs=[
+            OutputDefinition(name="one"),
+            OutputDefinition(name="two"),
+        ]
+    )
+    def failed_solid(_):
+        yield Output(1, "one")
+        raise SomeUserException()
+        yield Output(3, "two")  # pylint: disable=unreachable
+
+    @solid(output_defs=[DynamicOutputDefinition()])
+    def dynamic_solid(_):
+        yield DynamicOutput(1, mapping_key="mapping_1")
+        yield DynamicOutput(2, mapping_key="mapping_2")
+
+    @solid
+    def echo(_, x):
+        return x
+
+    @my_success_hook
+    @my_failure_hook
+    @pipeline
+    def a_pipeline():
+        a_solid()
+        failed_solid()
+        dynamic_solid().map(echo)
+
+    result = execute_pipeline(a_pipeline, raise_on_error=False)
+    assert not result.success
+    assert called.get("a_solid") == {"one": 1, "two": 2, "three": 3}
+    assert called.get("failed_solid") == {"one": 1}
+    assert called.get("dynamic_solid") == {"result": {"mapping_1": 1, "mapping_2": 2}}
+    assert called.get("echo[mapping_1]") == {"result": 1}
+    assert called.get("echo[mapping_2]") == {"result": 2}
 
 
 def test_hook_on_pipeline_def():

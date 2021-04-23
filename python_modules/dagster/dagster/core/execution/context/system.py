@@ -6,7 +6,7 @@ in the user_context module
 """
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
-from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
@@ -344,6 +344,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_launcher = step_launcher_resources[0]
 
         self._step_exception = None
+        self._step_output_capture: Dict[StepOutputHandle, Any] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -466,6 +467,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def step_exception(self) -> Optional[BaseException]:
         return self._step_exception
+
+    @property
+    def step_output_capture(self) -> Dict[StepOutputHandle, Any]:
+        return self._step_output_capture
 
 
 class TypeCheckContext:
@@ -590,3 +595,27 @@ class HookContext:
         """
 
         return self._step_execution_context.step_exception
+
+    @property
+    def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
+        """The computed output values.
+
+        Returns a dictionary where keys are output names and the values are:
+            * the output values in the normal case
+            * a dictionary from mapping key to corresponding value in the mapped case
+        """
+        results: Dict[str, Union[Any, Dict[str, Any]]] = {}
+
+        # make the returned values more user-friendly
+        for step_output_handle, value in self._step_execution_context.step_output_capture.items():
+            if step_output_handle.mapping_key:
+                if results.get(step_output_handle.output_name) is None:
+                    results[step_output_handle.output_name] = {
+                        step_output_handle.mapping_key: value
+                    }
+                else:
+                    results[step_output_handle.output_name][step_output_handle.mapping_key] = value
+            else:
+                results[step_output_handle.output_name] = value
+
+        return results

@@ -352,6 +352,8 @@ def _type_check_and_store_output(
     # to be directly captured to a dictionary after they are computed.
     if step_context.output_capture is not None:
         step_context.output_capture[step_output_handle] = output.value
+    # capture output at the step level for threading th computed output values to hook context
+    step_context.step_output_capture[step_output_handle] = output.value
 
     version = (
         resolve_step_output_versions(
