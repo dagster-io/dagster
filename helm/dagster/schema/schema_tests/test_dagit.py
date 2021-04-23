@@ -1,8 +1,8 @@
 import pytest
 from kubernetes.client import models
-from schema.charts.dagster.subschema.dagit import Dagit, Server, Workspace
+from schema.charts.dagster.subschema.dagit import Dagit
 from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.utils.kubernetes import Image, LivenessProbe, PullPolicy, Service, StartupProbe
+from schema.charts.utils.kubernetes import Service
 
 from .helm_template import HelmTemplate
 
