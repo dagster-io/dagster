@@ -23,25 +23,10 @@ CELERY_WORKER_NAME_PREFIX = "dagster-celery-workers"
 
 
 @contextmanager
-def _helm_namespace_helper(docker_image, helm_chart_fn, pytestconfig, should_cleanup):
-    """If an existing Helm chart namespace is specified via pytest CLI with the argument
-    --existing-helm-namespace, we will use that chart.
-
-    Otherwise, provision a test namespace and install Helm chart into that namespace.
-
-    Yields the Helm chart namespace.
-    """
-    existing_helm_namespace = pytestconfig.getoption("--existing-helm-namespace")
-
-    if existing_helm_namespace:
-        yield existing_helm_namespace
-
-    else:
-        with get_helm_test_namespace(should_cleanup) as namespace:
-            with helm_test_resources(namespace, should_cleanup):
-                with helm_chart_fn(namespace, docker_image, should_cleanup):
-                    print("Helm chart successfully installed in namespace %s" % namespace)
-                    yield namespace
+def _helm_namespace_helper(docker_image, helm_chart_fn, namespace, should_cleanup):
+    with helm_chart_fn(namespace, docker_image, should_cleanup):
+        print("Helm chart successfully installed in namespace %s" % namespace)
+        yield namespace
 
 
 @pytest.fixture(scope="session")
@@ -53,11 +38,30 @@ def should_cleanup(pytestconfig):
 
 
 @pytest.fixture(scope="session")
+def namespace(pytestconfig, should_cleanup):
+    """If an existing Helm chart namespace is specified via pytest CLI with the argument
+    --existing-helm-namespace, we will use that chart.
+
+    Otherwise, provision a test namespace and install Helm chart into that namespace.
+
+    Yields the Helm chart namespace.
+    """
+    existing_helm_namespace = pytestconfig.getoption("--existing-helm-namespace")
+
+    if existing_helm_namespace:
+        yield existing_helm_namespace
+    else:
+        with get_helm_test_namespace(should_cleanup) as namespace:
+            with helm_test_resources(namespace, should_cleanup):
+                yield namespace
+
+
+@pytest.fixture(scope="session")
 def helm_namespace_for_user_deployments(
-    dagster_docker_image, cluster_provider, pytestconfig, should_cleanup
+    dagster_docker_image, cluster_provider, namespace, should_cleanup
 ):  # pylint: disable=unused-argument
     with _helm_namespace_helper(
-        dagster_docker_image, helm_chart_for_user_deployments, pytestconfig, should_cleanup
+        dagster_docker_image, helm_chart_for_user_deployments, namespace, should_cleanup
     ) as namespace:
         yield namespace
 
@@ -81,40 +85,40 @@ def helm_namespace_for_user_deployments_subchart_disabled(
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_user_deployments_subchart(
-    dagster_docker_image, cluster_provider, pytestconfig, should_cleanup
+    dagster_docker_image, cluster_provider, namespace, should_cleanup
 ):  # pylint: disable=unused-argument
     with _helm_namespace_helper(
-        dagster_docker_image, helm_chart_for_user_deployments_subchart, pytestconfig, should_cleanup
+        dagster_docker_image, helm_chart_for_user_deployments_subchart, namespace, should_cleanup
     ) as namespace:
         yield namespace
 
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_daemon(
-    dagster_docker_image, cluster_provider, pytestconfig, should_cleanup
+    dagster_docker_image, cluster_provider, namespace, should_cleanup
 ):  # pylint: disable=unused-argument
     with _helm_namespace_helper(
-        dagster_docker_image, helm_chart_for_daemon, pytestconfig, should_cleanup
+        dagster_docker_image, helm_chart_for_daemon, namespace, should_cleanup
     ) as namespace:
         yield namespace
 
 
 @pytest.fixture(scope="session")
 def helm_namespace(
-    dagster_docker_image, cluster_provider, pytestconfig, should_cleanup
+    dagster_docker_image, cluster_provider, namespace, should_cleanup
 ):  # pylint: disable=unused-argument
     with _helm_namespace_helper(
-        dagster_docker_image, helm_chart, pytestconfig, should_cleanup
+        dagster_docker_image, helm_chart, namespace, should_cleanup
     ) as namespace:
         yield namespace
 
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_k8s_run_launcher(
-    dagster_docker_image, cluster_provider, pytestconfig, should_cleanup
+    dagster_docker_image, cluster_provider, namespace, should_cleanup
 ):  # pylint: disable=unused-argument
     with _helm_namespace_helper(
-        dagster_docker_image, helm_chart_for_k8s_run_launcher, pytestconfig, should_cleanup
+        dagster_docker_image, helm_chart_for_k8s_run_launcher, namespace, should_cleanup
     ) as namespace:
         yield namespace
 
