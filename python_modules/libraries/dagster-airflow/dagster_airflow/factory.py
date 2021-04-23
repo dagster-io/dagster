@@ -106,7 +106,14 @@ class DagsterOperatorParameters(
         execution_plan_snapshot=None,
         parent_pipeline_snapshot=None,
     ):
-        check_storage_specified(run_config)
+        pipeline_def = recon_repo.get_definition().get_pipeline(pipeline_name)
+
+        if mode is None:
+            mode = pipeline_def.get_default_mode_name()
+
+        mode_def = pipeline_def.get_mode_definition(mode)
+
+        check_storage_specified(pipeline_def, mode_def, run_config)
 
         return super(DagsterOperatorParameters, cls).__new__(
             cls,

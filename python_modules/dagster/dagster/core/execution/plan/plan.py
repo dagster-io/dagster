@@ -881,7 +881,7 @@ def _update_from_resolved_dynamic_outputs(
         del resolvable_map[key_set]
 
 
-def _all_outputs_non_mem_io_managers(pipeline_def: PipelineDefinition, mode_def: ModeDefinition):
+def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition):
     """Returns true if every output definition in the pipeline uses an IO manager that's not
     the mem_io_manager.
 
@@ -917,7 +917,7 @@ def _check_persistent_storage_requirement(
     intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
 
     if not (
-        _all_outputs_non_mem_io_managers(pipeline_def, mode_def)
+        can_isolate_steps(pipeline_def, mode_def)
         or (intermediate_storage_def and intermediate_storage_def.is_persistent)
     ):
         raise DagsterUnmetExecutorRequirementsError(
@@ -947,7 +947,7 @@ def _check_io_manager_intermediate_storage(
         raise DagsterInvariantViolationError(
             'You have specified an intermediate storage, "{intermediate_storage_name}", and have '
             "also specified a default IO manager. You must specify only one. To avoid specifying "
-            "an intermediate storage, omit the intermediate_storage_defs argument to your"
+            "an intermediate storage, omit the intermediate_storage_defs argument to your "
             'ModeDefinition and omit "intermediate_storage" in your run config. To avoid '
             'specifying a default IO manager, omit the "io_manager" key from the '
             "resource_defs argument to your ModeDefinition.".format(

@@ -13,17 +13,14 @@ from dagster_airflow_tests.marks import requires_airflow_db
     [
         ["--module-name", "dagster_test.toys.log_spew", "--pipeline-name", "log_spew"],
         ["--module-name", "dagster_test.toys.many_events", "--pipeline-name", "many_events"],
-        pytest.param(
-            [
-                "--module-name",
-                "dagster_test.toys.error_monster",
-                "--preset",
-                "passing",
-                "--pipeline-name",
-                "error_monster",
-            ],
-            marks=pytest.mark.skip,  # Breaking due to setting intermediate_storage and fs_io_manager
-        ),
+        [
+            "--module-name",
+            "dagster_test.toys.error_monster",
+            "--preset",
+            "passing",
+            "--pipeline-name",
+            "error_monster",
+        ],
         [
             "--module-name",
             "dagster_test.toys.resources",

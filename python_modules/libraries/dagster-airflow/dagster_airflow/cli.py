@@ -5,29 +5,34 @@ import click
 import yaml
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
+from dagster.core.execution.plan.plan import can_isolate_steps
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 
 def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
     # Load environment dict from either a preset or yaml file globs
+    cli_args = {
+        "fn_name": pipeline_name,
+        "module_name": module_name,
+    }
+
+    pipeline_def = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
+
     if preset_name:
         if config:
             raise click.UsageError("Can not use --preset with --config.")
 
-        cli_args = {
-            "fn_name": pipeline_name,
-            "module_name": module_name,
-        }
-        pipeline = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
-        run_config = pipeline.get_preset(preset_name).run_config
+        run_config = pipeline_def.get_preset(preset_name).run_config
 
     else:
         config = list(config)
         run_config = load_yaml_from_glob_list(config) if config else {}
 
-    # If not provided by the user, ensure we have storage location defined
-    if "intermediate_storage" not in run_config:
+    if (
+        not can_isolate_steps(pipeline_def, pipeline_def.get_default_mode())
+        and "intermediate_storage" not in run_config
+    ):
         system_tmp_path = seven.get_system_temp_directory()
         dagster_tmp_path = os.path.join(system_tmp_path, "dagster-airflow", pipeline_name)
         run_config["intermediate_storage"] = {
