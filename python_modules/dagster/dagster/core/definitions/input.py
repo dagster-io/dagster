@@ -260,13 +260,21 @@ class InputDefinition:
 
 def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     try:
-        return resolve_dagster_type(inferred.annotation)
+        resolved_type = resolve_dagster_type(inferred.annotation)
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
             f"'{inferred.name}', correct the issue or explicitly set the dagster_type on "
             "your InputDefinition."
         ) from e
+
+    if resolved_type.is_nothing:
+        raise DagsterInvalidDefinitionError(
+            f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
+            "which is a type that represents passing no data. This type must be used "
+            "via InputDefinition and no parameter should be included in the solid function."
+        )
+    return resolved_type
 
 
 class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):

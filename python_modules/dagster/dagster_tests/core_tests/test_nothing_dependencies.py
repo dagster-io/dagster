@@ -310,3 +310,23 @@ def test_execution_plan():
     assert "consume_nothing" in levels[1][0].key
 
     assert execute_pipeline(pipe).success
+
+
+def test_nothing_infer():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="which should not be included since no data will be passed for it",
+    ):
+
+        @solid(input_defs=[InputDefinition("_previous_steps_complete", Nothing)])
+        def _bad(_, _previous_steps_complete):
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="must be used via InputDefinition and no parameter should be included in the solid function",
+    ):
+
+        @solid
+        def _bad(_, _previous_steps_complete: Nothing):
+            pass
