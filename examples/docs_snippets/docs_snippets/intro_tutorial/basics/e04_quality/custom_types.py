@@ -30,8 +30,10 @@ SimpleDataFrame = DagsterType(
 
 
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
-def download_csv(context, url):
-    response = requests.get(url)
+def download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return [row for row in csv.DictReader(lines)]
@@ -49,19 +51,3 @@ def sort_by_calories(context, cereals):
 @pipeline
 def custom_type_pipeline():
     sort_by_calories(download_csv())
-
-
-if __name__ == "__main__":
-    run_config = {
-        "solids": {
-            "download_csv": {
-                "inputs": {
-                    "url": {
-                        "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-                    }
-                }
-            }
-        }
-    }
-    result = execute_pipeline(custom_type_pipeline, run_config=run_config)
-    assert result.success

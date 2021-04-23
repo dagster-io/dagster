@@ -6,8 +6,10 @@ from dagster import execute_pipeline, pipeline, solid
 
 # start_inputs_typed_marker_0
 @solid
-def download_csv(context, url: str):
-    response = requests.get(url)
+def download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return [row for row in csv.DictReader(lines)]
@@ -37,18 +39,5 @@ def inputs_pipeline():
 
 
 if __name__ == "__main__":
-    result = execute_pipeline(
-        inputs_pipeline,
-        run_config={
-            "solids": {
-                "download_csv": {
-                    "inputs": {
-                        "url": {
-                            "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-                        }
-                    }
-                }
-            }
-        },
-    )
+    result = execute_pipeline(inputs_pipeline)
     assert result.success

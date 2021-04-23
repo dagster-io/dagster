@@ -43,8 +43,10 @@ def local_sqlite_warehouse_resource(context):
 
 
 @solid
-def download_csv(context, url):
-    response = requests.get(url)
+def download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return [row for row in csv.DictReader(lines)]

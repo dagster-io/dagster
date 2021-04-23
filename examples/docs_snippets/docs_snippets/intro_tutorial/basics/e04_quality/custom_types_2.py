@@ -3,7 +3,6 @@ from dagster import (
     DagsterType,
     InputDefinition,
     OutputDefinition,
-    execute_pipeline,
     pipeline,
     solid,
 )
@@ -25,8 +24,10 @@ SimpleDataFrame = DagsterType(
 
 # start_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
-def bad_download_csv(context, url):
-    response = requests.get(url)
+def bad_download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return ["not_a_dict"]
@@ -44,20 +45,3 @@ def sort_by_calories(context, cereals):
 @pipeline
 def custom_type_pipeline():
     sort_by_calories(bad_download_csv())
-
-
-if __name__ == "__main__":
-    execute_pipeline(
-        custom_type_pipeline,
-        {
-            "solids": {
-                "bad_download_csv": {
-                    "inputs": {
-                        "url": {
-                            "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-                        }
-                    }
-                }
-            }
-        },
-    )

@@ -22,8 +22,10 @@ Let's look back at our simple `download_csv` solid.
 
 ```python file=/intro_tutorial/basics/e04_quality/inputs_typed.py startafter=start_inputs_typed_marker_0 endbefore=end_inputs_typed_marker_0
 @solid
-def download_csv(context, url: str):
-    response = requests.get(url)
+def download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return [row for row in csv.DictReader(lines)]
@@ -74,8 +76,10 @@ Now we can annotate the rest of our pipeline with our new type:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types.py startafter=start_custom_types_marker_1 endbefore=end_custom_types_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
-def download_csv(context, url):
-    response = requests.get(url)
+def download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return [row for row in csv.DictReader(lines)]
@@ -110,8 +114,10 @@ Now, if our solid logic fails to return the right type, we'll see a type check f
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
-def bad_download_csv(context, url):
-    response = requests.get(url)
+def bad_download_csv(context):
+    response = requests.get(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+    )
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return ["not_a_dict"]

@@ -205,16 +205,7 @@ Or, from the Python API:
 
 ```python file=/intro_tutorial/advanced/pipelines/modes.py startafter=start_modes_main endbefore=end_modes_main
 run_config = {
-        "solids": {
-            "download_csv": {
-                "inputs": {
-                    "url": {
-                        "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-                    }
-                }
-            }
-        },
-        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}},
+        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}
     }
     result = execute_pipeline(
         pipeline=modes_pipeline,
@@ -260,18 +251,9 @@ Dagster calls this a config preset:
         PresetDefinition(
             "unittest",
             run_config={
-                "solids": {
-                    "download_csv": {
-                        "inputs": {
-                            "url": {
-                                "value": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-                            }
-                        }
-                    }
-                },
                 "resources": {
                     "warehouse": {"config": {"conn_str": ":memory:"}}
-                },
+                }
             },
             mode="unittest",
         ),
