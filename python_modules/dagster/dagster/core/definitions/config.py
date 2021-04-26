@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, NamedTuple
+from typing import Any, Callable, Dict, NamedTuple, Union
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
@@ -8,7 +8,7 @@ from dagster.primitive_mapping import is_supported_config_python_builtin
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-def is_callable_valid_config_arg(config: Dict[str, Any]) -> bool:
+def is_callable_valid_config_arg(config: Union[Callable[..., Any], Dict[str, Any]]) -> bool:
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 

@@ -429,29 +429,33 @@ def test_step_keys_already_provided():
 
 
 @resource(config_schema={"input_str": Field(String)}, version="5")
-def test_resource(context):
+def basic_resource(context):
     return context.resource_config["input_str"]
 
 
 @resource(config_schema={"input_str": Field(String)})
-def test_resource_no_version(context):
+def resource_no_version(context):
     return context.resource_config["input_str"]
 
 
 @resource(version="42")
-def test_resource_no_config(_):
+def resource_no_config(_):
     return "Hello"
 
 
 @solid(
-    required_resource_keys={"test_resource", "test_resource_no_version", "test_resource_no_config"},
+    required_resource_keys={
+        "basic_resource",
+        "resource_no_version",
+        "resource_no_config",
+    },
 )
 def fake_solid_resources(context):
     return (
         "solidified_"
-        + context.resources.test_resource
-        + context.resources.test_resource_no_version
-        + context.resources.test_resource_no_config
+        + context.resources.basic_resource
+        + context.resources.resource_no_version
+        + context.resources.resource_no_config
     )
 
 
@@ -460,17 +464,17 @@ def fake_solid_resources(context):
         ModeDefinition(
             name="fakemode",
             resource_defs={
-                "test_resource": test_resource,
-                "test_resource_no_version": test_resource_no_version,
-                "test_resource_no_config": test_resource_no_config,
+                "basic_resource": basic_resource,
+                "resource_no_version": resource_no_version,
+                "resource_no_config": resource_no_config,
             },
         ),
         ModeDefinition(
             name="fakemode2",
             resource_defs={
-                "test_resource": test_resource,
-                "test_resource_no_version": test_resource_no_version,
-                "test_resource_no_config": test_resource_no_config,
+                "basic_resource": basic_resource,
+                "resource_no_version": resource_no_version,
+                "resource_no_config": resource_no_config,
             },
         ),
     ]
@@ -479,13 +483,13 @@ def modes_pipeline():
     fake_solid_resources()
 
 
-def test_resource_versions():
+def basic_resource_versions():
     run_config = {
         "resources": {
-            "test_resource": {
+            "basic_resource": {
                 "config": {"input_str": "apple"},
             },
-            "test_resource_no_version": {"config": {"input_str": "banana"}},
+            "resource_no_version": {"config": {"input_str": "banana"}},
         }
     }
 
@@ -493,22 +497,18 @@ def test_resource_versions():
 
     resource_versions_by_key = resolve_resource_versions(environment_config, modes_pipeline)
 
-    assert resource_versions_by_key["test_resource"] == join_and_hash(
-        resolve_config_version({"input_str": "apple"}), test_resource.version
+    assert resource_versions_by_key["basic_resource"] == join_and_hash(
+        resolve_config_version({"input_str": "apple"}), basic_resource.version
     )
 
-    assert resource_versions_by_key["test_resource_no_version"] == None
+    assert resource_versions_by_key["resource_no_version"] == None
 
-    assert resource_versions_by_key["test_resource_no_config"] == join_and_hash(
-        join_and_hash(), "42"
-    )
+    assert resource_versions_by_key["resource_no_config"] == join_and_hash(join_and_hash(), "42")
 
 
-@solid(required_resource_keys={"test_resource", "test_resource_no_config"}, version="39")
+@solid(required_resource_keys={"basic_resource", "resource_no_config"}, version="39")
 def fake_solid_resources_versioned(context):
-    return (
-        "solidified_" + context.resources.test_resource + context.resources.test_resource_no_config
-    )
+    return "solidified_" + context.resources.basic_resource + context.resources.resource_no_config
 
 
 @pipeline(
@@ -516,8 +516,8 @@ def fake_solid_resources_versioned(context):
         ModeDefinition(
             name="fakemode",
             resource_defs={
-                "test_resource": test_resource,
-                "test_resource_no_config": test_resource_no_config,
+                "basic_resource": basic_resource,
+                "resource_no_config": resource_no_config,
             },
         ),
     ]
@@ -527,7 +527,7 @@ def versioned_modes_pipeline():
 
 
 def test_step_versions_with_resources():
-    run_config = {"resources": {"test_resource": {"config": {"input_str": "apple"}}}}
+    run_config = {"resources": {"basic_resource": {"config": {"input_str": "apple"}}}}
     speculative_execution_plan = create_execution_plan(
         versioned_modes_pipeline, run_config=run_config, mode="fakemode"
     )

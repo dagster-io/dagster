@@ -1,5 +1,5 @@
 from collections import deque
-from typing import AbstractSet, Deque, Dict, Optional, cast
+from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -130,6 +130,7 @@ def _core_resource_initialization_event_generator(
                 if not resource_name in resource_keys_to_init:
                     continue
 
+                resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
                     resource_config=resource_configs[resource_name].config,
@@ -137,7 +138,7 @@ def _core_resource_initialization_event_generator(
                     # Add tags with information about the resource
                     log_manager=resource_log_manager.with_tags(
                         resource_name=resource_name,
-                        resource_fn_name=str(resource_def.resource_fn.__name__),
+                        resource_fn_name=str(resource_fn.__name__),
                     ),
                     resource_instance_dict=resource_instances,
                     required_resource_keys=resource_def.required_resource_keys,
