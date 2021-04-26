@@ -235,7 +235,7 @@ def watcher_thread(
             exit_event=watcher_thread_exit,
             started_event=watcher_thread_started,
         ):
-            if not isinstance(notif, psycopg2.extensions.Notify):
+            if notif is None:
                 if watcher_thread_exit.is_set():
                     break
             else:
