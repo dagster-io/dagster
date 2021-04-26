@@ -43,9 +43,11 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
       }}
     >
       <Box
+        background={Colors.WHITE}
         padding={{top: 16, bottom: 12, horizontal: 20}}
         border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
         flex={{direction: 'row', alignItems: 'flex-start'}}
+        style={{position: 'relative', zIndex: 1}}
       >
         <PageHeader
           title={
