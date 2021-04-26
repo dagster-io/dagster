@@ -45,8 +45,6 @@ if __name__ == "__main__":
             "click>=7.0",
             "dagster=={ver}".format(ver=ver),
             "dagster-graphql=={ver}".format(ver=ver),
-            # graphql
-            "graphql-core>=2.1,<3",
             # server
             "flask-cors>=3.0.6",
             "Flask-GraphQL>=2.0.0",
