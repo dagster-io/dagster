@@ -19,7 +19,7 @@ def test_heartbeat(
         assert all_daemons_healthy(instance) is False
 
         with start_daemon():
-            time.sleep(DEFAULT_HEARTBEAT_INTERVAL_SECONDS + 5)
+            time.sleep(5)
             assert all_daemons_healthy(instance) is True
 
         frozen_datetime = pendulum.now().add(

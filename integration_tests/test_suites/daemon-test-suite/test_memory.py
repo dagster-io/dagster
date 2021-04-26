@@ -98,7 +98,7 @@ def test_no_memory_leaks():
                 and "dagster" in inspect.getmodule(obj).__name__,
             )
             while True:
-                time.sleep(45)
+                time.sleep(30)
 
                 controller.check_daemon_threads()
                 controller.check_daemon_heartbeats()

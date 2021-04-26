@@ -74,6 +74,7 @@ def launch_scheduled_runs(
 
     if not schedules:
         logger.info("Not checking for any runs since no schedules have been started.")
+        yield
         return
 
     schedule_names = ", ".join([schedule.job_name for schedule in schedules])

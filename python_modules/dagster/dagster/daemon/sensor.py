@@ -153,6 +153,7 @@ def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None
     ]
     if not sensor_jobs:
         logger.info("Not checking for any runs since no sensors have been started.")
+        yield
         return
 
     for job_state in sensor_jobs:

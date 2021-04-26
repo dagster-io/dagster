@@ -44,7 +44,6 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
-        self._start_loop_time = None
         self._errors = []  # (SerializableErrorInfo, timestamp) tuples
 
         self._first_error_logged = False
@@ -71,8 +70,6 @@ class DagsterDaemon(AbstractContextManager):
         with DagsterInstance.get() as instance:
             with gen_workspace(instance) as workspace:
                 check.inst_param(workspace, "workspace", IWorkspace)
-
-                self._start_loop_time = pendulum.now("UTC")
 
                 while not daemon_shutdown_event.is_set() and (
                     not until or pendulum.now("UTC") < until
@@ -161,11 +158,10 @@ class DagsterDaemon(AbstractContextManager):
 
         curr_time = pendulum.now("UTC")
 
-        heartbeat_compare_time = (
-            self._last_heartbeat_time if self._last_heartbeat_time else self._start_loop_time
-        )
-
-        if (curr_time - heartbeat_compare_time).total_seconds() < heartbeat_interval_seconds:
+        if (
+            self._last_heartbeat_time
+            and (curr_time - self._last_heartbeat_time).total_seconds() < heartbeat_interval_seconds
+        ):
             return
 
         daemon_type = self.daemon_type()
