@@ -1,7 +1,7 @@
 import pendulum
 import pytest
 from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus

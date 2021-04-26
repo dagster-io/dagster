@@ -1353,7 +1353,7 @@ class DagsterInstance:
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo
-        from dagster.core.definitions.job import JobType
+        from dagster.core.definitions.run_request import JobType
         from dagster.core.scheduler.job import JobStatus
 
         errors = []
@@ -1404,7 +1404,7 @@ class DagsterInstance:
 
     def start_sensor(self, external_sensor):
         from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
-        from dagster.core.definitions.job import JobType
+        from dagster.core.definitions.run_request import JobType
 
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
 

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.job import JobState, JobStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime

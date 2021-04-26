@@ -270,11 +270,17 @@ class ExternalScheduleExecutionArgs(
 class SensorExecutionArgs(
     namedtuple(
         "_SensorExecutionArgs",
-        "repository_origin instance_ref sensor_name last_completion_time last_run_key",
+        "repository_origin instance_ref sensor_name last_completion_time last_run_key cursor",
     )
 ):
     def __new__(
-        cls, repository_origin, instance_ref, sensor_name, last_completion_time, last_run_key
+        cls,
+        repository_origin,
+        instance_ref,
+        sensor_name,
+        last_completion_time,
+        last_run_key,
+        cursor,
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
@@ -287,6 +293,7 @@ class SensorExecutionArgs(
                 last_completion_time, "last_completion_time"
             ),
             last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
+            cursor=check.opt_str_param(cursor, "cursor"),
         )
 
 

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation import JobSelector
 from dagster.core.scheduler.job import JobStatus
 

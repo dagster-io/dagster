@@ -6,10 +6,10 @@ from collections import namedtuple
 import pendulum
 from dagster import check, seven
 from dagster.cli.workspace.workspace import IWorkspace
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.sensor import SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector
-from dagster.core.host_representation.external_data import ExternalSensorExecutionData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -53,12 +53,24 @@ class SensorLaunchContext:
 
     def update_state(self, status, **kwargs):
         skip_reason = kwargs.get("skip_reason")
+        cursor = kwargs.get("cursor")
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
-        self._tick = self._tick.with_status(status=status, **kwargs).with_reason(
-            skip_reason=skip_reason
-        )
+        if "cursor" in kwargs:
+            del kwargs["cursor"]
+
+        if kwargs:
+            check.inst_param(status, "status", JobTickStatus)
+
+        if status:
+            self._tick = self._tick.with_status(status=status, **kwargs)
+
+        if skip_reason:
+            self._tick = self._tick.with_reason(skip_reason=skip_reason)
+
+        if cursor:
+            self._tick = self._tick.with_cursor(cursor)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -79,6 +91,7 @@ class SensorLaunchContext:
                         last_tick_timestamp=self._tick.timestamp,
                         last_run_key=last_run_key,
                         min_interval=self._external_sensor.min_interval_seconds,
+                        cursor=self._tick.cursor,
                     )
                 )
             )
@@ -125,6 +138,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
 
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
 
+    workspace_iteration = 0
     start_time = pendulum.now("UTC").timestamp()
     while True:
         start_time = pendulum.now("UTC").timestamp()
@@ -135,15 +149,19 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
         if start_time - manager_loaded_time > RELOAD_LOCATION_MANAGER_INTERVAL:
             workspace.cleanup()
             manager_loaded_time = pendulum.now("UTC").timestamp()
+            workspace_iteration = 0
 
-        yield from execute_sensor_iteration(instance, logger, workspace)
+        yield from execute_sensor_iteration(instance, logger, workspace, workspace_iteration)
         loop_duration = pendulum.now("UTC").timestamp() - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         time.sleep(sleep_time)
         yield
+        workspace_iteration += 1
 
 
-def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None):
+def execute_sensor_iteration(
+    instance, logger, workspace, workspace_iteration=None, debug_crash_flags=None
+):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
@@ -152,7 +170,8 @@ def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None
         if s.status == JobStatus.RUNNING
     ]
     if not sensor_jobs:
-        logger.info("Not checking for any runs since no sensors have been started.")
+        if not workspace_iteration:
+            logger.info("Not checking for any runs since no sensors have been started.")
         yield
         return
 
@@ -238,11 +257,12 @@ def _evaluate_sensor(
         external_sensor.name,
         job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
         job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
+        job_state.job_specific_data.cursor if job_state.job_specific_data else None,
     )
 
     yield
 
-    assert isinstance(sensor_runtime_data, ExternalSensorExecutionData)
+    assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.skip_message:
             context.logger.info(
@@ -250,11 +270,15 @@ def _evaluate_sensor(
                 f"{sensor_runtime_data.skip_message}"
             )
             context.update_state(
-                JobTickStatus.SKIPPED, skip_reason=sensor_runtime_data.skip_message
+                JobTickStatus.SKIPPED,
+                skip_reason=sensor_runtime_data.skip_message,
+                cursor=sensor_runtime_data.cursor,
             )
         else:
             context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
-            context.update_state(JobTickStatus.SKIPPED)
+            context.update_state(JobTickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
+
+        yield
         return
 
     pipeline_selector = PipelineSelector(
@@ -315,9 +339,9 @@ def _evaluate_sensor(
         )
 
     if context.run_count:
-        context.update_state(JobTickStatus.SUCCESS)
+        context.update_state(JobTickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
     else:
-        context.update_state(JobTickStatus.SKIPPED)
+        context.update_state(JobTickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
     yield
 
@@ -360,6 +384,7 @@ def _get_or_create_sensor_run(
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed before the tick could be put
             # into a SUCCESS state
+            context.logger.info(f"Skipping run for {run_request.run_key}, found {run.run_id}.")
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
         else:
             context.logger.info(

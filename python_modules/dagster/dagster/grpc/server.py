@@ -548,6 +548,7 @@ class DagsterApiServer(DagsterApiServicer):
                 args.sensor_name,
                 args.last_completion_time,
                 args.last_run_key,
+                args.cursor,
             )
         )
 

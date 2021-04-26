@@ -15,8 +15,8 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.utils import ensure_gen, merge_dicts
 
-from .job import JobType, RunRequest, SkipReason
 from .mode import DEFAULT_MODE_NAME
+from .run_request import JobType, RunRequest, SkipReason
 from .utils import check_valid_name
 
 

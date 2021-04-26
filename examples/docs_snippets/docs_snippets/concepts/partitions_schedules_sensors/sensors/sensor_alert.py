@@ -1,5 +1,5 @@
 from dagster import ModeDefinition, ResourceDefinition, pipeline, sensor, solid
-from dagster.core.definitions.job import RunRequest
+from dagster.core.definitions.run_request import RunRequest
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster_slack import slack_resource
 

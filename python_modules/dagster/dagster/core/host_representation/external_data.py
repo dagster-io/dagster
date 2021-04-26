@@ -15,8 +15,8 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
-from dagster.core.definitions.job import RunRequest, SkipReason
 from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions.run_request import RunRequest, SkipReason
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -241,33 +241,6 @@ class ExternalSensorData(
             mode=check.opt_str_param(mode, "mode"),
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
-        )
-
-
-@whitelist_for_serdes
-class ExternalSensorExecutionData(
-    namedtuple("_ExternalSensorExecutionData", "run_requests skip_message")
-):
-    def __new__(cls, run_requests=None, skip_message=None):
-        check.opt_list_param(run_requests, "run_requests", RunRequest)
-        check.opt_str_param(skip_message, "skip_message")
-        check.invariant(
-            not (run_requests and skip_message), "Found both skip data and run request data"
-        )
-        return super(ExternalSensorExecutionData, cls).__new__(
-            cls,
-            run_requests=run_requests,
-            skip_message=skip_message,
-        )
-
-    @staticmethod
-    def from_execution_data(tick_data):
-        check.opt_list_param(tick_data, "tick_data", (SkipReason, RunRequest))
-        return ExternalSensorExecutionData(
-            run_requests=[datum for datum in tick_data if isinstance(datum, RunRequest)],
-            skip_message=tick_data[0].skip_message
-            if tick_data and isinstance(tick_data[0], SkipReason)
-            else None,
         )
 
 

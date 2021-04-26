@@ -11,8 +11,8 @@ import pytest
 from dagster import Any, Field, pipeline, repository, solid
 from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.decorators.sensor import sensor
-from dagster.core.definitions.job import JobType
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
@@ -89,6 +89,28 @@ def custom_interval_sensor(_context):
     return SkipReason()
 
 
+@sensor(pipeline_name="the_pipeline")
+def skip_cursor_sensor(context):
+    if not context.cursor:
+        cursor = 1
+    else:
+        cursor = int(context.cursor) + 1
+
+    context.update_cursor(str(cursor))
+    return SkipReason()
+
+
+@sensor(pipeline_name="the_pipeline")
+def run_cursor_sensor(context):
+    if not context.cursor:
+        cursor = 1
+    else:
+        cursor = int(context.cursor) + 1
+
+    context.update_cursor(str(cursor))
+    return RunRequest(run_key=None, run_config={}, tags={})
+
+
 def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
@@ -121,6 +143,8 @@ def the_repo():
         always_on_sensor,
         run_key_sensor,
         custom_interval_sensor,
+        skip_cursor_sensor,
+        run_cursor_sensor,
     ]
 
 
@@ -851,3 +875,66 @@ def test_large_sensor(external_repo_context):
                 freeze_datetime,
                 JobTickStatus.SUCCESS,
             )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_cursor_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            skip_sensor = external_repo.get_external_sensor("skip_cursor_sensor")
+            run_sensor = external_repo.get_external_sensor("run_cursor_sensor")
+            instance.start_sensor(skip_sensor)
+            instance.start_sensor(run_sensor)
+            evaluate_sensors(instance, workspace)
+
+            skip_ticks = instance.get_job_ticks(skip_sensor.get_external_origin_id())
+            assert len(skip_ticks) == 1
+            validate_tick(
+                skip_ticks[0],
+                skip_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+            assert skip_ticks[0].cursor == "1"
+
+            run_ticks = instance.get_job_ticks(run_sensor.get_external_origin_id())
+            assert len(run_ticks) == 1
+            validate_tick(
+                run_ticks[0],
+                run_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            assert run_ticks[0].cursor == "1"
+
+        freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, workspace)
+
+            skip_ticks = instance.get_job_ticks(skip_sensor.get_external_origin_id())
+            assert len(skip_ticks) == 2
+            validate_tick(
+                skip_ticks[0],
+                skip_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+            assert skip_ticks[0].cursor == "2"
+
+            run_ticks = instance.get_job_ticks(run_sensor.get_external_origin_id())
+            assert len(run_ticks) == 2
+            validate_tick(
+                run_ticks[0],
+                run_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            assert run_ticks[0].cursor == "2"

@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.job import RunRequest, SkipReason
+from dagster.core.definitions.run_request import RunRequest, SkipReason
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,

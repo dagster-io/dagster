@@ -395,6 +395,7 @@ def test_sensor_timeout():
                         sensor_name="slow_sensor",
                         last_completion_time=None,
                         last_run_key=None,
+                        cursor=None,
                     ),
                     timeout=2,
                 )
@@ -407,6 +408,7 @@ def test_sensor_timeout():
                     sensor_name="slow_sensor",
                     last_completion_time=None,
                     last_run_key=None,
+                    cursor=None,
                 ),
             )
     finally:

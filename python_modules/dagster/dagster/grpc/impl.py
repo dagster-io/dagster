@@ -33,7 +33,6 @@ from dagster.core.host_representation.external_data import (
     ExternalPipelineSubsetResult,
     ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionData,
     ExternalSensorExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
@@ -244,7 +243,7 @@ def get_external_schedule_execution(
 
 
 def get_external_sensor_execution(
-    recon_repo, instance_ref, sensor_name, last_completion_timestamp, last_run_key
+    recon_repo, instance_ref, sensor_name, last_completion_timestamp, last_run_key, cursor
 ):
     check.inst_param(
         recon_repo,
@@ -256,7 +255,10 @@ def get_external_sensor_execution(
     sensor_def = definition.get_sensor_def(sensor_name)
 
     with SensorExecutionContext(
-        instance_ref, last_completion_time=last_completion_timestamp, last_run_key=last_run_key
+        instance_ref,
+        last_completion_time=last_completion_timestamp,
+        last_run_key=last_run_key,
+        cursor=cursor,
     ) as sensor_context:
         try:
             with user_code_error_boundary(
@@ -264,9 +266,7 @@ def get_external_sensor_execution(
                 lambda: "Error occurred during the execution of evaluation_fn for sensor "
                 "{sensor_name}".format(sensor_name=sensor_def.name),
             ):
-                return ExternalSensorExecutionData.from_execution_data(
-                    sensor_def.get_execution_data(sensor_context)
-                )
+                return sensor_def.get_execution_data(sensor_context)
         except SensorExecutionError:
             return ExternalSensorExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())

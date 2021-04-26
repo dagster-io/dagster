@@ -1,7 +1,7 @@
 import abc
 from typing import Iterable, Type
 
-from dagster.core.definitions.job import JobType
+from dagster.core.definitions.run_request import JobType
 from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.scheduler.job import JobState, JobStatus, JobTick, JobTickData, JobTickStatus

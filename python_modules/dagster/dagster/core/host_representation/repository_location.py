@@ -67,8 +67,8 @@ if TYPE_CHECKING:
         ExternalScheduleExecutionData,
         ExternalScheduleExecutionErrorData,
     )
+    from dagster.core.definitions.sensor import SensorExecutionData
     from dagster.core.host_representation.external_data import (
-        ExternalSensorExecutionData,
         ExternalSensorExecutionErrorData,
     )
 
@@ -174,7 +174,8 @@ class RepositoryLocation(AbstractContextManager):
         name: str,
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
-    ) -> Union["ExternalSensorExecutionData", "ExternalSensorExecutionErrorData"]:
+        cursor: Optional[str],
+    ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
         pass
 
     @abstractproperty
@@ -397,9 +398,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         name: str,
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
-    ) -> Union["ExternalSensorExecutionData", "ExternalSensorExecutionErrorData"]:
+        cursor: Optional[str],
+    ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
         return get_external_sensor_execution(
-            self._recon_repo, instance.get_ref(), name, last_completion_time, last_run_key
+            self._recon_repo, instance.get_ref(), name, last_completion_time, last_run_key, cursor
         )
 
     def get_external_partition_set_execution_param_data(
@@ -692,7 +694,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         name: str,
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
-    ) -> "ExternalSensorExecutionData":
+        cursor: Optional[str],
+    ) -> "SensorExecutionData":
         return sync_get_external_sensor_execution_data_grpc(
             self.client,
             instance,
@@ -700,6 +703,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             name,
             last_completion_time,
             last_run_key,
+            cursor,
         )
 
     def get_external_partition_set_execution_param_data(
