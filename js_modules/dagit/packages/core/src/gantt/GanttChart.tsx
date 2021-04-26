@@ -83,6 +83,9 @@ interface GanttChartProps {
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
   onSetSelection: (query: string) => void;
+
+  // for storybooks
+  overrideNowTime?: number;
 }
 
 interface GanttChartState {
@@ -204,7 +207,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
-  const [nowMs, setNowMs] = React.useState<number>(() => Date.now());
+  const [nowMs, setNowMs] = React.useState<number>(() => props.overrideNowTime || Date.now());
   const {options, metadata, selection} = props;
 
   const {rootServerURI} = React.useContext(AppContext);

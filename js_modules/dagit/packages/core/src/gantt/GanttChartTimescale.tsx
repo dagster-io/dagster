@@ -2,6 +2,8 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {formatElapsedTime} from '../app/Util';
+
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
 const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
@@ -58,6 +60,14 @@ const TICK_CONFIG = [
     tickIntervalMs: 20 * 60 * 1000,
     tickLabels: msToMinuteLabel,
   },
+  {
+    tickIntervalMs: 60 * 60 * 1000,
+    tickLabels: msToMinuteLabel,
+  },
+  {
+    tickIntervalMs: 6 * 60 * 60 * 1000,
+    tickLabels: msToMinuteLabel,
+  },
 ];
 
 interface GanttChartTimescaleProps {
@@ -82,25 +92,26 @@ export const GanttChartTimescale = ({
   const lines: React.ReactChild[] = [];
 
   const pxPerMs = scale;
-  const {tickIntervalMs, tickLabels} =
-    TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > 80) || TICK_CONFIG[TICK_CONFIG.length - 1];
+  const tickConfig = TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > 80);
+  if (tickConfig) {
+    const {tickIntervalMs, tickLabels} = tickConfig;
+    const pxPerTick = tickIntervalMs * pxPerMs;
+    const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
 
-  const pxPerTick = tickIntervalMs * pxPerMs;
-  const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
-
-  for (let x = firstTickX; x < firstTickX + viewport.width; x += pxPerTick) {
-    if (x - viewport.left < 10) {
-      continue;
+    for (let x = firstTickX; x < firstTickX + viewport.width; x += pxPerTick) {
+      if (x - viewport.left < 10) {
+        continue;
+      }
+      const ms = x / pxPerMs;
+      const key = `${ms.toFixed(2)}`;
+      const label = tickLabels(ms);
+      lines.push(<div className="line" key={key} style={{left: x, transform}} />);
+      ticks.push(
+        <div className="tick" key={key} style={{left: x - 20, transform}}>
+          {label}
+        </div>,
+      );
     }
-    const ms = x / pxPerMs;
-    const key = `${ms.toFixed(2)}`;
-    const label = tickLabels(ms);
-    lines.push(<div className="line" key={key} style={{left: x, transform}} />);
-    ticks.push(
-      <div className="tick" key={key} style={{left: x - 20, transform}}>
-        {label}
-      </div>,
-    );
   }
 
   return (
@@ -117,7 +128,7 @@ export const GanttChartTimescale = ({
               transform,
             }}
           >
-            {msToSubsecondLabel(highlightedMs[1] - highlightedMs[0])}
+            {formatElapsedTime(highlightedMs[1] - highlightedMs[0])}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {
