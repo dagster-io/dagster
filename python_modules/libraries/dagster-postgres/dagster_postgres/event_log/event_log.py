@@ -226,51 +226,48 @@ def watcher_thread(
     watcher_thread_exit: threading.Event,
     watcher_thread_started: threading.Event,
 ):
-    try:
-        for notif in await_pg_notifications(
-            conn_string,
-            channels=[CHANNEL_NAME],
-            timeout=POLLING_CADENCE,
-            yield_on_timeout=True,
-            exit_event=watcher_thread_exit,
-            started_event=watcher_thread_started,
-        ):
-            if notif is None:
-                if watcher_thread_exit.is_set():
-                    break
-            else:
-                run_id, index_str = notif.payload.split("_")
-                with dict_lock:
-                    if run_id not in handlers_dict:
-                        continue
+    for notif in await_pg_notifications(
+        conn_string,
+        channels=[CHANNEL_NAME],
+        timeout=POLLING_CADENCE,
+        yield_on_timeout=True,
+        exit_event=watcher_thread_exit,
+        started_event=watcher_thread_started,
+    ):
+        if notif is None:
+            if watcher_thread_exit.is_set():
+                break
+        else:
+            run_id, index_str = notif.payload.split("_")
+            with dict_lock:
+                if run_id not in handlers_dict:
+                    continue
 
-                index = int(index_str)
-                with dict_lock:
-                    handlers = handlers_dict.get(run_id, [])
+            index = int(index_str)
+            with dict_lock:
+                handlers = handlers_dict.get(run_id, [])
 
-                engine = create_engine(
-                    conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
-                )
-                try:
-                    with engine.connect() as conn:
-                        # https://github.com/dagster-io/dagster/issues/3858
-                        cursor_res = conn.execute(
-                            db.select([SqlEventLogStorageTable.c.event]).where(
-                                SqlEventLogStorageTable.c.id == index
-                            ),
-                        )
-                        dagster_event: EventRecord = deserialize_json_to_dagster_namedtuple(
-                            cursor_res.scalar()
-                        )
-                finally:
-                    engine.dispose()
+            engine = create_engine(
+                conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+            )
+            try:
+                with engine.connect() as conn:
+                    # https://github.com/dagster-io/dagster/issues/3858
+                    cursor_res = conn.execute(
+                        db.select([SqlEventLogStorageTable.c.event]).where(
+                            SqlEventLogStorageTable.c.id == index
+                        ),
+                    )
+                    dagster_event: EventRecord = deserialize_json_to_dagster_namedtuple(
+                        cursor_res.scalar()
+                    )
+            finally:
+                engine.dispose()
 
-                with dict_lock:
-                    for callback_with_cursor in handlers:
-                        if callback_with_cursor.start_cursor < index:
-                            callback_with_cursor.callback(dagster_event)
-    except psycopg2.OperationalError:
-        pass
+            with dict_lock:
+                for callback_with_cursor in handlers:
+                    if callback_with_cursor.start_cursor < index:
+                        callback_with_cursor.callback(dagster_event)
 
 
 class PostgresEventWatcher:
