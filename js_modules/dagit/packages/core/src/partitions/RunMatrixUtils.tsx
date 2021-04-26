@@ -252,6 +252,7 @@ export const GridScrollContainer = styled.div`
   padding-right: 60px;
   padding-bottom: 16px;
   overflow-x: scroll;
+  overscroll-behavior-x: contain;
   z-index: 0;
   background: ${Colors.LIGHT_GRAY5};
   flex: 1;
