@@ -1,11 +1,7 @@
 import yaml
 from dagster import check
 from dagster.core.host_representation import (
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
     ExternalPartitionSet,
-    ExternalPartitionTagsData,
     RepositoryHandle,
     RepositorySelector,
 )
@@ -84,8 +80,8 @@ def get_partition_by_name(graphene_info, repository_handle, partition_set, parti
     )
 
 
+@capture_error
 def get_partition_config(graphene_info, repository_handle, partition_set_name, partition_name):
-    from ..schema.errors import GraphenePythonError
     from ..schema.partition_sets import GraphenePartitionRunConfig
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -98,17 +94,13 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
         partition_name,
     )
 
-    if isinstance(result, ExternalPartitionConfigData):
-        return GraphenePartitionRunConfig(
-            yaml=yaml.safe_dump(result.run_config, default_flow_style=False)
-        )
-    else:
-        return GraphenePythonError(result.error)
+    return GraphenePartitionRunConfig(
+        yaml=yaml.safe_dump(result.run_config, default_flow_style=False)
+    )
 
 
 @capture_error
 def get_partition_tags(graphene_info, repository_handle, partition_set_name, partition_name):
-    from ..schema.errors import GraphenePythonError
     from ..schema.partition_sets import GraphenePartitionTags
     from ..schema.tags import GraphenePipelineTag
 
@@ -120,23 +112,19 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
         repository_handle, partition_set_name, partition_name
     )
 
-    if isinstance(result, ExternalPartitionTagsData):
-        return GraphenePartitionTags(
-            results=[
-                GraphenePipelineTag(key=key, value=value)
-                for key, value in result.tags.items()
-                if get_tag_type(key) != TagType.HIDDEN
-            ]
-        )
-    else:
-        return GraphenePythonError(result.error)
+    return GraphenePartitionTags(
+        results=[
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in result.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
+        ]
+    )
 
 
 @capture_error
 def get_partitions(
     graphene_info, repository_handle, partition_set, cursor=None, limit=None, reverse=False
 ):
-    from ..schema.errors import GraphenePythonError
     from ..schema.partition_sets import GraphenePartition, GraphenePartitions
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -145,25 +133,18 @@ def get_partitions(
         repository_handle, partition_set.name
     )
 
-    if isinstance(result, ExternalPartitionNamesData):
-        partition_names = _apply_cursor_limit_reverse(
-            result.partition_names, cursor, limit, reverse
-        )
+    partition_names = _apply_cursor_limit_reverse(result.partition_names, cursor, limit, reverse)
 
-        return GraphenePartitions(
-            results=[
-                GraphenePartition(
-                    external_partition_set=partition_set,
-                    external_repository_handle=repository_handle,
-                    partition_name=partition_name,
-                )
-                for partition_name in partition_names
-            ]
-        )
-
-    else:
-        assert isinstance(result, ExternalPartitionExecutionErrorData)
-        return GraphenePythonError(result.error)
+    return GraphenePartitions(
+        results=[
+            GraphenePartition(
+                external_partition_set=partition_set,
+                external_repository_handle=repository_handle,
+                partition_name=partition_name,
+            )
+            for partition_name in partition_names
+        ]
+    )
 
 
 def _apply_cursor_limit_reverse(items, cursor, limit, reverse):

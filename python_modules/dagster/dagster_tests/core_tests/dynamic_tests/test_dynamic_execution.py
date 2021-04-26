@@ -12,18 +12,19 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterExecutionStepNotFoundError
-from dagster.core.execution.api import reexecute_pipeline
+from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.test_utils import instance_for_test
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
-@solid
+@solid(tags={"third": "3"})
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@solid
+@solid(tags={"second": "2"})
 def multiply_inputs(context, y, ten):
     context.log.info("multiply_inputs is returning " + str(y * ten))
     return y * ten
@@ -45,6 +46,7 @@ def echo(_, x: int) -> int:
         "range": Field(int, is_required=False, default_value=3),
         "fail": Field(bool, is_required=False, default_value=False),
     },
+    tags={"first": "1"},
 )
 def emit(context):
     if context.solid_config["fail"]:
@@ -181,6 +183,24 @@ def test_composite_wrapping():
     assert result.result_for_solid("outer").output_value() == {"0": 0, "1": 1, "2": 2}
 
 
+def test_tags():
+    known_state = KnownExecutionState(
+        {},
+        {
+            emit.name: {"result": ["0", "1", "2"]},
+        },
+    )
+    plan = create_execution_plan(dynamic_pipeline, known_state=known_state)
+
+    assert plan.get_step_by_key(emit.name).tags == {"first": "1"}
+
+    for mapping_key in range(3):
+        assert plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]").tags == {
+            "second": "2"
+        }
+        assert plan.get_step_by_key(f"{multiply_by_two.name}[{mapping_key}]").tags == {"third": "3"}
+
+
 def test_full_reexecute():
     with instance_for_test() as instance:
         result_1 = execute_pipeline(dynamic_pipeline, instance=instance)
@@ -299,3 +319,43 @@ def test_map_multi_fail():
             raise_on_error=False,
         )
         assert not result.success
+
+
+def test_map_multi_reexecute_after_fail():
+    with instance_for_test() as instance:
+        result_1 = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            run_config={
+                "execution": {"multiprocess": {}},
+                "solids": {"emit": {"config": {"fail": True}}},
+            },
+            raise_on_error=False,
+        )
+        assert not result_1.success
+
+        result_2 = reexecute_pipeline(
+            reconstructable(dynamic_pipeline),
+            parent_run_id=result_1.run_id,
+            run_config={
+                "execution": {"multiprocess": {}},
+            },
+            instance=instance,
+        )
+        assert result_2.success
+
+
+def test_multi_collect():
+    @solid
+    def fan_in(_, x, y):
+        return x + y
+
+    @pipeline
+    def double():
+        nums_1 = emit()
+        nums_2 = emit()
+        fan_in(nums_1.collect(), nums_2.collect())
+
+    result = execute_pipeline(double)
+    assert result.success
+    assert result.result_for_solid("fan_in").output_value() == [0, 1, 2, 0, 1, 2]

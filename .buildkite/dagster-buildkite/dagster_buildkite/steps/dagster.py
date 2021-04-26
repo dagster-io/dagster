@@ -1,6 +1,12 @@
 import os
 
-from ..defines import GCP_CREDS_LOCAL_FILE, TOX_MAP, SupportedPython, SupportedPythons
+from ..defines import (
+    GCP_CREDS_LOCAL_FILE,
+    TOX_MAP,
+    ExamplePythons,
+    SupportedPython,
+    SupportedPythons,
+)
 from ..images.versions import COVERAGE_IMAGE_VERSION
 from ..module_build_spec import ModuleBuildSpec
 from ..step_builder import StepBuilder
@@ -149,18 +155,6 @@ def dagit_extra_cmds_fn(_):
     return ["make rebuild_dagit"]
 
 
-def legacy_examples_extra_cmds_fn(_):
-    return [
-        "pushd examples/legacy_examples",
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-        # Can't use host networking on buildkite and communicate via localhost
-        # between these sibling containers, so pass along the ip.
-        network_buildkite_container("postgres"),
-        connect_sibling_docker_container("postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"),
-        "popd",
-    ]
-
-
 def mysql_extra_cmds_fn(_):
     return [
         "pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/",
@@ -256,37 +250,21 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "examples/airline_demo",
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         buildkite_label="airline-demo",
+        supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
         buildkite_label="dbt_example",
         upload_coverage=False,
+        supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
         "examples/deploy_docker",
         extra_cmds_fn=deploy_docker_example_extra_cmds_fn,
         buildkite_label="deploy_docker_example",
         upload_coverage=False,
-    ),
-    # Examples: Events Demo
-    # TODO: https://github.com/dagster-io/dagster/issues/2617
-    # ModuleBuildSpec(
-    #     'examples',
-    #     env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
-    #     tox_file='tox_events.ini',
-    #     buildkite_label='events-demo',
-    # ),
-    # Examples
-    ModuleBuildSpec(
-        "examples/legacy_examples",
-        extra_cmds_fn=legacy_examples_extra_cmds_fn,
-        upload_coverage=False,
-    ),
-    ModuleBuildSpec(
-        "examples/docs_snippets",
-        extra_cmds_fn=legacy_examples_extra_cmds_fn,
-        upload_coverage=False,
+        supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec("python_modules/automation"),
@@ -435,7 +413,6 @@ def examples_tests():
     skip_examples = [
         # Skip these folders because they need custom build config
         "docs_snippets",
-        "legacy_examples",
         "airline_demo",
         "dbt_example",
         "deploy_docker",
@@ -451,7 +428,9 @@ def examples_tests():
 
     tests = []
     for example in examples_packages:
-        tests += ModuleBuildSpec(example, upload_coverage=False).get_tox_build_steps()
+        tests += ModuleBuildSpec(
+            example, upload_coverage=False, supported_pythons=ExamplePythons
+        ).get_tox_build_steps()
     return tests
 
 
@@ -522,7 +501,6 @@ def pylint_steps():
                 -e python_modules/libraries/dagstermill \
                 -e python_modules/libraries/dagster-celery \
                 -e python_modules/libraries/dagster-dask \
-                -e examples/legacy_examples
             """,
             "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % " ".join(base_paths_ext),
         )

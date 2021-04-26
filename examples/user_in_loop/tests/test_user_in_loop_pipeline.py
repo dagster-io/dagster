@@ -27,7 +27,7 @@ def create_file(path_to_dir):
 
 
 def test_user_in_loop_pipeline(capsys):
-    with tempfile.TemporaryDirectory(dir="user_in_loop") as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             f1 = executor.submit(run_pipeline, temp_dir)
             executor.submit(create_file, temp_dir)

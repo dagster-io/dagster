@@ -32,9 +32,9 @@ If release name contains chart name it will be used as a full name.
 {{- define "dagster.dagit.dagitCommand" -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
 {{- if $userDeployments.enabled }}
-dagit -h 0.0.0.0 -p 80 -w /dagster-workspace/workspace.yaml
+dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }} -w /dagster-workspace/workspace.yaml
 {{- else -}}
-dagit -h 0.0.0.0 -p 80
+dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- end -}}
 {{- end -}}
 
@@ -152,6 +152,10 @@ rpc://
 {{- else if .Values.redis.enabled -}}
 redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backendDbNumber | default 0}}
 {{- end -}}
+{{- end -}}
+
+{{- define "dagster.rabbitmq.alivenessTest" -}}
+until wget http://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.managerPort }}/api/aliveness-test/%2F; do echo waiting for rabbitmq; sleep 2; done;
 {{- end -}}
 
 {{/*

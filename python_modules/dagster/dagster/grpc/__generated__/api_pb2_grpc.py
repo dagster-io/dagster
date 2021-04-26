@@ -67,10 +67,10 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalPartitionTagsRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionTagsReply.FromString,
         )
-        self.ExternalPartitionSetExecutionParams = channel.unary_unary(
+        self.ExternalPartitionSetExecutionParams = channel.unary_stream(
             "/api.DagsterApi/ExternalPartitionSetExecutionParams",
             request_serializer=api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
-            response_deserializer=api__pb2.ExternalPartitionSetExecutionParamsReply.FromString,
+            response_deserializer=api__pb2.StreamingChunkEvent.FromString,
         )
         self.ExternalPipelineSubsetSnapshot = channel.unary_unary(
             "/api.DagsterApi/ExternalPipelineSubsetSnapshot",
@@ -87,15 +87,15 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalRepositoryRequest.SerializeToString,
             response_deserializer=api__pb2.StreamingExternalRepositoryEvent.FromString,
         )
-        self.ExternalScheduleExecution = channel.unary_unary(
+        self.ExternalScheduleExecution = channel.unary_stream(
             "/api.DagsterApi/ExternalScheduleExecution",
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
-            response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
+            response_deserializer=api__pb2.StreamingChunkEvent.FromString,
         )
-        self.ExternalSensorExecution = channel.unary_unary(
+        self.ExternalSensorExecution = channel.unary_stream(
             "/api.DagsterApi/ExternalSensorExecution",
             request_serializer=api__pb2.ExternalSensorExecutionRequest.SerializeToString,
-            response_deserializer=api__pb2.ExternalSensorExecutionReply.FromString,
+            response_deserializer=api__pb2.StreamingChunkEvent.FromString,
         )
         self.ShutdownServer = channel.unary_unary(
             "/api.DagsterApi/ShutdownServer",
@@ -295,10 +295,10 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.ExternalPartitionTagsRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionTagsReply.SerializeToString,
         ),
-        "ExternalPartitionSetExecutionParams": grpc.unary_unary_rpc_method_handler(
+        "ExternalPartitionSetExecutionParams": grpc.unary_stream_rpc_method_handler(
             servicer.ExternalPartitionSetExecutionParams,
             request_deserializer=api__pb2.ExternalPartitionSetExecutionParamsRequest.FromString,
-            response_serializer=api__pb2.ExternalPartitionSetExecutionParamsReply.SerializeToString,
+            response_serializer=api__pb2.StreamingChunkEvent.SerializeToString,
         ),
         "ExternalPipelineSubsetSnapshot": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPipelineSubsetSnapshot,
@@ -315,15 +315,15 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.ExternalRepositoryRequest.FromString,
             response_serializer=api__pb2.StreamingExternalRepositoryEvent.SerializeToString,
         ),
-        "ExternalScheduleExecution": grpc.unary_unary_rpc_method_handler(
+        "ExternalScheduleExecution": grpc.unary_stream_rpc_method_handler(
             servicer.ExternalScheduleExecution,
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
-            response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
+            response_serializer=api__pb2.StreamingChunkEvent.SerializeToString,
         ),
-        "ExternalSensorExecution": grpc.unary_unary_rpc_method_handler(
+        "ExternalSensorExecution": grpc.unary_stream_rpc_method_handler(
             servicer.ExternalSensorExecution,
             request_deserializer=api__pb2.ExternalSensorExecutionRequest.FromString,
-            response_serializer=api__pb2.ExternalSensorExecutionReply.SerializeToString,
+            response_serializer=api__pb2.StreamingChunkEvent.SerializeToString,
         ),
         "ShutdownServer": grpc.unary_unary_rpc_method_handler(
             servicer.ShutdownServer,
@@ -633,12 +633,12 @@ class DagsterApi(object):
         timeout=None,
         metadata=None,
     ):
-        return grpc.experimental.unary_unary(
+        return grpc.experimental.unary_stream(
             request,
             target,
             "/api.DagsterApi/ExternalPartitionSetExecutionParams",
             api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
-            api__pb2.ExternalPartitionSetExecutionParamsReply.FromString,
+            api__pb2.StreamingChunkEvent.FromString,
             options,
             channel_credentials,
             insecure,
@@ -749,12 +749,12 @@ class DagsterApi(object):
         timeout=None,
         metadata=None,
     ):
-        return grpc.experimental.unary_unary(
+        return grpc.experimental.unary_stream(
             request,
             target,
             "/api.DagsterApi/ExternalScheduleExecution",
             api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
-            api__pb2.ExternalScheduleExecutionReply.FromString,
+            api__pb2.StreamingChunkEvent.FromString,
             options,
             channel_credentials,
             insecure,
@@ -778,12 +778,12 @@ class DagsterApi(object):
         timeout=None,
         metadata=None,
     ):
-        return grpc.experimental.unary_unary(
+        return grpc.experimental.unary_stream(
             request,
             target,
             "/api.DagsterApi/ExternalSensorExecution",
             api__pb2.ExternalSensorExecutionRequest.SerializeToString,
-            api__pb2.ExternalSensorExecutionReply.FromString,
+            api__pb2.StreamingChunkEvent.FromString,
             options,
             channel_credentials,
             insecure,

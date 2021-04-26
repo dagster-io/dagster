@@ -7,6 +7,7 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    Field,
     IOManagerDefinition,
     InputDefinition,
     ModeDefinition,
@@ -17,8 +18,10 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.system import InputContext, OutputContext
+from dagster.core.execution.context.input import InputContext
+from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
@@ -47,7 +50,31 @@ def test_io_manager_with_config():
 
     run_config = {"solids": {"my_solid": {"outputs": {"result": {"some_config": "some_value"}}}}}
     result = execute_pipeline(my_pipeline, run_config=run_config)
-    assert result.output_for_solid("my_solid") == 1
+    assert result.success
+
+
+def test_io_manager_with_optional_config():
+    @solid
+    def my_solid(_):
+        pass
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            pass
+
+        def handle_output(self, context, obj):
+            pass
+
+    @io_manager(output_config_schema={"some_config": Field(str, is_required=False)})
+    def configurable_io_manager(_):
+        return MyIOManager()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": configurable_io_manager})])
+    def my_pipeline():
+        my_solid()
+
+    result = execute_pipeline(my_pipeline)
+    assert result.success
 
 
 def test_io_manager_with_required_resource_keys():
@@ -88,7 +115,7 @@ def test_io_manager_with_required_resource_keys():
         my_solid()
 
     result = execute_pipeline(my_pipeline)
-    assert result.output_for_solid("my_solid") == "foobar"
+    assert result.success
 
 
 def define_pipeline(manager, metadata_dict):
@@ -155,7 +182,7 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
             pipeline_def=pipeline_def,
             step_keys_to_execute=step_keys_to_execute,
         )
-        return execute_plan(plan, instance, pipeline_run)
+        return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, pipeline_run)
 
 
 def test_step_subset_with_custom_paths():

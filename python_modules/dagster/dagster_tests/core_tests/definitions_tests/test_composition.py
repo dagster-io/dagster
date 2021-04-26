@@ -884,3 +884,22 @@ def test_bad_alias():
 
     with pytest.raises(DagsterInvalidDefinitionError, match="not a valid name"):
         echo.alias("uh[oh]")
+
+
+def test_tag_subset():
+    @solid
+    def empty(_):
+        pass
+
+    @solid(tags={"def": "1"})
+    def emit(_):
+        return 1
+
+    @pipeline
+    def tag():
+        empty()
+        emit.tag({"invoke": "2"})()
+
+    plan = create_execution_plan(tag.get_pipeline_subset_def({"emit"}))
+    step = list(plan.step_dict.values())[0]
+    assert step.tags == {"def": "1", "invoke": "2"}

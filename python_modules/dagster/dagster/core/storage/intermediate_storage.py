@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterObjectStoreError, DagsterStepOutputNotFoundError
-from dagster.core.execution.context.system import SystemExecutionContext
+from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
@@ -199,7 +199,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         step_output_handle=None,
     ):
         dagster_type = resolve_dagster_type(dagster_type)
-        check.opt_inst_param(context, "context", SystemExecutionContext)
+        check.opt_inst_param(context, "context", PlanExecutionContext)
         check.inst_param(dagster_type, "dagster_type", DagsterType)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
@@ -256,7 +256,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         version=None,
     ):
         dagster_type = resolve_dagster_type(dagster_type)
-        check.opt_inst_param(context, "context", SystemExecutionContext)
+        check.opt_inst_param(context, "context", PlanExecutionContext)
         check.inst_param(dagster_type, "dagster_type", DagsterType)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         check.opt_str_param(version, "version")
@@ -279,7 +279,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         return self.set_intermediate_object(dagster_type, step_output_handle, value, version)
 
     def has_intermediate(self, context, step_output_handle):
-        check.opt_inst_param(context, "context", SystemExecutionContext)
+        check.opt_inst_param(context, "context", PlanExecutionContext)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         paths = self._get_paths(step_output_handle)
         check.list_param(paths, "paths", of_type=str)
@@ -289,7 +289,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         return self.object_store.has_object(key)
 
     def rm_intermediate(self, context, step_output_handle):
-        check.opt_inst_param(context, "context", SystemExecutionContext)
+        check.opt_inst_param(context, "context", PlanExecutionContext)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         paths = self._get_paths(step_output_handle)
         check.param_invariant(len(paths) > 0, "paths")
@@ -306,7 +306,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         )
 
     def copy_intermediate_from_run(self, context, run_id, step_output_handle):
-        check.opt_inst_param(context, "context", SystemExecutionContext)
+        check.opt_inst_param(context, "context", PlanExecutionContext)
         check.str_param(run_id, "run_id")
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         paths = self._get_paths(step_output_handle)

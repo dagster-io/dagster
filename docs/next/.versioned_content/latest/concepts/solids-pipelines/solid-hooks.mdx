@@ -17,10 +17,7 @@ Solid hooks let you define success and failure handling policies on solids.
 
 ## Overview
 
-A <PyObject module="dagster" object="success_hook" displayText="@success_hook" />
-or <PyObject module="dagster" object="failure_hook" displayText="@failure_hook" /> decorated
-function is called a solid hook. Solid hooks are designed for generic purposes — it can be anything
-you would like to do at a per solid level.
+A <PyObject module="dagster" object="success_hook" displayText="@success_hook" /> or <PyObject module="dagster" object="failure_hook" displayText="@failure_hook" /> decorated function is called a solid hook. Solid hooks are designed for generic purposes — it can be anything you would like to do at a per solid level.
 
 ---
 
@@ -44,8 +41,7 @@ def slack_message_on_failure(context: HookContext):
 
 ### Hook context
 
-As you may have noticed, the hook function takes one argument, which is an instance
-of <PyObject module="dagster" object="HookContext" />. The available properties on this context are:
+As you may have noticed, the hook function takes one argument, which is an instance of <PyObject module="dagster" object="HookContext" />. The available properties on this context are:
 
 - `context.log`: loggers
 - `context.solid`: the solid associated with the hook.
@@ -59,12 +55,9 @@ Dagster provides different ways to trigger solid hooks.
 
 ### Applying a hook on every solid in a pipeline
 
-For example, you want to send a slack message to a channel when any solid fails in a pipeline. In
-this case, we will be applying a hook on a pipeline, which will apply the hook on every solid
-instance within in that pipeline.
+For example, you want to send a slack message to a channel when any solid fails in a pipeline. In this case, we will be applying a hook on a pipeline, which will apply the hook on every solid instance within in that pipeline.
 
-You can simply use the hook created "slack_message_on_failure" above to decorate the pipeline
-"notif_all". Then, slack messages will be sent when any solid in the pipeline fails.
+You can simply use the hook created "slack_message_on_failure" above to decorate the pipeline "notif_all". Then, slack messages will be sent when any solid in the pipeline fails.
 
 ```python file=/concepts/solids_pipelines/solid_hooks.py startafter=start_repo_marker_1 endbefore=end_repo_marker_1
 @slack_message_on_failure
@@ -77,9 +70,7 @@ def notif_all():
 
 ### Applying a hook on a solid
 
-However, sometimes a pipeline is a shared responsibility or you only want to be alerted on
-high-priority solid executions. So we also provide a way to set up hooks on solid instances which
-enables you to apply policies on a per-solid basis.
+However, sometimes a pipeline is a shared responsibility or you only want to be alerted on high-priority solid executions. So we also provide a way to set up hooks on solid instances which enables you to apply policies on a per-solid basis.
 
 ```python file=/concepts/solids_pipelines/solid_hooks.py startafter=start_repo_marker_2 endbefore=end_repo_marker_2
 @pipeline(mode_defs=mode_defs)
@@ -90,8 +81,7 @@ def selective_notif():
     b()
 ```
 
-In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will
-send a slack message.
+In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will send a slack message.
 
 <!-- ## Examples
 
@@ -109,16 +99,11 @@ Some supporting text for the example
 
 ### <Check/> Environment-specific hooks using modes
 
-Hooks use resource keys to access resources. After including the resource key in its set of
-`required_resource_keys`, the body of the hook can access the corresponding resource via the
-`resources` attribute of its context object.
+Hooks use resource keys to access resources. After including the resource key in its set of `required_resource_keys`, the body of the hook can access the corresponding resource via the `resources` attribute of its context object.
 
-It also enables you to switch resource values in different modes so that, for example, you can send
-slack messages only when you are in "prod" mode and mock the slack resource when you are in "dev" mode.
+It also enables you to switch resource values in different modes so that, for example, you can send slack messages only when you are in "prod" mode and mock the slack resource when you are in "dev" mode.
 
-In this case, we can mock the `slack_resource` in the "dev" mode using a helper
-function <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>,
-so it won't send slack messages when you are developing the pipeline.
+In this case, we can mock the `slack_resource` in the "dev" mode using a helper function <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages when you are developing the pipeline.
 
 ```python file=/concepts/solids_pipelines/solid_hooks.py startafter=start_repo_marker_3 endbefore=end_repo_marker_3
 mode_defs = [
@@ -134,8 +119,7 @@ mode_defs = [
 ]
 ```
 
-When we switch to "prod" mode, we can provide the real slack token in the `run_config` and therefore
-enable sending messages to a certain slack channel when a hook is triggered.
+When we switch to "prod" mode, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.
 
 ```yaml file=/concepts/solids_pipelines/prod_solid_hooks.yaml
 resources:
@@ -144,8 +128,7 @@ resources:
       token: "xoxp-1234123412341234-12341234-1234" # replace with your slack token
 ```
 
-Then, we can execute a pipeline with the config through Python API, CLI, or the Dagit UI. Here's an
-example of using the Python API.
+Then, we can execute a pipeline with the config through Python API, CLI, or the Dagit UI. Here's an example of using the Python API.
 
 ```python file=/concepts/solids_pipelines/solid_hooks.py startafter=start_repo_main endbefore=end_repo_main
 if __name__ == "__main__":

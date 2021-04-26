@@ -139,7 +139,7 @@
   },
   {
     "source": "/overview/asset-materializations",
-    "destination": "/concepts/assets/asset-catalog",
+    "destination": "/concepts/assets/asset-materializations",
     "permanent": true
   },
   {
@@ -307,7 +307,7 @@
   },
   {
     "source": "/examples/materializations",
-    "destination": "/concepts/assets/asset-catalog",
+    "destination": "/concepts/assets/asset-materializations",
     "permanent": true
   },
   {

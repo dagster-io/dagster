@@ -83,47 +83,54 @@ def test_missing_config():
     def wrap_pipeline():
         wrap.alias("do_stuff")()
 
+    expected_suggested_config = {"solids": {"do_stuff": {"config": {"override_str": "..."}}}}
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline)
 
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
+    assert exc_info.value.errors[0].message.startswith(
         'Missing required config entry "solids" at the root.'
     )
+    assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {})
 
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
+    assert exc_info.value.errors[0].message.startswith(
         'Missing required config entry "solids" at the root.'
     )
+    assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
+    expected_suggested_config = expected_suggested_config["solids"]
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {"solids": {}})
 
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
+    assert exc_info.value.errors[0].message.startswith(
         'Missing required config entry "do_stuff" at path root:solids.'
     )
+    assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
+    expected_suggested_config = expected_suggested_config["do_stuff"]
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {"solids": {"do_stuff": {}}})
 
     assert len(exc_info.value.errors) == 1
-    assert (
-        exc_info.value.errors[0].message
-        == 'Missing required config entry "config" at path root:solids:do_stuff.'
+    assert exc_info.value.errors[0].message.startswith(
+        'Missing required config entry "config" at path root:solids:do_stuff.'
     )
+    assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
+    expected_suggested_config = expected_suggested_config["config"]
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline, {"solids": {"do_stuff": {"config": {}}}})
 
     assert len(exc_info.value.errors) == 1
-    assert (
-        exc_info.value.errors[0].message
-        == 'Missing required config entry "override_str" at path root:solids:do_stuff:config.'
+    assert exc_info.value.errors[0].message.startswith(
+        'Missing required config entry "override_str" at path root:solids:do_stuff:config.'
     )
+    assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
 
 def test_bad_override():
@@ -680,10 +687,11 @@ def test_wrap_all_config_and_inputs():
         'Expected: "{ config_field_a: String config_field_b: String }".'
     )
 
-    assert (
-        exc_info.value.errors[1].message
-        == 'Missing required config entry "config_field_b" at path root:solids:wrap_all:config.'
+    expected_suggested_config = {"config_field_a": "...", "config_field_b": "..."}
+    assert exc_info.value.errors[1].message.startswith(
+        'Missing required config entry "config_field_b" at path root:solids:wrap_all:config.'
     )
+    assert str(expected_suggested_config) in exc_info.value.errors[1].message
 
 
 def test_empty_config():
@@ -769,14 +777,19 @@ def test_bad_solid_def():
         def config_only():  # pylint: disable=unused-variable
             scalar_config_solid()
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=re.escape(
-            "@composite_solid 'config_fn_only' defines a configuration function <lambda> but does not "
-            "define a configuration schema."
-        ),
-    ):
 
-        @composite_solid(config_fn=lambda _cfg: {})
-        def config_fn_only():  # pylint: disable=unused-variable
-            scalar_config_solid()
+def test_default_config_schema():
+    @composite_solid(config_fn=lambda _cfg: {})
+    def config_fn_only():
+        scalar_config_solid()
+
+    @pipeline
+    def wrap_pipeline():
+        config_fn_only()
+
+    result = execute_pipeline(
+        wrap_pipeline,
+        {"solids": {"config_fn_only": {"config": {"override_str": "override"}}}},
+    )
+
+    assert result.success

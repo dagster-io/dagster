@@ -138,7 +138,11 @@ def test_dataframe_csv_missing_inputs():
 
     assert len(exc_info.value.errors) == 1
 
-    assert exc_info.value.errors[0].message == 'Missing required config entry "solids" at the root.'
+    expected_suggested_config = {"solids": {"df_as_input": {"inputs": {"df": "<selector>"}}}}
+    assert exc_info.value.errors[0].message.startswith(
+        'Missing required config entry "solids" at the root.'
+    )
+    assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
     assert "yup" not in called
 

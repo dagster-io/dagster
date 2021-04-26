@@ -2,7 +2,6 @@
 
 from dagster import (
     DependencyDefinition,
-    InputDefinition,
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -23,8 +22,8 @@ def return_one(context):
     return 1
 
 
-@solid(input_defs=[InputDefinition("number", int)])
-def add_one(context, number):
+@solid
+def add_one(context, number: int):
     return number + 1
 
 

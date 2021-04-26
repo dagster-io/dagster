@@ -237,3 +237,22 @@ def test_tags():
     # preset overwrites pipeline def
     assert "defs" in pipeline_run.tags
     assert pipeline_run.tags["defs"] == "preset"
+
+
+@pytest.mark.parametrize("initial_run_config", [{"foo": "bar"}, None])
+def test_with_additional_config(initial_run_config):
+    # Given: an initial preset with a run config or no run config
+    preset_def = PresetDefinition("example_with_config", run_config=initial_run_config)
+
+    # And: new config to be added
+    new_config = {"fizz": "buzz"}
+
+    # When: additional config is added
+    new_preset_def = preset_def.with_additional_config(new_config)
+
+    # Then: the new preset is a new preset object
+    assert id(preset_def) != id(new_preset_def)
+
+    # And: the preset has the expected new config
+    new_full_config = {"foo": "bar", "fizz": "buzz"} if initial_run_config else new_config
+    assert new_preset_def == PresetDefinition("example_with_config", run_config=new_full_config)

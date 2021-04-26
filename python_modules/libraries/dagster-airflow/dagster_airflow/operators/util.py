@@ -5,7 +5,7 @@ from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster import DagsterEventType, check
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.plan import should_skip_step
+from dagster.core.execution.plan.plan import can_isolate_steps, should_skip_step
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 
 
@@ -66,24 +66,14 @@ def get_aws_environment():
     return default_env
 
 
-def check_storage_specified(run_config, error_message_base_dir_ex="'/tmp/special_place'"):
-    if "intermediate_storage" not in run_config:
+def check_storage_specified(pipeline_def, mode_def, run_config):
+    if not can_isolate_steps(pipeline_def, mode_def) and "intermediate_storage" not in run_config:
         raise AirflowException(
-            "No intermediate_storage config found -- must configure intermediate storage accessible from all nodes (e.g. s3) "
-            "Ex.: \n"
-            "intermediate_storage:\n"
-            "  filesystem:\n"
-            "    base_dir: {error_message_base_dir_ex}"
-            "\n\n --or--\n\n"
-            "intermediate_storage:\n"
-            "  s3:\n"
-            "    s3_bucket: 'my-s3-bucket'\n"
-            "\n\n --or--\n\n"
-            "intermediate_storage:\n"
-            "  gcs:\n"
-            "    gcs_bucket: 'my-gcs-bucket'\n".format(
-                error_message_base_dir_ex=error_message_base_dir_ex
-            )
+            "DAGs created using dagster-airflow run each step in its own process, but your "
+            "pipeline includes solid outputs that will not be stored somewhere where other "
+            "processes can retrieve them. Please use a persistent IO manager for these "
+            "outputs. E.g. with\n"
+            '    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
         )
 
     check.invariant(
@@ -128,12 +118,12 @@ def invoke_steps_within_python_operator(
                 parent_pipeline_snapshot=parent_pipeline_snapshot,
             )
 
-            recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
+            recon_pipeline = recon_repo.get_reconstructable_pipeline(
+                pipeline_name
+            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
             execution_plan = create_execution_plan(
-                recon_pipeline.subset_for_execution_from_existing_pipeline(
-                    pipeline_run.solids_to_execute
-                ),
+                recon_pipeline,
                 run_config=run_config,
                 step_keys_to_execute=step_keys,
                 mode=mode,
@@ -142,7 +132,9 @@ def invoke_steps_within_python_operator(
                 raise AirflowSkipException(
                     "Dagster emitted skip event, skipping execution in Airflow"
                 )
-            events = execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
+            events = execute_plan(
+                execution_plan, recon_pipeline, instance, pipeline_run, run_config=run_config
+            )
             check_events_for_failures(events)
             check_events_for_skips(events)
             return events

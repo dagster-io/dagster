@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any
 
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
@@ -216,3 +217,41 @@ def snap_from_config_type(config_type):
         else None,
         scalar_kind=config_type.scalar_kind if config_type.kind == ConfigTypeKind.SCALAR else None,
     )
+
+
+def minimal_config_for_type_snap(
+    config_schema_snap: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap
+) -> Any:
+
+    check.inst_param(config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot)
+    check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
+
+    if ConfigTypeKind.has_fields(config_type_snap.kind):
+        default_dict = {}
+        if ConfigTypeKind.is_selector(config_type_snap.kind):
+            return "<selector>"
+        for field in config_type_snap.fields:
+            if not field.is_required:
+                continue
+
+            default_dict[field.name] = minimal_config_for_type_snap(
+                config_schema_snap, config_schema_snap.get_config_snap(field.type_key)
+            )
+        return default_dict
+    elif config_type_snap.kind == ConfigTypeKind.ANY:
+        return "AnyType"
+    elif config_type_snap.kind == ConfigTypeKind.SCALAR:
+        defaults = {"String": "...", "Int": 0, "Float": 0.0, "Bool": True}
+
+        return defaults.get(config_type_snap.given_name, "<unknown>")
+    elif config_type_snap.kind == ConfigTypeKind.ARRAY:
+        return []
+    elif config_type_snap.kind == ConfigTypeKind.ENUM:
+        return "|".join(sorted(map(lambda v: v.config_value, config_type_snap.enum_values)))
+    elif config_type_snap.kind == ConfigTypeKind.SCALAR_UNION:
+        return minimal_config_for_type_snap(
+            config_schema_snap,
+            config_schema_snap.get_config_snap(config_type_snap.type_param_keys[0]),
+        )
+    else:
+        return "<unknown>"

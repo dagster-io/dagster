@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 
-from dagster import StringSource, check
+from dagster import Field, Float, StringSource, check
 from dagster.core.execution.compute_logs import mirror_stream_to_file
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -20,7 +20,7 @@ from .compute_log_manager import (
     ComputeLogSubscription,
 )
 
-WATCHDOG_POLLING_TIMEOUT = 2.5
+DEFAULT_WATCHDOG_POLLING_TIMEOUT = 2.5
 
 IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: "out", ComputeIOType.STDERR: "err"}
 
@@ -30,8 +30,11 @@ MAX_FILENAME_LENGTH = 255
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
-    def __init__(self, base_dir, inst_data=None):
+    def __init__(self, base_dir, polling_timeout=None, inst_data=None):
         self._base_dir = base_dir
+        self._polling_timeout = check.opt_float_param(
+            polling_timeout, "polling_timeout", DEFAULT_WATCHDOG_POLLING_TIMEOUT
+        )
         self._subscription_manager = LocalComputeLogSubscriptionManager(self)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -51,9 +54,16 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def polling_timeout(self):
+        return self._polling_timeout
+
     @classmethod
     def config_type(cls):
-        return {"base_dir": StringSource}
+        return {
+            "base_dir": StringSource,
+            "polling_timeout": Field(Float, is_required=False),
+        }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -134,52 +144,61 @@ class LocalComputeLogSubscriptionManager:
         self._watchers = {}
         self._observer = None
 
-    def _key(self, run_id, key):
+    def _watch_key(self, run_id, key):
         return "{}:{}".format(run_id, key)
 
     def add_subscription(self, subscription):
         check.inst_param(subscription, "subscription", ComputeLogSubscription)
-        key = self._key(subscription.run_id, subscription.key)
-        self._subscriptions[key].append(subscription)
-        self.watch(subscription.run_id, subscription.key)
+        if self._manager.is_watch_completed(subscription.run_id, subscription.key):
+            subscription.fetch()
+            subscription.complete()
+        else:
+            watch_key = self._watch_key(subscription.run_id, subscription.key)
+            self._subscriptions[watch_key].append(subscription)
+            self.watch(subscription.run_id, subscription.key)
 
-    def remove_all_subscriptions(self, run_id, key):
-        key = self._key(run_id, key)
-        for subscription in self._subscriptions.pop(key, []):
+    def remove_all_subscriptions(self, run_id, step_key):
+        watch_key = self._watch_key(run_id, step_key)
+        for subscription in self._subscriptions.pop(watch_key, []):
             subscription.complete()
 
-    def watch(self, run_id, key):
-        key = self._key(run_id, key)
-        if key in self._watchers:
+    def watch(self, run_id, step_key):
+        watch_key = self._watch_key(run_id, step_key)
+        if watch_key in self._watchers:
             return
 
         update_paths = [
-            self._manager.get_local_path(run_id, key, ComputeIOType.STDOUT),
-            self._manager.get_local_path(run_id, key, ComputeIOType.STDERR),
+            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDOUT),
+            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR),
         ]
-        complete_paths = [self._manager.complete_artifact_path(run_id, key)]
-        directory = os.path.dirname(self._manager.get_local_path(run_id, key, ComputeIOType.STDERR))
+        complete_paths = [self._manager.complete_artifact_path(run_id, step_key)]
+        directory = os.path.dirname(
+            self._manager.get_local_path(run_id, step_key, ComputeIOType.STDERR)
+        )
 
         if not self._observer:
-            self._observer = PollingObserver(WATCHDOG_POLLING_TIMEOUT)
+            self._observer = PollingObserver(self._manager.polling_timeout)
             self._observer.start()
 
         ensure_dir(directory)
-        self._watchers[key] = self._observer.schedule(
-            LocalComputeLogFilesystemEventHandler(self, run_id, key, update_paths, complete_paths),
+
+        self._watchers[watch_key] = self._observer.schedule(
+            LocalComputeLogFilesystemEventHandler(
+                self, run_id, step_key, update_paths, complete_paths
+            ),
             str(directory),
         )
 
-    def notify_subscriptions(self, run_id, key):
-        key = self._key(run_id, key)
-        for subscription in self._subscriptions[key]:
+    def notify_subscriptions(self, run_id, step_key):
+        watch_key = self._watch_key(run_id, step_key)
+        for subscription in self._subscriptions[watch_key]:
             subscription.fetch()
 
-    def unwatch(self, run_id, key, handler):
-        key = self._key(run_id, key)
-        if key in self._watchers:
-            self._observer.remove_handler_for_watch(handler, self._watchers[key])
-        del self._watchers[key]
+    def unwatch(self, run_id, step_key, handler):
+        watch_key = self._watch_key(run_id, step_key)
+        if watch_key in self._watchers:
+            self._observer.remove_handler_for_watch(handler, self._watchers[watch_key])
+        del self._watchers[watch_key]
 
     def dispose(self):
         if self._observer:

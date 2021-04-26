@@ -1,6 +1,6 @@
 {
     "title": "DagsterHelmValues",
-    "description": "Schema for Helm values.",
+    "description": "@generated",
     "type": "object",
     "properties": {
         "dagit": {
@@ -11,6 +11,10 @@
         },
         "postgresql": {
             "$ref": "#/definitions/PostgreSQL"
+        },
+        "generatePostgresqlPasswordSecret": {
+            "title": "Generatepostgresqlpasswordsecret",
+            "type": "boolean"
         },
         "rabbitmq": {
             "$ref": "#/definitions/RabbitMQ"
@@ -60,6 +64,7 @@
         "dagit",
         "dagster-user-deployments",
         "postgresql",
+        "generatePostgresqlPasswordSecret",
         "rabbitmq",
         "redis",
         "flower",
@@ -137,6 +142,45 @@
             ],
             "additionalProperties": false
         },
+        "Server": {
+            "title": "Server",
+            "type": "object",
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "host",
+                "port"
+            ]
+        },
+        "Workspace": {
+            "title": "Workspace",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "servers": {
+                    "title": "Servers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Server"
+                    }
+                }
+            },
+            "required": [
+                "enabled",
+                "servers"
+            ]
+        },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
             "type": "object",
@@ -194,7 +238,13 @@
         "StartupProbe": {
             "title": "StartupProbe",
             "type": "object",
-            "properties": {},
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "default": true,
+                    "type": "boolean"
+                }
+            },
             "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "Dagit": {
@@ -210,6 +260,9 @@
                 },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
+                },
+                "workspace": {
+                    "$ref": "#/definitions/Workspace"
                 },
                 "env": {
                     "title": "Env",
@@ -264,6 +317,7 @@
                 "replicaCount",
                 "image",
                 "service",
+                "workspace",
                 "env",
                 "envConfigMaps",
                 "envSecrets",
@@ -454,6 +508,10 @@
                     "title": "Postgresqldatabase",
                     "type": "string"
                 },
+                "postgresqlParams": {
+                    "title": "Postgresqlparams",
+                    "type": "object"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__dagster__subschema__postgresql__Service"
                 }
@@ -465,6 +523,7 @@
                 "postgresqlUsername",
                 "postgresqlPassword",
                 "postgresqlDatabase",
+                "postgresqlParams",
                 "service"
             ]
         },

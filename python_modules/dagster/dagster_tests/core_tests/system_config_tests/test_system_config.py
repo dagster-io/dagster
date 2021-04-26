@@ -38,6 +38,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.mode_definition,
         logger_defs=default_loggers(),
         ignored_solids=[],
+        required_resources=set(),
     )
 
 
@@ -73,7 +74,9 @@ def test_all_types_provided():
 
 
 def test_provided_default_on_resources_config():
-    @solid(name="some_solid", input_defs=[], output_defs=[])
+    @solid(
+        name="some_solid", input_defs=[], output_defs=[], required_resource_keys={"some_resource"}
+    )
     def some_solid(_):
         return None
 
@@ -453,9 +456,13 @@ def nested_field(config_type, *field_names):
 
 
 def test_required_resource_with_required_subfield():
+    @solid(required_resource_keys={"with_required"})
+    def needs_resource(_):
+        pass
+
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
-        solid_defs=[],
+        solid_defs=[needs_resource],
         mode_defs=[
             ModeDefinition(
                 resource_defs={
@@ -508,9 +515,13 @@ def test_all_optional_field_on_single_resource():
 
 
 def test_optional_and_required_context():
+    @solid(required_resource_keys={"required_resource"})
+    def needs_resource(_):
+        pass
+
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
-        solid_defs=[],
+        solid_defs=[needs_resource],
         mode_defs=[
             ModeDefinition(
                 name="mixed",
@@ -555,7 +566,7 @@ def test_optional_and_required_context():
     )
 
     assert env_obj.resources == {
-        "optional_resource": ResourceConfig({}),
+        "optional_resource": ResourceConfig(None),
         "required_resource": ResourceConfig({"required_field": "foo"}),
         "io_manager": ResourceConfig(None),
     }

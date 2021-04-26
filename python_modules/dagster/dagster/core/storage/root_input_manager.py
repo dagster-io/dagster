@@ -101,10 +101,12 @@ def root_input_manager(
     The decorator produces an :py:class:`RootInputManagerDefinition`.
 
     Args:
-        config_schema (Optional[ConfigSchema]): The schema for the resource-level config.
+        config_schema (Optional[ConfigSchema]): The schema for the resource-level config. If not
+            set, Dagster will accept any config provided.
         description (Optional[str]): A human-readable description of the resource.
         input_config_schema (Optional[ConfigSchema]): A schema for the input-level config. Each
             input that uses this input manager can be configured separately using this config.
+            If not set, Dagster will accept any config provided.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the input
             manager.
         version (Optional[str]): (Experimental) the version of the input manager definition.

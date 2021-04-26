@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.daemon.daemon import SensorDaemon
@@ -61,6 +63,7 @@ query InstanceDetailSummaryQuery {
                 lastHeartbeatErrors {
                     message
                 }
+                healthy
             }
         }
     }
@@ -151,7 +154,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
             pytest.skip("The daemon isn't compatible with an in-memory instance")
         graphql_context.instance.add_daemon_heartbeat(
             DaemonHeartbeat(
-                timestamp=100.0,
+                timestamp=time.time(),
                 daemon_type=SensorDaemon.daemon_type(),
                 daemon_id=None,
                 errors=[
@@ -162,4 +165,5 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
         results = execute_dagster_graphql(graphql_context, DAEMON_HEALTH_QUERY)
         assert results.data["instance"]["daemonHealth"]["sensor"] == {
             "lastHeartbeatErrors": [{"message": "foobar"}],
+            "healthy": True,
         }

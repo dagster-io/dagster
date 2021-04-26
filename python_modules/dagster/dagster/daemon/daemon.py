@@ -5,6 +5,7 @@ from contextlib import AbstractContextManager
 
 import pendulum
 from dagster import DagsterInstance, check
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
@@ -12,9 +13,6 @@ from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler import execute_scheduler_iteration
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.log import default_format_string
-
-# Interval at which heartbeats are posted
-DAEMON_HEARTBEAT_INTERVAL_SECONDS = 30
 
 
 def _mockable_localtime(_):
@@ -36,8 +34,7 @@ def get_default_daemon_logger(daemon_name):
     return logger
 
 
-class CompletedIteration(object):
-    pass
+DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors
 
 
 class DagsterDaemon(AbstractContextManager):
@@ -47,8 +44,8 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
-        self._current_iteration_exceptions = None
-        self._last_iteration_exceptions = None
+        self._start_loop_time = None
+        self._errors = []  # (SerializableErrorInfo, timestamp) tuples
 
         self._first_error_logged = False
 
@@ -61,83 +58,121 @@ class DagsterDaemon(AbstractContextManager):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
 
-    def run_loop(self, daemon_uuid, daemon_shutdown_event, grpc_server_registry, until=None):
-        # Each loop runs in its own thread with its own instance
+    def run_loop(
+        self,
+        daemon_uuid,
+        daemon_shutdown_event,
+        gen_workspace,
+        heartbeat_interval_seconds,
+        error_interval_seconds,
+        until=None,
+    ):
+        # Each loop runs in its own thread with its own instance and IWorkspace
         with DagsterInstance.get() as instance:
-            while not daemon_shutdown_event.is_set() and (not until or pendulum.now("UTC") < until):
-                curr_time = pendulum.now("UTC")
-                if (
-                    not self._last_iteration_time
-                    or (curr_time - self._last_iteration_time).total_seconds()
-                    >= self.interval_seconds
-                ):
-                    self._last_iteration_time = curr_time
-                    self._run_iteration(
-                        instance, daemon_uuid, daemon_shutdown_event, grpc_server_registry, until
-                    )
+            with gen_workspace(instance) as workspace:
+                check.inst_param(workspace, "workspace", IWorkspace)
 
-                daemon_shutdown_event.wait(0.5)
+                self._start_loop_time = pendulum.now("UTC")
+
+                while not daemon_shutdown_event.is_set() and (
+                    not until or pendulum.now("UTC") < until
+                ):
+                    curr_time = pendulum.now("UTC")
+                    if (
+                        not self._last_iteration_time
+                        or (curr_time - self._last_iteration_time).total_seconds()
+                        >= self.interval_seconds
+                    ):
+                        self._last_iteration_time = curr_time
+                        self._run_iteration(
+                            instance,
+                            daemon_uuid,
+                            daemon_shutdown_event,
+                            workspace,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                            until,
+                        )
+
+                    self._check_add_heartbeat(
+                        instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
+                    )
+                    daemon_shutdown_event.wait(0.5)
 
     def _run_iteration(
-        self, instance, daemon_uuid, daemon_shutdown_event, grpc_server_registry, until=None
+        self,
+        instance,
+        daemon_uuid,
+        daemon_shutdown_event,
+        workspace,
+        heartbeat_interval_seconds,
+        error_interval_seconds,
+        until=None,
     ):
-        # Build a list of any exceptions encountered during the iteration.
-        # Once the iteration completes, this is copied to last_iteration_exceptions
-        # which is used in the heartbeats. This guarantees that heartbeats contain the full
-        # list of errors raised.
-        self._current_iteration_exceptions = []
-        daemon_generator = self.run_iteration(instance, grpc_server_registry)
+        # Clear out the workspace locations after each iteration
+        workspace.cleanup()
+
+        daemon_generator = self.run_iteration(instance, workspace)
 
         try:
             while (not daemon_shutdown_event.is_set()) and (
                 not until or pendulum.now("UTC") < until
             ):
                 try:
-                    result = check.opt_inst(
-                        next(daemon_generator), tuple([SerializableErrorInfo, CompletedIteration])
-                    )
-                    if isinstance(result, CompletedIteration):
-                        self._last_iteration_exceptions = self._current_iteration_exceptions
-                        self._current_iteration_exceptions = []
-                    elif result:
-                        self._current_iteration_exceptions.append(result)
+                    result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
+                    if result:
+                        self._errors.append((result, pendulum.now("UTC")))
                 except StopIteration:
-                    self._last_iteration_exceptions = self._current_iteration_exceptions
                     break
                 except Exception:  # pylint: disable=broad-except
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     self._logger.error("Caught error:\n{}".format(error_info))
-                    self._current_iteration_exceptions.append(error_info)
-                    self._last_iteration_exceptions = self._current_iteration_exceptions
+                    self._errors.append((error_info, pendulum.now("UTC")))
                     break
                 finally:
-                    self._check_add_heartbeat(instance, daemon_uuid)
+                    try:
+                        self._check_add_heartbeat(
+                            instance,
+                            daemon_uuid,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                        )
+                    except Exception:  # pylint: disable=broad-except
+                        self._logger.error(
+                            "Failed to add heartbeat: \n{}".format(
+                                serializable_error_info_from_exc_info(sys.exc_info())
+                            )
+                        )
 
         finally:
             # cleanup the generator if it was stopped part-way through
             daemon_generator.close()
 
-    def _check_add_heartbeat(self, instance, daemon_uuid):
-        # Always log a heartbeat after the first time an iteration returns an error to make sure we
-        # don't incorrectly say the daemon is healthy
-        first_time_logging_error = self._last_iteration_exceptions and not self._first_error_logged
+    def _check_add_heartbeat(
+        self, instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
+    ):
+        error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
+
+        self._errors = self._errors[:DAEMON_HEARTBEAT_ERROR_LIMIT]
+
+        self._errors = [
+            (error, timestamp) for (error, timestamp) in self._errors if timestamp >= error_max_time
+        ]
 
         curr_time = pendulum.now("UTC")
-        if not first_time_logging_error and (
-            self._last_heartbeat_time
-            and (curr_time - self._last_heartbeat_time).total_seconds()
-            < DAEMON_HEARTBEAT_INTERVAL_SECONDS
-        ):
-            return
 
-        if first_time_logging_error:
-            self._first_error_logged = True
+        heartbeat_compare_time = (
+            self._last_heartbeat_time if self._last_heartbeat_time else self._start_loop_time
+        )
+
+        if (curr_time - heartbeat_compare_time).total_seconds() < heartbeat_interval_seconds:
+            return
 
         daemon_type = self.daemon_type()
 
         last_stored_heartbeat = instance.get_daemon_heartbeats().get(daemon_type)
         if (
-            self._last_heartbeat_time  # not the first heartbeat
+            self._last_heartbeat_time
             and last_stored_heartbeat
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
@@ -159,12 +194,12 @@ class DagsterDaemon(AbstractContextManager):
                 curr_time.float_timestamp,
                 daemon_type,
                 daemon_uuid,
-                errors=self._last_iteration_exceptions,
+                errors=[error for (error, timestamp) in self._errors],
             )
         )
 
     @abstractmethod
-    def run_iteration(self, instance, grpc_server_registry):
+    def run_iteration(self, instance, workspace):
         """
         Execute the daemon. In order to avoid blocking the controller thread for extended periods,
         daemons can yield control during this method. Yields can be either NoneType or a
@@ -198,9 +233,9 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SCHEDULER"
 
-    def run_iteration(self, instance, grpc_server_registry):
+    def run_iteration(self, instance, workspace):
         yield from execute_scheduler_iteration(
-            instance, grpc_server_registry, self._logger, self._max_catchup_runs
+            instance, workspace, self._logger, self._max_catchup_runs
         )
 
 
@@ -213,8 +248,8 @@ class SensorDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "SENSOR"
 
-    def run_iteration(self, instance, grpc_server_registry):
-        yield from execute_sensor_iteration_loop(instance, grpc_server_registry, self._logger)
+    def run_iteration(self, instance, workspace):
+        yield from execute_sensor_iteration_loop(instance, workspace, self._logger)
 
 
 class BackfillDaemon(DagsterDaemon):
@@ -228,5 +263,5 @@ class BackfillDaemon(DagsterDaemon):
     def daemon_type(cls):
         return "BACKFILL"
 
-    def run_iteration(self, instance, grpc_server_registry):
-        yield from execute_backfill_iteration(instance, grpc_server_registry, self._logger)
+    def run_iteration(self, instance, workspace):
+        yield from execute_backfill_iteration(instance, workspace, self._logger)

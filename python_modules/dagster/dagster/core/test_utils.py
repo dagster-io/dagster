@@ -262,7 +262,8 @@ def new_cwd(path):
         os.chdir(old)
 
 
-def today_at_midnight(timezone_name=None):
+def today_at_midnight(timezone_name="UTC"):
+    check.str_param(timezone_name, "timezone_name")
     now = pendulum.now(timezone_name)
     return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
 

@@ -219,11 +219,8 @@ class PartitionSetDefinition(
             ):
                 selected_partition = partition_selector(context, self)
 
-            if not selected_partition:
-                yield SkipReason(
-                    "Partition selector did not return a partition. Make sure that the timezone "
-                    "on your partition set matches your execution timezone."
-                )
+            if isinstance(selected_partition, SkipReason):
+                yield selected_partition
                 return
 
             if selected_partition.name not in self.get_partition_names(

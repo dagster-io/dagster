@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, cast
 
 from dagster import check
 from dagster.core.events.log import EventRecord
@@ -53,25 +53,27 @@ class KnownExecutionState(
                 continue
             event = log.get_dagster_event()
 
+            step_key = cast(str, event.step_key)
+
             # record dynamic outputs
             if event.is_successful_output and event.step_output_data.mapping_key:
-                dynamic_outputs[event.step_key][event.step_output_data.output_name].append(
+                dynamic_outputs[step_key][event.step_output_data.output_name].append(
                     event.step_output_data.mapping_key
                 )
 
             # on a retry
             if event.is_step_up_for_retry:
                 # tally up retry attempt
-                previous_retry_attempts[event.step_key] += 1
+                previous_retry_attempts[step_key] += 1
 
                 # clear any existing tracked mapping keys
                 if event.step_key in dynamic_outputs:
-                    for mapping_list in dynamic_outputs[event.step_key].values():
+                    for mapping_list in dynamic_outputs[step_key].values():
                         mapping_list.clear()
 
             # commit the set of dynamic outputs once the step is successful
-            if event.is_step_success and event.step_key in dynamic_outputs:
-                successful_dynamic_mappings[event.step_key] = dict(dynamic_outputs[event.step_key])
+            if event.is_step_success and step_key in dynamic_outputs:
+                successful_dynamic_mappings[step_key] = dict(dynamic_outputs[step_key])
 
         return KnownExecutionState(
             dict(previous_retry_attempts),

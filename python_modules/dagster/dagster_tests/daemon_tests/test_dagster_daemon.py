@@ -1,4 +1,3 @@
-import re
 import time
 
 import pendulum
@@ -20,9 +19,7 @@ def test_scheduler_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(
-            instance, wait_for_processes_on_exit=True
-        ) as controller:
+        with daemon_controller_from_instance(instance) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 3
@@ -39,9 +36,7 @@ def test_run_coordinator_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(
-            instance, wait_for_processes_on_exit=True
-        ) as controller:
+        with daemon_controller_from_instance(instance) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 4
@@ -89,12 +84,7 @@ def _sensor_ran(caplog):
 
 def test_ephemeral_instance():
     runner = CliRunner()
-    with pytest.raises(
-        Exception,
-        match=re.escape(
-            "dagster-daemon can't run using an in-memory instance. Make sure the DAGSTER_HOME environment variable has been set correctly and that you have created a dagster.yaml file there."
-        ),
-    ):
+    with pytest.raises(Exception, match="DAGSTER_HOME is not set"):
         runner.invoke(run_command, env={"DAGSTER_HOME": ""}, catch_exceptions=False)
 
 
@@ -113,7 +103,7 @@ def test_different_intervals(caplog):
         }
     ) as instance:
         init_time = pendulum.now("UTC")
-        with daemon_controller_from_instance(instance, wait_for_processes_on_exit=True):
+        with daemon_controller_from_instance(instance):
             while True:
                 now = pendulum.now("UTC")
                 # Wait until the run coordinator has run three times

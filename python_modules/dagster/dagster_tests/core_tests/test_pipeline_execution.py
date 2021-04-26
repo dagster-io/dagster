@@ -3,6 +3,7 @@ import uuid
 import pytest
 from dagster import (
     DependencyDefinition,
+    Field,
     InputDefinition,
     Int,
     List,
@@ -18,8 +19,10 @@ from dagster import (
     check,
     execute_pipeline,
     execute_pipeline_iterator,
+    fs_io_manager,
     lambda_solid,
     pipeline,
+    reconstructable,
     reexecute_pipeline,
     solid,
 )
@@ -169,8 +172,7 @@ def test_external_diamond_toposort():
         python_file=__file__,
         attribute="create_diamond_pipeline",
         working_directory=None,
-    ).create_handle() as handle:
-        repo_location = handle.create_location()
+    ).create_test_location() as repo_location:
         external_repo = next(iter(repo_location.get_repositories().values()))
         external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
         assert external_pipeline.solid_names_in_topological_order == [
@@ -688,11 +690,10 @@ def test_pipeline_init_failure():
         raise_on_error=False,
         instance=mem_instance,
     )
-
     assert result.success is False
     event = result.event_list[-1]
-    assert event.event_type_value == "PIPELINE_INIT_FAILURE"
-    assert event.pipeline_init_failure_data
+    assert event.event_type_value == "PIPELINE_FAILURE"
+    assert event.pipeline_failure_data
     assert mem_instance.get_run_by_id(result.run_id).is_failure
 
     with instance_for_test() as fs_instance:
@@ -704,8 +705,8 @@ def test_pipeline_init_failure():
         )
         assert result.success is False
         event = result.event_list[-1]
-        assert event.event_type_value == "PIPELINE_INIT_FAILURE"
-        assert event.pipeline_init_failure_data
+        assert event.event_type_value == "PIPELINE_FAILURE"
+        assert event.pipeline_failure_data
         assert fs_instance.get_run_by_id(result.run_id).is_failure
 
 
@@ -760,6 +761,74 @@ def test_reexecution_fs_storage():
     grandchild_run = instance.get_run_by_id(grandchild_result.run_id)
     assert grandchild_run.parent_run_id == reexecution_result.run_id
     assert grandchild_run.root_run_id == pipeline_result.run_id
+
+
+def retry_pipeline():
+    @solid(
+        config_schema={
+            "fail": Field(bool, is_required=False, default_value=False),
+        },
+    )
+    def return_one(context):
+        if context.solid_config["fail"]:
+            raise Exception("FAILURE")
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    return PipelineDefinition(
+        solid_defs=[return_one, add_one],
+        name="test",
+        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
+    )
+
+
+def test_multiproc_reexecution_fs_storage_after_fail():
+    with instance_for_test() as instance:
+        run_config = {"execution": {"multiprocess": {}}}
+        pipeline_result = execute_pipeline(
+            reconstructable(retry_pipeline),
+            run_config={
+                "execution": {"multiprocess": {}},
+                "solids": {"return_one": {"config": {"fail": True}}},
+            },
+            instance=instance,
+            raise_on_error=False,
+        )
+        assert not pipeline_result.success
+
+        reexecution_result = reexecute_pipeline(
+            reconstructable(retry_pipeline),
+            pipeline_result.run_id,
+            run_config=run_config,
+            instance=instance,
+        )
+
+        assert reexecution_result.success
+        assert len(reexecution_result.solid_result_list) == 2
+        assert reexecution_result.result_for_solid("return_one").output_value() == 1
+        assert reexecution_result.result_for_solid("add_one").output_value() == 2
+        reexecution_run = instance.get_run_by_id(reexecution_result.run_id)
+        assert reexecution_run.parent_run_id == pipeline_result.run_id
+        assert reexecution_run.root_run_id == pipeline_result.run_id
+
+        grandchild_result = reexecute_pipeline(
+            reconstructable(retry_pipeline),
+            reexecution_result.run_id,
+            run_config=run_config,
+            instance=instance,
+        )
+
+        assert grandchild_result.success
+        assert len(grandchild_result.solid_result_list) == 2
+        assert grandchild_result.result_for_solid("return_one").output_value() == 1
+        assert grandchild_result.result_for_solid("add_one").output_value() == 2
+        grandchild_run = instance.get_run_by_id(grandchild_result.run_id)
+        assert grandchild_run.parent_run_id == reexecution_result.run_id
+        assert grandchild_run.root_run_id == pipeline_result.run_id
 
 
 def test_reexecution_fs_storage_with_solid_selection():

@@ -11,6 +11,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -324,7 +325,11 @@ def test_executor_not_created_for_execute_plan():
     pipeline_run = instance.create_run_for_pipeline(pipe, plan)
 
     results = execute_plan(
-        plan, instance, pipeline_run, run_config={"execution": {"multiprocess": {}}}
+        plan,
+        InMemoryPipeline(pipe),
+        instance,
+        pipeline_run,
+        run_config={"execution": {"multiprocess": {}}},
     )
     for result in results:
         assert not result.is_failure
@@ -397,6 +402,7 @@ def test_fan_out_should_skip_step():
     pipeline_run = PipelineRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
+        InMemoryPipeline(optional_outputs),
         instance,
         pipeline_run,
     )
@@ -455,6 +461,7 @@ def test_fan_in_should_skip_step():
                 "composite_all_upstream_skip.skip_2",
             ],
         ),
+        InMemoryPipeline(optional_outputs_composite),
         instance,
         pipeline_run,
     )
@@ -476,6 +483,7 @@ def test_fan_in_should_skip_step():
                 "composite_one_upstream_skip.skip",
             ],
         ),
+        InMemoryPipeline(optional_outputs_composite),
         instance,
         pipeline_run,
     )
@@ -518,6 +526,7 @@ def test_configured_input_should_skip_step():
             step_keys_to_execute=["one"],
             run_config=run_config,
         ),
+        InMemoryPipeline(my_pipeline),
         instance,
         pipeline_run,
         run_config=run_config,

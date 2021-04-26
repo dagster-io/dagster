@@ -1,6 +1,6 @@
 import os
 
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import environ, instance_for_test
 from dagster.seven import tempfile
 from dagster_celery.cli import get_config_dir
 
@@ -31,27 +31,7 @@ CONFIG_PYTHON_FILE = "{config_module_name}.py".format(config_module_name="dagste
 
 
 def test_config_value_from_yaml():
-    with tempfile.NamedTemporaryFile() as tmp:
-        tmp.write(CONFIG_YAML.encode("utf-8"))
-        tmp.seek(0)
-        python_path = get_config_dir(config_yaml=tmp.name)
-
-    with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
-        assert str(fd.read()) == CONFIG_PY
-
-
-def test_config_value_from_empty_yaml():
-    with tempfile.NamedTemporaryFile() as tmp:
-        tmp.write(b"")
-        tmp.seek(0)
-        python_path = get_config_dir(config_yaml=tmp.name)
-
-    with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
-        assert str(fd.read()) == "result_backend = 'rpc://'\n"
-
-
-def test_config_value_from_env_yaml():
-    with environ({"BROKER_URL": "pyampqp://foo@bar:1234//"}):
+    with instance_for_test():
         with tempfile.NamedTemporaryFile() as tmp:
             tmp.write(CONFIG_YAML.encode("utf-8"))
             tmp.seek(0)
@@ -59,3 +39,26 @@ def test_config_value_from_env_yaml():
 
         with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
             assert str(fd.read()) == CONFIG_PY
+
+
+def test_config_value_from_empty_yaml():
+    with instance_for_test():
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write(b"")
+            tmp.seek(0)
+            python_path = get_config_dir(config_yaml=tmp.name)
+
+        with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
+            assert str(fd.read()) == "result_backend = 'rpc://'\n"
+
+
+def test_config_value_from_env_yaml():
+    with instance_for_test():
+        with environ({"BROKER_URL": "pyampqp://foo@bar:1234//"}):
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(CONFIG_YAML.encode("utf-8"))
+                tmp.seek(0)
+                python_path = get_config_dir(config_yaml=tmp.name)
+
+            with open(os.path.join(python_path, CONFIG_PYTHON_FILE), "r") as fd:
+                assert str(fd.read()) == CONFIG_PY

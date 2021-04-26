@@ -9,14 +9,16 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
+from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,
     single_resource_event_generator,
 )
+from dagster.core.execution.retries import RetryMode
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -26,7 +28,7 @@ def test_generator_exit():
         try:
             yield "A"
         finally:
-            yield "EXIT"
+            yield "EXIT"  # pylint: disable=finally-yield
 
     gen = generator()
     next(gen)
@@ -95,7 +97,7 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    resource_defs = execution_plan.pipeline_def.get_mode_definition(environment_config.mode)
+    resource_defs = pipeline_def.get_mode_definition(environment_config.mode)
 
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -105,18 +107,20 @@ def test_clean_event_generator_exit():
         pipeline_run=pipeline_run,
         resource_keys_to_init={"a"},
         instance=instance,
-        resource_instances_to_override=None,
         emit_persistent_events=True,
+        pipeline_def_for_backwards_compat=pipeline_def,
     )
     next(generator)
     generator.close()
 
-    generator = PipelineExecutionContextManager(  # pylint: disable=protected-access
-        execution_plan,
-        {},
-        pipeline_run,
-        instance,
-        resource_initialization_manager,
+    generator = PlanExecutionContextManager(  # pylint: disable=protected-access
+        pipeline=InMemoryPipeline(pipeline_def),
+        execution_plan=execution_plan,
+        run_config={},
+        pipeline_run=pipeline_run,
+        instance=instance,
+        retry_mode=RetryMode.DISABLED,
+        scoped_resources_builder_cm=resource_initialization_manager,
     ).get_generator()
     next(generator)
     generator.close()

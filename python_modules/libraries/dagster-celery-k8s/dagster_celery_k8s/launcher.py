@@ -9,6 +9,7 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -198,6 +199,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             service_account_name=exc_config.get("service_account_name"),
             env_config_maps=exc_config.get("env_config_maps"),
             env_secrets=exc_config.get("env_secrets"),
+        )
+
+        self._instance.add_run_tags(
+            run.run_id,
+            {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))

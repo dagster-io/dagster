@@ -15,7 +15,9 @@ import yaml
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
+    DagsterHomeNotSetError,
     DagsterInvariantViolationError,
     DagsterNoStepsToExecuteException,
     DagsterRunAlreadyExists,
@@ -29,7 +31,7 @@ from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import DAGSTER_CONFIG_YAML_FILENAME
+from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
 from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
@@ -48,51 +50,8 @@ if TYPE_CHECKING:
     from dagster.daemon.types import DaemonHeartbeat
 
 
-def _is_dagster_home_set():
-    return bool(os.getenv("DAGSTER_HOME"))
-
-
 def is_memoized_run(tags):
     return tags is not None and MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
-
-
-def _dagster_home():
-    dagster_home_path = os.getenv("DAGSTER_HOME")
-
-    if not dagster_home_path:
-        raise DagsterInvariantViolationError(
-            (
-                "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
-                "environment variable to be set to an existing directory in your filesystem "
-                "that contains your dagster instance configuration file (dagster.yaml).\n"
-                "You can resolve this error by exporting the environment variable."
-                "For example, you can run the following command in your shell or "
-                "include it in your shell configuration file:\n"
-                '\texport DAGSTER_HOME="~/dagster_home"'
-            )
-        )
-
-    dagster_home_path = os.path.expanduser(dagster_home_path)
-
-    if not os.path.isabs(dagster_home_path):
-        raise DagsterInvariantViolationError(
-            (
-                '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                "environment variable to be set to an existing directory in your filesystem that "
-                "contains your dagster instance configuration file (dagster.yaml)."
-            ).format(dagster_home_path)
-        )
-
-    if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
-        raise DagsterInvariantViolationError(
-            (
-                '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this '
-                "environment variable to be set to an existing directory in your filesystem that "
-                "contains your dagster instance configuration file (dagster.yaml)."
-            ).format(dagster_home_path)
-        )
-
-    return dagster_home_path
 
 
 def _check_run_equality(pipeline_run, candidate_run):
@@ -194,8 +153,10 @@ class DagsterInstance:
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
-    the values in the ``dagster.yaml`` file in ``$DAGSTER_HOME`` if set, otherwise fallback
-    to using an ephemeral in-memory set of components.
+    the values in the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
+
+    Alternatively, DagsterInstance.ephemeral() can use used which provides a set of
+    transient in-memory components.
 
     Configuration of this class should be done by setting values in ``$DAGSTER_HOME/dagster.yaml``.
     For example, to use Postgres for run and event log storage, you can write a ``dagster.yaml``
@@ -346,28 +307,44 @@ class DagsterInstance:
         )
 
     @staticmethod
-    def get(fallback_storage=None):
-        # 1. Use $DAGSTER_HOME to determine instance if set.
-        if _is_dagster_home_set():
-            return DagsterInstance.from_config(_dagster_home())
+    def get():
+        dagster_home_path = os.getenv("DAGSTER_HOME")
 
-        # 2. If that is not set use the fallback storage directory if provided.
-        # This allows us to have a nice out of the box dagit experience where runs are persisted
-        # across restarts in a tempdir that gets cleaned up when the dagit watchdog process exits.
-        elif fallback_storage is not None:
-            return DagsterInstance.from_config(fallback_storage)
+        if not dagster_home_path:
+            raise DagsterHomeNotSetError(
+                (
+                    "The environment variable $DAGSTER_HOME is not set. \n"
+                    "Dagster requires this environment variable to be set to an existing directory in your filesystem. "
+                    "This directory is used to store metadata across sessions, or load the dagster.yaml "
+                    "file which can configure storing metadata in an external database.\n"
+                    "You can resolve this error by exporting the environment variable. For example, you can run the following command in your shell or include it in your shell configuration file:\n"
+                    '\texport DAGSTER_HOME="~/dagster_home"\n'
+                    "Alternatively, DagsterInstance.ephemeral() can be used for a transient instance.\n"
+                )
+            )
 
-        # 3. If all else fails create an ephemeral in memory instance.
-        else:
-            return DagsterInstance.ephemeral(fallback_storage)
+        dagster_home_path = os.path.expanduser(dagster_home_path)
+
+        if not os.path.isabs(dagster_home_path):
+            raise DagsterInvariantViolationError(
+                (
+                    '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
+                    "environment variable to be set to an existing directory in your filesystem."
+                ).format(dagster_home_path)
+            )
+
+        if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
+            raise DagsterInvariantViolationError(
+                (
+                    '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this '
+                    "environment variable to be set to an existing directory in your filesystem"
+                ).format(dagster_home_path)
+            )
+
+        return DagsterInstance.from_config(dagster_home_path)
 
     @staticmethod
     def local_temp(tempdir=None, overrides=None):
-        warnings.warn(
-            "To create a local DagsterInstance for a test, use the instance_for_test "
-            "context manager instead, which ensures that resoures are cleaned up afterwards"
-        )
-
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 
@@ -642,7 +619,6 @@ class DagsterInstance:
         parent_run_id=None,
         solid_selection=None,
     ):
-        from dagster.core.execution.api import create_execution_plan
         from dagster.core.execution.plan.plan import ExecutionPlan
         from dagster.core.snap import snapshot_from_execution_plan
 
@@ -674,11 +650,14 @@ class DagsterInstance:
                     solids_to_execute=solids_to_execute
                 )
 
-        full_execution_plan = execution_plan or create_execution_plan(
-            pipeline_def,
-            run_config=run_config,
-            mode=mode,
-        )
+        if execution_plan:
+            environment_config = None
+            full_execution_plan = execution_plan
+        else:
+            environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
+            full_execution_plan = ExecutionPlan.build(
+                InMemoryPipeline(pipeline_def), environment_config
+            )
 
         if is_memoized_run(tags):
             from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
@@ -689,8 +668,15 @@ class DagsterInstance:
                     "pipeline runs."
                 )
 
+            if not environment_config:
+                environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
+
             subsetted_execution_plan = resolve_memoized_execution_plan(
-                full_execution_plan, run_config, self
+                full_execution_plan,
+                pipeline_def,
+                run_config,
+                self,
+                environment_config,
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
             step_keys_to_execute = subsetted_execution_plan.step_keys_to_execute
             if not step_keys_to_execute:
@@ -698,12 +684,14 @@ class DagsterInstance:
                     "No steps found to execute. "
                     "This is because every step in the plan has already been memoized."
                 )
-        else:
-            subsetted_execution_plan = (
-                full_execution_plan.build_subset_plan(step_keys_to_execute)
-                if step_keys_to_execute
-                else full_execution_plan
+        elif step_keys_to_execute:
+            if not environment_config:
+                environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
+            subsetted_execution_plan = full_execution_plan.build_subset_plan(
+                step_keys_to_execute, pipeline_def, environment_config
             )
+        else:
+            subsetted_execution_plan = full_execution_plan
 
         return self.create_run(
             pipeline_name=pipeline_def.name,

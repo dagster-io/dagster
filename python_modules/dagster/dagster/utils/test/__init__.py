@@ -24,12 +24,13 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
+from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.execution.context_creation_pipeline import (
-    SystemPipelineExecutionContext,
-    construct_execution_context_data,
     create_context_creation_data,
+    create_execution_data,
     create_executor,
     create_log_manager,
+    create_plan_data,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import Scheduler
@@ -68,22 +69,22 @@ def create_test_pipeline_execution_context(logger_defs=None):
     pipeline_run = PipelineRun(pipeline_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
-    creation_data = create_context_creation_data(execution_plan, run_config, pipeline_run, instance)
+    creation_data = create_context_creation_data(
+        InMemoryPipeline(pipeline_def), execution_plan, run_config, pipeline_run, instance
+    )
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
     executor = create_executor(creation_data)
 
-    return SystemPipelineExecutionContext(
-        construct_execution_context_data(
+    return PlanExecutionContext(
+        plan_data=create_plan_data(creation_data, True, executor.retries),
+        execution_data=create_execution_data(
             context_creation_data=creation_data,
             scoped_resources_builder=scoped_resources_builder,
             intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
-            log_manager=log_manager,
-            retry_mode=executor.retries,
-            raise_on_error=True,
         ),
-        executor=executor,
         log_manager=log_manager,
+        output_capture=None,
     )
 
 
@@ -258,7 +259,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
         ),
         parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
     )
-    with scoped_pipeline_context(execution_plan, {}, pipeline_run, instance) as context:
+    with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
         yield context
 
 

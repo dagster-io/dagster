@@ -7,7 +7,7 @@ import pytest
 from celery.contrib.testing import worker
 from celery.contrib.testing.app import setup_default_app
 from dagster import file_relative_path
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import environ, instance_for_test
 from dagster_celery.make_app import make_app
 from dagster_celery.tasks import create_task
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
@@ -65,9 +65,9 @@ def rabbitmq():  # pylint: disable=redefined-outer-name
 def dagster_celery_app(rabbitmq):  # pylint: disable=redefined-outer-name, unused-argument
     app = make_app()
     execute_plan = create_task(app)  # pylint: disable=unused-variable
-
-    with setup_default_app(app, use_trap=False):
-        yield app
+    with instance_for_test():
+        with setup_default_app(app, use_trap=False):
+            yield app
 
 
 # pylint doesn't understand pytest fixtures

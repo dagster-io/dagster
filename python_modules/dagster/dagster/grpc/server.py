@@ -18,8 +18,8 @@ from dagster.core.definitions.reconstructable import (
     repository_def_from_target_def,
 )
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.host_representation.external_data import external_repository_data_from_def
+from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (
@@ -78,7 +78,7 @@ EVENT_QUEUE_POLL_INTERVAL = 0.1
 
 CLEANUP_TICK = 0.5
 
-STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE = 4000000
+STREAMING_CHUNK_SIZE = 4000000
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -271,10 +271,10 @@ class DagsterApiServer(DagsterApiServicer):
 
                         # the process died in an unexpected manner. inform the system
                         message = (
-                            "Pipeline execution process for {run_id} unexpectedly exited.".format(
-                                run_id=run.run_id
-                            )
+                            f"Pipeline execution process for {run.run_id} unexpectedly "
+                            f"exited with exit code {process.exitcode}."
                         )
+
                         instance.report_engine_event(message, run, cls=self.__class__)
                         instance.report_run_failed(run)
 
@@ -399,16 +399,15 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         recon_repo = self._recon_repository_from_origin(args.repository_origin)
-
-        return api_pb2.ExternalPartitionSetExecutionParamsReply(
-            serialized_external_partition_set_execution_param_data_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                get_partition_set_execution_param_data(
-                    recon_repo=recon_repo,
-                    partition_set_name=args.partition_set_name,
-                    partition_names=args.partition_names,
-                )
+        serialized_data = serialize_dagster_namedtuple(
+            get_partition_set_execution_param_data(
+                recon_repo=recon_repo,
+                partition_set_name=args.partition_set_name,
+                partition_names=args.partition_names,
             )
         )
+
+        yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
     def ExternalPartitionConfig(self, request, _context):
         args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
@@ -479,16 +478,13 @@ class DagsterApiServer(DagsterApiServicer):
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
 
         num_chunks = int(
-            math.ceil(
-                float(len(serialized_external_repository_data))
-                / STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE
-            )
+            math.ceil(float(len(serialized_external_repository_data)) / STREAMING_CHUNK_SIZE)
         )
 
         for i in range(num_chunks):
-            start_index = i * STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE
+            start_index = i * STREAMING_CHUNK_SIZE
             end_index = min(
-                (i + 1) * STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE,
+                (i + 1) * STREAMING_CHUNK_SIZE,
                 len(serialized_external_repository_data),
             )
 
@@ -497,6 +493,20 @@ class DagsterApiServer(DagsterApiServicer):
                 serialized_external_repository_chunk=serialized_external_repository_data[
                     start_index:end_index
                 ],
+            )
+
+    def _split_serialized_data_into_chunk_events(self, serialized_data):
+        num_chunks = int(math.ceil(float(len(serialized_data)) / STREAMING_CHUNK_SIZE))
+        for i in range(num_chunks):
+            start_index = i * STREAMING_CHUNK_SIZE
+            end_index = min(
+                (i + 1) * STREAMING_CHUNK_SIZE,
+                len(serialized_data),
+            )
+
+            yield api_pb2.StreamingChunkEvent(
+                sequence_number=i,
+                serialized_chunk=serialized_data[start_index:end_index],
             )
 
     def ExternalScheduleExecution(self, request, _context):
@@ -511,18 +521,17 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         recon_repo = self._recon_repository_from_origin(args.repository_origin)
-
-        return api_pb2.ExternalScheduleExecutionReply(
-            serialized_external_schedule_execution_data_or_external_schedule_execution_error=serialize_dagster_namedtuple(
-                get_external_schedule_execution(
-                    recon_repo,
-                    args.instance_ref,
-                    args.schedule_name,
-                    args.scheduled_execution_timestamp,
-                    args.scheduled_execution_timezone,
-                )
+        serialized_schedule_data = serialize_dagster_namedtuple(
+            get_external_schedule_execution(
+                recon_repo,
+                args.instance_ref,
+                args.schedule_name,
+                args.scheduled_execution_timestamp,
+                args.scheduled_execution_timezone,
             )
         )
+
+        yield from self._split_serialized_data_into_chunk_events(serialized_schedule_data)
 
     def ExternalSensorExecution(self, request, _context):
         args = deserialize_json_to_dagster_namedtuple(
@@ -532,18 +541,17 @@ class DagsterApiServer(DagsterApiServicer):
         check.inst_param(args, "args", SensorExecutionArgs)
 
         recon_repo = self._recon_repository_from_origin(args.repository_origin)
-
-        return api_pb2.ExternalSensorExecutionReply(
-            serialized_external_sensor_execution_data_or_external_sensor_execution_error=serialize_dagster_namedtuple(
-                get_external_sensor_execution(
-                    recon_repo,
-                    args.instance_ref,
-                    args.sensor_name,
-                    args.last_completion_time,
-                    args.last_run_key,
-                )
+        serialized_sensor_data = serialize_dagster_namedtuple(
+            get_external_sensor_execution(
+                recon_repo,
+                args.instance_ref,
+                args.sensor_name,
+                args.last_completion_time,
+                args.last_run_key,
             )
         )
+
+        yield from self._split_serialized_data_into_chunk_events(serialized_sensor_data)
 
     def ShutdownServer(self, request, _context):
         try:
@@ -1035,7 +1043,9 @@ class GrpcServerProcess:
         self.socket = None
         self.server_process = None
 
-        check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
+        self.loadable_target_origin = check.opt_inst_param(
+            loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+        )
         check.bool_param(force_port, "force_port")
         check.int_param(max_retries, "max_retries")
         check.opt_int_param(max_workers, "max_workers")

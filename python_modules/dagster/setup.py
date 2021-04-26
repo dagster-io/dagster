@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "click>=5.0",
             "coloredlogs>=6.1, <=14.0",
             "Jinja2",
-            "PyYAML",
+            "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             "alembic>=1.2.1",
             "croniter>=0.3.34",
@@ -69,9 +69,7 @@ if __name__ == "__main__":
             "grpcio-health-checking>=1.32.0",
             "pendulum",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
-            "pyrsistent>=0.14.8",
             "python-dateutil",
-            "requests",
             "rx<=1.6.1",  # 3.0 was a breaking change.
             "tabulate",
             "tqdm",
@@ -81,8 +79,6 @@ if __name__ == "__main__":
             'psutil >= 1.0; platform_system=="Windows"',
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
-            # Compatibility with the Snowflake connector
-            "pytz < 2021.0",
             "docstring-parser==0.7.1",
         ],
         extras_require={

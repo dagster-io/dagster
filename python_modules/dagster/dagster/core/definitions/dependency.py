@@ -3,13 +3,12 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
-    FrozenSet,
     List,
     NamedTuple,
     Optional,
-    Set,
     Tuple,
     Type,
     Union,
@@ -41,7 +40,7 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
             multiple instances of the same solid.
         tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
             set on the solid definition.
-        hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
+        hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
             solid instance.
 
     Examples:
@@ -78,7 +77,7 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
         name: str,
         alias: Optional[str] = None,
         tags: Dict[str, str] = None,
-        hook_defs: FrozenSet[HookDefinition] = None,
+        hook_defs: AbstractSet[HookDefinition] = None,
     ):
         name = check.str_param(name, "name")
         alias = check.opt_str_param(alias, "alias")
@@ -104,7 +103,7 @@ class Solid:
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
         tags: Dict[str, str] = None,
-        hook_defs: Optional[Set[HookDefinition]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ):
         from .graph import GraphDefinition
         from .solid import NodeDefinition
@@ -198,7 +197,7 @@ class Solid:
         )
 
     @property
-    def hook_defs(self) -> Optional[Set[HookDefinition]]:
+    def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
 
 
@@ -655,8 +654,8 @@ class DependencyStructure:
         # solid_name => dynamic output_handle that this will solid dupe for
         self._dynamic_fan_out_index: dict = {}
 
-        # solid_name => dynamic output_handle this collects over
-        self._collect_index: dict = {}
+        # solid_name => set of dynamic output_handle this collects over
+        self._collect_index: Dict[str, set] = defaultdict(set)
 
         for input_handle, (dep_type, output_handle_or_list) in self._handle_dict.items():
             if dep_type == DependencyType.FAN_IN:
@@ -733,7 +732,7 @@ class DependencyStructure:
             raise DagsterInvalidDefinitionError(
                 f'Solid "{input_handle.solid_name}" cannot be both downstream of dynamic output '
                 f"{output_handle.describe()} and collect over dynamic output "
-                f"{self._collect_index[input_handle.solid_name].describe()}."
+                f"{list(self._collect_index[input_handle.solid_name])[0].describe()}."
             )
 
         if self._dynamic_fan_out_index.get(input_handle.solid_name) is None:
@@ -759,10 +758,7 @@ class DependencyStructure:
                 f"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}."
             )
 
-        if self._collect_index.get(input_handle.solid_name) is None:
-            self._collect_index[input_handle.solid_name] = output_handle
-        else:
-            check.failed("collect index unexpectedly set twice")
+        self._collect_index[input_handle.solid_name].add(output_handle)
 
         # if the output is already fanned out
         if self._dynamic_fan_out_index.get(output_handle.solid_name):

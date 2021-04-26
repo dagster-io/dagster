@@ -1,4 +1,6 @@
 import os
+import random
+import string
 import sys
 import threading
 import time
@@ -6,7 +8,8 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import pipeline, repository, solid
+from dagster import Any, Field, pipeline, repository, solid
+from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -17,7 +20,6 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationHandleManager,
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
@@ -25,7 +27,11 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.daemon import SensorDaemon
+from dagster.daemon.controller import (
+    DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+    DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+)
+from dagster.daemon.daemon import DAEMON_HEARTBEAT_ERROR_LIMIT, SensorDaemon
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven import create_pendulum_time, to_timezone
 
@@ -38,6 +44,16 @@ def the_solid(_):
 @pipeline
 def the_pipeline():
     the_solid()
+
+
+@solid(config_schema=Field(Any))
+def config_solid(_):
+    return 1
+
+
+@pipeline
+def config_pipeline():
+    config_solid()
 
 
 @sensor(pipeline_name="the_pipeline")
@@ -73,10 +89,32 @@ def custom_interval_sensor(_context):
     return SkipReason()
 
 
+def _random_string(length):
+    return "".join(random.choice(string.ascii_lowercase) for x in range(length))
+
+
+@sensor(pipeline_name="config_pipeline")
+def large_sensor(_context):
+    # create a gRPC response payload larger than the limit (4194304)
+    REQUEST_COUNT = 25
+    REQUEST_TAG_COUNT = 5000
+    REQUEST_CONFIG_COUNT = 100
+
+    for _ in range(REQUEST_COUNT):
+        tags_garbage = {_random_string(10): _random_string(20) for i in range(REQUEST_TAG_COUNT)}
+        config_garbage = {
+            _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
+        }
+        config = {"solids": {"config_solid": {"config": {"foo": config_garbage}}}}
+        yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
+
+
 @repository
 def the_repo():
     return [
         the_pipeline,
+        config_pipeline,
+        large_sensor,
         simple_sensor,
         error_sensor,
         wrong_config_sensor,
@@ -101,9 +139,10 @@ def the_other_repo():
 @contextmanager
 def instance_with_sensors(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
-            with external_repo_context() as external_repo:
-                yield (instance, grpc_server_registry, external_repo)
+        with ProcessGrpcServerRegistry() as grpc_server_registry:
+            with DynamicWorkspace(grpc_server_registry) as workspace:
+                with external_repo_context() as external_repo:
+                    yield (instance, workspace, external_repo)
 
 
 @contextmanager
@@ -117,24 +156,22 @@ def default_repo():
     with ManagedGrpcPythonEnvRepositoryLocationOrigin(
         loadable_target_origin=loadable_target_origin,
         location_name="test_location",
-    ).create_handle() as handle:
-        yield handle.create_location().get_repository("the_repo")
+    ).create_test_location() as location:
+        yield location.get_repository("the_repo")
 
 
 def repos():
     return [default_repo]
 
 
-def evaluate_sensors(instance, grpc_server_registry):
-
-    with RepositoryLocationHandleManager(grpc_server_registry) as handle_manager:
-        list(
-            execute_sensor_iteration(
-                instance,
-                get_default_daemon_logger("SensorDaemon"),
-                handle_manager,
-            )
+def evaluate_sensors(instance, workspace):
+    list(
+        execute_sensor_iteration(
+            instance,
+            get_default_daemon_logger("SensorDaemon"),
+            workspace,
         )
+    )
 
 
 def validate_tick(
@@ -151,7 +188,8 @@ def validate_tick(
     assert tick_data.job_type == JobType.SENSOR
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
-    assert set(tick_data.run_ids) == set(expected_run_ids if expected_run_ids else [])
+    if expected_run_ids is not None:
+        assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
         assert expected_error in tick_data.error.message
 
@@ -190,7 +228,7 @@ def test_simple_sensor(external_repo_context, capfd):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -202,7 +240,7 @@ def test_simple_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -225,7 +263,7 @@ def test_simple_sensor(external_repo_context, capfd):
             freeze_datetime = freeze_datetime.add(seconds=30)
 
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             wait_for_all_runs_to_start(instance)
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
@@ -264,7 +302,7 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -287,7 +325,7 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
             ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
@@ -309,7 +347,7 @@ def test_bad_load_sensor(external_repo_context, capfd):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -329,7 +367,7 @@ def test_bad_load_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(invalid_repo_origin.get_id())
@@ -348,7 +386,7 @@ def test_error_sensor(external_repo_context, capfd):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -360,7 +398,7 @@ def test_error_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
@@ -375,8 +413,6 @@ def test_error_sensor(external_repo_context, capfd):
             )
 
             captured = capfd.readouterr()
-            assert ("Failed to resolve sensor for error_sensor : ") in captured.out
-
             assert (
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor"
             ) in captured.out
@@ -397,7 +433,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -409,7 +445,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
@@ -428,7 +464,7 @@ def test_wrong_config_sensor(external_repo_context, capfd):
 
             # Error repeats on subsequent ticks
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             assert instance.get_runs_count() == 0
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
@@ -460,7 +496,7 @@ def test_launch_failure(external_repo_context, capfd):
                 "class": "ExplodingRunLauncher",
             },
         },
-    ) as (instance, grpc_server_registry, external_repo):
+    ) as (instance, workspace, external_repo):
         with pendulum.test(freeze_datetime):
 
             external_sensor = external_repo.get_external_sensor("always_on_sensor")
@@ -471,7 +507,7 @@ def test_launch_failure(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
 
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
@@ -505,7 +541,7 @@ def test_launch_once(external_repo_context, capfd):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -518,7 +554,7 @@ def test_launch_once(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             wait_for_all_runs_to_start(instance)
 
             assert instance.get_runs_count() == 1
@@ -536,7 +572,7 @@ def test_launch_once(external_repo_context, capfd):
         # run again (after 30 seconds), to ensure that the run key maintains idempotence
         freeze_datetime = freeze_datetime.add(seconds=30)
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
@@ -565,7 +601,7 @@ def test_launch_once(external_repo_context, capfd):
             # Sensor loop still executes
         freeze_datetime = freeze_datetime.add(seconds=30)
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
 
             assert len(ticks) == 3
@@ -584,7 +620,7 @@ def test_custom_interval_sensor(external_repo_context):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -595,7 +631,7 @@ def test_custom_interval_sensor(external_repo_context):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED)
@@ -603,7 +639,7 @@ def test_custom_interval_sensor(external_repo_context):
             freeze_datetime = freeze_datetime.add(seconds=30)
 
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             # no additional tick created after 30 seconds
             assert len(ticks) == 1
@@ -611,7 +647,7 @@ def test_custom_interval_sensor(external_repo_context):
             freeze_datetime = freeze_datetime.add(seconds=30)
 
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
 
@@ -635,7 +671,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
 
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -648,13 +684,13 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
             )
 
             # create a tick
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
 
             # calling for another iteration should not generate another tick because time has not
             # advanced
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
 
@@ -663,7 +699,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
             list(
                 execute_sensor_iteration_loop(
                     instance,
-                    grpc_server_registry,
+                    workspace,
                     get_default_daemon_logger("SensorDaemon"),
                     until=freeze_datetime.add(seconds=65).timestamp(),
                 )
@@ -705,7 +741,12 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
                 "class": "ExplodingRunLauncher",
             },
         },
-    ) as (instance, grpc_server_registry, _external_repo):
+    ) as (instance, workspace, _external_repo):
+
+        @contextmanager
+        def _gen_workspace(_instance):
+            yield workspace
+
         with pendulum.test(freeze_datetime):
             instance.add_job_state(
                 JobState(_get_unloadable_sensor_origin(), JobType.SENSOR, JobStatus.RUNNING)
@@ -715,7 +756,9 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             sensor_daemon.run_loop(
                 "my_uuid",
                 daemon_shutdown_event,
-                grpc_server_registry,
+                _gen_workspace,
+                heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+                error_interval_seconds=DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
                 until=freeze_datetime.add(seconds=65),
             )
 
@@ -723,7 +766,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             heartbeat = heartbeats["SENSOR"]
             assert heartbeat
             assert heartbeat.errors
-            assert len(heartbeat.errors) == 1
+            assert len(heartbeat.errors) == DAEMON_HEARTBEAT_ERROR_LIMIT
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -734,7 +777,7 @@ def test_sensor_start_stop(external_repo_context):
     )
     with instance_with_sensors(external_repo_context) as (
         instance,
-        grpc_server_registry,
+        workspace,
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
@@ -746,7 +789,7 @@ def test_sensor_start_stop(external_repo_context):
             ticks = instance.get_job_ticks(external_origin_id)
             assert len(ticks) == 0
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
 
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
@@ -759,7 +802,7 @@ def test_sensor_start_stop(external_repo_context):
             freeze_datetime = freeze_datetime.add(seconds=15)
 
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             # no new ticks, no new runs, we are below the 30 second min interval
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(external_origin_id)
@@ -769,7 +812,7 @@ def test_sensor_start_stop(external_repo_context):
             instance.stop_sensor(external_origin_id)
             instance.start_sensor(external_sensor)
 
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             # no new ticks, no new runs, we are below the 30 second min interval
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(external_origin_id)
@@ -778,8 +821,33 @@ def test_sensor_start_stop(external_repo_context):
             freeze_datetime = freeze_datetime.add(seconds=16)
 
         with pendulum.test(freeze_datetime):
-            evaluate_sensors(instance, grpc_server_registry)
+            evaluate_sensors(instance, workspace)
             # should have new tick, new run, we are after the 30 second min interval
             assert instance.get_runs_count() == 2
             ticks = instance.get_job_ticks(external_origin_id)
             assert len(ticks) == 2
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_large_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_sensor = external_repo.get_external_sensor("large_sensor")
+            instance.start_sensor(external_sensor)
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )

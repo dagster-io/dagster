@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.code_pointer import rebase_file
-from dagster.core.host_representation import (
+from dagster.core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )

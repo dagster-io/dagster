@@ -3,13 +3,13 @@
 # start_marker
 import random
 
-from dagster import InputDefinition, Output, OutputDefinition, pipeline, solid
+from dagster import Output, OutputDefinition, pipeline, solid
 
 
 @solid(
     output_defs=[
-        OutputDefinition(int, "branch_1", is_required=False),
-        OutputDefinition(int, "branch_2", is_required=False),
+        OutputDefinition(name="branch_1", is_required=False),
+        OutputDefinition(name="branch_2", is_required=False),
     ]
 )
 def branching_solid(_):
@@ -20,12 +20,12 @@ def branching_solid(_):
         yield Output(2, "branch_2")
 
 
-@solid(input_defs=[InputDefinition("_input", int)])
+@solid
 def branch_1_solid(_, _input):
     pass
 
 
-@solid(input_defs=[InputDefinition("_input", int)])
+@solid
 def branch_2_solid(_, _input):
     pass
 

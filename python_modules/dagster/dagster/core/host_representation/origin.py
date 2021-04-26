@@ -2,6 +2,7 @@ import os
 import sys
 from abc import ABC, abstractmethod, abstractproperty
 from collections import namedtuple
+from contextlib import contextmanager
 from typing import Set
 
 from dagster import check
@@ -72,12 +73,12 @@ class RepositoryLocationOrigin(ABC):
     def get_id(self):
         return create_snapshot_id(self)
 
-    @abstractmethod
-    def create_handle(self):
-        pass
-
     @abstractproperty
     def location_name(self):
+        pass
+
+    @abstractmethod
+    def create_location(self):
         pass
 
 
@@ -99,10 +100,10 @@ class RegisteredRepositoryLocationOrigin(
     def get_display_metadata(self):
         return {}
 
-    def create_handle(self):
+    def create_location(self):
         raise DagsterInvariantViolationError(
             "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
-            "repository location."
+            "repository location on its own."
         )
 
 
@@ -136,10 +137,10 @@ class InProcessRepositoryLocationOrigin(
             "in_process_code_pointer": self.recon_repo.pointer.describe(),
         }
 
-    def create_handle(self):
-        from dagster.core.host_representation.handle import InProcessRepositoryLocationHandle
+    def create_location(self):
+        from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
 
-        return InProcessRepositoryLocationHandle(self)
+        return InProcessRepositoryLocation(self)
 
 
 @whitelist_for_serdes
@@ -182,12 +183,21 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_handle(self):
-        from dagster.core.host_representation.handle import (
-            ManagedGrpcPythonEnvRepositoryLocationHandle,
+    def create_location(self):
+        raise DagsterInvariantViolationError(
+            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a DynamicWorkspace"
+            " in order to create a handle."
         )
 
-        return ManagedGrpcPythonEnvRepositoryLocationHandle(self)
+    @contextmanager
+    def create_test_location(self):
+        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+        from .grpc_server_registry import ProcessGrpcServerRegistry
+
+        with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
+            with DynamicWorkspace(grpc_server_registry) as workspace:
+                with workspace.get_location(self) as location:
+                    yield location
 
 
 class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
@@ -229,10 +239,12 @@ class GrpcServerRepositoryLocationOrigin(
         metadata = {"host": self.host, "port": self.port, "socket": self.socket}
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_handle(self):
-        from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+    def create_location(self):
+        from dagster.core.host_representation.repository_location import (
+            GrpcServerRepositoryLocation,
+        )
 
-        return GrpcServerRepositoryLocationHandle(self)
+        return GrpcServerRepositoryLocation(self)
 
 
 @whitelist_for_serdes

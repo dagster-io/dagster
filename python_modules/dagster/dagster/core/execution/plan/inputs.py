@@ -29,7 +29,8 @@ if TYPE_CHECKING:
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.storage.input_manager import InputManager
     from dagster.core.events import DagsterEvent
-    from dagster.core.execution.context.system import SystemStepExecutionContext, InputContext
+    from dagster.core.execution.context.system import StepExecutionContext
+    from dagster.core.execution.context.input import InputContext
 
 
 def _get_asset_lineage_from_fns(
@@ -115,15 +116,13 @@ class StepInputSource(ABC):
         pass
 
     @abstractmethod
-    def load_input_object(self, step_context: "SystemStepExecutionContext"):
+    def load_input_object(self, step_context: "StepExecutionContext"):
         raise NotImplementedError()
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def get_asset_lineage(
-        self, _step_context: "SystemStepExecutionContext"
-    ) -> List[AssetLineageInfo]:
+    def get_asset_lineage(self, _step_context: "StepExecutionContext") -> List[AssetLineageInfo]:
         return []
 
     @abstractmethod
@@ -145,9 +144,7 @@ class FromRootInputManager(
     ),
     StepInputSource,
 ):
-    def load_input_object(
-        self, step_context: "SystemStepExecutionContext"
-    ) -> Iterator["DagsterEvent"]:
+    def load_input_object(self, step_context: "StepExecutionContext") -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
 
         input_def = self.get_input_def(step_context.pipeline_def)
@@ -216,8 +213,10 @@ class FromStepOutput(
     def step_output_handle_dependencies(self) -> List[StepOutputHandle]:
         return [self.step_output_handle]
 
-    def get_load_context(self, step_context: "SystemStepExecutionContext") -> "InputContext":
-        io_manager_key = step_context.execution_plan.get_manager_key(self.step_output_handle)
+    def get_load_context(self, step_context: "StepExecutionContext") -> "InputContext":
+        io_manager_key = step_context.execution_plan.get_manager_key(
+            self.step_output_handle, step_context.pipeline_def
+        )
         resource_config = step_context.environment_config.resources[io_manager_key].config
         resources = build_resources_for_manager(io_manager_key, step_context)
 
@@ -236,14 +235,14 @@ class FromStepOutput(
             resources,
         )
 
-    def load_input_object(
-        self, step_context: "SystemStepExecutionContext"
-    ) -> Iterator["DagsterEvent"]:
+    def load_input_object(self, step_context: "StepExecutionContext") -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
         from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
 
         source_handle = self.step_output_handle
-        manager_key = step_context.execution_plan.get_manager_key(source_handle)
+        manager_key = step_context.execution_plan.get_manager_key(
+            source_handle, step_context.pipeline_def
+        )
         input_manager = step_context.get_io_manager(source_handle)
         check.invariant(
             isinstance(input_manager, IOManager),
@@ -284,9 +283,7 @@ class FromStepOutput(
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def get_asset_lineage(
-        self, step_context: "SystemStepExecutionContext"
-    ) -> List[AssetLineageInfo]:
+    def get_asset_lineage(self, step_context: "StepExecutionContext") -> List[AssetLineageInfo]:
         source_handle = self.step_output_handle
         input_manager = step_context.get_io_manager(source_handle)
         load_context = self.get_load_context(step_context)
@@ -338,7 +335,7 @@ class FromConfig(
             input_name=input_name,
         )
 
-    def load_input_object(self, step_context: "SystemStepExecutionContext") -> Any:
+    def load_input_object(self, step_context: "StepExecutionContext") -> Any:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
             msg_fn=lambda: (
@@ -393,7 +390,7 @@ class FromDefaultValue(
             self.input_name
         )
 
-    def load_input_object(self, step_context: "SystemStepExecutionContext"):
+    def load_input_object(self, step_context: "StepExecutionContext"):
         return self._load_value(step_context.pipeline_def)
 
     def compute_version(
@@ -494,9 +491,7 @@ class FromMultipleSources(
             ]
         )
 
-    def get_asset_lineage(
-        self, step_context: "SystemStepExecutionContext"
-    ) -> List[AssetLineageInfo]:
+    def get_asset_lineage(self, step_context: "StepExecutionContext") -> List[AssetLineageInfo]:
         return [
             relation
             for source in self.sources
@@ -505,14 +500,17 @@ class FromMultipleSources(
 
 
 def _load_input_with_input_manager(input_manager: "InputManager", context: "InputContext"):
+    from dagster.core.execution.context.system import StepExecutionContext
+
+    step_context = cast(StepExecutionContext, context.step_context)
     with user_code_error_boundary(
         DagsterExecutionLoadInputError,
         control_flow_exceptions=[Failure, RetryRequested],
         msg_fn=lambda: (
             f'Error occurred while loading input "{context.name}" of '
-            f'step "{context.step_context.step.key}":'
+            f'step "{step_context.step.key}":'
         ),
-        step_key=context.step_context.step.key,
+        step_key=step_context.step.key,
         input_name=context.name,
     ):
         value = input_manager.load_input(context)

@@ -1,5 +1,6 @@
 import pendulum
 import pytest
+from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobTickStatus
@@ -21,20 +22,21 @@ from .test_scheduler_run import (
 
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
-        with ProcessGrpcServerRegistry(wait_for_processes_on_exit=True) as grpc_server_registry:
-            try:
-                with pendulum.test(execution_datetime):
-                    list(
-                        launch_scheduled_runs(
-                            instance,
-                            grpc_server_registry,
-                            logger(),
-                            pendulum.now("UTC"),
-                            debug_crash_flags=debug_crash_flags,
+        try:
+            with ProcessGrpcServerRegistry() as grpc_server_registry:
+                with DynamicWorkspace(grpc_server_registry) as workspace:
+                    with pendulum.test(execution_datetime):
+                        list(
+                            launch_scheduled_runs(
+                                instance,
+                                workspace,
+                                logger(),
+                                pendulum.now("UTC"),
+                                debug_crash_flags=debug_crash_flags,
+                            )
                         )
-                    )
-            finally:
-                cleanup_test_instance(instance)
+        finally:
+            cleanup_test_instance(instance)
 
 
 @pytest.mark.skipif(

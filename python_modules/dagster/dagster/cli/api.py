@@ -14,11 +14,9 @@ from dagster.cli.workspace.cli_target import (
     python_origin_target_argument,
     repository_target_argument,
 )
-from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.host_representation.external import ExternalPipeline
-from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
@@ -204,12 +202,12 @@ def execute_step_command(input_json):
                 if not success:
                     return
 
-            recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+            recon_pipeline = recon_pipeline_from_origin(
+                args.pipeline_origin
+            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
             execution_plan = create_execution_plan(
-                recon_pipeline.subset_for_execution_from_existing_pipeline(
-                    pipeline_run.solids_to_execute
-                ),
+                recon_pipeline,
                 run_config=pipeline_run.run_config,
                 step_keys_to_execute=args.step_keys_to_execute,
                 mode=pipeline_run.mode,
@@ -220,6 +218,7 @@ def execute_step_command(input_json):
 
             for event in execute_plan_iterator(
                 execution_plan,
+                recon_pipeline,
                 pipeline_run,
                 instance,
                 run_config=pipeline_run.run_config,
@@ -345,7 +344,7 @@ def _schedule_tick_context(instance, stream, tick_data):
 def grpc_command(
     port=None,
     socket=None,
-    host="localhost",
+    host=None,
     max_workers=None,
     heartbeat=False,
     heartbeat_timeout=30,
@@ -548,12 +547,6 @@ def _launch_scheduled_executions(
         scheduled_execution_time=None,  # No way to know this in general for this scheduler
     )
 
-    if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
-        error = schedule_execution_data.error
-        tick_context.update_state(JobTickStatus.FAILURE, error=error)
-        tick_context.stream.send(ScheduledExecutionFailed(run_id=None, errors=[error]))
-        return
-
     if not schedule_execution_data.run_requests:
         # Update tick to skipped state and return
         tick_context.update_state(JobTickStatus.SKIPPED)
@@ -585,9 +578,7 @@ def _launch_run(
             known_state=None,
         )
         execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-    except DagsterSubprocessError as e:
-        errors.extend(e.subprocess_error_infos)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}

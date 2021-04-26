@@ -34,8 +34,19 @@ dagit:
 
   service:
     type: ClusterIP
+    # Defines the port where Dagit will serve requests; if changed, don't forget to update the
+    # livenessProbe and startupProbe entries below as well.
     port: 80
     annotations: {}
+
+  # Defines a workspace for Dagit. This should only be set if user deployments are enabled, but
+  # the subchart is disabled to manage user deployments in a separate Helm release.
+  # In this case, Dagit will need the addresses of the servers in order to load the user code.
+  workspace:
+    enabled: false
+    servers:
+      - host: "k8s-example-user-code-1"
+        port: 3030
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -99,9 +110,10 @@ dagit:
   # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
-  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
   # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
+    enabled: true
     httpGet:
       path: "/dagit_info"
       port: 80
@@ -520,8 +532,16 @@ postgresql:
 
   postgresqlDatabase: test
 
+  # set postgresql parameter keywords for the connection string.
+  # see: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+  postgresqlParams: {}
+
   service:
     port: 5432
+
+# Whether to generate a secret resource for the PostgreSQL password. Useful if
+# global.postgresqlSecretName is managed outside of this helm chart.
+generatePostgresqlPasswordSecret: true
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
@@ -761,9 +781,10 @@ dagsterDaemon:
   # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
-  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
   # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
+    enabled: true
     exec:
       command:
         - "dagster-daemon"

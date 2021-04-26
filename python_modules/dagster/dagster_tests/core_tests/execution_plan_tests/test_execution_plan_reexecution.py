@@ -9,6 +9,7 @@ from dagster import (
     lambda_solid,
     reexecute_pipeline,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -17,8 +18,10 @@ from dagster.core.errors import (
 from dagster.core.events import get_step_output_event
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.utils import merge_dicts
 
 
@@ -70,18 +73,26 @@ def test_execution_plan_reexecution():
 
     ## re-execute add_two
 
-    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
-
+    environment_config = EnvironmentConfig.build(
+        pipeline_def,
+        run_config=run_config,
+    )
+    execution_plan = ExecutionPlan.build(
+        InMemoryPipeline(pipeline_def),
+        environment_config,
+    )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=execution_plan,
         run_config=run_config,
         parent_run_id=result.run_id,
         root_run_id=result.run_id,
+        step_keys_to_execute=["add_two"],
     )
 
     step_events = execute_plan(
-        execution_plan.build_subset_plan(["add_two"]),
+        execution_plan.build_subset_plan(["add_two"], pipeline_def, environment_config),
+        InMemoryPipeline(pipeline_def),
         run_config=run_config,
         pipeline_run=pipeline_run,
         instance=instance,
@@ -118,6 +129,7 @@ def test_execution_plan_wrong_run_id():
     with pytest.raises(DagsterRunNotFoundError) as exc_info:
         execute_plan(
             execution_plan,
+            InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -140,7 +152,8 @@ def test_execution_plan_reexecution_with_in_memory():
 
     ## re-execute add_two
 
-    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
+    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
@@ -152,7 +165,8 @@ def test_execution_plan_reexecution_with_in_memory():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
-            execution_plan.build_subset_plan(["add_two"]),
+            execution_plan.build_subset_plan(["add_two"], pipeline_def, environment_config),
+            InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,

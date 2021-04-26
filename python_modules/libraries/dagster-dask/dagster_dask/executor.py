@@ -1,11 +1,20 @@
 import dask
 import dask.distributed
-from dagster import Executor, Field, Permissive, Selector, StringSource, check, seven
-from dagster.core.definitions.executor import check_cross_process_constraints, executor
+from dagster import (
+    Executor,
+    Field,
+    Permissive,
+    Selector,
+    StringSource,
+    check,
+    multiple_process_executor_requirements,
+    seven,
+)
+from dagster.core.definitions.executor import executor
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
@@ -17,6 +26,7 @@ DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 
 @executor(
     name="dask",
+    requirements=multiple_process_executor_requirements(),
     config_schema={
         "cluster": Field(
             Selector(
@@ -100,7 +110,6 @@ def dask_executor(init_context):
             pass
 
     """
-    check_cross_process_constraints(init_context)
     ((cluster_type, cluster_configuration),) = init_context.executor_config["cluster"].items()
     return DaskExecutor(cluster_type, cluster_configuration)
 
@@ -119,16 +128,20 @@ def query_on_dask_worker(
     """
 
     with DagsterInstance.from_ref(instance_ref) as instance:
+        subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
+            pipeline_run.solids_to_execute
+        )
+
         execution_plan = create_execution_plan(
-            recon_pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
-            ),
+            subset_pipeline,
             run_config=run_config,
             step_keys_to_execute=step_keys,
             mode=mode,
         )
 
-        return execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
+        return execute_plan(
+            execution_plan, subset_pipeline, instance, pipeline_run, run_config=run_config
+        )
 
 
 def get_dask_resource_requirements(tags):
@@ -152,7 +165,7 @@ class DaskExecutor(Executor):
         return RetryMode.DISABLED
 
     def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+        check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         check.param_invariant(
             isinstance(pipeline_context.executor, DaskExecutor),
@@ -234,11 +247,10 @@ class DaskExecutor(Executor):
                             dependencies.append(execution_futures_dict[key])
 
                     run_config = dict(pipeline_context.run_config, execution={"in_process": {}})
-                    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
-                    recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
+                    recon_pipeline = pipeline_context.reconstructable_pipeline
 
                     future = client.submit(
                         query_on_dask_worker,
@@ -247,7 +259,7 @@ class DaskExecutor(Executor):
                         pipeline_context.pipeline_run,
                         run_config,
                         [step.key],
-                        pipeline_context.mode_def.name,
+                        pipeline_context.pipeline_run.mode,
                         instance.get_ref(),
                         key=dask_task_name,
                         resources=get_dask_resource_requirements(step.tags),

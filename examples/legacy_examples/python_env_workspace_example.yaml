@@ -1,9 +1,0 @@
-# This is just here as an example of how to point a user process to specific virtual environment
-load_from:
-  - python_environment:
-      executable_path: "/Users/schrockn/venvs/dagster-dev-3.7.6/bin/python"
-      target:
-        python_module:
-          module_name: dagster_examples
-          location_name: dagster_examples
-          attribute: define_internal_dagit_repository

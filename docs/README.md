@@ -55,7 +55,7 @@ Then, with the virtual environment activated, run the following from the `dagste
 pip install -r docs-requirements.txt
 ```
 
-Finally, in the `dagster/docs` directory (not this directory), run:
+Finally, in the `dagster/docs` directory, run:
 
 ```
 make build

@@ -357,6 +357,18 @@ def yield_obj_pipeline():
     yield_obj()
 
 
+@pipeline(mode_defs=default_mode_defs)
+def retries_pipeline():
+    test_nb_solid("raise_retry")()
+    test_nb_solid("yield_retry")()
+
+
+@pipeline(mode_defs=default_mode_defs)
+def failure_pipeline():
+    test_nb_solid("raise_failure")()
+    test_nb_solid("yield_failure")()
+
+
 @repository
 def notebook_repo():
     pipelines = [
@@ -375,6 +387,8 @@ def notebook_repo():
         reimport_pipeline,
         yield_3_pipeline,
         yield_obj_pipeline,
+        retries_pipeline,
+        failure_pipeline,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]

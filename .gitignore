@@ -140,7 +140,6 @@ dask-worker-space
 .codemod.bookmark
 
 # Examples outputs
-examples/legacy_examples/dagster_examples/*/output/
 examples/docs_snippets/docs_snippets/**/**/output/
 examples/**/**/example.db
 

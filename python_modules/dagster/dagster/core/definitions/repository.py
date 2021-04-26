@@ -17,7 +17,14 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 
 
 class _CacheingDefinitionIndex:
-    def __init__(self, definition_class, definition_class_name, definition_kind, definitions):
+    def __init__(
+        self,
+        definition_class,
+        definition_class_name,
+        definition_kind,
+        definitions,
+        validation_fn,
+    ):
 
         for key, definition in definitions.items():
             check.invariant(
@@ -34,6 +41,7 @@ class _CacheingDefinitionIndex:
         self._definition_class = definition_class
         self._definition_class_name = definition_class_name
         self._definition_kind = definition_kind
+        self._validation_fn = validation_fn
 
         self._definitions = definitions
         self._definition_cache = {}
@@ -88,7 +96,7 @@ class _CacheingDefinitionIndex:
         definition_source = self._definitions[definition_name]
 
         if isinstance(definition_source, self._definition_class):
-            self._definition_cache[definition_name] = definition_source
+            self._definition_cache[definition_name] = self._validation_fn(definition_source)
             return definition_source
         else:
             definition = definition_source()
@@ -112,7 +120,7 @@ class _CacheingDefinitionIndex:
                     definition_def_name=definition.name,
                 ),
             )
-            self._definition_cache[definition_name] = definition
+            self._definition_cache[definition_name] = self._validation_fn(definition)
             return definition
 
 
@@ -154,10 +162,15 @@ class RepositoryData:
         check.dict_param(sensors, "sensors", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
-            PipelineDefinition, "PipelineDefinition", "pipeline", pipelines
+            PipelineDefinition, "PipelineDefinition", "pipeline", pipelines, self._validate_pipeline
         )
+
         self._schedules = _CacheingDefinitionIndex(
-            ScheduleDefinition, "ScheduleDefinition", "schedule", schedules
+            ScheduleDefinition,
+            "ScheduleDefinition",
+            "schedule",
+            schedules,
+            self._validate_schedule,
         )
         schedule_partition_sets = [
             schedule.get_partition_set()
@@ -172,13 +185,18 @@ class RepositoryData:
                 {partition_set.name: partition_set for partition_set in schedule_partition_sets},
                 partition_sets,
             ),
+            self._validate_partition_set,
         )
         self._sensors = _CacheingDefinitionIndex(
             SensorDefinition,
             "SensorDefinition",
             "sensor",
             sensors,
+            self._validate_sensor,
         )
+        # load all sensors to force validation
+        self._sensors.get_all_definitions()
+
         self._all_pipelines = None
         self._solids = None
         self._all_solids = None
@@ -503,6 +521,34 @@ class RepositoryData:
             check.failed("could not find solid_def for solid {name}".format(name=name))
 
         return self._all_solids[name]
+
+    def _validate_pipeline(self, pipeline):
+        return pipeline
+
+    def _validate_schedule(self, schedule):
+        pipelines = self.get_pipeline_names()
+
+        if schedule.pipeline_name not in pipelines:
+            raise DagsterInvalidDefinitionError(
+                f'ScheduleDefinition "{schedule.name}" targets pipeline "{schedule.pipeline_name}" '
+                "which was not found in this repository."
+            )
+
+        return schedule
+
+    def _validate_sensor(self, sensor):
+        pipelines = self.get_pipeline_names()
+
+        if sensor.pipeline_name not in pipelines:
+            raise DagsterInvalidDefinitionError(
+                f'SensorDefinition "{sensor.name}" targets pipeline "{sensor.pipeline_name}" '
+                "which was not found in this repository."
+            )
+
+        return sensor
+
+    def _validate_partition_set(self, partition_set):
+        return partition_set
 
 
 class RepositoryDefinition:

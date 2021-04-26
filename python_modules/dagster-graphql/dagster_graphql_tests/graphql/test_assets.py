@@ -78,9 +78,9 @@ GET_ASSET_RUNS = """
 """
 
 
-WIPE_ASSET = """
-    mutation AssetKeyWipe($assetKey: AssetKeyInput!) {
-        wipeAsset(assetKey: $assetKey) {
+WIPE_ASSETS = """
+    mutation AssetKeyWipe($assetKeys: [AssetKeyInput!]!) {
+        wipeAssets(assetKeys: $assetKeys) {
             __typename
         }
     }
@@ -208,12 +208,12 @@ class TestAssetAwareEventLog(
         assert AssetKey("a") in asset_keys
 
         result = execute_dagster_graphql(
-            graphql_context, WIPE_ASSET, variables={"assetKey": {"path": ["a"]}}
+            graphql_context, WIPE_ASSETS, variables={"assetKeys": [{"path": ["a"]}]}
         )
 
         assert result.data
-        assert result.data["wipeAsset"]
-        assert result.data["wipeAsset"]["__typename"] == "AssetWipeSuccess"
+        assert result.data["wipeAssets"]
+        assert result.data["wipeAssets"]["__typename"] == "AssetWipeSuccess"
 
         asset_keys = graphql_context.instance.all_asset_keys()
         assert AssetKey("a") not in asset_keys

@@ -1,12 +1,14 @@
 import logging
 import time
 from contextlib import contextmanager
+from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
+from urllib.parse import urlencode
 
 import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
-from dagster import Field, IntSource, Selector, StringSource, check
+from dagster import Field, IntSource, Permissive, StringSource, check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
 
@@ -21,35 +23,48 @@ def get_conn(conn_string):
 
 
 def pg_config():
-    return Selector(
-        {
-            "postgres_url": StringSource,
-            "postgres_db": {
+    return {
+        "postgres_url": Field(StringSource, is_required=False),
+        "postgres_db": Field(
+            {
                 "username": StringSource,
                 "password": StringSource,
                 "hostname": StringSource,
                 "db_name": StringSource,
                 "port": Field(IntSource, is_required=False, default_value=5432),
+                "params": Field(Permissive(), is_required=False, default_value={}),
             },
-        }
-    )
+            is_required=False,
+        ),
+        "should_autocreate_tables": Field(bool, is_required=False, default_value=True),
+    }
 
 
 def pg_url_from_config(config_value):
+
     if config_value.get("postgres_url"):
+        check.invariant(
+            not "postgres_db" in config_value,
+            "postgres storage config must have exactly one of `postgres_url` or `postgres_db`",
+        )
         return config_value["postgres_url"]
+    else:
+        check.invariant(
+            "postgres_db" in config_value,
+            "postgres storage config must have exactly one of `postgres_url` or `postgres_db`",
+        )
 
-    return get_conn_string(**config_value["postgres_db"])
+        return get_conn_string(**config_value["postgres_db"])
 
 
-def get_conn_string(username, password, hostname, db_name, port="5432"):
-    return "postgresql://{username}:{password}@{hostname}:{port}/{db_name}".format(
-        username=username,
-        password=urlquote(password),
-        hostname=hostname,
-        db_name=db_name,
-        port=port,
-    )
+def get_conn_string(username, password, hostname, db_name, port="5432", params=None):
+    uri = f"postgresql://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
+
+    if params:
+        query_string = f"{urlencode(params, quote_via=quote)}"
+        uri = f"{uri}?{query_string}"
+
+    return uri
 
 
 def retry_pg_creation_fn(fn, retry_limit=5, retry_wait=0.2):

@@ -1,4 +1,5 @@
 import re
+import string
 import typing
 
 import pytest
@@ -619,7 +620,9 @@ def test_no_env_missing_required_error_handling():
     assert mfe.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
     assert len(pe.errors) == 1
 
-    assert pe.errors[0].message == 'Missing required config entry "solids" at the root.'
+    expected_suggested_config = {"solids": {"required_int_solid": {"config": 0}}}
+    assert pe.errors[0].message.startswith('Missing required config entry "solids" at the root.')
+    assert str(expected_suggested_config) in pe.errors[0].message
 
 
 def test_root_extra_field():
@@ -724,12 +727,16 @@ def test_list_in_config_error():
 
 
 def test_required_resource_not_given():
+    @solid(required_resource_keys={"required"})
+    def needs_resource(_):
+        pass
+
     @pipeline(
         name="required_resource_not_given",
         mode_defs=[ModeDefinition(resource_defs={"required": dummy_resource(Int)})],
     )
     def pipeline_def():
-        pass
+        needs_resource()
 
     with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
         execute_pipeline(pipeline_def, run_config={"resources": None})
@@ -745,7 +752,12 @@ def test_required_resource_not_given():
     pe = pe_info.value
     error = pe.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert error.message == 'Missing required config entry "required" at path root:resources.'
+
+    expected_suggested_config = {"required": {"config": 0}}
+    assert error.message.startswith(
+        'Missing required config entry "required" at path root:resources.'
+    )
+    assert str(expected_suggested_config) in error.message
 
 
 def test_multilevel_good_error_handling_solids():
@@ -767,9 +779,12 @@ def test_multilevel_good_error_handling_solids():
         execute_pipeline(pipeline_def, run_config={"solids": {}})
 
     assert len(missing_field_pe_info.value.errors) == 1
-    assert missing_field_pe_info.value.errors[0].message == (
+
+    expected_suggested_config = {"good_error_handling": {"config": 0}}
+    assert missing_field_pe_info.value.errors[0].message.startswith(
         """Missing required config entry "good_error_handling" at path root:solids."""
     )
+    assert str(expected_suggested_config) in missing_field_pe_info.value.errors[0].message
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
@@ -785,9 +800,12 @@ def test_multilevel_good_error_handling_solid_name_solids():
         execute_pipeline(pipeline_def, run_config={"solids": {"good_error_handling": {}}})
 
     assert len(pe_info.value.errors) == 1
-    assert pe_info.value.errors[0].message == (
+
+    expected_suggested_config = {"config": 0}
+    assert pe_info.value.errors[0].message.startswith(
         """Missing required config entry "config" at path root:solids:good_error_handling."""
     )
+    assert str(expected_suggested_config) in pe_info.value.errors[0].message
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
@@ -917,3 +935,25 @@ def test_field_is_none():
             pass
 
     assert "Fields cannot be None" in str(exc_info.value)
+
+
+def test_permissive_defaults():
+    @solid(config_schema=Permissive({"four": Field(int, default_value=4)}))
+    def perm_with_defaults(context):
+        assert context.solid_config["four"] == 4
+
+    assert execute_solid(perm_with_defaults).success
+
+
+def test_permissive_ordering():
+    alphabet = {letter: letter for letter in string.ascii_lowercase}
+
+    @solid(config_schema=dict)
+    def test_order(context):
+        alpha = list(context.solid_config.keys())
+        for idx, letter in enumerate(string.ascii_lowercase):
+            assert letter == alpha[idx]  # if this fails dict ordering got messed up
+
+    assert execute_solid(
+        test_order, run_config={"solids": {"test_order": {"config": alphabet}}}
+    ).success

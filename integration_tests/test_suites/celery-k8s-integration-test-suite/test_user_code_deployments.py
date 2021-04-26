@@ -4,9 +4,11 @@ import os
 
 import kubernetes
 import pytest
+from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
+from dagster_test.test_project import get_test_project_docker_image
 from kubernetes.stream import stream
 from marks import mark_user_code_deployment
 
@@ -70,6 +72,8 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-a
         "user-code-deployment-1",
         "--config-json",
         run_config_json,
+        "--run-id",
+        "foobar",
     ]
 
     stream(
@@ -101,3 +105,6 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-a
         job_name=runmaster_job_name, namespace=namespace, wait_timeout=450
     )
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+
+    updated_run = dagster_instance_for_user_deployments.get_run_by_id("foobar")
+    assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()

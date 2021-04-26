@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
+
+if TYPE_CHECKING:
+    from .solid import NodeDefinition
+    from .graph import GraphDefinition
 
 
 class IContainSolids(ABC):  # pylint: disable=no-init
@@ -29,9 +34,11 @@ class IContainSolids(ABC):  # pylint: disable=no-init
         """
 
 
-def validate_dependency_dict(dependencies):
+def validate_dependency_dict(
+    dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]]
+) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
     prelude = (
-        'The expected type for "dependencies" is dict[Union[str, SolidInvocation], dict[str, '
+        'The expected type for "dependencies" is Dict[Union[str, SolidInvocation], Dict[str, '
         "DependencyDefinition]]. "
     )
 
@@ -86,7 +93,11 @@ def validate_dependency_dict(dependencies):
     return dependencies
 
 
-def create_execution_structure(solid_defs, dependencies_dict, graph_definition):
+def create_execution_structure(
+    solid_defs: List["NodeDefinition"],
+    dependencies_dict: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]],
+    graph_definition: "GraphDefinition",
+) -> Tuple[DependencyStructure, Dict[str, Solid]]:
     """This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -176,8 +187,11 @@ def create_execution_structure(solid_defs, dependencies_dict, graph_definition):
 
 
 def _build_pipeline_solid_dict(
-    solid_defs, name_to_aliases, alias_to_solid_instance, graph_definition
-):
+    solid_defs: List["NodeDefinition"],
+    name_to_aliases: Dict[str, Set[str]],
+    alias_to_solid_instance: Dict[str, SolidInvocation],
+    graph_definition,
+) -> Dict[str, Solid]:
     pipeline_solids = []
     for solid_def in solid_defs:
         uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})

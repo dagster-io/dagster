@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 
+import pendulum
 import sqlalchemy as db
 from dagster import check
 from dagster.core.errors import (
@@ -145,7 +146,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 .values(
                     status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
-                    update_timestamp=datetime.now(),
+                    update_timestamp=pendulum.now("UTC"),
                 )
             )
 
@@ -291,7 +292,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     ),
                     partition=partition,
                     partition_set=partition_set,
-                    update_timestamp=datetime.now(),
+                    update_timestamp=pendulum.now("UTC"),
                 )
             )
 

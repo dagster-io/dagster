@@ -14,46 +14,46 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
     dagster_instance_for_daemon, helm_namespace_for_daemon
 ):
     schedule_name = "frequent_celery"
-    external_schedule = get_test_project_external_schedule(schedule_name)
-    reoriginated_schedule = ReOriginatedExternalScheduleForTest(external_schedule)
-    dagster_instance_for_daemon.start_schedule_and_update_storage_state(reoriginated_schedule)
+    with get_test_project_external_schedule(schedule_name) as external_schedule:
+        reoriginated_schedule = ReOriginatedExternalScheduleForTest(external_schedule)
+        dagster_instance_for_daemon.start_schedule_and_update_storage_state(reoriginated_schedule)
 
-    scheduler_runs = dagster_instance_for_daemon.get_runs(
-        PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
-    )
-
-    assert len(scheduler_runs) == 0
-
-    try:
-
-        start_time = time.time()
-
-        while True:
-            schedule_runs = dagster_instance_for_daemon.get_runs(
-                PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
-            )
-
-            if len(schedule_runs) > 0:
-                break
-
-            if time.time() - start_time > 120:
-                raise Exception(
-                    "Timed out waiting for schedule to start a run. "
-                    "Check the dagster-daemon pod logs to see why it didn't start."
-                )
-
-            time.sleep(1)
-            continue
-
-    finally:
-        dagster_instance_for_daemon.stop_schedule_and_update_storage_state(
-            reoriginated_schedule.get_external_origin_id()
+        scheduler_runs = dagster_instance_for_daemon.get_runs(
+            PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
         )
 
-    last_run = schedule_runs[0]
+        assert len(scheduler_runs) == 0
 
-    finished_pipeline_run = poll_for_finished_run(
-        dagster_instance_for_daemon, last_run.run_id, timeout=120
-    )
+        try:
 
-    assert finished_pipeline_run.is_success
+            start_time = time.time()
+
+            while True:
+                schedule_runs = dagster_instance_for_daemon.get_runs(
+                    PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
+                )
+
+                if len(schedule_runs) > 0:
+                    break
+
+                if time.time() - start_time > 120:
+                    raise Exception(
+                        "Timed out waiting for schedule to start a run. "
+                        "Check the dagster-daemon pod logs to see why it didn't start."
+                    )
+
+                time.sleep(1)
+                continue
+
+        finally:
+            dagster_instance_for_daemon.stop_schedule_and_update_storage_state(
+                reoriginated_schedule.get_external_origin_id()
+            )
+
+        last_run = schedule_runs[0]
+
+        finished_pipeline_run = poll_for_finished_run(
+            dagster_instance_for_daemon, last_run.run_id, timeout=120
+        )
+
+        assert finished_pipeline_run.is_success

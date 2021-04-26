@@ -1,5 +1,13 @@
-from dagster import Executor, Field, Noneable, Permissive, StringSource, check, executor
-from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster import (
+    Executor,
+    Field,
+    Noneable,
+    Permissive,
+    StringSource,
+    check,
+    executor,
+    multiple_process_executor_requirements,
+)
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import pack_value
@@ -35,7 +43,11 @@ CELERY_CONFIG = {
 }
 
 
-@executor(name="celery", config_schema=CELERY_CONFIG)
+@executor(
+    name="celery",
+    config_schema=CELERY_CONFIG,
+    requirements=multiple_process_executor_requirements(),
+)
 def celery_executor(init_context):
     """Celery-based executor.
 
@@ -86,7 +98,6 @@ def celery_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
     """
-    check_cross_process_constraints(init_context)
 
     return CeleryExecutor(
         broker=init_context.executor_config.get("broker"),
@@ -101,7 +112,7 @@ def _submit_task(app, pipeline_context, step, queue, priority, known_state):
     from .tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_context.pipeline.get_python_origin(),
+        pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
@@ -112,7 +123,7 @@ def _submit_task(app, pipeline_context, step, queue, priority, known_state):
     task = create_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        executable_dict=pipeline_context.pipeline.to_dict(),
+        executable_dict=pipeline_context.reconstructable_pipeline.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority,

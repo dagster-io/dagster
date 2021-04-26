@@ -10,6 +10,7 @@ from dagster.core.definitions import (
     DependencyDefinition,
     EventMetadataEntry,
     ExecutorDefinition,
+    ExecutorRequirement,
     ExpectationResult,
     Failure,
     FloatMetadataEntryData,
@@ -28,6 +29,7 @@ from dagster.core.definitions import (
     OutputDefinition,
     OutputMapping,
     Partition,
+    PartitionScheduleDefinition,
     PartitionSetDefinition,
     PathMetadataEntryData,
     PipelineDefinition,
@@ -57,6 +59,7 @@ from dagster.core.definitions import (
     lambda_solid,
     logger,
     monthly_schedule,
+    multiple_process_executor_requirements,
     multiprocess_executor,
     pipeline,
     reconstructable,
@@ -98,14 +101,10 @@ from dagster.core.execution.api import (
 )
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
+from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.execution.context.system import (
-    HookContext,
-    InputContext,
-    OutputContext,
-    SystemComputeExecutionContext,
-    TypeCheckContext,
-)
+from dagster.core.execution.context.output import OutputContext
+from dagster.core.execution.context.system import HookContext, TypeCheckContext
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
@@ -177,6 +176,7 @@ __all__ = [
     "DependencyDefinition",
     "EventMetadataEntry",
     "ExecutorDefinition",
+    "ExecutorRequirement",
     "ExpectationResult",
     "Failure",
     "Field",
@@ -231,7 +231,6 @@ __all__ = [
     "PipelineExecutionResult",
     "RetryRequested",
     "SolidExecutionResult",
-    "SystemComputeExecutionContext",
     "SolidExecutionContext",
     "HookContext",
     "TypeCheckContext",
@@ -248,6 +247,7 @@ __all__ = [
     "mem_intermediate_storage",
     "io_manager_from_intermediate_storage",
     "multiprocess_executor",
+    "multiple_process_executor_requirements",
     "reconstructable",
     "reexecute_pipeline_iterator",
     "reexecute_pipeline",
@@ -323,6 +323,7 @@ __all__ = [
     "DagsterInstance",
     # partitions and schedules
     "Partition",
+    "PartitionScheduleDefinition",
     "PartitionSetDefinition",
     "RunRequest",
     "ScheduleDefinition",

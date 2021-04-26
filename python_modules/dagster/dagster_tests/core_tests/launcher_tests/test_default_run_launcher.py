@@ -12,7 +12,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
     environ,
@@ -114,8 +113,7 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
                 port=api_client.port,
                 socket=api_client.socket,
                 host=api_client.host,
-            ).create_handle() as handle:
-                repository_location = GrpcServerRepositoryLocation(handle)
+            ).create_location() as repository_location:
                 yield repository_location.get_repository("nope").get_full_external_pipeline(
                     pipeline_name
                 )
@@ -132,8 +130,7 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         ),
         location_name="nope",
-    ).create_handle() as repository_location_handle:
-        repository_location = GrpcServerRepositoryLocation(repository_location_handle)
+    ).create_test_location() as repository_location:
         yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
 
 
@@ -288,7 +285,7 @@ def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redef
                     "step crashy_solid unexpectedly exited"
                 )
             else:
-                message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
+                message = "Pipeline execution process for {run_id} unexpectedly exited".format(
                     run_id=run_id
                 )
 
@@ -370,7 +367,6 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                             "PIPELINE_CANCELED",
                             'Execution of pipeline "sleepy_pipeline" canceled.',
                         ),
-                        ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
                         ("ENGINE_EVENT", "Process for pipeline exited"),
                     ],
                 )
@@ -514,8 +510,6 @@ def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=re
             if _is_multiprocess(run_config):
                 messages = [
                     "Started process for pipeline",
-                    "Starting initialization of resources",
-                    "Finished initialization of resources",
                     "Executing steps using multiprocess executor",
                     "Launching subprocess for return_one",
                     "Executing step return_one in subprocess",
@@ -540,9 +534,9 @@ def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=re
             else:
                 messages = [
                     "Started process for pipeline",
+                    "Executing steps in process",
                     "Starting initialization of resources",
                     "Finished initialization of resources",
-                    "Executing steps in process",
                     "Finished steps in process",
                     "Process for pipeline exited",
                 ]

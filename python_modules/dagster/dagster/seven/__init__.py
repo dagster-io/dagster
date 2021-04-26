@@ -1,5 +1,4 @@
 """Internal py2/3 compatibility library. A little more than six."""
-
 import datetime
 import inspect
 import multiprocessing
@@ -11,6 +10,7 @@ import tempfile
 import threading
 import time
 from contextlib import contextmanager
+from datetime import timezone
 from types import MethodType
 
 import pendulum
@@ -124,12 +124,6 @@ def builtin_print():
     return "builtins.print"
 
 
-def get_utc_timezone():
-    from datetime import timezone
-
-    return timezone.utc
-
-
 def get_current_datetime_in_utc():
     return pendulum.now("UTC")
 
@@ -139,7 +133,7 @@ def get_timestamp_from_utc_datetime(utc_datetime):
     if isinstance(utc_datetime, PendulumDateTime):
         return utc_datetime.timestamp()
 
-    if utc_datetime.tzinfo != get_utc_timezone():
+    if utc_datetime.tzinfo != timezone.utc:
         raise Exception("Must pass in a UTC timezone to compute UNIX timestamp")
 
     return utc_datetime.timestamp()

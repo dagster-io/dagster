@@ -1,6 +1,6 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import Optional, Set
+from typing import AbstractSet, Optional
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -8,7 +8,12 @@ from dagster.core.definitions.configurable import AnonymousConfigurableDefinitio
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
 from dagster.utils.backcompat import experimental_arg_warning
 
-from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
+from ..decorator_utils import (
+    is_required_param,
+    positional_arg_name_list,
+    split_function_parameters,
+    validate_decorated_fn_positionals,
+)
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
@@ -30,8 +35,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         resource_fn (Callable[[InitResourceContext], Any]): User-provided function to instantiate
             the resource, which will be made available to solid executions keyed on the
             ``context.resources`` object.
-        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
-            available in `init_context.resource_config`.
+        config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
+            that config provided for the resource matches this schema and fail if it does not. If
+            not set, Dagster will accept any config provided for the resource.
         description (Optional[str]): A human-readable description of the resource.
         required_resource_keys: (Optional[Set[str]]) Keys for the resources required by this
             resource. A DagsterInvariantViolationError will be raised during initialization if
@@ -49,19 +55,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         required_resource_keys=None,
         version=None,
     ):
-        EXPECTED_POSITIONALS = ["*"]
-        fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
-        missing_positional = validate_decorated_fn_positionals(fn_positionals, EXPECTED_POSITIONALS)
-
-        if missing_positional:
-            raise DagsterInvalidDefinitionError(
-                "@resource '{resource_name}' decorated function does not have required "
-                "positional parameter '{missing_param}'. Resource functions should only have keyword "
-                "arguments that match input names and a first positional parameter.".format(
-                    resource_name=resource_fn.__name__, missing_param=missing_positional
-                )
-            )
-
         self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
@@ -166,18 +159,33 @@ class _ResourceDecoratorCallable:
             required_resource_keys, "required_resource_keys"
         )
 
-    def __call__(self, fn):
-        check.callable_param(fn, "fn")
+    def __call__(self, resource_fn):
+        check.callable_param(resource_fn, "resource_fn")
+
+        any_name = ["*"]
+        fn_positionals, extras = split_function_parameters(resource_fn, any_name)
+        missing_positional = validate_decorated_fn_positionals(fn_positionals, any_name)
+
+        if missing_positional:
+            raise DagsterInvalidDefinitionError(
+                f"@resource decorated function '{resource_fn.__name__}' expects a single positional argument."
+            )
+        required_extras = list(filter(is_required_param, extras))
+        if required_extras:
+            raise DagsterInvalidDefinitionError(
+                f"@resource decorated function '{resource_fn.__name__}' expects only a single positional required argument. "
+                f"Got required extra params {', '.join(positional_arg_name_list(required_extras))}"
+            )
 
         resource_def = ResourceDefinition(
-            resource_fn=fn,
+            resource_fn=resource_fn,
             config_schema=self.config_schema,
             description=self.description,
             version=self.version,
             required_resource_keys=self.required_resource_keys,
         )
 
-        update_wrapper(resource_def, wrapped=fn)
+        update_wrapper(resource_def, wrapped=resource_fn)
 
         return resource_def
 
@@ -196,7 +204,7 @@ def resource(config_schema=None, description=None, required_resource_keys=None, 
 
     Args:
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
-            `init_context.resource_config`.
+            `init_context.resource_config`. If not set, Dagster will accept any config provided.
         description(Optional[str]): A human-readable description of the resource.
         version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
@@ -221,7 +229,10 @@ def resource(config_schema=None, description=None, required_resource_keys=None, 
 
 
 class Resources:
-    pass
+    """This class functions as a "tag" that we can use to type the namedtuple returned by
+    ScopedResourcesBuilder.build(). The way that we create the namedtuple returned by build() is
+    incompatible with type annotations on its own due to its dynamic attributes, so this tag class
+    provides a workaround."""
 
 
 class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_instance_dict")):
@@ -238,7 +249,7 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             ),
         )
 
-    def build(self, required_resource_keys: Optional[Set[str]]) -> Resources:
+    def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
 
         """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.

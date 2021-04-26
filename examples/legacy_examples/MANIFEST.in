@@ -1,2 +1,0 @@
-include docs_snippets/docs_snippets/intro_tutorial/cereal.csv
-recursive-include . *.yaml

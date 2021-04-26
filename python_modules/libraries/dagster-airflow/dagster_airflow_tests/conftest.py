@@ -27,7 +27,7 @@ def airflow_home():
     return airflow_home_dir
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def clean_airflow_home(airflow_home):
     """Ensure that the existing contents of AIRFLOW_HOME do not interfere with test."""
 

@@ -3,7 +3,7 @@ import os
 from dagster import execute_pipeline
 from dagster.cli.pipeline import do_execute_command
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 
 
@@ -47,18 +47,18 @@ def test_cli_execute():
     try:
 
         os.chdir(file_relative_path(__file__, "../.."))
-
-        do_execute_command(
-            pipeline=ReconstructablePipeline.for_module(
-                "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world"
-            ),
-            instance=DagsterInstance.get(),
-            config=[
-                file_relative_path(
-                    __file__, "../../dagster_pandas/examples/pandas_hello_world/*.yaml"
-                )
-            ],
-        )
+        with instance_for_test() as instance:
+            do_execute_command(
+                pipeline=ReconstructablePipeline.for_module(
+                    "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world"
+                ),
+                instance=instance,
+                config=[
+                    file_relative_path(
+                        __file__, "../../dagster_pandas/examples/pandas_hello_world/*.yaml"
+                    )
+                ],
+            )
     finally:
         # restore cwd
         os.chdir(cwd)
@@ -73,18 +73,19 @@ def test_cli_execute_failure():
     try:
 
         os.chdir(file_relative_path(__file__, "../.."))
-
-        result = do_execute_command(
-            pipeline=ReconstructablePipeline.for_module(
-                "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world_fails"
-            ),
-            instance=DagsterInstance.get(),
-            config=[
-                file_relative_path(
-                    __file__, "../../dagster_pandas/examples/pandas_hello_world/*.yaml"
-                )
-            ],
-        )
+        with instance_for_test() as instance:
+            result = do_execute_command(
+                pipeline=ReconstructablePipeline.for_module(
+                    "dagster_pandas.examples.pandas_hello_world.pipeline",
+                    "pandas_hello_world_fails",
+                ),
+                instance=instance,
+                config=[
+                    file_relative_path(
+                        __file__, "../../dagster_pandas/examples/pandas_hello_world/*.yaml"
+                    )
+                ],
+            )
         failures = [event for event in result.step_event_list if event.is_failure]
     finally:
         # restore cwd

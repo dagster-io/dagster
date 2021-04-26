@@ -5,8 +5,8 @@ from dagster_test.test_project import (
 
 
 def test_reoriginated_external_pipeline():
-    external_pipeline = get_test_project_external_pipeline("demo_pipeline_celery")
-    reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+    with get_test_project_external_pipeline("demo_pipeline_celery") as external_pipeline:
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
 
-    assert reoriginated_pipeline.get_python_origin()
-    assert reoriginated_pipeline.get_external_origin()
+        assert reoriginated_pipeline.get_python_origin()
+        assert reoriginated_pipeline.get_external_origin()

@@ -44,7 +44,8 @@ def example_repo():
     return [foo_pipeline, always_run_schedule, always_on_sensor]
 
 
-def get_example_repository_location_handle():
+@contextmanager
+def get_example_repository_location():
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=__file__,
@@ -53,13 +54,14 @@ def get_example_repository_location_handle():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    return origin.create_handle()
+    with origin.create_test_location() as location:
+        yield location
 
 
 @contextmanager
 def get_example_repo():
-    with get_example_repository_location_handle() as location_handle:
-        yield location_handle.create_location().get_repository("example_repo")
+    with get_example_repository_location() as location:
+        yield location.get_repository("example_repo")
 
 
 def test_no_memory_leaks():
@@ -68,7 +70,14 @@ def test_no_memory_leaks():
             "run_coordinator": {
                 "module": "dagster.core.run_coordinator",
                 "class": "QueuedRunCoordinator",
-            }
+            },
+            "run_launcher": {
+                "class": "DefaultRunLauncher",
+                "module": "dagster.core.launcher.default_run_launcher",
+                "config": {
+                    "wait_for_processes": False,
+                },
+            },
         }
     ) as instance, get_example_repo() as repo:
 
@@ -78,7 +87,9 @@ def test_no_memory_leaks():
         instance.start_schedule_and_update_storage_state(external_schedule)
         instance.start_sensor(external_sensor)
 
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance, wait_for_processes_on_exit=True
+        ) as controller:
             start_time = time.time()
 
             growth = objgraph.growth(
@@ -87,9 +98,10 @@ def test_no_memory_leaks():
                 and "dagster" in inspect.getmodule(obj).__name__,
             )
             while True:
-                time.sleep(30)
+                time.sleep(45)
 
-                controller.check_daemons()
+                controller.check_daemon_threads()
+                controller.check_daemon_heartbeats()
 
                 growth = objgraph.growth(
                     limit=10,

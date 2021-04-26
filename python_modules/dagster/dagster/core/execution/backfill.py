@@ -2,7 +2,6 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.errors import DagsterBackfillFailedError
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
@@ -11,7 +10,6 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.host_representation.external_data import (
-    ExternalPartitionExecutionErrorData,
     ExternalPartitionExecutionParamData,
     ExternalPartitionSetExecutionParamData,
 )
@@ -141,8 +139,6 @@ def submit_backfill_runs(instance, repo_location, backfill_job, partition_names=
     result = repo_location.get_external_partition_set_execution_param_data(
         external_repo.handle, partition_set_name, partition_names
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
-        raise DagsterBackfillFailedError(serializable_error_info=result.error)
 
     assert isinstance(result, ExternalPartitionSetExecutionParamData)
     external_pipeline = external_repo.get_full_external_pipeline(
@@ -176,7 +172,6 @@ def create_backfill_run(
     check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
     check.inst_param(partition_data, "partition_data", ExternalPartitionExecutionParamData)
 
-    # potentially wrap this so we don't waste resources if plan is bad
     full_external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         partition_data.run_config,

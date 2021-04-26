@@ -7,7 +7,7 @@ from airflow.operators import BaseOperator
 from dagster import check, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 from dagster_airflow.operators.util import check_storage_specified
@@ -106,7 +106,14 @@ class DagsterOperatorParameters(
         execution_plan_snapshot=None,
         parent_pipeline_snapshot=None,
     ):
-        check_storage_specified(run_config)
+        pipeline_def = recon_repo.get_definition().get_pipeline(pipeline_name)
+
+        if mode is None:
+            mode = pipeline_def.get_default_mode_name()
+
+        mode_def = pipeline_def.get_mode_definition(mode)
+
+        check_storage_specified(pipeline_def, mode_def, run_config)
 
         return super(DagsterOperatorParameters, cls).__new__(
             cls,
@@ -163,11 +170,14 @@ def _make_airflow_dag(
     mode = check.opt_str_param(mode, "mode")
     # Default to use the (persistent) system temp directory rather than a TemporaryDirectory,
     # which would not be consistent between Airflow task invocations.
-    instance = (
-        check.inst_param(instance, "instance", DagsterInstance)
-        if instance
-        else DagsterInstance.get(fallback_storage=seven.get_system_temp_directory())
-    )
+
+    if instance is None:
+        if is_dagster_home_set():
+            instance = DagsterInstance.get()
+        else:
+            instance = DagsterInstance.local_temp(tempdir=seven.get_system_temp_directory())
+
+    check.inst_param(instance, "instance", DagsterInstance)
 
     # Only used for Airflow; internally we continue to use pipeline.name
     dag_id = check.opt_str_param(dag_id, "dag_id", _rename_for_airflow(pipeline_name))
@@ -388,8 +398,7 @@ def make_airflow_dag_containerized(
 ):
     """Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
 
-    Tasks in the resulting DAG will execute the Dagster logic they encapsulate by calling the
-    dagster-graphql API exposed by a container run using a subclass of
+    Tasks in the resulting DAG will execute the Dagster logic they encapsulate  using a subclass of
     :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`. As a
     consequence, both dagster, any Python dependencies required by your solid logic, and the module
     containing your pipeline definition must be available in the container spun up by this operator.

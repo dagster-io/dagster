@@ -1,19 +1,32 @@
 from collections import OrderedDict
+from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
+from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import (
+    DagsterType,
+    DagsterTypeKind,
+    construct_dagster_type_dictionary,
+)
 from toposort import CircularDependencyError, toposort_flatten
 
-from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
+from .dependency import (
+    DependencyStructure,
+    IDependencyDefinition,
+    Solid,
+    SolidHandle,
+    SolidInputHandle,
+    SolidInvocation,
+)
 from .i_solid_definition import NodeDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition, OutputMapping
 from .solid_container import create_execution_structure, validate_dependency_dict
 
 
-def _check_node_defs_arg(graph_name, node_defs):
+def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
     if not isinstance(node_defs, list):
         raise DagsterInvalidDefinitionError(
             '"solids" arg to "{name}" is not a list. Got {val}.'.format(
@@ -40,13 +53,13 @@ def _check_node_defs_arg(graph_name, node_defs):
     return node_defs
 
 
-def _create_adjacency_lists(solids, dep_structure):
-    check.list_param(solids, "solids", Solid)
-    check.inst_param(dep_structure, "dep_structure", DependencyStructure)
-
+def _create_adjacency_lists(
+    solids: List[Solid],
+    dep_structure: DependencyStructure,
+) -> Tuple[Dict[str, Set[Solid]], Dict[str, Set[Solid]]]:
     visit_dict = {s.name: False for s in solids}
-    forward_edges = {s.name: set() for s in solids}
-    backward_edges = {s.name: set() for s in solids}
+    forward_edges: Dict[str, Set[Solid]] = {s.name: set() for s in solids}
+    backward_edges: Dict[str, Set[Solid]] = {s.name: set() for s in solids}
 
     def visit(solid_name):
         if visit_dict[solid_name]:
@@ -71,13 +84,13 @@ def _create_adjacency_lists(solids, dep_structure):
 class GraphDefinition(NodeDefinition):
     def __init__(
         self,
-        name,
-        description,
-        node_defs,
-        dependencies,
-        input_mappings,
-        output_mappings,
-        config_mapping,
+        name: str,
+        description: Optional[str],
+        node_defs: List[NodeDefinition],
+        dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]],
+        input_mappings: Optional[List[InputMapping]],
+        output_mappings: Optional[List[OutputMapping]],
+        config_mapping: Optional[ConfigMapping],
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -134,16 +147,16 @@ class GraphDefinition(NodeDefinition):
         return [self.solid_named(solid_name) for solid_name in order]
 
     @property
-    def solids(self):
+    def solids(self) -> List[Solid]:
         """List[Solid]: Top-level solids in the graph."""
         return list(set(self._solid_dict.values()))
 
     @property
-    def node_defs(self):
+    def node_defs(self) -> List[NodeDefinition]:
         """List[NodeDefinition]: List of nodes in the graph."""
         return self._node_defs
 
-    def has_solid_named(self, name):
+    def has_solid_named(self, name: str) -> bool:
         """Return whether or not there is a top level solid with this name in the graph.
 
         Args:
@@ -155,7 +168,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         return name in self._solid_dict
 
-    def solid_named(self, name):
+    def solid_named(self, name: str) -> Solid:
         """Return the top level solid named "name". Throws if it does not exist.
 
         Args:
@@ -172,7 +185,7 @@ class GraphDefinition(NodeDefinition):
 
         return self._solid_dict[name]
 
-    def get_solid(self, handle):
+    def get_solid(self, handle: SolidHandle) -> Solid:
         """Return the solid contained anywhere within the graph via its handle.
 
         Args:
@@ -197,38 +210,40 @@ class GraphDefinition(NodeDefinition):
 
         return solid
 
-    def iterate_node_defs(self):
+    def iterate_node_defs(self) -> Iterator[NodeDefinition]:
         yield self
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_node_defs()
 
     @property
-    def input_mappings(self):
+    def input_mappings(self) -> List[InputMapping]:
         return self._input_mappings
 
     @property
-    def output_mappings(self):
+    def output_mappings(self) -> List[OutputMapping]:
         return self._output_mappings
 
     @property
-    def config_mapping(self):
+    def config_mapping(self) -> Optional[ConfigMapping]:
         return self._config_mapping
 
     @property
-    def has_config_mapping(self):
+    def has_config_mapping(self) -> bool:
         return self._config_mapping is not None
 
-    def all_dagster_types(self):
+    def all_dagster_types(self) -> Iterable[DagsterType]:
         return self._dagster_type_dict.values()
 
-    def get_input_mapping(self, input_name):
+    def get_input_mapping(self, input_name: str) -> InputMapping:
         check.str_param(input_name, "input_name")
         for mapping in self._input_mappings:
             if mapping.definition.name == input_name:
                 return mapping
-        return None
+        check.failed(f"Could not find input mapping {input_name}")
 
-    def input_mapping_for_pointer(self, pointer):
+    def input_mapping_for_pointer(
+        self, pointer: Union[InputPointer, FanInInputPointer]
+    ) -> Optional[InputMapping]:
         check.inst_param(pointer, "pointer", (InputPointer, FanInInputPointer))
 
         for mapping in self._input_mappings:
@@ -236,14 +251,16 @@ class GraphDefinition(NodeDefinition):
                 return mapping
         return None
 
-    def get_output_mapping(self, output_name):
+    def get_output_mapping(self, output_name: str) -> OutputMapping:
         check.str_param(output_name, "output_name")
         for mapping in self._output_mappings:
             if mapping.definition.name == output_name:
                 return mapping
-        return None
+        check.failed(f"Could not find output mapping {output_name}")
 
-    def resolve_output_to_origin(self, output_name, handle):
+    def resolve_output_to_origin(
+        self, output_name: str, handle: SolidHandle
+    ) -> Tuple[OutputDefinition, SolidHandle]:
         check.str_param(output_name, "output_name")
         check.inst_param(handle, "handle", SolidHandle)
 
@@ -255,7 +272,7 @@ class GraphDefinition(NodeDefinition):
             SolidHandle(mapped_solid.name, handle),
         )
 
-    def default_value_for_input(self, input_name):
+    def default_value_for_input(self, input_name: str) -> Any:
         check.str_param(input_name, "input_name")
 
         # base case
@@ -268,7 +285,7 @@ class GraphDefinition(NodeDefinition):
 
         return mapped_solid.definition.default_value_for_input(mapping.maps_to.input_name)
 
-    def input_has_default(self, input_name):
+    def input_has_default(self, input_name: str) -> bool:
         check.str_param(input_name, "input_name")
 
         # base case
@@ -282,25 +299,25 @@ class GraphDefinition(NodeDefinition):
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def required_resource_keys(self):
+    def required_resource_keys(self) -> FrozenSet[str]:
         required_resource_keys = set()
         for solid in self.solids:
             required_resource_keys.update(solid.definition.required_resource_keys)
         return frozenset(required_resource_keys)
 
     @property
-    def dependencies(self):
+    def dependencies(self) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
         return self._dependencies
 
     @property
-    def dependency_structure(self):
+    def dependency_structure(self) -> DependencyStructure:
         return self._dependency_structure
 
     @property
-    def config_schema(self):
-        return self.config_mapping.config_schema if self.has_config_mapping else None
+    def config_schema(self) -> Optional[IDefinitionConfigSchema]:
+        return self.config_mapping.config_schema if self.config_mapping is not None else None
 
-    def input_supports_dynamic_output_dep(self, input_name):
+    def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
         mapping = self.get_input_mapping(input_name)
         internal_dynamic_handle = self.dependency_structure.get_upstream_dynamic_handle_for_solid(
             mapping.maps_to.solid_name
@@ -310,14 +327,26 @@ class GraphDefinition(NodeDefinition):
 
         return True
 
-    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+    def copy_for_configured(
+        self,
+        name: str,
+        description: Optional[str],
+        config_schema: Any,
+        config_or_config_fn: Any,
+    ):
         check.not_implemented("@graph does not yet implement configured")
 
 
-def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name, class_name):
+def _validate_in_mappings(
+    input_mappings: List[InputMapping],
+    solid_dict: Dict[str, Solid],
+    dependency_structure: DependencyStructure,
+    name: str,
+    class_name: str,
+) -> Tuple[List[InputMapping], Iterable[InputDefinition]]:
     from .composition import MappedInputPlaceholder
 
-    input_def_dict = OrderedDict()
+    input_def_dict: Dict[str, InputDefinition] = OrderedDict()
     mapping_keys = set()
 
     for mapping in input_mappings:
@@ -447,7 +476,13 @@ def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name
     return input_mappings, input_def_dict.values()
 
 
-def _validate_out_mappings(output_mappings, solid_dict, dependency_structure, name, class_name):
+def _validate_out_mappings(
+    output_mappings: List[OutputMapping],
+    solid_dict: Dict[str, Solid],
+    dependency_structure: DependencyStructure,
+    name: str,
+    class_name: str,
+) -> List[OutputMapping]:
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
 

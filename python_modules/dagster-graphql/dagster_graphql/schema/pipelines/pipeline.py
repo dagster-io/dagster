@@ -76,6 +76,7 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
 
 
 class GrapheneAsset(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
@@ -97,6 +98,9 @@ class GrapheneAsset(graphene.ObjectType):
         super().__init__(key=key)
         check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
         self._tags = tags
+
+    def resolve_id(self, _):
+        return self.key
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ...implementation.fetch_assets import get_asset_events

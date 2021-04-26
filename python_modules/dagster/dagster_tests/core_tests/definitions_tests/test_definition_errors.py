@@ -134,7 +134,7 @@ def test_malformed_dependencies():
 
 def test_list_dependencies():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='The expected type for "dependencies" is dict'
+        DagsterInvalidDefinitionError, match='The expected type for "dependencies" is Dict'
     ):
         PipelineDefinition(solid_defs=solid_a_b_list(), name="test", dependencies=[])
 

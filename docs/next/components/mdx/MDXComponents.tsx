@@ -10,8 +10,9 @@ import React, { useContext } from "react";
 import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
-
+import Image from "next/image";
 export const SearchIndexContext = React.createContext(null);
+import path from "path";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -26,47 +27,47 @@ const PyObject: React.FunctionComponent<{
   pluralize = false,
   decorator = false,
 }) => {
-    const value = useContext(SearchIndexContext);
-    if (!value) {
-      return null;
-    }
+  const value = useContext(SearchIndexContext);
+  if (!value) {
+    return null;
+  }
 
-    const objects = value.objects as any;
-    const moduleObjects = objects[module];
-    const objectData = moduleObjects && moduleObjects[object];
+  const objects = value.objects as any;
+  const moduleObjects = objects[module];
+  const objectData = moduleObjects && moduleObjects[object];
 
-    let textValue = displayText || object;
-    if (pluralize) {
-      textValue += "s";
-    }
-    if (decorator) {
-      textValue = "@" + textValue;
-    }
+  let textValue = displayText || object;
+  if (pluralize) {
+    textValue += "s";
+  }
+  if (decorator) {
+    textValue = "@" + textValue;
+  }
 
-    if (!moduleObjects || !objectData) {
-      // TODO: broken link
-      // https://github.com/dagster-io/dagster/issues/2939
-      return (
-        <a className="no-underline hover:underline" href="#">
-          <code className="bg-red-100 p-1">{textValue}</code>
-        </a>
-      );
-    }
-
-    const fileIndex = objectData[0];
-    // TODO: refer to all anchors available in apidocs
-    // https://github.com/dagster-io/dagster/issues/3568
-    const doc = value.docnames[fileIndex];
-    const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
-
+  if (!moduleObjects || !objectData) {
+    // TODO: broken link
+    // https://github.com/dagster-io/dagster/issues/2939
     return (
-      <Link href={link + "#" + module + "." + object}>
-        <a className="no-underline hover:underline">
-          <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
-        </a>
-      </Link>
+      <a className="no-underline hover:underline" href="#">
+        <code className="bg-red-100 p-1">{textValue}</code>
+      </a>
     );
-  };
+  }
+
+  const fileIndex = objectData[0];
+  // TODO: refer to all anchors available in apidocs
+  // https://github.com/dagster-io/dagster/issues/3568
+  const doc = value.docnames[fileIndex];
+  const link = doc.replace("sections/api/apidocs/", "/_apidocs/");
+
+  return (
+    <Link href={link + "#" + module + "." + object}>
+      <a className="no-underline hover:underline">
+        <code className="bg-blue-100 dark:bg-gray-700 p-1">{textValue}</code>
+      </a>
+    </Link>
+  );
+};
 
 const Check = () => {
   return (
@@ -220,7 +221,6 @@ const Warning = ({ children }) => {
 const CodeReferenceLink = (props: { filePath: string }) => {
   const filePath = props.filePath;
   const { version } = useVersion();
-  // TODO: versioned github link
   return (
     <div className="bg-blue-50 rounded flex item-center p-4 shadow">
       <div>
@@ -273,9 +273,9 @@ const PlaceholderImage = ({ caption = "Placeholder Image" }) => {
 
 const Experimental = () => {
   return (
-    <span className="inline-flex items-center px-3 py-0.5 rounded-full align-baseline text-sm font-medium bg-blue-100 text-blue-800">
+    <div className="inline-flex items-center px-3 py-0.5 rounded-full align-baseline text-sm font-medium bg-blue-100 text-blue-800">
       Experimental
-    </span>
+    </div>
   );
 };
 
@@ -285,6 +285,38 @@ export default {
       <img {...(props as any)} />
     </div>
   ),
+  Image: ({ children, ...props }) => {
+    /* Only version images when all conditions meet:
+     * - use <Image> component in mdx
+     * - on non-master version
+     * - in public/images/ dir
+     */
+    const { version } = useVersion();
+    const { src } = props;
+    if (version === "master" || !src.startsWith("/images/")) {
+      return (
+        <div className="mx-auto">
+          <Image {...(props as any)} />
+        </div>
+      );
+    }
+
+    const resolvedPath = path.resolve(
+      ".versioned_images",
+      version,
+      src.replace("/images/", "")
+    );
+    return (
+      <div className="mx-auto">
+        <Image
+          src={resolvedPath}
+          width={props.width}
+          height={props.height}
+          alt={props.alt}
+        />
+      </div>
+    );
+  },
   PyObject,
   Link,
   Check,

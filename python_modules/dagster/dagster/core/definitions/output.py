@@ -1,12 +1,16 @@
 from collections import namedtuple
-from typing import Optional, Set
+from typing import Any, Optional, Set, TypeVar
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.types.dagster_type import resolve_dagster_type
+from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
+from .inference import InferredOutputProps
 from .utils import DEFAULT_OUTPUT, check_valid_name
+
+TOut = TypeVar("TOut", bound="OutputDefinition")
 
 
 class OutputDefinition:
@@ -20,10 +24,10 @@ class OutputDefinition:
     Output definitions may be typed using the Dagster type system.
 
     Args:
-        dagster_type (Optional[Any]): The type of this output. Users should provide one of the
-            :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
-            :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type`, or
-            :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
+        dagster_type (Optional[Union[Type, DagsterType]]]): The type of this output.
+            Users should provide the Python type of the objects that they expect the solid to yield
+            for this output, or a :py:class:`DagsterType` that defines a runtime check that they
+            want to be run on this output. Defaults to :py:class:`Any`.
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
@@ -51,8 +55,10 @@ class OutputDefinition:
         metadata=None,
         asset_key=None,
         asset_partitions=None,
+        # make sure new parameters are updated in combine_with_inferred below
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
+        self._type_not_set = dagster_type is None
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
@@ -66,13 +72,13 @@ class OutputDefinition:
         if asset_key:
             experimental_arg_warning("asset_key", "OutputDefinition.__init__")
 
-        self._is_asset = asset_key is not None
-
         if callable(asset_key):
             self._asset_key_fn = asset_key
-        else:
+        elif asset_key is not None:
             asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
             self._asset_key_fn = lambda _: asset_key
+        else:
+            self._asset_key_fn = None
 
         if asset_partitions:
             experimental_arg_warning("asset_partitions", "OutputDefinition.__init__")
@@ -81,11 +87,14 @@ class OutputDefinition:
                 "asset_partitions",
                 'Cannot specify "asset_partitions" argument without also specifying "asset_key"',
             )
+
         if callable(asset_partitions):
             self._asset_partitions_fn = asset_partitions
-        else:
+        elif asset_partitions is not None:
             asset_partitions = check.opt_set_param(asset_partitions, "asset_partitions", str)
             self._asset_partitions_fn = lambda _: asset_partitions
+        else:
+            self._asset_partitions_fn = None
 
     @property
     def name(self):
@@ -121,7 +130,7 @@ class OutputDefinition:
 
     @property
     def is_asset(self):
-        return self._is_asset
+        return self._asset_key_fn is not None
 
     def get_asset_key(self, context) -> Optional[AssetKey]:
         """Get the AssetKey associated with this OutputDefinition for the given
@@ -131,6 +140,9 @@ class OutputDefinition:
             context (OutputContext): The OutputContext that this OutputDefinition is being evaluated
             in
         """
+        if self._asset_key_fn is None:
+            return None
+
         return self._asset_key_fn(context)
 
     def get_asset_partitions(self, context) -> Optional[Set[str]]:
@@ -141,6 +153,9 @@ class OutputDefinition:
             context (OutputContext): The OutputContext that this OutputDefinition is being evaluated
             in
         """
+        if self._asset_partitions_fn is None:
+            return None
+
         return self._asset_partitions_fn(context)
 
     def mapping_from(self, solid_name, output_name=None):
@@ -161,12 +176,56 @@ class OutputDefinition:
         """
         return OutputMapping(self, OutputPointer(solid_name, output_name))
 
+    @staticmethod
+    def create_from_inferred(inferred: InferredOutputProps) -> "OutputDefinition":
+        return OutputDefinition(
+            dagster_type=_checked_inferred_type(inferred.annotation),
+            description=inferred.description,
+        )
+
+    def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
+        dagster_type = self._dagster_type
+        if self._type_not_set:
+            dagster_type = _checked_inferred_type(inferred.annotation)
+        if self._description is None:
+            description = inferred.description
+        else:
+            description = self.description
+
+        return self.__class__(
+            name=self._name,
+            dagster_type=dagster_type,
+            description=description,
+            is_required=self._is_required,
+            io_manager_key=self._manager_key,
+            metadata=self._metadata,
+            asset_key=self._asset_key_fn,
+            asset_partitions=self._asset_partitions_fn,
+        )
+
+
+def _checked_inferred_type(inferred: Any) -> DagsterType:
+    try:
+        return resolve_dagster_type(inferred)
+    except DagsterError as e:
+        raise DagsterInvalidDefinitionError(
+            f"Problem using type '{inferred}' from return type annotation, correct the issue "
+            "or explicitly set the dagster_type on your OutputDefinition."
+        ) from e
+
 
 class DynamicOutputDefinition(OutputDefinition):
     """
-    (EXPERIMENTAL) Variant of :py:class:`OutputDefinition` for an output that will dynamically
-    alter the graph at runtime. Each copy of :py:class:`DynamicOutput` corresponding to this
-    definition that is yielded from the solid will create a copy of the downstream graph.
+    (Experimental) Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
+    output that will dynamically alter the graph at runtime.
+
+    When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
+    dynamic outputs must be used with either
+
+    * ``map`` - clone downstream solids for each separate :py:class:`DynamicOutput`
+    * ``collect`` - gather across all :py:class:`DynamicOutput` in to a list
+
+    Uses the same constructor as :py:class:`OutputDefinition <dagster.OutputDefinition>`
 
         .. code-block:: python
 
@@ -181,6 +240,16 @@ class DynamicOutputDefinition(OutputDefinition):
                 dirname, _, filenames = next(os.walk(path))
                 for file in filenames:
                     yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
+
+            @pipeline
+            def process_directory():
+                files = files_in_directory()
+
+                # use map to invoke a solid on each dynamic output
+                file_results = files.map(process_file)
+
+                # use collect to gather the results in to a list
+                summarize_directory(file_results.collect())
     """
 
     @property

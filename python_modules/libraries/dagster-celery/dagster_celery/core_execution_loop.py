@@ -5,7 +5,7 @@ from celery.exceptions import TaskRevokedError
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
@@ -25,7 +25,7 @@ DELEGATE_MARKER = "celery_queue_wait"
 
 def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_fn):
 
-    check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+    check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.callable_param(step_execution_fn, "step_execution_fn")
 

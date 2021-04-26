@@ -2,7 +2,8 @@ from tempfile import TemporaryDirectory
 
 from dagster import Any
 from dagster.core.execution.build_resources import initialize_console_manager
-from dagster.core.execution.context.system import InputContext, OutputContext
+from dagster.core.execution.context.input import InputContext
+from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.memoizable_io_manager import VersionedPickledObjectFilesystemIOManager
 
 

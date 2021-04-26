@@ -1,4 +1,5 @@
 from dagster import Field, Int, String, composite_solid, pipeline, solid
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 
@@ -54,6 +55,7 @@ def test_execution_plan_for_composite_solid():
     )
     events = execute_plan(
         execution_plan,
+        InMemoryPipeline(composite_pipeline),
         run_config=run_config,
         pipeline_run=pipeline_run,
         instance=instance,
@@ -93,6 +95,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
 
     events = execute_plan(
         execution_plan,
+        InMemoryPipeline(composite_pipeline_with_config_mapping),
         run_config=run_config,
         pipeline_run=pipeline_run,
         instance=instance,

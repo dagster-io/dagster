@@ -1,6 +1,6 @@
 from collections import defaultdict, namedtuple
 from enum import Enum
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, cast
 
 from dagster import check
 from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
@@ -112,14 +112,14 @@ def build_run_step_stats_from_events(
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
         if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-            check.inst(dagster_event.event_specific_data, StepMaterializationData)
-            materialization = dagster_event.event_specific_data.materialization
+            event_specific_data = cast(StepMaterializationData, dagster_event.event_specific_data)
+            materialization = event_specific_data.materialization
             step_materializations = by_step_key[step_key].get("materializations", [])
             step_materializations.append(materialization)
             by_step_key[step_key]["materializations"] = step_materializations
         if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-            check.inst(dagster_event.event_specific_data, StepExpectationResultData)
-            expectation_result = dagster_event.event_specific_data.expectation_result
+            expectation_data = cast(StepExpectationResultData, dagster_event.event_specific_data)
+            expectation_result = expectation_data.expectation_result
             step_expectation_results = by_step_key[step_key].get("expectation_results", [])
             step_expectation_results.append(expectation_result)
             by_step_key[step_key]["expectation_results"] = step_expectation_results

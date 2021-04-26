@@ -1,26 +1,22 @@
 import inspect
 from functools import update_wrapper, wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.seven import funcsigs
 
 from ...decorator_utils import (
-    InvalidDecoratedFunctionInfo,
     positional_arg_name_list,
     split_function_parameters,
-    validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
 from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
-from ..inference import infer_input_definitions_for_solid, infer_output_definitions
+from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
 from ..solid import SolidDefinition
-
-if TYPE_CHECKING:
-    from dagster.core.execution.context.system import SystemComputeExecutionContext
 
 
 class _Solid:
@@ -36,7 +32,7 @@ class _Solid:
         version: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", OutputDefinition
         )
@@ -57,23 +53,26 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
-        input_defs = (
-            self.input_defs
-            if self.input_defs is not None
-            else infer_input_definitions_for_solid(self.name, fn)
-        )
-        output_defs = (
-            self.output_defs
-            if self.output_defs is not None
-            else infer_output_definitions("@solid", self.name, fn)
-        )
+        if self.output_defs is None:
+            output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
+        elif len(self.output_defs) == 1:
+            output_defs = [self.output_defs[0].combine_with_inferred(infer_output_props(fn))]
+        else:
+            output_defs = self.output_defs
 
-        positional_inputs = validate_solid_fn("@solid", self.name, fn, input_defs, ["context"])
-        compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
+        resolved_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+            decorator_name="@solid",
+            fn_name=self.name,
+            compute_fn=fn,
+            explicit_input_defs=self.input_defs,
+            has_context_arg=True,
+            exclude_nothing=True,
+        )
+        compute_fn = _create_solid_compute_wrapper(fn, resolved_input_defs, output_defs)
 
         solid_def = SolidDefinition(
             name=self.name,
-            input_defs=input_defs,
+            input_defs=resolved_input_defs,
             output_defs=output_defs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
@@ -117,17 +116,26 @@ def solid(
     to decorate a function that yields events, it must also wrap its eventual output in an
     :py:class:`Output` and yield it.
 
+    @solid supports ``async def`` functions as well, including async generators when yielding multiple
+    events or outputs. Note that async solids will generally be run on their own unless using a custom
+    :py:class:`Executor` implementation that supports running them together.
+
     Args:
         name (Optional[str]): Name of solid. Must be unique within any :py:class:`PipelineDefinition`
             using the solid.
         description (Optional[str]): Human-readable description of this solid. If not provided, and
             the decorated function has docstring, that docstring will be used as the description.
         input_defs (Optional[List[InputDefinition]]):
-            List of input definitions. Inferred from typehints if not provided.
+            Information about the inputs to the solid. Information provided here will be combined
+            with what can be inferred from the function signature, with these explicit InputDefinitions
+            taking precedence.
         output_defs (Optional[List[OutputDefinition]]):
-            List of output definitions. Inferred from typehints if not provided.
-        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
-            available as context.solid_config.
+            Information about the solids outputs. Information provided here will be combined with
+            what can be inferred from the return type signature if there is only one OutputDefinition
+            and the function does not use yield.
+        config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
+            that config provided for the solid matches this schema and fail if it does not. If not
+            set, Dagster will accept any config provided for the solid.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -212,9 +220,75 @@ def solid(
     )
 
 
+def _coerce_solid_output_to_iterator(result, context, output_defs):
+    if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+        raise DagsterInvariantViolationError(
+            (
+                "Error in solid {solid_name}: If you are returning an AssetMaterialization "
+                "or an ExpectationResult from solid you must yield them to avoid "
+                "ambiguity with an implied result from returning a value.".format(
+                    solid_name=context.solid.name
+                )
+            )
+        )
+
+    if isinstance(result, Output):
+        yield result
+    elif len(output_defs) == 1:
+        if result is None and output_defs[0].is_required is False:
+            context.log.warn(
+                'Value "None" returned for non-required output "{output_name}". '
+                "This value will be passed to downstream solids. For conditional execution use\n"
+                '  yield Output(value, "{output_name}")\n'
+                "when you want the downstream solids to execute, "
+                "and do not yield it when you want downstream solids to skip.".format(
+                    output_name=output_defs[0].name
+                )
+            )
+        yield Output(value=result, output_name=output_defs[0].name)
+    elif result is not None:
+        if not output_defs:
+            raise DagsterInvariantViolationError(
+                (
+                    "Error in solid {solid_name}: Unexpectedly returned output {result} "
+                    "of type {type_}. Solid is explicitly defined to return no "
+                    "results."
+                ).format(solid_name=context.solid.name, result=result, type_=type(result))
+            )
+
+        raise DagsterInvariantViolationError(
+            (
+                "Error in solid {solid_name}: Solid unexpectedly returned "
+                "output {result} of type {type_}. Should "
+                "be a generator, containing or yielding "
+                "{n_results} results: {{{expected_results}}}."
+            ).format(
+                solid_name=context.solid.name,
+                result=result,
+                type_=type(result),
+                n_results=len(output_defs),
+                expected_results=", ".join(
+                    [
+                        "'{result_name}': {dagster_type}".format(
+                            result_name=output_def.name,
+                            dagster_type=output_def.dagster_type,
+                        )
+                        for output_def in output_defs
+                    ]
+                ),
+            )
+        )
+
+
+async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
+    result = await awaitable
+    for event in _coerce_solid_output_to_iterator(result, context, output_defs):
+        yield event
+
+
 def _create_solid_compute_wrapper(
-    fn: Callable[..., Any], input_defs: List[InputDefinition], output_defs: List[OutputDefinition]
-) -> Callable[..., Any]:
+    fn: Callable, input_defs: List[InputDefinition], output_defs: List[OutputDefinition]
+):
     check.callable_param(fn, "fn")
     check.list_param(input_defs, "input_defs", of_type=InputDefinition)
     check.list_param(output_defs, "output_defs", of_type=OutputDefinition)
@@ -234,93 +308,45 @@ def _create_solid_compute_wrapper(
         result = fn(context, **kwargs)
 
         if inspect.isgenerator(result):
-            yield from result
+            return result
+        elif inspect.isasyncgen(result):
+            return result
+        elif inspect.iscoroutine(result):
+            return _coerce_async_solid_to_async_gen(result, context, output_defs)
         else:
-            if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in solid {solid_name}: If you are returning an AssetMaterialization "
-                        "or an ExpectationResult from solid you must yield them to avoid "
-                        "ambiguity with an implied result from returning a value.".format(
-                            solid_name=context.solid.name
-                        )
-                    )
-                )
-
-            if isinstance(result, Output):
-                yield result
-            elif len(output_defs) == 1:
-                if result is None and output_defs[0].is_required is False:
-                    context.log.warn(
-                        'Value "None" returned for non-required output "{output_name}". '
-                        "This value will be passed to downstream solids. For conditional execution use\n"
-                        '  yield Output(value, "{output_name}")\n'
-                        "when you want the downstream solids to execute, "
-                        "and do not yield it when you want downstream solids to skip.".format(
-                            output_name=output_defs[0].name
-                        )
-                    )
-                yield Output(value=result, output_name=output_defs[0].name)
-            elif result is not None:
-                if not output_defs:
-                    raise DagsterInvariantViolationError(
-                        (
-                            "Error in solid {solid_name}: Unexpectedly returned output {result} "
-                            "of type {type_}. Solid is explicitly defined to return no "
-                            "results."
-                        ).format(solid_name=context.solid.name, result=result, type_=type(result))
-                    )
-
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in solid {solid_name}: Solid unexpectedly returned "
-                        "output {result} of type {type_}. Should "
-                        "be a generator, containing or yielding "
-                        "{n_results} results: {{{expected_results}}}."
-                    ).format(
-                        solid_name=context.solid.name,
-                        result=result,
-                        type_=type(result),
-                        n_results=len(output_defs),
-                        expected_results=", ".join(
-                            [
-                                "'{result_name}': {dagster_type}".format(
-                                    result_name=output_def.name,
-                                    dagster_type=output_def.dagster_type,
-                                )
-                                for output_def in output_defs
-                            ]
-                        ),
-                    )
-                )
+            return _coerce_solid_output_to_iterator(result, context, output_defs)
 
     return compute
 
 
-def validate_solid_fn(
+def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: Callable[..., Any],
-    input_defs: List[InputDefinition],
-    expected_positionals: Optional[List[str]] = None,
-    exclude_nothing: Optional[bool] = True,
-) -> List[str]:
-    check.str_param(decorator_name, "decorator_name")
-    check.str_param(fn_name, "fn_name")
-    check.callable_param(compute_fn, "compute_fn")
-    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
-    expected_positionals = check.opt_list_param(
-        expected_positionals, "expected_positionals", of_type=str
-    )
+    explicit_input_defs: List[InputDefinition],
+    has_context_arg: bool,
+    exclude_nothing: bool,  # should Nothing type inputs be excluded from compute_fn args
+) -> Tuple[List[InputDefinition], List[str]]:
+    """
+    Validate provided input definitions and infer the remaining from the type signature of the compute_fn
+    Returns the resolved set of InputDefinitions and the positions of input names (which is used
+    during graph composition).
+    """
+    expected_positionals = ["context"] if has_context_arg else []
+
     if exclude_nothing:
-        names = set(
-            inp.name for inp in input_defs if not inp.dagster_type.kind == DagsterTypeKind.NOTHING
+        explicit_names = set(
+            inp.name
+            for inp in explicit_input_defs
+            if not inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
         nothing_names = set(
-            inp.name for inp in input_defs if inp.dagster_type.kind == DagsterTypeKind.NOTHING
+            inp.name
+            for inp in explicit_input_defs
+            if inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
     else:
-        names = set(inp.name for inp in input_defs)
+        explicit_names = set(inp.name for inp in explicit_input_defs)
         nothing_names = set()
 
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
@@ -338,50 +364,61 @@ def validate_solid_fn(
         )
 
     # Validate non positional parameters
-    invalid_function_info = validate_decorated_fn_input_args(names, input_args)
-    if invalid_function_info:
-        if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["vararg"]:
+    used_inputs = set()
+    inputs_to_infer = set()
+    has_kwargs = False
+
+    for param in input_args:
+        if param.kind == funcsigs.Parameter.VAR_KEYWORD:
+            has_kwargs = True
+        elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
             raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{solid_name}' decorated function has positional vararg parameter "
-                "'{param}'. Solid functions should only have keyword arguments that match "
-                "input names and a first positional parameter named 'context'.".format(
-                    decorator_name=decorator_name,
-                    solid_name=fn_name,
-                    param=invalid_function_info.param,
-                )
-            )
-        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["missing_name"]:
-            if invalid_function_info.param in nothing_names:
-                raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is "
-                    "one of the solid input_defs of type 'Nothing' which should not be included since "
-                    "no data will be passed for it. ".format(
-                        decorator_name=decorator_name,
-                        solid_name=fn_name,
-                        param=invalid_function_info.param,
-                    )
-                )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is not "
-                    "one of the solid input_defs. Solid functions should only have keyword arguments "
-                    "that match input names and a first positional parameter named 'context'.".format(
-                        decorator_name=decorator_name,
-                        solid_name=fn_name,
-                        param=invalid_function_info.param,
-                    )
-                )
-        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["extra"]:
-            undeclared_inputs_printed = ", '".join(invalid_function_info.missing_names)
-            raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{solid_name}' decorated function does not have parameter(s) "
-                "'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
-                "should only have keyword arguments that match input names and a first positional "
-                "parameter named 'context'.".format(
-                    decorator_name=decorator_name,
-                    solid_name=fn_name,
-                    undeclared_inputs_printed=undeclared_inputs_printed,
-                )
+                f"{decorator_name} '{fn_name}' decorated function has positional vararg parameter "
+                f"'{param}'. Solid functions should only have keyword arguments that match "
+                "input names and a first positional parameter named 'context'."
             )
 
-    return positional_arg_name_list(input_args)
+        else:
+            if param.name not in explicit_names:
+                if param.name in nothing_names:
+                    raise DagsterInvalidDefinitionError(
+                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
+                        "one of the solid input_defs of type 'Nothing' which should not be included since "
+                        "no data will be passed for it. "
+                    )
+                else:
+                    inputs_to_infer.add(param.name)
+
+            else:
+                used_inputs.add(param.name)
+
+    undeclared_inputs = explicit_names - used_inputs
+    if not has_kwargs and undeclared_inputs:
+        undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        raise DagsterInvalidDefinitionError(
+            f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
+            f"'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
+            "should only have keyword arguments that match input names and a first positional "
+            "parameter named 'context'."
+        )
+
+    inferred_props = {
+        inferred.name: inferred for inferred in infer_input_props(compute_fn, has_context_arg)
+    }
+    input_defs = []
+    for input_def in explicit_input_defs:
+        if input_def.name in inferred_props:
+            # combine any information missing on the explicit def that can be inferred
+            input_defs.append(input_def.combine_with_inferred(inferred_props[input_def.name]))
+        else:
+            # pass through those that don't have any inference info, such as Nothing type inputs
+            input_defs.append(input_def)
+
+    # build defs from the inferred props for those without explicit entries
+    input_defs.extend(
+        InputDefinition.create_from_inferred(inferred)
+        for inferred in inferred_props.values()
+        if inferred.name in inputs_to_infer
+    )
+
+    return input_defs, positional_arg_name_list(input_args)

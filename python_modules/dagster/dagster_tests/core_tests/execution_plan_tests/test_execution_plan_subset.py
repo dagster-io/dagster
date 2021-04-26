@@ -8,6 +8,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 
@@ -46,7 +47,9 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key("return_one")
     assert execution_plan.get_step_by_key("add_one")
 
-    events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
+    events = execute_plan(
+        execution_plan, InMemoryPipeline(pipeline_def), pipeline_run=pipeline_run, instance=instance
+    )
     step_starts = find_events(events, event_type="STEP_START")
     assert len(step_starts) == 2
     step_successes = find_events(events, event_type="STEP_SUCCESS")
@@ -75,7 +78,9 @@ def test_execution_plan_two_outputs():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
-    events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
+    events = execute_plan(
+        execution_plan, InMemoryPipeline(pipeline_def), pipeline_run=pipeline_run, instance=instance
+    )
 
     output_events = find_events(events, event_type="STEP_OUTPUT")
     assert output_events[0].step_key == "return_one_two"
@@ -99,7 +104,9 @@ def test_reentrant_execute_plan():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, tags={"foo": "bar"}, execution_plan=execution_plan
     )
-    step_events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
+    step_events = execute_plan(
+        execution_plan, InMemoryPipeline(pipeline_def), pipeline_run=pipeline_run, instance=instance
+    )
 
     assert called["yup"]
 

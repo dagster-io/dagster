@@ -1,5 +1,110 @@
 # Changelog
 
+## 0.11.6
+
+### Breaking Changes
+
+* `DagsterInstance.get()` no longer falls back to an ephemeral instance if `DAGSTER_HOME` is not set. We don’t expect this to break normal workflows. This change allows our tooling to be more consistent around it’s expectations. If you were relying on getting an ephemeral instance you can use `DagsterInstance.ephemeral()` directly.
+* Undocumented attributes on `HookContext` have been removed. `step_key` and `mode_def` have been documented as attributes.
+
+### New
+
+* Added a permanent, linkable panel in the Run view in Dagit to display the raw compute logs.
+* Added more descriptive / actionable error messages throughout the config system.
+* When viewing a partitioned asset in Dagit, display only the most recent materialization for a partition, with a link to view previous materializations in a dialog.
+* When viewing a run in Dagit, individual log line timestams now have permalinks. When loading a timestamp permalink, the log table will highlight and scroll directly to that line.
+* The default `config_schema` for all configurable objects - solids, resources, IO managers, composite solids, executors, loggers - is now `Any`.  This means that you can now use configuration without explicitly providing a `config_schema`. Refer to the docs for more details: https://docs.dagster.io/concepts/configuration/config-schema.
+* When launching an out of process run, resources are no longer initialized in the orchestrating process. This should give a performance boost for those using out of process execution with heavy resources (ie, spark context).
+* `input_defs` and `output_defs` on `@solid` will now flexibly combine data that can be inferred from the function signature that is not declared explicitly via `InputDefinition` / `OutputDefinition`. This allows for more concise defining of solids with reduced repetition of information. 
+* [Helm] Postgres storage configuration now supports connection string parameter keywords.
+* The Status page in Dagit will now display errors that were surfaced in the `dagster-daemon` process within the last 5 minutes. Previously, it would only display errors from the last 30 seconds.
+* Hanging sensors and schedule functions will now raise a timeout exception after 60 seconds, instead of crashing the `dagster-daemon` process.
+* The `DockerRunLauncher` now accepts a `container_kwargs` config parameter, allowing you to specify any argument to the run container that can be passed into the Docker containers.run method. See https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run for the full list of available options.
+* Added clearer error messages for when a Partition cannot be found in a Partition Set.
+* The `celery_k8s_job_executor` now accepts a `job_wait_timeout` allowing you to override the default of 24 hours.
+### Bugfixes
+
+* Fixed the raw compute logs in Dagit, which were not live updating as the selected step was executing.
+* Fixed broken links in the Backfill table in Dagit when Dagit is started with a `--prefix-path` argument.
+* Showed failed status of backfills in the Backfill table in Dagit, along with an error stack trace. Previously, the backfill jobs were stuck in a `Requested` state.
+* Previously, if you passed a non-required Field to the `output_config_schema` or `input_config_schema` arguments of `@io_manager`, the config would still be required. Now, the config is not required.
+* Fixed nested subdirectory views in the `Assets` catalog, where the view switcher would flip back from the directory view to the flat view when navigating into subdirectories.
+* Fixed an issue where the `dagster-daemon` process would crash if it experienced a transient connection error while connecting to the Dagster database.
+* Fixed an issue where the `dagster-airflow scaffold` command would raise an exception if a preset was specified.
+* Fixed an issue where Dagit was not including the error stack trace in the Status page when a repository failed to load.
+
+## 0.11.5
+
+### New
+- Resources in a `ModeDefinition` that are not required by a pipeline no longer require runtime configuration. This should make it easier to share modes or resources among multiple pipelines.
+- Dagstermill solids now support retries when a `RetryRequested` is yielded from a notebook using `dagstermill.yield_event`.
+- In Dagit, the asset catalog now supports both a flattened view of all assets as well as a hierarchical directory view.
+- In Dagit, the asset catalog now supports bulk wiping of assets.
+
+### Bugfixes
+
+- In the Dagit left nav, schedules and sensors accurately reflect the filtered repositories.
+- When executing a pipeline with a subset of solids, the config for solids not included in the subset is correctly made optional in more cases.
+- URLs were sometimes not prefixed correctly when running Dagit using the `--path-prefix` option, leading to failed GraphQL requests and broken pages. This bug was introduced in 0.11.4, and is now fixed.
+*  The `update_timestamp` column in the runs table is now updated with a UTC timezone, making it consistent with the `create_timestamp` column.
+*  In Dagit, the main content pane now renders correctly on ultra-wide displays.
+*  The partition run matrix on the pipeline partition tab now shows step results for composite solids and dynamically mapped solids.  Previously, the step status was not shown at all for these solids.
+- Removed dependency constraint of `dagster-pandas` on `pandas`. You can now include any version of pandas. (https://github.com/dagster-io/dagster/issues/3350)
+- Removed dependency on `requests` in `dagster`. Now only `dagit` depends on `requests.`
+- Removed dependency on `pyrsistent` in `dagster`.
+
+### Documentation
+- Updated the “Deploying to Airflow” documentation to reflect the current state of the system.
+
+## 0.11.4
+
+### Community Contributions
+
+- Fix typo in `--config` help message (thanks [@pawelad](https://github.com/pawelad) !)
+
+### Breaking Changes
+
+- Previously, when retrieving the outputs from a run of `execute_pipeline`, the system would use the io manager that handled each output to perform the retrieval. Now, when using `execute_pipeline` with the default in-process executor, the system directly captures the outputs of solids for use with the result object returned by `execute_pipeline`. This may lead to slightly different behavior when retrieving outputs if switching between executors and using custom IO managers.
+
+### New
+
+- The `K8sRunLauncher` and `CeleryK8sRunLauncher` now add a `dagster/image` tag to pipeline runs to document the image used. The `DockerRunLauncher` has also been modified to use this tag (previously it used `docker/image`).
+- In Dagit, the left navigation is now collapsible on smaller viewports. You can use the `.` key shortcut to toggle visibility.
+- `@solid` can now decorate async def functions.
+
+### Bugfixes
+
+- In Dagit, a GraphQL error on partition sets related to missing fragment `PartitionGraphFragment` has been fixed.
+- The compute log manager now handles base directories containing spaces in the path.
+- Fixed a bug where re-execution was not working if the initial execution failed, and execution was delegated to other machines/process (e.g. using the multiprocess executor)
+- The same solid can now collect over multiple dynamic outputs
+
+## 0.11.3
+
+### Breaking Changes
+
+- Schedules and sensors that target a `pipeline_name` that is not present in the current repository will now error out when the repository is created.
+
+### New
+
+- Assets are now included in Dagit global search. The search bar has also been moved to the top of the app.
+- [helm] `generatePostgresqlPasswordSecret` toggle was added to allow the Helm chart to reference an external secret containing the Postgresql password (thanks @PenguinToast !)
+- [helm] The Dagster Helm chart is now hosted on [Artifact Hub](https://artifacthub.io/packages/search?page=1&org=dagster).
+- [helm] The workspace can now be specified under `dagit.workspace`, which can be useful if you are managing your user deployments in a separate Helm release.
+
+### Bugfixes
+
+- In Dagit, toggling schedules and sensors on or off will now immediately update the green dot in the left navigation, without requiring a refresh.
+- When evaluating `dict` values in `run_config` targeting `Permissive` / `dict` config schemas, the ordering is now preserved.
+- Integer values for `EventMetadataEntry.int` greater than 32 bits no longer cause `dagit` errors.
+- `PresetDefinition.with_additional_config` no longer errors if the base config was empty (thanks @esztermarton !)
+- Fixed limitation on gRPC message size when evaluating run requests for sensors, schedules, and backfills. Previously, a gRPC error would be thrown with status code `StatusCode.RESOURCE_EXHAUSTED` for a large number of run requests, especially when the requested run configs were large.
+- Changed backfill job status to reflect the number of successful runs against the number of partitions requested instead of the number of runs requested. Normally these two numbers are the same, but they can differ if a pipeline run initiated by the backfill job is re-executed manually.
+
+### Documentation
+
+- Corrections from the community - thanks @mrdavidlaing & @a-cid !
+
 ## 0.11.2
 
 **Community Contributions**
@@ -13,7 +118,7 @@
 
 **Bugfixes**
 
-- In 0.11.0, we introduced the ability to auto-generate Dagster Types from PEP 484 type annotations on solid arguments and return values.  However, when clicked on in Dagit, these types would show “Type Not Found” instead of rendering a description.  This has been fixed.
+- In 0.11.0, we introduced the ability to auto-generate Dagster Types from PEP 484 type annotations on solid arguments and return values. However, when clicked on in Dagit, these types would show “Type Not Found” instead of rendering a description. This has been fixed.
 - Fixed an issue where the `dagster api execute_step` will mistakenly skip a step and output a non-DagsterEvent log. This affected the `celery_k8s_job_executor`.
 - Fixed an issue where NaN floats were not properly handled by Dagit metadata entries.
 - Fixed an issue where Dagit run tags were unclickable.

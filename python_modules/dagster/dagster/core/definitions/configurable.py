@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, Optional, Union
 
 from dagster import Field, check
 from dagster.config.evaluate_value_result import EvaluateValueResult
-from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 
 from .definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
@@ -14,7 +13,7 @@ from .definition_config_schema import (
 
 class ConfigurableDefinition(ABC):
     @abstractproperty
-    def config_schema(self) -> IDefinitionConfigSchema:
+    def config_schema(self) -> Optional[IDefinitionConfigSchema]:
         raise NotImplementedError()
 
     @property
@@ -24,6 +23,13 @@ class ConfigurableDefinition(ABC):
     @property
     def config_field(self) -> Optional[Field]:
         return None if not self.config_schema else self.config_schema.as_field()
+
+    # getter for typed access
+    def get_config_field(self) -> Field:
+        field = self.config_field
+        if field is None:
+            check.failed("Must check has_config_Field before calling get_config_field")
+        return field
 
     def apply_config_mapping(self, config: Any) -> EvaluateValueResult:
         """

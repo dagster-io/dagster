@@ -1,3 +1,4 @@
+import string
 from collections import namedtuple
 from enum import Enum
 from typing import NamedTuple, Set
@@ -305,6 +306,16 @@ def test_set():
     serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
     foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
     assert foo == foo_2
+
+    # verify that set elements are serialized in a consistent order so that
+    # equal objects always have a consistent serialization / snapshot ID
+    big_foo = HasSets(set(string.ascii_lowercase), frozenset(string.ascii_lowercase))
+
+    assert create_snapshot_id(big_foo) == create_snapshot_id(
+        _deserialize_json_to_dagster_namedtuple(
+            _serialize_dagster_namedtuple(big_foo, whitelist_map=test_map), whitelist_map=test_map
+        )
+    )
 
 
 def test_persistent_tuple():

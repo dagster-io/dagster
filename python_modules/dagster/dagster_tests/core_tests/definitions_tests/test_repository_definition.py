@@ -10,6 +10,7 @@ from dagster import (
     lambda_solid,
     repository,
 )
+from dagster.core.definitions import sensor
 
 
 def create_single_node_pipeline(name, called):
@@ -162,3 +163,38 @@ def test_schedule_partitions():
     assert len(some_repo.schedule_defs) == 1
     assert len(some_repo.partition_set_defs) == 1
     assert some_repo.get_partition_set_def("daily_foo_partitions")
+
+
+def test_bad_schedule():
+    @daily_schedule(
+        pipeline_name="foo",
+        start_date=datetime.datetime(2020, 1, 1),
+    )
+    def daily_foo(_date):
+        return {}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='targets pipeline "foo" which was not found in this repository',
+    ):
+
+        @repository
+        def _some_repo():
+            return [daily_foo]
+
+
+def test_bad_sensor():
+    @sensor(
+        pipeline_name="foo",
+    )
+    def foo_sensor(_):
+        return {}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='targets pipeline "foo" which was not found in this repository',
+    ):
+
+        @repository
+        def _some_repo():
+            return [foo_sensor]

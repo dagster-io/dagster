@@ -5,13 +5,10 @@ from typing import List
 import pytest
 from kubernetes.client import models
 from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.dagster_user_deployments.subschema.user_deployments import (
-    UserDeployment,
-    UserDeployments,
-)
-from schema.charts.utils import kubernetes
+from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 
 from .helm_template import HelmTemplate
+from .utils import create_complex_user_deployment, create_simple_user_deployment
 
 
 @pytest.fixture(name="template")
@@ -27,118 +24,11 @@ def full_helm_template() -> HelmTemplate:
     return HelmTemplate()
 
 
-def create_simple_user_deployment(name: str) -> UserDeployment:
-    return UserDeployment(
-        name=name,
-        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
-        port=3030,
-    )
-
-
-def create_complex_user_deployment(name: str) -> UserDeployment:
-    return UserDeployment(
-        name=name,
-        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
-        dagsterApiGrpcArgs=["-m", name],
-        port=3030,
-        annotations=kubernetes.Annotations.parse_obj(
-            {"annotation_1": "an_annotation_1", "annotation_2": "an_annotation_2"}
-        ),
-        nodeSelector=kubernetes.NodeSelector.parse_obj(
-            {"node_selector_1": "node_type_1", "node_selector_2": "node_type_2"}
-        ),
-        affinity=kubernetes.Affinity.parse_obj(
-            {
-                "nodeAffinity": {
-                    "requiredDuringSchedulingIgnoredDuringExecution": {
-                        "nodeSelectorTerms": [
-                            {
-                                "matchExpressions": [
-                                    {
-                                        "key": "kubernetes.io/e2e-az-name",
-                                        "operator": "In",
-                                        "values": ["e2e-az1", "e2e-az2"],
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            }
-        ),
-        tolerations=kubernetes.Tolerations.parse_obj(
-            [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}]
-        ),
-        podSecurityContext=kubernetes.PodSecurityContext.parse_obj(
-            {"runAsUser": 1000, "runAsGroup": 3000}
-        ),
-        securityContext=kubernetes.SecurityContext.parse_obj(
-            {"runAsUser": 1000, "runAsGroup": 3000}
-        ),
-        resources=kubernetes.Resources.parse_obj(
-            {
-                "requests": {"memory": "64Mi", "cpu": "250m"},
-                "limits": {"memory": "128Mi", "cpu": "500m"},
-            }
-        ),
-    )
-
-
-@pytest.fixture(name="single_user_deployment_values")
-def helm_values_single_user_deployment() -> DagsterHelmValues:
-    return DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[create_simple_user_deployment("simple-deployment-one")],
-        )
-    )
-
-
-@pytest.fixture(name="single_complex_user_deployment_values")
-def helm_values_single_complex_user_deployment() -> DagsterHelmValues:
-    return DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[create_complex_user_deployment("complex-deployment-one")],
-        )
-    )
-
-
-@pytest.fixture(name="multi_user_deployment_values")
-def helm_values_multi_user_deployment() -> DagsterHelmValues:
-    return DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[
-                create_simple_user_deployment("simple-deployment-one"),
-                create_simple_user_deployment("simple-deployment-two"),
-            ],
-        )
-    )
-
-
-@pytest.fixture(name="multi_complex_user_deployment_values")
-def helm_values_multi_complex_user_deployment() -> DagsterHelmValues:
-    return DagsterHelmValues.construct(
-        dagsterUserDeployments=UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[
-                create_complex_user_deployment("complex-deployment-one"),
-                create_complex_user_deployment("complex-deployment-two"),
-                create_simple_user_deployment("simple-deployment-three"),
-            ],
-        )
-    )
-
-
 def assert_user_deployment_template(
     t: HelmTemplate, templates: List[models.V1Deployment], values: DagsterHelmValues
 ):
+    assert len(templates) == len(values.dagsterUserDeployments.deployments)
+
     for template, deployment_values in zip(templates, values.dagsterUserDeployments.deployments):
         # Assert simple stuff
         assert template.metadata.labels["deployment"] == deployment_values.name
@@ -224,22 +114,28 @@ def assert_user_deployment_template(
 
 
 @pytest.mark.parametrize(
-    "user_deployments",
+    "helm_values",
     [
-        UserDeployments(
-            enabled=False,
-            enableSubchart=False,
-            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=False,
+                enableSubchart=False,
+                deployments=[create_simple_user_deployment("simple-deployment-one")],
+            )
         ),
-        UserDeployments(
-            enabled=False,
-            enableSubchart=True,
-            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=False,
+                enableSubchart=True,
+                deployments=[create_simple_user_deployment("simple-deployment-one")],
+            )
         ),
-        UserDeployments(
-            enabled=True,
-            enableSubchart=False,
-            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=False,
+                deployments=[create_simple_user_deployment("simple-deployment-one")],
+            )
         ),
     ],
     ids=[
@@ -248,80 +144,77 @@ def assert_user_deployment_template(
         "user deployments enabled, subchart disabled",
     ],
 )
-def test_deployments_do_not_render(
-    user_deployments: UserDeployments, template: HelmTemplate, capsys
-):
+def test_deployments_do_not_render(helm_values: DagsterHelmValues, template: HelmTemplate, capsys):
     with pytest.raises(subprocess.CalledProcessError):
-        values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
-        template.render(values)
+        template.render(helm_values)
 
         _, err = capsys.readouterr()
         assert "Error: could not find template" in err
 
 
-def test_single_deployment_render(
-    template: HelmTemplate, single_user_deployment_values: DagsterHelmValues
-):
-    user_deployments = template.render(single_user_deployment_values)
-
-    assert len(user_deployments) == 1
-
-    assert_user_deployment_template(template, user_deployments, single_user_deployment_values)
-
-
-def test_multi_deployment_render(
-    template: HelmTemplate, multi_user_deployment_values: DagsterHelmValues
-):
-    user_deployments = template.render(multi_user_deployment_values)
-
-    assert len(user_deployments) == 2
-
-    assert_user_deployment_template(template, user_deployments, multi_user_deployment_values)
-
-
-def test_single_complex_deployment_render(
-    template: HelmTemplate, single_complex_user_deployment_values: DagsterHelmValues
-):
-    user_deployments = template.render(single_complex_user_deployment_values)
-
-    assert len(user_deployments) == 1
-
-    assert_user_deployment_template(
-        template, user_deployments, single_complex_user_deployment_values
-    )
-
-
-def test_multi_complex_deployment_render(
-    template: HelmTemplate, multi_complex_user_deployment_values: DagsterHelmValues
-):
-    user_deployments = template.render(multi_complex_user_deployment_values)
-
-    assert len(user_deployments) == 3
-
-    assert_user_deployment_template(
-        template, user_deployments, multi_complex_user_deployment_values
-    )
-
-
 @pytest.mark.parametrize(
-    "user_deployments",
+    "helm_values",
     [
-        UserDeployments(
-            enabled=False,
-            enableSubchart=True,
-            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[create_simple_user_deployment("simple-deployment-one")],
+            )
+        ),
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[create_complex_user_deployment("complex-deployment-one")],
+            )
+        ),
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[
+                    create_simple_user_deployment("simple-deployment-one"),
+                    create_simple_user_deployment("simple-deployment-two"),
+                ],
+            )
+        ),
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[
+                    create_complex_user_deployment("complex-deployment-one"),
+                    create_complex_user_deployment("complex-deployment-two"),
+                    create_simple_user_deployment("simple-deployment-three"),
+                ],
+            )
         ),
     ],
     ids=[
-        "user deployments disabled, subchart enabled",
+        "single user deployment",
+        "multi user deployment",
+        "complex, single user deployment",
+        "complex, multi user deployment",
     ],
 )
-def test_chart_does_not_render(
-    user_deployments: UserDeployments, full_template: HelmTemplate, capsys
-):
+def test_deployments_render(helm_values: DagsterHelmValues, template: HelmTemplate):
+    user_deployments = template.render(helm_values)
+
+    assert_user_deployment_template(template, user_deployments, helm_values)
+
+
+def test_chart_does_not_render(full_template: HelmTemplate, capsys):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=False,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        )
+    )
+
     with pytest.raises(subprocess.CalledProcessError):
-        values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
-        full_template.render(values)
+        full_template.render(helm_values)
 
         _, err = capsys.readouterr()
         assert (
@@ -331,23 +224,27 @@ def test_chart_does_not_render(
 
 
 @pytest.mark.parametrize(
-    "user_deployments",
+    "helm_values",
     [
-        UserDeployments(
-            enabled=True,
-            enableSubchart=False,
-            deployments=[
-                create_simple_user_deployment("simple-deployment-one"),
-            ],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=False,
+                deployments=[
+                    create_simple_user_deployment("simple-deployment-one"),
+                ],
+            )
         ),
-        UserDeployments(
-            enabled=True,
-            enableSubchart=False,
-            deployments=[
-                create_complex_user_deployment("complex-deployment-one"),
-                create_complex_user_deployment("complex-deployment-two"),
-                create_simple_user_deployment("simple-deployment-three"),
-            ],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=False,
+                deployments=[
+                    create_complex_user_deployment("complex-deployment-one"),
+                    create_complex_user_deployment("complex-deployment-two"),
+                    create_simple_user_deployment("simple-deployment-three"),
+                ],
+            )
         ),
     ],
     ids=[
@@ -355,31 +252,34 @@ def test_chart_does_not_render(
         "multiple user deployments enabled, subchart disabled",
     ],
 )
-def test_chart_does_render(user_deployments: UserDeployments, full_template: HelmTemplate):
-    values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
-    templates = full_template.render(values)
+def test_chart_does_render(helm_values: DagsterHelmValues, full_template: HelmTemplate):
+    templates = full_template.render(helm_values)
 
     assert templates
 
 
 @pytest.mark.parametrize(
-    "user_deployments",
+    "helm_values",
     [
-        UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[
-                create_simple_user_deployment("simple-deployment-one"),
-            ],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[
+                    create_simple_user_deployment("simple-deployment-one"),
+                ],
+            )
         ),
-        UserDeployments(
-            enabled=True,
-            enableSubchart=True,
-            deployments=[
-                create_complex_user_deployment("complex-deployment-one"),
-                create_complex_user_deployment("complex-deployment-two"),
-                create_simple_user_deployment("simple-deployment-three"),
-            ],
+        DagsterHelmValues.construct(
+            dagsterUserDeployments=UserDeployments(
+                enabled=True,
+                enableSubchart=True,
+                deployments=[
+                    create_complex_user_deployment("complex-deployment-one"),
+                    create_complex_user_deployment("complex-deployment-two"),
+                    create_simple_user_deployment("simple-deployment-three"),
+                ],
+            )
         ),
     ],
     ids=[
@@ -387,13 +287,9 @@ def test_chart_does_render(user_deployments: UserDeployments, full_template: Hel
         "multiple user deployments enabled",
     ],
 )
-def test_user_deployment_checksum_unchanged(
-    user_deployments: UserDeployments, template: HelmTemplate
-):
-    values = DagsterHelmValues.construct(dagsterUserDeployments=user_deployments)
-
-    pre_upgrade_templates = template.render(values)
-    post_upgrade_templates = template.render(values)
+def test_user_deployment_checksum_unchanged(helm_values: DagsterHelmValues, template: HelmTemplate):
+    pre_upgrade_templates = template.render(helm_values)
+    post_upgrade_templates = template.render(helm_values)
 
     # User deployment templates with the same Helm values should not redeploy in a Helm upgrade
     for pre_upgrade_user_deployment, post_upgrade_user_deployment in zip(
@@ -409,44 +305,30 @@ def test_user_deployment_checksum_unchanged(
         assert pre_upgrade_checksum == post_upgrade_checksum
 
 
-@pytest.mark.parametrize(
-    "user_deployments",
-    [
-        (
-            UserDeployments(
-                enabled=True,
-                enableSubchart=True,
-                deployments=[
-                    create_simple_user_deployment("deployment-one"),
-                    create_simple_user_deployment("deployment-two"),
-                ],
-            ),
-            UserDeployments(
-                enabled=True,
-                enableSubchart=True,
-                deployments=[
-                    create_complex_user_deployment("deployment-one"),
-                    create_complex_user_deployment("deployment-two"),
-                ],
-            ),
+def test_user_deployment_checksum_changes(template: HelmTemplate):
+    pre_upgrade_helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[
+                create_simple_user_deployment("deployment-one"),
+                create_simple_user_deployment("deployment-two"),
+            ],
         )
-    ],
-    ids=["multiple user deployments change"],
-)
-def test_user_deployment_checksum_changes(
-    user_deployments: UserDeployments, template: HelmTemplate
-):
-    pre_upgrade_user_deployments, post_upgrade_user_deployments = user_deployments
-
-    pre_upgrade_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=pre_upgrade_user_deployments
     )
-    post_upgrade_values = DagsterHelmValues.construct(
-        dagsterUserDeployments=post_upgrade_user_deployments
+    post_upgrade_helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[
+                create_complex_user_deployment("deployment-one"),
+                create_complex_user_deployment("deployment-two"),
+            ],
+        )
     )
 
-    pre_upgrade_templates = template.render(pre_upgrade_values)
-    post_upgrade_templates = template.render(post_upgrade_values)
+    pre_upgrade_templates = template.render(pre_upgrade_helm_values)
+    post_upgrade_templates = template.render(post_upgrade_helm_values)
 
     # User deployment templates with the same Helm values should not redeploy in a Helm upgrade
     for pre_upgrade_user_deployment, post_upgrade_user_deployment in zip(

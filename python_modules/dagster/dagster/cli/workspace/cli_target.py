@@ -9,12 +9,13 @@ from click import UsageError
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
-from dagster.core.host_representation import (
-    ExternalRepository,
+from dagster.core.host_representation.external import ExternalRepository
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
-    RepositoryLocation,
 )
+from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -362,7 +363,7 @@ def target_with_config_option(command_name):
             "\n\nYou can also specify multiple files:"
             "\n\nExample: "
             "dagster pipeline {name} -f hello_world.py -p pandas_hello_world "
-            "-c pandas_hello_world/solids.yaml -e pandas_hello_world/env.yaml"
+            "-c pandas_hello_world/solids.yaml -c pandas_hello_world/env.yaml"
         ).format(name=command_name),
     )
 
@@ -590,8 +591,12 @@ def get_repository_python_origin_from_kwargs(kwargs):
 @contextmanager
 def get_repository_location_from_kwargs(kwargs):
     origin = get_repository_location_origin_from_kwargs(kwargs)
-    with origin.create_handle() as handle:
-        yield handle.create_location()
+    with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
+        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+
+        with DynamicWorkspace(grpc_server_registry) as workspace:
+            with workspace.get_location(origin) as location:
+                yield location
 
 
 def get_repository_location_origin_from_kwargs(kwargs):

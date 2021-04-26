@@ -327,7 +327,7 @@ def validate_enum_config(context, config_value):
     return EvaluateValueResult.for_value(config_value)
 
 
-def process_config(config_type, config_dict):
+def process_config(config_type, config_dict) -> EvaluateValueResult:
     config_type = resolve_to_config_type(config_type)
     validate_evr = validate_config(config_type, config_dict)
     if not validate_evr.success:

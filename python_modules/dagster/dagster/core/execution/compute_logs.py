@@ -113,7 +113,7 @@ def execute_windows_tail(path, stream):
 @contextmanager
 def execute_posix_tail(path, stream):
     # open a subprocess to tail the file and print to stdout
-    tail_cmd = "tail -F -c +0 {}".format(path).split(" ")
+    tail_cmd = ["tail", "-F", "-c", "+0", path]
     stream = stream if _fileno(stream) else None
 
     try:

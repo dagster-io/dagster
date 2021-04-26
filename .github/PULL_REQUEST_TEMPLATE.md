@@ -17,8 +17,7 @@
 
 ## Checklist
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
-<!--- If you're unsure about any of these, don't hesitate to ask in our Slack-->
-<!--- channel #contributors: https://app.slack.com/client/TCDGQDUKF/C01K91YP0TF. We're here to answer any questions!-->
+<!--- If you're unsure about any of these, don't hesitate to ask in our Slack. -->
 
 - [ ] My change requires a change to the documentation and I have updated the documentation accordingly.
 - [ ] I have added tests to cover my changes.

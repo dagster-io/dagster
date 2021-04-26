@@ -12,6 +12,7 @@ import sys
 import tempfile
 import threading
 from collections import namedtuple
+from datetime import timezone
 from enum import Enum
 from typing import Iterator
 from warnings import warn
@@ -439,24 +440,13 @@ class EventGenerationManager:
             yield from self.generator
 
 
-def utc_timezone():
-    if sys.version_info.major >= 3 and sys.version_info.minor >= 2:
-        from datetime import timezone
-
-        return timezone.utc
-    else:
-        import pytz
-
-        return pytz.utc
-
-
 def utc_datetime_from_timestamp(timestamp):
-    tz = utc_timezone()
+    tz = timezone.utc
     return datetime.datetime.fromtimestamp(timestamp, tz=tz)
 
 
 def utc_datetime_from_naive(dt):
-    tz = utc_timezone()
+    tz = timezone.utc
     return dt.replace(tzinfo=tz)
 
 

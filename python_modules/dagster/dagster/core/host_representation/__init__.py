@@ -33,15 +33,7 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from .handle import (
-    GrpcServerRepositoryLocationHandle,
-    InProcessRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationHandle,
-    PipelineHandle,
-    RepositoryHandle,
-    RepositoryLocationHandle,
-)
-from .handle_manager import RepositoryLocationHandleManager
+from .handle import PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
 from .origin import (
     IN_PROCESS_NAME,

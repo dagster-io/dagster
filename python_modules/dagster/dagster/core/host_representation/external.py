@@ -50,6 +50,10 @@ class ExternalRepository:
             + external_repository_data.external_sensor_datas
         )
         self._job_map = OrderedDict((job_data.name, job_data) for job_data in jobs_list)
+        self._partition_set_map = OrderedDict(
+            (external_partition_set_data.name, external_partition_set_data)
+            for external_partition_set_data in external_repository_data.external_partition_set_datas
+        )
 
     @property
     def name(self):
@@ -95,6 +99,9 @@ class ExternalRepository:
     def has_external_sensor(self, sensor_name):
         return isinstance(self._job_map.get(sensor_name), ExternalSensorData)
 
+    def has_external_partition_set(self, partition_set_name):
+        return partition_set_name in self._partition_set_map
+
     def get_external_partition_set(self, partition_set_name):
         return ExternalPartitionSet(
             self.external_repository_data.get_external_partition_set_data(partition_set_name),
@@ -126,7 +133,7 @@ class ExternalRepository:
         return self.handle.get_external_origin()
 
     def get_python_origin(self):
-        return self.handle.repository_location_handle.get_repository_python_origin(
+        return self.handle.repository_location.get_repository_python_origin(
             self.name,
         )
 
@@ -138,7 +145,7 @@ class ExternalRepository:
         return self.get_external_origin().get_id()
 
     def get_display_metadata(self):
-        return self.handle.repository_location_handle.get_display_metadata()
+        return self.handle.repository_location.get_display_metadata()
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -266,7 +273,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     def get_python_origin(self):
         repository_python_origin = (
-            self.repository_handle.repository_location_handle.get_repository_python_origin(
+            self.repository_handle.repository_location.get_repository_python_origin(
                 self.repository_handle.repository_name,
             )
         )

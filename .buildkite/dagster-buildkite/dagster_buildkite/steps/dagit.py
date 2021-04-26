@@ -10,7 +10,7 @@ def dagit_steps() -> List[dict]:
         .run(
             "cd js_modules/dagit",
             "tox -vv -e py37",
-            "mv coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
+            "mv packages/core/coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_integration_image(SupportedPython.V3_7)

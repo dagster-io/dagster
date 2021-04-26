@@ -15,15 +15,19 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.events import RetryRequested
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
+from dagster.core.execution.api import scoped_pipeline_context
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import unpack_value
@@ -70,8 +74,8 @@ class Manager:
         pipeline_run,
         resource_keys_to_init,
         instance,
-        resource_instances_to_override,
         emit_persistent_events,
+        pipeline_def_for_backwards_compat,
     ):
         """
         Drop-in replacement for
@@ -86,8 +90,8 @@ class Manager:
             pipeline_run=pipeline_run,
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
-            resource_instances_to_override=resource_instances_to_override,
             emit_persistent_events=emit_persistent_events,
+            pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
             generator, ScopedResourcesBuilder
@@ -144,15 +148,19 @@ class Manager:
         self.solid_def = solid_def
         self.pipeline = pipeline
 
-        execution_plan = create_execution_plan(
+        environment_config = EnvironmentConfig.build(
+            pipeline_def, run_config, mode=pipeline_run.mode
+        )
+
+        execution_plan = ExecutionPlan.build(
             self.pipeline,
-            run_config,
-            mode=pipeline_run.mode,
+            environment_config,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
 
         with scoped_pipeline_context(
             execution_plan,
+            pipeline,
             run_config,
             pipeline_run,
             instance,
@@ -162,9 +170,12 @@ class Manager:
         ) as pipeline_context:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
+                pipeline_def=pipeline_def,
                 solid_config=run_config.get("solids", {}).get(solid_def.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
+                    pipeline_def,
+                    environment_config,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
@@ -234,9 +245,14 @@ class Manager:
         self.solid_def = solid_def
         self.pipeline = pipeline_def
 
-        execution_plan = create_execution_plan(self.pipeline, run_config, mode=mode_def.name)
+        environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode_def.name)
+
+        pipeline = InMemoryPipeline(pipeline_def)
+        execution_plan = ExecutionPlan.build(pipeline, environment_config)
+
         with scoped_pipeline_context(
             execution_plan,
+            pipeline,
             run_config,
             pipeline_run,
             DagsterInstance.ephemeral(),
@@ -245,9 +261,12 @@ class Manager:
 
             self.context = DagstermillExecutionContext(
                 pipeline_context=pipeline_context,
+                pipeline_def=pipeline_def,
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
+                    pipeline_def,
+                    environment_config,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
@@ -287,14 +306,21 @@ class Manager:
         When called interactively or in development, returns its input.
 
         Args:
-            dagster_event (Union[:class:`dagster.Materialization`, :class:`dagster.ExpectationResult`, :class:`dagster.TypeCheck`, :class:`dagster.Failure`]):
+            dagster_event (Union[:class:`dagster.AssetMaterialization`, :class:`dagster.ExpectationResult`, :class:`dagster.TypeCheck`, :class:`dagster.Failure`, :class:`dagster.RetryRequested`]):
                 An event to yield back to Dagster.
         """
-        check.inst_param(
-            dagster_event,
-            "dagster_event",
-            (AssetMaterialization, Materialization, ExpectationResult, TypeCheck, Failure),
+        valid_types = (
+            Materialization,
+            AssetMaterialization,
+            ExpectationResult,
+            TypeCheck,
+            Failure,
+            RetryRequested,
         )
+        if not isinstance(dagster_event, valid_types):
+            raise DagstermillError(
+                f"Received invalid type {dagster_event} in yield_event. Expected a Dagster event type, one of {valid_types}."
+            )
 
         if not self.in_pipeline:
             return dagster_event

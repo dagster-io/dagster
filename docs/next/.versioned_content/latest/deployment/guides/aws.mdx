@@ -1,8 +1,6 @@
 ---
 title: Deploying Dagster to AWS | Dagster
-description:
-  To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store runs and events,
-  and S3 can act as an IO manager.
+description: To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store runs and events, and S3 can act as an IO manager.
 ---
 
 # Deploying Dagster to AWS
@@ -15,9 +13,7 @@ To host Dagit or Dagster Daemon on a bare VM or in Docker on EC2 or ECS, see [Ru
 
 ## Using RDS for run and event log storage
 
-You can use a hosted RDS PostgreSQL database for your Dagster run/events
-data. You can do this by setting blocks in your
-`$DAGSTER_HOME/dagster.yaml` appropriately.
+You can use a hosted RDS PostgreSQL database for your Dagster run/events data. You can do this by setting blocks in your `$DAGSTER_HOME/dagster.yaml` appropriately.
 
 ```python file=/deploying/dagster-pg.yaml
 run_storage:
@@ -54,22 +50,15 @@ schedule_storage:
       port: { port }
 ```
 
-In this case, you'll want to ensure you provide the right connection
-strings for your RDS instance, and ensure that the node or container
-hosting Dagit is able to connect to RDS.
+In this case, you'll want to ensure you provide the right connection strings for your RDS instance, and ensure that the node or container hosting Dagit is able to connect to RDS.
 
-Be sure that this file is present, and _DAGSTER_HOME_ is
-set, on the node where Dagit is running.
+Be sure that this file is present, and _DAGSTER_HOME_ is set, on the node where Dagit is running.
 
-Note that using RDS for run and event log storage does not require that
-Dagit be running in the cloud. If you are connecting a local Dagit
-instance to a remote RDS storage, double check that your local node is
-able to connect to RDS.
+Note that using RDS for run and event log storage does not require that Dagit be running in the cloud. If you are connecting a local Dagit instance to a remote RDS storage, double check that your local node is able to connect to RDS.
 
 ## Using S3 for IO Management
 
-To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store
-intermediates.
+To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you will need to configure persistent [IO Managers](/concepts/io-management/io-managers) -- for instance, using an S3 bucket to store intermediates.
 
 You'll first need to need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
 
@@ -94,9 +83,6 @@ resources:
       s3_prefix: good/prefix-for-files-
 ```
 
-The resource uses `boto` under the hood, so if you are accessing your private buckets, you will
-need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables
-or follow one of the other boto authentication methods.
+The resource uses `boto` under the hood, so if you are accessing your private buckets, you will need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow one of the other boto authentication methods.
 
-With this in place, your pipeline runs will store intermediates on S3 in the location
-`s3://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`.
+With this in place, your pipeline runs will store intermediates on S3 in the location `s3://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`.

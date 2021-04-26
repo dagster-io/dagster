@@ -72,6 +72,18 @@ def core_execute_run(recon_pipeline, pipeline_run, instance):
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
+    # try to load the pipeline definition early
+    try:
+        recon_pipeline.get_definition()
+    except Exception:  # pylint: disable=broad-except
+        yield instance.report_engine_event(
+            "Could not load pipeline definition.",
+            pipeline_run,
+            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+        )
+        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        return
+
     try:
         yield from execute_run_iterator(recon_pipeline, pipeline_run, instance)
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):

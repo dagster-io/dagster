@@ -1,16 +1,16 @@
 # pylint: disable=unused-argument
 
 # start_marker
-from dagster import InputDefinition, pipeline, solid
+from dagster import pipeline, solid
 
 
 @solid
-def return_one(context):
+def return_one(context) -> int:
     return 1
 
 
-@solid(input_defs=[InputDefinition("number", int)])
-def add_one(context, number):
+@solid
+def add_one(context, number: int) -> int:
     return number + 1
 
 

@@ -2,21 +2,14 @@ import os
 import sys
 import time
 from collections import namedtuple
-from contextlib import ExitStack
 
 import pendulum
 from dagster import check, seven
+from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterError
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    PipelineSelector,
-    RepositoryLocationHandleManager,
-)
-from dagster.core.host_representation.external_data import (
-    ExternalSensorExecutionData,
-    ExternalSensorExecutionErrorData,
-)
+from dagster.core.host_representation import ExternalPipeline, PipelineSelector
+from dagster.core.host_representation.external_data import ExternalSensorExecutionData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -98,15 +91,14 @@ class SensorLaunchContext:
         if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             self.update_state(JobTickStatus.FAILURE, error=error_data)
-            self._write()
-            self._logger.error(
-                "Error launching sensor run: {error_info}".format(
-                    error_info=error_data.to_string()
-                ),
-            )
-            return True  # Swallow the exception after logging in the tick DB
 
         self._write()
+
+        self._instance.purge_job_ticks(
+            self._job_state.job_origin_id,
+            tick_status=JobTickStatus.SKIPPED,
+            before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
+        )
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
@@ -122,47 +114,37 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def execute_sensor_iteration_loop(instance, grpc_server_registry, logger, until=None):
+def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-    from dagster.daemon.daemon import CompletedIteration
-
-    handle_manager = None
-    manager_loaded_time = None
+    manager_loaded_time = pendulum.now("UTC").timestamp()
 
     RELOAD_LOCATION_MANAGER_INTERVAL = 60
 
     start_time = pendulum.now("UTC").timestamp()
-    with ExitStack() as stack:
-        while True:
-            start_time = pendulum.now("UTC").timestamp()
-            if until and start_time >= until:
-                # provide a way of organically ending the loop to support test environment
-                break
+    while True:
+        start_time = pendulum.now("UTC").timestamp()
+        if until and start_time >= until:
+            # provide a way of organically ending the loop to support test environment
+            break
 
-            if (
-                not handle_manager
-                or (start_time - manager_loaded_time) > RELOAD_LOCATION_MANAGER_INTERVAL
-            ):
-                stack.close()  # remove the previous context
-                handle_manager = stack.enter_context(
-                    RepositoryLocationHandleManager(grpc_server_registry)
-                )
-                manager_loaded_time = start_time
+        if start_time - manager_loaded_time > RELOAD_LOCATION_MANAGER_INTERVAL:
+            workspace.cleanup()
+            manager_loaded_time = pendulum.now("UTC").timestamp()
 
-            yield from execute_sensor_iteration(instance, logger, handle_manager)
-            loop_duration = pendulum.now("UTC").timestamp() - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            yield CompletedIteration()
-            time.sleep(sleep_time)
+        yield from execute_sensor_iteration(instance, logger, workspace)
+        loop_duration = pendulum.now("UTC").timestamp() - start_time
+        sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
+        time.sleep(sleep_time)
+        yield
 
 
-def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags=None):
-    check.inst_param(handle_manager, "handle_manager", RepositoryLocationHandleManager)
+def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None):
+    check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
         s
@@ -180,8 +162,7 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
         error_info = None
         try:
             origin = job_state.origin.external_repository_origin.repository_location_origin
-            repo_location_handle = handle_manager.get_handle(origin)
-            repo_location = repo_location_handle.create_location()
+            repo_location = workspace.get_location(origin)
 
             repo_name = job_state.origin.external_repository_origin.repository_name
 
@@ -229,12 +210,6 @@ def execute_sensor_iteration(instance, logger, handle_manager, debug_crash_flags
                     job_state,
                     sensor_debug_crash_flags,
                 )
-
-            instance.purge_job_ticks(
-                job_state.job_origin_id,
-                tick_status=JobTickStatus.SKIPPED,
-                before=now.subtract(days=7).timestamp(),  #  keep the last 7 days
-            )
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
@@ -263,13 +238,6 @@ def _evaluate_sensor(
         job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
         job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
     )
-    if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
-        context.logger.error(
-            f"Failed to resolve sensor for {external_sensor.name} : {sensor_runtime_data.error.to_string()}"
-        )
-        context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
-        yield
-        return
 
     assert isinstance(sensor_runtime_data, ExternalSensorExecutionData)
     if not sensor_runtime_data.run_requests:
@@ -312,6 +280,8 @@ def _evaluate_sensor(
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
 
+        error_info = None
+
         try:
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
@@ -323,11 +293,12 @@ def _evaluate_sensor(
                 )
             )
         except Exception:  # pylint: disable=broad-except
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
             context.logger.error(
-                f"Run {run.run_id} created successfully but failed to launch: "
-                f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
+                f"Run {run.run_id} created successfully but failed to launch: " f"{str(error_info)}"
             )
-        yield
+
+        yield error_info
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 

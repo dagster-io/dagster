@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
 
 from dagster import check
+from dagster.config.config_type import ConfigAnyInstance, ConfigType
+from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field import Field
 from dagster.config.field_utils import convert_potential_field
 from dagster.config.validate import process_config
@@ -8,13 +11,12 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_err
 
 
 def convert_user_facing_definition_config_schema(potential_schema):
-    return (
-        None
-        if potential_schema is None
-        else potential_schema
-        if isinstance(potential_schema, IDefinitionConfigSchema)
-        else DefinitionConfigSchema(convert_potential_field(potential_schema))
-    )
+    if potential_schema is None:
+        return DefinitionConfigSchema(Field(ConfigAnyInstance, is_required=False))
+    elif isinstance(potential_schema, IDefinitionConfigSchema):
+        return potential_schema
+    else:
+        return DefinitionConfigSchema(convert_potential_field(potential_schema))
 
 
 # This structure is used to represent the config schema attached to a definition
@@ -26,47 +28,47 @@ def convert_user_facing_definition_config_schema(potential_schema):
 #
 class IDefinitionConfigSchema(ABC):
     @abstractmethod
-    def as_field(self):
+    def as_field(self) -> Field:
         raise NotImplementedError()
 
     @property
-    def config_type(self):
+    def config_type(self) -> Optional[ConfigType]:
         field = self.as_field()
         return field.config_type if field else None
 
     @property
-    def is_required(self):
+    def is_required(self) -> bool:
         field = self.as_field()
         return field.is_required if field else False
 
     @property
-    def default_provided(self):
+    def default_provided(self) -> bool:
         field = self.as_field()
         return field.default_provided if field else False
 
     @property
-    def default_value(self):
+    def default_value(self) -> Any:
         field = self.as_field()
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return field.default_value if field else None
 
     @property
-    def default_value_as_json_str(self):
+    def default_value_as_json_str(self) -> str:
         field = self.as_field()
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return field.default_value_as_json_str
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         field = self.as_field()
-        return field.description if field else False
+        return field.description if field else None
 
 
 class DefinitionConfigSchema(IDefinitionConfigSchema):
     def __init__(self, config_field):
         self._config_field = check.inst_param(config_field, "config_field", Field)
 
-    def as_field(self):
+    def as_field(self) -> Field:
         return self._config_field
 
 
@@ -89,15 +91,11 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         self._current_field = config_schema.as_field() if config_schema else None
 
         if not callable(config_or_config_fn):
-            check.invariant(
-                config_schema is None,
-                "When non-callable config is given, config_schema must be None",
-            )
             self._config_fn = lambda _: config_or_config_fn
         else:
             self._config_fn = config_or_config_fn
 
-    def as_field(self):
+    def as_field(self) -> Field:
         return self._current_field
 
     def _invoke_user_config_fn(self, processed_config):
@@ -107,7 +105,7 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         ):
             return {"config": self._config_fn(processed_config.get("config", {}))}
 
-    def resolve_config(self, processed_config):
+    def resolve_config(self, processed_config: Dict[str, Any]) -> EvaluateValueResult:
         check.dict_param(processed_config, "processed_config")
         # Validate resolved config against the inner definitions's config_schema (on self).
         config_evr = process_config(

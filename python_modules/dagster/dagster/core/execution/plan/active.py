@@ -8,13 +8,13 @@ from dagster.core.errors import (
     DagsterUnknownStepStateError,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.utils.interrupts import pop_captured_interrupt
 
-from .outputs import StepOutputHandle
+from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan
 from .step import ExecutionStep
 
@@ -59,13 +59,13 @@ class ActiveExecution:
         self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
+        self._new_dynamic_mappings: bool = False
 
         # steps move in to these buckets as a result of _update calls
         self._executable: List[str] = []
         self._pending_skip: List[str] = []
         self._pending_retry: List[str] = []
         self._pending_abandon: List[str] = []
-        self._pending_resolve: List[str] = []
         self._waiting_to_retry: Dict[str, float] = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
@@ -100,23 +100,28 @@ class ActiveExecution:
             pending_action = (
                 self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
             )
-            raise DagsterInvariantViolationError(
-                "Execution of pipeline finished without completing the execution plan,."
-                "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
-                    in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
-                    if self._in_flight
-                    else "",
-                    pending_str="\nSteps pending processing: {}".format(self._pending.keys())
-                    if self._pending
-                    else "",
-                    action_str="\nSteps pending action: {}".format(pending_action)
-                    if pending_action
-                    else "",
-                    retry_str="\nSteps waiting to retry: {}".format(self._waiting_to_retry.keys())
-                    if self._waiting_to_retry
-                    else "",
-                )
+            state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
+                in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
+                if self._in_flight
+                else "",
+                pending_str="\nSteps pending processing: {}".format(self._pending.keys())
+                if self._pending
+                else "",
+                action_str="\nSteps pending action: {}".format(pending_action)
+                if pending_action
+                else "",
+                retry_str="\nSteps waiting to retry: {}".format(self._waiting_to_retry.keys())
+                if self._waiting_to_retry
+                else "",
             )
+            if self._interrupted:
+                raise DagsterExecutionInterruptedError(
+                    f"Execution of pipeline was interrupted before completing the execution plan. {state_str}"
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    f"Execution of pipeline finished without completing the execution plan. {state_str}"
+                )
 
         # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
         # state so we raise to ensure pipeline failure.
@@ -145,15 +150,12 @@ class ActiveExecution:
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
 
-        # make a copy since we are mutating during iteration
-        pending_resolve_snapshot = list(self._pending_resolve)
-        for idx, key in enumerate(pending_resolve_snapshot):
-            new_step_deps = self._plan.resolve(key, self._successful_dynamic_outputs[key])
+        if self._new_dynamic_mappings:
+            new_step_deps = self._plan.resolve(self._successful_dynamic_outputs)
             for step_key, deps in new_step_deps.items():
-                # does this work right with step_keys_to_execute?
                 self._pending[step_key] = deps
 
-            del self._pending_resolve[idx]
+            self._new_dyamic_mappings = False
 
         for step_key, requirements in self._pending.items():
             # If any upstream deps failed - this is not executable
@@ -339,7 +341,7 @@ class ActiveExecution:
         self._success.add(step_key)
         self._mark_complete(step_key)
         if step_key in self._successful_dynamic_outputs:
-            self._pending_resolve.append(step_key)
+            self._new_dynamic_mappings = True
 
     def mark_skipped(self, step_key: str) -> None:
         self._skipped.add(step_key)
@@ -389,29 +391,29 @@ class ActiveExecution:
     def handle_event(self, dagster_event: DagsterEvent) -> None:
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
+        step_key = cast(str, dagster_event.step_key)
         if dagster_event.is_step_failure:
-            self.mark_failed(dagster_event.step_key)
+            self.mark_failed(step_key)
         elif dagster_event.is_step_success:
-            self.mark_success(dagster_event.step_key)
+            self.mark_success(step_key)
         elif dagster_event.is_step_skipped:
-            self.mark_skipped(dagster_event.step_key)
+            self.mark_skipped(step_key)
         elif dagster_event.is_step_up_for_retry:
             self.mark_up_for_retry(
-                dagster_event.step_key,
+                step_key,
                 time.time() + dagster_event.step_retry_data.seconds_to_wait
                 if dagster_event.step_retry_data.seconds_to_wait
                 else None,
             )
         elif dagster_event.is_successful_output:
-            self.mark_step_produced_output(dagster_event.event_specific_data.step_output_handle)
+            event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
+            self.mark_step_produced_output(event_specific_data.step_output_handle)
             if dagster_event.step_output_data.step_output_handle.mapping_key:
-                self._successful_dynamic_outputs[dagster_event.step_key][
+                self._successful_dynamic_outputs[step_key][
                     dagster_event.step_output_data.step_output_handle.output_name
                 ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(
-        self, pipeline_context: SystemPipelineExecutionContext, step_key: str
-    ) -> None:
+    def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure"""
         if step_key in self._in_flight:
             pipeline_context.log.error(

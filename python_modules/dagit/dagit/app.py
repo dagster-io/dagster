@@ -15,7 +15,7 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Blueprint, Flask, jsonify, redirect, request, send_file
+from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -94,7 +94,7 @@ def download_log_view(context):
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
         step_key = step_key.split("/")[-1]  # make sure we're not diving deep into
-        out_name = "{}_{}.{}".format(run_id, step_key, file_type)
+        out_name = f"{run_id}_{step_key}.{file_type}"
 
         manager = context.instance.compute_log_manager
         try:
@@ -124,7 +124,7 @@ def download_dump_view(context):
         run = context.instance.get_run_by_id(run_id)
         debug_payload = DebugRunPayload.build(context.instance, run)
         check.invariant(run is not None)
-        out_name = "{}.gzip".format(run_id)
+        out_name = f"{run_id}.gzip"
 
         result = io.BytesIO()
         with gzip.GzipFile(fileobj=result, mode="wb") as file:
@@ -137,27 +137,27 @@ def download_dump_view(context):
     return view
 
 
-def instantiate_app_with_views(context, schema, app_path_prefix):
+def instantiate_app_with_views(
+    context, schema, app_path_prefix, target_dir=os.path.dirname(__file__)
+):
     app = Flask(
         "dagster-ui",
         static_url_path=app_path_prefix,
-        static_folder=os.path.join(os.path.dirname(__file__), "./webapp/build"),
+        static_folder=os.path.join(target_dir, "./webapp/build"),
     )
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
     # Websocket routes
     sockets = Sockets(app)
     sockets.add_url_rule(
-        "{}/graphql".format(app_path_prefix),
+        f"{app_path_prefix}/graphql",
         "graphql",
         dagster_graphql_subscription_view(subscription_server, context),
     )
 
     # HTTP routes
     bp = Blueprint("routes", __name__, url_prefix=app_path_prefix)
-    bp.add_url_rule(
-        "/graphiql", "graphiql", lambda: redirect("{}/graphql".format(app_path_prefix), 301)
-    )
+    bp.add_url_rule("/graphiql", "graphiql", lambda: redirect(f"{app_path_prefix}/graphql", 301))
     bp.add_url_rule(
         "/graphql",
         "graphql",
@@ -165,7 +165,7 @@ def instantiate_app_with_views(context, schema, app_path_prefix):
             "graphql",
             schema=schema,
             graphiql=True,
-            graphiql_template=PLAYGROUND_TEMPLATE.replace("APP_PATH_PREFIX", app_path_prefix),
+            graphiql_template=PLAYGROUND_TEMPLATE,
             executor=Executor(),
             context=context,
         ),
@@ -190,19 +190,16 @@ def instantiate_app_with_views(context, schema, app_path_prefix):
     bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(request.args))
     bp.add_url_rule("/dagit_info", "sanity_view", info_view)
 
-    index_path = os.path.join(os.path.dirname(__file__), "./webapp/build/index.html")
+    index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
-    def index_view(_path):
+    def index_view():
         try:
             with open(index_path) as f:
+                rendered_template = render_template_string(f.read())
                 return (
-                    f.read()
-                    .replace('href="/', 'href="{}/'.format(app_path_prefix))
-                    .replace('src="/', 'src="{}/'.format(app_path_prefix))
-                    .replace(
-                        '<meta name="dagit-path-prefix"',
-                        '<meta name="dagit-path-prefix" content="{}"'.format(app_path_prefix),
-                    )
+                    rendered_template.replace('href="/', f'href="{app_path_prefix}/')
+                    .replace('src="/', f'src="{app_path_prefix}/')
+                    .replace("__PATH_PREFIX__", app_path_prefix)
                 )
         except FileNotFoundError:
             raise Exception(
@@ -214,9 +211,15 @@ def instantiate_app_with_views(context, schema, app_path_prefix):
                 make rebuild_dagit"""
             )
 
+    def error_redirect(_path):
+        return index_view()
+
+    bp.add_url_rule("/", "index_view", index_view)
+    bp.context_processor(lambda: {"app_path_prefix": app_path_prefix})
+
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
-    app.register_error_handler(404, index_view)
+    app.register_error_handler(404, error_redirect)
 
     # if the user asked for a path prefix, handle the naked domain just in case they are not
     # filtering inbound traffic elsewhere and redirect to the path prefix.
@@ -227,16 +230,18 @@ def instantiate_app_with_views(context, schema, app_path_prefix):
     return app
 
 
-def create_app_from_workspace(workspace, instance, path_prefix=""):
+def create_app_from_workspace(
+    workspace: Workspace, instance: DagsterInstance, path_prefix: str = ""
+):
     check.inst_param(workspace, "workspace", Workspace)
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(path_prefix, "path_prefix")
 
     if path_prefix:
         if not path_prefix.startswith("/"):
-            raise Exception('The path prefix should begin with a leading "/".')
+            raise Exception(f'The path prefix should begin with a leading "/": got {path_prefix}')
         if path_prefix.endswith("/"):
-            raise Exception('The path prefix should not include a trailing "/".')
+            raise Exception(f'The path prefix should not include a trailing "/": got {path_prefix}')
 
     warn_if_compute_logs_disabled()
 

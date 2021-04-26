@@ -157,7 +157,7 @@ def raise_execution_interrupts():
 def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **kwargs):
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
-    policy around an user code invoked by the framework. This ensures that all user
+    policy around any user code invoked by the framework. This ensures that all user
     errors are wrapped in an exception derived from DagsterUserCodeExecutionError,
     and that the original stack trace of the user error is preserved, so that it
     can be reported without confusing framework code in the stack trace, if a
@@ -360,6 +360,15 @@ class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
     was communicating with."""
 
+    @staticmethod
+    def from_error_info(error_info):
+        from dagster.utils.error import SerializableErrorInfo
+
+        check.inst_param(error_info, "error_info", SerializableErrorInfo)
+        return DagsterUserCodeProcessError(
+            error_info.to_string(), user_code_process_error_infos=[error_info]
+        )
+
     def __init__(self, *args, **kwargs):
         from dagster.utils.error import SerializableErrorInfo
 
@@ -369,6 +378,18 @@ class DagsterUserCodeProcessError(DagsterError):
             SerializableErrorInfo,
         )
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
+
+
+class DagsterRepositoryLocationLoadError(DagsterError):
+    def __init__(self, *args, **kwargs):
+        from dagster.utils.error import SerializableErrorInfo
+
+        self.load_error_infos = check.list_param(
+            kwargs.pop("load_error_infos"),
+            "load_error_infos",
+            SerializableErrorInfo,
+        )
+        super(DagsterRepositoryLocationLoadError, self).__init__(*args, **kwargs)
 
 
 class DagsterLaunchFailedError(DagsterError):
@@ -510,3 +531,10 @@ class DagsterObjectStoreError(DagsterError):
 class DagsterInvalidPropertyError(DagsterError):
     """Indicates that an invalid property was accessed. May often happen by accessing a property
     that no longer exists after breaking changes."""
+
+
+class DagsterHomeNotSetError(DagsterError):
+    """
+    The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
+    without setting DAGSTER_HOME env var.
+    """

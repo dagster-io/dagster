@@ -1,7 +1,7 @@
 import traceback
 from collections import namedtuple
 from types import TracebackType
-from typing import List, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
 from dagster.serdes import whitelist_for_serdes
 
@@ -40,6 +40,18 @@ def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> Serial
 def serializable_error_info_from_exc_info(
     exc_info: Union[
         Tuple[Type[BaseException], BaseException, TracebackType], Tuple[None, None, None]
-    ]
+    ],
+    # Whether to forward serialized errors thrown from subprocesses
+    hoist_user_code_error: Optional[bool] = True,
 ) -> SerializableErrorInfo:
-    return _serializable_error_info_from_tb(traceback.TracebackException(*exc_info))
+    _exc_type, e, _tb = exc_info
+    from dagster.core.errors import DagsterUserCodeProcessError
+
+    if (
+        hoist_user_code_error
+        and isinstance(e, DagsterUserCodeProcessError)
+        and len(e.user_code_process_error_infos) == 1
+    ):
+        return e.user_code_process_error_infos[0]
+    else:
+        return _serializable_error_info_from_tb(traceback.TracebackException(*exc_info))

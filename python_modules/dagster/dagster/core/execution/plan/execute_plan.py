@@ -1,5 +1,5 @@
 import sys
-from typing import Iterator, List
+from typing import Iterator, List, cast
 
 from dagster import check
 from dagster.core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -11,7 +11,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
+from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.execution.plan.objects import (
     ErrorSource,
@@ -26,9 +26,9 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 
 
 def inner_plan_execution_iterator(
-    pipeline_context: SystemExecutionContext, execution_plan: ExecutionPlan
+    pipeline_context: PlanExecutionContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+    check.inst_param(pipeline_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
     with execution_plan.start(retry_mode=pipeline_context.retry_mode) as active_execution:
@@ -38,7 +38,7 @@ def inner_plan_execution_iterator(
         # https://github.com/dagster-io/dagster/issues/811
         while not active_execution.is_complete:
             step = active_execution.get_next_step()
-            step_context = pipeline_context.for_step(step)
+            step_context = cast(StepExecutionContext, pipeline_context.for_step(step))
             step_event_list = []
 
             missing_resources = [
@@ -80,7 +80,7 @@ def inner_plan_execution_iterator(
 
 
 def _trigger_hook(
-    step_context: SystemStepExecutionContext, step_event_list: List[DagsterEvent]
+    step_context: StepExecutionContext, step_event_list: List[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events"""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
@@ -104,7 +104,7 @@ def _trigger_hook(
         except HookExecutionError as hook_execution_error:
             # catch hook execution error and field a failure event instead of failing the pipeline run
             # is_hook_completed = False
-            yield DagsterEvent.hook_errored(hook_context, hook_execution_error)
+            yield DagsterEvent.hook_errored(step_context, hook_execution_error)
             continue
 
         check.invariant(
@@ -122,14 +122,14 @@ def _trigger_hook(
             # when the triggering condition didn't meet in the hook_fn, for instance,
             # a @success_hook decorated user-defined function won't run on a failed solid
             # but internally the hook_fn still runs, so we yield HOOK_SKIPPED event instead
-            yield DagsterEvent.hook_skipped(hook_context, hook_def)
+            yield DagsterEvent.hook_skipped(step_context, hook_def)
         else:
             # hook_fn finishes successfully
-            yield DagsterEvent.hook_completed(hook_context, hook_def)
+            yield DagsterEvent.hook_completed(step_context, hook_def)
 
 
 def _dagster_event_sequence_for_step(
-    step_context: SystemStepExecutionContext, retry_state: RetryState
+    step_context: StepExecutionContext, retry_state: RetryState
 ) -> Iterator[DagsterEvent]:
     """
     Yield a sequence of dagster events for the given step with the step context.
@@ -177,7 +177,7 @@ def _dagster_event_sequence_for_step(
     signaled to the user within that tool.
     """
 
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(retry_state, "retry_state", RetryState)
 
     try:

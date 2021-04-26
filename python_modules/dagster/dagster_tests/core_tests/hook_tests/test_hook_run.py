@@ -56,17 +56,17 @@ def test_hook_accumulation():
 
     @event_list_hook
     def pipeline_hook(context, _):
-        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("pipeline_hook")
 
     @event_list_hook
     def solid_1_hook(context, _):
-        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("solid_1_hook")
 
     @event_list_hook
     def composite_1_hook(context, _):
-        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("composite_1_hook")
 
     @solid
@@ -119,7 +119,7 @@ def test_hook_on_composite_solid_instance():
 
     @event_list_hook
     def hook_a_generic(context, _):
-        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("hook_a_generic")
 
     @solid
@@ -175,6 +175,37 @@ def test_success_hook_on_solid_instance():
 
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert not result.success
+    assert called_hook_to_solids["a_hook"] == {"a_solid", "solid_with_hook"}
+
+
+def test_success_hook_on_solid_instance_subset():
+
+    called_hook_to_solids = defaultdict(set)
+
+    @success_hook(required_resource_keys={"resource_a"})
+    def a_hook(context):
+        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        assert context.resources.resource_a == 1
+
+    @solid
+    def a_solid(_):
+        pass
+
+    @solid
+    def failed_solid(_):
+        raise SomeUserException()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})])
+    def a_pipeline():
+        a_solid.with_hooks(hook_defs={a_hook})()
+        a_solid.alias("solid_with_hook").with_hooks(hook_defs={a_hook})()
+        a_solid.alias("solid_without_hook")()
+        failed_solid.with_hooks(hook_defs={a_hook})()
+
+    result = execute_pipeline(
+        a_pipeline, raise_on_error=False, solid_selection=["a_solid", "solid_with_hook"]
+    )
+    assert result.success
     assert called_hook_to_solids["a_hook"] == {"a_solid", "solid_with_hook"}
 
 
@@ -254,7 +285,7 @@ def test_hook_on_pipeline_def_with_composite_solids():
 
     @event_list_hook
     def hook_a_generic(context, _):
-        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("hook_a_generic")
 
     @solid

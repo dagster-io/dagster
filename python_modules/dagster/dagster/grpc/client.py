@@ -7,7 +7,7 @@ from contextlib import contextmanager
 import grpc
 from dagster import check, seven
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import ExternalRepositoryOrigin
+from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -31,6 +31,8 @@ from .types import (
 )
 
 CLIENT_HEARTBEAT_INTERVAL = 1
+
+DEFAULT_GRPC_TIMEOUT = 60
 
 
 def client_heartbeat_thread(client, shutdown_event):
@@ -81,17 +83,17 @@ class DagsterGrpcClient:
         ) as channel:
             yield channel
 
-    def _query(self, method, request_type, timeout=None, **kwargs):
+    def _query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
         # TODO need error handling here
         return response
 
-    def _streaming_query(self, method, request_type, **kwargs):
+    def _streaming_query(self, method, request_type, timeout=DEFAULT_GRPC_TIMEOUT, **kwargs):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
-            response_stream = getattr(stub, method)(request_type(**kwargs))
+            response_stream = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
             yield from response_stream
 
     def ping(self, echo):
@@ -190,16 +192,18 @@ class DagsterGrpcClient:
             PartitionSetExecutionParamArgs,
         )
 
-        res = self._query(
-            "ExternalPartitionSetExecutionParams",
-            api_pb2.ExternalPartitionSetExecutionParamsRequest,
-            serialized_partition_set_execution_param_args=serialize_dagster_namedtuple(
-                partition_set_execution_param_args
-            ),
+        chunks = list(
+            self._streaming_query(
+                "ExternalPartitionSetExecutionParams",
+                api_pb2.ExternalPartitionSetExecutionParamsRequest,
+                serialized_partition_set_execution_param_args=serialize_dagster_namedtuple(
+                    partition_set_execution_param_args
+                ),
+            )
         )
 
         return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_partition_set_execution_param_data_or_external_partition_execution_error
+            "".join([chunk.serialized_chunk for chunk in chunks])
         )
 
     def external_pipeline_subset(self, pipeline_subset_snapshot_args):
@@ -260,35 +264,40 @@ class DagsterGrpcClient:
             ExternalScheduleExecutionArgs,
         )
 
-        res = self._query(
-            "ExternalScheduleExecution",
-            api_pb2.ExternalScheduleExecutionRequest,
-            serialized_external_schedule_execution_args=serialize_dagster_namedtuple(
-                external_schedule_execution_args
-            ),
+        chunks = list(
+            self._streaming_query(
+                "ExternalScheduleExecution",
+                api_pb2.ExternalScheduleExecutionRequest,
+                serialized_external_schedule_execution_args=serialize_dagster_namedtuple(
+                    external_schedule_execution_args
+                ),
+            )
         )
 
         return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_schedule_execution_data_or_external_schedule_execution_error
+            "".join([chunk.serialized_chunk for chunk in chunks])
         )
 
-    def external_sensor_execution(self, sensor_execution_args):
+    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_GRPC_TIMEOUT):
         check.inst_param(
             sensor_execution_args,
             "sensor_execution_args",
             SensorExecutionArgs,
         )
 
-        res = self._query(
-            "ExternalSensorExecution",
-            api_pb2.ExternalSensorExecutionRequest,
-            serialized_external_sensor_execution_args=serialize_dagster_namedtuple(
-                sensor_execution_args
-            ),
+        chunks = list(
+            self._streaming_query(
+                "ExternalSensorExecution",
+                api_pb2.ExternalSensorExecutionRequest,
+                timeout=timeout,
+                serialized_external_sensor_execution_args=serialize_dagster_namedtuple(
+                    sensor_execution_args
+                ),
+            )
         )
 
         return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_sensor_execution_data_or_external_sensor_execution_error
+            "".join([chunk.serialized_chunk for chunk in chunks])
         )
 
     def shutdown_server(self, timeout=15):

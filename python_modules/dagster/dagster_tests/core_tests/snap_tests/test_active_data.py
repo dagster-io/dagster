@@ -29,7 +29,7 @@ def a_pipeline():
     a_solid()
 
 
-@daily_schedule(
+@daily_schedule(  # type: ignore
     pipeline_name="a_pipeline",
     start_date=datetime(year=2019, month=1, day=1),
     end_date=datetime(year=2019, month=2, day=1),

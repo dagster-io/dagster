@@ -14,7 +14,7 @@ from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context.system import SystemStepExecutionContext
+from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
@@ -43,7 +43,9 @@ class LocalExternalStepLauncher(StepLauncher):
         self.scratch_dir = check.str_param(scratch_dir, "scratch_dir")
 
     def launch_step(
-        self, step_context: SystemStepExecutionContext, prior_attempts_count: int
+        self,
+        step_context: StepExecutionContext,
+        prior_attempts_count: int,
     ) -> Iterator[DagsterEvent]:
         step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
         run_id = step_context.pipeline_run.run_id
@@ -93,13 +95,13 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
 
 
 def step_context_to_step_run_ref(
-    step_context: SystemStepExecutionContext,
+    step_context: StepExecutionContext,
     prior_attempts_count: int,
     package_dir: Optional[str] = None,
 ) -> StepRunRef:
     """
     Args:
-        step_context (SystemStepExecutionContext): The step context.
+        step_context (StepExecutionContext): The step context.
         prior_attempts_count (int): The number of times this time has been tried before in the same
             pipeline run.
         package_dir (Optional[str]): If set, the reconstruction file code pointer will be converted
@@ -112,7 +114,7 @@ def step_context_to_step_run_ref(
         A reference to the step.
     """
 
-    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(step_context, "step_context", StepExecutionContext)
     check.int_param(prior_attempts_count, "prior_attempts_count")
 
     retry_mode = step_context.retry_mode
@@ -148,18 +150,22 @@ def step_context_to_step_run_ref(
 
 def step_run_ref_to_step_context(
     step_run_ref: StepRunRef, instance: DagsterInstance
-) -> SystemStepExecutionContext:
+) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
     pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
         step_run_ref.pipeline_run.solids_to_execute
     )
 
     execution_plan = create_execution_plan(
-        pipeline, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
-    ).build_subset_plan([step_run_ref.step_key])
+        pipeline,
+        step_run_ref.run_config,
+        mode=step_run_ref.pipeline_run.mode,
+        step_keys_to_execute=[step_run_ref.step_key],
+    )
 
     initialization_manager = PlanExecutionContextManager(
         retry_mode=step_run_ref.retry_mode.for_inner_plan(),
+        pipeline=pipeline,
         execution_plan=execution_plan,
         run_config=step_run_ref.run_config,
         pipeline_run=step_run_ref.pipeline_run,

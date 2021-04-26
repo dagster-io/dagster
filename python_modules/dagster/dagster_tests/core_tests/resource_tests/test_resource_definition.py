@@ -18,7 +18,6 @@ from dagster import (
     execute_pipeline_iterator,
     reconstructable,
     resource,
-    seven,
     solid,
 )
 from dagster.core.definitions import pipeline
@@ -329,13 +328,13 @@ def test_none_resource():
         assert context.resources.test_null is None
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_none_resource",
         solid_defs=[solid_test_null],
         mode_defs=[ModeDefinition(resource_defs={"test_null": ResourceDefinition.none_resource()})],
     )
 
-    result = execute_pipeline(pipeline)
+    result = execute_pipeline(the_pipeline)
 
     assert result.success
     assert called["yup"]
@@ -349,7 +348,7 @@ def test_string_resource():
         assert context.resources.test_string == "foo"
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_string_resource",
         solid_defs=[solid_test_string],
         mode_defs=[
@@ -357,7 +356,7 @@ def test_string_resource():
         ],
     )
 
-    result = execute_pipeline(pipeline, {"resources": {"test_string": {"config": "foo"}}})
+    result = execute_pipeline(the_pipeline, {"resources": {"test_string": {"config": "foo"}}})
 
     assert result.success
     assert called["yup"]
@@ -373,7 +372,7 @@ def test_hardcoded_resource():
         assert context.resources.hardcoded("called")
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="hardcoded_resource",
         solid_defs=[solid_hardcoded],
         mode_defs=[
@@ -383,7 +382,7 @@ def test_hardcoded_resource():
         ],
     )
 
-    result = execute_pipeline(pipeline)
+    result = execute_pipeline(the_pipeline)
 
     assert result.success
     assert called["yup"]
@@ -398,13 +397,13 @@ def test_mock_resource():
         assert context.resources.test_mock is not None
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_mock_resource",
         solid_defs=[solid_test_mock],
         mode_defs=[ModeDefinition(resource_defs={"test_mock": ResourceDefinition.mock_resource()})],
     )
 
-    result = execute_pipeline(pipeline)
+    result = execute_pipeline(the_pipeline)
 
     assert result.success
     assert called["yup"]
@@ -423,13 +422,13 @@ def test_no_config_resource_pass_none():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_no_config_resource",
         solid_defs=[check_thing],
         mode_defs=[ModeDefinition(resource_defs={"return_thing": return_thing})],
     )
 
-    execute_pipeline(pipeline)
+    execute_pipeline(the_pipeline)
 
     assert called["resource"]
     assert called["solid"]
@@ -448,13 +447,13 @@ def test_no_config_resource_no_arg():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_no_config_resource",
         solid_defs=[check_thing],
         mode_defs=[ModeDefinition(resource_defs={"return_thing": return_thing})],
     )
 
-    execute_pipeline(pipeline)
+    execute_pipeline(the_pipeline)
 
     assert called["resource"]
     assert called["solid"]
@@ -473,13 +472,13 @@ def test_no_config_resource_bare_no_arg():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_no_config_resource",
         solid_defs=[check_thing],
         mode_defs=[ModeDefinition(resource_defs={"return_thing": return_thing})],
     )
 
-    execute_pipeline(pipeline)
+    execute_pipeline(the_pipeline)
 
     assert called["resource"]
     assert called["solid"]
@@ -497,7 +496,7 @@ def test_no_config_resource_definition():
         called["solid"] = True
         assert context.resources.return_thing == "thing"
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_no_config_resource",
         solid_defs=[check_thing],
         mode_defs=[
@@ -507,7 +506,7 @@ def test_no_config_resource_definition():
         ],
     )
 
-    execute_pipeline(pipeline)
+    execute_pipeline(the_pipeline)
 
     assert called["resource"]
     assert called["solid"]
@@ -526,7 +525,7 @@ def test_resource_cleanup():
         called["solid"] = True
         assert context.resources.resource_with_cleanup is True
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_resource_cleanup",
         solid_defs=[check_resource_created],
         mode_defs=[
@@ -536,7 +535,7 @@ def test_resource_cleanup():
         ],
     )
 
-    execute_pipeline(pipeline)
+    execute_pipeline(the_pipeline)
 
     assert called["creation"] is True
     assert called["solid"] is True
@@ -562,7 +561,7 @@ def test_stacked_resource_cleanup():
         assert context.resources.resource_with_cleanup_1 is True
         assert context.resources.resource_with_cleanup_2 is True
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_resource_cleanup",
         solid_defs=[check_resource_created],
         mode_defs=[
@@ -575,26 +574,34 @@ def test_stacked_resource_cleanup():
         ],
     )
 
-    execute_pipeline(pipeline)
+    execute_pipeline(the_pipeline)
 
     assert called == ["creation_1", "creation_2", "solid", "cleanup_2", "cleanup_1"]
 
 
 def test_incorrect_resource_init_error():
-    try:
+    @resource
+    def _correct_resource(_):
+        pass
 
-        @resource
-        def _correct_resource(_):
-            pass
-
-    except DagsterInvalidDefinitionError:
-        pytest.fail("Correct resource definition threw a DagsterInvalidDefinitionError...")
-
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(DagsterInvalidDefinitionError, match="expects a single positional argument"):
 
         @resource
         def _incorrect_resource():
             pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="expects only a single positional required argument. Got required extra params _b, _c",
+    ):
+
+        @resource
+        def _incorrect_resource_2(_a, _b, _c, _d=4):
+            pass
+
+    @resource
+    def _correct_resource_2(_a, _b=1, _c=2):
+        pass
 
 
 def test_resource_init_failure():
@@ -606,36 +613,43 @@ def test_resource_init_failure():
     def failing_resource_solid(_context):
         pass
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_resource_init_failure",
         solid_defs=[failing_resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"failing_resource": failing_resource})],
     )
 
-    res = execute_pipeline(pipeline, raise_on_error=False)
+    res = execute_pipeline(the_pipeline, raise_on_error=False)
 
     event_types = [event.event_type_value for event in res.event_list]
-    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
+    assert DagsterEventType.PIPELINE_FAILURE.value in event_types
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline)
-    pipeline_run = instance.create_run_for_pipeline(pipeline, execution_plan=execution_plan)
+    execution_plan = create_execution_plan(the_pipeline)
+    pipeline_run = instance.create_run_for_pipeline(the_pipeline, execution_plan=execution_plan)
 
-    step_events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
+    with pytest.raises(
+        DagsterResourceFunctionError,
+        match="Error executing resource_fn on ResourceDefinition failing_resource",
+    ):
 
-    event_types = [event.event_type_value for event in step_events]
-    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
+        execute_plan(
+            execution_plan,
+            InMemoryPipeline(the_pipeline),
+            pipeline_run=pipeline_run,
+            instance=instance,
+        )
 
     # Test the pipeline init failure event fires even if we are raising errors
     events = []
     try:
-        for event in execute_pipeline_iterator(pipeline):
+        for event in execute_pipeline_iterator(the_pipeline):
             events.append(event)
     except DagsterResourceFunctionError:
         pass
 
     event_types = [event.event_type_value for event in events]
-    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
+    assert DagsterEventType.PIPELINE_FAILURE.value in event_types
 
 
 def test_dagster_type_resource_decorator_config():
@@ -677,15 +691,15 @@ def test_resource_init_failure_with_teardown():
     def resource_solid(_):
         pass
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_resource_init_failure_with_cleanup",
         solid_defs=[resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
-    res = execute_pipeline(pipeline, raise_on_error=False)
+    res = execute_pipeline(the_pipeline, raise_on_error=False)
     event_types = [event.event_type_value for event in res.event_list]
-    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
+    assert DagsterEventType.PIPELINE_FAILURE.value in event_types
 
     assert called == ["A", "B"]
     assert cleaned == ["B", "A"]
@@ -695,13 +709,13 @@ def test_resource_init_failure_with_teardown():
 
     events = []
     try:
-        for event in execute_pipeline_iterator(pipeline):
+        for event in execute_pipeline_iterator(the_pipeline):
             events.append(event)
     except DagsterResourceFunctionError:
         pass
 
     event_types = [event.event_type_value for event in events]
-    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
+    assert DagsterEventType.PIPELINE_FAILURE.value in event_types
     assert called == ["A", "B"]
     assert cleaned == ["B", "A"]
 
@@ -730,13 +744,13 @@ def test_solid_failure_resource_teardown():
     def resource_solid(_):
         raise Exception("uh oh")
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_solid_failure_resource_teardown",
         solid_defs=[resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
-    res = execute_pipeline(pipeline, raise_on_error=False)
+    res = execute_pipeline(the_pipeline, raise_on_error=False)
     assert res.event_list[-1].event_type_value == "PIPELINE_FAILURE"
     assert called == ["A", "B"]
     assert cleaned == ["B", "A"]
@@ -746,7 +760,7 @@ def test_solid_failure_resource_teardown():
 
     events = []
     try:
-        for event in execute_pipeline_iterator(pipeline):
+        for event in execute_pipeline_iterator(the_pipeline):
             events.append(event)
     except DagsterResourceFunctionError:
         pass
@@ -782,14 +796,14 @@ def test_solid_failure_resource_teardown_raise():
     def resource_solid(_):
         raise Exception("uh oh")
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_solid_failure_resource_teardown",
         solid_defs=[resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
     with pytest.raises(Exception):
-        execute_pipeline(pipeline)
+        execute_pipeline(the_pipeline)
 
     assert called == ["A", "B"]
     assert cleaned == ["B", "A"]
@@ -823,13 +837,13 @@ def test_resource_teardown_failure():
     def resource_solid(_):
         pass
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="test_resource_teardown_failure",
         solid_defs=[resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
-    result = execute_pipeline(pipeline, raise_on_error=False)
+    result = execute_pipeline(the_pipeline, raise_on_error=False)
     assert result.success
     error_events = [
         event
@@ -844,7 +858,7 @@ def test_resource_teardown_failure():
     cleaned = []
     events = []
     try:
-        for event in execute_pipeline_iterator(pipeline):
+        for event in execute_pipeline_iterator(the_pipeline):
             events.append(event)
     except DagsterResourceFunctionError:
         pass
@@ -881,9 +895,9 @@ def define_resource_teardown_failure_pipeline():
 
 def test_multiprocessing_resource_teardown_failure():
     with instance_for_test() as instance:
-        pipeline = reconstructable(define_resource_teardown_failure_pipeline)
+        recon_pipeline = reconstructable(define_resource_teardown_failure_pipeline)
         result = execute_pipeline(
-            pipeline,
+            recon_pipeline,
             run_config={
                 "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
@@ -897,7 +911,7 @@ def test_multiprocessing_resource_teardown_failure():
             for event in result.event_list
             if event.is_engine_event and event.event_specific_data.error
         ]
-        assert len(error_events) > 1
+        assert len(error_events) == 1
 
 
 def test_single_step_resource_event_logs():
@@ -921,7 +935,7 @@ def test_single_step_resource_event_logs():
         context.log.info(USER_RESOURCE_MESSAGE)
         return "A"
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         name="resource_logging_pipeline",
         solid_defs=[resource_solid],
         mode_defs=[
@@ -934,12 +948,12 @@ def test_single_step_resource_event_logs():
 
     with instance_for_test() as instance:
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline,
+            the_pipeline,
             run_config={"loggers": {"callback": {}}},
             step_keys_to_execute=["resource_solid"],
         )
 
-        result = execute_run(InMemoryPipeline(pipeline), pipeline_run, instance)
+        result = execute_run(InMemoryPipeline(the_pipeline), pipeline_run, instance)
 
         assert result.success
         log_messages = [
@@ -1075,3 +1089,19 @@ def test_resource_needs_resource():
         )
         def _fail():
             pass
+
+
+def test_config_with_no_schema():
+    @resource
+    def my_resource(init_context):
+        return init_context.resource_config
+
+    @solid(required_resource_keys={"resource"})
+    def my_solid(context):
+        assert context.resources.resource == 5
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"resource": my_resource})])
+    def my_pipeline():
+        my_solid()
+
+    execute_pipeline(my_pipeline, run_config={"resources": {"resource": {"config": 5}}})
