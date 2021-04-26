@@ -91,27 +91,38 @@ dagit -f configurable_pipeline.py
 Notice that the launch execution button is disabled and the solids are red in the bottom right corner of the Playground.
 
 <Image
-alt="inputs_figure_one.png"
-src="/images/tutorial/inputs_figure_one.png"
-width={1680}
-height={946}
+  alt="inputs_figure_one.png"
+  src="/images/tutorial/inputs_figure_one.png"
+  width={1680}
+  height={946}
 />
 
 Let's enter the config we need in order to execute our pipeline.
 
 <Image
-alt="inputs_figure_three.png"
-src="/images/tutorial/inputs_figure_three.png"
-width={1680}
-height={946}
+  alt="inputs_figure_three.png"
+  src="/images/tutorial/inputs_figure_three.png"
+  width={1680}
+  height={946}
 />
+
+```yaml file=/intro_tutorial/basics/configuring_solids/run_config.yaml
+solids:
+  read_csv:
+    config:
+      csv_name: "cereal.csv"
+```
+
+Note that as you type and edit the config, the config minimap hovering on the right side of the
+editor pane changes to provide context—you always know where in the nested config schema
+you are while making changes.
 
 ### Config in Python API
 
 We previously encountered the <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" />function. Pipeline run config is specified by the second argument to this function, which must be a dict.
 
-This dict contains all of the user-provided configuration with which to execute a pipeline. As such, it can have [a lot of sections](/\_apidocs/execution), but we'll only use one of them here: per-solid configuration, which is specified under the key `solids`:
+This dict contains all of the user-provided configuration with which to execute a pipeline. As such, it can have [a lot of sections](/_apidocs/execution), but we'll only use one of them here: per-solid configuration, which is specified under the key `solids`:
 
 ```python file=/intro_tutorial/advanced/configuring_solids/configurable_pipeline.py startafter=start_run_config_marker endbefore=end_run_config_marker
 run_config = {
@@ -175,10 +186,10 @@ Because of the config schema we've provided, Dagit knows that this pipeline requ
 Go back to the Playground and press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
 
 <Image
-alt="inputs_figure_two.png"
-src="/images/tutorial/inputs_figure_two.png"
-width={1680}
-height={946}
+  alt="inputs_figure_two.png"
+  src="/images/tutorial/inputs_figure_two.png"
+  width={1680}
+  height={946}
 />
 
 Here you can see all of the valid config fields for your pipeline.
