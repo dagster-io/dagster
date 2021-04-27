@@ -174,7 +174,14 @@ export function metadataForIO(
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_IN});
   }
   if (invocation && item.__typename === 'OutputDefinition') {
-    const others = invocation.outputs.find((i) => i.definition.name === item.name)!.dependedBy;
+    const output = invocation.outputs.find((i) => i.definition.name === item.name);
+    if (!output) {
+      throw new Error(
+        `Invocation ${invocation.name} has no output with a definition named "${item.name}"`,
+      );
+    }
+
+    const others = output.dependedBy;
     if (others.length) {
       title += '\n\nUsed By:\n' + others.map((o) => titleOfIO(o)).join('\n');
       jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;

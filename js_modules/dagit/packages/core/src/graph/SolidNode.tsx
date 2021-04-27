@@ -167,6 +167,9 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
   public render() {
     const {definition, invocation, layout, dim, focused, selected, minified} = this.props;
     const {metadata} = definition;
+    if (!layout) {
+      throw new Error(`Layout is missing for ${definition.name}`);
+    }
     const {x, y, width, height} = layout.solid;
 
     let configField = null;

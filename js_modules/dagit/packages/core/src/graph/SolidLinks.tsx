@@ -21,8 +21,17 @@ const buildSVGPaths = weakmapMemoize(
   (connections: ILayoutConnection[], solids: {[name: string]: IFullSolidLayout}) =>
     connections.map(({from, to}) => {
       const sourceOutput = solids[from.solidName].outputs[from.edgeName];
+      if (!sourceOutput) {
+        throw new Error(
+          `Cannot find ${from.solidName}:${from.edgeName} for edge to ${to.solidName}:${to.edgeName}`,
+        );
+      }
       const targetInput = solids[to.solidName].inputs[to.edgeName];
-
+      if (!targetInput) {
+        throw new Error(
+          `Cannot find ${to.solidName}:${to.edgeName} for edge from ${from.solidName}:${from.edgeName}`,
+        );
+      }
       return {
         // can also use from.point for the "Dagre" closest point on node
         path: buildSVGPath({
