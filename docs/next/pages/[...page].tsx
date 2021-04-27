@@ -73,13 +73,13 @@ export const VersionNotice = () => {
             <p>
               This documentation is for an unreleased version ({version}) of
               Dagster. The content here is not guaranteed to be correct or
-              stable. You can view the version of this page rom our latest
+              stable. You can view the version of this page from our latest
               release below.
             </p>
           ) : (
             <p>
               This documentation is for an older version ({version}) of Dagster.
-              A new version of this page is available for our latest
+              You can view the version of this page from our latest release below.
             </p>
           )}
         </div>
