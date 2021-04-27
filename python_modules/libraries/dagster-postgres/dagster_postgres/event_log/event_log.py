@@ -2,7 +2,6 @@ import threading
 from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
-import psycopg2
 import sqlalchemy as db
 from dagster import check
 from dagster.core.events.log import EventRecord
