@@ -69,6 +69,7 @@ class DagsterK8sPipelineStatusException(Exception):
 WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
     503,  # Service unavailable
     504,  # Gateway timeout
+    500,  # Internal server error
 ]
 
 

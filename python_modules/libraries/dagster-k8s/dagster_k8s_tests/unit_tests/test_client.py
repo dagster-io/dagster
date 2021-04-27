@@ -132,7 +132,7 @@ def test_wait_for_job_success_with_api_errors_retry_limit_exceeded():
 
     completed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(failed=0, succeeded=1))
     mock_client.batch_api.read_namespaced_job_status.side_effect = [
-        kubernetes.client.rest.ApiException(status=503, reason="Service unavailable"),
+        kubernetes.client.rest.ApiException(status=500, reason="Internal server error"),
         kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
         kubernetes.client.rest.ApiException(status=503, reason="Service unavailable"),
         kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
@@ -163,7 +163,7 @@ def test_wait_for_job_success_with_unrecoverable_api_errors():
 
     mock_client.batch_api.read_namespaced_job_status.side_effect = [
         kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
-        kubernetes.client.rest.ApiException(status=500, reason="Internal server error"),
+        kubernetes.client.rest.ApiException(status=429, reason="Too many requests"),
     ]
 
     with pytest.raises(DagsterK8sUnrecoverableAPIError) as exc_info:
