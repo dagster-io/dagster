@@ -2,7 +2,7 @@ from dagster import Field, StringSource, resource
 from dagster.utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
-from .utils import construct_s3_client, construct_s3_client_for_profile
+from .utils import construct_s3_client
 
 S3_SESSION_CONFIG = {
     "use_unsigned_session": Field(
@@ -28,7 +28,7 @@ S3_SESSION_CONFIG = {
     ),
     "profile_name": Field(
         str,
-        description="TSpecifies a profile to connect that session",
+        description="Specifies a profile to connect that session",
         is_required=False,
         default_value="default",
     ),
@@ -39,7 +39,7 @@ S3_SESSION_CONFIG = {
 def s3_resource(context):
     """Resource that gives solids access to S3.
 
-    The underlying S3 session is created by calling :py:func:`boto3.resource('s3') <boto3:boto3.resource>`.
+    The underlying S3 session is created by calling :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
     The returned resource object is an S3 client, an instance of `botocore.client.S3`.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition` in order to make it
@@ -97,23 +97,9 @@ def s3_resource(context):
         region_name=context.resource_config.get("region_name"),
         endpoint_url=context.resource_config.get("endpoint_url"),
         use_unsigned_session=context.resource_config["use_unsigned_session"],
+        profile_name=context.resource_config["profile_name"],
     )
 
-@resource(S3_SESSION_CONFIG)
-def s3_resource_for_profile(context):
-    """Resource that gives solids access to S3 for a specific profile.
-
-    The underlying S3 session is created by calling :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
-    The returned resource object is an S3 client fro specified profile_name, an instance of `botocore.client.S3`.
-
-    """
-    return construct_s3_client_for_profile(
-        max_attempts=context.resource_config["max_attempts"],
-        region_name=context.resource_config.get("region_name"),
-        endpoint_url=context.resource_config.get("endpoint_url"),
-        use_unsigned_session=context.resource_config["use_unsigned_session"],
-        profile_name=context.resource_config["profile_name"]
-    )
 
 @resource(
     merge_dicts(
