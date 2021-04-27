@@ -376,9 +376,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 }}
                 dimSuccesses={!options.colorizeByAge}
               >
-                <TopLabelTilted>
-                  <div className="tilted">{p.name}</div>
-                </TopLabelTilted>
+                <TopLabelTilted label={p.name} />
                 {sortPartitionSteps(p.steps).map(({name, color, unix}) => (
                   <div
                     key={name}

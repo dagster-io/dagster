@@ -1,4 +1,6 @@
 import {Colors} from '@blueprintjs/core';
+import {Tooltip2} from '@blueprintjs/popover2';
+import * as React from 'react';
 import styled from 'styled-components/macro';
 
 export const STEP_STATUS_COLORS = {
@@ -34,7 +36,7 @@ export const GridColumn = styled.div<{
     `&${hovered ? '' : ':hover'} {
     background: ${Colors.LIGHT_GRAY3};
     cursor: default;
-    ${TopLabelTilted} {
+    ${TopLabelTiltedInner} {
       background: ${Colors.LIGHT_GRAY5};
       .tilted {
         background: ${Colors.LIGHT_GRAY3};
@@ -45,7 +47,7 @@ export const GridColumn = styled.div<{
   ${({disabled}) =>
     disabled &&
     `
-      ${TopLabelTilted} {
+      ${TopLabelTiltedInner} {
         color: ${Colors.GRAY3}
       }
     `}
@@ -56,7 +58,7 @@ export const GridColumn = styled.div<{
     ${LeftLabel} {
       color: white;
     }
-    ${TopLabelTilted} {
+    ${TopLabelTiltedInner} {
       background: ${Colors.LIGHT_GRAY5};
       color: white;
       .tilted {
@@ -71,7 +73,7 @@ export const GridColumn = styled.div<{
     ${LeftLabel} {
       color: white;
     }
-    ${TopLabelTilted} {
+    ${TopLabelTiltedInner} {
       background: ${Colors.LIGHT_GRAY5};
       color: white;
       .tilted {
@@ -215,9 +217,45 @@ export const TopLabel = styled.div`
   display: flex;
 `;
 
-export const TopLabelTilted = styled.div`
+const TITLE_HEGIHT = 55;
+const ROTATION_DEGREES = 41;
+
+export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
+  const node = React.useRef<HTMLDivElement>(null);
+  const [tooltip, showTooltip] = React.useState(false);
+
+  // On mount, measure whether the height of the rotated text is greater than the container.
+  // If so, we'll display a tooltip so that the text can be made visible on hover.
+  React.useEffect(() => {
+    if (node.current) {
+      const nodeWidth = node.current.offsetWidth;
+      const rotatedHeight = Math.sin(ROTATION_DEGREES * (Math.PI / 180)) * nodeWidth;
+      if (rotatedHeight > TITLE_HEGIHT) {
+        showTooltip(true);
+      }
+    }
+  }, []);
+
+  const content = (
+    <TopLabelTiltedInner>
+      <div className="tilted" ref={node}>
+        {label}
+      </div>
+    </TopLabelTiltedInner>
+  );
+
+  return tooltip ? (
+    <Tooltip2 placement="bottom" content={label}>
+      {content}
+    </Tooltip2>
+  ) : (
+    content
+  );
+};
+
+export const TopLabelTiltedInner = styled.div`
   position: relative;
-  height: 55px;
+  height: ${TITLE_HEGIHT}px;
   padding: 4px;
   padding-bottom: 0;
   min-width: 15px;
@@ -234,7 +272,7 @@ export const TopLabelTilted = styled.div`
     padding: 2px;
     padding-right: 4px;
     padding-left: 0;
-    transform: rotate(-41deg);
+    transform: rotate(-${ROTATION_DEGREES}deg);
     transform-origin: top left;
   }
 `;

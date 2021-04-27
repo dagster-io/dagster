@@ -517,9 +517,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   onMouseUp={() => onPartitionMouseUp(partitionName)}
                   onMouseOver={() => onPartitionMouseOver(partitionName)}
                 >
-                  <TopLabelTilted>
-                    <div className="tilted">{partitionName}</div>
-                  </TopLabelTilted>
+                  <TopLabelTilted label={partitionName} />
                   {!options.reexecute ? (
                     <div
                       className={`square ${
