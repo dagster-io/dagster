@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.partition import PartitionScheduleDefinition, PartitionSetDefinition
+from dagster.core.definitions.partition import (
+    PartitionScheduleDefinition,
+    PartitionSetDefinition,
+    schedule_partition_range,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
@@ -12,7 +16,6 @@ from dagster.utils.partitions import (
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
     create_offset_partition_selector,
-    schedule_partition_range,
 )
 
 from ..mode import DEFAULT_MODE_NAME

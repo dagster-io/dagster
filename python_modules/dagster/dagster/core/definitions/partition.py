@@ -1,5 +1,9 @@
 import inspect
+from abc import ABC, abstractmethod
 from collections import namedtuple
+from datetime import datetime, time
+from enum import Enum
+from typing import Callable, List, NamedTuple, Optional, cast
 
 import pendulum
 from dagster import check
@@ -7,15 +11,20 @@ from dagster.core.definitions.run_request import RunRequest, SkipReason
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
+from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster.utils import frozenlist, merge_dicts
+from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
+
+DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 
 class Partition(namedtuple("_Partition", ("value name"))):
@@ -50,6 +59,253 @@ def last_empty_partition(context, partition_set_def):
             selected = partition
             break
     return selected
+
+
+def schedule_partition_range(
+    start,
+    end,
+    cron_schedule,
+    fmt,
+    timezone,
+    execution_time_to_partition_fn,
+    inclusive=False,
+):
+    check.inst_param(start, "start", datetime)
+    check.opt_inst_param(end, "end", datetime)
+    check.str_param(cron_schedule, "cron_schedule")
+    check.str_param(fmt, "fmt")
+    check.opt_str_param(timezone, "timezone")
+    check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
+    check.opt_bool_param(inclusive, "inclusive")
+
+    if end and start > end:
+        raise DagsterInvariantViolationError(
+            'Selected date range start "{start}" is after date range end "{end}'.format(
+                start=start.strftime(fmt),
+                end=end.strftime(fmt),
+            )
+        )
+
+    def _get_schedule_range_partitions(current_time=None):
+        check.opt_inst_param(current_time, "current_time", datetime)
+        tz = timezone if timezone else "UTC"
+        _start = (
+            to_timezone(start, tz)
+            if isinstance(start, PendulumDateTime)
+            else pendulum.instance(start, tz=tz)
+        )
+
+        if end:
+            _end = end
+        elif current_time:
+            _end = current_time
+        else:
+            _end = pendulum.now(tz)
+
+        # coerce to the definition timezone
+        if isinstance(_end, PendulumDateTime):
+            _end = to_timezone(_end, tz)
+        else:
+            _end = pendulum.instance(_end, tz=tz)
+
+        end_timestamp = _end.timestamp()
+
+        partitions = []
+        for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
+
+            partition_time = execution_time_to_partition_fn(next_time)
+
+            if partition_time.timestamp() > end_timestamp:
+                break
+
+            if partition_time.timestamp() < _start.timestamp():
+                continue
+
+            partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
+
+        return partitions if inclusive else partitions[:-1]
+
+    return _get_schedule_range_partitions
+
+
+class ScheduleType(Enum):
+    HOURLY = "HOURLY"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+
+
+class PartitionParams(ABC):
+    @abstractmethod
+    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+        ...
+
+
+class StaticPartitionParams(
+    PartitionParams, NamedTuple("_StaticPartitionParams", [("partitions", List[Partition])])
+):
+    def __new__(cls, partitions: List[Partition]):
+        return super(StaticPartitionParams, cls).__new__(
+            cls, check.list_param(partitions, "partitions", of_type=Partition)
+        )
+
+    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+        return self.partitions
+
+
+class TimeBasedPartitionParams(
+    PartitionParams,
+    NamedTuple(
+        "_TimeBasedPartitionParams",
+        [
+            ("schedule_type", ScheduleType),
+            ("start", datetime),
+            ("execution_day", Optional[int]),
+            ("execution_time", time),
+            ("end", Optional[datetime]),
+            ("fmt", Optional[str]),
+            ("inclusive", Optional[bool]),
+            ("timezone", Optional[str]),
+            ("offset", Optional[int]),
+        ],
+    ),
+):
+    def __new__(
+        cls,
+        schedule_type: ScheduleType,
+        start: datetime,
+        execution_day: Optional[int],
+        execution_time: Optional[time],
+        end: Optional[datetime],
+        fmt: Optional[str],
+        inclusive: Optional[bool],
+        timezone: Optional[str],
+        offset: Optional[int],
+    ):
+        if end is not None:
+            check.invariant(
+                start <= end,
+                f'Selected date range start "{start}" '
+                f'is after date range end "{end}"'.format(
+                    start=start.strftime(fmt) if fmt is not None else start,
+                    end=cast(datetime, end).strftime(fmt) if fmt is not None else end,
+                ),
+            )
+        if schedule_type in [ScheduleType.HOURLY, ScheduleType.DAILY]:
+            check.invariant(
+                not execution_day,
+                f'Execution day should not be provided for schedule type "{schedule_type}"',
+            )
+        elif schedule_type is ScheduleType.WEEKLY:
+            execution_day = execution_day if execution_day is not None else 0
+            check.invariant(
+                execution_day is not None and 0 <= execution_day <= 6,
+                f'Execution day "{execution_day}" must be between 0 and 6 for '
+                f'schedule type "{schedule_type}"',
+            )
+        elif schedule_type is ScheduleType.MONTHLY:
+            execution_day = execution_day if execution_day is not None else 1
+            check.invariant(
+                execution_day is not None and 1 <= execution_day <= 31,
+                f'Execution day "{execution_day}" must be between 1 and 31 for '
+                f'schedule type "{schedule_type}"',
+            )
+
+        return super(TimeBasedPartitionParams, cls).__new__(
+            cls,
+            check.inst_param(schedule_type, "schedule_type", ScheduleType),
+            check.inst_param(start, "start", datetime),
+            check.opt_int_param(
+                execution_day,
+                "execution_day",
+            ),
+            check.opt_inst_param(execution_time, "execution_time", time, time(0, 0)),
+            check.opt_inst_param(end, "end", datetime),
+            check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
+            check.opt_bool_param(inclusive, "inclusive", default=False),
+            check.opt_str_param(timezone, "timezone", default="UTC"),
+            check.opt_int_param(offset, "offset", default=1),
+        )
+
+    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+        check.opt_inst_param(current_time, "current_time", datetime)
+
+        partition_fn = schedule_partition_range(
+            start=self.start,
+            end=self.end,
+            cron_schedule=self.get_cron_schedule(),
+            fmt=self.fmt,
+            timezone=self.timezone,
+            execution_time_to_partition_fn=self.get_execution_time_to_partition_fn(),
+            inclusive=self.inclusive,
+        )
+
+        return partition_fn(current_time=current_time)
+
+    def get_cron_schedule(self) -> str:
+        minute = self.execution_time.minute
+        hour = self.execution_time.hour
+        day = self.execution_day
+
+        if self.schedule_type is ScheduleType.HOURLY:
+            return f"{minute} * * * *"
+        elif self.schedule_type is ScheduleType.DAILY:
+            return f"{minute} {hour} * * *"
+        elif self.schedule_type is ScheduleType.WEEKLY:
+            return f"{minute} {hour} * * {day}"
+        elif self.schedule_type is ScheduleType.MONTHLY:
+            return f"{minute} {hour} {day} * *"
+        else:
+            check.assert_never(self.schedule_type)
+
+    def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
+        if self.schedule_type is ScheduleType.HOURLY:
+            minute_difference = self.execution_time.minute - self.start.minute % 60
+            return lambda d: pendulum.instance(d).subtract(
+                hours=self.offset,
+                minutes=minute_difference,
+            )
+        elif self.schedule_type is ScheduleType.DAILY:
+            return (
+                lambda d: pendulum.instance(d)
+                .replace(hour=0, minute=0)
+                .subtract(
+                    days=self.offset,
+                )
+            )
+        elif self.schedule_type is ScheduleType.WEEKLY:
+            execution_day = cast(int, self.execution_day)
+            day_difference = (execution_day - (self.start.weekday() + 1)) % 7
+            return (
+                lambda d: pendulum.instance(d)
+                .replace(hour=0, minute=0)
+                .subtract(weeks=self.offset, days=day_difference)
+            )
+        elif self.schedule_type is ScheduleType.MONTHLY:
+            execution_day = cast(int, self.execution_day)
+            return (
+                lambda d: pendulum.instance(d)
+                .replace(hour=0, minute=0)
+                .subtract(months=self.offset, days=execution_day - 1)
+            )
+        else:
+            check.assert_never(self.schedule_type)
+
+
+class DynamicPartitionParams(
+    PartitionParams,
+    NamedTuple(
+        "_DynamicPartitionParams",
+        [("partition_fn", Callable[[Optional[datetime]], List[Partition]])],
+    ),
+):
+    def __new__(cls, partition_fn: Callable[[Optional[datetime]], List[Partition]]):
+        return super(DynamicPartitionParams, cls).__new__(
+            cls, check.callable_param(partition_fn, "partition_fn")
+        )
+
+    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+        return self.partition_fn(current_time)
 
 
 class PartitionSetDefinition(
