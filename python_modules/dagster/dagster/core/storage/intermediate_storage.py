@@ -87,14 +87,14 @@ class IntermediateStorageAdapter(IOManager):
             context.upstream_output.mapping_key,
         )
 
-        # backcompat behavior: copy intermediate from parent run to the current run destination
+        # backcompat behavior: copy intermediate from source run to the current run destination
         if (
             context.upstream_output
-            and context.upstream_output.run_id == step_context.pipeline_run.parent_run_id
+            and context.upstream_output.run_id != step_context.pipeline_run.run_id
         ):
             if not self.intermediate_storage.has_intermediate(step_context, source_handle):
                 operation = self.intermediate_storage.copy_intermediate_from_run(
-                    step_context, step_context.pipeline_run.parent_run_id, source_handle
+                    step_context, context.upstream_output.run_id, source_handle
                 )
 
                 context.log.debug(

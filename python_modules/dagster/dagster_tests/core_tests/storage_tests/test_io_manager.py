@@ -12,6 +12,7 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
+    composite_solid,
     execute_pipeline,
     pipeline,
     reexecute_pipeline,
@@ -175,14 +176,128 @@ def test_can_reexecute():
     assert plan.artifacts_persisted
 
 
-def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
-    plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
-    with DagsterInstance.ephemeral() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            step_keys_to_execute=step_keys_to_execute,
+def test_reexecute_subset_of_subset():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        instance = DagsterInstance.ephemeral()
+
+        my_fs_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        def my_pipeline_def(should_fail):
+            @solid
+            def one(_):
+                return 1
+
+            @solid
+            def plus_two(_, i):
+                if should_fail:
+                    raise Exception()
+                return i + 2
+
+            @solid
+            def plus_three(_, i):
+                return i + 3
+
+            @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})])
+            def my_pipeline():
+                plus_three(plus_two(one()))
+
+            return my_pipeline
+
+        first_result = execute_pipeline(
+            my_pipeline_def(should_fail=True), instance=instance, raise_on_error=False
         )
-        return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, pipeline_run)
+        assert not first_result.success
+
+        first_run_id = first_result.run_id
+
+        second_result = reexecute_pipeline(
+            my_pipeline_def(should_fail=False),
+            instance=instance,
+            parent_run_id=first_run_id,
+            step_selection=["plus_two*"],
+        )
+        assert second_result.success
+        assert second_result.result_for_solid("plus_two").output_value() == 3
+        second_run_id = second_result.run_id
+
+        # step_context._get_source_run_id should return first_run_id
+        third_result = reexecute_pipeline(
+            my_pipeline_def(should_fail=False),
+            instance=instance,
+            parent_run_id=second_run_id,
+            step_selection=["plus_two*"],
+        )
+        assert third_result.success
+        assert third_result.result_for_solid("plus_two").output_value() == 3
+
+
+def test_reexecute_subset_of_subset_with_composite():
+    @solid
+    def one(_):
+        return 1
+
+    @solid
+    def plus_two(_, i):
+        return i + 2
+
+    @composite_solid
+    def one_plus_two():
+        return plus_two(one())
+
+    @solid
+    def plus_three(_, i):
+        return i + 3
+
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        instance = DagsterInstance.ephemeral()
+
+        my_fs_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})])
+        def my_pipeline():
+            plus_three(one_plus_two())
+
+        first_result = execute_pipeline(my_pipeline, instance=instance)
+        assert first_result.success
+        first_run_id = first_result.run_id
+
+        second_result = reexecute_pipeline(
+            my_pipeline,
+            instance=instance,
+            parent_run_id=first_run_id,
+            step_selection=["plus_three"],
+        )
+        assert second_result.success
+        second_run_id = second_result.run_id
+
+        # step_context._get_source_run_id should return first_run_id
+        third_result = reexecute_pipeline(
+            my_pipeline,
+            instance=instance,
+            parent_run_id=second_run_id,
+            step_selection=["plus_three"],
+        )
+        assert third_result.success
+
+
+def execute_pipeline_with_steps(
+    instance,
+    pipeline_def,
+    step_keys_to_execute=None,
+    run_id=None,
+    parent_run_id=None,
+    root_run_id=None,
+):
+    plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def=pipeline_def,
+        step_keys_to_execute=step_keys_to_execute,
+        run_id=run_id,
+        # the backfill flow can inject run group info
+        parent_run_id=parent_run_id,
+        root_run_id=root_run_id,
+    )
+    return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, pipeline_run)
 
 
 def test_step_subset_with_custom_paths():
@@ -195,15 +310,18 @@ def test_step_subset_with_custom_paths():
         }
 
         pipeline_def = define_pipeline(default_io_manager, test_metadata_dict)
-        events = execute_pipeline_with_steps(pipeline_def)
+
+        instance = DagsterInstance.ephemeral()
+        events = execute_pipeline_with_steps(instance, pipeline_def)
         for evt in events:
             assert not evt.is_failure
 
+        run_id = "my_run_id"
         # when a path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
         step_subset_events = execute_pipeline_with_steps(
-            pipeline_def, step_keys_to_execute=["solid_b"]
+            instance, pipeline_def, step_keys_to_execute=["solid_b"], run_id=run_id
         )
         for evt in step_subset_events:
             assert not evt.is_failure
@@ -220,6 +338,17 @@ def test_step_subset_with_custom_paths():
             .event_specific_data.materialization.metadata_entries[0]
             .entry_data.path
         )
+
+        # test reexecution via backfills (not via re-execution apis)
+        another_step_subset_events = execute_pipeline_with_steps(
+            instance,
+            pipeline_def,
+            step_keys_to_execute=["solid_b"],
+            parent_run_id=run_id,
+            root_run_id=run_id,
+        )
+        for evt in another_step_subset_events:
+            assert not evt.is_failure
 
 
 def test_multi_materialization():

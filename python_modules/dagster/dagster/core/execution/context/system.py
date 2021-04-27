@@ -447,8 +447,37 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
         return HookContext(self, hook_def)
 
-    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> str:
-        # determine if the step is skipped
+    def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+        # walk through event logs to find the right run_id based on the run lineage
+
+        from dagster.core.events import get_step_output_event
+
+        _, runs = self.instance.get_run_group(self.run_id)
+        run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
+        source_run_id = self.pipeline_run.parent_run_id
+        while source_run_id:
+            # note: this would cost N db calls where N = number of parent runs
+            logs = self.instance.all_logs(source_run_id)
+            # if the parent run has yielded an StepOutput event for the given step output,
+            # we find the source run id
+            if get_step_output_event(
+                events=[e.dagster_event for e in logs if e.is_dagster_event],
+                step_key=step_output_handle.step_key,
+                output_name=step_output_handle.output_name,
+            ):
+                return source_run_id
+            else:
+                # else, keep looking backwards
+                source_run_id = run_id_to_parent_run_id[source_run_id]
+
+        # when a fixed path is provided via io manager, it's able to run step subset using an execution
+        # plan when the ascendant outputs were not previously created by dagster-controlled
+        # computations. for example, in backfills, with fixed path io manager, we allow users to
+        # "re-execute" runs with steps where the outputs weren't previously stored by dagster.
+        return None
+
+    def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+        # determine if the step is not selected and
         if (
             # this is re-execution
             self.pipeline_run.parent_run_id
@@ -457,7 +486,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             # this step is not being executed
             and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
         ):
-            return self.pipeline_run.parent_run_id
+            return self._get_source_run_id_from_logs(step_output_handle)
         else:
             return self.pipeline_run.run_id
 
