@@ -52,6 +52,18 @@ def celery_mode_defs(resources=None):
     ]
 
 
+def k8s_mode_defs(resources=None):
+    from dagster_k8s.executor import dagster_k8s_executor
+
+    return [
+        ModeDefinition(
+            intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+            resource_defs=resources if resources else {"s3": s3_resource},
+            executor_defs=default_executors + [dagster_k8s_executor],
+        )
+    ]
+
+
 @solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": Int})
 def multiply_the_word(context, word):
     return word * context.solid_config["factor"]
@@ -482,6 +494,16 @@ def define_hard_failer():
     return hard_failer
 
 
+def define_demo_k8s_executor_pipeline():
+    @pipeline(
+        mode_defs=k8s_mode_defs(),
+    )
+    def demo_k8s_executor_pipeline():
+        count_letters(multiply_the_word())
+
+    return demo_k8s_executor_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -503,6 +525,7 @@ def define_demo_execution_repo():
                 "demo_airflow_execution_date_pipeline": demo_airflow_execution_date_pipeline,
                 "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
+                "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
             },
             "schedules": define_schedules(),
         }

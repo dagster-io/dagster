@@ -125,14 +125,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
-        self._dagster_home = check.str_param(dagster_home, "dagster_home")
+        self.dagster_home = check.str_param(dagster_home, "dagster_home")
         self._image_pull_policy = check.str_param(image_pull_policy, "image_pull_policy")
         self._image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
         self._service_account_name = check.str_param(service_account_name, "service_account_name")
-        self._instance_config_map = check.str_param(instance_config_map, "instance_config_map")
-        self._postgres_password_secret = check.opt_str_param(
+        self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
+        self.postgres_password_secret = check.opt_str_param(
             postgres_password_secret, "postgres_password_secret"
         )
         self._env_config_maps = check.opt_list_param(
@@ -170,7 +170,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         else:
             self._job_config = DagsterK8sJobConfig(
                 job_image=check.str_param(self._job_image, "job_image"),
-                dagster_home=check.str_param(self._dagster_home, "dagster_home"),
+                dagster_home=check.str_param(self.dagster_home, "dagster_home"),
                 image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
                 image_pull_secrets=check.opt_list_param(
                     self._image_pull_secrets, "image_pull_secrets", of_type=dict
@@ -179,10 +179,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     self._service_account_name, "service_account_name"
                 ),
                 instance_config_map=check.str_param(
-                    self._instance_config_map, "instance_config_map"
+                    self.instance_config_map, "instance_config_map"
                 ),
                 postgres_password_secret=check.opt_str_param(
-                    self._postgres_password_secret, "postgres_password_secret"
+                    self.postgres_password_secret, "postgres_password_secret"
                 ),
                 env_config_maps=check.opt_list_param(
                     self._env_config_maps, "env_config_maps", of_type=str
@@ -194,7 +194,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def _get_grpc_job_config(self, job_image):
         return DagsterK8sJobConfig(
             job_image=check.str_param(job_image, "job_image"),
-            dagster_home=check.str_param(self._dagster_home, "dagster_home"),
+            dagster_home=check.str_param(self.dagster_home, "dagster_home"),
             image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
             image_pull_secrets=check.opt_list_param(
                 self._image_pull_secrets, "image_pull_secrets", of_type=dict
@@ -202,9 +202,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             service_account_name=check.str_param(
                 self._service_account_name, "service_account_name"
             ),
-            instance_config_map=check.str_param(self._instance_config_map, "instance_config_map"),
+            instance_config_map=check.str_param(self.instance_config_map, "instance_config_map"),
             postgres_password_secret=check.opt_str_param(
-                self._postgres_password_secret, "postgres_password_secret"
+                self.postgres_password_secret, "postgres_password_secret"
             ),
             env_config_maps=check.opt_list_param(
                 self._env_config_maps, "env_config_maps", of_type=str
