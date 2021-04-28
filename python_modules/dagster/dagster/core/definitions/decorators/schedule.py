@@ -125,7 +125,7 @@ def monthly_schedule(
         start_date (datetime.datetime): The date from which to run the schedule.
         name (Optional[str]): The name of the schedule to create.
         execution_day_of_month (int): The day of the month on which to run the schedule (must be
-            between 0 and 31).
+            between 1 and 31).
         execution_time (datetime.time): The time at which to execute the schedule.
         tags_fn_for_date (Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes the date of the
