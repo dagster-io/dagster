@@ -13,7 +13,7 @@ Dagster solids can describe their persistent artifacts to the system by yielding
 
 Suppose that we rewrite our `sort_calories` solid so that it saves the newly sorted data frame to disk.
 
-```python file=/intro_tutorial/advanced/materializations/materializations.py lines=25-48
+```python file=/intro_tutorial/advanced/materializations/materializations.py lines=23-46
 @solid
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(

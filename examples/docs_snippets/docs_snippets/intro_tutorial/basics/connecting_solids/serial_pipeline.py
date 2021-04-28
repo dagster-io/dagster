@@ -6,9 +6,7 @@ from dagster import pipeline, solid
 
 @solid
 def download_cereals(_):
-    response = requests.get(
-        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-    )
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 

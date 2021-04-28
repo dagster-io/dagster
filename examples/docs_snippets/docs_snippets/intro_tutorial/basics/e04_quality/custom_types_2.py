@@ -25,9 +25,7 @@ SimpleDataFrame = DagsterType(
 # start_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
 def bad_download_csv(context):
-    response = requests.get(
-        "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-    )
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return ["not_a_dict"]

@@ -33,9 +33,7 @@ if __name__ == "__main__":
     run_config = {
         "solids": {
             "download_csv": {
-                "config": {
-                    "url": "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
-                }
+                "config": {"url": "https://docs.dagster.io/assets/cereal.csv"}
             }
         }
     }
