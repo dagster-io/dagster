@@ -497,6 +497,7 @@ def pylint_steps():
             # Deps needed to pylint docs
             """pip install \
                 -e python_modules/dagster \
+                -e python_modules/dagster-graphql \
                 -e python_modules/dagit \
                 -e python_modules/automation \
                 -e python_modules/libraries/dagstermill \
