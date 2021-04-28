@@ -1,5 +1,5 @@
 ---
-name: Report Missing Documentation
+name: Report missing documentation
 about: Please file documentation content issues here. We use this to track missing
   docs content.
 title: "[Content Gap]"
