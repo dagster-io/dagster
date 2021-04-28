@@ -36,13 +36,15 @@ def get_asset(graphene_info, asset_key):
     return GrapheneAsset(key=asset_key, tags=tags)
 
 
-def get_asset_events(graphene_info, asset_key, partitions=None, cursor=None, limit=None):
+def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, before_timestamp=None):
     check.inst_param(asset_key, "asset_key", AssetKey)
-    check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
     instance = graphene_info.context.instance
     events = instance.events_for_asset_key(
-        asset_key, partitions=partitions, before_cursor=cursor, limit=limit
+        asset_key,
+        partitions=partitions,
+        before_timestamp=before_timestamp,
+        limit=limit,
     )
     return [
         event

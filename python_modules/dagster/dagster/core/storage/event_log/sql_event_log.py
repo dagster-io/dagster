@@ -525,7 +525,13 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
     def _add_cursor_limit_to_query(
-        self, query, before_cursor, after_cursor, limit, ascending=False
+        self,
+        query,
+        before_cursor,
+        after_cursor,
+        limit,
+        ascending=False,
+        before_timestamp=None,
     ):
         """ Helper function to deal with cursor/limit pagination args """
 
@@ -539,6 +545,10 @@ class SqlEventLogStorage(EventLogStorage):
                 SqlEventLogStorageTable.c.id == after_cursor
             )
             query = query.where(SqlEventLogStorageTable.c.id > after_query)
+        if before_timestamp:
+            query = query.where(
+                SqlEventLogStorageTable.c.timestamp < utc_datetime_from_timestamp(before_timestamp)
+            )
 
         if limit:
             query = query.limit(limit)
@@ -676,6 +686,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit=None,
         ascending=False,
         include_cursor=False,
+        before_timestamp=None,
         cursor=None,  # deprecated
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -697,7 +708,12 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         query = self._add_cursor_limit_to_query(
-            query, before_cursor, after_cursor, limit, ascending=ascending
+            query,
+            before_cursor,
+            after_cursor,
+            limit,
+            before_timestamp=before_timestamp,
+            ascending=ascending,
         )
 
         with self.index_connection() as conn:

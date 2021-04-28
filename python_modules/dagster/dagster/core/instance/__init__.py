@@ -1017,6 +1017,7 @@ class DagsterInstance:
         before_cursor=None,
         after_cursor=None,
         cursor=None,
+        before_timestamp=None,
         limit=None,
         ascending=False,
     ):
@@ -1028,6 +1029,7 @@ class DagsterInstance:
             before_cursor,
             after_cursor,
             limit,
+            before_timestamp=before_timestamp,
             ascending=ascending,
             include_cursor=True,
             cursor=cursor,

@@ -127,6 +127,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         limit=None,
         ascending=False,
         include_cursor=False,
+        before_timestamp=None,
         cursor=None,
     ):
         asset_events = []
@@ -149,6 +150,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             for event_id, event in enumerate(asset_events)
             if (after_cursor is None or event_id > after_cursor)
             and (before_cursor is None or event_id < before_cursor)
+            and (before_timestamp is None or event.timestamp < before_timestamp)
         ]
 
         events_with_ids = sorted(

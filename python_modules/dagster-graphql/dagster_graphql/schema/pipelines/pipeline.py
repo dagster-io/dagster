@@ -81,12 +81,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-    )
-    runs = graphene.Field(
-        non_null_list(lambda: GraphenePipelineRun),
-        cursor=graphene.String(),
+        beforeTimestamp=graphene.Float(),
         limit=graphene.Int(),
     )
     tags = non_null_list(GrapheneAssetTag)
@@ -111,37 +106,8 @@ class GrapheneAsset(graphene.ObjectType):
                 graphene_info,
                 self.key,
                 kwargs.get("partitions"),
-                kwargs.get("cursor"),
-                kwargs.get("limit"),
-            )
-        ]
-
-    def resolve_runs(self, graphene_info, **kwargs):
-        from ...implementation.fetch_assets import get_asset_run_ids
-
-        cursor = kwargs.get("cursor")
-        limit = kwargs.get("limit")
-
-        run_ids = get_asset_run_ids(graphene_info, self.key)
-
-        if not run_ids:
-            return []
-
-        # for now, handle cursor/limit here instead of in the DB layer
-        if cursor:
-            try:
-                idx = run_ids.index(cursor)
-                run_ids = run_ids[idx:]
-            except ValueError:
-                return []
-
-        if limit:
-            run_ids = run_ids[:limit]
-
-        return [
-            GraphenePipelineRun(r)
-            for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(run_ids=run_ids)
+                before_timestamp=kwargs.get("beforeTimestamp"),
+                limit=kwargs.get("limit"),
             )
         ]
 
