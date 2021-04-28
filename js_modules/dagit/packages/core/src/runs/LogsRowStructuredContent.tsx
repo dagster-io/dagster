@@ -6,6 +6,7 @@ import {Link, useLocation} from 'react-router-dom';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
@@ -228,10 +229,10 @@ const DefaultContent: React.FunctionComponent<{
           </Tag>
         )}
       </EventTypeColumn>
-      <span style={{flex: 1}}>
+      <Box padding={{left: 4}} style={{flex: 1}}>
         {message}
         {children}
-      </span>
+      </Box>
     </>
   );
 };
@@ -284,13 +285,13 @@ const FailureContent: React.FunctionComponent<{
           {eventType}
         </Tag>
       </EventTypeColumn>
-      <span style={{flex: 1}}>
+      <Box padding={{left: 4}} style={{flex: 1}}>
         {contextMessage}
         {errorMessage}
         <MetadataEntries entries={metadataEntries} />
         {errorStack}
         {errorCause}
-      </span>
+      </Box>
     </>
   );
 };

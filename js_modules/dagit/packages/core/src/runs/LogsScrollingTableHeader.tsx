@@ -161,13 +161,13 @@ const HeaderDragHandle = styled.div<{
   isDraggable: boolean;
   isDragging: boolean;
 }>`
-  width: 17px;
+  width: 1px;
   height: 20000px;
   position: absolute;
   cursor: ${({isDraggable}) => (isDraggable ? 'ew-resize' : 'default')};
   z-index: 2;
-  ${({side}) => (side === 'right' ? `right: -13px;` : `left: -13px;`)}
-  padding: 0 8px;
+  ${({side}) => (side === 'right' ? `right: -2px;` : `left: -2px;`)}
+  padding: 0 2px;
   & > div {
     width: 1px;
     height: 100%;

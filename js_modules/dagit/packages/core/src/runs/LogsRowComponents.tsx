@@ -26,7 +26,6 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   width: 100%;
   height: 100%;
   max-height: 17em;
-  padding: 4px 8px;
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
@@ -54,11 +53,8 @@ export const StructuredContent = styled.div`
   background: rgba(255, 255, 255, 0.5);
   color: ${Colors.DARK_GRAY2};
   box-sizing: border-box;
-  margin: -4px;
-  margin-bottom: -4px;
   border-left: 1px solid ${Colors.LIGHT_GRAY4};
   border-right: 1px solid ${Colors.LIGHT_GRAY4};
-  padding: 4px;
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
@@ -106,6 +102,7 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
 const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
+  padding: 4px;
 `;
 
 const SolidColumnTooltipStyle = JSON.stringify({
@@ -159,6 +156,7 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
 const TimestampColumnContainer = styled.div`
   flex-shrink: 0;
   text-align: right;
+  padding: 4px;
 
   a:link,
   a:visited,
@@ -185,4 +183,5 @@ export const EventTypeColumn: React.FC = (props) => {
 const EventTypeColumnContainer = styled.div`
   flex-shrink: 0;
   color: ${Colors.GRAY3};
+  padding: 4px;
 `;

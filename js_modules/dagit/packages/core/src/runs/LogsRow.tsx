@@ -5,6 +5,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
 import {LogLevel} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
@@ -278,7 +279,9 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
   >
     <SolidColumn stepKey={node.stepKey} />
     <EventTypeColumn>{node.level}</EventTypeColumn>
-    <span style={{flex: 1}}>{node.message}</span>
+    <Box padding={{left: 4}} style={{flex: 1}}>
+      {node.message}
+    </Box>
     <TimestampColumn time={node.timestamp} />
   </Row>
 ));
