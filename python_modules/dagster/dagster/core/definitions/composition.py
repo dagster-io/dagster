@@ -1,8 +1,9 @@
 import warnings
 from collections import namedtuple
-from typing import NamedTuple
+from typing import AbstractSet, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
 from dagster import check
+from dagster.core.definitions.input import InputDefinition, InputMapping
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import frozentags
 
@@ -11,25 +12,28 @@ from .decorators.solid import resolve_checked_solid_fn_inputs
 from .dependency import (
     DependencyDefinition,
     DynamicCollectDependencyDefinition,
+    IDependencyDefinition,
     MultiDependencyDefinition,
     SolidInvocation,
 )
 from .hook import HookDefinition
 from .inference import infer_output_props
-from .output import OutputDefinition
+from .output import OutputDefinition, OutputMapping
 from .solid import NodeDefinition
 from .utils import check_valid_name, validate_tags
 
-_composition_stack = []
+_composition_stack: List["InProgressCompositionContext"] = []
 
 
 class MappedInputPlaceholder:
     """Marker for holding places in fan-in lists where input mappings will feed"""
 
 
-def _not_invoked_warning(solid, context_source, context_name):
-    check.inst_param(solid, "solid", PendingNodeInvocation)
-
+def _not_invoked_warning(
+    solid: "PendingNodeInvocation",
+    context_source: str,
+    context_name: str,
+) -> None:
     warning_message = (
         "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
     )
@@ -52,19 +56,21 @@ def _not_invoked_warning(solid, context_source, context_name):
     warnings.warn(warning_message.strip())
 
 
-def enter_composition(name, source):
+def enter_composition(name: str, source: str) -> None:
     _composition_stack.append(InProgressCompositionContext(name, source))
 
 
-def exit_composition(output=None):
+def exit_composition(
+    output: Optional[Dict[str, OutputMapping]] = None
+) -> "CompleteCompositionContext":
     return _composition_stack.pop().complete(output)
 
 
-def current_context():
+def current_context() -> "InProgressCompositionContext":
     return _composition_stack[-1]
 
 
-def assert_in_composition(solid_name):
+def assert_in_composition(solid_name: str) -> None:
     if len(_composition_stack) < 1:
         raise DagsterInvariantViolationError(
             'Attempted to call solid "{solid_name}" outside of a composition function. '
@@ -73,8 +79,8 @@ def assert_in_composition(solid_name):
         )
 
 
-def _is_in_composition():
-    return _composition_stack
+def _is_in_composition() -> bool:
+    return len(_composition_stack) > 0
 
 
 class InProgressCompositionContext:
@@ -82,14 +88,21 @@ class InProgressCompositionContext:
     composition function such as @composite_solid or @pipeline
     """
 
-    def __init__(self, name, source):
+    def __init__(self, name: str, source: str):
         self.name = check.str_param(name, "name")
         self.source = check.str_param(source, "source")
-        self._invocations = {}
-        self._collisions = {}
-        self._pending_invocations = {}
+        self._invocations: Dict[str, "InvokedNode"] = {}
+        self._collisions: Dict[str, int] = {}
+        self._pending_invocations: Dict[str, PendingNodeInvocation] = {}
 
-    def observe_invocation(self, given_alias, node_def, input_bindings, tags=None, hook_defs=None):
+    def observe_invocation(
+        self,
+        given_alias: str,
+        node_def: NodeDefinition,
+        input_bindings: Dict[str, Any],
+        tags: frozentags,
+        hook_defs: AbstractSet[HookDefinition],
+    ):
         if given_alias is None:
             node_name = node_def.name
             self._pending_invocations.pop(node_name, None)
@@ -112,17 +125,20 @@ class InProgressCompositionContext:
             )
 
         self._invocations[node_name] = InvokedNode(
-            node_name, node_def, input_bindings, tags, hook_defs
+            node_name,
+            node_def,
+            input_bindings,
+            tags,
+            hook_defs,
         )
         return node_name
 
-    def add_pending_invocation(self, solid):
-        solid = check.opt_inst_param(solid, "solid", PendingNodeInvocation)
+    def add_pending_invocation(self, solid: "PendingNodeInvocation"):
         solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
-    def complete(self, output):
-        return CompleteCompositionContext(
+    def complete(self, output: Optional[Dict[str, OutputMapping]]) -> "CompleteCompositionContext":
+        return CompleteCompositionContext.create(
             self.name,
             self.source,
             self._invocations,
@@ -131,17 +147,26 @@ class InProgressCompositionContext:
         )
 
 
-class CompleteCompositionContext(
-    namedtuple(
-        "_CompositionContext", "name solid_defs dependencies input_mappings output_mapping_dict"
-    )
-):
+class CompleteCompositionContext(NamedTuple):
     """The processed information from capturing solid invocations during a composition function."""
 
-    def __new__(cls, name, source, invocations, output_mapping_dict, pending_invocations):
+    name: str
+    solid_defs: List[NodeDefinition]
+    dependencies: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+    input_mappings: List[InputMapping]
+    output_mapping_dict: Dict[str, OutputMapping]
 
-        dep_dict = {}
-        node_def_dict = {}
+    @staticmethod
+    def create(
+        name: str,
+        source: str,
+        invocations: Dict[str, "InvokedNode"],
+        output_mapping_dict: Dict[str, OutputMapping],
+        pending_invocations: Dict[str, "PendingNodeInvocation"],
+    ):
+
+        dep_dict: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]] = {}
+        node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
 
         for solid in pending_invocations.values():
@@ -157,7 +182,7 @@ class CompleteCompositionContext(
                 )
             node_def_dict[def_name] = invocation.node_def
 
-            deps = {}
+            deps: Dict[str, IDependencyDefinition] = {}
             for input_name, node in invocation.input_bindings.items():
                 if isinstance(node, InvokedSolidOutputHandle):
                     deps[input_name] = DependencyDefinition(node.solid_name, node.output_name)
@@ -166,7 +191,7 @@ class CompleteCompositionContext(
                         node.input_def.mapping_to(invocation.node_name, input_name)
                     )
                 elif isinstance(node, list):
-                    entries = []
+                    entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
                         if isinstance(fanned_in_node, InvokedSolidOutputHandle):
                             entries.append(
@@ -201,8 +226,12 @@ class CompleteCompositionContext(
                 )
             ] = deps
 
-        return super(cls, CompleteCompositionContext).__new__(
-            cls, name, list(node_def_dict.values()), dep_dict, input_mappings, output_mapping_dict
+        return CompleteCompositionContext(
+            name,
+            list(node_def_dict.values()),
+            dep_dict,
+            input_mappings,
+            output_mapping_dict,
         )
 
 
@@ -211,7 +240,13 @@ class PendingNodeInvocation:
     an alias before invoking.
     """
 
-    def __init__(self, node_def, given_alias=None, tags=None, hook_defs=None):
+    def __init__(
+        self,
+        node_def: NodeDefinition,
+        given_alias: Optional[str],
+        tags: Optional[frozentags],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+    ):
         self.node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
         self.tags = check.opt_inst_param(tags, "tags", frozentags)
@@ -391,35 +426,40 @@ class PendingNodeInvocation:
             )
 
     def alias(self, name):
-        return PendingNodeInvocation(self.node_def, name, self.tags)
+        return PendingNodeInvocation(
+            node_def=self.node_def,
+            given_alias=name,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+        )
 
     def tag(self, tags):
         tags = validate_tags(tags)
         return PendingNodeInvocation(
-            self.node_def,
-            self.given_alias,
-            frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
+            node_def=self.node_def,
+            given_alias=self.given_alias,
+            tags=frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
+            hook_defs=self.hook_defs,
         )
 
     def with_hooks(self, hook_defs):
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return PendingNodeInvocation(
-            self.node_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
+            node_def=self.node_def,
+            given_alias=self.given_alias,
+            tags=self.tags,
+            hook_defs=hook_defs.union(self.hook_defs),
         )
 
 
-class InvokedNode(namedtuple("_InvokedNode", "node_name, node_def input_bindings tags hook_defs")):
+class InvokedNode(NamedTuple):
     """The metadata about a solid invocation saved by the current composition context."""
 
-    def __new__(cls, node_name, node_def, input_bindings, tags=None, hook_defs=None):
-        return super(cls, InvokedNode).__new__(
-            cls,
-            check.str_param(node_name, "node_name"),
-            check.inst_param(node_def, "node_def", NodeDefinition),
-            check.dict_param(input_bindings, "input_bindings", key_type=str),
-            check.opt_inst_param(tags, "tags", frozentags),
-            check.opt_set_param(hook_defs, "hook_defs", HookDefinition),
-        )
+    node_name: str
+    node_def: NodeDefinition
+    input_bindings: Dict[str, Any]
+    tags: frozentags
+    hook_defs: AbstractSet[HookDefinition]
 
 
 class InvokedSolidOutputHandle:
@@ -490,7 +530,7 @@ class InvokedSolidDynamicOutputWrapper:
     Must be unwrapped by invoking map or collect.
     """
 
-    def __init__(self, solid_name, output_name):
+    def __init__(self, solid_name: str, output_name: str):
         self.solid_name = check.str_param(solid_name, "solid_name")
         self.output_name = check.str_param(output_name, "output_name")
 
@@ -520,10 +560,10 @@ class InvokedSolidDynamicOutputWrapper:
                 f"Could not handle output from map function invoked on {self.solid_name}:{self.output_name}, received {result}"
             )
 
-    def collect(self):
+    def collect(self) -> DynamicFanIn:
         return DynamicFanIn(self.solid_name, self.output_name)
 
-    def unwrap_for_composite_mapping(self):
+    def unwrap_for_composite_mapping(self) -> InvokedSolidOutputHandle:
         return InvokedSolidOutputHandle(self.solid_name, self.output_name)
 
     def __iter__(self):
@@ -573,12 +613,15 @@ class InvokedSolidDynamicOutputWrapper:
         )
 
 
-class InputMappingNode:
-    def __init__(self, input_def):
-        self.input_def = input_def
+class InputMappingNode(NamedTuple):
+    input_def: InputDefinition
 
 
-def composite_mapping_from_output(output, output_defs, solid_name):
+def composite_mapping_from_output(
+    output: Any,
+    output_defs: List[OutputDefinition],
+    solid_name: str,
+) -> Optional[Dict[str, OutputMapping]]:
     # output can be different types
     check.list_param(output_defs, "output_defs", OutputDefinition)
     check.str_param(solid_name, "solid_name")
@@ -668,17 +711,26 @@ def composite_mapping_from_output(output, output_defs, solid_name):
             )
         )
 
+    return None
+
 
 def do_composition(
-    decorator_name,
-    graph_name,
-    fn,
-    provided_input_defs,
-    provided_output_defs,
-    config_schema,
-    config_fn,
-    ignore_output_from_composition_fn,
-):
+    decorator_name: str,
+    graph_name: str,
+    fn: Callable,
+    provided_input_defs: List[InputDefinition],
+    provided_output_defs: Optional[List[OutputDefinition]],
+    config_schema: Any,
+    config_fn: Optional[Callable[[Any], Any]],
+    ignore_output_from_composition_fn: bool,
+) -> Tuple[
+    List[InputMapping],
+    List[OutputMapping],
+    Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]],
+    List[NodeDefinition],
+    Optional[ConfigMapping],
+    List[str],
+]:
     """
     This a function used by both @pipeline and @composite_solid to implement their composition
     function which is our DSL for constructing a dependency graph.
@@ -798,7 +850,11 @@ def do_composition(
     )
 
 
-def _get_validated_config_mapping(name, config_schema, config_fn):
+def _get_validated_config_mapping(
+    name: str,
+    config_schema: Any,
+    config_fn: Optional[Callable[[Any], Any]],
+) -> Optional[ConfigMapping]:
     if config_fn is None and config_schema is None:
         return None
     elif config_fn is not None:

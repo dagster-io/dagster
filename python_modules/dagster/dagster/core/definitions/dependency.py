@@ -535,7 +535,10 @@ class MultiDependencyDefinition(
         description (Optional[str]): Human-readable description of this dependency.
     """
 
-    def __new__(cls, dependencies: List[Union[DependencyDefinition, "MappedInputPlaceholder"]]):
+    def __new__(
+        cls,
+        dependencies: List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
+    ):
         from .composition import MappedInputPlaceholder
 
         deps = check.list_param(dependencies, "dependencies")

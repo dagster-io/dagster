@@ -15,7 +15,7 @@ from dagster import (
     repository,
     solid,
 )
-from dagster.core.definitions.decorators.hook import event_list_hook
+from dagster.core.definitions.decorators.hook import event_list_hook, success_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
@@ -903,3 +903,35 @@ def test_tag_subset():
     plan = create_execution_plan(tag.get_pipeline_subset_def({"emit"}))
     step = list(plan.step_dict.values())[0]
     assert step.tags == {"def": "1", "invoke": "2"}
+
+
+def test_composition_order():
+    solid_to_tags = {}
+
+    @success_hook
+    def test_hook(context):
+        solid_to_tags[context.solid.name] = context.solid.tags
+
+    @solid
+    def a_solid(_):
+        pass
+
+    @pipeline
+    def a_pipeline():
+        a_solid.with_hooks(hook_defs={test_hook}).alias("hook_alias_tag").tag({"pos": 3})()
+        a_solid.with_hooks(hook_defs={test_hook}).tag({"pos": 2}).alias("hook_tag_alias")()
+        a_solid.alias("alias_tag_hook").tag({"pos": 2}).with_hooks(hook_defs={test_hook})()
+        a_solid.alias("alias_hook_tag").with_hooks(hook_defs={test_hook}).tag({"pos": 3})()
+        a_solid.tag({"pos": 1}).with_hooks(hook_defs={test_hook}).alias("tag_hook_alias")()
+        a_solid.tag({"pos": 1}).alias("tag_alias_hook").with_hooks(hook_defs={test_hook})()
+
+    result = execute_pipeline(a_pipeline, raise_on_error=False)
+    assert result.success
+    assert solid_to_tags == {
+        "tag_hook_alias": {"pos": "1"},
+        "tag_alias_hook": {"pos": "1"},
+        "hook_tag_alias": {"pos": "2"},
+        "alias_tag_hook": {"pos": "2"},
+        "hook_alias_tag": {"pos": "3"},
+        "alias_hook_tag": {"pos": "3"},
+    }

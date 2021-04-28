@@ -135,26 +135,46 @@ class NodeDefinition(NamedConfigurableDefinition):
     def __call__(self, *args, **kwargs):
         from .composition import PendingNodeInvocation
 
-        return PendingNodeInvocation(self)(*args, **kwargs)
+        return PendingNodeInvocation(
+            node_def=self,
+            given_alias=None,
+            tags=None,
+            hook_defs=None,
+        )(*args, **kwargs)
 
     def alias(self, name):
         from .composition import PendingNodeInvocation
 
         check.str_param(name, "name")
 
-        return PendingNodeInvocation(self, given_alias=name)
+        return PendingNodeInvocation(
+            node_def=self,
+            given_alias=name,
+            tags=None,
+            hook_defs=None,
+        )
 
     def tag(self, tags):
         from .composition import PendingNodeInvocation
 
-        return PendingNodeInvocation(self, tags=validate_tags(tags))
+        return PendingNodeInvocation(
+            node_def=self,
+            given_alias=None,
+            tags=validate_tags(tags),
+            hook_defs=None,
+        )
 
     def with_hooks(self, hook_defs):
         from .composition import PendingNodeInvocation
 
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
 
-        return PendingNodeInvocation(self, hook_defs=hook_defs)
+        return PendingNodeInvocation(
+            node_def=self,
+            given_alias=None,
+            tags=None,
+            hook_defs=hook_defs,
+        )
 
     @abstractproperty
     def required_resource_keys(self):
