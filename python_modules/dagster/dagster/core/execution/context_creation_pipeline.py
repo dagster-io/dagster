@@ -8,10 +8,12 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Generic,
     Iterable,
     NamedTuple,
     Optional,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -188,24 +190,27 @@ def create_execution_data(
     )
 
 
-class ExecutionContextManager(ABC):
+TContextType = TypeVar("TContextType", bound=IPlanContext)
+
+
+class ExecutionContextManager(Generic[TContextType], ABC):
     def __init__(
         self,
-        event_generator: Generator[Union[DagsterEvent, IPlanContext], None, None],
+        event_generator: Generator[Union[DagsterEvent, TContextType], None, None],
         raise_on_error: Optional[bool] = False,
     ):
-        self._manager = EventGenerationManager[IPlanContext](
+        self._manager = EventGenerationManager[TContextType](
             generator=event_generator, object_cls=self.context_type, require_object=raise_on_error
         )
 
     @abstractproperty
-    def context_type(self) -> Type[IPlanContext]:
+    def context_type(self) -> Type[TContextType]:
         pass
 
     def prepare_context(self) -> Iterable[DagsterEvent]:  # ode to Preparable
         return self._manager.generate_setup_events()
 
-    def get_context(self) -> IPlanContext:
+    def get_context(self) -> TContextType:
         return self._manager.get_object()
 
     def shutdown_context(self) -> Iterable[DagsterEvent]:
@@ -298,7 +303,7 @@ def execution_context_event_generator(
     yield from resources_manager.generate_teardown_events()
 
 
-class PlanOrchestrationContextManager(ExecutionContextManager):
+class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationContext]):
     def __init__(
         self,
         context_event_generator: Callable[
@@ -385,7 +390,7 @@ def orchestration_context_event_generator(
             raise dagster_error
 
 
-class PlanExecutionContextManager(ExecutionContextManager):
+class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext]):
     def __init__(
         self,
         pipeline: IPipeline,

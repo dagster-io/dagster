@@ -23,6 +23,14 @@ Inputs & outputs
 
 .. autoclass:: OutputDefinition
 
+
+-------
+
+Execution
+---------
+
+.. autoclass:: RetryPolicy
+
 -------
 
 Composing solids

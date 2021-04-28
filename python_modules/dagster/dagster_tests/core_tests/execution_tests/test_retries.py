@@ -9,6 +9,7 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineRun,
+    RetryPolicy,
     RetryRequested,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -257,3 +258,60 @@ def test_step_retry_fixed_wait(environment):
             assert end_wait is not None
             delay = end_wait - start_wait
             assert delay > DELAY
+
+
+def test_basic_retry_policy():
+    @solid(retry_policy=RetryPolicy())
+    def throws(_):
+        raise Exception("I fail")
+
+    @pipeline
+    def policy_test():
+        throws()
+
+    result = execute_pipeline(policy_test, raise_on_error=False)
+    assert not result.success
+    assert result.result_for_solid("throws").retry_attempts == 1
+
+
+def test_retry_policy_rules():
+    @solid(retry_policy=RetryPolicy(max_retries=2))
+    def throw_with_policy():
+        raise Exception("I fail")
+
+    @solid
+    def throw_no_policy():
+        raise Exception("I fail")
+
+    @pipeline(solid_retry_policy=RetryPolicy(max_retries=3))
+    def policy_test():
+        throw_with_policy()
+        throw_no_policy()
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+
+    result = execute_pipeline(policy_test, raise_on_error=False)
+    assert not result.success
+    assert result.result_for_solid("throw_no_policy").retry_attempts == 3
+    assert result.result_for_solid("throw_with_policy").retry_attempts == 2
+    assert result.result_for_solid("override_no").retry_attempts == 1
+    assert result.result_for_solid("override_with").retry_attempts == 1
+
+
+def test_delay():
+    delay = 0.3
+
+    @solid(retry_policy=RetryPolicy(delay=delay))
+    def throws(_):
+        raise Exception("I fail")
+
+    @pipeline
+    def policy_test():
+        throws()
+
+    start = time.time()
+    result = execute_pipeline(policy_test, raise_on_error=False)
+    elapsed_time = time.time() - start
+    assert not result.success
+    assert elapsed_time > delay
+    assert result.result_for_solid("throws").retry_attempts == 1

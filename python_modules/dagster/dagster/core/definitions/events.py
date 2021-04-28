@@ -472,7 +472,7 @@ class RetryRequested(Exception):
     Args:
         max_retries (Optional[int]):
             The max number of retries this step should attempt before failing
-        seconds_to_wait (Optional[int]):
+        seconds_to_wait (Optional[Union[float,int]]):
             Seconds to wait before restarting the step after putting the step in
             to the up_for_retry state
 
@@ -491,7 +491,7 @@ class RetryRequested(Exception):
     def __init__(self, max_retries=1, seconds_to_wait=None):
         super(RetryRequested, self).__init__()
         self.max_retries = check.int_param(max_retries, "max_retries")
-        self.seconds_to_wait = check.opt_int_param(seconds_to_wait, "seconds_to_wait")
+        self.seconds_to_wait = check.opt_numeric_param(seconds_to_wait, "seconds_to_wait")
 
 
 class ObjectStoreOperationType(Enum):

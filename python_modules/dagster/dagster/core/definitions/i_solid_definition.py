@@ -2,6 +2,7 @@ from abc import abstractmethod
 
 from dagster import check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils import frozendict, frozenlist
 
 from .hook import HookDefinition
@@ -144,6 +145,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             given_alias=None,
             tags=None,
             hook_defs=None,
+            retry_policy=None,
         )(*args, **kwargs)
 
     def alias(self, name):
@@ -156,6 +158,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             given_alias=name,
             tags=None,
             hook_defs=None,
+            retry_policy=None,
         )
 
     def tag(self, tags):
@@ -166,6 +169,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             given_alias=None,
             tags=validate_tags(tags),
             hook_defs=None,
+            retry_policy=None,
         )
 
     def with_hooks(self, hook_defs):
@@ -178,4 +182,16 @@ class NodeDefinition(NamedConfigurableDefinition):
             given_alias=None,
             tags=None,
             hook_defs=hook_defs,
+            retry_policy=None,
+        )
+
+    def with_retry_policy(self, retry_policy: RetryPolicy):
+        from .composition import PendingNodeInvocation
+
+        return PendingNodeInvocation(
+            node_def=self,
+            given_alias=None,
+            tags=None,
+            hook_defs=None,
+            retry_policy=retry_policy,
         )

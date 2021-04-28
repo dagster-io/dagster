@@ -130,14 +130,15 @@ def step_failure_event_from_exc_info(
 @whitelist_for_serdes
 class StepRetryData(
     NamedTuple(
-        "_StepRetryData", [("error", SerializableErrorInfo), ("seconds_to_wait", Optional[int])]
+        "_StepRetryData",
+        [("error", SerializableErrorInfo), ("seconds_to_wait", Optional[check.Numeric])],
     )
 ):
     def __new__(cls, error, seconds_to_wait=None):
         return super(StepRetryData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-            seconds_to_wait=check.opt_int_param(seconds_to_wait, "seconds_to_wait"),
+            seconds_to_wait=check.opt_numeric_param(seconds_to_wait, "seconds_to_wait"),
         )
 
 

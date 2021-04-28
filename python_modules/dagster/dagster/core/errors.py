@@ -154,7 +154,7 @@ def raise_execution_interrupts():
 
 
 @contextmanager
-def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **kwargs):
+def user_code_error_boundary(error_cls, msg_fn, **kwargs):
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around any user code invoked by the framework. This ensures that all user
@@ -178,16 +178,10 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
     """
     check.callable_param(msg_fn, "msg_fn")
     check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
-    control_flow_exceptions = tuple(
-        check.opt_list_param(control_flow_exceptions, "control_flow_exceptions")
-    )
 
     with raise_execution_interrupts():
         try:
             yield
-        except control_flow_exceptions as cf:
-            # A control flow exception has occurred and should be propagated
-            raise cf
         except DagsterError as de:
             # The system has thrown an error that is part of the user-framework contract
             raise de

@@ -4,6 +4,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, NamedTuple, Optional,
 
 from dagster import check
 from dagster.core.definitions.input import InputDefinition, InputMapping
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import frozentags
 
@@ -91,8 +92,9 @@ class InProgressCompositionContext:
         given_alias: str,
         node_def: NodeDefinition,
         input_bindings: Dict[str, Any],
-        tags: frozentags,
-        hook_defs: AbstractSet[HookDefinition],
+        tags: Optional[frozentags],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+        retry_policy: Optional[RetryPolicy],
     ):
         if given_alias is None:
             node_name = node_def.name
@@ -116,11 +118,7 @@ class InProgressCompositionContext:
             )
 
         self._invocations[node_name] = InvokedNode(
-            node_name,
-            node_def,
-            input_bindings,
-            tags,
-            hook_defs,
+            node_name, node_def, input_bindings, tags, hook_defs, retry_policy
         )
         return node_name
 
@@ -214,6 +212,7 @@ class CompleteCompositionContext(NamedTuple):
                     invocation.node_name,
                     tags=invocation.tags,
                     hook_defs=invocation.hook_defs,
+                    retry_policy=invocation.retry_policy,
                 )
             ] = deps
 
@@ -237,11 +236,13 @@ class PendingNodeInvocation:
         given_alias: Optional[str],
         tags: Optional[frozentags],
         hook_defs: Optional[AbstractSet[HookDefinition]],
+        retry_policy: Optional[RetryPolicy],
     ):
         self.node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
         self.tags = check.opt_inst_param(tags, "tags", frozentags)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
+        self.retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
         if self.given_alias is not None:
             check_valid_name(self.given_alias)
@@ -307,6 +308,7 @@ class PendingNodeInvocation:
             input_bindings,
             self.tags,
             self.hook_defs,
+            self.retry_policy,
         )
 
         if len(self.node_def.output_defs) == 0:
@@ -421,6 +423,7 @@ class PendingNodeInvocation:
             given_alias=name,
             tags=self.tags,
             hook_defs=self.hook_defs,
+            retry_policy=self.retry_policy,
         )
 
     def tag(self, tags):
@@ -430,6 +433,7 @@ class PendingNodeInvocation:
             given_alias=self.given_alias,
             tags=frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
             hook_defs=self.hook_defs,
+            retry_policy=self.retry_policy,
         )
 
     def with_hooks(self, hook_defs):
@@ -439,6 +443,16 @@ class PendingNodeInvocation:
             given_alias=self.given_alias,
             tags=self.tags,
             hook_defs=hook_defs.union(self.hook_defs),
+            retry_policy=self.retry_policy,
+        )
+
+    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        return PendingNodeInvocation(
+            node_def=self.node_def,
+            given_alias=self.given_alias,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            retry_policy=retry_policy,
         )
 
 
@@ -448,8 +462,9 @@ class InvokedNode(NamedTuple):
     node_name: str
     node_def: NodeDefinition
     input_bindings: Dict[str, Any]
-    tags: frozentags
-    hook_defs: AbstractSet[HookDefinition]
+    tags: Optional[frozentags]
+    hook_defs: Optional[AbstractSet[HookDefinition]]
+    retry_policy: Optional[RetryPolicy]
 
 
 class InvokedSolidOutputHandle:

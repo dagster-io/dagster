@@ -17,6 +17,7 @@ from ..events import AssetMaterialization, ExpectationResult, Materialization, O
 from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
+from ..policy import RetryPolicy
 from ..solid import SolidDefinition
 
 
@@ -32,6 +33,7 @@ class _Solid:
         tags: Optional[Dict[str, Any]] = None,
         version: Optional[str] = None,
         has_context_arg: Optional[bool] = True,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
@@ -46,6 +48,7 @@ class _Solid:
         self.required_resource_keys = required_resource_keys
         self.tags = tags
         self.version = version
+        self.retry_policy = retry_policy
 
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
@@ -92,6 +95,7 @@ class _Solid:
             positional_inputs=positional_inputs,
             version=self.version,
             context_arg_provided=context_arg_provided,
+            retry_policy=self.retry_policy,
         )
         update_wrapper(solid_def, fn)
         return solid_def
@@ -106,6 +110,7 @@ def solid(
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Union[_Solid, SolidDefinition]:
     """Create a solid with the specified parameters from the decorated function.
 
@@ -155,6 +160,7 @@ def solid(
         version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
+        retry_policy (Optional[RetryPolicy]): The retry policy for this solid.
 
 
     Examples:
@@ -228,6 +234,7 @@ def solid(
         required_resource_keys=required_resource_keys,
         tags=tags,
         version=version,
+        retry_policy=retry_policy,
     )
 
 

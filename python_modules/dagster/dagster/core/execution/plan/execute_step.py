@@ -6,11 +6,9 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     ExpectationResult,
-    Failure,
     Materialization,
     Output,
     OutputDefinition,
-    RetryRequested,
     SolidDefinition,
     TypeCheck,
 )
@@ -43,6 +41,7 @@ from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
+from .utils import solid_execution_error_boundary
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -255,7 +254,7 @@ def _type_check_output(
 
 
 def core_dagster_event_sequence_for_step(
-    step_context: StepExecutionContext, prior_attempt_count: int
+    step_context: StepExecutionContext,
 ) -> Iterator[DagsterEvent]:
     """
     Execute the step within the step_context argument given the in-memory
@@ -264,9 +263,9 @@ def core_dagster_event_sequence_for_step(
     of the step.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.int_param(prior_attempt_count, "prior_attempt_count")
-    if prior_attempt_count > 0:
-        yield DagsterEvent.step_restarted_event(step_context, prior_attempt_count)
+
+    if step_context.previous_attempt_count > 0:
+        yield DagsterEvent.step_restarted_event(step_context, step_context.previous_attempt_count)
     else:
         yield DagsterEvent.step_start_event(step_context)
 
@@ -470,13 +469,13 @@ def _store_output(
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
 
-    with user_code_error_boundary(
+    with solid_execution_error_boundary(
         DagsterExecutionHandleOutputError,
-        control_flow_exceptions=[Failure, RetryRequested],
         msg_fn=lambda: (
             f'Error occurred while handling output "{output_context.name}" of '
             f'step "{step_context.step.key}":'
         ),
+        step_context=step_context,
         step_key=step_context.step.key,
         output_name=output_context.name,
     ):
@@ -596,10 +595,10 @@ def _user_event_sequence_for_step_compute_fn(
     )
 
     for event in iterate_with_context(
-        lambda: user_code_error_boundary(
+        lambda: solid_execution_error_boundary(
             DagsterExecutionStepExecutionError,
-            control_flow_exceptions=[Failure, RetryRequested],
             msg_fn=lambda: f'Error occurred while executing solid "{step_context.solid.name}":',
+            step_context=step_context,
             step_key=step_context.step.key,
             solid_def_name=step_context.solid_def.name,
             solid_name=step_context.solid.name,

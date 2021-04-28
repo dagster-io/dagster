@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Optional, Set
 
 from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_arg_warning
@@ -58,6 +59,7 @@ class SolidDefinition(NodeDefinition):
         version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
+        retry_policy (Optional[RetryPolicy]): The retry policy for this solid.
 
 
     Examples:
@@ -87,6 +89,7 @@ class SolidDefinition(NodeDefinition):
         positional_inputs: Optional[List[str]] = None,
         version: Optional[str] = None,
         context_arg_provided: Optional[bool] = True,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         self._compute_fn = check.callable_param(compute_fn, "compute_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
@@ -96,6 +99,7 @@ class SolidDefinition(NodeDefinition):
         self._version = check.opt_str_param(version, "version")
         if version:
             experimental_arg_warning("version", "SolidDefinition.__init__")
+        self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
         self._context_arg_provided = check.bool_param(context_arg_provided, "context_arg_provided")
 
@@ -194,7 +198,12 @@ class SolidDefinition(NodeDefinition):
             positional_inputs=self.positional_inputs,
             version=self.version,
             context_arg_provided=self._context_arg_provided,
+            retry_policy=self.retry_policy,
         )
+
+    @property
+    def retry_policy(self) -> Optional[RetryPolicy]:
+        return self._retry_policy
 
 
 class CompositeSolidDefinition(GraphDefinition):

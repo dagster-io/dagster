@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from dagster import check
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..hook import HookDefinition
@@ -25,6 +26,7 @@ class _Pipeline:
         output_defs: Optional[List[OutputDefinition]] = None,
         config_schema: Optional[Dict[str, Any]] = None,
         config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        solid_retry_policy: Optional[RetryPolicy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
@@ -39,6 +41,9 @@ class _Pipeline:
         )
         self.config_schema = config_schema
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
+        self.solid_retry_policy = check.opt_inst_param(
+            solid_retry_policy, "solid_retry_policy", RetryPolicy
+        )
 
     def __call__(self, fn: Callable[..., Any]) -> PipelineDefinition:
         check.callable_param(fn, "fn")
@@ -79,6 +84,7 @@ class _Pipeline:
             output_mappings=output_mappings,
             config_mapping=config_mapping,
             positional_inputs=positional_inputs,
+            solid_retry_policy=self.solid_retry_policy,
         )
         update_wrapper(pipeline_def, fn)
         return pipeline_def
@@ -95,6 +101,7 @@ def pipeline(
     output_defs: Optional[List[OutputDefinition]] = None,
     config_schema: Optional[Dict[str, Any]] = None,
     config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+    solid_retry_policy: Optional[RetryPolicy] = None,
 ) -> Union[PipelineDefinition, _Pipeline]:
     """Create a pipeline with the specified parameters from the decorated composition function.
 
@@ -121,6 +128,9 @@ def pipeline(
         hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
             pipeline. When a hook is applied to a pipeline, it will be attached to all solid
             instances within the pipeline.
+        solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
+            this pipeline. Only used if retry policy is not defined on the solid definition or
+            solid invocation.
 
     Example:
 
@@ -176,4 +186,5 @@ def pipeline(
         output_defs=output_defs,
         config_schema=config_schema,
         config_fn=config_fn,
+        solid_retry_policy=solid_retry_policy,
     )

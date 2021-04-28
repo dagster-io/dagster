@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optio
 from dagster import check
 from dagster.core.definitions.input import InputMapping
 from dagster.core.definitions.output import OutputMapping
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.errors import (
@@ -82,6 +83,10 @@ class PipelineDefinition(GraphDefinition):
         hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
             pipeline. When a hook is applied to a pipeline, it will be attached to all solid
             instances within the pipeline.
+        solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
+            this pipeline. Only used if retry policy is not defined on the solid definition or
+            solid invocation.
+
 
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
 
@@ -142,6 +147,7 @@ class PipelineDefinition(GraphDefinition):
         output_mappings: Optional[List[OutputMapping]] = None,
         config_mapping: Optional[ConfigMapping] = None,
         positional_inputs: List[str] = None,
+        solid_retry_policy: Optional[RetryPolicy] = None,
         _parent_pipeline_def: Optional[
             "PipelineDefinition"
         ] = None,  # https://github.com/dagster-io/dagster/issues/2115
@@ -195,6 +201,9 @@ class PipelineDefinition(GraphDefinition):
             seen_modes.add(mode_def.name)
 
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+        self._solid_retry_policy = check.opt_inst_param(
+            solid_retry_policy, "solid_retry_policy", RetryPolicy
+        )
 
         self._preset_defs = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
         self._preset_dict: Dict[str, PresetDefinition] = {}
@@ -466,6 +475,18 @@ class PipelineDefinition(GraphDefinition):
 
         return frozenset(hook_defs)
 
+    def get_retry_policy_for_handle(self, handle: SolidHandle) -> Optional[RetryPolicy]:
+        solid = self.get_solid(handle)
+
+        if solid.retry_policy:
+            return solid.retry_policy
+        elif solid.definition.retry_policy:
+            return solid.definition.retry_policy
+
+        # could be expanded to look in composite_solid / graph containers
+        else:
+            return self._solid_retry_policy
+
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
 
@@ -523,6 +544,7 @@ def _dep_key_of(solid: Solid) -> SolidInvocation:
         alias=solid.name,
         tags=solid.tags,
         hook_defs=solid.hook_defs,
+        retry_policy=solid.retry_policy,
     )
 
 

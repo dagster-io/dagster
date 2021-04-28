@@ -5,7 +5,7 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
 import warnings
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
@@ -13,6 +13,7 @@ from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
@@ -48,10 +49,6 @@ class IPlanContext(ABC):
 
     @abstractproperty
     def plan_data(self) -> "PlanData":
-        raise NotImplementedError()
-
-    @abstractmethod
-    def for_step(self, step: ExecutionStep) -> "IStepContext":
         raise NotImplementedError()
 
     @property
@@ -254,13 +251,15 @@ class PlanExecutionContext(IPlanContext):
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
-    def for_step(self, step: ExecutionStep) -> IStepContext:
+    def for_step(self, step: ExecutionStep, previous_attempt_count: int = 0) -> IStepContext:
+
         return StepExecutionContext(
             plan_data=self.plan_data,
             execution_data=self._execution_data,
             log_manager=self._log_manager.with_tags(**step.logging_tags),
             step=step,
             output_capture=self.output_capture,
+            previous_attempt_count=previous_attempt_count,
         )
 
     @property
@@ -307,6 +306,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         log_manager: DagsterLogManager,
         step: ExecutionStep,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
+        previous_attempt_count: int,
     ):
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -327,6 +327,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._resources = execution_data.scoped_resources_builder.build(
             self._required_resource_keys
         )
+        self._previous_attempt_count = previous_attempt_count
 
         resources_iter = cast(Iterable, self._resources)
 
@@ -383,6 +384,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def solid(self) -> "Solid":
         return self.pipeline_def.get_solid(self._step.solid_handle)
+
+    @property
+    def solid_retry_policy(self) -> Optional[RetryPolicy]:
+        return self.pipeline_def.get_retry_policy_for_handle(self.solid_handle)
 
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
@@ -504,6 +509,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def step_output_capture(self) -> Dict[StepOutputHandle, Any]:
         return self._step_output_capture
+
+    @property
+    def previous_attempt_count(self) -> int:
+        return self._previous_attempt_count
 
 
 class TypeCheckContext:

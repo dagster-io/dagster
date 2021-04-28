@@ -16,6 +16,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from .solid import NodeDefinition
 
 
-class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
+class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs retry_policy")):
     """Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
@@ -78,12 +79,18 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
         alias: Optional[str] = None,
         tags: Dict[str, str] = None,
         hook_defs: AbstractSet[HookDefinition] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
-        name = check.str_param(name, "name")
-        alias = check.opt_str_param(alias, "alias")
-        tags = frozentags(check.opt_dict_param(tags, "tags", value_type=str, key_type=str))
-        hook_defs = frozenset(check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition))
-        return super(cls, SolidInvocation).__new__(cls, name, alias, tags, hook_defs)
+        return super().__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            alias=check.opt_str_param(alias, "alias"),
+            tags=frozentags(check.opt_dict_param(tags, "tags", value_type=str, key_type=str)),
+            hook_defs=frozenset(
+                check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+            ),
+            retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
+        )
 
 
 class Solid:
@@ -104,6 +111,7 @@ class Solid:
         graph_definition: "GraphDefinition",
         tags: Dict[str, str] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         from .graph import GraphDefinition
         from .solid import NodeDefinition
@@ -117,6 +125,7 @@ class Solid:
         )
         self._additional_tags = validate_tags(tags)
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+        self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
         input_handles = {}
         for name, input_def in self.definition.input_dict.items():
@@ -199,6 +208,10 @@ class Solid:
     @property
     def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
+
+    @property
+    def retry_policy(self) -> Optional[RetryPolicy]:
+        return self._retry_policy
 
 
 @whitelist_for_serdes
