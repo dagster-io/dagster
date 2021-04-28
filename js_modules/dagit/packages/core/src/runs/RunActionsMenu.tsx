@@ -9,7 +9,6 @@ import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {DeletionDialog} from './DeletionDialog';
-import {REEXECUTE_PIPELINE_UNKNOWN} from './RunActionButtons';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
 import {doneStatuses} from './RunStatuses';
 import {
@@ -97,7 +96,9 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               <Tooltip
-                content={REEXECUTE_PIPELINE_UNKNOWN}
+                content={
+                  'Re-execute is unavailable because the pipeline is not present in the current workspace.'
+                }
                 position={Position.BOTTOM}
                 disabled={infoReady && !!repoMatch}
                 wrapperTagName="div"

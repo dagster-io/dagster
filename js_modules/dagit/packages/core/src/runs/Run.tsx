@@ -20,7 +20,7 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
-import {IRunMetadataDict, IStepState, RunMetadataProvider} from './RunMetadataProvider';
+import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {RunStatusToPageAttributes} from './RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -263,13 +263,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           toolbarActions={
             <RunActionButtons
               run={run}
-              runtimeStepKeys={runtimeStepKeys}
-              artifactsPersisted={run.executionPlan.artifactsPersisted}
               onLaunch={onLaunch}
+              graph={runtimeGraph}
+              metadata={metadata}
               selection={{query: selectionQuery, keys: selectionStepKeys}}
-              selectionStates={selectionStepKeys.map(
-                (key) => (key && metadata.steps[key]?.state) || IStepState.PREPARING,
-              )}
             />
           }
           runId={runId}

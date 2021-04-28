@@ -3,36 +3,27 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
-import {filterByQuery} from '../app/GraphQueryImpl';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
-import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
-import {IStepState} from './RunMetadataProvider';
+import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses} from './RunStatuses';
+import {DagsterTag} from './RunTag';
 import {ReExecutionStyle} from './RunUtils';
 import {StepSelection} from './StepSelection';
 import {TerminationDialog, TerminationState} from './TerminationDialog';
 import {RunFragment} from './types/RunFragment';
 
-// Descriptions of re-execute options
-export const REEXECUTE_PIPELINE_UNKNOWN =
-  'Re-execute is unavailable because the pipeline is not present in the current workspace.';
-const REEXECUTE_SUBSET = 'Re-run the following steps with existing configuration:';
-const REEXECUTE_SUBSET_NO_SELECTION =
-  'Re-execute is only enabled when steps are selected. Try selecting a step or typing a step subset to re-execute.';
-const REEXECUTE_SUBSET_NOT_DONE = 'Wait for the selected steps to finish to re-execute it.';
-
 interface RunActionButtonsProps {
-  run?: RunFragment;
-  runtimeStepKeys: string[];
+  run: RunFragment;
   selection: StepSelection;
-  selectionStates: IStepState[];
-  artifactsPersisted: boolean;
+  graph: GraphQueryItem[];
+  metadata: IRunMetadataDict;
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
@@ -84,54 +75,90 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
   );
 };
 
-export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
-  selection,
-  selectionStates,
-  artifactsPersisted,
-  onLaunch,
-  run,
-  runtimeStepKeys,
-}) => {
+function stepSelectionWithState(selection: StepSelection, metadata: IRunMetadataDict) {
+  const stepStates = selection.keys.map(
+    (key) => (key && metadata.steps[key]?.state) || IStepState.PREPARING,
+  );
+
+  return {
+    ...selection,
+    present: selection.keys.length > 0,
+    failed: selection.keys.length && stepStates.includes(IStepState.FAILED),
+    finished: stepStates.every((stepState) =>
+      [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState),
+    ),
+  };
+}
+
+function stepSelectionFromRunTags(
+  run: RunFragment,
+  graph: GraphQueryItem[],
+  metadata: IRunMetadataDict,
+) {
+  const tag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
+  if (!tag) {
+    return null;
+  }
+  return stepSelectionWithState(
+    {keys: filterByQuery(graph, tag.value).all.map((k) => k.name), query: tag.value},
+    metadata,
+  );
+}
+
+export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
+  const {metadata, graph, onLaunch, run} = props;
+  const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
-  const isSelectionPresent = selection.keys.length > 0;
-  const isSelectionFinished = selectionStates.every((stepState) =>
-    [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState),
-  );
-  const isFinalStatus = !!(run && doneStatuses.has(run.status));
+  const selection = stepSelectionWithState(props.selection, metadata);
+  const selectionOfCurrentRun = stepSelectionFromRunTags(run, graph, metadata);
+
+  const isFinalStatus = !!doneStatuses.has(run.status);
   const isFailedWithPlan =
-    run &&
     run.executionPlan &&
     (run.status === PipelineRunStatus.FAILURE || run.status == PipelineRunStatus.CANCELED);
-  const isFailureInSelection = selection.keys.length && selectionStates.includes(IStepState.FAILED);
 
   const full: LaunchButtonConfiguration = {
     icon: 'repeat',
     scope: '*',
-    title: 'All Steps',
+    title: 'All Steps in Root Run',
     tooltip: 'Re-execute the pipeline run from scratch',
     disabled: !isFinalStatus,
     onClick: () => onLaunch({type: 'all'}),
+  };
+
+  const same: LaunchButtonConfiguration = {
+    icon: 'select',
+    scope: selectionOfCurrentRun?.query || '*',
+    title: 'Same Steps',
+    disabled:
+      !selectionOfCurrentRun || !(selectionOfCurrentRun.finished || selectionOfCurrentRun.failed),
+    tooltip: (
+      <div>
+        {!selectionOfCurrentRun || !selectionOfCurrentRun.present
+          ? 'Re-executes the same step subset used for this run if one was present.'
+          : !selectionOfCurrentRun.finished
+          ? 'Wait for all of the steps to finish to re-execute the same subset.'
+          : 'Re-execute the same step subset used for this run:'}
+        <StepSelectionDescription selection={selectionOfCurrentRun} />
+      </div>
+    ),
+    onClick: () => onLaunch({type: 'selection', selection: selectionOfCurrentRun!}),
   };
 
   const selected: LaunchButtonConfiguration = {
     icon: 'select',
     scope: selection.query,
     title: selection.keys.length > 1 ? 'Selected Steps' : 'Selected Step',
-    disabled: !isSelectionPresent || !(isSelectionFinished || isFailureInSelection),
+    disabled: !selection.present || !(selection.finished || selection.failed),
     tooltip: (
       <div>
-        {!isSelectionPresent
-          ? REEXECUTE_SUBSET_NO_SELECTION
-          : !isSelectionFinished
-          ? REEXECUTE_SUBSET_NOT_DONE
-          : REEXECUTE_SUBSET}
-        <div style={{paddingLeft: '10px'}}>
-          {isSelectionPresent &&
-            selection.keys.map((step) => (
-              <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>
-            ))}
-        </div>
+        {!selection.present
+          ? 'Select a step or type a step subset to re-execute.'
+          : !selection.finished
+          ? 'Wait for the steps to finish to re-execute them.'
+          : 'Re-execute the selected steps with existing configuration:'}
+        <StepSelectionDescription selection={selection} />
       </div>
     ),
     onClick: () => onLaunch({type: 'selection', selection}),
@@ -143,18 +170,19 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
     disabled: !isFinalStatus || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
     onClick: () => {
-      if (!run?.executionPlan) {
+      if (!run.executionPlan) {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
       const selectionAndDownstreamQuery = selection.keys.map((k) => `${k}*`).join(',');
-      const graph = toGraphQueryItems(run.executionPlan, runtimeStepKeys);
-      const graphFiltered = filterByQuery(graph, selectionAndDownstreamQuery);
+      const selectionKeys = filterByQuery(graph, selectionAndDownstreamQuery).all.map(
+        (node) => node.name,
+      );
 
       return onLaunch({
         type: 'selection',
         selection: {
-          keys: graphFiltered.all.map((node) => node.name),
+          keys: selectionKeys,
           query: selectionAndDownstreamQuery,
         },
       });
@@ -172,15 +200,20 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
   };
 
   if (!artifactsPersisted) {
-    [selected, fromFailure, fromSelected].forEach((option) => {
+    [selected, same, fromFailure, fromSelected].forEach((option) => {
       option.disabled = true;
       option.title =
         'Retry and re-execute are only enabled on persistent storage. Try rerunning with a different storage configuration.';
     });
   }
 
-  const options = [full, selected, fromSelected, fromFailure];
-  const primary = isSelectionPresent && artifactsPersisted ? selected : full;
+  const options = [full, same, selected, fromSelected, fromFailure];
+  const preferredRerun = selection.present
+    ? selected
+    : selectionOfCurrentRun?.present
+    ? same
+    : null;
+  const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
   return (
     <Group direction="row" spacing={8}>
@@ -261,3 +294,13 @@ function usePipelineAvailabilityErrorForRun(
     disabled: true,
   };
 }
+
+const StepSelectionDescription: React.FunctionComponent<{selection: StepSelection | null}> = ({
+  selection,
+}) => (
+  <div style={{paddingLeft: '10px'}}>
+    {(selection?.keys || []).map((step) => (
+      <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>
+    ))}
+  </div>
+);
