@@ -83,17 +83,23 @@ def selective_notif():
 
 In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will send a slack message.
 
-<!-- ## Examples
+## Examples
 
-### First example
+### Accessing failure information in a failure hook
 
-Some supporting text for the example
+In many cases, you might want to know details about a solid failure. You can get the exception object thrown in the failed solid via the `solid_exception` property on <PyObject module="dagster" object="HookContext" />:
 
-```python
+```python file=/concepts/solids_pipelines/solid_hooks_context.py startafter=start_failure_hook_solid_exception endbefore=end_failure_hook_solid_exception
+from dagster import HookContext, failure_hook
+import traceback
 
-    ...
 
-``` -->
+@failure_hook
+def my_failure_hook(context: HookContext):
+    solid_exception: BaseException = context.solid_exception
+    # print stack trace of exception
+    traceback.print_tb(solid_exception.__traceback__)
+```
 
 ## Patterns
 

@@ -1,6 +1,7 @@
 from unittest import mock
 
 from dagster import DagsterEventType, ModeDefinition, ResourceDefinition, execute_pipeline, pipeline
+from dagster.core.definitions import solid
 from docs_snippets.concepts.solids_pipelines.solid_hooks import (
     a,
     notif_all,
@@ -8,6 +9,7 @@ from docs_snippets.concepts.solids_pipelines.solid_hooks import (
     slack_message_on_failure,
     slack_message_on_success,
 )
+from docs_snippets.concepts.solids_pipelines.solid_hooks_context import my_failure_hook
 
 
 def test_notif_all_pipeline():
@@ -51,3 +53,17 @@ def test_hook_resource():
 
     execute_pipeline(foo)
     assert slack_mock.chat.post_message.call_count == 1
+
+
+def test_failure_hook_solid_exception():
+    @solid
+    def failed_solid(_):
+        raise Exception("my failure")
+
+    @my_failure_hook
+    @pipeline
+    def foo():
+        failed_solid()
+
+    result = execute_pipeline(foo, raise_on_error=False)
+    assert not result.success
