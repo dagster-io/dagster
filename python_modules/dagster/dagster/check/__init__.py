@@ -859,3 +859,7 @@ def class_param(obj: Any, param_name: str) -> Union[ParameterCheckError, type]:
             f'Param "{param_name}" is not a class. Got {repr(obj)} which is type {type(obj)}.'
         )
     return obj
+
+
+def assert_never(value: NoReturn) -> NoReturn:
+    failed(f"Unhandled value: {value} ({type(value).__name__})")
