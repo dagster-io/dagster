@@ -12,7 +12,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
-from dagster.utils import merge_dicts
+from dagster.utils import frozenlist, merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
@@ -171,7 +171,8 @@ class PartitionSetDefinition(
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
             partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition],
-            Partition): Function that determines the partition to use at a given execution time.
+            Union[Partition, List[Partition]]): Function that determines the partition to use at a given execution time.
+            Can return either a single Partition or a list of Partitions.
             For time-based partition sets, will likely be either `identity_partition_selector` or a
             selector returned by `create_offset_partition_selector`.
             should_execute (Optional[function]): Function that runs at schedule execution time that
@@ -200,17 +201,35 @@ class PartitionSetDefinition(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the execution of partition_selector for schedule {schedule_name}",
             ):
-                selected_partition = partition_selector(context, self)
+                selector_result = partition_selector(context, self)
 
-            if isinstance(selected_partition, SkipReason):
-                yield selected_partition
+            if isinstance(selector_result, SkipReason):
+                yield selector_result
                 return
 
-            if selected_partition.name not in self.get_partition_names(
-                context.scheduled_execution_time
-            ):
+            selected_partitions = (
+                selector_result
+                if isinstance(selector_result, (frozenlist, list))
+                else [selector_result]
+            )
+
+            check.is_list(selected_partitions, of_type=Partition)
+
+            if not selected_partitions:
+                yield SkipReason("Partition selector returned an empty list of partitions.")
+                return
+
+            missing_partition_names = [
+                partition.name
+                for partition in selected_partitions
+                if partition.name not in self.get_partition_names(context.scheduled_execution_time)
+            ]
+
+            if missing_partition_names:
                 yield SkipReason(
-                    f"Partition selector returned a partition {selected_partition.name} not in the partition set."
+                    "Partition selector returned partition"
+                    + ("s" if len(missing_partition_names) > 1 else "")
+                    + f" not in the partition set: {', '.join(missing_partition_names)}."
                 )
                 return
 
@@ -226,22 +245,23 @@ class PartitionSetDefinition(
                     )
                     return
 
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: f"Error occurred during the execution of run_config_fn for schedule {schedule_name}",
-            ):
-                run_config = self.run_config_for_partition(selected_partition)
+            for selected_partition in selected_partitions:
+                with user_code_error_boundary(
+                    ScheduleExecutionError,
+                    lambda: f"Error occurred during the execution of run_config_fn for schedule {schedule_name}",
+                ):
+                    run_config = self.run_config_for_partition(selected_partition)
 
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: f"Error occurred during the execution of tags_fn for schedule {schedule_name}",
-            ):
-                tags = self.tags_for_partition(selected_partition)
-            yield RunRequest(
-                run_key=None,
-                run_config=run_config,
-                tags=tags,
-            )
+                with user_code_error_boundary(
+                    ScheduleExecutionError,
+                    lambda: f"Error occurred during the execution of tags_fn for schedule {schedule_name}",
+                ):
+                    tags = self.tags_for_partition(selected_partition)
+                yield RunRequest(
+                    run_key=selected_partition.name if len(selected_partitions) > 0 else None,
+                    run_config=run_config,
+                    tags=tags,
+                )
 
         return PartitionScheduleDefinition(
             name=schedule_name,
