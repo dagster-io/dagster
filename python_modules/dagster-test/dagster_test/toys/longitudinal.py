@@ -5,7 +5,6 @@ from random import random
 
 from dagster import (
     AssetMaterialization,
-    EventMetadataEntry,
     InputDefinition,
     ModeDefinition,
     Nothing,
@@ -60,7 +59,6 @@ def make_solid(
     asset_key=None,
     error_rate=None,
     data_size_fn=None,
-    materialization_metadata_entries=None,
     sleep_factor=None,
     has_input=False,
 ):
@@ -82,16 +80,11 @@ def make_solid(
             raise Exception("blah")
 
         if asset_key:
-            metadata_entries = materialization_metadata_entries or []
-            if data_size_fn:
-                metadata_entries.append(EventMetadataEntry.float(data_size, "Data size (bytes)"))
-
-            if len(metadata_entries) == 0:
-                metadata_entries = None
+            metadata = {"Data size (bytes)": data_size} if data_size_fn else None
 
             yield AssetMaterialization(
                 asset_key=asset_key,
-                metadata_entries=metadata_entries,
+                metadata=metadata,
                 partition=context.solid_config.get("partition"),
             )
 

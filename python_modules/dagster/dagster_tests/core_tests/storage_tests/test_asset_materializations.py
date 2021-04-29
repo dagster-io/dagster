@@ -11,11 +11,8 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.events import (
-    AssetLineageInfo,
-    EventMetadataEntry,
-    PartitionMetadataEntry,
-)
+from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
+from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
 

@@ -24,25 +24,29 @@ from .dependency import (
     SolidInvocation,
     SolidOutputHandle,
 )
+from .event_metadata import (
+    EventMetadata,
+    EventMetadataEntry,
+    FloatMetadataEntryData,
+    IntMetadataEntryData,
+    JsonMetadataEntryData,
+    MarkdownMetadataEntryData,
+    PathMetadataEntryData,
+    PythonArtifactMetadataEntryData,
+    TextMetadataEntryData,
+    UrlMetadataEntryData,
+)
 from .events import (
     AssetKey,
     AssetMaterialization,
     DynamicOutput,
-    EventMetadataEntry,
     ExpectationResult,
     Failure,
-    FloatMetadataEntryData,
     HookExecutionResult,
-    IntMetadataEntryData,
-    JsonMetadataEntryData,
-    MarkdownMetadataEntryData,
     Materialization,
     Output,
-    PathMetadataEntryData,
     RetryRequested,
-    TextMetadataEntryData,
     TypeCheck,
-    UrlMetadataEntryData,
 )
 from .executor import (
     ExecutorDefinition,

@@ -14,12 +14,8 @@ from dagster.core.definitions import (
     SolidDefinition,
     TypeCheck,
 )
-from dagster.core.definitions.events import (
-    AssetLineageInfo,
-    DynamicOutput,
-    EventMetadataEntry,
-    PartitionMetadataEntry,
-)
+from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
+from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
     DagsterExecutionStepExecutionError,

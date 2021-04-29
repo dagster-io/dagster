@@ -4,7 +4,8 @@ import pickle
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
-from dagster.core.definitions.events import AssetKey, AssetMaterialization, EventMetadataEntry
+from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager

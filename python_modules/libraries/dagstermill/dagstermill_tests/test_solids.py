@@ -7,7 +7,7 @@ import nbformat
 import pytest
 from dagster import execute_pipeline, pipeline
 from dagster.check import CheckError
-from dagster.core.definitions.events import PathMetadataEntryData
+from dagster.core.definitions.event_metadata import PathMetadataEntryData
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path

@@ -508,6 +508,10 @@ class DagsterInvalidAssetKey(DagsterError):
     """ Error raised by invalid asset key """
 
 
+class DagsterInvalidEventMetadata(DagsterError):
+    """ Error raised by invalid event metadata parameters """
+
+
 class HookExecutionError(DagsterUserCodeExecutionError):
     """ Error raised during the execution of a user-defined hook. """
 

@@ -7,7 +7,6 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
-    EventMetadataEntry,
     InputDefinition,
     ModeDefinition,
     Output,
@@ -764,12 +763,12 @@ class TestEventLogStorage:
         def materialize_one(_):
             yield AssetMaterialization(
                 asset_key=asset_key,
-                metadata_entries=[
-                    EventMetadataEntry.text("hello", "text"),
-                    EventMetadataEntry.json({"hello": "world"}, "json"),
-                    EventMetadataEntry.float(1.0, "one_float"),
-                    EventMetadataEntry.int(1, "one_int"),
-                ],
+                metadata={
+                    "text": "hello",
+                    "json": {"hello": "world"},
+                    "one_float": 1.0,
+                    "one_int": 1,
+                },
             )
             yield Output(1)
 

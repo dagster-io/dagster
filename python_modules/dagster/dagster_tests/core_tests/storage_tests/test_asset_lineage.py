@@ -10,11 +10,8 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.events import (
-    AssetLineageInfo,
-    EventMetadataEntry,
-    PartitionMetadataEntry,
-)
+from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
+from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition

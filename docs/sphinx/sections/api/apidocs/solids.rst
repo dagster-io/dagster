@@ -79,14 +79,23 @@ Event types
 
 -------
 
-Metadata entries
-^^^^^^^^^^^^^^^^
+Event metadata
+^^^^^^^^^^^^^^
 
-Dagster uses lists of metadata entries to communicate arbitrary user-specified metadata about
-structured events.
+Dagster uses event metadata to communicate arbitrary user-specified metadata about structured
+events.
+
+.. autoclass:: EventMetadata
+    :members:
 
 .. autoclass:: EventMetadataEntry
     :members:
+
+Metadata types
+^^^^^^^^^^^^^^
+
+The type alias for the union of the structured event metadata types is `EventMetadataEntryData`.
+This consists of the following data types:
 
 .. autoclass:: JsonMetadataEntryData
     :members:
@@ -109,9 +118,12 @@ structured events.
 .. autoclass:: IntMetadataEntryData
     :members:
 
+.. autoclass:: PythonArtifactMetadataEntryData
+    :members:
+
 -------
 
-Asset Key
+Asset key
 ^^^^^^^^^^^^^^^^
 
 Dagster uses :py:class:`AssetKey` to build an index on :py:class:`Materialization` events.

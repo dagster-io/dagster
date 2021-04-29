@@ -1,6 +1,6 @@
 from dagster import (
     AssetMaterialization,
-    EventMetadataEntry,
+    EventMetadata,
     ExpectationResult,
     InputDefinition,
     Nothing,
@@ -42,9 +42,7 @@ def create_raw_file_solid(name):
     def raw_file_solid(_context):
         yield AssetMaterialization(
             asset_key="table_info",
-            metadata_entries=[
-                EventMetadataEntry.path(label="table_path", path="/path/to/{}.raw".format(name))
-            ],
+            metadata={"table_path": EventMetadata.path("/path/to/{}.raw".format(name))},
         )
         yield do_expectation(_context, name)
         yield Output(name)
@@ -83,17 +81,15 @@ def many_table_materializations(_context):
         for table in raw_tables:
             yield AssetMaterialization(
                 asset_key="table_info",
-                metadata_entries=[
-                    EventMetadataEntry.text(text=table, label="table_name"),
-                    EventMetadataEntry.fspath(path="/path/to/{}".format(table), label="table_path"),
-                    EventMetadataEntry.json(data={"name": table}, label="table_data"),
-                    EventMetadataEntry.url(
-                        url="https://bigty.pe/{}".format(table), label="table_name_big"
-                    ),
-                    EventMetadataEntry.md(md_str=md_str, label="table_blurb"),
-                    EventMetadataEntry.int(29119888133298982934829348, label="big_int"),
-                    EventMetadataEntry.float(float("nan"), label="float_nan"),
-                ],
+                metadata={
+                    "table_name": table,
+                    "table_path": EventMetadata.path(f"/path/to/{table}"),
+                    "table_data": {"name": table},
+                    "table_name_big": EventMetadata.url(f"https://bigty.pe/{table}"),
+                    "table_blurb": EventMetadata.md(md_str),
+                    "big_int": 29119888133298982934829348,
+                    "float_nan": float("nan"),
+                },
             )
 
 
@@ -119,9 +115,9 @@ def many_materializations_and_passing_expectations(_context):
     for table in tables:
         yield AssetMaterialization(
             asset_key="table_info",
-            metadata_entries=[
-                EventMetadataEntry.path(label="table_path", path="/path/to/{}.raw".format(table))
-            ],
+            metadata={
+                "table_path": EventMetadata.path(f"/path/to/{table}.raw"),
+            },
         )
         yield ExpectationResult(
             success=True,
@@ -140,34 +136,28 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
         success=True,
         label="user_expectations",
         description="Battery of expectations for user",
-        metadata_entries=[
-            EventMetadataEntry.json(
-                label="table_summary",
-                data={
-                    "columns": {
-                        "name": {"nulls": 0, "empty": 0, "values": 123, "average_length": 3.394893},
-                        "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
-                    }
-                },
-            )
-        ],
+        metadata={
+            "table_summary": {
+                "columns": {
+                    "name": {"nulls": 0, "empty": 0, "values": 123, "average_length": 3.394893},
+                    "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
+                }
+            },
+        },
     )
 
     yield ExpectationResult(
         success=False,
         label="groups_expectations",
         description="Battery of expectations for groups",
-        metadata_entries=[
-            EventMetadataEntry.json(
-                label="table_summary",
-                data={
-                    "columns": {
-                        "name": {"nulls": 1, "empty": 0, "values": 122, "average_length": 3.394893},
-                        "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
-                    }
-                },
-            )
-        ],
+        metadata={
+            "table_summary": {
+                "columns": {
+                    "name": {"nulls": 1, "empty": 0, "values": 122, "average_length": 3.394893},
+                    "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
+                }
+            }
+        },
     )
 
 
