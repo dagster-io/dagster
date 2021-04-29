@@ -11,53 +11,40 @@ In many situations, we'd like to be able to configure solids at run time. For ex
 
 We've seen a solid whose behavior is the same every time it runs:
 
-```python file=/intro_tutorial/advanced/configuring_solids/read_csv.py startafter=start_load_cereals_marker endbefore=end_load_cereals_marker
+```python file=/intro_tutorial/advanced/configuring_solids/download_csv.py startafter=start_download_cereals_marker endbefore=end_download_cereals_marker
 @solid
-def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
-    with open(csv_path, "r") as fd:
-        cereals = [row for row in csv.DictReader(fd)]
-
-    context.log.info(f"Found {len(cereals)} cereals".format())
-    return cereals
+def download_cereals(_):
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
 ```
 
-If we want the file to be determined by whomever is launching the pipeline, we might write a more generic version:
+If we want the URL to be determined by whomever is launching the pipeline, we might write a more generic version:
 
-```python file=/intro_tutorial/advanced/configuring_solids/read_csv.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
+```python file=/intro_tutorial/advanced/configuring_solids/download_csv.py startafter=start_download_csv_marker endbefore=end_download_csv_marker
 @solid
-def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
-
-    context.log.info(f"Read {len(lines)} lines")
-    return lines
+def download_csv(context):
+    response = requests.get(context.solid_config["url"])
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
 ```
 
-Here, rather than hard-coding the value of `dataset_path`, we use a config option, `csv_name`.
+Here, rather than hard-coding the value of the URL we want to download from, we use a config option, `url`.
 
 Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
 ```python file=/intro_tutorial/advanced/configuring_solids/configurable_pipeline.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 import csv
-import os
 
+import requests
 from dagster import execute_pipeline, pipeline, solid
 
 
 @solid
-def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
-
-    context.log.info(f"Read {len(lines)} lines")
-    return lines
+def download_csv(context):
+    response = requests.get(context.solid_config["url"])
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
 
 
 @solid
@@ -71,7 +58,7 @@ def sort_by_calories(context, cereals):
 
 @pipeline
 def configurable_pipeline():
-    sort_by_calories(read_csv())
+    sort_by_calories(download_csv())
 ```
 
 <br />
@@ -88,20 +75,20 @@ Dagit provides a powerful, schema-aware, typeahead-enabled config editor to enab
 dagit -f configurable_pipeline.py
 ```
 
-Notice that the launch execution button is disabled and the solids are red in the bottom right corner of the Playground.
+Select the "Playground" tab to get to the place for entering config and launching pipelines. Here's the config we need to execute our pipeline:
+
+```yaml file=/intro_tutorial/advanced/configuring_solids/run_config.yaml
+solids:
+  download_csv:
+    config:
+      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
+```
+
+Let's enter it into the config editor:
 
 <Image
-alt="inputs_figure_one.png"
-src="/images/tutorial/inputs_figure_one.png"
-width={1680}
-height={946}
-/>
-
-Let's enter the config we need in order to execute our pipeline.
-
-<Image
-alt="inputs_figure_three.png"
-src="/images/tutorial/inputs_figure_three.png"
+alt="config_filled_out.png"
+src="/images/tutorial/config_filled_out.png"
 width={1680}
 height={946}
 />
@@ -115,7 +102,11 @@ This dict contains all of the user-provided configuration with which to execute 
 
 ```python file=/intro_tutorial/advanced/configuring_solids/configurable_pipeline.py startafter=start_run_config_marker endbefore=end_run_config_marker
 run_config = {
-        "solids": {"read_csv": {"config": {"csv_name": "cereal.csv"}}}
+        "solids": {
+            "download_csv": {
+                "config": {"url": "https://docs.dagster.io/assets/cereal.csv"}
+            }
+        }
     }
 ```
 
@@ -134,9 +125,9 @@ When executing pipelines with the Dagster CLI, we'll need to provide the run con
 
 ```yaml file=/intro_tutorial/advanced/configuring_solids/run_config.yaml
 solids:
-  read_csv:
+  download_csv:
     config:
-      csv_name: "cereal.csv"
+      url: "https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv"
 ```
 
 We can pass config files in this format to the Dagster CLI tool with the `-c` flag.
@@ -149,21 +140,22 @@ In practice, you might have different sections of your run config in different y
 
 ## Putting Schema on a Config
 
-The implementation of the `read_csv` solid we wrote above expects the provided configuration will look a particular way. I.e. that it will include a key called "csv_name" and an accompanying value that is a string. If someone running the pipeline were to neglect to provide config, the solid would fail with a `KeyError` when it tried to fetch the value for "csv_name" from `context.solid_config`. If the provided value were an integer and not a string, the solid would also fail, because paths are strings.
+The implementation of the `download_csv` solid we wrote above expects the provided configuration will look a particular way. I.e. that it will include a key called "url" and an accompanying value that is a string. If someone running the pipeline were to neglect to provide config, the solid would fail with a `KeyError` when it tried to fetch the value for "url" from `context.solid_config`. If the provided value were an integer and not a string, the solid would also fail, because `requests.get` expects a string, not an integer.
 
-Dagster allows specifying a "config schema" on any configurable object to help catch these kinds of errors early. Here's a version of `read_csv` that includes a `config_schema`. With this version, if we try to pass config that doesn't match the expected schema, Dagster can tell us immediately.
+Dagster allows specifying a "config schema" on any configurable object to help catch these kinds of errors early. Here's a version of `download_csv` that includes a `config_schema`. With this version, if we try to pass config that doesn't match the expected schema, Dagster can tell us immediately.
 
-```python file=/intro_tutorial/advanced/configuring_solids/config_schema.py startafter=start_read_csv_marker endbefore=end_read_csv_marker
-@solid(config_schema={"csv_name": str})
-def read_csv(context):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), context.solid_config["csv_name"]
-    )
-    with open(csv_path, "r") as fd:
-        lines = [row for row in csv.DictReader(fd)]
+```python file=/intro_tutorial/advanced/configuring_solids/config_schema.py
+import csv
 
-    context.log.info(f"Read {len(lines)} lines")
-    return lines
+import requests
+from dagster import solid
+
+
+@solid(config_schema={"url": str})
+def download_csv(context):
+    response = requests.get(context.solid_config["url"])
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
 ```
 
 The <PyObject module="dagster" object="ConfigSchema" /> documentation describes all the ways that you can provide config schema, including optional config fields, default values, and collections.

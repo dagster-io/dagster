@@ -167,7 +167,7 @@ The Dagster gRPC server needs to have access to your code. To initialize the ser
 
 Similar to when specifying code in your `workspace.yaml`, the target can be either a python file or installed python package, and you can use an 'attribute' flag to identify a single repository within that target. The server will automatically find and load the specified repositories.
 
-You also need to specify a host and either a post or socket to run the server on.
+You also need to specify a host and either a port or socket to run the server on.
 
     # Load gRPC Server using python file:
     dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port 4266
