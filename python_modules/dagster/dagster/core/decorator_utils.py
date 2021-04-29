@@ -1,33 +1,38 @@
-from dagster import check
+from typing import Any, Callable, List, Optional
+
 from dagster.seven import funcsigs
 
 
-def split_function_parameters(fn, expected_positionals):
-    check.callable_param(fn, "fn")
-    check.list_param(expected_positionals, "expected_positionals", str)
-    fn_params = list(funcsigs.signature(fn).parameters.values())
-    return fn_params[0 : len(expected_positionals)], fn_params[len(expected_positionals) :]
+def _is_param_valid(param: funcsigs.Parameter, expected_positional: str) -> bool:
+    # The "*" character indicates that we permit any name for this positional parameter.
+    if expected_positional == "*":
+        return True
+
+    possible_names = {
+        "_",
+        expected_positional,
+        f"_{expected_positional}",
+        f"{expected_positional}_",
+    }
+    possible_kinds = {funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY}
+
+    return param.name in possible_names and param.kind in possible_kinds
 
 
-def validate_decorated_fn_positionals(decorated_fn_positionals, expected_positionals):
-    if len(decorated_fn_positionals) < len(expected_positionals):
-        return expected_positionals[0]
-    for expected_name, actual in zip(expected_positionals, decorated_fn_positionals):
-        if expected_name != "*":
-            possible_names = {
-                "_",
-                expected_name,
-                "_{expected}".format(expected=expected_name),
-                "{expected}_".format(expected=expected_name),
-            }
-            if (
-                actual.kind
-                not in [
-                    funcsigs.Parameter.POSITIONAL_OR_KEYWORD,
-                    funcsigs.Parameter.POSITIONAL_ONLY,
-                ]
-            ) or (actual.name not in possible_names):
-                return expected_name
+def get_function_params(fn: Callable[..., Any]) -> List[funcsigs.Parameter]:
+    return list(funcsigs.signature(fn).parameters.values())
+
+
+def validate_expected_params(
+    params: List[funcsigs.Parameter], expected_params: List[str]
+) -> Optional[str]:
+    """Returns first missing positional, if any, otherwise None"""
+    expected_idx = 0
+    for expected_param in expected_params:
+        if expected_idx >= len(params) or not _is_param_valid(params[expected_idx], expected_param):
+            return expected_param
+        expected_idx += 1
+    return None
 
 
 def is_required_param(param):

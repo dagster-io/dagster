@@ -1,7 +1,4 @@
-from dagster.core.decorator_utils import (
-    split_function_parameters,
-    validate_decorated_fn_positionals,
-)
+from dagster.core.decorator_utils import get_function_params, validate_expected_params
 
 
 def decorated_function_one_positional():
@@ -18,24 +15,20 @@ def decorated_function_two_positionals_one_kwarg():
     return foo_kwarg
 
 
-def test_get_function_positional_parameters_ok():
-    positionals, non_positionals = split_function_parameters(
-        decorated_function_one_positional(), ["bar"]
-    )
-    validate_decorated_fn_positionals(positionals, ["bar"])
-    assert "bar" in {positional.name for positional in positionals}
-    assert not non_positionals
+def test_one_required_positional_param():
+    positionals = ["bar"]
+    fn_params = get_function_params(decorated_function_one_positional())
+    assert {fn_param.name for fn_param in fn_params} == {"bar"}
+    assert not validate_expected_params(fn_params, positionals)
 
 
-def test_get_function_positional_parameters_multiple():
-    positionals, non_positionals = split_function_parameters(
-        decorated_function_two_positionals_one_kwarg(), ["bar", "baz"]
-    )
-    validate_decorated_fn_positionals(positionals, ["bar", "baz"])
-    assert {positional.name for positional in positionals} == {"bar", "baz"}
-    assert {non_positional.name for non_positional in non_positionals} == {"qux"}
+def test_required_positional_parameters_not_missing():
+    positionals = ["bar", "baz"]
 
+    fn_params = get_function_params(decorated_function_two_positionals_one_kwarg())
+    assert {fn_param.name for fn_param in fn_params} == {"bar", "qux", "baz"}
 
-def test_get_function_positional_parameters_invalid():
-    positionals, _ = split_function_parameters(decorated_function_one_positional(), ["bat"])
-    assert validate_decorated_fn_positionals(positionals, ["bat"]) == "bat"
+    assert not validate_expected_params(fn_params, positionals)
+
+    fn_params = get_function_params(decorated_function_one_positional())
+    assert validate_expected_params(fn_params, positionals) == "baz"

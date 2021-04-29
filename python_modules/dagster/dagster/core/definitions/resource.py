@@ -9,10 +9,10 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownRes
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
+    get_function_params,
     is_required_param,
     positional_arg_name_list,
-    split_function_parameters,
-    validate_decorated_fn_positionals,
+    validate_expected_params,
 )
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
@@ -163,13 +163,18 @@ class _ResourceDecoratorCallable:
         check.callable_param(resource_fn, "resource_fn")
 
         any_name = ["*"]
-        fn_positionals, extras = split_function_parameters(resource_fn, any_name)
-        missing_positional = validate_decorated_fn_positionals(fn_positionals, any_name)
 
+        params = get_function_params(resource_fn)
+
+        missing_positional = validate_expected_params(params, any_name)
         if missing_positional:
             raise DagsterInvalidDefinitionError(
-                f"@resource decorated function '{resource_fn.__name__}' expects a single positional argument."
+                f"@resource decorated function '{resource_fn.__name__}' expects a single "
+                "positional argument."
             )
+
+        extras = params[len(any_name) :]
+
         required_extras = list(filter(is_required_param, extras))
         if required_extras:
             raise DagsterInvalidDefinitionError(
