@@ -13,6 +13,8 @@ from dagster import (
     Any,
     DagsterEventType,
     Field,
+    Partition,
+    PartitionSetDefinition,
     ScheduleDefinition,
     daily_schedule,
     hourly_schedule,
@@ -304,6 +306,36 @@ def large_schedule(_):
     }
 
 
+@solid
+def start(_, x):
+    return x
+
+
+@solid
+def end(_, x=1):
+    return x
+
+
+@pipeline
+def two_step_pipeline():
+    end(start())
+
+
+manual_partition = PartitionSetDefinition(
+    name="manual_partition",
+    pipeline_name="two_step_pipeline",
+    # selects only second step
+    solid_selection=["end"],
+    partition_fn=lambda: ["one"],
+    # includes config for first step - test that it is ignored
+    run_config_fn_for_partition=lambda _: {"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
+)
+
+manual_partition_schedule = manual_partition.create_schedule_definition(
+    "manual_partition_schedule", "0 0 * * *", lambda _x, _y: Partition("one")
+)
+
+
 @repository
 def the_repo():
     return [
@@ -328,6 +360,8 @@ def the_repo():
         define_multi_run_schedule_with_missing_run_key(),
         partitionless_schedule,
         large_schedule,
+        two_step_pipeline,
+        manual_partition_schedule,
     ]
 
 
@@ -1664,3 +1698,54 @@ def test_large_schedule(external_repo_context):
             assert instance.get_runs_count() == 1
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_manual_partition_with_solid_selection(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_schedules(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("manual_partition_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            freeze_datetime = freeze_datetime.add(seconds=2)
+
+        with pendulum.test(freeze_datetime):
+            list(
+                launch_scheduled_runs(
+                    instance,
+                    workspace,
+                    logger(),
+                    pendulum.now("UTC"),
+                )
+            )
+
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+            run_id = ticks[0].run_ids[0]
+
+            start_time = time.time()
+            while (time.time() - start_time) < 5:
+                run = instance.get_run_by_id(run_id)
+                if not run.is_finished:
+                    time.sleep(0.1)
+                else:
+                    break
+
+            events = instance.all_logs(run_id)
+            started_steps = set()
+
+            for event in events:
+                if event.is_dagster_event and event.dagster_event.is_step_start:
+                    started_steps.add(event.dagster_event.step_key)
+
+            assert started_steps == {"end"}  # matches solid_selection
