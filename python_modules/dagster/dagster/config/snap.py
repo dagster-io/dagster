@@ -247,7 +247,10 @@ def minimal_config_for_type_snap(
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return []
     elif config_type_snap.kind == ConfigTypeKind.ENUM:
-        return "|".join(sorted(map(lambda v: v.config_value, config_type_snap.enum_values)))
+        # guard against the edge case that an enum is defined with zero options
+        return (
+            config_type_snap.enum_values[0].value if config_type_snap.enum_values else "<unknown>"
+        )
     elif config_type_snap.kind == ConfigTypeKind.SCALAR_UNION:
         return minimal_config_for_type_snap(
             config_schema_snap,

@@ -8,6 +8,8 @@ from dagster import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    Enum,
+    EnumValue,
     Field,
     Float,
     Int,
@@ -93,6 +95,12 @@ def test_default_float_arg():
     assert_config_value_success(config_field.config_type, {}, {"float_field": 2})
 
 
+def _single_required_enum_config_dict():
+    return convert_potential_field(
+        {"enum_field": Enum("MyEnum", [EnumValue("OptionA"), EnumValue("OptionB")])}
+    )
+
+
 def _single_required_string_config_dict():
     return convert_potential_field({"string_field": String})
 
@@ -128,6 +136,19 @@ def _validate(config_field, value):
     res = process_config(config_field.config_type, value)
     assert res.success, res.errors[0].message
     return res.value
+
+
+def test_single_required_enum_field_config_type():
+    assert _validate(_single_required_enum_config_dict(), {"enum_field": "OptionA"}) == {
+        "enum_field": "OptionA"
+    }
+
+    expected_suggested_config = {"enum_field": "OptionA"}
+    with pytest.raises(
+        AssertionError,
+        match=f'Missing required config entry "enum_field" at the root. .* {expected_suggested_config}',
+    ):
+        _validate(_single_required_enum_config_dict(), {})
 
 
 def test_single_required_string_field_config_type():

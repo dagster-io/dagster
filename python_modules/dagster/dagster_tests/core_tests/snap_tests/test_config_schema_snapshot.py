@@ -1,5 +1,7 @@
 from dagster import (
     Array,
+    Enum,
+    EnumValue,
     Field,
     ModeDefinition,
     Noneable,
@@ -12,7 +14,11 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.field import resolve_to_config_type
-from dagster.core.snap import build_config_schema_snapshot, snap_from_config_type
+from dagster.core.snap import (
+    ConfigEnumValueSnap,
+    build_config_schema_snapshot,
+    snap_from_config_type,
+)
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
@@ -23,6 +29,26 @@ from dagster.serdes import (
 
 def snap_from_dagster_type(dagster_type):
     return snap_from_config_type(resolve_to_config_type(dagster_type))
+
+
+def test_enum_snap():
+    enum_snap = snap_from_dagster_type(
+        Enum(
+            "CowboyType",
+            [
+                EnumValue("good"),
+                EnumValue("bad"),
+                EnumValue("ugly"),
+            ],
+        )
+    )
+    assert enum_snap.given_name == "CowboyType"
+    assert enum_snap.key == "CowboyType"
+    assert enum_snap.kind == ConfigTypeKind.ENUM
+    assert enum_snap.enum_values == [
+        ConfigEnumValueSnap(value, description=None) for value in ["good", "bad", "ugly"]
+    ]
+    assert enum_snap.fields is None
 
 
 def test_basic_int_snap():
