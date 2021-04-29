@@ -3,7 +3,7 @@ title: Testing Solids and Pipelines | Dagster
 description: Dagster enables you to build testable data pipelines
 ---
 
-# Testing and Solids and Pipeline
+# Testing Solids and Pipelines
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/" />
 
@@ -11,7 +11,7 @@ Data applications are notoriously difficult to test and are therefore often un- 
 
 Creating testable and verifiable data pipelines is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll show how to write unit tests for Dagster pipelines and solids.
 
-## Testing Solids and Pipelines
+## Testing the Cereal Pipeline (and its solids)
 
 Let's go back to our first solid and pipeline in [`hello_cereal.py`](/tutorial/intro-tutorial/single-solid-pipeline#executing-our-first-pipeline) and ensure they're working as expected by writing some tests. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" /> to test our solid in isolation.
 

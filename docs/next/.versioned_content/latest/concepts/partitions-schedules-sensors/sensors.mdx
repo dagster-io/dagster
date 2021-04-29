@@ -75,6 +75,8 @@ def my_directory_sensor(_context):
 
 This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyObject object="RunRequest"/> for each file.
 
+Once `my_directory_sensor` is added to a <PyObject object="repository"/> with `log_file_pipeline`, it can be enabled and used.
+
 ## Idempotence and Cursors
 
 When instigating runs based on external events, you usually want to run exactly one pipeline run for each event. There are two ways to define your sensors to avoid creating duplicate runs for your events: using `run_key` and using a cursor.

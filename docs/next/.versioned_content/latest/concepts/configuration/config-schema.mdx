@@ -158,32 +158,70 @@ resources:
 
 ### Passing Configuration to Multiple Solids in a Pipeline
 
-If you want to make a single config value available to multiple solids, you can house the configuration inside a resource and reference that resource from any solid that wants to use it.
+If you want multiple solids to share values, You can use <PyObject module="dagster" object="make_values_resource" /> to pass the values via a resource and reference that resource from any solid that wants to use it.
 
-```python file=/concepts/configuration/multiple_solids.py
-from dagster import ModeDefinition, execute_pipeline, pipeline, resource, solid
+It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource:
 
-
-@resource(config_schema=str)
-def my_str_resource(init_context):
-    return init_context.resource_config
+```python file=/concepts/configuration/make_values_resource_any.py
+from dagster import ModeDefinition, execute_pipeline, make_values_resource, pipeline, solid
 
 
-@solid(required_resource_keys={"my_str"})
+@solid(required_resource_keys={"value"})
 def solid1(context):
-    context.log.info("solid1: " + context.resources.my_str)
+    context.log.info(f"value: {context.resources.value}")
 
 
-@solid(required_resource_keys={"my_str"})
+@solid(required_resource_keys={"value"})
 def solid2(context):
-    context.log.info("solid2: " + context.resources.my_str)
+    context.log.info(f"value: {context.resources.value}")
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"my_str": my_str_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"value": make_values_resource()})])
 def my_pipeline():
     solid1()
     solid2()
 
 
-execute_pipeline(my_pipeline, run_config={"resources": {"my_str": "some_value"}})
+execute_pipeline(my_pipeline, run_config={"resources": {"value": {"config": "some_value"}}})
+```
+
+You can also specify the schema of the values like:
+
+```python file=/concepts/configuration/make_values_resource_config_schema.py
+from dagster import ModeDefinition, execute_pipeline, make_values_resource, pipeline, solid
+
+
+@solid(required_resource_keys={"values"})
+def solid1(context):
+    context.log.info(f"my str: {context.resources.values['my_str']}")
+
+
+@solid(required_resource_keys={"values"})
+def solid2(context):
+    context.log.info(f"my int: {context.resources.values['my_int']}")
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
+    ]
+)
+def my_pipeline():
+    solid1()
+    solid2()
+
+
+execute_pipeline(
+    my_pipeline, run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
+)
+```
+
+And pass the values via a run config like:
+
+```YAML file=/concepts/configuration/make_values_resource_values.yaml
+resources:
+  values:
+    config:
+      my_str: foo
+      my_int: 1
 ```
