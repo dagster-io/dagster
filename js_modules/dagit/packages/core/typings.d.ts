@@ -12,6 +12,12 @@ declare module '*.json' {
   export default value;
 }
 
+declare module '*.png' {
+  const value: string;
+  // eslint-disable-next-line import/no-default-export
+  export default value;
+}
+
 declare module 'worker-loader!*' {
   class WebpackWorker extends Worker {
     constructor();

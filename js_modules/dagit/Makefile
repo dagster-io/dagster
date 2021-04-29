@@ -14,7 +14,7 @@ lint:
 	yarn workspace @dagit/app lint && yarn workspace @dagit/core lint
 
 test:
-	yarn workspace @dagit/core test
+	yarn workspace @dagit/core jest
 
 jest:
 	yarn workspace @dagit/core jest
