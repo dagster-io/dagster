@@ -3,6 +3,7 @@ import sys
 import threading
 from abc import abstractmethod, abstractproperty
 from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
@@ -18,17 +19,25 @@ from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.reconstructable import (
+    ReconstructablePipeline,
+    ReconstructableRepository,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
+from dagster.core.host_representation import ExternalPipelineSubsetResult
 from dagster.core.host_representation.external import (
     ExternalExecutionPlan,
     ExternalPipeline,
     ExternalRepository,
 )
+from dagster.core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
+    LocationStateSubscriber,
 )
 from dagster.core.host_representation.handle import PipelineHandle, RepositoryHandle
 from dagster.core.host_representation.origin import (
@@ -53,6 +62,21 @@ from dagster.utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 
+if TYPE_CHECKING:
+    from dagster.core.host_representation import (
+        ExternalPartitionConfigData,
+        ExternalPartitionExecutionErrorData,
+        ExternalPartitionNamesData,
+        ExternalPartitionSetExecutionParamData,
+        ExternalPartitionTagsData,
+        ExternalScheduleExecutionData,
+        ExternalScheduleExecutionErrorData,
+    )
+    from dagster.core.host_representation.external_data import (
+        ExternalSensorExecutionData,
+        ExternalSensorExecutionErrorData,
+    )
+
 
 class RepositoryLocation(AbstractContextManager):
     """
@@ -75,70 +99,91 @@ class RepositoryLocation(AbstractContextManager):
     """
 
     @abstractmethod
-    def get_repository(self, name):
+    def get_repository(self, name: str) -> ExternalRepository:
         pass
 
     @abstractmethod
-    def has_repository(self, name):
+    def has_repository(self, name: str) -> bool:
         pass
 
     @abstractmethod
-    def get_repositories(self):
+    def get_repositories(self) -> Dict[str, ExternalRepository]:
         pass
 
-    def get_repository_names(self):
+    def get_repository_names(self) -> List[str]:
         return list(self.get_repositories().keys())
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.origin.location_name
 
     @abstractmethod
     def get_external_execution_plan(
-        self, external_pipeline, run_config, mode, step_keys_to_execute, known_state
-    ):
+        self,
+        external_pipeline: ExternalPipeline,
+        run_config: Dict[str, Any],
+        mode: str,
+        step_keys_to_execute: Optional[List[str]],
+        known_state: Optional[KnownExecutionState],
+    ) -> ExternalExecutionPlan:
         pass
 
     @abstractmethod
-    def get_subset_external_pipeline_result(self, selector):
+    def get_subset_external_pipeline_result(
+        self, selector: PipelineSelector
+    ) -> ExternalPipelineSubsetResult:
         pass
 
     @abstractmethod
-    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_config(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         pass
 
     @abstractmethod
-    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_tags(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         pass
 
     @abstractmethod
-    def get_external_partition_names(self, repository_handle, partition_set_name):
+    def get_external_partition_names(
+        self, repository_handle: RepositoryHandle, partition_set_name: str
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
     @abstractmethod
     def get_external_partition_set_execution_param_data(
-        self, repository_handle, partition_set_name, partition_names
-    ):
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_names: List[str],
+    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         pass
 
     @abstractmethod
     def get_external_schedule_execution_data(
         self,
-        instance,
-        repository_handle,
-        schedule_name,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        schedule_name: str,
         scheduled_execution_time,
-    ):
+    ) -> Union["ExternalScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
         pass
 
     @abstractmethod
     def get_external_sensor_execution_data(
-        self, instance, repository_handle, name, last_completion_time, last_run_key
-    ):
+        self,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        name: str,
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+    ) -> Union["ExternalSensorExecutionData", "ExternalSensorExecutionErrorData"]:
         pass
 
     @abstractproperty
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         pass
 
     def __del__(self):
@@ -147,35 +192,35 @@ class RepositoryLocation(AbstractContextManager):
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self.cleanup()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         pass
 
-    def add_state_subscriber(self, subscriber):
+    def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> None:
         pass
 
     @abstractproperty
-    def origin(self):
+    def origin(self) -> RepositoryLocationOrigin:
         pass
 
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, str]:
         return merge_dicts(
             self.origin.get_display_metadata(),
             ({"image": self.container_image} if self.container_image else {}),
         )
 
     @abstractproperty
-    def executable_path(self):
+    def executable_path(self) -> Optional[str]:
         pass
 
     @abstractproperty
-    def container_image(self):
+    def container_image(self) -> str:
         pass
 
     @abstractproperty
-    def repository_code_pointer_dict(self):
+    def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         pass
 
-    def get_repository_python_origin(self, repository_name):
+    def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
         if repository_name not in self.repository_code_pointer_dict:
             raise DagsterInvariantViolationError(
                 "Unable to find repository name {} on GRPC server.".format(repository_name)
@@ -190,7 +235,7 @@ class RepositoryLocation(AbstractContextManager):
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, origin):
+    def __init__(self, origin: InProcessRepositoryLocationOrigin):
         self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
         self._recon_repo = self._origin.recon_repo
@@ -209,41 +254,43 @@ class InProcessRepositoryLocation(RepositoryLocation):
         self._repositories = {self._external_repo.name: self._external_repo}
 
     @property
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         return False
 
     @property
-    def origin(self):
+    def origin(self) -> InProcessRepositoryLocationOrigin:
         return self._origin
 
     @property
-    def executable_path(self):
+    def executable_path(self) -> Optional[str]:
         return sys.executable
 
     @property
-    def container_image(self):
+    def container_image(self) -> str:
         return self._recon_repo.container_image
 
     @property
-    def repository_code_pointer_dict(self):
+    def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
         return self._repository_code_pointer_dict
 
-    def get_reconstructable_pipeline(self, name):
+    def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
         return self.get_reconstructable_repository().get_reconstructable_pipeline(name)
 
-    def get_reconstructable_repository(self):
+    def get_reconstructable_repository(self) -> ReconstructableRepository:
         return self.origin.recon_repo
 
-    def get_repository(self, name):
+    def get_repository(self, name: str) -> ExternalRepository:
         return self._repositories[name]
 
-    def has_repository(self, name):
+    def has_repository(self, name: str) -> bool:
         return name in self._repositories
 
-    def get_repositories(self):
+    def get_repositories(self) -> Dict[str, ExternalRepository]:
         return self._repositories
 
-    def get_subset_external_pipeline_result(self, selector):
+    def get_subset_external_pipeline_result(
+        self, selector: PipelineSelector
+    ) -> ExternalPipelineSubsetResult:
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -260,12 +307,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     def get_external_execution_plan(
         self,
-        external_pipeline,
-        run_config,
-        mode,
-        step_keys_to_execute,
-        known_state,
-    ):
+        external_pipeline: ExternalPipeline,
+        run_config: Dict[str, Any],
+        mode: str,
+        step_keys_to_execute: Optional[List[str]],
+        known_state: Optional[KnownExecutionState],
+    ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
@@ -290,7 +337,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
             represented_pipeline=external_pipeline,
         )
 
-    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_config(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -301,7 +350,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
             partition_name=partition_name,
         )
 
-    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_tags(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -312,7 +363,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
             partition_name=partition_name,
         )
 
-    def get_external_partition_names(self, repository_handle, partition_set_name):
+    def get_external_partition_names(
+        self, repository_handle: RepositoryHandle, partition_set_name: str
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
 
@@ -323,11 +376,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     def get_external_schedule_execution_data(
         self,
-        instance,
-        repository_handle,
-        schedule_name,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        schedule_name: str,
         scheduled_execution_time,
-    ):
+    ) -> Union["ExternalScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
@@ -346,15 +399,23 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_sensor_execution_data(
-        self, instance, repository_handle, name, last_completion_time, last_run_key
-    ):
+        self,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        name: str,
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+    ) -> Union["ExternalSensorExecutionData", "ExternalSensorExecutionErrorData"]:
         return get_external_sensor_execution(
             self._recon_repo, instance.get_ref(), name, last_completion_time, last_run_key
         )
 
     def get_external_partition_set_execution_param_data(
-        self, repository_handle, partition_set_name, partition_names
-    ):
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_names: List[str],
+    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.list_param(partition_names, "partition_names", of_type=str)
@@ -369,18 +430,17 @@ class InProcessRepositoryLocation(RepositoryLocation):
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(
         self,
-        origin,
-        host=None,
-        port=None,
-        socket=None,
-        server_id=None,
-        heartbeat=False,
-        watch_server=True,
-        grpc_server_registry=None,
+        origin: RepositoryLocationOrigin,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        socket: Optional[str] = None,
+        server_id: Optional[str] = None,
+        heartbeat: Optional[bool] = False,
+        watch_server: Optional[bool] = True,
+        grpc_server_registry: Optional[GrpcServerRegistry] = None,
     ):
         from dagster.grpc.client import DagsterGrpcClient, client_heartbeat_thread
         from dagster.grpc.server_watcher import create_grpc_watch_thread
-        from .grpc_server_registry import GrpcServerRegistry
 
         self._origin = check.inst_param(origin, "origin", RepositoryLocationOrigin)
 
@@ -388,7 +448,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
         )
 
-        if isinstance(self._origin, GrpcServerRepositoryLocationOrigin):
+        if isinstance(self.origin, GrpcServerRepositoryLocationOrigin):
             self._port = self.origin.port
             self._socket = self.origin.socket
             self._host = self.origin.host
@@ -444,7 +504,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
                 self._heartbeat_thread.start()
 
             if self._watch_server:
-                self._state_subscribers = []
+                self._state_subscribers: List[LocationStateSubscriber] = []
                 self._watch_thread_shutdown_event, self._watch_thread = create_grpc_watch_thread(
                     self.client,
                     on_updated=lambda new_server_id: self._send_state_event_to_subscribers(
@@ -493,51 +553,51 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.cleanup()
             raise
 
-    def add_state_subscriber(self, subscriber):
+    def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> None:
         if self._watch_server:
             self._state_subscribers.append(subscriber)
 
-    def _send_state_event_to_subscribers(self, event):
+    def _send_state_event_to_subscribers(self, event: LocationStateChangeEvent) -> None:
         check.inst_param(event, "event", LocationStateChangeEvent)
         for subscriber in self._state_subscribers:
             subscriber.handle_event(event)
 
     @property
-    def origin(self):
+    def origin(self) -> RepositoryLocationOrigin:
         return self._origin
 
     @property
-    def container_image(self):
-        return self._container_image
+    def container_image(self) -> str:
+        return cast(str, self._container_image)
 
     @property
-    def repository_code_pointer_dict(self):
-        return self._repository_code_pointer_dict
+    def repository_code_pointer_dict(self) -> Dict[str, CodePointer]:
+        return cast(Dict[str, CodePointer], self._repository_code_pointer_dict)
 
     @property
-    def executable_path(self):
+    def executable_path(self) -> Optional[str]:
         return self._executable_path
 
     @property
-    def port(self):
+    def port(self) -> Optional[int]:
         return self._port
 
     @property
-    def socket(self):
+    def socket(self) -> Optional[str]:
         return self._socket
 
     @property
-    def host(self):
+    def host(self) -> str:
         return self._host
 
     @property
-    def use_ssl(self):
+    def use_ssl(self) -> bool:
         return self._use_ssl
 
-    def _reload_current_image(self):
+    def _reload_current_image(self) -> str:
         return self.client.get_current_image().current_image
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
             self._heartbeat_shutdown_event.set()
             self._heartbeat_shutdown_event = None
@@ -555,27 +615,27 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._watch_thread = None
 
     @property
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         return True
 
-    def get_repository(self, name):
+    def get_repository(self, name: str) -> ExternalRepository:
         check.str_param(name, "name")
         return self.get_repositories()[name]
 
-    def has_repository(self, name):
+    def has_repository(self, name: str) -> bool:
         return name in self.get_repositories()
 
-    def get_repositories(self):
+    def get_repositories(self) -> Dict[str, ExternalRepository]:
         return self.external_repositories
 
     def get_external_execution_plan(
         self,
-        external_pipeline,
-        run_config,
-        mode,
-        step_keys_to_execute,
-        known_state,
-    ):
+        external_pipeline: ExternalPipeline,
+        run_config: Dict[str, Any],
+        mode: str,
+        step_keys_to_execute: Optional[List[str]],
+        known_state: Optional[KnownExecutionState],
+    ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
@@ -598,7 +658,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             represented_pipeline=external_pipeline,
         )
 
-    def get_subset_external_pipeline_result(self, selector):
+    def get_subset_external_pipeline_result(
+        self, selector: PipelineSelector
+    ) -> "ExternalPipelineSubsetResult":
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -613,7 +675,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.client, pipeline_handle.get_external_origin(), selector.solid_selection
         )
 
-    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_config(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> "ExternalPartitionConfigData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -622,7 +686,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.client, repository_handle, partition_set_name, partition_name
         )
 
-    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+    def get_external_partition_tags(
+        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+    ) -> "ExternalPartitionTagsData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
@@ -631,7 +697,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.client, repository_handle, partition_set_name, partition_name
         )
 
-    def get_external_partition_names(self, repository_handle, partition_set_name):
+    def get_external_partition_names(
+        self, repository_handle: RepositoryHandle, partition_set_name: str
+    ) -> "ExternalPartitionNamesData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
 
@@ -641,17 +709,15 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
     def get_external_schedule_execution_data(
         self,
-        instance,
-        repository_handle,
-        schedule_name,
-        scheduled_execution_time,
-    ):
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        schedule_name: str,
+        scheduled_execution_time: Optional[datetime.datetime],
+    ) -> "ExternalScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
-        check.opt_inst_param(
-            scheduled_execution_time, "scheduled_execution_time", datetime.datetime
-        )
+        check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
         return sync_get_external_schedule_execution_data_grpc(
             self.client,
@@ -662,8 +728,13 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_sensor_execution_data(
-        self, instance, repository_handle, name, last_completion_time, last_run_key
-    ):
+        self,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        name: str,
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+    ) -> "ExternalSensorExecutionData":
         return sync_get_external_sensor_execution_data_grpc(
             self.client,
             instance,
@@ -674,8 +745,11 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_set_execution_param_data(
-        self, repository_handle, partition_set_name, partition_names
-    ):
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_names: List[str],
+    ) -> "ExternalPartitionSetExecutionParamData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.list_param(partition_names, "partition_names", of_type=str)
