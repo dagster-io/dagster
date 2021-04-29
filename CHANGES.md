@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.11.7
+
+### New
+
+* For pipelines with tags defined in code, display these tags in the Dagit playground.
+* On the Dagit asset list page, use a polling query to regularly refresh the asset list.
+* When viewing the Dagit asset list, persist the user’s preference between the flattened list view and the directory structure view.
+* Added `solid_exception` on `HookContext` which returns the actual exception object thrown in a failed solid. See the example “[Accessing failure information in a failure hook](https://docs.dagster.io/concepts/solids-pipelines/solid-hooks#accessing-failure-information-in-a-failure-hook)“ for more details.
+* Added `solid_output_values` on `HookContext` which returns the computed output values.
+* Added `make_values_resource` helper for defining a resource that passes in user-defined values. This is useful when you want multiple solids to share values. See the [example](https://docs.dagster.io/concepts/configuration/config-schema#passing-configuration-to-multiple-solids-in-a-pipeline) for more details.
+* StartupProbes can now be set to disabled in Helm charts. This is useful if you’re running on a version earlier than Kubernetes 1.16.
+
+### Bugfixes
+
+* Fixed an issue where partial re-execution was not referencing the right source run and failed to load the correct persisted outputs.
+* When running Dagit with `--path-prefix`, our color-coded favicons denoting the success or failure of a run were not loading properly. This has been fixed.
+* Hooks and tags defined on solid invocations now work correctly when executing a pipeline with a solid subselection
+* Fixed an issue where heartbeats from the dagster-daemon process would not appear on the Status page in dagit until the process had been running for 30 seconds
+* When filtering runs, Dagit now suggests all “status:” values and other auto-completions in a scrolling list
+* Fixed asset catalog where nested directory structure links flipped back to the flat view structure
+
+### Community Contributions
+
+* [Helm] The Dagit service port is now configurable (thanks @trevenrawr!)
+* [Docs] Cleanup & updating visual aids (thanks @keypointt!)
+
+### Experimental
+
+* [Dagster-GraphQL] Added an official Python Client for Dagster’s GraphQL API ([GH issue #2674](https://github.com/dagster-io/dagster/issues/2674)). Docs can be found [here](http://concepts/dagit/graphql-client)
+
+### Documentation
+
+* Fixed a confusingly-worded header on the Solids/Pipelines Testing page
+
 ## 0.11.6
 
 ### Breaking Changes
