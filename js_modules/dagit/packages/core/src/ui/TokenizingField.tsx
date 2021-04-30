@@ -33,6 +33,7 @@ interface TokenizingFieldProps {
   maxValues?: number;
   onChange: (values: TokenizingFieldValue[]) => void;
   onChangeBeforeCommit?: boolean;
+  onFocus?: () => void;
 
   placeholder?: string;
   loading?: boolean;
@@ -80,13 +81,14 @@ export function stringFromValue(value: TokenizingFieldValue[]) {
 where the key is one of a known set of "suggestion provider tokens". Provide
 one or more SuggestionProviders to build the tree of autocompletions. The
 input also allows for freeform typing (`value` items with no token value) */
-export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
+export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   suggestionProviders,
   suggestionProvidersFilter,
   values: externalValues,
   maxValues,
   onChange,
   onChangeBeforeCommit,
+  onFocus,
   placeholder,
   loading,
   small,
@@ -352,7 +354,10 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
           }
         }}
         inputProps={{
-          onFocus: () => setOpen(true),
+          onFocus: () => {
+            setOpen(true);
+            onFocus && onFocus();
+          },
           onBlur: () => setOpen(false),
         }}
         onAdd={() => false}

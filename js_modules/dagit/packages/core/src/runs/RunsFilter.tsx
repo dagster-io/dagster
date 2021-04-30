@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -154,9 +154,10 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   enabledFilters,
 }) => {
   const {options} = useRepositoryOptions();
-  const {data} = useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
+  const [performQuery, {data}] = useLazyQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
+
   const suggestions = searchSuggestionsForRuns(options, data?.pipelineRunTags, enabledFilters);
 
   const search = tokenizedValuesFromString(stringFromValue(tokens), suggestions);
@@ -184,10 +185,13 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
     return suggestionProviders.filter((provider) => !presentLimitedTokens.includes(provider.token));
   };
 
+  const onFocus = React.useCallback(() => performQuery(), [performQuery]);
+
   return (
     <TokenizingField
       values={search}
       onChange={onChange}
+      onFocus={onFocus}
       suggestionProviders={suggestions}
       suggestionProvidersFilter={suggestionProvidersFilter}
       loading={loading}
