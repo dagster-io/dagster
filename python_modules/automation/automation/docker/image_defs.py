@@ -22,7 +22,9 @@ def copy_directories(paths, cwd, destination="build_cache"):
     paths_to_copy = []
     for path in paths:
         src_path = os.path.join(DAGSTER_REPO, path)
-        check.invariant(os.path.exists(src_path), "Path for copying to image build does not exist")
+        check.invariant(
+            os.path.exists(src_path), f"Path {src_path} for copying to image build does not exist"
+        )
 
         _, dest_name = os.path.split(path)
         dest_path = os.path.join(build_cache_dir, dest_name)
