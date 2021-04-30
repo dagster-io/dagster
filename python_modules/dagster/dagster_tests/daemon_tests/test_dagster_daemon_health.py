@@ -5,6 +5,7 @@ import pytest
 from dagster import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
 from dagster.daemon.controller import (
+    DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     all_daemons_healthy,
     all_daemons_live,
     daemon_controller_from_instance,
@@ -57,7 +58,9 @@ def test_healthy():
                     controller.check_daemon_threads()
                     controller.check_daemon_heartbeats()
 
-                    beyond_tolerated_time = now.float_timestamp + 100
+                    beyond_tolerated_time = (
+                        now.float_timestamp + DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS + 1
+                    )
 
                     assert not all_daemons_healthy(
                         instance,

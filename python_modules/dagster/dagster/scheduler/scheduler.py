@@ -257,13 +257,13 @@ def _schedule_runs_at_time(
         schedule_name=external_schedule.name,
         scheduled_execution_time=schedule_time,
     )
+    yield
 
     if not schedule_execution_data.run_requests:
         logger.info(f"No run requests returned for {external_schedule.name}, skipping")
 
         # Update tick to skipped state and return
         tick_context.update_state(JobTickStatus.SKIPPED)
-        yield
         return
 
     for run_request in schedule_execution_data.run_requests:
@@ -313,6 +313,7 @@ def _schedule_runs_at_time(
         _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
         tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
         _check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
+        yield
 
     _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
     tick_context.update_state(JobTickStatus.SUCCESS)

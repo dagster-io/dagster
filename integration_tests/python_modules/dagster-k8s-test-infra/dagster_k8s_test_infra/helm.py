@@ -850,6 +850,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
         "dagsterDaemon": {
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "heartbeatTolerance": 180,
             "queuedRunCoordinator": {"enabled": True},
             "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],

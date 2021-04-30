@@ -21,7 +21,7 @@ from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
-DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 60
+DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 300
 
 # Default interval at which daemons run
 DEFAULT_DAEMON_INTERVAL_SECONDS = 30
@@ -272,6 +272,7 @@ def all_daemons_healthy(
     instance,
     curr_time_seconds=None,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ):
     """
     True if all required daemons have had a recent heartbeat with no errors
@@ -283,6 +284,7 @@ def all_daemons_healthy(
             instance,
             daemon_type,
             heartbeat_interval_seconds=heartbeat_interval_seconds,
+            heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
             curr_time_seconds=curr_time_seconds,
         )
         for daemon_type in instance.get_required_daemon_types()
@@ -294,6 +296,7 @@ def all_daemons_live(
     instance,
     curr_time_seconds=None,
     heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ):
     """
     True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
@@ -304,6 +307,7 @@ def all_daemons_live(
             instance,
             daemon_type,
             heartbeat_interval_seconds=heartbeat_interval_seconds,
+            heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
             curr_time_seconds=curr_time_seconds,
             ignore_errors=True,
         )

@@ -1721,6 +1721,10 @@
                 "queuedRunCoordinator": {
                     "$ref": "#/definitions/QueuedRunCoordinator"
                 },
+                "heartbeatTolerance": {
+                    "title": "Heartbeattolerance",
+                    "type": "integer"
+                },
                 "env": {
                     "title": "Env",
                     "type": "object",
@@ -1774,6 +1778,7 @@
                 "enabled",
                 "image",
                 "queuedRunCoordinator",
+                "heartbeatTolerance",
                 "env",
                 "envConfigMaps",
                 "envSecrets",

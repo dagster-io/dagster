@@ -10,6 +10,7 @@ import pendulum
 from dagster import __version__
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.controller import (
+    DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
     all_daemons_live,
@@ -18,6 +19,13 @@ from dagster.daemon.controller import (
     get_daemon_status,
 )
 from dagster.utils.interrupts import capture_interrupts, raise_interrupts_as
+
+
+def _get_heartbeat_tolerance():
+    tolerance = os.getenv(
+        "DAGSTER_DAEMON_HEARTBEAT_TOLERANCE",
+    )
+    return int(tolerance) if tolerance else DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS
 
 
 @click.command(
@@ -34,7 +42,9 @@ def run_command():
                     "you have created a dagster.yaml file there."
                 )
 
-            with daemon_controller_from_instance(instance) as controller:
+            with daemon_controller_from_instance(
+                instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()
+            ) as controller:
                 controller.check_daemon_loop()
 
 
@@ -45,7 +55,7 @@ def run_command():
 def health_check_command():
     warnings.warn("health-check is deprecated. Use liveness-check instead.")
     with DagsterInstance.get() as instance:
-        if all_daemons_healthy(instance):
+        if all_daemons_healthy(instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()):
             click.echo("Daemon healthy")
         else:
             click.echo("Daemon not healthy")
@@ -56,9 +66,15 @@ def health_check_command():
     name="liveness-check",
     help="Check for recent heartbeats from the daemon.",
 )
+@click.option(
+    "--heartbeat-tolerance",
+    required=False,
+    default=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    help="How long (in seconds) to allow a daemon to go without heartbeating before failing the dagster-daemon process.",
+)
 def liveness_check_command():
     with DagsterInstance.get() as instance:
-        if all_daemons_live(instance):
+        if all_daemons_live(instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()):
             click.echo("Daemon live")
         else:
             click.echo("Daemon(s) not running")

@@ -240,6 +240,8 @@ def _evaluate_sensor(
         job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
     )
 
+    yield
+
     assert isinstance(sensor_runtime_data, ExternalSensorExecutionData)
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.skip_message:
@@ -253,7 +255,6 @@ def _evaluate_sensor(
         else:
             context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
             context.update_state(JobTickStatus.SKIPPED)
-        yield
         return
 
     pipeline_selector = PipelineSelector(

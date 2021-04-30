@@ -14,6 +14,7 @@ class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
     queuedRunCoordinator: QueuedRunCoordinator
+    heartbeatTolerance: int
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
