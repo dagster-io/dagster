@@ -27,7 +27,7 @@ It is also possible to raise Dagster-specific exceptions, which will indicate to
 
 Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="EventMetadataEntry"/> object, we provide a consistent interface for specifying this metadata on a variety of events. Depending on the type of the data, these entries will be rendered in Dagit in a more useful format than a simple unstructured string.
 
-The <PyObject object="AssetMaterialization" />, <PyObject object="ExpectationResult" />, and <PyObject object="Failure" /> objects each accept a `metadata_entries` parameter, which is simply a list of <PyObject object="EventMetadataEntry"/>. <PyObject object="Output"/> also accepts this parameter, although this functionality is currently experimental may change in the future.
+The <PyObject object="AssetMaterialization" />, <PyObject object="ExpectationResult" />, and <PyObject object="Failure" /> objects each accept a `metadata` parameter, which maps string labels to structured values. <PyObject object="Output"/> also accepts this parameter, although this functionality is currently experimental may change in the future.
 
 We provide support for a wide variety of potentially useful metadata types, including simple datatypes (`EventMetadataEntry.float`, `EventMetadataEntry.int`, `EventMetadataEntry.text`), as well as more complex information such as markdown and json (`EventMetadataEntry.md`, `EventMetadataEntry.json`).
 
@@ -73,7 +73,9 @@ Check out the docs on [Solid Outputs](/concepts/solids-pipelines/solids#outputs)
 
 #### Attaching Metadata to Outputs <Experimental/>
 
-If there is information specific to an <PyObject object="Output"/> that you would like to log, you may optionally represent that by passing in a list of <PyObject object="EventMetadataEntry"/> to the `metadata_entries` parameter.
+If there is information specific to an <PyObject object="Output"/> that you would like to log, you may optionally represent that by passing in a `metadata` parameter containing a mapping of string labels to metadata values.
+
+The <PyObject object="EventMetadata" /> class contains a set of static wrappers to customize the display of certain types of structured metadata.
 
 The following example demonstrates how you might use this functionality:
 
@@ -83,12 +85,12 @@ def my_metadata_output(context):
     df = get_some_data()
     yield Output(
         df,
-        metadata_entries=[
-            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
-            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
-            EventMetadataEntry.int(len(df), "row count"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
 ```
 
@@ -119,7 +121,7 @@ To learn more about assets and how they are surfaced once you send this event, c
 
 #### Attaching Metadata to Asset Materializations
 
-Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata_entries` parameter, allowing you to attach a list of <PyObject object="EventMetadataEntry"/>.
+Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_solids.py startafter=start_materialization_solids_marker_2 endbefore=end_materialization_solids_marker_2
 @solid
@@ -129,12 +131,12 @@ def my_metadata_materialization_solid(context):
     yield AssetMaterialization(
         asset_key="my_dataset",
         description="Persisted result to storage",
-        metadata_entries=[
-            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
-            EventMetadataEntry.fspath(remote_storage_path),
-            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "path": EventMetadata.path(remote_storage_path),
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
     yield Output(remote_storage_path)
 ```
@@ -164,12 +166,12 @@ def my_metadata_expectation_solid(context, df):
     yield ExpectationResult(
         success=len(df) > 0,
         description="ensure dataframe has rows",
-        metadata_entries=[
-            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
-            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
-            EventMetadataEntry.int(len(df), "row count"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
     yield Output(df)
 ```
@@ -191,7 +193,13 @@ def my_failure_solid(_):
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
-        raise Failure("No files to process")
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
     return some_calculation(my_files)
 ```
 
@@ -207,10 +215,10 @@ def my_failure_metadata_solid(_):
     if len(my_files) == 0:
         raise Failure(
             description="No files to process",
-            metadata_entries=[
-                EventMetadataEntry.fspath(path, label="filepath"),
-                EventMetadataEntry.url("http://mycoolsite.com/failures", label="dashboard_url"),
-            ],
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
         )
     return some_calculation(my_files)
 ```

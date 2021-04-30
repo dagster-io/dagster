@@ -1,12 +1,4 @@
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    EventMetadataEntry,
-    Field,
-    Output,
-    pipeline,
-    solid,
-)
+from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, pipeline, solid
 
 
 @solid(
@@ -22,7 +14,7 @@ def read_s3_key(context):
     context.log.info(f"Found file {path}")
     yield AssetMaterialization(
         asset_key=AssetKey(["log_s3", path]),
-        metadata_entries=[EventMetadataEntry.url(path, "S3 path")],
+        metadata={"S3 path": EventMetadata.url(path)},
     )
     yield Output(path)
 

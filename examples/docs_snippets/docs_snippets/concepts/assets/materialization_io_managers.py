@@ -41,10 +41,10 @@ class PandasCsvIOManagerWithAsset(IOManager):
         yield AssetMaterialization(
             asset_key=AssetKey(file_path),
             description="Persisted result to storage.",
-            metadata_entries=[
-                EventMetadataEntry.int(obj.shape[0], label="number of rows"),
-                EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean"),
-            ],
+            metadata={
+                "number of rows": obj.shape[0],
+                "some_column mean": obj["some_column"].mean(),
+            },
         )
 
 

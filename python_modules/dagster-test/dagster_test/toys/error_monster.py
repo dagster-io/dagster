@@ -1,5 +1,4 @@
 from dagster import (
-    EventMetadataEntry,
     Failure,
     Field,
     IOManager,
@@ -94,13 +93,9 @@ def _act_on_config(solid_config):
         except ExampleException as e:
             raise Failure(
                 description="I'm a Failure",
-                metadata_entries=[
-                    EventMetadataEntry.text(
-                        label="metadata_label",
-                        text="I am metadata text",
-                        description="metadata_description",
-                    )
-                ],
+                metadata={
+                    "metadata_label": "I am metadata text",
+                },
             ) from e
     elif solid_config["throw_in_solid"]:
         raise ExampleException("I threw up")

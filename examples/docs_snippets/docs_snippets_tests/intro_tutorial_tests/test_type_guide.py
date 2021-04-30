@@ -6,7 +6,6 @@ from dagster import (
     AssetMaterialization,
     DagsterType,
     DagsterTypeCheckDidNotPass,
-    EventMetadataEntry,
     InputDefinition,
     Nothing,
     OutputDefinition,
@@ -146,9 +145,7 @@ def test_even_type_materialization_config():
         with open(cfg["path"], "w") as ff:
             ff.write(str(value))
             return AssetMaterialization(
-                "path",
-                "Wrote out value to {path}".format(path=path),
-                metadata_entries=[EventMetadataEntry.text("path", path)],
+                "path", "Wrote out value to {path}".format(path=path), metadata={"path": path}
             )
 
     EvenDagsterType = PythonObjectDagsterType(EvenType, materializer=save_to_file_materialization)

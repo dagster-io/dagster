@@ -3,7 +3,7 @@
 from dagster import (
     AssetKey,
     AssetMaterialization,
-    EventMetadataEntry,
+    EventMetadata,
     Output,
     OutputContext,
     OutputDefinition,
@@ -114,12 +114,12 @@ def my_metadata_materialization_solid(context):
     yield AssetMaterialization(
         asset_key="my_dataset",
         description="Persisted result to storage",
-        metadata_entries=[
-            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
-            EventMetadataEntry.fspath(remote_storage_path),
-            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "path": EventMetadata.path(remote_storage_path),
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
     yield Output(remote_storage_path)
 
@@ -135,10 +135,10 @@ def my_asset_key_materialization_solid(context):
     yield AssetMaterialization(
         asset_key=AssetKey(["dashboard", "my_cool_site"]),
         description="Persisted result to storage",
-        metadata_entries=[
-            EventMetadataEntry.url("http://mycoolsite.com/dashboard", label="dashboard_url"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/dashboard"),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
     yield Output(remote_storage_path)
 

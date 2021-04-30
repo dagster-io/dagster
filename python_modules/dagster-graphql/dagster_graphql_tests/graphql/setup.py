@@ -265,9 +265,7 @@ def pipeline_with_expectations():
             success=True,
             label="always_true",
             description="Successful",
-            metadata_entries=[
-                EventMetadataEntry.json(label="data", data={"reason": "Just because."})
-            ],
+            metadata={"data": {"reason": "Just because."}},
         )
 
     @solid(output_defs=[])
@@ -276,9 +274,7 @@ def pipeline_with_expectations():
             success=False,
             label="always_false",
             description="Failure",
-            metadata_entries=[
-                EventMetadataEntry.json(label="data", data={"reason": "Relentless pessimism."})
-            ],
+            metadata={"data": {"reason": "Relentless pessimism."}},
         )
 
     @solid(output_defs=[])

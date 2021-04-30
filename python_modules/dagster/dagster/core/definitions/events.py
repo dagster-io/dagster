@@ -146,8 +146,10 @@ class Output(namedtuple("_Output", "value output_name metadata_entries")):
             "result")
         metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this Output.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadataEntryData]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
     """
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT, metadata_entries=None, metadata=None):
@@ -185,8 +187,10 @@ class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name 
             (default: "result")
         metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this output.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadataEntryData]]]):
-            (Experimental) Arbitrary metadata about the failure.  Keys are displayed string labels.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
     """
 
     def __new__(
@@ -231,8 +235,10 @@ class AssetMaterialization(
         tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
             materialization.  Used for search and organization of the asset entry in the asset
             catalog in Dagit.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadataEntryData]]]):
-            Arbitrary metadata about the event.  Keys are displayed string labels.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
     """
 
     def __new__(
@@ -389,8 +395,10 @@ class ExpectationResult(
         description (Optional[str]): A longer human-readable description of the expectation.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             expectation.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadataEntryData]]]):
-            Arbitrary metadata about the event.  Keys are displayed string labels.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
     """
 
     def __new__(cls, success, label=None, description=None, metadata_entries=None, metadata=None):
@@ -419,8 +427,10 @@ class TypeCheck(namedtuple("_TypeCheck", "success description metadata_entries")
         description (Optional[str]): A human-readable description of the type check.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             type check.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadataEntryData]]]):
-            Arbitrary metadata about the event.  Keys are displayed string labels.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
     """
 
     def __new__(cls, success, description=None, metadata_entries=None, metadata=None):
@@ -443,8 +453,10 @@ class Failure(Exception):
         description (Optional[str]): A human-readable description of the failure.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             failure.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadataEntryData]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
     """
 
     def __init__(self, description=None, metadata_entries=None, metadata=None):

@@ -1,14 +1,6 @@
 import os
 
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    EventMetadataEntry,
-    Field,
-    Output,
-    pipeline,
-    solid,
-)
+from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, pipeline, solid
 
 
 @solid(
@@ -26,17 +18,14 @@ def read_file(context):
         context.log.info("Found file {}".format(relative_filename))
         yield AssetMaterialization(
             asset_key=AssetKey(["log_file", relative_filename]),
-            metadata_entries=[
-                EventMetadataEntry.fspath(filename),
-                EventMetadataEntry.json(
-                    {
-                        "size": fstats.st_size,
-                        "ctime": fstats.st_ctime,
-                        "mtime": fstats.st_mtime,
-                    },
-                    "File stats",
-                ),
-            ],
+            metadata={
+                "path": EventMetadata.path(filename),
+                "File status": {
+                    "size": fstats.st_size,
+                    "ctime": fstats.st_ctime,
+                    "mtime": fstats.st_mtime,
+                },
+            },
         )
         yield Output(relative_filename)
     except FileNotFoundError:

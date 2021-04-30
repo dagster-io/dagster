@@ -7,6 +7,7 @@ import pandas as pd
 from dagster import (
     Array,
     AssetKey,
+    EventMetadata,
     EventMetadataEntry,
     Field,
     ModeDefinition,
@@ -58,11 +59,11 @@ asset_lineage_partition_set = PartitionSetDefinition(
 
 
 def metadata_for_actions(df):
-    return [
-        EventMetadataEntry.int(int(df["score"].min()), "min score"),
-        EventMetadataEntry.int(int(df["score"].max()), "max score"),
-        EventMetadataEntry.md(df[:5].to_markdown(), "sample rows"),
-    ]
+    return {
+        "min_score": int(df["score"].min()),
+        "max_score": int(df["score"].max()),
+        "sample rows": EventMetadata.md(df[:5].to_markdown()),
+    }
 
 
 class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
@@ -74,7 +75,9 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
     def handle_output(self, context, obj):
         super().handle_output(context, obj)
         # can pretend this actually came from a library call
-        yield EventMetadataEntry.int(len(obj), "num rows written to db")
+        yield EventMetadataEntry(
+            label="num rows written to db", description=None, entry_data=EventMetadata.int(len(obj))
+        )
 
     def get_output_asset_key(self, context):
         return AssetKey(
@@ -113,7 +116,7 @@ def download_data(_):
         "score": [random.randint(0, 10000) for i in range(n_entries)],
     }
     df = pd.DataFrame.from_dict(data)
-    yield Output(df, metadata_entries=metadata_for_actions(df))
+    yield Output(df, metadata=metadata_for_actions(df))
 
 
 @solid(
@@ -133,9 +136,9 @@ def split_action_types(_, df):
     yield Output(
         reviews_df,
         "reviews",
-        metadata_entries=metadata_for_actions(reviews_df),
+        metadata=metadata_for_actions(reviews_df),
     )
-    yield Output(comments_df, "comments", metadata_entries=metadata_for_actions(comments_df))
+    yield Output(comments_df, "comments", metadata=metadata_for_actions(comments_df))
 
 
 def best_n_actions(n, action_type):
@@ -152,9 +155,7 @@ def best_n_actions(n, action_type):
         df = df.nlargest(n, "score")
         return Output(
             df,
-            metadata_entries=[
-                EventMetadataEntry.md(df.to_markdown(), "data"),
-            ],
+            metadata={"data": EventMetadata.md(df.to_markdown())},
         )
 
     return _best_n_actions
@@ -174,7 +175,7 @@ top_10_comments = best_n_actions(10, "comments")
 )
 def daily_top_action(_, df1, df2):
     df = pd.concat([df1, df2]).nlargest(1, "score")
-    return Output(df, metadata_entries=[EventMetadataEntry.md(df.to_markdown(), "data")])
+    return Output(df, metadata={"data": EventMetadata.md(df.to_markdown())})
 
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})])

@@ -11,7 +11,6 @@ import boto3
 from dagster import (
     AssetMaterialization,
     Bool,
-    EventMetadataEntry,
     Field,
     InputDefinition,
     Int,
@@ -441,9 +440,9 @@ def emit_airflow_execution_date(context):
     airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
     yield AssetMaterialization(
         asset_key="airflow_execution_date",
-        metadata_entries=[
-            EventMetadataEntry.text(airflow_execution_date, "airflow_execution_date")
-        ],
+        metadata={
+            "airflow_execution_date": airflow_execution_date,
+        },
     )
     yield Output(airflow_execution_date)
 

@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 from dagster import (
     AssetMaterialization,
-    EventMetadataEntry,
+    EventMetadata,
     ExpectationResult,
     Failure,
     Output,
@@ -81,12 +81,12 @@ def my_metadata_output(context):
     df = get_some_data()
     yield Output(
         df,
-        metadata_entries=[
-            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
-            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
-            EventMetadataEntry.int(len(df), "row count"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
 
 
@@ -101,12 +101,12 @@ def my_metadata_expectation_solid(context, df):
     yield ExpectationResult(
         success=len(df) > 0,
         description="ensure dataframe has rows",
-        metadata_entries=[
-            EventMetadataEntry.text("Text-based metadata for this event", label="text_metadata"),
-            EventMetadataEntry.url("http://mycoolsite.com/url_for_my_data", label="dashboard_url"),
-            EventMetadataEntry.int(len(df), "row count"),
-            EventMetadataEntry.float(calculate_bytes(df), "size (bytes)"),
-        ],
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        },
     )
     yield Output(df)
 
@@ -121,7 +121,13 @@ def my_failure_solid(_):
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
-        raise Failure("No files to process")
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
     return some_calculation(my_files)
 
 
@@ -137,10 +143,10 @@ def my_failure_metadata_solid(_):
     if len(my_files) == 0:
         raise Failure(
             description="No files to process",
-            metadata_entries=[
-                EventMetadataEntry.fspath(path, label="filepath"),
-                EventMetadataEntry.url("http://mycoolsite.com/failures", label="dashboard_url"),
-            ],
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
         )
     return some_calculation(my_files)
 

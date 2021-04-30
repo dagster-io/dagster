@@ -64,6 +64,12 @@ def parse_metadata_entry(label, value):
 
 
 def parse_metadata(metadata, metadata_entries):
+    if metadata and metadata_entries:
+        raise DagsterInvalidEventMetadata(
+            "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
+            "Must provide only one of the two."
+        )
+
     if metadata_entries:
         return check.list_param(
             metadata_entries, "metadata_entries", (EventMetadataEntry, PartitionMetadataEntry)
@@ -424,6 +430,10 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
 
     Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
     in Dagit and other tooling.
+
+    Should be yielded from within an IO manager to append metadata for a given input/output event.
+    For other event types, passing a dict with `EventMetadata` values to the `metadata` argument
+    is preferred.
 
     Args:
         label (str): Short display label for this metadata entry.
