@@ -13,7 +13,6 @@ from dagster import (
     OutputDefinition,
     ResourceDefinition,
     String,
-    lambda_solid,
     pipeline,
     repository,
     resource,
@@ -172,12 +171,12 @@ mult_two_numbers = test_nb_solid(
 )
 
 
-@lambda_solid
+@solid
 def return_one():
     return 1
 
 
-@lambda_solid
+@solid
 def return_two():
     return 2
 

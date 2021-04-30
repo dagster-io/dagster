@@ -31,12 +31,14 @@ class _Solid:
         config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
         tags: Optional[Dict[str, Any]] = None,
         version: Optional[str] = None,
+        has_context_arg: Optional[bool] = True,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", OutputDefinition
         )
+        self.has_context_arg = check.bool_param(has_context_arg, "has_context_arg")
 
         self.description = check.opt_str_param(description, "description")
 
@@ -70,7 +72,7 @@ class _Solid:
             fn_name=self.name,
             compute_fn=fn,
             explicit_input_defs=self.input_defs,
-            has_context_arg=True,
+            has_context_arg=self.has_context_arg,
             context_required=bool(self.required_resource_keys) or bool(self.config_schema),
             exclude_nothing=True,
         )
@@ -450,3 +452,70 @@ def _is_context_provided(params: List[funcsigs.Parameter]) -> bool:
     if len(params) == 0:
         return False
     return params[0].name in get_valid_name_permutations("context")
+
+
+def lambda_solid(
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    description: Optional[str] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_def: Optional[OutputDefinition] = None,
+) -> Union[_Solid, SolidDefinition]:
+    """Create a simple solid from the decorated function.
+
+    This shortcut allows the creation of simple solids that do not require
+    configuration and whose implementations do not require a
+    :py:class:`context <SolidExecutionContext>`.
+
+    Lambda solids take any number of inputs and produce a single output.
+
+    Inputs can be defined using :class:`InputDefinition` and passed to the ``input_defs`` argument
+    of this decorator, or inferred from the type signature of the decorated function.
+
+    The single output can be defined using :class:`OutputDefinition` and passed as the
+    ``output_def`` argument of this decorator, or its type can be inferred from the type signature
+    of the decorated function.
+
+    The body of the decorated function should return a single value, which will be yielded as the
+    solid's output.
+
+    Args:
+        name (str): Name of solid.
+        description (str): Solid description.
+        input_defs (List[InputDefinition]): List of input_defs.
+        output_def (OutputDefinition): The output of the solid. Defaults to
+            :class:`OutputDefinition() <OutputDefinition>`.
+
+    Examples:
+
+    .. code-block:: python
+
+        @lambda_solid
+        def hello_world():
+            return 'hello'
+
+        @lambda_solid(
+            input_defs=[InputDefinition(name='foo', str)],
+            output_def=OutputDefinition(str)
+        )
+        def hello_world(foo):
+            # explicitly type and name inputs and outputs
+            return foo
+
+        @lambda_solid
+        def hello_world(foo: str) -> str:
+            # same as above inferred from signature
+            return foo
+
+    """
+    if callable(name):
+        check.invariant(input_defs is None)
+        check.invariant(description is None)
+        return _Solid(output_defs=[output_def] if output_def else None, has_context_arg=False)(name)
+
+    return _Solid(
+        name=name,
+        input_defs=input_defs,
+        output_defs=[output_def] if output_def else None,
+        description=description,
+        has_context_arg=False,
+    )

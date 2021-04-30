@@ -4,14 +4,14 @@ from dagster import (
     OutputDefinition,
     PresetDefinition,
     file_relative_path,
-    lambda_solid,
     pipeline,
+    solid,
 )
 
 
-@lambda_solid(
+@solid(
     input_defs=[InputDefinition("num", dagster_pd.DataFrame)],
-    output_def=OutputDefinition(dagster_pd.DataFrame),
+    output_defs=[OutputDefinition(dagster_pd.DataFrame)],
 )
 def sum_solid(num):
     sum_df = num.copy()
@@ -19,9 +19,9 @@ def sum_solid(num):
     return sum_df
 
 
-@lambda_solid(
+@solid(
     input_defs=[InputDefinition("sum_df", dagster_pd.DataFrame)],
-    output_def=OutputDefinition(dagster_pd.DataFrame),
+    output_defs=[OutputDefinition(dagster_pd.DataFrame)],
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
@@ -29,9 +29,9 @@ def sum_sq_solid(sum_df):
     return sum_sq_df
 
 
-@lambda_solid(
+@solid(
     input_defs=[InputDefinition("sum_sq_solid", dagster_pd.DataFrame)],
-    output_def=OutputDefinition(dagster_pd.DataFrame),
+    output_defs=[OutputDefinition(dagster_pd.DataFrame)],
 )
 def always_fails_solid(**_kwargs):
     raise Exception("I am a programmer and I make error")

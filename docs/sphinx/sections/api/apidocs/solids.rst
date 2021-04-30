@@ -14,10 +14,6 @@ Defining solids
 .. autoclass:: SolidDefinition
     :members: configured
 
-
-.. autodecorator:: lambda_solid
-
-
 -------
 
 Inputs & outputs
