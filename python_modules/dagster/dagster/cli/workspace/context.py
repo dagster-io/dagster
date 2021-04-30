@@ -189,22 +189,14 @@ class WorkspaceProcessContext:
             self._location_state_events_handler
         )
 
-        self.version = version
-
-        self._initialize_repository_locations()
-
-    def _initialize_repository_locations(self) -> None:
-        self._repository_locations: Dict[str, RepositoryLocation] = {}
-        for location in self._workspace.repository_locations:
-            check.invariant(
-                self._repository_locations.get(location.name) is None,
-                'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
-                    name=location.name,
-                ),
-            )
+        self.set_state_subscribers()
 
             location.add_state_subscriber(self._location_state_subscriber)
             self._repository_locations[location.name] = location
+
+    def set_state_subscribers(self):
+        for location in self._workspace.repository_locations:
+            location.add_state_subscriber(self._location_state_subscriber)
 
     def create_request_context(self) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
@@ -221,7 +213,7 @@ class WorkspaceProcessContext:
 
     @property
     def repository_locations(self) -> List[RepositoryLocation]:
-        return list(self._repository_locations.values())
+        return list(self._workspace.repository_locations)
 
     @property
     def location_state_events(self) -> "Subject":
@@ -257,4 +249,4 @@ class WorkspaceProcessContext:
 
     def reload_workspace(self) -> None:
         self._workspace.reload_workspace()
-        self._initialize_repository_locations()
+        self.set_state_subscribers()
