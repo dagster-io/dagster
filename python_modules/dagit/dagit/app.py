@@ -19,7 +19,6 @@ from flask import Blueprint, Flask, jsonify, redirect, render_template_string, r
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
-from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from .format_error import format_error_with_stack_trace
@@ -166,7 +165,6 @@ def instantiate_app_with_views(
             schema=schema,
             graphiql=True,
             graphiql_template=PLAYGROUND_TEMPLATE,
-            executor=Executor(),
             context=context,
         ),
     )

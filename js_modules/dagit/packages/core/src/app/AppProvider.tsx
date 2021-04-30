@@ -4,8 +4,9 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {ApolloLink, ApolloClient, ApolloProvider} from '@apollo/client';
+import {split, ApolloLink, ApolloClient, ApolloProvider, HttpLink} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
+import {getMainDefinition} from '@apollo/client/utilities';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -78,27 +79,19 @@ interface Props {
 export const AppProvider: React.FC<Props> = (props) => {
   const {basePath = '', subscriptionParams = {}, graphqlURI} = props.config;
 
-  const websocketURI =
-    graphqlURI ||
-    `${document.location.protocol === 'https:' ? 'wss' : 'ws'}://${
-      document.location.host
-    }${basePath}/graphql`;
+  const httpGraphqlURI = graphqlURI.replace('wss://', 'https://').replace('ws://', 'http://');
+
+  const httpURI = httpGraphqlURI || `${document.location.origin}${basePath}/graphql`;
+
+  const websocketURI = httpURI.replace('https://', 'wss://').replace('http://', 'ws://');
 
   // The address to the dagit server (eg: http://localhost:5000) based
   // on our current "GRAPHQL_URI" env var. Note there is no trailing slash.
-  const rootServerURI = React.useMemo(
-    () =>
-      websocketURI
-        .replace('wss://', 'https://')
-        .replace('ws://', 'http://')
-        .replace('/graphql', ''),
-    [websocketURI],
-  );
+  const rootServerURI = httpURI.replace('/graphql', '');
 
   const websocketClient = React.useMemo(() => {
     return new SubscriptionClient(websocketURI, {
       reconnect: true,
-      lazy: true,
       connectionParams: subscriptionParams,
     });
   }, [subscriptionParams, websocketURI]);
@@ -117,16 +110,25 @@ export const AppProvider: React.FC<Props> = (props) => {
       return forward(operation);
     });
 
+    const httpLink = new HttpLink({uri: httpURI});
+
+    const websocketLink = new WebSocketLink(websocketClient);
+
+    // subscriptions should use the websocket link; queries & mutations should use HTTP
+    const splitLink = split(
+      ({query}) => {
+        const definition = getMainDefinition(query);
+        return definition.kind == 'OperationDefinition' && definition.operation == 'subscription';
+      },
+      websocketLink,
+      httpLink,
+    );
+
     return new ApolloClient({
       cache: AppCache,
-      link: ApolloLink.from([
-        logLink,
-        AppErrorLink(),
-        timeStartLink,
-        new WebSocketLink(websocketClient),
-      ]),
+      link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [websocketClient]);
+  }, [httpURI, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({

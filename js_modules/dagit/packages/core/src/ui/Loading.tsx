@@ -38,7 +38,9 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
     };
   }, [isLoading]);
 
-  if (error) {
+  // either error.networkError or error.graphQLErrors is set,
+  // so check that the error is not just a transient network error
+  if (error && !error.networkError) {
     console.error(error);
     return (
       <Box padding={64} flex={{justifyContent: 'center'}}>
