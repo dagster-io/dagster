@@ -256,6 +256,7 @@ class PandasColumn:
         unique=False,
         ignore_missing_vals=False,
         is_required=None,
+        utc=False,
     ):
         """
         Simple constructor for PandasColumns that expresses datetime constraints on 'datetime64[ns]' dtypes.
@@ -274,11 +275,22 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
+            utc (Optional[bool]): Flag indicating whether datetime should have UTC timezone
+                If the column exists the validate function will validate the column. Default to False.
         """
+        if utc:
+            datetime_constraint = ColumnDTypeInSetConstraint({"datetime64[ns, UTC]"})
+            if Timestamp(min_datetime).tz is None:
+                min_datetime = Timestamp(min_datetime).tz_localize("UTC")
+            if Timestamp(max_datetime).tz is None:
+                max_datetime = Timestamp(max_datetime).tz_localize("UTC")
+        else:
+            datetime_constraint = ColumnDTypeInSetConstraint({"datetime64[ns]"})
+
         return PandasColumn(
             name=check.str_param(name, "name"),
             constraints=[
-                ColumnDTypeInSetConstraint({"datetime64[ns]"}),
+                datetime_constraint,
                 InRangeColumnConstraint(
                     min_datetime, max_datetime, ignore_missing_vals=ignore_missing_vals
                 ),
