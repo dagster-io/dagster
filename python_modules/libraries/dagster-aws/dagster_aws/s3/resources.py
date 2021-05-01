@@ -30,7 +30,6 @@ S3_SESSION_CONFIG = {
         str,
         description="Specifies a profile to connect that session",
         is_required=False,
-        default_value="default",
     ),
 }
 
@@ -97,7 +96,7 @@ def s3_resource(context):
         region_name=context.resource_config.get("region_name"),
         endpoint_url=context.resource_config.get("endpoint_url"),
         use_unsigned_session=context.resource_config["use_unsigned_session"],
-        profile_name=context.resource_config["profile_name"],
+        profile_name=context.resource_config.get("profile_name"),
     )
 
 
@@ -121,6 +120,7 @@ def s3_file_manager(context):
             region_name=context.resource_config.get("region_name"),
             endpoint_url=context.resource_config.get("endpoint_url"),
             use_unsigned_session=context.resource_config["use_unsigned_session"],
+            profile_name=context.resource_config.get("profile_name"),
         ),
         s3_bucket=context.resource_config["s3_bucket"],
         s3_base_key=context.resource_config["s3_prefix"],

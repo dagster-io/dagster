@@ -154,7 +154,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     assert uuid.UUID(comps[-1])
 
 
-@mock.patch("boto3.resource")
+@mock.patch("boto3.session.Session.resource")
 @mock.patch("dagster_aws.s3.resources.S3FileManager")
 def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
     did_it_run = dict(it_ran=False)
