@@ -106,7 +106,7 @@ You can see that the output of `download_csv` (which by default has the name `re
 
 ### When Type Checks Fail
 
-Now, if our solid logic fails to return the right type, we'll see a type check failure, which will fai the pipeline. Let's replace our `download_csv` solid with the following bad logic:
+Now, if our solid logic fails to return the right type, we'll see a type check failure, which will fail the pipeline. Let's replace our `download_csv` solid with the following bad logic:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
