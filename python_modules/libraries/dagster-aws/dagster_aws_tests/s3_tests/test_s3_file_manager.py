@@ -1,5 +1,7 @@
 import uuid
 from unittest import mock
+from botocore import exceptions
+import pytest
 
 from dagster import (
     InputDefinition,
@@ -207,3 +209,62 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
 
     execute_pipeline(test_pipeline)
     assert did_it_run["it_ran"]
+
+@mock.patch("boto3.session.Session.resource")
+@mock.patch("dagster_aws.s3.resources.S3FileManager")
+def test_s3_file_manager_resource_with_profile(MockS3FileManager, mock_boto3_resource):
+    did_it_run = dict(it_ran=False)
+
+    resource_config = {
+        "use_unsigned_session": True,
+        "region_name": "us-west-1",
+        "endpoint_url": "http://alternate-s3-host.io",
+        "s3_bucket": "some-bucket",
+        "s3_prefix": "some-prefix",
+        "profile_name": "some-profile"
+    }
+
+    mock_s3_session = mock_boto3_resource.return_value.meta.client
+
+    @solid(required_resource_keys={"file_manager"})
+    def test_solid(context):
+        # test that we got back a S3FileManager
+        assert context.resources.file_manager == MockS3FileManager.return_value
+
+        # make sure the file manager was initalized with the config we are supplying
+        MockS3FileManager.assert_called_once_with(
+            s3_session=mock_s3_session,
+            s3_bucket=resource_config["s3_bucket"],
+            s3_base_key=resource_config["s3_prefix"],
+        )
+
+        _, call_kwargs = mock_boto3_resource.call_args
+
+        mock_boto3_resource.assert_called_once_with(
+            "s3",
+            region_name=resource_config["region_name"],
+            endpoint_url=resource_config["endpoint_url"],
+            use_ssl=True,
+            config=call_kwargs["config"],
+            profile_name=resource_config["profile_name"],
+        )
+
+        assert call_kwargs["config"].retries["max_attempts"] == 5
+
+        did_it_run["it_ran"] = True
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"file_manager": configured(s3_file_manager)(resource_config)},
+            )
+        ]
+    )
+    def test_pipeline():
+        with pytest.raises(exceptions.ProfileNotFound) as profilenotfoundexception:
+            test_solid()
+        assert str(profilenotfoundexception.value) == "The config profile (some-profile) could not be found"
+
+    execute_pipeline(test_pipeline)
+    assert did_it_run["it_ran"]
+
