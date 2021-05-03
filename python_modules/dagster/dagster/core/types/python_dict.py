@@ -83,7 +83,7 @@ class _TypedPythonDict(DagsterType):
 
     @property
     def inner_types(self):
-        return [self.key_type, self.value_type]
+        return [self.key_type, self.value_type] + self.value_type.inner_types
 
     @property
     def type_param_keys(self):

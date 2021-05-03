@@ -63,7 +63,7 @@ class _TypedPythonSet(DagsterType):
 
     @property
     def inner_types(self):
-        return [self.item_type]
+        return [self.item_type] + self.item_type.inner_types
 
     @property
     def type_param_keys(self):

@@ -56,6 +56,26 @@ def test_inner_types():
     )
     assert not tuple_optional_list.kind == DagsterTypeKind.SCALAR
 
+    deep_dict = resolve_dagster_type(Dict[str, Dict[str, Dict[str, int]]])
+    assert inner_type_key_set(deep_dict) == set(
+        [
+            "TypedPythonDict.String.TypedPythonDict.String.Int",
+            "TypedPythonDict.String.Int",
+            "String",
+            "Int",
+        ]
+    )
+
+    deep_set = resolve_dagster_type(Set[Dict[str, Dict[str, int]]])
+    assert inner_type_key_set(deep_set) == set(
+        [
+            "TypedPythonDict.String.TypedPythonDict.String.Int",
+            "TypedPythonDict.String.Int",
+            "String",
+            "Int",
+        ]
+    )
+
 
 def test_is_any():
     assert not resolve_dagster_type(Int).kind == DagsterTypeKind.ANY
