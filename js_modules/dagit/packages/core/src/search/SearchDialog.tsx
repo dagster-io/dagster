@@ -20,6 +20,7 @@ type State = {
   searching: boolean;
   results: Fuse.FuseResult<SearchResult>[];
   highlight: number;
+  loaded: boolean;
 };
 
 type Action =
@@ -32,7 +33,7 @@ type Action =
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
     case 'show-dialog':
-      return {...state, shown: true};
+      return {...state, shown: true, loaded: true};
     case 'hide-dialog':
       return {...state, shown: false, queryString: ''};
     case 'highlight':
@@ -52,6 +53,7 @@ const initialState: State = {
   searching: false,
   results: [],
   highlight: 0,
+  loaded: false,
 };
 
 export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder: string}> = ({
@@ -63,7 +65,7 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
   const {loading, performSearch} = useRepoSearch();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {shown, queryString, results, highlight} = state;
+  const {shown, queryString, results, highlight, loaded} = state;
 
   const numResults = results.length;
 
@@ -73,9 +75,9 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
   }, []);
 
   React.useEffect(() => {
-    const results = performSearch(queryString);
+    const results = performSearch(queryString, loaded);
     dispatch({type: 'complete-search', results});
-  }, [queryString, performSearch]);
+  }, [queryString, performSearch, loaded]);
 
   React.useEffect(() => {
     dispatch({type: 'hide-dialog'});
