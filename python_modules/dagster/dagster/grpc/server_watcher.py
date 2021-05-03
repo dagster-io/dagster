@@ -10,6 +10,7 @@ MAX_RECONNECT_ATTEMPTS = 10
 
 
 def watch_grpc_server_thread(
+    location_name,
     client,
     on_disconnect,
     on_reconnected,
@@ -47,6 +48,7 @@ def watch_grpc_server_thread(
     multiple times in order to be properly handle intermittent network failures.
     """
 
+    check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)
     check.callable_param(on_disconnect, "on_disconnect")
     check.callable_param(on_reconnected, "on_reconnected")
@@ -57,13 +59,21 @@ def watch_grpc_server_thread(
         max_reconnect_attempts, "max_reconnect_attempts", MAX_RECONNECT_ATTEMPTS
     )
 
-    server_id = {"current": None}
+    server_id = {"current": None, "error": False}
 
     def current_server_id():
         return server_id["current"]
 
+    def has_error():
+        return server_id["error"]
+
     def set_server_id(new_id):
         server_id["current"] = new_id
+        server_id["error"] = False
+
+    def set_error():
+        server_id["current"] = None
+        server_id["error"] = True
 
     def watch_for_changes():
         while True:
@@ -71,50 +81,52 @@ def watch_grpc_server_thread(
                 break
 
             curr = current_server_id()
+
             new_server_id = client.get_server_id(timeout=REQUEST_TIMEOUT)
             if curr is None:
                 set_server_id(new_server_id)
             elif curr != new_server_id:
                 set_server_id(new_server_id)
-                return on_updated(new_server_id)
+                on_updated(location_name, new_server_id)
 
             shutdown_event.wait(watch_interval)
 
     def reconnect_loop():
         attempts = 0
-        while attempts < max_reconnect_attempts:
+        while True:
             shutdown_event.wait(watch_interval)
             if shutdown_event.is_set():
-                return False
+                return
 
             try:
                 new_server_id = client.get_server_id(timeout=REQUEST_TIMEOUT)
-                if current_server_id() == new_server_id:
+                if current_server_id() == new_server_id and not has_error():
                     # Intermittent failure, was able to reconnect to the same server
-                    on_reconnected()
-                    return True
+                    on_reconnected(location_name)
+                    return
                 else:
-                    on_updated(new_server_id)
+                    on_updated(location_name, new_server_id)
                     set_server_id(new_server_id)
-                    return False
+                    return
             except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
                 attempts += 1
 
-        on_error()
-        return False
+            if attempts >= max_reconnect_attempts and not has_error():
+                on_error(location_name)
+                set_error()
 
     while True:
+        if shutdown_event.is_set():
+            break
         try:
             watch_for_changes()
-            return
         except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
-            on_disconnect()
-            reconnected_to_same_server = reconnect_loop()
-            if not reconnected_to_same_server:
-                return
+            on_disconnect(location_name)
+            reconnect_loop()
 
 
 def create_grpc_watch_thread(
+    location_name,
     client,
     on_disconnect=None,
     on_reconnected=None,
@@ -123,6 +135,7 @@ def create_grpc_watch_thread(
     watch_interval=None,
     max_reconnect_attempts=None,
 ):
+    check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)
 
     noop = lambda *a: None
@@ -135,6 +148,7 @@ def create_grpc_watch_thread(
     thread = threading.Thread(
         target=watch_grpc_server_thread,
         args=[
+            location_name,
             client,
             on_disconnect,
             on_reconnected,

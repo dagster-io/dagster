@@ -34,11 +34,6 @@ from dagster.core.host_representation.external import (
     ExternalRepository,
 )
 from dagster.core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster.core.host_representation.grpc_server_state_subscriber import (
-    LocationStateChangeEvent,
-    LocationStateChangeEventType,
-    LocationStateSubscriber,
-)
 from dagster.core.host_representation.handle import PipelineHandle, RepositoryHandle
 from dagster.core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
@@ -193,9 +188,6 @@ class RepositoryLocation(AbstractContextManager):
         self.cleanup()
 
     def cleanup(self) -> None:
-        pass
-
-    def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> None:
         pass
 
     @abstractproperty
@@ -440,7 +432,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
     ):
         from dagster.grpc.client import DagsterGrpcClient, client_heartbeat_thread
-        from dagster.grpc.server_watcher import create_grpc_watch_thread
 
         self._origin = check.inst_param(origin, "origin", RepositoryLocationOrigin)
 
@@ -503,30 +494,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
                 self._heartbeat_thread.daemon = True
                 self._heartbeat_thread.start()
 
-            if self._watch_server:
-                self._state_subscribers: List[LocationStateSubscriber] = []
-                self._watch_thread_shutdown_event, self._watch_thread = create_grpc_watch_thread(
-                    self.client,
-                    on_updated=lambda new_server_id: self._send_state_event_to_subscribers(
-                        LocationStateChangeEvent(
-                            LocationStateChangeEventType.LOCATION_UPDATED,
-                            location_name=self.name,
-                            message="Server has been updated.",
-                            server_id=new_server_id,
-                        )
-                    ),
-                    on_error=lambda: self._send_state_event_to_subscribers(
-                        LocationStateChangeEvent(
-                            LocationStateChangeEventType.LOCATION_ERROR,
-                            location_name=self.name,
-                            message="Unable to reconnect to server. You can reload the server once it is "
-                            "reachable again",
-                        )
-                    ),
-                )
-
-                self._watch_thread.start()
-
             self._executable_path = list_repositories_response.executable_path
             self._repository_code_pointer_dict = (
                 list_repositories_response.repository_code_pointer_dict
@@ -552,15 +519,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         except:
             self.cleanup()
             raise
-
-    def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> None:
-        if self._watch_server:
-            self._state_subscribers.append(subscriber)
-
-    def _send_state_event_to_subscribers(self, event: LocationStateChangeEvent) -> None:
-        check.inst_param(event, "event", LocationStateChangeEvent)
-        for subscriber in self._state_subscribers:
-            subscriber.handle_event(event)
 
     @property
     def origin(self) -> RepositoryLocationOrigin:

@@ -1,8 +1,10 @@
 import sys
+import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import OrderedDict, namedtuple
 from contextlib import ExitStack
+from typing import List
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
@@ -11,6 +13,12 @@ from dagster.core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
     ProcessGrpcServerRegistry,
 )
+from dagster.core.host_representation.grpc_server_state_subscriber import (
+    LocationStateChangeEvent,
+    LocationStateChangeEventType,
+    LocationStateSubscriber,
+)
+from dagster.grpc.server_watcher import create_grpc_watch_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -21,7 +29,9 @@ class IWorkspace(ABC):
 
 
 class WorkspaceSnapshot(
-    namedtuple("WorkspaceSnapshot", "location_origin_dict location_error_dict")
+    namedtuple(
+        "WorkspaceSnapshot", "location_origin_dict location_error_dict repository_locations_dict"
+    )
 ):
     """
     This class is request-scoped object that stores a reference to all the locaiton origins and errors
@@ -32,9 +42,12 @@ class WorkspaceSnapshot(
     at the same time the repository location was being cleaned up, we would run into errors.
     """
 
-    def __new__(cls, location_origin_dict, _location_error_dict):
+    def __new__(cls, location_origin_dict, location_error_dict, repository_locations_dict):
         return super(WorkspaceSnapshot, cls).__new__(
-            cls, location_origin_dict, _location_error_dict
+            cls,
+            location_origin_dict,
+            location_error_dict,
+            repository_locations_dict,
         )
 
     def is_reload_supported(self, location_name):
@@ -64,6 +77,15 @@ class Workspace(IWorkspace):
     def __init__(self, workspace_load_target, grpc_server_registry=None):
         self._stack = ExitStack()
 
+        # Guards changes to _location_dict, _location_error_dict, and _location_origin_dict
+        self._lock = threading.Lock()
+
+        # Only ever set up by main thread
+        self._watch_thread_shutdown_events = {}
+        self._watch_threads = {}
+
+        self._state_subscribers: List[LocationStateSubscriber] = []
+
         from .cli_target import WorkspaceLoadTarget
 
         self._workspace_load_target = check.opt_inst_param(
@@ -79,6 +101,9 @@ class Workspace(IWorkspace):
                 ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30)
             )
 
+        self._location_dict = {}
+        self._location_error_dict = {}
+
         self._load_workspace()
 
     def _load_workspace(self):
@@ -93,18 +118,21 @@ class Workspace(IWorkspace):
             of_type=RepositoryLocationOrigin,
         )
 
-        self._location_dict = {}
-        self._location_error_dict = {}
-        for origin in repository_location_origins:
-            check.invariant(
-                self._location_origin_dict.get(origin.location_name) is None,
-                'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
-                    name=origin.location_name,
-                ),
-            )
+        with self._lock:
+            self._location_dict = {}
+            self._location_error_dict = {}
+            for origin in repository_location_origins:
+                check.invariant(
+                    self._location_origin_dict.get(origin.location_name) is None,
+                    'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
+                        name=origin.location_name,
+                    ),
+                )
 
-            self._location_origin_dict[origin.location_name] = origin
-            self._load_location(origin.location_name)
+                self._location_origin_dict[origin.location_name] = origin
+                if origin.supports_server_watch:
+                    self._start_watch_thread(origin)
+                self._load_location(origin.location_name)
 
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
@@ -129,13 +157,44 @@ class Workspace(IWorkspace):
                 grpc_server_registry=self._grpc_server_registry,
             )
 
+    def add_state_subscriber(self, subscriber):
+        self._state_subscribers.append(subscriber)
+
+    def _send_state_event_to_subscribers(self, event: LocationStateChangeEvent) -> None:
+        check.inst_param(event, "event", LocationStateChangeEvent)
+        for subscriber in self._state_subscribers:
+            subscriber.handle_event(event)
+
+    def _start_watch_thread(self, origin):
+        location_name = origin.location_name
+        check.invariant(location_name not in self._watch_thread_shutdown_events)
+        client = origin.create_client()
+        shutdown_event, watch_thread = create_grpc_watch_thread(
+            location_name,
+            client,
+            on_updated=lambda location_name, new_server_id: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_UPDATED,
+                    location_name=location_name,
+                    message="Server has been updated.",
+                    server_id=new_server_id,
+                )
+            ),
+            on_error=lambda location_name: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_ERROR,
+                    location_name=location_name,
+                    message="Unable to reconnect to server. You can reload the server once it is "
+                    "reachable again",
+                )
+            ),
+        )
+        self._watch_thread_shutdown_events[location_name] = shutdown_event
+        self._watch_threads[location_name] = watch_thread
+        watch_thread.start()
+
     def _load_location(self, location_name):
-        if self._location_dict.get(location_name):
-            del self._location_dict[location_name]
-
-        if self._location_error_dict.get(location_name):
-            del self._location_error_dict[location_name]
-
+        assert self._lock.locked()
         origin = self._location_origin_dict[location_name]
         try:
             location = self.create_location_from_origin(origin)
@@ -150,61 +209,83 @@ class Workspace(IWorkspace):
             )
 
     def create_snapshot(self):
-        return WorkspaceSnapshot(
-            self._location_origin_dict.copy(), self._location_error_dict.copy()
-        )
-
-    @property
-    def repository_locations_dict(self):
-        return self._location_dict
+        with self._lock:
+            return WorkspaceSnapshot(
+                self._location_origin_dict.copy(),
+                self._location_error_dict.copy(),
+                self._location_dict.copy(),
+            )
 
     @property
     def repository_locations(self):
-        return list(self._location_dict.values())
+        return list(self._location_dict.copy().values())
 
     def has_repository_location(self, location_name):
         check.str_param(location_name, "location_name")
-        return location_name in self._location_dict
+        with self._lock:
+            return location_name in self._location_dict
 
     def get_repository_location(self, location_name):
-        check.str_param(location_name, "location_name")
-        return self._location_dict[location_name]
+        with self._lock:
+            return self._location_dict.get(location_name)
 
     def has_repository_location_error(self, location_name):
         check.str_param(location_name, "location_name")
-        return location_name in self._location_error_dict
-
-    def get_repository_location_error(self, location_name):
-        check.str_param(location_name, "location_name")
-        return self._location_error_dict[location_name]
+        with self._lock:
+            return location_name in self._location_error_dict
 
     def reload_repository_location(self, location_name):
-        self._load_location(location_name)
+        # Can be called from a background thread
+        with self._lock:
+            # Relying on GC to clean up the old location once nothing else
+            # is referencing it
+            if self._location_dict.get(location_name):
+                del self._location_dict[location_name]
+
+            if self._location_error_dict.get(location_name):
+                del self._location_error_dict[location_name]
+
+            self._load_location(location_name)
 
     def reload_workspace(self):
-        for location in self.repository_locations:
-            location.cleanup()
+        self._cleanup_locations()
         self._load_workspace()
 
+    def _cleanup_locations(self):
+        for _, event in self._watch_thread_shutdown_events.items():
+            event.set()
+        for _, watch_thread in self._watch_threads.items():
+            watch_thread.join()
+
+        self._watch_thread_shutdown_events = {}
+        self._watch_threads = {}
+
+        with self._lock:
+            for location in self.repository_locations:
+                location.cleanup()
+
+            self._location_dict = {}
+            self._location_error_dict = {}
+
     def get_location(self, origin):
-        location_name = origin.location_name
-        if self.has_repository_location(location_name):
-            return self.get_repository_location(location_name)
-        elif self.has_repository_location_error(location_name):
-            error_info = self.get_repository_location_error(location_name)
-            raise DagsterRepositoryLocationLoadError(
-                f"Failure loading {location_name}: {error_info.to_string()}",
-                load_error_infos=[error_info],
-            )
-        else:
-            raise DagsterInvariantViolationError(
-                f"Location {location_name} does not exist in workspace"
-            )
+        with self._lock:
+            location_name = origin.location_name
+            if location_name in self._location_dict:
+                return self._location_dict[location_name]
+            elif location_name in self._location_error_dict:
+                error_info = self._location_error_dict[location_name]
+                raise DagsterRepositoryLocationLoadError(
+                    f"Failure loading {location_name}: {error_info.to_string()}",
+                    load_error_infos=[error_info],
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    f"Location {location_name} does not exist in workspace"
+                )
 
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        for location in self.repository_locations:
-            location.cleanup()
+        self._cleanup_locations()
         self._stack.close()

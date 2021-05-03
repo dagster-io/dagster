@@ -22,7 +22,9 @@ class TestSubscribeToGrpcServerEvents(
                 graphql_context.process_context._workspace.repository_locations  # pylint: disable=protected-access
             )
         )
-        location.add_state_subscriber(test_subscriber)
+        graphql_context.process_context._workspace.add_state_subscriber(  # pylint: disable=protected-access
+            test_subscriber
+        )
         location.client.shutdown_server()
 
         # Wait for event
@@ -36,3 +38,4 @@ class TestSubscribeToGrpcServerEvents(
         assert len(events) == 1
         assert isinstance(events[0], LocationStateChangeEvent)
         assert events[0].event_type == LocationStateChangeEventType.LOCATION_ERROR
+        assert events[0].location_name == location.name

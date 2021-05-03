@@ -43,9 +43,12 @@ class WorkspaceRequestContext(NamedTuple):
 
     instance: DagsterInstance
     workspace_snapshot: WorkspaceSnapshot
-    repository_locations_dict: Dict[str, RepositoryLocation]
     process_context: "WorkspaceProcessContext"
     version: Optional[str] = None
+
+    @property
+    def repository_locations_dict(self) -> Dict[str, RepositoryLocation]:
+        return self.workspace_snapshot.repository_locations_dict
 
     @property
     def repository_locations(self) -> List[RepositoryLocation]:
@@ -193,14 +196,12 @@ class WorkspaceProcessContext:
         self.set_state_subscribers()
 
     def set_state_subscribers(self):
-        for location in self._workspace.repository_locations:
-            location.add_state_subscriber(self._location_state_subscriber)
+        self._workspace.add_state_subscriber(self._location_state_subscriber)
 
     def create_request_context(self) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self.instance,
             workspace_snapshot=self._workspace.create_snapshot(),
-            repository_locations_dict=self._workspace.repository_locations_dict.copy(),
             process_context=self,
             version=self.version,
         )
@@ -211,7 +212,7 @@ class WorkspaceProcessContext:
 
     @property
     def repository_locations(self) -> List[RepositoryLocation]:
-        return list(self._workspace.repository_locations)
+        return self._workspace.repository_locations
 
     @property
     def location_state_events(self) -> "Subject":
@@ -234,11 +235,6 @@ class WorkspaceProcessContext:
 
     def reload_repository_location(self, name: str) -> "WorkspaceProcessContext":
         self._workspace.reload_repository_location(name)
-
-        if self._workspace.has_repository_location(name):
-            new_location = self._workspace.get_repository_location(name)
-            new_location.add_state_subscriber(self._location_state_subscriber)
-
         return self
 
     def reload_workspace(self) -> None:
