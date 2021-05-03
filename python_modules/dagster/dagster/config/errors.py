@@ -223,17 +223,23 @@ def create_missing_required_field_error(context, expected_field):
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
 
+    missing_field_type = context.config_schema_snapshot.get_config_snap(
+        context.config_type_snap.get_field(expected_field).type_key
+    )
+
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=(
-            'Missing required config entry "{expected}" {path_msg}. Minimal acceptable config for this path: {minimal_config}'
+            'Missing required config entry "{expected}" {path_msg}. Sample config for missing entry: {minimal_config}'
         ).format(
             expected=expected_field,
             path_msg=get_friendly_path_msg(context.stack),
-            minimal_config=minimal_config_for_type_snap(
-                context.config_schema_snapshot, context.config_type_snap
-            ),
+            minimal_config={
+                expected_field: minimal_config_for_type_snap(
+                    context.config_schema_snapshot, missing_field_type
+                )
+            },
         ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_snap=context.config_type_snap.get_field(expected_field)
@@ -251,12 +257,16 @@ def create_missing_required_fields_error(context, missing_fields):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS,
-        message='Missing required config entries "{missing_fields}" {path_msg}". Minimum acceptable config for this path: {minimal_config}'.format(
+        message="Missing required config entries {missing_fields} {path_msg}. Sample config for missing entries: {minimal_config}".format(
             missing_fields=missing_fields,
             path_msg=get_friendly_path_msg(context.stack),
-            minimal_config=minimal_config_for_type_snap(
-                context.config_schema_snapshot, context.config_type_snap
-            ),
+            minimal_config={
+                field_snap.name: minimal_config_for_type_snap(
+                    context.config_schema_snapshot,
+                    context.config_schema_snapshot.get_config_snap(field_snap.type_key),
+                )
+                for field_snap in missing_field_snaps
+            },
         ),
         error_data=MissingFieldsErrorData(
             field_names=missing_fields, field_snaps=missing_field_snaps

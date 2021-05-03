@@ -26,7 +26,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [
@@ -59,7 +59,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [
@@ -92,7 +92,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [
@@ -125,7 +125,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [
@@ -158,7 +158,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [
@@ -191,7 +191,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [
@@ -224,7 +224,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required config entry "solids" at the root. Minimal acceptable config for this path: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
+                    'message': 'Missing required config entry "solids" at the root. Sample config for missing entry: {\'solids\': {\'sum_solid\': {\'inputs\': {\'num\': \'...\'}}}}',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [

@@ -687,7 +687,7 @@ def test_wrap_all_config_and_inputs():
         'Expected: "{ config_field_a: String config_field_b: String }".'
     )
 
-    expected_suggested_config = {"config_field_a": "...", "config_field_b": "..."}
+    expected_suggested_config = {"config_field_b": "..."}
     assert exc_info.value.errors[1].message.startswith(
         'Missing required config entry "config_field_b" at path root:solids:wrap_all:config.'
     )

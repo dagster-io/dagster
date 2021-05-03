@@ -196,10 +196,18 @@ def test_multiple_required_fields_passing():
 
 
 def test_multiple_required_fields_failing():
-    with pytest.raises(AssertionError):
+    expected_suggested_config = {"field_one": "...", "field_two": "..."}
+    with pytest.raises(
+        AssertionError,
+        match=fr"Missing required config entries \['field_one', 'field_two'\] at the root. .* {expected_suggested_config}",
+    ):
         _validate(_multiple_required_fields_config_dict(), {})
 
-    with pytest.raises(AssertionError):
+    expected_suggested_config = {"field_two": "..."}
+    with pytest.raises(
+        AssertionError,
+        match=fr'Missing required config entry "field_two" at the root. .* {expected_suggested_config}',
+    ):
         _validate(_multiple_required_fields_config_dict(), {"field_one": "yup"})
 
     with pytest.raises(AssertionError):
