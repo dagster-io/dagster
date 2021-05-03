@@ -1,4 +1,4 @@
-import {gql, QueryResult} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Colors, Icon, NonIdealState, Popover, Button, Menu, MenuItem, Tag} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
@@ -31,20 +31,24 @@ import {FontFamily} from '../ui/styles';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
+import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstanceTabs} from './InstanceTabs';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
-import {InstanceHealthQuery} from './types/InstanceHealthQuery';
+import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
 
 type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 type BackfillRun = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs;
 
 const PAGE_SIZE = 25;
 
-export const InstanceBackfills = ({queryData}: {queryData: QueryResult<InstanceHealthQuery>}) => {
+export const InstanceBackfills = () => {
+  const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
+
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     InstanceBackfillsQuery,
     InstanceBackfillsQueryVariables
@@ -64,66 +68,79 @@ export const InstanceBackfills = ({queryData}: {queryData: QueryResult<InstanceH
   useDocumentTitle('Backfills');
 
   return (
-    <Loading queryResult={queryResult} allowStaleData={true}>
-      {({partitionBackfillsOrError}) => {
-        if (partitionBackfillsOrError.__typename === 'PythonError') {
-          return <PythonErrorInfo error={partitionBackfillsOrError} />;
-        }
+    <Group direction="column" spacing={20}>
+      <InstanceTabs tab="backfills" />
+      <Loading queryResult={queryResult} allowStaleData={true}>
+        {({partitionBackfillsOrError}) => {
+          if (partitionBackfillsOrError.__typename === 'PythonError') {
+            return <PythonErrorInfo error={partitionBackfillsOrError} />;
+          }
 
-        if (!partitionBackfillsOrError.results.length) {
+          if (!partitionBackfillsOrError.results.length) {
+            return (
+              <NonIdealState
+                icon="multi-select"
+                title="No backfills found"
+                description={<p>This instance does not have any backfill jobs.</p>}
+              />
+            );
+          }
+
+          const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
+          const backfillHealths = daemonHealths
+            .filter((daemon) => daemon.daemonType == 'BACKFILL')
+            .map((daemon) => daemon.required && daemon.healthy);
+          const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
+
           return (
-            <NonIdealState
-              icon="multi-select"
-              title="No backfills found"
-              description={<p>This instance does not have any backfill jobs.</p>}
-            />
+            <>
+              {isBackfillHealthy ? null : (
+                <Box margin={{bottom: 8}}>
+                  <Alert
+                    intent="warning"
+                    title="The backfill daemon is not running."
+                    description={
+                      <div>
+                        See the{' '}
+                        <a
+                          href="https://docs.dagster.io/overview/daemon"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          dagster-daemon documentation
+                        </a>{' '}
+                        for more information on how to deploy the dagster-daemon process.
+                      </div>
+                    }
+                  />
+                </Box>
+              )}
+              <BackfillTable
+                backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
+                refetch={queryResult.refetch}
+              />
+              {partitionBackfillsOrError.results.length > 0 ? (
+                <div style={{marginTop: '16px'}}>
+                  <CursorPaginationControls {...paginationProps} />
+                </div>
+              ) : null}
+            </>
           );
-        }
-
-        const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
-        const backfillHealths = daemonHealths
-          .filter((daemon) => daemon.daemonType == 'BACKFILL')
-          .map((daemon) => daemon.required && daemon.healthy);
-        const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
-
-        return (
-          <>
-            {isBackfillHealthy ? null : (
-              <Box margin={{bottom: 8}}>
-                <Alert
-                  intent="warning"
-                  title="The backfill daemon is not running."
-                  description={
-                    <div>
-                      See the{' '}
-                      <a
-                        href="https://docs.dagster.io/overview/daemon"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        dagster-daemon documentation
-                      </a>{' '}
-                      for more information on how to deploy the dagster-daemon process.
-                    </div>
-                  }
-                />
-              </Box>
-            )}
-            <BackfillTable
-              backfills={partitionBackfillsOrError.results.slice(0, PAGE_SIZE)}
-              refetch={queryResult.refetch}
-            />
-            {partitionBackfillsOrError.results.length > 0 ? (
-              <div style={{marginTop: '16px'}}>
-                <CursorPaginationControls {...paginationProps} />
-              </div>
-            ) : null}
-          </>
-        );
-      }}
-    </Loading>
+        }}
+      </Loading>
+    </Group>
   );
 };
+
+const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
+  query InstanceHealthForBackfillsQuery {
+    instance {
+      ...InstanceHealthFragment
+    }
+  }
+
+  ${INSTANCE_HEALTH_FRAGMENT}
+`;
 
 const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: () => void}) => {
   const [terminationBackfill, setTerminationBackfill] = React.useState<Backfill>();

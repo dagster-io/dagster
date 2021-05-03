@@ -1,33 +1,45 @@
-import {QueryResult} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
 import {UnloadableSensors} from '../jobs/UnloadableJobs';
 import {Group, Box} from '../main';
+import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
 import {JobType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {Subheading} from '../ui/Text';
+import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
+import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {InstanceHealthQuery} from './types/InstanceHealthQuery';
+import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstanceTabs} from './InstanceTabs';
+import {InstanceSensorsQuery} from './types/InstanceSensorsQuery';
 
-interface Props {
-  queryData: QueryResult<InstanceHealthQuery>;
-}
+const POLL_INTERVAL = 15000;
 
-export const InstanceSensors = (props: Props) => {
-  const {queryData} = props;
+export const InstanceSensors = React.memo(() => {
+  const queryData = useQuery<InstanceSensorsQuery>(INSTANCE_SENSORS_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    pollInterval: POLL_INTERVAL,
+    notifyOnNetworkStatusChange: true,
+  });
+
   return (
-    <Loading queryResult={queryData} allowStaleData={true}>
-      {(data) => <AllSensors data={data} />}
-    </Loading>
+    <Group direction="column" spacing={20}>
+      <InstanceTabs tab="sensors" queryData={queryData} />
+      <Loading queryResult={queryData} allowStaleData={true}>
+        {(data) => <AllSensors data={data} />}
+      </Loading>
+    </Group>
   );
-};
+});
 
-const AllSensors: React.FC<{data: InstanceHealthQuery}> = ({data}) => {
+const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
   const {instance, repositoriesOrError, unloadableJobStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
@@ -93,3 +105,45 @@ const AllSensors: React.FC<{data: InstanceHealthQuery}> = ({data}) => {
     </Group>
   );
 };
+
+const INSTANCE_SENSORS_QUERY = gql`
+  query InstanceSensorsQuery {
+    instance {
+      ...InstanceHealthFragment
+    }
+    repositoryLocationsOrError {
+      ...RepositoryLocationsFragment
+    }
+    repositoriesOrError {
+      __typename
+      ... on RepositoryConnection {
+        nodes {
+          id
+          name
+          ...RepositoryInfoFragment
+          sensors {
+            id
+            ...SensorFragment
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+    unloadableJobStatesOrError {
+      ... on JobStates {
+        results {
+          id
+          ...JobStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${INSTANCE_HEALTH_FRAGMENT}
+  ${REPOSITORY_LOCATIONS_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+  ${SENSOR_FRAGMENT}
+  ${JOB_STATE_FRAGMENT}
+`;

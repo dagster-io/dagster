@@ -1,34 +1,44 @@
-import {QueryResult} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
 import {UnloadableSchedules} from '../jobs/UnloadableJobs';
 import {Group, Box} from '../main';
-import {SchedulerTimezoneNote} from '../schedules/ScheduleUtils';
-import {SchedulerInfo} from '../schedules/SchedulerInfo';
+import {SchedulerTimezoneNote, SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
+import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
 import {JobType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {Subheading} from '../ui/Text';
+import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {InstanceHealthQuery} from './types/InstanceHealthQuery';
+import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstanceTabs} from './InstanceTabs';
+import {InstanceSchedulesQuery} from './types/InstanceSchedulesQuery';
 
-interface Props {
-  queryData: QueryResult<InstanceHealthQuery>;
-}
+const POLL_INTERVAL = 15000;
 
-export const InstanceSchedules = React.memo((props: Props) => {
-  const {queryData} = props;
+export const InstanceSchedules = React.memo(() => {
+  const queryData = useQuery<InstanceSchedulesQuery>(INSTANCE_SCHEDULES_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    pollInterval: POLL_INTERVAL,
+    notifyOnNetworkStatusChange: true,
+  });
+
   return (
-    <Loading queryResult={queryData} allowStaleData={true}>
-      {(data) => <AllSchedules data={data} />}
-    </Loading>
+    <Group direction="column" spacing={20}>
+      <InstanceTabs tab="schedules" queryData={queryData} />
+      <Loading queryResult={queryData} allowStaleData={true}>
+        {(data) => <AllSchedules data={data} />}
+      </Loading>
+    </Group>
   );
 });
 
-const AllSchedules: React.FC<{data: InstanceHealthQuery}> = ({data}) => {
+const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
   const {instance, scheduler, repositoriesOrError, unloadableJobStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
@@ -98,3 +108,45 @@ const AllSchedules: React.FC<{data: InstanceHealthQuery}> = ({data}) => {
     </Group>
   );
 };
+
+const INSTANCE_SCHEDULES_QUERY = gql`
+  query InstanceSchedulesQuery {
+    instance {
+      ...InstanceHealthFragment
+    }
+    repositoriesOrError {
+      __typename
+      ... on RepositoryConnection {
+        nodes {
+          id
+          name
+          ...RepositoryInfoFragment
+          schedules {
+            id
+            ...ScheduleFragment
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+    scheduler {
+      ...SchedulerFragment
+    }
+    unloadableJobStatesOrError {
+      ... on JobStates {
+        results {
+          id
+          ...JobStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${INSTANCE_HEALTH_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
+  ${SCHEDULER_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+  ${JOB_STATE_FRAGMENT}
+`;

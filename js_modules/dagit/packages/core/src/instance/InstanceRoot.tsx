@@ -19,10 +19,7 @@ export const InstanceRoot = () => {
         <Route path="/instance/runs" exact component={RunsRoot} />
         <Route path="/instance/runs/:runId" exact component={RunRoot} />
         <Route path="/instance/snapshots/:pipelinePath/:tab?" component={SnapshotRoot} />
-        <Route
-          path="/instance/:tab"
-          render={({match}) => <InstanceStatusRoot tab={match.params.tab} />}
-        />
+        <Route path="/instance/:tab" component={InstanceStatusRoot} />
         <Route path="/instance" render={() => <Redirect to="/instance/health" />} />
       </Switch>
     </MainContent>

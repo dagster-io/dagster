@@ -10,6 +10,7 @@ import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
 
+import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
 
 const YamlShimStyle = createGlobalStyle`
@@ -60,23 +61,26 @@ export const InstanceConfig = React.memo(() => {
   const sections = data.instance.info.split(/\n(?=\w)/g);
 
   return (
-    <Group direction="column" spacing={16}>
-      <Subheading>{`Dagster ${data.version}`}</Subheading>
-      <YamlShimStyle />
-      {sections.map((section) => {
-        const [id] = section.split(/\:/);
-        const hashForSection = `#${id}`;
-        return (
-          <Box flex={{direction: 'row', alignItems: 'flex-start'}} key={id} id={id}>
-            <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
-              <Icon icon="link" color={Colors.GRAY4} iconSize={11} />
-            </ConfigLink>
-            <ConfigSection highlighted={hash === hashForSection}>
-              <HighlightedCodeBlock value={section} language="yaml" />
-            </ConfigSection>
-          </Box>
-        );
-      })}
+    <Group direction="column" spacing={20}>
+      <InstanceTabs tab="config" />
+      <Group direction="column" spacing={16}>
+        <Subheading>{`Dagster ${data.version}`}</Subheading>
+        <YamlShimStyle />
+        {sections.map((section) => {
+          const [id] = section.split(/\:/);
+          const hashForSection = `#${id}`;
+          return (
+            <Box flex={{direction: 'row', alignItems: 'flex-start'}} key={id} id={id}>
+              <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
+                <Icon icon="link" color={Colors.GRAY4} iconSize={11} />
+              </ConfigLink>
+              <ConfigSection highlighted={hash === hashForSection}>
+                <HighlightedCodeBlock value={section} language="yaml" />
+              </ConfigSection>
+            </Box>
+          );
+        })}
+      </Group>
     </Group>
   );
 });
