@@ -1,9 +1,10 @@
 import uuid
 from unittest import mock
-from botocore import exceptions
-import pytest
 
+import pytest
+from botocore import exceptions
 from dagster import (
+    DagsterResourceFunctionError,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -12,7 +13,6 @@ from dagster import (
     execute_pipeline,
     pipeline,
     solid,
-    DagsterResourceFunctionError,
 )
 from dagster_aws.s3 import (
     S3FileHandle,
