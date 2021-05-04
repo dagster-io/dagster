@@ -38,7 +38,8 @@ S3_SESSION_CONFIG = {
 def s3_resource(context):
     """Resource that gives solids access to S3.
 
-    The underlying S3 session is created by calling :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
+    The underlying S3 session is created by calling
+    :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
     The returned resource object is an S3 client, an instance of `botocore.client.S3`.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition` in order to make it
