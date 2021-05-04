@@ -111,7 +111,6 @@ def test_provided_default_on_resources_config():
     value = EnvironmentConfig.build(pipeline_def, {})
     assert value.resources == {
         "some_resource": ResourceConfig({"with_default_int": 23434}),
-        "io_manager": ResourceConfig(None),
     }
 
 
@@ -246,7 +245,8 @@ def test_whole_environment():
                 name="int_config_solid",
                 config_schema=Int,
                 input_defs=[],
-                output_defs=[],
+                output_defs=[OutputDefinition()],
+                required_resource_keys={"test_resource"},
                 compute_fn=lambda *args: None,
             ),
             SolidDefinition(
@@ -566,7 +566,6 @@ def test_optional_and_required_context():
     )
 
     assert env_obj.resources == {
-        "optional_resource": ResourceConfig(None),
         "required_resource": ResourceConfig({"required_field": "foo"}),
         "io_manager": ResourceConfig(None),
     }

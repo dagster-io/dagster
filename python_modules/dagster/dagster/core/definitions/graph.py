@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
@@ -24,6 +24,9 @@ from .i_solid_definition import NodeDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition, OutputMapping
 from .solid_container import create_execution_structure, validate_dependency_dict
+
+if TYPE_CHECKING:
+    from .solid import SolidDefinition
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
@@ -215,6 +218,10 @@ class GraphDefinition(NodeDefinition):
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_node_defs()
 
+    def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
+        for outer_node_def in self._node_defs:
+            yield from outer_node_def.iterate_solid_defs()
+
     @property
     def input_mappings(self) -> List[InputMapping]:
         return self._input_mappings
@@ -297,13 +304,6 @@ class GraphDefinition(NodeDefinition):
         mapped_solid = self.solid_named(mapping.maps_to.solid_name)
 
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
-
-    @property
-    def required_resource_keys(self) -> FrozenSet[str]:
-        required_resource_keys = set()
-        for solid in self.solids:
-            required_resource_keys.update(solid.definition.required_resource_keys)
-        return frozenset(required_resource_keys)
 
     @property
     def dependencies(self) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:

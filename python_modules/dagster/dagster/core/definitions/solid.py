@@ -123,7 +123,10 @@ class SolidDefinition(NodeDefinition):
     def all_dagster_types(self) -> Iterator[DagsterType]:
         yield from self.all_input_output_types()
 
-    def iterate_node_defs(self) -> Iterator["SolidDefinition"]:
+    def iterate_node_defs(self) -> Iterator[NodeDefinition]:
+        yield self
+
+    def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
         yield self
 
     def resolve_output_to_origin(

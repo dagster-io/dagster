@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optio
 from dagster import check
 from dagster.core.definitions.input import InputMapping
 from dagster.core.definitions.output import OutputMapping
+from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
@@ -221,12 +222,10 @@ class PipelineDefinition(GraphDefinition):
                 self._dagster_type_dict,
                 self._solid_dict,
                 self._hook_defs,
+                self._dependency_structure,
             )
             for mode_def in self._mode_definitions
         }
-
-        # Validate unsatisfied inputs can be materialized from config
-        _validate_inputs(self._dependency_structure, self._solid_dict, self._mode_definitions)
 
         # Recursively explore all nodes in the this pipeline
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
@@ -332,6 +331,13 @@ class PipelineDefinition(GraphDefinition):
     @property
     def available_modes(self) -> List[str]:
         return [mode_def.name for mode_def in self._mode_definitions]
+
+    def get_required_resource_defs_for_mode(self, mode: str) -> Dict[str, ResourceDefinition]:
+        return {
+            resource_key: resource
+            for resource_key, resource in self.get_mode_definition(mode).resource_defs.items()
+            if resource_key in self._resource_requirements[mode]
+        }
 
     @property
     def tags(self) -> Dict[str, Any]:
@@ -604,6 +610,7 @@ def _checked_resource_reqs_for_mode(
     dagster_type_dict: Dict[str, DagsterType],
     solid_dict: Dict[str, Solid],
     pipeline_hook_defs: AbstractSet[HookDefinition],
+    dependency_structure: DependencyStructure,
 ) -> Set[str]:
     """
     Calculate the resource requirements for the pipeline in this mode and ensure they are
@@ -615,34 +622,36 @@ def _checked_resource_reqs_for_mode(
     resource_reqs: Set[str] = set()
     mode_resources = set(mode_def.resource_defs.keys())
     for node_def in node_defs:
-        for required_resource in node_def.required_resource_keys:
-            resource_reqs.add(required_resource)
-            if required_resource not in mode_resources:
-                raise DagsterInvalidDefinitionError(
-                    (
-                        'Resource "{resource}" is required by solid def {node_def_name}, but is not '
-                        'provided by mode "{mode_name}".'
-                    ).format(
-                        resource=required_resource,
-                        node_def_name=node_def.name,
-                        mode_name=mode_def.name,
+        for solid_def in node_def.iterate_solid_defs():
+            for required_resource in solid_def.required_resource_keys:
+                resource_reqs.add(required_resource)
+                if required_resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            f'Resource "{required_resource}" is required by solid def '
+                            f'{solid_def.name}, but is not provided by mode "{mode_def.name}".'
+                        )
                     )
-                )
 
-        for output_def in node_def.output_defs:
-            resource_reqs.add(output_def.io_manager_key)
-            if output_def.io_manager_key not in mode_resources:
-                raise DagsterInvalidDefinitionError(
-                    f'IO manager "{output_def.io_manager_key}" is required by output '
-                    f'"{output_def.name}" of solid def {node_def.name}, but is not '
-                    f'provided by mode "{mode_def.name}".'
-                )
+            for output_def in solid_def.output_defs:
+                resource_reqs.add(output_def.io_manager_key)
+                if output_def.io_manager_key not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        f'IO manager "{output_def.io_manager_key}" is required by output '
+                        f'"{output_def.name}" of solid def {solid_def.name}, but is not '
+                        f'provided by mode "{mode_def.name}".'
+                    )
 
     resource_reqs.update(
         _checked_type_resource_reqs_for_mode(
             mode_def,
             dagster_type_dict,
         )
+    )
+
+    # Validate unsatisfied inputs can be materialized from config
+    resource_reqs.update(
+        _checked_input_resource_reqs_for_mode(dependency_structure, solid_dict, mode_def)
     )
 
     for intermediate_storage in mode_def.intermediate_storage_defs or []:
@@ -705,7 +714,7 @@ def _checked_resource_reqs_for_mode(
 def _checked_type_resource_reqs_for_mode(
     mode_def: ModeDefinition,
     dagster_type_dict: Dict[str, DagsterType],
-) -> AbstractSet[str]:
+) -> Set[str]:
     """
     Calculate all the resource requirements related to DagsterTypes for this mode and ensure the
     mode provides those resources.
@@ -785,28 +794,29 @@ def _checked_type_resource_reqs_for_mode(
     return resource_reqs
 
 
-def _validate_inputs(
+def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
     solid_dict: Dict[str, Solid],
-    mode_definitions: List[ModeDefinition],
-) -> None:
+    mode_def: ModeDefinition,
+) -> Set[str]:
+    resource_reqs = set()
+
     for solid in solid_dict.values():
         for handle in solid.input_handles():
             if dependency_structure.has_deps(handle):
-                for mode_def in mode_definitions:
-                    for source_output_handle in dependency_structure.get_deps_list(handle):
-                        output_manager_key = source_output_handle.output_def.io_manager_key
-                        output_manager_def = mode_def.resource_defs[output_manager_key]
-                        if not isinstance(output_manager_def, IInputManagerDefinition):
-                            raise DagsterInvalidDefinitionError(
-                                f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
-                                f'connected to output "{source_output_handle.output_def.name}" '
-                                f'of solid "{source_output_handle.solid.name}". In mode '
-                                f'"{mode_def.name}", that output does not have an output '
-                                f"manager that knows how to load inputs, so we don't know how "
-                                f"to load the input. To address this, assign an IOManager to "
-                                f"the upstream output."
-                            )
+                for source_output_handle in dependency_structure.get_deps_list(handle):
+                    output_manager_key = source_output_handle.output_def.io_manager_key
+                    output_manager_def = mode_def.resource_defs[output_manager_key]
+                    if not isinstance(output_manager_def, IInputManagerDefinition):
+                        raise DagsterInvalidDefinitionError(
+                            f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
+                            f'connected to output "{source_output_handle.output_def.name}" '
+                            f'of solid "{source_output_handle.solid.name}". In mode '
+                            f'"{mode_def.name}", that output does not have an output '
+                            f"manager that knows how to load inputs, so we don't know how "
+                            f"to load the input. To address this, assign an IOManager to "
+                            f"the upstream output."
+                        )
             else:
                 input_def = handle.input_def
                 if (
@@ -827,19 +837,19 @@ def _validate_inputs(
                         )
                     )
 
-                for mode_def in mode_definitions:
-                    # If a root manager is provided, it's always used. I.e. it has priority over
-                    # the other ways of loading unsatisified inputs - dagster type loaders and
-                    # default values.
-                    if (
-                        input_def.root_manager_key
-                        and input_def.root_manager_key not in mode_def.resource_defs
-                    ):
+                # If a root manager is provided, it's always used. I.e. it has priority over
+                # the other ways of loading unsatisfied inputs - dagster type loaders and
+                # default values.
+                if input_def.root_manager_key:
+                    resource_reqs.add(input_def.root_manager_key)
+                    if input_def.root_manager_key not in mode_def.resource_defs:
                         raise DagsterInvalidDefinitionError(
                             f'Root input manager "{input_def.root_manager_key}" is required by '
                             f'unsatisfied input "{input_def.name}" of solid {solid.name}, but is not '
                             f'provided by mode "{mode_def.name}".'
                         )
+
+    return resource_reqs
 
 
 def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefinition]:

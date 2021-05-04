@@ -246,7 +246,7 @@ snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "6e571d235315a2d57c221ebc65192f1d4f22669c",
+  "pipeline_snapshot_id": "6c7258b985583457031d0cf6d7738ce2ab2ae0ef",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",

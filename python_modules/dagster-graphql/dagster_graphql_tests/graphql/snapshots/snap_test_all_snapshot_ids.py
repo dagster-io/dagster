@@ -42539,7 +42539,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
             "mapped_solid_name": "adder_2"
           }
         ],
-        "required_resource_keys": [],
         "tags": {}
       },
       {
@@ -42622,7 +42621,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
             "mapped_solid_name": "adder_2"
           }
         ],
-        "required_resource_keys": [],
         "tags": {}
       },
       {
@@ -42705,7 +42703,6 @@ snapshots['test_all_snapshot_ids 7'] = '''{
             "mapped_solid_name": "div_2"
           }
         ],
-        "required_resource_keys": [],
         "tags": {}
       }
     ],
@@ -45061,7 +45058,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
 
 snapshots['test_all_snapshot_ids 74'] = '9caaf68627f51ec571013c15898a65c61be90cf8'
 
-snapshots['test_all_snapshot_ids 8'] = 'c63daad0e8be840cb71a6c95f4d58c50646ca222'
+snapshots['test_all_snapshot_ids 8'] = '5155ee4f5835d45428014c6043487d7e13b22382'
 
 snapshots['test_all_snapshot_ids 9'] = '''{
   "__class__": "PipelineSnapshot",

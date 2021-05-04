@@ -1,4 +1,4 @@
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 
 from dagster import check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -108,6 +108,10 @@ class NodeDefinition(NamedConfigurableDefinition):
         raise NotImplementedError()
 
     @abstractmethod
+    def iterate_solid_defs(self):
+        raise NotImplementedError()
+
+    @abstractmethod
     def resolve_output_to_origin(self, output_name, handle):
         raise NotImplementedError()
 
@@ -175,7 +179,3 @@ class NodeDefinition(NamedConfigurableDefinition):
             tags=None,
             hook_defs=hook_defs,
         )
-
-    @abstractproperty
-    def required_resource_keys(self):
-        raise NotImplementedError()

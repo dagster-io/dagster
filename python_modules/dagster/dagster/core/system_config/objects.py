@@ -158,7 +158,7 @@ class EnvironmentConfig(
             config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
         )
 
-        resource_defs = pipeline_def.get_mode_definition(mode).resource_defs
+        resource_defs = pipeline_def.get_required_resource_defs_for_mode(mode)
         resource_configs = config_value.get("resources", {})
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
