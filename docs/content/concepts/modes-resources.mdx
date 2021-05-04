@@ -1,85 +1,118 @@
 ---
-title: Modes and Resources | Dagster
-description: Modes and resources enable you to separate the pipeline logic from the environments and therefore make it easier to test and develop data pipelines in various environments.
+title: Resources | Dagster
+description: Resources enable you to separate the pipeline logic from the environments and therefore make it easier to test and develop data pipelines in various environments.
 ---
 
-# Modes and Resources
+# Resources
 
-Resources provide a way to manage dependencies to external APIs. Together with modes, they can be used to represent multiple different execution environments for a pipeline.
+Resources are pluggable objects that can be shared by multiple solids in a pipeline.
 
 ## Relevant APIs
 
-| Name                                     | Description                                                                                                                                                                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject object="resource" decorator /> | The decorator used to define resources. The decorated function is called a `resource_fn`. The decorator returns a <PyObject object="ResourceDefinition" />.                                                        |
-| <PyObject object="ResourceDefinition" /> | Base class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
-| <PyObject object="ModeDefinition"     /> | Base class used to define a pipeline mode.                                                                                                                                                                         |
+| Name                                                   | Description                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| <PyObject object="PipelineDefinition" method="bind" /> | A method that creates a derived pipeline with a given set of resources.                                                                                                                                                                                                        |
+| <PyObject object="resource" decorator />               | A decorator used to create resource definitions. The decorator returns a <PyObject object="ResourceDefinition" />, which invokes the decorated function to instantiate the resource.                                                                                           |
+| <PyObject object="ResourceDefinition" />               | Resource definitions help defer resource instantiation until solid execution time, You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
 
 ## Overview
 
-You can use **resources** to access features of the execution environments to solids during pipeline execution. You can use **modes** to bind a set of resources (and other environment information) to a pipeline so that those resources can be available to the solids within a pipeline. You can provide multiple modes to a pipeline, each with different resources, to represent the execution environments that your pipeline will be run within.
+Resources are pluggable objects that can be shared by multiple solids in a pipeline. They typically model external systems like databases, file systems, and APIs. They're often used to create different versions of the same logical pipeline, such that each version can execute in a different environment.
 
-### Why Use Resources and Modes
+Solids express resource requirements, e.g. "I need a resource called `data_warehouse`", and then the pipeline containing the solids provides those resources. When defining a pipeline, you can leave some resource requirements unsatisfied and then later "bind" resources to it to derive pipeline versions that include those resources. Each version can correspond to an operating environment that the pipeline is intended for and include the set of resources for that environment. For example, the production version of a pipeline might include a resource representing a production S3 bucket, while a version for local development might use the local file system instead.
 
-Representing external dependencies as resources, in conjunction with modes, have very convenient properties:
+It's common to define collections of resources that correspond to particular operating environments and to share those collections across multiple pipelines.
 
-- **Pluggable**: You can map a resource to a key in one mode, and then map a different resource to that same key in a different mode. This is useful if there is a heavy external dependency that you want to use in production, but avoid using it in testing. You can simply provide different modes for each execution case: one for production with the heavy dependency (e.g., AWS) as a resource, and one for testing with something lighter (i.e., in-memory store) mapped to the same key. For more information about this capability, check out [Separating Business Logic from Environments](/concepts/testing#separating-business-logic-from-environments).
-- **Pipeline Scoped**: Since resources are pipeline scoped, if you provide a resource to a mode, then it becomes available for use with every solid in that pipeline.
-- **Configurable**: Resources can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
-- **Dependencies**: Resources can depend on other resources. This makes it possible to cleanly represent external environment objects that rely on other external environment information for initialization.
+### Requiring and using a resource
 
-## Defining a Resource
+Here's a solid that needs to get data on cereals from an external service. It expects a resource that it can access with the name "cereals_source", and it invokes a method called `fetch_cereal_lines` on that resource.
 
-To define a resource, use the <PyObject object="resource" decorator/> decorator. Wrap a function that takes an `init_context` as the first parameter, which is an instance of <PyObject object="InitResourceContext"/>. From this function, return or yield the object that you would like to be available as a resource.
-
-```python file=/concepts/modes_resources/modes_resources.py startafter=start_resource_example endbefore=end_resource_example
-class ExternalCerealFetcher:
-    def fetch_new_cereals(self, start_ts, end_ts):
-        pass
-
-
-@resource
-def cereal_fetcher(init_context):
-    return ExternalCerealFetcher()
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_solid_with_required_resource endbefore=end_solid_with_required_resource
+@solid(required_resource_keys={"cereals_source"})
+def load_cereals(context):
+    lines = context.resource.fetch_cereal_lines()
+    cereals = [row for row in csv.DictReader(lines)]
+    context.log.info(f"Found {len(cereals)} cereals")
 ```
 
-## Defining a Mode
+### Defining and supplying a resource
 
-To define a mode, construct a <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition"/>. Each resource definition provided to the mode should be mapped to a unique key.
+The simplest way to define a resource is as a plain old Python object:
 
-```python file=/concepts/modes_resources/modes_resources.py startafter=start_mode_example endbefore=end_mode_example
-mode_def_ab = ModeDefinition(
-    "ab_mode",
-    resource_defs={
-        "a": resource_a,
-        "b": resource_b,
-    },
-)
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_resource endbefore=end_resource
+class ExternalCerealsSource:
+    def fetch_cereals_lines(self):
+        response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+        return response.text.split("\n")
 ```
 
-## Providing Modes to a Pipeline
+When defining a pipeline, you can make resources available to the solids inside it with the `resource_defs` argument:
 
-Modes can be provided to a pipeline via the `mode_defs` argument on the <PyObject object="pipeline" decorator/> decorator.
-
-```python file=/concepts/modes_resources/modes_resources.py startafter=start_pipeline_example endbefore=end_pipeline_example
-@pipeline(mode_defs=[mode_def_ab, mode_def_c])
-def pipeline_with_mode():
-    basic_solid()
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_pipeline endbefore=end_pipeline
+@pipeline(resource_defs={"cereals_source": ExternalCerealsSource()})
+def cereal_pipeline():
+    load_cereals()
 ```
 
-## Selecting a Mode during Execution
+## Binding resources to a pipeline
 
-### Python API
+Resources are most useful when you want to execute the same pipeline with different resources in different situations. You can define a pipeline without satisfying its resource requirements, then bind resources to it to create derived pipelines that have the same solids but different resources.
 
-When executing a pipeline using <PyObject module="dagster" object="execute_pipeline" />, you can toggle between modes by providing the mode name to the `mode` parameter.
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_multiple_versions endbefore=end_multiple_versions
+class MockCerealsSource:
+    def fetch_cereals_lines(self):
+        response_text = """
+        name,mfr,type,calories,protein,fat,sodium,fiber,carbo,sugars,potass,vitamins,shelf,weight,cups,rating
+        100% Bran,N,C,70,4,1,130,10,5,6,280,25,3,1,0.33,68.402973
+        100% Natural Bran,Q,C,120,3,5,15,2,8,8,135,0,3,1,1,33.983679
+        """
+        return response_text.split("\n")
 
-```python file=/concepts/modes_resources/modes_resources.py startafter=start_execute_example endbefore=end_execute_example
-execute_pipeline(pipeline_with_mode, mode="ab_mode")
+
+@pipeline
+def cereal_pipeline_2():
+    load_cereals()
+
+
+dev_pipeline = cereal_pipeline_2.bind({"cereals_source": MockCerealsSource()}, "dev")
+prod_pipeline = cereal_pipeline_2.bind({"cereals_source": ExternalCerealsSource()}, "prod")
 ```
+
+A common pattern when defining multiple derived pipelines is to expose them on separate [repositories](/concepts/repositories-workspaces/repositories). Then, in your production Dagster instance, you can point to the production repository so the development versions of your pipelines don't clutter up your production Dagit.
+
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_repositories endbefore=end_repositories
+from dagster import repository
+
+
+@repository
+def dev_repository():
+    return [dev_pipeline]
+
+
+@repository
+def prod_repository():
+    return [prod_pipeline]
+```
+
+## Advanced resource initialization
+
+In the example above, `ExternalCerealsSource` is instantiated every time that the module is loaded. `ExternalCerealsSource`is cheap to initialize, but, in some situations, you might want to run heavy initialization logic for your resource. For example, initializing your resource might involve booting up a Spark session that connects to a set of executors on a cluster. You'd only want to do that when you actually execute your pipeline, not when Dagit loads your module to determine the pipeline's name and structure.
+
+For cases where a resource requires heavy initialization, you can construct a resource definition. When you've constructed a resource definition, initialization happens at the time that the solid that uses it is executed, not every time the module is loaded.
+
+### Configuring resources
+
+TODO
+
+### Context managers
+
+TODO
+
+## Using derived pipelines in Dagit and the CLI
 
 ### In Dagit
 
-When Launching the pipeline via the Dagit Playground, you can select a mode from the mode selector dropdown:
+When you've navigated to a pipeline in Dagit, you can navigate to other pipelines that were derived from the same pipeline.
 
 <Image
 alt="Modes in Dagit"
@@ -90,9 +123,9 @@ height={2414}
 
 ### Dagster CLI
 
-When launching a pipeline via the CLI, you can use the `-d` option to specify the mode.
+To launch a derived pipeline via the CLI, its name is the name of the pipeline it's derived from, plus its name, separated by a forward slash:
 
-    $ dagster pipeline execute -d prod_mode my_pipeline
+    $ dagster pipeline execute cereal_pipeline_2/prod
 
 ## Examples
 
@@ -130,7 +163,7 @@ def emit_foo(init_context):
     return init_context.resources.foo
 ```
 
-Note that the required keys provided must be provided to the same mode as the requiring resource, and that dependencies between resources cannot be cyclic.
+Note that the dependencies between resources cannot be cyclic.
 
 ```python file=/concepts/modes_resources/modes_resources.py startafter=start_resource_dep_mode endbefore=end_resource_dep_mode
 ModeDefinition(resource_defs={"foo": foo_resource, "emit": emit_foo})

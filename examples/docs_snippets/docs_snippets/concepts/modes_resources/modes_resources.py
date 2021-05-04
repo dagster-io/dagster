@@ -1,52 +1,74 @@
-# pylint: disable=unused-argument
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, resource, solid
+import requests
+import csv
+
+# start_solid_with_required_resource
+@solid(required_resource_keys={"cereals_source"})
+def load_cereals(context):
+    lines = context.resource.fetch_cereal_lines()
+    cereals = [row for row in csv.DictReader(lines)]
+    context.log.info(f"Found {len(cereals)} cereals")
 
 
-# start_resource_example
-class ExternalCerealFetcher:
-    def fetch_new_cereals(self, start_ts, end_ts):
-        pass
+# end_solid_with_required_resource
 
 
-@resource
-def cereal_fetcher(init_context):
-    return ExternalCerealFetcher()
+# start_resource
+class ExternalCerealsSource:
+    def fetch_cereals_lines(self):
+        response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+        return response.text.split("\n")
 
 
-# end_resource_example
+# end_resource
 
-resource_a = ResourceDefinition.hardcoded_resource(1)
-resource_b = ResourceDefinition.hardcoded_resource(2)
-
-# start_mode_example
-mode_def_ab = ModeDefinition(
-    "ab_mode",
-    resource_defs={
-        "a": resource_a,
-        "b": resource_b,
-    },
-)
-# end_mode_example
-
-mode_def_c = ModeDefinition("c_mode", resource_defs={"a": resource_a})
+# start_pipeline
+@pipeline(resource_defs={"cereals_source": ExternalCerealsSource()})
+def cereal_pipeline():
+    load_cereals()
 
 
-@solid(required_resource_keys={"a"})
-def basic_solid(_):
-    pass
+# end_pipeline
 
 
-# start_pipeline_example
-@pipeline(mode_defs=[mode_def_ab, mode_def_c])
-def pipeline_with_mode():
-    basic_solid()
+# start_multiple_versions
+class MockCerealsSource:
+    def fetch_cereals_lines(self):
+        response_text = """
+        name,mfr,type,calories,protein,fat,sodium,fiber,carbo,sugars,potass,vitamins,shelf,weight,cups,rating
+        100% Bran,N,C,70,4,1,130,10,5,6,280,25,3,1,0.33,68.402973
+        100% Natural Bran,Q,C,120,3,5,15,2,8,8,135,0,3,1,1,33.983679
+        """
+        return response_text.split("\n")
 
 
-# end_pipeline_example
+@pipeline
+def cereal_pipeline_2():
+    load_cereals()
 
-# start_execute_example
-execute_pipeline(pipeline_with_mode, mode="ab_mode")
-# end_execute_example
+
+dev_pipeline = cereal_pipeline_2.bind({"cereals_source": MockCerealsSource()}, "dev")
+prod_pipeline = cereal_pipeline_2.bind({"cereals_source": ExternalCerealsSource()}, "prod")
+
+
+# end_multiple_versions
+
+
+# start_repositories
+from dagster import repository
+
+
+@repository
+def dev_repository():
+    return [dev_pipeline]
+
+
+@repository
+def prod_repository():
+    return [prod_pipeline]
+
+
+# end_repositories
 
 # start_resource_dep_example
 @resource
