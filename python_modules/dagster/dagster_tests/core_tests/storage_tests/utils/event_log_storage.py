@@ -234,6 +234,12 @@ class TestEventLogStorage:
         assert storage.get_logs_for_run("bar") == []
 
     def can_wipe(self):
+        # Whether the storage is allowed to wipe the event log
+        return True
+
+    def can_watch(self):
+        # whether the storage is allowed to subscribe to runs
+        # for event log updates
         return True
 
     def test_event_log_storage_store_events_and_wipe(self, storage):
@@ -294,6 +300,9 @@ class TestEventLogStorage:
         reason="watchdog's default MacOSX FSEventsObserver sometimes fails to pick up changes",
     )
     def test_event_log_storage_watch(self, storage):
+        if self.can_watch():
+            pytest.skip("storage cannot watch runs")
+
         watched = []
         watcher = lambda x: watched.append(x)  # pylint: disable=unnecessary-lambda
 
