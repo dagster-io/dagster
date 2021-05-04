@@ -21,7 +21,7 @@ def read_dataframe_from_table(**_kwargs):
 
 
 # start_marker
-from dagster import IOManager, ModeDefinition, io_manager, pipeline
+from dagster import IOManager, pipeline
 
 
 class DataframeTableIOManager(IOManager):
@@ -36,12 +36,7 @@ class DataframeTableIOManager(IOManager):
         return read_dataframe_from_table(name=table_name)
 
 
-@io_manager
-def df_table_io_manager(_):
-    return DataframeTableIOManager()
-
-
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": df_table_io_manager})])
+@pipeline(resource_defs={"io_manager": DataframeTableIOManager()})
 def my_pipeline():
     solid2(solid1())
 
@@ -66,13 +61,6 @@ class DataframeTableIOManagerWithMetadata(IOManager):
 # end_metadata_marker
 
 
-@io_manager
-def df_table_io_manager_with_metadata(_):
-    return DataframeTableIOManagerWithMetadata()
-
-
-@pipeline(
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": df_table_io_manager_with_metadata})]
-)
+@pipeline(resource_defs={"io_manager": DataframeTableIOManagerWithMetadata()})
 def my_pipeline_with_metadata():
     solid2(solid1())

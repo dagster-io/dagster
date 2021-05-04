@@ -1,4 +1,4 @@
-from dagster import IOManager, ModeDefinition, execute_pipeline, io_manager, pipeline, solid
+from dagster import IOManager, execute_pipeline, io_manager, pipeline, solid
 
 
 def connect():
@@ -44,7 +44,7 @@ def my_io_manager(_):
 
 def execute_with_config():
     # execute_start_marker
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
+    @pipeline(resource_defs={"io_manager": my_io_manager})
     def my_pipeline():
         solid2(solid1())
 
