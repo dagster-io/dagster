@@ -227,13 +227,14 @@ class TestEventLogStorage:
     def test_init_log_storage(self, storage):
         if isinstance(storage, InMemoryEventLogStorage):
             assert not storage.is_persistent
-        elif isinstance(storage, SqlEventLogStorage):
-            assert storage.is_persistent
         else:
-            raise Exception("Invalid event storage type")
+            assert storage.is_persistent
 
     def test_log_storage_run_not_found(self, storage):
         assert storage.get_logs_for_run("bar") == []
+
+    def can_wipe(self):
+        return True
 
     def test_event_log_storage_store_events_and_wipe(self, storage):
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
@@ -254,8 +255,10 @@ class TestEventLogStorage:
         )
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 1
         assert storage.get_stats_for_run(DEFAULT_RUN_ID)
-        storage.wipe()
-        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
+
+        if self.can_wipe():
+            storage.wipe()
+            assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
 
     def test_event_log_storage_store_with_multiple_runs(self, storage):
         runs = ["foo", "bar", "baz"]
@@ -281,9 +284,10 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(run_id)) == 1
             assert storage.get_stats_for_run(run_id).steps_succeeded == 1
 
-        storage.wipe()
-        for run_id in runs:
-            assert len(storage.get_logs_for_run(run_id)) == 0
+        if self.can_wipe():
+            storage.wipe()
+            for run_id in runs:
+                assert len(storage.get_logs_for_run(run_id)) == 0
 
     @pytest.mark.skipif(
         platform.is_darwin(),
@@ -513,9 +517,10 @@ class TestEventLogStorage:
 
         assert _event_types(out_events) == _event_types(events)
 
-        storage.wipe()
+        if self.can_wipe():
+            storage.wipe()
 
-        assert storage.get_logs_for_run(result.run_id) == []
+            assert storage.get_logs_for_run(result.run_id) == []
 
     def test_delete_sql_backed_event_log(self, storage):
         @solid
