@@ -82,12 +82,6 @@ def my_pipeline():
     solid2(solid1())
 ```
 
-```python
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
-def my_pipeline():
-    solid2(solid1())
-```
-
 ### Per-output IO manager
 
 Not all the outputs in a pipeline should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
@@ -217,17 +211,6 @@ You might want to provide static metadata that controls how particular outputs a
 For example, if your pipeline produces DataFrames to populate tables in a data warehouse, you might want to specify that each output always goes to a particular table. To accomplish this, you can define `metadata` on each <PyObject module="dagster" object="OutputDefinition" />:
 
 ```python file=/concepts/io_management/metadata.py startafter=solids_start_marker endbefore=solids_end_marker
-@solid(output_defs=[OutputDefinition(metadata={"schema": "some_schema", "table": "some_table"})])
-def solid1(_):
-    """Return a Pandas DataFrame"""
-
-
-@solid(output_defs=[OutputDefinition(metadata={"schema": "other_schema", "table": "other_table"})])
-def solid2(_, _input_dataframe):
-    """Return a Pandas DataFrame"""
-```
-
-```python
 @solid(output_defs=[OutputDefinition(metadata={"schema": "some_schema", "table": "some_table"})])
 def solid1(_):
     """Return a Pandas DataFrame"""
