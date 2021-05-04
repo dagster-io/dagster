@@ -88,8 +88,8 @@ class PipelineDefinition(GraphDefinition):
 
         .. code-block:: python
 
-            @lambda_solid
-            def return_one():
+            @solid
+            def return_one(_):
                 return 1
 
 
