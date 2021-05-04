@@ -3,7 +3,7 @@ import os.path
 import pickle
 import tempfile
 
-from dagster import Bool, Field, StringSource, check, resource
+from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import log_step_event
@@ -13,7 +13,8 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster.serdes import deserialize_value
-from dagster_databricks import DatabricksJobRunner, databricks_step_main
+from dagster_databricks import databricks_step_main
+from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
 from dagster_pyspark.utils import build_pyspark_zip
 
 from .configs import (
@@ -66,6 +67,13 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             "location. Note that logs are copied every 5 minutes, so enabling this will add "
             "several minutes to the job runtime.",
         ),
+        "max_completion_wait_time_seconds": Field(
+            IntSource,
+            is_required=False,
+            default_value=DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+            description="If the Databricks job run takes more than this many seconds, then "
+            "consider it failed and terminate the step.",
+        ),
     }
 )
 def databricks_pyspark_step_launcher(context):
@@ -96,6 +104,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         local_pipeline_package_path,
         staging_prefix,
         wait_for_logs,
+        max_completion_wait_time_seconds,
     ):
         self.run_config = check.dict_param(run_config, "run_config")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
@@ -109,7 +118,11 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         check.invariant(staging_prefix.startswith("/"), "staging_prefix must be an absolute path")
         self.wait_for_logs = check.bool_param(wait_for_logs, "wait_for_logs")
 
-        self.databricks_runner = DatabricksJobRunner(host=databricks_host, token=databricks_token)
+        self.databricks_runner = DatabricksJobRunner(
+            host=databricks_host,
+            token=databricks_token,
+            max_wait_time_sec=max_completion_wait_time_seconds,
+        )
 
     def launch_step(self, step_context, prior_attempts_count):
         step_run_ref = step_context_to_step_run_ref(
