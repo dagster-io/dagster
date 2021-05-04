@@ -77,10 +77,10 @@ WIPE_ASSETS = """
 """
 
 GET_ASSET_MATERIALIZATION_TIMESTAMP = """
-    query AssetQuery($assetKey: AssetKeyInput!, $asOf: Float) {
+    query AssetQuery($assetKey: AssetKeyInput!, $asOf: String) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
-                assetMaterializations(beforeTimestamp: $asOf) {
+                assetMaterializations(beforeTimestampMillis: $asOf) {
                     materializationEvent {
                         timestamp
                     }
@@ -231,7 +231,7 @@ class TestAssetAwareEventLog(
         assert result.data["assetOrError"]
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
-        first_timestamp = float(materializations[0]["materializationEvent"]["timestamp"]) / 1000
+        first_timestamp = int(materializations[0]["materializationEvent"]["timestamp"])
 
         as_of_timestamp = first_timestamp + 1
 
@@ -246,7 +246,7 @@ class TestAssetAwareEventLog(
         assert result.data["assetOrError"]
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 2
-        second_timestamp = float(materializations[0]["materializationEvent"]["timestamp"]) / 1000
+        second_timestamp = int(materializations[0]["materializationEvent"]["timestamp"])
 
         assert second_timestamp > as_of_timestamp
 
@@ -259,7 +259,4 @@ class TestAssetAwareEventLog(
         assert result.data["assetOrError"]
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
-        assert (
-            first_timestamp
-            == float(materializations[0]["materializationEvent"]["timestamp"]) / 1000
-        )
+        assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])

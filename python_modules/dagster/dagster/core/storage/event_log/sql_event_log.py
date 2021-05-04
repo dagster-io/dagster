@@ -470,7 +470,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .values(
                     event=serialize_dagster_namedtuple(event),
                     dagster_event_type=dagster_event_type,
-                    timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    timestamp=datetime.utcfromtimestamp(event.timestamp),
                     step_key=event.step_key,
                     asset_key=asset_key_str,
                 )
@@ -547,7 +547,7 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(SqlEventLogStorageTable.c.id > after_query)
         if before_timestamp:
             query = query.where(
-                SqlEventLogStorageTable.c.timestamp < utc_datetime_from_timestamp(before_timestamp)
+                SqlEventLogStorageTable.c.timestamp < datetime.utcfromtimestamp(before_timestamp)
             )
 
         if limit:
@@ -674,7 +674,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query.where(
             SqlEventLogStorageTable.c.timestamp
-            > utc_datetime_from_timestamp(asset_details.last_wipe_timestamp)
+            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
         )
 
     def get_asset_events(
