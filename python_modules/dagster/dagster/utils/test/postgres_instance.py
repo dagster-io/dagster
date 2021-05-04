@@ -61,10 +61,10 @@ class TestPostgresInstance:
     def get_hostname(env_name="POSTGRES_TEST_DB_HOST"):
         # In buildkite we get the ip address from this variable (see buildkite code for commentary)
         # Otherwise assume local development and assume localhost
-        return os.environ.get(env_name, "localhost")
+        return os.getenv(env_name, "localhost")
 
     @staticmethod
-    def conn_string(**kwargs):
+    def conn_string(env_name="POSTGRES_TEST_DB_HOST", **kwargs):
         check.invariant(
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
@@ -76,7 +76,7 @@ class TestPostgresInstance:
                 dict(
                     username="test",
                     password="test",
-                    hostname=TestPostgresInstance.get_hostname(),
+                    hostname=TestPostgresInstance.get_hostname(env_name=env_name),
                     db_name="test",
                 ),
                 **kwargs,
@@ -131,7 +131,9 @@ class TestPostgresInstance:
 
     @staticmethod
     @contextmanager
-    def docker_service_up(docker_compose_file, service_name, conn_args=None):
+    def docker_service_up(
+        docker_compose_file, service_name, conn_args=None, env_name="POSTGRES_TEST_DB_HOST"
+    ):
         check.invariant(
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
@@ -147,7 +149,8 @@ class TestPostgresInstance:
 
         if BUILDKITE:
             yield TestPostgresInstance.conn_string(
-                **conn_args
+                **conn_args,
+                env_name=env_name,
             )  # buildkite docker is handled in pipeline setup
             return
 
@@ -189,10 +192,12 @@ class TestPostgresInstance:
 
     @staticmethod
     @contextmanager
-    def docker_service_up_or_skip(docker_compose_file, service_name, conn_args=None):
+    def docker_service_up_or_skip(
+        docker_compose_file, service_name, conn_args=None, env_name="POSTGRES_TEST_DB_HOST"
+    ):
         try:
             with TestPostgresInstance.docker_service_up(
-                docker_compose_file, service_name, conn_args
+                docker_compose_file, service_name, conn_args, env_name
             ) as conn_str:
                 yield conn_str
         except PostgresDockerError as ex:
