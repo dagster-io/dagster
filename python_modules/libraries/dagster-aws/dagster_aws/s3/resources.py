@@ -90,6 +90,10 @@ def s3_resource(context):
               # Optional[bool]: Specifies whether to use an unsigned S3 session. Default: True
               endpoint_url: "http://localhost"
               # Optional[str]: Specifies a custom endpoint for the S3 session. Default is None.
+              profile_name: "dev"
+              # Optional[str]: Specifies a custom profile for S3 session. Default is default
+              # profile as specified in ~/.aws/credentials file
+
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],

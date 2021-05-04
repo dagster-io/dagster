@@ -12,6 +12,7 @@ from dagster import (
     execute_pipeline,
     pipeline,
     solid,
+    DagsterResourceFunctionError,
 )
 from dagster_aws.s3 import (
     S3FileHandle,
@@ -210,6 +211,7 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
     execute_pipeline(test_pipeline)
     assert did_it_run["it_ran"]
 
+
 @mock.patch("boto3.session.Session.resource")
 @mock.patch("dagster_aws.s3.resources.S3FileManager")
 def test_s3_file_manager_resource_with_profile(MockS3FileManager, mock_boto3_resource):
@@ -221,37 +223,15 @@ def test_s3_file_manager_resource_with_profile(MockS3FileManager, mock_boto3_res
         "endpoint_url": "http://alternate-s3-host.io",
         "s3_bucket": "some-bucket",
         "s3_prefix": "some-prefix",
-        "profile_name": "some-profile"
+        "profile_name": "some-profile",
     }
 
     mock_s3_session = mock_boto3_resource.return_value.meta.client
 
     @solid(required_resource_keys={"file_manager"})
     def test_solid(context):
-        # test that we got back a S3FileManager
-        assert context.resources.file_manager == MockS3FileManager.return_value
-
-        # make sure the file manager was initalized with the config we are supplying
-        MockS3FileManager.assert_called_once_with(
-            s3_session=mock_s3_session,
-            s3_bucket=resource_config["s3_bucket"],
-            s3_base_key=resource_config["s3_prefix"],
-        )
-
-        _, call_kwargs = mock_boto3_resource.call_args
-
-        mock_boto3_resource.assert_called_once_with(
-            "s3",
-            region_name=resource_config["region_name"],
-            endpoint_url=resource_config["endpoint_url"],
-            use_ssl=True,
-            config=call_kwargs["config"],
-            profile_name=resource_config["profile_name"],
-        )
-
-        assert call_kwargs["config"].retries["max_attempts"] == 5
-
-        did_it_run["it_ran"] = True
+        # placeholder function to test resource initialization
+        pass
 
     @pipeline(
         mode_defs=[
@@ -261,10 +241,10 @@ def test_s3_file_manager_resource_with_profile(MockS3FileManager, mock_boto3_res
         ]
     )
     def test_pipeline():
-        with pytest.raises(exceptions.ProfileNotFound) as profilenotfoundexception:
-            test_solid()
-        assert str(profilenotfoundexception.value) == "The config profile (some-profile) could not be found"
+        test_solid()
 
-    execute_pipeline(test_pipeline)
-    assert did_it_run["it_ran"]
+    with pytest.raises(DagsterResourceFunctionError) as e:
+        execute_pipeline(test_pipeline)
 
+    assert isinstance(e.value.user_exception, exceptions.ProfileNotFound)
+    assert str(e.value.user_exception) == "The config profile (some-profile) could not be found"
