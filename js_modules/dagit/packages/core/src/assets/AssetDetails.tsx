@@ -20,9 +20,18 @@ import {ASSET_QUERY} from './queries';
 import {AssetKey} from './types';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
-export const AssetDetails: React.FC<{assetKey: AssetKey}> = ({assetKey}) => {
+interface Props {
+  assetKey: AssetKey;
+  asOf: string | null;
+}
+
+export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {assetKey: {path: assetKey.path}, limit: 1},
+    variables: {
+      assetKey: {path: assetKey.path},
+      limit: 1,
+      before: asOf,
+    },
   });
 
   const content = () => {
@@ -114,7 +123,12 @@ export const AssetDetails: React.FC<{assetKey: AssetKey}> = ({assetKey}) => {
           latestAssetLineage.length > 0
             ? {
                 key: 'Latest parent assets',
-                value: <AssetLineageElements elements={latestAssetLineage} />,
+                value: (
+                  <AssetLineageElements
+                    elements={latestAssetLineage}
+                    timestamp={latestEvent.timestamp}
+                  />
+                ),
               }
             : undefined,
           ...latestEvent?.materialization.metadataEntries.map((entry) => ({

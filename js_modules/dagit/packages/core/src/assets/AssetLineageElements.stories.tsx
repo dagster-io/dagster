@@ -11,6 +11,7 @@ export default {
 } as Meta;
 
 export const FewParents = () => {
+  const timestamp = React.useMemo(() => Date.now(), []);
   const elements: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[] = [
     {
       __typename: 'AssetLineageInfo',
@@ -38,10 +39,11 @@ export const FewParents = () => {
     },
   ];
 
-  return <AssetLineageElements elements={elements} />;
+  return <AssetLineageElements elements={elements} timestamp={`${timestamp}`} />;
 };
 
 export const ManyParents = () => {
+  const timestamp = React.useMemo(() => Date.now(), []);
   const elements: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[] = [];
   for (let ii = 0; ii < 20; ii++) {
     elements.push({
@@ -53,5 +55,5 @@ export const ManyParents = () => {
       },
     });
   }
-  return <AssetLineageElements elements={elements} />;
+  return <AssetLineageElements elements={elements} timestamp={`${timestamp}`} />;
 };

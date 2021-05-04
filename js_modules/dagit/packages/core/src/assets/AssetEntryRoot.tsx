@@ -1,10 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Breadcrumbs, IBreadcrumbProps, Icon} from '@blueprintjs/core';
+import {Colors, Breadcrumbs, Icon, BreadcrumbProps} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {Link, RouteComponentProps} from 'react-router-dom';
+import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {Timestamp} from '../app/time/Timestamp';
+import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -17,11 +19,26 @@ import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {AssetEntryRootQuery} from './types/AssetEntryRootQuery';
 import {useAssetView} from './useAssetView';
 
-export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
+// Jan 1, 2015 at 00:00 GMT
+const EARLIEST_TIME = 1420070400000;
+
+export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match}) => {
   const currentPath: string[] = (match.params['0'] || '')
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);
+
+  const {pathname, search} = location;
+  const asOf = React.useMemo(() => {
+    const params = new URLSearchParams(search);
+    return params.get('asOf');
+  }, [search]);
+
+  // Validate the `asOf` time, since it's user-specified.
+  const invalidTime = React.useMemo(() => {
+    const asOfNumber = Number(asOf);
+    return asOfNumber && (asOfNumber < EARLIEST_TIME || asOfNumber > Date.now());
+  }, [asOf]);
 
   const [view] = useAssetView();
 
@@ -29,12 +46,17 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     variables: {assetKey: {path: currentPath}},
   });
 
+  // If the asOf timestamp is invalid, discard it via redirect.
+  if (invalidTime) {
+    return <Redirect to={pathname} />;
+  }
+
   const pathDetails = () => {
     if (currentPath.length === 1 || view !== 'directory') {
       return <Link to="/instance/assets">Assets</Link>;
     }
 
-    const breadcrumbs: IBreadcrumbProps[] = [];
+    const breadcrumbs: BreadcrumbProps[] = [];
     currentPath.slice(0, currentPath.length - 1).reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
       breadcrumbs.push({text: elem, href});
@@ -82,6 +104,26 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
           icon="th"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
+        {asOf ? (
+          <Alert
+            intent="info"
+            title="This is a historical asset snapshot."
+            description={
+              <span>
+                This view represents{' '}
+                <span style={{fontWeight: 600}}>{currentPath[currentPath.length - 1]}</span> as of{' '}
+                <span style={{fontWeight: 600}}>
+                  <Timestamp
+                    timestamp={{ms: Number(asOf)}}
+                    timeFormat={{showSeconds: true, showTimezone: true}}
+                  />
+                </span>
+                . You can also view the <Link to={location.pathname}>latest materialization</Link>{' '}
+                for this asset.
+              </span>
+            }
+          />
+        ) : null}
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetNotFoundError') {
@@ -90,7 +132,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
 
             return (
               <Wrapper>
-                <AssetView assetKey={assetOrError.key} />
+                <AssetView assetKey={assetOrError.key} asOf={asOf} />
               </Wrapper>
             );
           }}

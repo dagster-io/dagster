@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
 import {AssetEntryRoot} from '../assets/AssetEntryRoot';
 import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
@@ -11,8 +11,15 @@ import {MainContent} from '../ui/MainContent';
 import {InstanceStatusRoot} from './InstanceStatusRoot';
 
 export const InstanceRoot = () => {
+  const {pathname} = useLocation();
+  const main = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    main.current?.scrollTo({top: 0});
+  }, [pathname]);
+
   return (
-    <MainContent>
+    <MainContent ref={main}>
       <Switch>
         <Route path="/instance/assets" exact component={AssetsCatalogRoot} />
         <Route path="/instance/assets/(/?.*)" component={AssetEntryRoot} />

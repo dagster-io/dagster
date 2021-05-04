@@ -35,7 +35,7 @@ export const AssetMaterializationTable: React.FC<{
         <tr>
           {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
           <th style={{paddingLeft: 0}}>Materialization Metadata</th>
-          {hasLineage && <th style={{minWidth: 100}}>Parent Assets</th>}
+          {hasLineage && <th style={{minWidth: 100}}>Parent Materializations</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
           <th style={{minWidth: 150}}>Pipeline</th>
           <th style={{width: 200}}>Run</th>
@@ -81,7 +81,9 @@ const AssetMaterializationRow: React.FC<{
           <MetadataEntries entries={metadataEntries} />
         ) : null}
       </td>
-      {hasLineage && <td>{<AssetLineageElements elements={assetLineage} />}</td>}
+      {hasLineage && (
+        <td>{<AssetLineageElements elements={assetLineage} timestamp={timestamp} />}</td>
+      )}
       <td>
         <Group direction="column" spacing={4}>
           <Timestamp timestamp={{ms: Number(timestamp)}} />

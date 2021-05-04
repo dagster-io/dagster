@@ -21,9 +21,18 @@ import {
 } from './types/AssetQuery';
 import {HistoricalMaterialization, useMaterializationBuckets} from './useMaterializationBuckets';
 
-export const AssetMaterializations: React.FC<{assetKey: AssetKey}> = ({assetKey}) => {
+interface Props {
+  assetKey: AssetKey;
+  asOf: string | null;
+}
+
+export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf}) => {
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {assetKey: {path: assetKey.path}, limit: 200},
+    variables: {
+      assetKey: {path: assetKey.path},
+      limit: 200,
+      before: asOf,
+    },
   });
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
