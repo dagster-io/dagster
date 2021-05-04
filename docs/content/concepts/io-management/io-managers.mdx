@@ -64,7 +64,7 @@ By default, all the inputs and outputs in a pipeline use the same IOManager. Thi
 Here’s how to specify that all solid outputs are stored using the <PyObject module="dagster" object="fs_io_manager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
 
 ```python file=/concepts/io_management/default_io_manager.py
-from dagster import ModeDefinition, fs_io_manager, pipeline, solid
+from dagster import fs_io_manager, pipeline, solid
 
 
 @solid
@@ -77,13 +77,7 @@ def solid2(_, a):
     return a + 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
-def my_pipeline():
-    solid2(solid1())
-```
-
-```python
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+@pipeline(resource_defs={"io_manager": fs_io_manager})
 def my_pipeline():
     solid2(solid1())
 ```
@@ -95,7 +89,7 @@ Not all the outputs in a pipeline should necessarily be stored the same way. May
 To select the IOManager for a particular output, you can set an `io_manager_key` on the <PyObject module="dagster" object="OutputDefinition" />, and then refer to that `io_manager_key` when setting IO managers in your <PyObject module="dagster" object="ModeDefinition" />. In this example, the output of solid1 will go to `fs_io_manager` and the output of solid2 will go to `mem_io_manager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster import ModeDefinition, OutputDefinition, fs_io_manager, mem_io_manager, pipeline, solid
+from dagster import OutputDefinition, fs_io_manager, mem_io_manager, pipeline, solid
 
 
 @solid(output_defs=[OutputDefinition(io_manager_key="fs")])
@@ -108,7 +102,7 @@ def solid2(_, a):
     return a + 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"fs": fs_io_manager, "mem": mem_io_manager})])
+@pipeline(resource_defs={"fs": fs_io_manager, "mem": mem_io_manager})
 def my_pipeline():
     solid2(solid1())
 ```
@@ -117,22 +111,18 @@ def my_pipeline():
 
 If you have specific requirements for where and how your outputs should be stored and retrieved, you can define your own IOManager. This boils down to implementing two functions: one that stores outputs and one that loads inputs.
 
-To define an IO manager, use the <PyObject module="dagster" object="io_manager" displayText="@io_manager" /> decorator.
+To define an IO manager, extend the <PyObject module="dagster" object="IOManager" /> class.
 
 ```python
+from dagster import IOManager
+
 class MyIOManager(IOManager):
     def handle_output(self, context, obj):
         write_csv("some/path")
 
     def load_input(self, context):
         return read_csv("some/path")
-
-@io_manager
-def my_io_manager(init_context):
-    return MyIOManager()
 ```
-
-The <PyObject module="dagster" object="io_manager" /> decorator behaves nearly identically to the <PyObject module="dagster" object="resource" /> decorator. It yields an <PyObject module="dagster" object="IOManagerDefinition" />, which is a subclass of <PyObject module="dagster" object="ResourceDefinition" /> that will produce an <PyObject module="dagster" object="IOManager" />.
 
 The provided `context` argument for `handle_output` is an <PyObject module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
 
@@ -143,7 +133,7 @@ The provided `context` argument for `handle_output` is an <PyObject module="dags
 If your solids produce Pandas DataFrames that populate tables in a data warehouse, you might write something like the following. This IO manager uses the name assigned to the output as the name of the table to write the output to.
 
 ```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster import IOManager, ModeDefinition, io_manager, pipeline
+from dagster import IOManager, pipeline
 
 
 class DataframeTableIOManager(IOManager):
@@ -158,12 +148,7 @@ class DataframeTableIOManager(IOManager):
         return read_dataframe_from_table(name=table_name)
 
 
-@io_manager
-def df_table_io_manager(_):
-    return DataframeTableIOManager()
-
-
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": df_table_io_manager})])
+@pipeline(resource_defs={"io_manager": DataframeTableIOManager()})
 def my_pipeline():
     solid2(solid1())
 ```
@@ -195,7 +180,7 @@ def my_io_manager(_):
 Then, when executing a pipeline, you can pass in this per-output config.
 
 ```python file=/concepts/io_management/output_config.py startafter=execute_start_marker endbefore=execute_end_marker
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
+@pipeline(resource_defs={"io_manager": my_io_manager})
     def my_pipeline():
         solid2(solid1())
 
