@@ -143,6 +143,13 @@ class PartitionSetDefinition(
         return tags
 
     def get_partitions(self, current_time=None):
+        """Return the set of known partitions.
+
+        Arguments:
+            current_time (Optional[datetime]): The evaluation time for the partition function, which
+                is passed through to the ``partition_fn`` (if it accepts a parameter).  Defaults to
+                the current time in UTC.
+        """
         return self.partition_fn(current_time)
 
     def get_partition(self, name):
@@ -170,21 +177,22 @@ class PartitionSetDefinition(
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition],
-            Union[Partition, List[Partition]]): Function that determines the partition to use at a given execution time.
-            Can return either a single Partition or a list of Partitions.
-            For time-based partition sets, will likely be either `identity_partition_selector` or a
-            selector returned by `create_offset_partition_selector`.
+            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
+                Function that determines the partition to use at a given execution time. Can return
+                either a single Partition or a list of Partitions. For time-based partition sets,
+                will likely be either `identity_partition_selector` or a selector returned by
+                `create_offset_partition_selector`.
             should_execute (Optional[function]): Function that runs at schedule execution time that
-            determines whether a schedule should execute. Defaults to a function that always returns
-            ``True``.
+                determines whether a schedule should execute. Defaults to a function that always returns
+                ``True``.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
             execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
                 with DagsterDaemonScheduler, and must be set when using that scheduler.
             description (Optional[str]): A human-readable description of the schedule.
 
         Returns:
-            ScheduleDefinition: The generated ScheduleDefinition for the partition selector
+            PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
+                selector
         """
 
         check.str_param(schedule_name, "schedule_name")

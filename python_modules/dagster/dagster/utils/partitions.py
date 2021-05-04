@@ -169,7 +169,7 @@ def date_partition_range(
 
 def identity_partition_selector(context, partition_set_def):
     """Utility function for supplying a partition selector when creating a schedule from a
-    partition set made of ``datetime``s that assumes the schedule always executes at the
+    partition set made of ``datetime`` objects that assumes the schedule always executes at the
     partition time.
 
     It's important that the cron string passed into ``create_schedule_definition`` match
@@ -202,11 +202,11 @@ def identity_partition_selector(context, partition_set_def):
 
 def create_offset_partition_selector(execution_time_to_partition_fn):
     """Utility function for supplying a partition selector when creating a schedule from a
-    partition set made of `datetime`s that assumes a fixed time offset between the partition
-    time and the time at which the schedule executes.
+    partition set made of ``datetime`` objects that assumes a fixed time offset between the
+    partition time and the time at which the schedule executes.
 
     It's important to keep the cron string that's supplied to
-    `PartitionSetDefinition.create_schedule_definition` in sync with the offset that's
+    ``PartitionSetDefinition.create_schedule_definition`` in sync with the offset that's
     supplied to this function. For example, a schedule created from a partition set with
     partitions for each day at midnight that fills in the partition for day N at day N+1 at
     10:00AM would create the partition selector as follows:
@@ -233,7 +233,7 @@ def create_offset_partition_selector(execution_time_to_partition_fn):
 
     Args:
         execution_time_to_partition_fn (Callable[[datetime.datetime], datetime.datetime]): A
-        function that maps the execution time of the schedule to the partition time.
+            function that maps the execution time of the schedule to the partition time.
     """
 
     check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
