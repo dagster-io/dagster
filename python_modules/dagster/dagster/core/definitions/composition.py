@@ -762,12 +762,13 @@ def do_composition(
         outputs_are_explicit = True
         actual_output_defs = provided_output_defs
 
-    actual_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+    actual_input_defs, positional_inputs, _ = resolve_checked_solid_fn_inputs(
         decorator_name,
         graph_name,
         fn,
         provided_input_defs,
         has_context_arg=False,
+        context_required=False,
         exclude_nothing=False,
     )
 

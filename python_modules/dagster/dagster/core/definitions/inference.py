@@ -94,10 +94,10 @@ def _infer_inputs_from_params(
     return input_defs
 
 
-def infer_input_props(fn: Callable, has_context_arg: bool) -> List[InferredInputProps]:
+def infer_input_props(fn: Callable, context_arg_provided: bool) -> List[InferredInputProps]:
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    params_to_infer = params[1:] if has_context_arg else params
+    params_to_infer = params[1:] if context_arg_provided else params
     defs = _infer_inputs_from_params(params_to_infer, descriptions=descriptions)
     return defs

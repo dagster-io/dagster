@@ -62,9 +62,11 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
 
 
 class SolidExecutionContext(AbstractComputeExecutionContext):
-    """The ``context`` object available as the first argument to every solid's compute function.
+    """The ``context`` object that can be made available as the first argument to a solid's compute
+    function.
 
-    Users should not instantiate this object directly.
+    The context object provides system information such as resources, config, and logging to a
+    solid's compute function. Users should not instantiate this object directly.
 
     Example:
 

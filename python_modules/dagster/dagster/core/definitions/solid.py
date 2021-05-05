@@ -33,8 +33,8 @@ class SolidDefinition(NodeDefinition):
             using the solid.
         input_defs (List[InputDefinition]): Inputs of the solid.
         compute_fn (Callable): The core of the solid, the function that does the actual
-            computation. The signature of this function is determined by ``input_defs``, with
-            an additional injected first argument, ``context``, a collection of information provided
+            computation. The signature of this function is determined by ``input_defs``, and
+            optionally, an injected first argument, ``context``, a collection of information provided
             by the system.
 
             This function must return a generator or an async generator, which must yield one

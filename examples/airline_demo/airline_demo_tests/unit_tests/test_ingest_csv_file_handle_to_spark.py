@@ -18,7 +18,7 @@ from pyspark.sql import Row
 
 
 @solid
-def collect_df(_, df):
+def collect_df(df):
     """The pyspark Spark context will be stopped on pipeline termination, so we need to collect
     the pyspark DataFrame before pipeline completion.
     """
@@ -27,7 +27,7 @@ def collect_df(_, df):
 
 def test_ingest_csv_file_handle_to_spark(spark_config):
     @solid
-    def emit_num_csv_local_file(_):
+    def emit_num_csv_local_file():
         return LocalFileHandle(file_relative_path(__file__, "../num.csv"))
 
     @pipeline(
@@ -65,7 +65,7 @@ def test_ingest_csv_file_handle_to_spark(spark_config):
 
 def test_ingest_csv_file_with_special_handle_to_spark(spark_config):
     @solid
-    def emit_num_special_csv_local_file(_):
+    def emit_num_special_csv_local_file():
         return LocalFileHandle(file_relative_path(__file__, "../num_with_special_chars.csv"))
 
     @pipeline(

@@ -265,7 +265,7 @@ def test_infer_input_description_from_docstring_rest():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(rest.compute_fn, has_context_arg=True)
+    defs = infer_input_props(rest.compute_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -293,7 +293,7 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_numpy.compute_fn, has_context_arg=True)
+    defs = infer_input_props(good_numpy.compute_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -320,7 +320,7 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_google.compute_fn, has_context_arg=True)
+    defs = infer_input_props(good_google.compute_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]

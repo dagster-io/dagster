@@ -1,6 +1,16 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Set
 
 from dagster.seven import funcsigs
+
+
+def get_valid_name_permutations(param_name: str) -> Set[str]:
+    """Get all underscore permutations for provided arg name"""
+    return {
+        "_",
+        param_name,
+        f"_{param_name}",
+        f"{param_name}_",
+    }
 
 
 def _is_param_valid(param: funcsigs.Parameter, expected_positional: str) -> bool:
@@ -8,15 +18,12 @@ def _is_param_valid(param: funcsigs.Parameter, expected_positional: str) -> bool
     if expected_positional == "*":
         return True
 
-    possible_names = {
-        "_",
-        expected_positional,
-        f"_{expected_positional}",
-        f"{expected_positional}_",
-    }
     possible_kinds = {funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY}
 
-    return param.name in possible_names and param.kind in possible_kinds
+    return (
+        param.name in get_valid_name_permutations(expected_positional)
+        and param.kind in possible_kinds
+    )
 
 
 def get_function_params(fn: Callable[..., Any]) -> List[funcsigs.Parameter]:
@@ -35,18 +42,13 @@ def validate_expected_params(
     return None
 
 
-def is_required_param(param):
+def is_required_param(param: funcsigs.Parameter) -> bool:
     return param.default == funcsigs.Parameter.empty
 
 
-def positional_arg_name_list(params):
-    return list(
-        map(
-            lambda p: p.name,
-            filter(
-                lambda p: p.kind
-                in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY],
-                params,
-            ),
-        )
-    )
+def positional_arg_name_list(params: List[funcsigs.Parameter]) -> List[str]:
+    accepted_param_types = {
+        funcsigs.Parameter.POSITIONAL_OR_KEYWORD,
+        funcsigs.Parameter.POSITIONAL_ONLY,
+    }
+    return [p.name for p in params if p.kind in accepted_param_types]

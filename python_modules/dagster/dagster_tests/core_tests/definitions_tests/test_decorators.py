@@ -220,12 +220,6 @@ def test_solid_definition_errors():
         def wrong_name_2(context, foo):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
-        def no_context(foo):
-            pass
-
     @solid(
         input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
         output_defs=[OutputDefinition()],
@@ -287,11 +281,20 @@ def test_any_config_field():
 def test_solid_no_arg():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="does not have required positional parameter 'context'.",
+        match="'_noop' decorated function requires positional parameter 'context',",
     ):
 
-        @solid
-        def noop():
+        @solid(required_resource_keys={"foo"})
+        def _noop():
+            return
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="'_noop2' decorated function requires positional parameter 'context',",
+    ):
+
+        @solid(config_schema={"foo": str})
+        def _noop2():
             return
 
 

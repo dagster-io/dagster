@@ -40,12 +40,13 @@ class _LambdaSolid:
         else:
             output_def = self.output_def.combine_with_inferred(inferred)
 
-        resolved_input_defs, positional_inputs = resolve_checked_solid_fn_inputs(
+        resolved_input_defs, positional_inputs, _ = resolve_checked_solid_fn_inputs(
             decorator_name="@lambda_solid",
             fn_name=self.name,
             compute_fn=fn,
             explicit_input_defs=self.input_defs,
             has_context_arg=False,
+            context_required=False,
             exclude_nothing=True,
         )
         compute_fn = _create_lambda_solid_compute_wrapper(fn, resolved_input_defs, output_def)
