@@ -56,6 +56,9 @@ class ActiveExecution:
         self._pending: Dict[str, Set[str]] = self._plan.get_executable_step_deps()
 
         # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
+        # to _gathering while in flight
+        self._gathering_dynamic_outputs: Dict[str, Dict[str, List[str]]] = {}
+        # then on success move to _successful
         self._successful_dynamic_outputs: Dict[str, Dict[str, List[str]]] = (
             dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
         )
@@ -155,7 +158,7 @@ class ActiveExecution:
             for step_key, deps in new_step_deps.items():
                 self._pending[step_key] = deps
 
-            self._new_dyamic_mappings = False
+            self._new_dynamic_mappings = False
 
         for step_key, requirements in self._pending.items():
             # If any upstream deps failed - this is not executable
@@ -340,7 +343,8 @@ class ActiveExecution:
     def mark_success(self, step_key: str) -> None:
         self._success.add(step_key)
         self._mark_complete(step_key)
-        if step_key in self._successful_dynamic_outputs:
+        if step_key in self._gathering_dynamic_outputs:
+            self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
             self._new_dynamic_mappings = True
 
     def mark_skipped(self, step_key: str) -> None:
@@ -409,7 +413,7 @@ class ActiveExecution:
             event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
             self.mark_step_produced_output(event_specific_data.step_output_handle)
             if dagster_event.step_output_data.step_output_handle.mapping_key:
-                self._successful_dynamic_outputs[step_key][
+                self._gathering_dynamic_outputs[step_key][
                     dagster_event.step_output_data.step_output_handle.output_name
                 ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
@@ -460,4 +464,4 @@ class ActiveExecution:
         dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
 
         if dyn_outputs:
-            self._successful_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
+            self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}

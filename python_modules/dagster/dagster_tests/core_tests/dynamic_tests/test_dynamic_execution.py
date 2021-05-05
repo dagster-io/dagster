@@ -16,6 +16,7 @@ from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.test_utils import instance_for_test
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
+from dagster.utils import merge_dicts
 
 
 @solid(tags={"third": "3"})
@@ -78,14 +79,26 @@ def dynamic_pipeline():
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
 def fan_repeat():
     one = emit().map(multiply_by_two)
-    two = dynamic_echo(one.collect()).map(multiply_by_two)
+    two = dynamic_echo(one.collect()).map(multiply_by_two).map(echo)
     three = dynamic_echo(two.collect()).map(multiply_by_two)
     sum_numbers(three.collect())
 
 
-def test_map_basic():
+def _run_configs():
+    return [{}, {"execution": {"multiprocess": {}}}]
+
+
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_map(run_config):
     with instance_for_test() as instance:
-        result = execute_pipeline(reconstructable(dynamic_pipeline), instance=instance)
+        result = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            run_config=run_config,
+        )
         assert result.success
         keys = result.events_by_step_key.keys()
         assert "multiply_inputs[0]" in keys
@@ -106,44 +119,19 @@ def test_map_basic():
         assert result.result_for_solid("echo").output_value() == 120
 
 
-def test_map_empty():
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_map_empty(run_config):
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config={"solids": {"emit": {"config": {"range": 0}}}},
+            run_config=merge_dicts({"solids": {"emit": {"config": {"range": 0}}}}, run_config),
         )
         assert result.success
         assert result.result_for_solid("double_total").output_value() == 0
-
-
-def test_map_multi():
-    with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(dynamic_pipeline),
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
-            instance=instance,
-        )
-        assert result.success
-        keys = result.events_by_step_key.keys()
-        assert "multiply_inputs[0]" in keys
-        assert "multiply_inputs[1]" in keys
-        assert "multiply_inputs[2]" in keys
-        assert result.result_for_solid("multiply_inputs").output_value() == {
-            "0": 0,
-            "1": 10,
-            "2": 20,
-        }
-        assert result.result_for_solid("multiply_by_two").output_value() == {
-            "0": 0,
-            "1": 20,
-            "2": 40,
-        }
-        assert result.result_for_solid("sum_numbers").output_value() == 60
-        assert result.result_for_solid("double_total").output_value() == 120
-        assert result.result_for_solid("echo").output_value() == 120
 
 
 def test_composite_wrapping():
@@ -212,34 +200,16 @@ def test_full_reexecute():
         assert result_2.success
 
 
-def test_partial_reexecute():
-    with instance_for_test() as instance:
-        result_1 = execute_pipeline(dynamic_pipeline, instance=instance)
-        assert result_1.success
-
-        result_2 = reexecute_pipeline(
-            dynamic_pipeline,
-            parent_run_id=result_1.run_id,
-            instance=instance,
-            step_selection=["sum_numbers*"],
-        )
-        assert result_2.success
-
-        result_3 = reexecute_pipeline(
-            dynamic_pipeline,
-            parent_run_id=result_1.run_id,
-            instance=instance,
-            step_selection=["multiply_by_two[1]*"],
-        )
-        assert result_3.success
-
-
-def test_partial_reexecute_multiproc():
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_partial_reexecute(run_config):
     with instance_for_test() as instance:
         result_1 = execute_pipeline(
             reconstructable(dynamic_pipeline),
-            run_config={"execution": {"multiprocess": {}}},
             instance=instance,
+            run_config=run_config,
         )
         assert result_1.success
 
@@ -248,6 +218,7 @@ def test_partial_reexecute_multiproc():
             parent_run_id=result_1.run_id,
             instance=instance,
             step_selection=["sum_numbers*"],
+            run_config=run_config,
         )
         assert result_2.success
 
@@ -256,15 +227,21 @@ def test_partial_reexecute_multiproc():
             parent_run_id=result_1.run_id,
             instance=instance,
             step_selection=["multiply_by_two[1]*"],
+            run_config=run_config,
         )
         assert result_3.success
 
 
-def test_fan_out_in_out_in():
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_fan_out_in_out_in(run_config):
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(fan_repeat),
             instance=instance,
+            run_config=run_config,
         )
         assert result.success
         assert (
@@ -296,40 +273,34 @@ def test_bad_step_selection():
             )
 
 
-def test_map_basic_fail():
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_map_fail(run_config):
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config={"solids": {"emit": {"config": {"fail": True}}}},
+            run_config=merge_dicts({"solids": {"emit": {"config": {"fail": True}}}}, run_config),
             raise_on_error=False,
         )
         assert not result.success
 
 
-def test_map_multi_fail():
-    with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(dynamic_pipeline),
-            instance=instance,
-            run_config={
-                "execution": {"multiprocess": {}},
-                "solids": {"emit": {"config": {"fail": True}}},
-            },
-            raise_on_error=False,
-        )
-        assert not result.success
-
-
-def test_map_multi_reexecute_after_fail():
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_map_reexecute_after_fail(run_config):
     with instance_for_test() as instance:
         result_1 = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config={
-                "execution": {"multiprocess": {}},
-                "solids": {"emit": {"config": {"fail": True}}},
-            },
+            run_config=merge_dicts(
+                run_config,
+                {"solids": {"emit": {"config": {"fail": True}}}},
+            ),
             raise_on_error=False,
         )
         assert not result_1.success
@@ -337,10 +308,8 @@ def test_map_multi_reexecute_after_fail():
         result_2 = reexecute_pipeline(
             reconstructable(dynamic_pipeline),
             parent_run_id=result_1.run_id,
-            run_config={
-                "execution": {"multiprocess": {}},
-            },
             instance=instance,
+            run_config=run_config,
         )
         assert result_2.success
 
