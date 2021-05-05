@@ -28,6 +28,7 @@ export const GridColumn = styled.div<{
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  line-height: 0;
 
   ${({disabled, focused, multiselectFocused, hovered}) =>
     !disabled &&
@@ -262,6 +263,7 @@ export const TopLabelTiltedInner = styled.div`
   margin-bottom: 15px;
   align-items: end;
   display: flex;
+  line-height: normal;
 
   & > div.tilted {
     font-size: 12px;

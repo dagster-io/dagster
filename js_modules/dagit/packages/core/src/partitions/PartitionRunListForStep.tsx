@@ -1,14 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Button, Colors, Tooltip} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import qs from 'query-string';
 import React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
-import {openRunInBrowser} from '../runs/RunUtils';
 import {StepEventStatus} from '../types/globalTypes';
 import {Spinner} from '../ui/Spinner';
 
@@ -38,7 +38,6 @@ interface PartitionRunListForStepProps {
 export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListForStepProps> = (
   props,
 ) => {
-  const {basePath} = React.useContext(AppContext);
   const {data, loading} = useQuery<
     PartitionRunListForStepQuery,
     PartitionRunListForStepQueryVariables
@@ -78,18 +77,10 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
           <StepStatsColumn
             key="context"
             stats={props.stepStatsByRunId[run.runId] || null}
-            onOpenLogs={() =>
-              openRunInBrowser(
-                basePath,
-                {runId: run.runId, pipelineName: props.pipelineName},
-                {
-                  query: {
-                    selection: props.stepName,
-                    logs: `step:${props.stepName}`,
-                  },
-                },
-              )
-            }
+            linkToLogs={`/instance/runs/${run.runId}?${qs.stringify({
+              selection: props.stepName,
+              logs: `step:${props.stepName}`,
+            })}`}
           />,
         ]}
       />
@@ -99,8 +90,8 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
 
 const StepStatsColumn: React.FunctionComponent<{
   stats: StepStats | null;
-  onOpenLogs: () => void;
-}> = ({stats, onOpenLogs}) => {
+  linkToLogs: string;
+}> = ({stats, linkToLogs}) => {
   return (
     <td key="context" style={{maxWidth: 150, borderRight: 0}}>
       {stats ? (
@@ -123,9 +114,9 @@ const StepStatsColumn: React.FunctionComponent<{
               <StatBox>{`${stats.materializations.length}`}</StatBox>
             </Tooltip>
           </StatSummaryLine>
-          <Button onClick={onOpenLogs} rightIcon="share" small>
+          <Link to={linkToLogs} component={Button} {...{small: true, rightIcon: 'share'}}>
             Step Logs
-          </Button>
+          </Link>
         </div>
       ) : (
         <div>No step data.</div>

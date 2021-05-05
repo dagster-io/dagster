@@ -181,4 +181,67 @@ describe('useQueryPersistedState', () => {
     await screen.getByText(`{"view":"grid","pipeline":"my_pipeline"}`).click();
     expect(querySearch).toEqual('?pipeline=my_pipeline');
   });
+
+  it('automatically coerces true/false if no encode/decode methods are provided', async () => {
+    const TestWithObject: React.FunctionComponent = () => {
+      const [filters, setFilters] = useQueryPersistedState<{
+        enableA?: boolean;
+        enableB?: boolean;
+      }>({
+        defaults: {enableA: true, enableB: false},
+      });
+      return (
+        <div onClick={() => setFilters({enableA: !filters.enableA, enableB: !filters.enableB})}>
+          {JSON.stringify(filters)}
+        </div>
+      );
+    };
+    let querySearch;
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestWithObject />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
+
+    await screen.getByText(`{"enableA":true,"enableB":false}`).click();
+    expect(querySearch).toEqual('?enableA=false&enableB=true');
+    await screen.getByText(`{"enableA":false,"enableB":true}`).click();
+    expect(querySearch).toEqual('');
+  });
+
+  it('emits the same setFilters on each render if memoized options are provided, matching React.useState', async () => {
+    let firstSetFunction: (v: any) => void;
+
+    const TestWithObject: React.FunctionComponent = () => {
+      const [_, setFilters] = useQueryPersistedState<{isOn: boolean}>(
+        React.useMemo(
+          () => ({
+            encode: ({isOn}) => ({isOn: isOn ? 'yes' : 'no'}),
+            decode: (qs) => ({isOn: qs.isOn === 'yes' ? true : false}),
+          }),
+          [],
+        ),
+      );
+
+      if (!firstSetFunction) {
+        firstSetFunction = setFilters;
+      }
+
+      return (
+        <div onClick={() => setFilters({isOn: true})}>
+          {`Functions Same: ${firstSetFunction === setFilters}`}
+        </div>
+      );
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestWithObject />
+      </MemoryRouter>,
+    );
+
+    await screen.getByText(`Functions Same: true`).click();
+    await screen.getByText(`Functions Same: true`).click();
+  });
 });

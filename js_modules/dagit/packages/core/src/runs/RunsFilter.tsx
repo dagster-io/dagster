@@ -53,14 +53,19 @@ const RUN_PROVIDERS_EMPTY = [
  * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
  */
 export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
-  return useQueryPersistedState<TokenizingFieldValue[]>({
-    encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
-    decode: ({q = ''}) =>
-      tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
-        (t) =>
-          !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-      ),
-  });
+  return useQueryPersistedState<TokenizingFieldValue[]>(
+    React.useMemo(
+      () => ({
+        encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
+        decode: ({q = ''}) =>
+          tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
+            (t) =>
+              !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
+          ),
+      }),
+      [enabledFilters],
+    ),
+  );
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {

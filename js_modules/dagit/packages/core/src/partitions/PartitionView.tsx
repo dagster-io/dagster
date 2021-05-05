@@ -38,18 +38,16 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 }) => {
   const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
-  const [pageSize, setPageSize] = useQueryPersistedState<number | 'all'>({
-    encode: (val) => ({pageSize: val}),
-    decode: (qs) => (qs.pageSize === 'all' ? 'all' : Number(qs.pageSize || 30)),
-  });
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
-  const {loading, loadingPercent, partitions, paginationProps} = useChunkedPartitionsQuery(
-    partitionSet.name,
+  const {
+    loading,
+    loadingPercent,
+    partitions,
+    paginationProps,
     pageSize,
-    runTags,
-    repoAddress,
-  );
+    setPageSize,
+  } = useChunkedPartitionsQuery(partitionSet.name, runTags, repoAddress);
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 

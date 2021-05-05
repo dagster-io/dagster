@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Icon, Popover} from '@blueprintjs/core';
-import qs from 'query-string';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
@@ -46,7 +45,7 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchPipelineRunSuccess') {
-    openRunInBrowser(basePath, obj.run);
+    window.location.href = `${basePath}/instance/runs/${obj.run.runId}`;
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -63,16 +62,6 @@ export function handleLaunchResult(
 
     showCustomAlert({body: message});
   }
-}
-
-export function openRunInBrowser(
-  basePath: string,
-  run: {runId: string; pipelineName: string},
-  opts?: {query?: {[key: string]: string}},
-) {
-  window.location.href = `${basePath}/instance/runs/${run.runId}?${
-    opts?.query ? qs.stringify(opts.query) : ''
-  }`;
 }
 
 function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {

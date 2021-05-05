@@ -1,10 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover, Icon} from '@blueprintjs/core';
+import {Popover2} from '@blueprintjs/popover2';
+import qs from 'query-string';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {AppContext} from '../app/AppContext';
 import {useViewport} from '../gantt/useViewport';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
 import {Box} from '../ui/Box';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -73,30 +76,35 @@ const _backfillIdFromTags = (runTags: TokenizingFieldValue[]) => {
   return backfillId;
 };
 
+const PartitionRunSelectionQueryConfig: QueryPersistedStateConfig<PartitionRunSelection | null> = {
+  encode: (val) => ({partitionName: val?.partitionName, stepName: val?.stepName}),
+  decode: (qs) =>
+    qs.partitionName && qs.stepName
+      ? {partitionName: qs.partitionName, stepName: qs.stepName}
+      : null,
+};
+
+const DisplayOptionsQueryConfig: QueryPersistedStateConfig<DisplayOptions> = {
+  decode: (qs) => ({
+    showPrevious: qs.showPrevious === 'true',
+    colorizeByAge: qs.colorizeByAge === 'true',
+    showFailuresAndGapsOnly: qs.showFailuresAndGapsOnly === 'true',
+  }),
+  defaults: {
+    showPrevious: false,
+    colorizeByAge: false,
+    showFailuresAndGapsOnly: false,
+  },
+};
+
 export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
+  const {basePath} = React.useContext(AppContext);
   const {viewport, containerProps} = useViewport();
   const [colorizeSliceUnix, setColorizeSliceUnix] = React.useState(0);
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = useQueryPersistedState<PartitionRunSelection | null>({
-    encode: (val) => ({partitionName: val?.partitionName, stepName: val?.stepName}),
-    decode: (qs) =>
-      qs.partitionName && qs.stepName
-        ? {partitionName: qs.partitionName, stepName: qs.stepName}
-        : null,
-  });
+  const [focused, setFocused] = useQueryPersistedState(PartitionRunSelectionQueryConfig);
   const [stepSort = '', setStepSort] = useQueryPersistedState<string>({queryKey: 'stepSort'});
-  const [options, setOptions] = useQueryPersistedState<DisplayOptions>({
-    decode: (qs) => ({
-      showPrevious: qs.showPrevious === 'true',
-      colorizeByAge: qs.colorizeByAge === 'true',
-      showFailuresAndGapsOnly: qs.showFailuresAndGapsOnly === 'true',
-    }),
-    defaults: {
-      showPrevious: false,
-      colorizeByAge: false,
-      showFailuresAndGapsOnly: false,
-    },
-  });
+  const [options, setOptions] = useQueryPersistedState(DisplayOptionsQueryConfig);
 
   // Retrieve the pipeline's structure
   const repositorySelector = repoAddressToSelector(props.repoAddress);
@@ -378,9 +386,41 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               >
                 <TopLabelTilted label={p.name} />
                 {sortPartitionSteps(p.steps).map(({name, color, unix}) => (
-                  <div
+                  <Popover2
                     key={name}
-                    className={`
+                    minimal
+                    disabled={p.runs.length === 0}
+                    interactionKind="click"
+                    placement="bottom-start"
+                    content={
+                      p.runs.length ? (
+                        <Menu>
+                          <MenuItem
+                            icon="share"
+                            text="Show Logs From Last Run"
+                            href={`${basePath}/instance/runs/${
+                              p.runs[p.runs.length - 1].runId
+                            }?${qs.stringify({
+                              selection: name,
+                              logs: `step:${name}`,
+                            })}`}
+                          />
+                          <MenuItem
+                            icon="list"
+                            text={`View Runs (${p.runs.length})`}
+                            onClick={() =>
+                              p.runs.length > 0 &&
+                              setFocused({stepName: name, partitionName: p.name})
+                            }
+                          />
+                        </Menu>
+                      ) : (
+                        <span />
+                      )
+                    }
+                  >
+                    <div
+                      className={`
                       square
                       ${p.runs.length === 0 && 'empty'}
                       ${(options.showPrevious
@@ -388,22 +428,20 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                         : StatusSquareFinalColor[color] || color
                       ).toLowerCase()}
                     `}
-                    onClick={() =>
-                      p.runs.length > 0 && setFocused({stepName: name, partitionName: p.name})
-                    }
-                    onMouseEnter={() => setHovered({stepName: name, partitionName: p.name})}
-                    onMouseLeave={() => setHovered(null)}
-                    style={
-                      options.colorizeByAge
-                        ? {
-                            opacity:
-                              unix >= colorizeSliceUnix
-                                ? 0.3 + 0.7 * ((unix - minUnix) / (maxUnix - minUnix))
-                                : 0.08,
-                          }
-                        : {}
-                    }
-                  />
+                      onMouseEnter={() => setHovered({stepName: name, partitionName: p.name})}
+                      onMouseLeave={() => setHovered(null)}
+                      style={
+                        options.colorizeByAge
+                          ? {
+                              opacity:
+                                unix >= colorizeSliceUnix
+                                  ? 0.3 + 0.7 * ((unix - minUnix) / (maxUnix - minUnix))
+                                  : 0.08,
+                            }
+                          : {}
+                      }
+                    />
+                  </Popover2>
                 ))}
                 <Divider />
                 <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
