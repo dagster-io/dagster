@@ -491,6 +491,10 @@
             "path": "/_apidocs/libraries/dagster-celery-docker"
           },
           {
+            "title": "Celery + Kubernetes (dagster-celery-k8s)",
+            "path": "/_apidocs/libraries/dagster-celery-k8s"
+          },
+          {
             "title": "Cron (dagster-cron)",
             "path": "/_apidocs/libraries/dagster-cron"
           },
