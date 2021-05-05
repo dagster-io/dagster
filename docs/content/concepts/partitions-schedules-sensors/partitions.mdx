@@ -92,7 +92,7 @@ def my_repository():
 
 To create a schedule from a partition set, you must first define a partition selector. A partition selector is a function which takes a <PyObject object="ScheduleExecutionContext" /> and a <PyObject object="PartitionSetDefinition" /> and returns a <PyObject object="Partition" /> object or a list of <PyObject object="Partition" /> objects. Every time the schedule fires, a pipeline run will be submitted for each partition returned by this partition selector.
 
-Once you have created your partition selector, you can manually create a schedule using the `create_schedule_definition` method on your <PyObject object="PartitionSetDefinition" />.
+Once you have created your partition selector, you can manually create a schedule using the method <PyObject object="PartitionSetDefinition" method="create_schedule_definition" />.
 
 In the following example, we first define a static partition set with partitions representing days of the week. We then create a partition selector, which maps the schedule execution time to the appropriate partition. Finally, we create a schedule that kicks off a pipeline run for the selected partition.
 
