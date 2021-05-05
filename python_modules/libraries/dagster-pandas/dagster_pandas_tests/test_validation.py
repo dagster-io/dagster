@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
@@ -11,7 +13,6 @@ from dagster_pandas.constraints import (
 )
 from dagster_pandas.validation import PandasColumn, validate_constraints
 from pandas import DataFrame, Timestamp
-from datetime import datetime
 
 
 def test_validate_constraints_ok():
@@ -147,15 +148,47 @@ def test_datetime_column_composition(composer, composer_args, expected_constrain
         if hasattr(constraint, "ignore_missing_vals"):
             assert constraint.ignore_missing_vals
 
-def test_datetime_column_utc_ok():
+
+def test_datetime_column_with_tz_validation_ok():
     assert (
         validate_constraints(
-            DataFrame({"datetime": [Timestamp('2021-03-14T12:34:56')],"datetime_utc": [Timestamp('2021-03-14T12:34:56Z')],"datetime_utc_with_min_max": [Timestamp('2021-03-14T12:34:56Z')]}),
+            DataFrame(
+                {
+                    "datetime": [Timestamp("2021-03-14T12:34:56")],
+                    "datetime_utc": [Timestamp("2021-03-14T12:34:56Z")],
+                    "datetime_dublin": [Timestamp("2021-03-14T12:34:56", tz="Europe/Dublin")],
+                    "datetime_est": [Timestamp("2021-03-14T12:34:56", tz="US/Eastern")],
+                    "datetime_chatham": [Timestamp("2021-03-14T12:34:56", tz="Pacific/Chatham")],
+                    "datetime_utc_with_min_max": [Timestamp("2021-03-14T12:34:56Z")],
+                }
+            ),
             pandas_columns=[
                 PandasColumn.datetime_column("datetime"),
-                PandasColumn.datetime_column("datetime_utc", utc=True),
-                PandasColumn.datetime_column("datetime_utc_with_min_max", utc=True, min_datetime=datetime(2021,3,1), max_datetime=Timestamp('2021-04-01T00:00:00Z')),
-            ]
+                PandasColumn.datetime_column("datetime_utc", tz="UTC"),
+                PandasColumn.datetime_column("datetime_dublin", tz="Europe/Dublin"),
+                PandasColumn.datetime_column("datetime_est", tz="US/Eastern"),
+                PandasColumn.datetime_column("datetime_chatham", tz="Pacific/Chatham"),
+                PandasColumn.datetime_column(
+                    "datetime_utc_with_min_max",
+                    tz="UTC",
+                    min_datetime=datetime(2021, 3, 1),
+                    max_datetime=Timestamp("2021-04-01T00:00:00Z"),
+                ),
+            ],
         )
         is None
     )
+
+
+def test_datetime_column_with_tz_validation_fails_when_incorrect_tz():
+    with pytest.raises(ConstraintViolationException):
+        validate_constraints(
+            DataFrame(
+                {
+                    "datetime_utc": [Timestamp("2021-03-14T12:34:56")],
+                }
+            ),
+            pandas_columns=[
+                PandasColumn.datetime_column("datetime_utc", tz="UTC"),
+            ],
+        )
