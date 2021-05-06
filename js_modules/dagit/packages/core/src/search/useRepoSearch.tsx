@@ -91,7 +91,7 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
 
   const {nodes} = data.assetsOrError;
   const allEntries = nodes.map((node) => {
-    const {key, tags} = node;
+    const {key} = node;
     const path = key.path.join(' › ');
     return {
       key: path,
@@ -99,7 +99,6 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
       description: 'Asset',
       href: `/instance/assets/${key.path.join('/')}`,
       type: SearchResultType.Asset,
-      tags: tags.map((tag) => `${tag.key}:${tag.value}`).join(' '),
     };
   });
 
@@ -193,10 +192,6 @@ const SEARCH_SECONDARY_QUERY = gql`
           id
           key {
             path
-          }
-          tags {
-            key
-            value
           }
         }
       }

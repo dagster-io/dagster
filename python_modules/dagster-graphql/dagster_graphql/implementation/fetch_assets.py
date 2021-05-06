@@ -13,13 +13,7 @@ def get_assets(graphene_info):
     instance = graphene_info.context.instance
 
     asset_keys = instance.all_asset_keys()
-    asset_tags_by_key = instance.all_asset_tags()
-    return GrapheneAssetConnection(
-        nodes=[
-            GrapheneAsset(key=asset_key, tags=asset_tags_by_key.get(asset_key, {}))
-            for asset_key in asset_keys
-        ]
-    )
+    return GrapheneAssetConnection(nodes=[GrapheneAsset(key=asset_key) for asset_key in asset_keys])
 
 
 def get_asset(graphene_info, asset_key):
