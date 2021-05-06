@@ -1,75 +1,139 @@
 # Changelog
 
+## 0.11.8
+
+### New
+
+- The `@solid` decorator can now wrap a function without a `context` argument, if no context information is required. For example, you can now do:
+
+```py
+@solid
+def basic_solid():
+    return 5
+
+@solid
+def solid_with_inputs(x, y):
+    return x + y
+
+```
+
+however, if your solid requires config or resources, then you will receive an error at definition time.
+
+- It is now simpler to provide structured metadata on events. Events that take a `metadata_entries` argument may now instead accept a `metadata` argument, which should allow for a more convenient API. The `metadata` argument takes a dictionary with string labels as keys and `EventMetadata` values. Some base types (`str`, `int`, `float`, and JSON-serializable `list`/`dict`s) are also accepted as values and will be automatically coerced to the appropriate `EventMetadata` value. For example:
+
+```py
+@solid
+def old_metadata_entries_solid(df):
+   yield AssetMaterialization(
+       "my_asset",
+       metadata_entries=[
+           EventMetadataEntry.text("users_table", "table name"),
+           EventMetadataEntry.int(len(df), "row count"),
+           EventMetadataEntry.url("http://mysite/users_table", "data url")
+       ]
+   )
+
+@solid
+def new_metadata_solid(df):
+    yield AssetMaterialization(
+       "my_asset",
+       metadata={
+           "table name": "users_table",
+           "row count": len(df),
+           "data url": EventMetadata.url("http://mysite/users_table")
+       }
+   )
+
+```
+
+- The dagster-daemon process now has a `--heartbeat-tolerance` argument that allows you to configure how long the process can run before shutting itself down due to a hanging thread. This parameter can be used to troubleshoot failures with the daemon process.
+- When creating a schedule from a partition set using `PartitionSetDefinition.create_schedule_definition`, the `partition_selector` function that determines which partition to use for a given schedule tick can now return a list of partitions or a single partition, allowing you to create schedules that create multiple runs for each schedule tick.
+
+### Bugfixes
+
+- Runs submitted via backfills can now correctly resolve the source run id when loading inputs from previous runs instead of encountering an unexpected `KeyError`.
+- Using nested `Dict` and `Set` types for solid inputs/outputs now works as expected. Previously a structure like `Dict[str, Dict[str, Dict[str, SomeClass]]]` could result in confusing errors.
+- Dagstermill now correctly loads the config for aliased solids instead of loading from the incorrect place which would result in empty `solid_config`.
+- Error messages when incomplete run config is supplied are now more accurate and precise.
+- An issue that would cause `map` and `collect` steps downstream of other `map` and `collect` steps to mysteriously not execute when using multiprocess executors has been resolved.
+
+### Documentation
+
+- Typo fixes and improvements (thanks @elsenorbw (https://github.com/dagster-io/dagster/commits?author=elsenorbw) !)
+- Improved documentation for scheduling partitions
+
 ## 0.11.7
 
 ### New
 
-* For pipelines with tags defined in code, display these tags in the Dagit playground.
-* On the Dagit asset list page, use a polling query to regularly refresh the asset list.
-* When viewing the Dagit asset list, persist the user’s preference between the flattened list view and the directory structure view.
-* Added `solid_exception` on `HookContext` which returns the actual exception object thrown in a failed solid. See the example “[Accessing failure information in a failure hook](https://docs.dagster.io/concepts/solids-pipelines/solid-hooks#accessing-failure-information-in-a-failure-hook)“ for more details.
-* Added `solid_output_values` on `HookContext` which returns the computed output values.
-* Added `make_values_resource` helper for defining a resource that passes in user-defined values. This is useful when you want multiple solids to share values. See the [example](https://docs.dagster.io/concepts/configuration/config-schema#passing-configuration-to-multiple-solids-in-a-pipeline) for more details.
-* StartupProbes can now be set to disabled in Helm charts. This is useful if you’re running on a version earlier than Kubernetes 1.16.
+- For pipelines with tags defined in code, display these tags in the Dagit playground.
+- On the Dagit asset list page, use a polling query to regularly refresh the asset list.
+- When viewing the Dagit asset list, persist the user’s preference between the flattened list view and the directory structure view.
+- Added `solid_exception` on `HookContext` which returns the actual exception object thrown in a failed solid. See the example “[Accessing failure information in a failure hook](https://docs.dagster.io/concepts/solids-pipelines/solid-hooks#accessing-failure-information-in-a-failure-hook)“ for more details.
+- Added `solid_output_values` on `HookContext` which returns the computed output values.
+- Added `make_values_resource` helper for defining a resource that passes in user-defined values. This is useful when you want multiple solids to share values. See the [example](https://docs.dagster.io/concepts/configuration/config-schema#passing-configuration-to-multiple-solids-in-a-pipeline) for more details.
+- StartupProbes can now be set to disabled in Helm charts. This is useful if you’re running on a version earlier than Kubernetes 1.16.
 
 ### Bugfixes
 
-* Fixed an issue where partial re-execution was not referencing the right source run and failed to load the correct persisted outputs.
-* When running Dagit with `--path-prefix`, our color-coded favicons denoting the success or failure of a run were not loading properly. This has been fixed.
-* Hooks and tags defined on solid invocations now work correctly when executing a pipeline with a solid subselection
-* Fixed an issue where heartbeats from the dagster-daemon process would not appear on the Status page in dagit until the process had been running for 30 seconds
-* When filtering runs, Dagit now suggests all “status:” values and other auto-completions in a scrolling list
-* Fixed asset catalog where nested directory structure links flipped back to the flat view structure
+- Fixed an issue where partial re-execution was not referencing the right source run and failed to load the correct persisted outputs.
+- When running Dagit with `--path-prefix`, our color-coded favicons denoting the success or failure of a run were not loading properly. This has been fixed.
+- Hooks and tags defined on solid invocations now work correctly when executing a pipeline with a solid subselection
+- Fixed an issue where heartbeats from the dagster-daemon process would not appear on the Status page in dagit until the process had been running for 30 seconds
+- When filtering runs, Dagit now suggests all “status:” values and other auto-completions in a scrolling list
+- Fixed asset catalog where nested directory structure links flipped back to the flat view structure
 
 ### Community Contributions
 
-* [Helm] The Dagit service port is now configurable (thanks @trevenrawr!)
-* [Docs] Cleanup & updating visual aids (thanks @keypointt!)
+- [Helm] The Dagit service port is now configurable (thanks @trevenrawr!)
+- [Docs] Cleanup & updating visual aids (thanks @keypointt!)
 
 ### Experimental
 
-* [Dagster-GraphQL] Added an official Python Client for Dagster’s GraphQL API ([GH issue #2674](https://github.com/dagster-io/dagster/issues/2674)). Docs can be found [here](https://docs.dagster.io/concepts/dagit/graphql-client)
+- [Dagster-GraphQL] Added an official Python Client for Dagster’s GraphQL API ([GH issue #2674](https://github.com/dagster-io/dagster/issues/2674)). Docs can be found [here](https://docs.dagster.io/concepts/dagit/graphql-client)
 
 ### Documentation
 
-* Fixed a confusingly-worded header on the Solids/Pipelines Testing page
+- Fixed a confusingly-worded header on the Solids/Pipelines Testing page
 
 ## 0.11.6
 
 ### Breaking Changes
 
-* `DagsterInstance.get()` no longer falls back to an ephemeral instance if `DAGSTER_HOME` is not set. We don’t expect this to break normal workflows. This change allows our tooling to be more consistent around it’s expectations. If you were relying on getting an ephemeral instance you can use `DagsterInstance.ephemeral()` directly.
-* Undocumented attributes on `HookContext` have been removed. `step_key` and `mode_def` have been documented as attributes.
+- `DagsterInstance.get()` no longer falls back to an ephemeral instance if `DAGSTER_HOME` is not set. We don’t expect this to break normal workflows. This change allows our tooling to be more consistent around it’s expectations. If you were relying on getting an ephemeral instance you can use `DagsterInstance.ephemeral()` directly.
+- Undocumented attributes on `HookContext` have been removed. `step_key` and `mode_def` have been documented as attributes.
 
 ### New
 
-* Added a permanent, linkable panel in the Run view in Dagit to display the raw compute logs.
-* Added more descriptive / actionable error messages throughout the config system.
-* When viewing a partitioned asset in Dagit, display only the most recent materialization for a partition, with a link to view previous materializations in a dialog.
-* When viewing a run in Dagit, individual log line timestams now have permalinks. When loading a timestamp permalink, the log table will highlight and scroll directly to that line.
-* The default `config_schema` for all configurable objects - solids, resources, IO managers, composite solids, executors, loggers - is now `Any`.  This means that you can now use configuration without explicitly providing a `config_schema`. Refer to the docs for more details: https://docs.dagster.io/concepts/configuration/config-schema.
-* When launching an out of process run, resources are no longer initialized in the orchestrating process. This should give a performance boost for those using out of process execution with heavy resources (ie, spark context).
-* `input_defs` and `output_defs` on `@solid` will now flexibly combine data that can be inferred from the function signature that is not declared explicitly via `InputDefinition` / `OutputDefinition`. This allows for more concise defining of solids with reduced repetition of information. 
-* [Helm] Postgres storage configuration now supports connection string parameter keywords.
-* The Status page in Dagit will now display errors that were surfaced in the `dagster-daemon` process within the last 5 minutes. Previously, it would only display errors from the last 30 seconds.
-* Hanging sensors and schedule functions will now raise a timeout exception after 60 seconds, instead of crashing the `dagster-daemon` process.
-* The `DockerRunLauncher` now accepts a `container_kwargs` config parameter, allowing you to specify any argument to the run container that can be passed into the Docker containers.run method. See https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run for the full list of available options.
-* Added clearer error messages for when a Partition cannot be found in a Partition Set.
-* The `celery_k8s_job_executor` now accepts a `job_wait_timeout` allowing you to override the default of 24 hours.
+- Added a permanent, linkable panel in the Run view in Dagit to display the raw compute logs.
+- Added more descriptive / actionable error messages throughout the config system.
+- When viewing a partitioned asset in Dagit, display only the most recent materialization for a partition, with a link to view previous materializations in a dialog.
+- When viewing a run in Dagit, individual log line timestamps now have permalinks. When loading a timestamp permalink, the log table will highlight and scroll directly to that line.
+- The default `config_schema` for all configurable objects - solids, resources, IO managers, composite solids, executors, loggers - is now `Any`. This means that you can now use configuration without explicitly providing a `config_schema`. Refer to the docs for more details: https://docs.dagster.io/concepts/configuration/config-schema.
+- When launching an out of process run, resources are no longer initialized in the orchestrating process. This should give a performance boost for those using out of process execution with heavy resources (ie, spark context).
+- `input_defs` and `output_defs` on `@solid` will now flexibly combine data that can be inferred from the function signature that is not declared explicitly via `InputDefinition` / `OutputDefinition`. This allows for more concise defining of solids with reduced repetition of information.
+- [Helm] Postgres storage configuration now supports connection string parameter keywords.
+- The Status page in Dagit will now display errors that were surfaced in the `dagster-daemon` process within the last 5 minutes. Previously, it would only display errors from the last 30 seconds.
+- Hanging sensors and schedule functions will now raise a timeout exception after 60 seconds, instead of crashing the `dagster-daemon` process.
+- The `DockerRunLauncher` now accepts a `container_kwargs` config parameter, allowing you to specify any argument to the run container that can be passed into the Docker containers.run method. See https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run for the full list of available options.
+- Added clearer error messages for when a Partition cannot be found in a Partition Set.
+- The `celery_k8s_job_executor` now accepts a `job_wait_timeout` allowing you to override the default of 24 hours.
+
 ### Bugfixes
 
-* Fixed the raw compute logs in Dagit, which were not live updating as the selected step was executing.
-* Fixed broken links in the Backfill table in Dagit when Dagit is started with a `--prefix-path` argument.
-* Showed failed status of backfills in the Backfill table in Dagit, along with an error stack trace. Previously, the backfill jobs were stuck in a `Requested` state.
-* Previously, if you passed a non-required Field to the `output_config_schema` or `input_config_schema` arguments of `@io_manager`, the config would still be required. Now, the config is not required.
-* Fixed nested subdirectory views in the `Assets` catalog, where the view switcher would flip back from the directory view to the flat view when navigating into subdirectories.
-* Fixed an issue where the `dagster-daemon` process would crash if it experienced a transient connection error while connecting to the Dagster database.
-* Fixed an issue where the `dagster-airflow scaffold` command would raise an exception if a preset was specified.
-* Fixed an issue where Dagit was not including the error stack trace in the Status page when a repository failed to load.
+- Fixed the raw compute logs in Dagit, which were not live updating as the selected step was executing.
+- Fixed broken links in the Backfill table in Dagit when Dagit is started with a `--prefix-path` argument.
+- Showed failed status of backfills in the Backfill table in Dagit, along with an error stack trace. Previously, the backfill jobs were stuck in a `Requested` state.
+- Previously, if you passed a non-required Field to the `output_config_schema` or `input_config_schema` arguments of `@io_manager`, the config would still be required. Now, the config is not required.
+- Fixed nested subdirectory views in the `Assets` catalog, where the view switcher would flip back from the directory view to the flat view when navigating into subdirectories.
+- Fixed an issue where the `dagster-daemon` process would crash if it experienced a transient connection error while connecting to the Dagster database.
+- Fixed an issue where the `dagster-airflow scaffold` command would raise an exception if a preset was specified.
+- Fixed an issue where Dagit was not including the error stack trace in the Status page when a repository failed to load.
 
 ## 0.11.5
 
 ### New
+
 - Resources in a `ModeDefinition` that are not required by a pipeline no longer require runtime configuration. This should make it easier to share modes or resources among multiple pipelines.
 - Dagstermill solids now support retries when a `RetryRequested` is yielded from a notebook using `dagstermill.yield_event`.
 - In Dagit, the asset catalog now supports both a flattened view of all assets as well as a hierarchical directory view.
@@ -80,14 +144,15 @@
 - In the Dagit left nav, schedules and sensors accurately reflect the filtered repositories.
 - When executing a pipeline with a subset of solids, the config for solids not included in the subset is correctly made optional in more cases.
 - URLs were sometimes not prefixed correctly when running Dagit using the `--path-prefix` option, leading to failed GraphQL requests and broken pages. This bug was introduced in 0.11.4, and is now fixed.
-*  The `update_timestamp` column in the runs table is now updated with a UTC timezone, making it consistent with the `create_timestamp` column.
-*  In Dagit, the main content pane now renders correctly on ultra-wide displays.
-*  The partition run matrix on the pipeline partition tab now shows step results for composite solids and dynamically mapped solids.  Previously, the step status was not shown at all for these solids.
+- The `update_timestamp` column in the runs table is now updated with a UTC timezone, making it consistent with the `create_timestamp` column.
+- In Dagit, the main content pane now renders correctly on ultra-wide displays.
+- The partition run matrix on the pipeline partition tab now shows step results for composite solids and dynamically mapped solids. Previously, the step status was not shown at all for these solids.
 - Removed dependency constraint of `dagster-pandas` on `pandas`. You can now include any version of pandas. (https://github.com/dagster-io/dagster/issues/3350)
 - Removed dependency on `requests` in `dagster`. Now only `dagit` depends on `requests.`
 - Removed dependency on `pyrsistent` in `dagster`.
 
 ### Documentation
+
 - Updated the “Deploying to Airflow” documentation to reflect the current state of the system.
 
 ## 0.11.4
