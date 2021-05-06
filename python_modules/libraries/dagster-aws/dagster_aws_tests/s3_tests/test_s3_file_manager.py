@@ -212,10 +212,7 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
     assert did_it_run["it_ran"]
 
 
-@mock.patch("boto3.session.Session.resource")
-@mock.patch("dagster_aws.s3.resources.S3FileManager")
-def test_s3_file_manager_resource_with_profile(MockS3FileManager, mock_boto3_resource):
-    did_it_run = dict(it_ran=False)
+def test_s3_file_manager_resource_with_profile():
 
     resource_config = {
         "use_unsigned_session": True,
@@ -226,12 +223,10 @@ def test_s3_file_manager_resource_with_profile(MockS3FileManager, mock_boto3_res
         "profile_name": "some-profile",
     }
 
-    mock_s3_session = mock_boto3_resource.return_value.meta.client
-
     @solid(required_resource_keys={"file_manager"})
     def test_solid(context):
         # placeholder function to test resource initialization
-        pass
+        return context.log.info("return from test_solid")
 
     @pipeline(
         mode_defs=[
