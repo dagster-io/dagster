@@ -1,8 +1,8 @@
 import pytest
 from dagster import Field, resource
+from dagster.core.definitions.resource import IContainsGenerator
 from dagster.core.errors import DagsterResourceFunctionError
 from dagster.core.execution.build_resources import build_resources
-from dagster.core.storage.mem_io_manager import InMemoryIOManager
 
 
 def test_basic_resource():
@@ -13,6 +13,7 @@ def test_basic_resource():
     with build_resources(
         resources={"basic_resource": basic_resource},
     ) as resources:
+        assert not isinstance(resources, IContainsGenerator)
         assert resources.basic_resource == "foo"
 
 
@@ -82,5 +83,18 @@ def test_resource_init_values():
         assert resources.bar == "bar"
 
 
-def test_resource_init_io_manager():
-    build_resources({"io_manager": InMemoryIOManager})
+def test_context_manager_resource():
+    tore_down = []
+
+    @resource
+    def cm_resource(_):
+        try:
+            yield "foo"
+        finally:
+            tore_down.append("yes")
+
+    with build_resources({"cm_resource": cm_resource}) as resources:
+        assert isinstance(resources, IContainsGenerator)
+        assert resources.cm_resource == "foo"
+
+    assert tore_down == ["yes"]

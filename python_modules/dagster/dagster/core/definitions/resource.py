@@ -262,18 +262,30 @@ class Resources:
     provides a workaround."""
 
 
-class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_instance_dict")):
+class IContainsGenerator:
+    """This class adds an additional tag to indicate that the resources object has at least one
+    resource that has been yielded from a generator, and thus may require teardown."""
+
+
+class ScopedResourcesBuilder(
+    namedtuple("ScopedResourcesBuilder", "resource_instance_dict contains_generator")
+):
     """There are concepts in the codebase (e.g. solids, system storage) that receive
     only the resources that they have specified in required_resource_keys.
     ScopedResourcesBuilder is responsible for dynamically building a class with
     only those required resources and returning an instance of that class."""
 
-    def __new__(cls, resource_instance_dict: Optional[Dict[str, Any]] = None):
+    def __new__(
+        cls,
+        resource_instance_dict: Optional[Dict[str, Any]] = None,
+        contains_generator: Optional[bool] = False,
+    ):
         return super(ScopedResourcesBuilder, cls).__new__(
             cls,
             resource_instance_dict=check.opt_dict_param(
                 resource_instance_dict, "resource_instance_dict", key_type=str
             ),
+            contains_generator=contains_generator,
         )
 
     def build(self, required_resource_keys: Optional[AbstractSet[str]]) -> Resources:
@@ -302,13 +314,30 @@ class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_inst
             if key in self.resource_instance_dict
         }
 
-        class _ScopedResources(
-            namedtuple("_ScopedResources", list(resource_instance_dict.keys())), Resources  # type: ignore[misc]
-        ):
-            def __getattr__(self, attr):
-                raise DagsterUnknownResourceError(attr)
+        # If any of the resources are generators, add the IContainsGenerator subclass to flag that
+        # this is the case.
+        if self.contains_generator:
 
-        return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
+            class _ScopedResourcesContainsGenerator(
+                namedtuple("_ScopedResourcesContainsGenerator", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                Resources,
+                IContainsGenerator,
+            ):
+                def __getattr__(self, attr):
+                    raise DagsterUnknownResourceError(attr)
+
+            return _ScopedResourcesContainsGenerator(**resource_instance_dict)  # type: ignore[call-arg]
+
+        else:
+
+            class _ScopedResources(
+                namedtuple("_ScopedResources", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                Resources,
+            ):
+                def __getattr__(self, attr):
+                    raise DagsterUnknownResourceError(attr)
+
+            return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
 
 
 def make_values_resource(**kwargs: Any) -> ResourceDefinition:
