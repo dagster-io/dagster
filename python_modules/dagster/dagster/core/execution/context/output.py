@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, cast
 
+from dagster import check
 from dagster.core.execution.plan.utils import build_resources_for_manager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
@@ -109,6 +110,11 @@ class OutputContext(
         Returns:
             List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
+        # if run_id is None and this is a re-execution, it means we failed to find its source run id
+        check.invariant(
+            self.run_id is not None,
+            "Unable to find the run scoped output identifier: run_id is None on OutputContext.",
+        )
         run_id = cast(str, self.run_id)
         if self.mapping_key:
             return [run_id, self.step_key, self.name, self.mapping_key]

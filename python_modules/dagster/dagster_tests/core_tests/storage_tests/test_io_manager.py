@@ -550,9 +550,7 @@ def test_configured():
 def test_mem_io_manager_execution():
     mem_io_manager_instance = InMemoryIOManager()
     output_context = OutputContext(
-        step_key="step_key",
-        name="output_name",
-        pipeline_name="foo",
+        step_key="step_key", name="output_name", pipeline_name="foo", run_id="123"
     )
     mem_io_manager_instance.handle_output(output_context, 1)
     input_context = InputContext(
