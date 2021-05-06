@@ -6,7 +6,7 @@ from dagster import pipeline, solid
 
 
 @solid
-def get_name(_):
+def get_name():
     return "dagster"
 
 
