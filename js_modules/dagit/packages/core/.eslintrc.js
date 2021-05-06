@@ -51,6 +51,10 @@ module.exports = {
             message: 'Please use components in src/ui instead.',
           },
           {
+            name: 'csstype',
+            message: 'Please use React types instead of importing from csstype.',
+          },
+          {
             name: 'graphql-tag',
             message: 'Please import from `@apollo/client`.',
           },

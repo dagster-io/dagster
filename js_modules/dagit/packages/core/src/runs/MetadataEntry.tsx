@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import {Button, Classes, Colors, Dialog, Icon, Position, Tooltip} from '@blueprintjs/core';
-import CSS from 'csstype';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {Link} from 'react-router-dom';
@@ -13,7 +12,7 @@ import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 export const LogRowStructuredContentTable: React.FC<{
   rows: {label: string; item: JSX.Element}[];
-  styles?: CSS.Properties;
+  styles?: React.CSSProperties;
 }> = ({rows, styles}) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
     <StructuredContentTable cellPadding="0" cellSpacing="0">
