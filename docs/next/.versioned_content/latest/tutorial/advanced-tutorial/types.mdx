@@ -106,7 +106,7 @@ You can see that the output of `download_csv` (which by default has the name `re
 
 ### When Type Checks Fail
 
-Now, if our solid logic fails to return the right type, we'll see a type check failure, which will fai the pipeline. Let's replace our `download_csv` solid with the following bad logic:
+Now, if our solid logic fails to return the right type, we'll see a type check failure, which will fail the pipeline. Let's replace our `download_csv` solid with the following bad logic:
 
 ```python file=/intro_tutorial/basics/e04_quality/custom_types_2.py startafter=start_custom_types_2_marker_1 endbefore=end_custom_types_2_marker_1
 @solid(output_defs=[OutputDefinition(SimpleDataFrame)])
@@ -145,54 +145,41 @@ def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         return TypeCheck(
             success=False,
-            description=(
-                "LessSimpleDataFrame should be a list of dicts, got "
-                "{type_}"
-            ).format(type_=type(value)),
+            description=f"LessSimpleDataFrame should be a list of dicts, got {type(value)}",
         )
 
     fields = [field for field in value[0].keys()]
 
     for i in range(len(value)):
         row = value[i]
+        idx = i + 1
         if not isinstance(row, dict):
             return TypeCheck(
                 success=False,
                 description=(
-                    "LessSimpleDataFrame should be a list of dicts, "
-                    "got {type_} for row {idx}"
-                ).format(type_=type(row), idx=(i + 1)),
+                    f"LessSimpleDataFrame should be a list of dicts, got {type(row)} for row {idx}"
+                ),
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
             return TypeCheck(
                 success=False,
                 description=(
-                    "Rows in LessSimpleDataFrame should have the same fields, "
-                    "got {actual} for row {idx}, expected {expected}"
-                ).format(actual=row_fields, idx=(i + 1), expected=fields),
+                    f"Rows in LessSimpleDataFrame should have the same fields, got {row_fields} "
+                    f"for row {idx}, expected {fields}"
+                ),
             )
 
     return TypeCheck(
         success=True,
         description="LessSimpleDataFrame summary statistics",
-        metadata_entries=[
-            EventMetadataEntry.text(
-                str(len(value)),
-                "n_rows",
-                "Number of rows seen in the data frame",
+        metadata={
+            "n_rows": len(value),
+            "n_cols": len(value[0].keys()) if len(value) > 0 else 0,
+            "column_names": str(
+                list(value[0].keys()) if len(value) > 0 else []
             ),
-            EventMetadataEntry.text(
-                str(len(value[0].keys()) if len(value) > 0 else 0),
-                "n_cols",
-                "Number of columns seen in the data frame",
-            ),
-            EventMetadataEntry.text(
-                str(list(value[0].keys()) if len(value) > 0 else []),
-                "column_names",
-                "Keys of columns seen in the data frame",
-            ),
-        ],
+        },
     )
 ```
 
