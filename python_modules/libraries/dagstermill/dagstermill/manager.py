@@ -141,7 +141,8 @@ class Manager:
         pipeline_run = unpack_value(pipeline_run_dict)
 
         solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
-        solid_def = pipeline_def.get_solid(solid_handle).definition
+        solid = pipeline_def.get_solid(solid_handle)
+        solid_def = solid.definition
 
         self.marshal_dir = marshal_dir
         self.in_pipeline = True
@@ -171,14 +172,14 @@ class Manager:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
                 pipeline_def=pipeline_def,
-                solid_config=run_config.get("solids", {}).get(solid_def.name, {}).get("config"),
+                solid_config=run_config.get("solids", {}).get(solid.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
                     environment_config,
                     pipeline_context.intermediate_storage_def,
                 ),
-                solid_name=solid_def.name,
+                solid_name=solid.name,
             )
 
         return self.context

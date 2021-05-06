@@ -88,6 +88,7 @@ def test_hello_world():
 def test_hello_world_with_config():
     with exec_for_test("hello_world_config_pipeline") as result:
         assert result.success
+        assert result.output_for_solid("hello_world_config") == "hello"
 
 
 @pytest.mark.notebook_test
@@ -122,30 +123,45 @@ def test_hello_world_with_config_escape():
         env={"solids": {"hello_world_config": {"config": {"greeting": "'"}}}},
     ) as result:
         assert result.success
+        assert result.output_for_solid("hello_world_config") == "'"
 
     with exec_for_test(
         "hello_world_config_pipeline",
         env={"solids": {"hello_world_config": {"config": {"greeting": '"'}}}},
     ) as result:
         assert result.success
+        assert result.output_for_solid("hello_world_config") == '"'
 
     with exec_for_test(
         "hello_world_config_pipeline",
         env={"solids": {"hello_world_config": {"config": {"greeting": "\\"}}}},
     ) as result:
         assert result.success
+        assert result.output_for_solid("hello_world_config") == "\\"
 
     with exec_for_test(
         "hello_world_config_pipeline",
         env={"solids": {"hello_world_config": {"config": {"greeting": "}"}}}},
     ) as result:
         assert result.success
+        assert result.output_for_solid("hello_world_config") == "}"
 
     with exec_for_test(
         "hello_world_config_pipeline",
         env={"solids": {"hello_world_config": {"config": {"greeting": "\n"}}}},
     ) as result:
         assert result.success
+        assert result.output_for_solid("hello_world_config") == "\n"
+
+
+@pytest.mark.notebook_test
+def test_alias_with_config():
+    with exec_for_test(
+        "alias_config_pipeline",
+        env={"solids": {"aliased_greeting": {"config": {"greeting": "boo"}}}},
+    ) as result:
+        assert result.success
+        assert result.output_for_solid("aliased_greeting") == "boo"
 
 
 @pytest.mark.notebook_test

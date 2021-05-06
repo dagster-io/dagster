@@ -109,6 +109,12 @@ def hello_world_config_pipeline():
     goodbye_config()
 
 
+@pipeline(mode_defs=default_mode_defs)
+def alias_config_pipeline():
+    hello_world_config.alias("aliased_greeting")()
+    goodbye_config.alias("aliased_goodbye")()
+
+
 @solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
 def load_notebook(_, notebook):
     return os.path.exists(notebook.path_desc)
