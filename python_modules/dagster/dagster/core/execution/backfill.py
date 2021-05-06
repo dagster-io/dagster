@@ -16,7 +16,13 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, RESUME_RETRY_TAG
+from dagster.core.storage.tags import (
+    PARENT_RUN_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    RESUME_RETRY_TAG,
+    ROOT_RUN_ID_TAG,
+)
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
@@ -200,7 +206,14 @@ def create_backfill_run(
 
         parent_run_id = last_run.run_id
         root_run_id = last_run.root_run_id or last_run.run_id
-        tags = merge_dicts(tags, {RESUME_RETRY_TAG: "true"})
+        tags = merge_dicts(
+            tags,
+            {
+                RESUME_RETRY_TAG: "true",
+                PARENT_RUN_ID_TAG: parent_run_id,
+                ROOT_RUN_ID_TAG: root_run_id,
+            },
+        )
         step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
             instance, full_external_execution_plan, parent_run_id
         )
@@ -208,6 +221,10 @@ def create_backfill_run(
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
         parent_run_id = last_run.run_id if last_run else None
         root_run_id = (last_run.root_run_id or last_run.run_id) if last_run else None
+        if parent_run_id and root_run_id:
+            tags = merge_dicts(
+                tags, {PARENT_RUN_ID_TAG: parent_run_id, ROOT_RUN_ID_TAG: root_run_id}
+            )
         step_keys_to_execute = backfill_job.reexecution_steps
         if last_run and last_run.status == PipelineRunStatus.SUCCESS:
             known_state = KnownExecutionState.for_reexecution(

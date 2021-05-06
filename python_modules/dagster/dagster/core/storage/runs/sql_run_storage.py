@@ -326,6 +326,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         root_run = self.get_run_by_id(root_run_id)
 
         # root_run_id to run_id 1:1 mapping
+        # https://github.com/dagster-io/dagster/issues/2495
+        # Note: we currently use tags to persist the run group info
         root_to_run = (
             db.select(
                 [RunTagsTable.c.value.label("root_run_id"), RunTagsTable.c.run_id.label("run_id")]

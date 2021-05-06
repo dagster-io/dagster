@@ -468,7 +468,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 return source_run_id
             else:
                 # else, keep looking backwards
-                source_run_id = run_id_to_parent_run_id[source_run_id]
+                source_run_id = run_id_to_parent_run_id.get(source_run_id)
 
         # when a fixed path is provided via io manager, it's able to run step subset using an execution
         # plan when the ascendant outputs were not previously created by dagster-controlled
