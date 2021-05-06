@@ -9,9 +9,10 @@ Dagster supports data backfills for each partition or subsets of partitions.
 
 ## Relevant APIs
 
-| Name                                         | Description                          |
-| -------------------------------------------- | ------------------------------------ |
-| <PyObject object="PartitionSetDefinition" /> | The class to define a partition set. |
+| Name                                         | Description                                                      |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| <PyObject object="Partition" />              | Class defining a logical slice of pipeline configuration.        |
+| <PyObject object="PartitionSetDefinition" /> | Class defining a set of <PyObject object="Partition" /> objects. |
 
 ## Overview
 
@@ -32,13 +33,23 @@ To launch a backfill, click the "Launch backfill" button at the top center of th
     * Navigating to the partitions page for `my_data_pipeline`
 -->
 
-[/backfills-launch-modal](/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png)
+<Image
+alt="backfills-launch-modal"
+src="/images/concepts/partitions-schedules-sensors/backfills-launch-modal.png"
+width={3808}
+height={2414}
+/>
 
 You can click the button on the bottom right to submit the runs. What happens when you hit this button depends on your [Run Coordinator](/deployment/run-coordinator). With the default run coordinator, the modal will exit after all runs have been launched. With the queued run coordinator, the modal will exit after all runs have been queued.
 
 After all the runs have been submitted, you'll be returned to the partitions page, with a filter for runs inside the backfill. This refreshes periodically and allows you to see how the backfill is progressing. Boxes become green or red as steps in the backfill runs succeed or fail.
 
-[/partitions-page](/images/concepts/partitions-schedules-sensors/partitions-page.png)
+<Image
+alt="partitions-page"
+src="/images/concepts/partitions-schedules-sensors/partitions-page.png"
+width={3808}
+height={2414}
+/>
 
 ### Using the Backfill CLI
 
@@ -85,7 +96,12 @@ _See details in [Repositories](/concepts/repositories-workspaces/repositories) a
 
 Now we can run the command `dagster pipeline backfill` to execute the backfill. To run all partitions, simply run the command with the arguments to specify the pipeline and partition set.
 
-[/backfills-cli](/images/concepts/partitions-schedules-sensors/backfills-cli.png)
+<Image
+alt="backfills-cli"
+src="/images/concepts/partitions-schedules-sensors/backfills-cli.png"
+width={1280}
+height={402}
+/>
 
 ## Examples
 
