@@ -175,7 +175,7 @@ class DagsterK8sJobConfig(
     namedtuple(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
-        "instance_config_map postgres_password_secret env_config_maps env_secrets",
+        "instance_config_map postgres_password_secret env_config_maps env_secrets volume_mounts",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -224,6 +224,7 @@ class DagsterK8sJobConfig(
         postgres_password_secret=None,
         env_config_maps=None,
         env_secrets=None,
+        volume_mounts=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -242,6 +243,7 @@ class DagsterK8sJobConfig(
             ),
             env_config_maps=check.opt_list_param(env_config_maps, "env_config_maps", of_type=str),
             env_secrets=check.opt_list_param(env_secrets, "env_secrets", of_type=str),
+            volume_mounts=check.opt_list_param(volume_mounts, "volume_mounts"),
         )
 
     @classmethod
@@ -454,14 +456,37 @@ def construct_dagster_k8s_job(
                 ),
                 sub_path="dagster.yaml",
             )
+        ]
+        + [
+            kubernetes.client.V1VolumeMount(
+                name=mount["name"],
+                mount_path=mount["path"],
+                sub_path=mount["sub_path"],
+            )
+            for mount in job_config.volume_mounts
         ],
         **user_defined_k8s_config.container_config,
     )
 
-    config_map_volume = kubernetes.client.V1Volume(
-        name="dagster-instance",
-        config_map=kubernetes.client.V1ConfigMapVolumeSource(name=job_config.instance_config_map),
-    )
+    volumes = [
+        kubernetes.client.V1Volume(
+            name="dagster-instance",
+            config_map=kubernetes.client.V1ConfigMapVolumeSource(
+                name=job_config.instance_config_map
+            ),
+        )
+    ] + [
+        kubernetes.client.V1Volume(
+            name=mount["name"],
+            config_map=kubernetes.client.V1ConfigMapVolumeSource(name=mount["configmap"]),
+        )
+        if mount.get("configmap")
+        else kubernetes.client.V1Volume(
+            name=mount["name"],
+            secret=kubernetes.client.V1SecretVolumeSource(secret_name=mount["secret"]),
+        )
+        for mount in job_config.volume_mounts
+    ]
 
     # If the user has defined custom labels, remove them from the pod_template_spec_metadata
     # key and merge them with the dagster labels
@@ -483,7 +508,7 @@ def construct_dagster_k8s_job(
             service_account_name=job_config.service_account_name,
             restart_policy="Never",
             containers=[job_container],
-            volumes=[config_map_volume],
+            volumes=volumes,
             **user_defined_k8s_config.pod_spec_config,
         ),
     )

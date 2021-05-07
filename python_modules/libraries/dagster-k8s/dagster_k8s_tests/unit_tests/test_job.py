@@ -76,3 +76,51 @@ def test_construct_dagster_k8s_job_no_postgres():
     assert DAGSTER_PG_PASSWORD_ENV_VAR not in [
         env["name"] for env in job["spec"]["template"]["spec"]["containers"][0]["env"]
     ]
+
+
+def test_construct_dagster_k8s_job_with_mounts():
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        image_pull_policy="Always",
+        image_pull_secrets=[{"name": "my_secret"}],
+        service_account_name=None,
+        instance_config_map="some-instance-configmap",
+        postgres_password_secret=None,
+        env_config_maps=None,
+        env_secrets=None,
+        volume_mounts=[
+            {"name": "foo", "path": "biz/buz", "sub_path": "file.txt", "configmap": "settings-cm"}
+        ],
+    )
+    job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
+
+    assert len(job["spec"]["template"]["spec"]["volumes"]) == 2
+    foo_volumes = [
+        volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
+    ]
+    assert len(foo_volumes) == 1
+
+    assert len(job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]) == 2
+    foo_volumes_mounts = [
+        volume
+        for volume in job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
+        if volume["name"] == "foo"
+    ]
+    assert len(foo_volumes_mounts) == 1
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        image_pull_policy="Always",
+        image_pull_secrets=[{"name": "my_secret"}],
+        service_account_name=None,
+        instance_config_map="some-instance-configmap",
+        postgres_password_secret=None,
+        env_config_maps=None,
+        env_secrets=None,
+        volume_mounts=[
+            {"name": "foo", "path": "biz/buz", "sub_path": "file.txt", "secret": "settings-secret"}
+        ],
+    )
+    construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
