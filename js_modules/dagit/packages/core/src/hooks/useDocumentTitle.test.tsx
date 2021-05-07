@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {act, create, ReactTestRenderer} from 'react-test-renderer';
 
-import {useDocumentTitle} from '../useDocumentTitle';
+import {useDocumentTitle} from './useDocumentTitle';
 
 describe('useDocumentTitle', () => {
   const Test = (props: {children?: React.ReactNode; title: string}) => {

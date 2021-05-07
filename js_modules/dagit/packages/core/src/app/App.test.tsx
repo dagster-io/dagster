@@ -3,14 +3,15 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {App} from '../app/App';
-import {TestAppContextProvider} from '../app/TestAppContextProvider';
-import {breakOnUnderscores} from '../app/Util';
 import {ApolloTestProvider} from '../testing/ApolloTestProvider';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
+import {App} from './App';
+import {TestAppContextProvider} from './TestAppContextProvider';
+import {breakOnUnderscores} from './Util';
+
 // Import lazy routes up front so that they don't slow down the tests.
-import '../app/FeatureFlagsRoot';
+import './FeatureFlagsRoot';
 import '../instance/InstanceRoot';
 import '../workspace/WorkspaceRoot';
 

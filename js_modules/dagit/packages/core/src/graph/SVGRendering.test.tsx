@@ -6,11 +6,12 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/server';
 import {StyleSheetManager} from 'styled-components/macro';
 
-import {PipelineGraphContents} from '../../graph/PipelineGraph';
-import {getDagrePipelineLayout} from '../../graph/getFullSolidLayout';
-import {PipelineGraphSolidFragment} from '../../graph/types/PipelineGraphSolidFragment';
-import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../../pipelines/types/PipelineExplorerRootQuery';
-import {MOCKS} from '../../testing/SVGMocks';
+import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../pipelines/types/PipelineExplorerRootQuery';
+import {MOCKS} from '../testing/SVGMocks';
+
+import {PipelineGraphContents} from './PipelineGraph';
+import {getDagrePipelineLayout} from './getFullSolidLayout';
+import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 
 function readMock(mock: {filepath: string}) {
   const {data} = JSON.parse(fs.readFileSync(mock.filepath).toString());
