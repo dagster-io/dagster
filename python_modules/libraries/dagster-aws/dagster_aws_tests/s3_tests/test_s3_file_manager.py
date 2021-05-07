@@ -1,7 +1,10 @@
 import uuid
 from unittest import mock
 
+import pytest
+from botocore import exceptions
 from dagster import (
+    DagsterResourceFunctionError,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -154,7 +157,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     assert uuid.UUID(comps[-1])
 
 
-@mock.patch("boto3.resource")
+@mock.patch("boto3.session.Session.resource")
 @mock.patch("dagster_aws.s3.resources.S3FileManager")
 def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
     did_it_run = dict(it_ran=False)
@@ -207,3 +210,36 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
 
     execute_pipeline(test_pipeline)
     assert did_it_run["it_ran"]
+
+
+def test_s3_file_manager_resource_with_profile():
+
+    resource_config = {
+        "use_unsigned_session": True,
+        "region_name": "us-west-1",
+        "endpoint_url": "http://alternate-s3-host.io",
+        "s3_bucket": "some-bucket",
+        "s3_prefix": "some-prefix",
+        "profile_name": "some-profile",
+    }
+
+    @solid(required_resource_keys={"file_manager"})
+    def test_solid(context):
+        # placeholder function to test resource initialization
+        return context.log.info("return from test_solid")
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"file_manager": configured(s3_file_manager)(resource_config)},
+            )
+        ]
+    )
+    def test_pipeline():
+        test_solid()
+
+    with pytest.raises(DagsterResourceFunctionError) as e:
+        execute_pipeline(test_pipeline)
+
+    assert isinstance(e.value.user_exception, exceptions.ProfileNotFound)
+    assert str(e.value.user_exception) == "The config profile (some-profile) could not be found"
