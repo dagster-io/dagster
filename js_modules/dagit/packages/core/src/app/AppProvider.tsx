@@ -4,7 +4,7 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {split, ApolloLink, ApolloClient, ApolloProvider, HttpLink} from '@apollo/client';
+import {concat, split, ApolloLink, ApolloClient, ApolloProvider, HttpLink} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {Colors} from '@blueprintjs/core';
@@ -73,11 +73,12 @@ interface Props {
     graphqlURI: string;
     basePath?: string;
     subscriptionParams?: {[key: string]: string};
+    headerAuthToken?: string;
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
-  const {basePath = '', subscriptionParams = {}, graphqlURI} = props.config;
+  const {headerAuthToken = '', basePath = '', subscriptionParams = {}, graphqlURI} = props.config;
 
   const httpGraphqlURI = graphqlURI.replace('wss://', 'https://').replace('ws://', 'http://');
 
@@ -110,7 +111,22 @@ export const AppProvider: React.FC<Props> = (props) => {
       return forward(operation);
     });
 
-    const httpLink = new HttpLink({uri: httpURI});
+    let httpLink: ApolloLink = new HttpLink({uri: httpURI});
+
+    // add an auth header to the HTTP requests made by the app
+    // note that the websocket-based subscriptions will not carry this header
+    if (headerAuthToken) {
+      const authMiddleware = new ApolloLink((operation, forward) => {
+        operation.setContext({
+          headers: {
+            authorization: headerAuthToken,
+          },
+        });
+
+        return forward(operation);
+      });
+      httpLink = concat(authMiddleware, httpLink);
+    }
 
     const websocketLink = new WebSocketLink(websocketClient);
 
