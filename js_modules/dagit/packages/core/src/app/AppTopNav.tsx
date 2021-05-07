@@ -6,9 +6,9 @@ import styled from 'styled-components/macro';
 
 import navBarImage from '../images/nav-logo-icon.png';
 import navTitleImage from '../images/nav-title.png';
-import {Group} from '../main';
 import {VersionNumber} from '../nav/VersionNumber';
 import {SearchDialog} from '../search/SearchDialog';
+import {Group} from '../ui/Group';
 
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';

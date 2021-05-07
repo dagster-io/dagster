@@ -1,7 +1,9 @@
 // Before anything else, set the webpack public path.
 import './publicPath';
 
-import {App, AppProvider, AppTopNav} from '@dagit/core';
+import {App} from '@dagit/core/app/App';
+import {AppProvider} from '@dagit/core/app/AppProvider';
+import {AppTopNav} from '@dagit/core/app/AppTopNav';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 

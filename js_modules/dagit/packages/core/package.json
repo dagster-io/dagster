@@ -136,7 +136,7 @@
   "scripts": {
     "preinstall": "node src/scripts/yarnCheck.js",
     "prettier": "prettier --write \"./src/**/*.tsx\"",
-    "find-dead-code": "yarn ts-prune | grep -v '/types/\\|stories.tsx\\|src/main.tsx'",
+    "find-dead-code": "yarn ts-prune | grep -v '/types/\\|stories.tsx'",
     "jest": "jest",
     "jest:debug": "jest --inspect-brk --runInBand --no-cache",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",

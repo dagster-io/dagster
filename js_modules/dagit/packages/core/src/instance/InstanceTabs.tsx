@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
-import {Box} from '../main';
+import {Box} from '../ui/Box';
 
 const POLL_INTERVAL = 15000;
 
