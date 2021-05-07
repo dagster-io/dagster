@@ -166,8 +166,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
   const stepKeys = React.useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
 
-  const runtimeStepKeys = Object.keys(metadata.steps);
-  const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, runtimeStepKeys);
+  const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, metadata.steps);
   const selectionStepKeys = React.useMemo(() => {
     return runtimeGraph && selectionQuery && selectionQuery !== '*'
       ? filterByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
