@@ -144,7 +144,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: AppCache,
       link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [httpURI, websocketClient]);
+  }, [headerAuthToken, httpURI, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
