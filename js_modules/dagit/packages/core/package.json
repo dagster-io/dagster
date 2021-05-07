@@ -6,7 +6,7 @@
   "main": "./src/main.tsx",
   "license": "MIT",
   "dependencies": {
-    "@apollo/client": "^3.2.5",
+    "@apollo/client": "^3.3.16",
     "@types/chart.js": "^2.9.24",
     "@vx/gradient": "^0.0.192",
     "@vx/group": "^0.0.192",
@@ -89,7 +89,7 @@
     "@types/ws": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^4.11.1",
     "@typescript-eslint/parser": "^4.11.1",
-    "apollo": "^2.31.0",
+    "apollo": "^2.33.1",
     "babel-jest": "^26.6.3",
     "babel-plugin-graphql-tag": "^2.5.0",
     "babel-plugin-macros": "^2.8.0",
