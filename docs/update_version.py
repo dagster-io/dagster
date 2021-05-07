@@ -7,6 +7,11 @@ import shutil
 import click
 from dagster import file_relative_path
 
+VERSIONED_CONTENT_DIR = file_relative_path(__file__, "next/.versioned_content")
+VERSIONED_IMAGE_DIR = file_relative_path(__file__, "next/public/.versioned_images/")
+CONTENT_DIR = file_relative_path(__file__, "./content")
+IMAGE_DIR = file_relative_path(__file__, "next/public/images")
+
 
 def read_json(filename):
     with open(filename) as f:
@@ -20,10 +25,8 @@ def write_json(filename, data):
 
 
 def version_images(version, overwrite=False):
-    image_directory = file_relative_path(__file__, "next/public/images")
-    versioned_image_directory = file_relative_path(__file__, "next/public/.versioned_images/")
+    version_image_directory = os.path.join(VERSIONED_IMAGE_DIR, version)
 
-    version_image_directory = os.path.join(versioned_image_directory, version)
     # Create version
     if os.path.isdir(version_image_directory):
         if not overwrite:
@@ -45,18 +48,16 @@ def version_images(version, overwrite=False):
             raise click.ClickException("Incorrect version number: {}".format(value))
 
     # Copy image directory to version directory
-    shutil.copytree(image_directory, version_image_directory)
+    shutil.copytree(IMAGE_DIR, version_image_directory)
 
 
 @click.command()
 @click.option("--version", required=True, help="Version to release")
 @click.option("--overwrite", is_flag=True, help="Overwrite an existing version")
 def main(version, overwrite):
-    content_directory = file_relative_path(__file__, "./content")
-    versioned_content_directory = file_relative_path(__file__, "next/.versioned_content")
+    version_directory = os.path.join(VERSIONED_CONTENT_DIR, version)
 
     # Create version
-    version_directory = os.path.join(versioned_content_directory, version)
     if os.path.isdir(version_directory):
         if not overwrite:
             raise click.ClickException(
@@ -76,21 +77,21 @@ def main(version, overwrite):
         else:
             raise click.ClickException("Incorrect version number: {}".format(value))
 
-    shutil.copytree(content_directory, version_directory)
+    shutil.copytree(CONTENT_DIR, version_directory)
 
     # Version images
     version_images(version, overwrite)
 
     # Overwite latest version
-    latest_directory = os.path.join(versioned_content_directory, "latest")
+    latest_directory = os.path.join(VERSIONED_CONTENT_DIR, "latest")
     if os.path.isdir(latest_directory):
         shutil.rmtree(latest_directory)
 
-    shutil.copytree(content_directory, latest_directory)
+    shutil.copytree(CONTENT_DIR, latest_directory)
 
     # Create master navigation file
     versioned_navigation = {}
-    for (root, _, files) in os.walk(versioned_content_directory):
+    for (root, _, files) in os.walk(VERSIONED_CONTENT_DIR):
         for filename in files:
             if filename == "_navigation.json":
                 curr_version = root.split("/")[-1]
@@ -98,15 +99,15 @@ def main(version, overwrite):
                 versioned_navigation[curr_version] = data
 
     write_json(
-        os.path.join(versioned_content_directory, "_versioned_navigation.json"),
+        os.path.join(VERSIONED_CONTENT_DIR, "_versioned_navigation.json"),
         versioned_navigation,
     )
 
     # Update versions file
-    versions = read_json(os.path.join(versioned_content_directory, "_versions.json"))
+    versions = read_json(os.path.join(VERSIONED_CONTENT_DIR, "_versions.json"))
     if version not in versions:
         versions.append(version)
-    write_json(os.path.join(versioned_content_directory, "_versions.json"), versions)
+    write_json(os.path.join(VERSIONED_CONTENT_DIR, "_versions.json"), versions)
 
 
 if __name__ == "__main__":
