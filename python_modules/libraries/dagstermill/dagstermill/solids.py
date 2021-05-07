@@ -98,8 +98,8 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     check.dict_param(inputs, "inputs", key_type=str)
 
     run_id = step_context.run_id
-
-    marshal_dir = "/tmp/dagstermill/{run_id}/marshal".format(run_id=run_id)
+    temp_dir = tempfile.gettempdir()
+    marshal_dir = os.path.normpath(os.path.join(temp_dir, "dagstermill", str(run_id), "marshal"))
     mkdir_p(marshal_dir)
 
     if not isinstance(step_context.pipeline, ReconstructablePipeline):
