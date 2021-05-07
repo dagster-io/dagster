@@ -140,13 +140,14 @@ class SqlEventLogStorage(EventLogStorage):
         if event.is_dagster_event and event.dagster_event.asset_key:
             self.store_asset(event)
 
-    def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
+    def get_logs_for_run_by_log_id(self, run_id, cursor=-1, dagster_event_type=None):
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
         check.invariant(
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
+        check.opt_inst_param(dagster_event_type, "dagster_event_type", DagsterEventType)
 
         # cursor starts at 0 & auto-increment column starts at 1 so adjust
         cursor = cursor + 1
@@ -157,6 +158,10 @@ class SqlEventLogStorage(EventLogStorage):
             .where(SqlEventLogStorageTable.c.id > cursor)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
+        if dagster_event_type:
+            query = query.where(
+                SqlEventLogStorageTable.c.dagster_event_type == dagster_event_type.value
+            )
 
         with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
@@ -175,13 +180,14 @@ class SqlEventLogStorage(EventLogStorage):
 
         return events
 
-    def get_logs_for_run(self, run_id, cursor=-1):
+    def get_logs_for_run(self, run_id, cursor=-1, of_type=None):
         """Get all of the logs corresponding to a run.
 
         Args:
             run_id (str): The id of the run for which to fetch logs.
             cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
                 i.e., if cursor is -1, all logs will be returned. (default: -1)
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
         """
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
@@ -189,8 +195,9 @@ class SqlEventLogStorage(EventLogStorage):
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
+        check.opt_inst_param(of_type, "of_type", DagsterEventType)
 
-        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor)
+        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type)
         return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
 
     def get_stats_for_run(self, run_id):

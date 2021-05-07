@@ -44,7 +44,7 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 
 if TYPE_CHECKING:
-    from dagster.core.events import DagsterEvent
+    from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.host_representation import HistoricalPipeline
     from dagster.core.snap import PipelineSnapshot
     from dagster.daemon.types import DaemonHeartbeat
@@ -993,11 +993,11 @@ class DagsterInstance:
 
     # event storage
 
-    def logs_after(self, run_id, cursor):
-        return self._event_storage.get_logs_for_run(run_id, cursor=cursor)
+    def logs_after(self, run_id, cursor, of_type: "DagsterEventType" = None):
+        return self._event_storage.get_logs_for_run(run_id, cursor=cursor, of_type=of_type)
 
-    def all_logs(self, run_id):
-        return self._event_storage.get_logs_for_run(run_id)
+    def all_logs(self, run_id, of_type: "DagsterEventType" = None):
+        return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
         return self._event_storage.watch(run_id, cursor, cb)

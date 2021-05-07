@@ -4,6 +4,7 @@ from typing import Dict
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
@@ -41,16 +42,26 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def from_config_value(cls, inst_data, config_value):
         return cls(inst_data)
 
-    def get_logs_for_run(self, run_id, cursor=-1):
+    def get_logs_for_run(self, run_id, cursor=-1, of_type=None):
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
         check.invariant(
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
+        check.opt_inst_param(of_type, "of_type", DagsterEventType)
 
         cursor = cursor + 1
-        return self._logs[run_id][cursor:]
+        if of_type:
+            return list(
+                filter(
+                    lambda r: r.is_dagster_event
+                    and r.dagster_event.event_type_value == of_type.value,
+                    self._logs[run_id][cursor:],
+                )
+            )
+        else:
+            return self._logs[run_id][cursor:]
 
     def store_event(self, event):
         check.inst_param(event, "event", EventRecord)

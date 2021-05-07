@@ -448,23 +448,25 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return HookContext(self, hook_def)
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
+        from dagster.core.events import DagsterEventType
+
         # walk through event logs to find the right run_id based on the run lineage
-
-        from dagster.core.events import get_step_output_event
-
         _, runs = self.instance.get_run_group(self.run_id)
         run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
         source_run_id = self.pipeline_run.parent_run_id
         while source_run_id:
             # note: this would cost N db calls where N = number of parent runs
-            logs = self.instance.all_logs(source_run_id)
+            step_output_record = self.instance.all_logs(
+                source_run_id, of_type=DagsterEventType.STEP_OUTPUT
+            )
             # if the parent run has yielded an StepOutput event for the given step output,
             # we find the source run id
-            if get_step_output_event(
-                events=[e.dagster_event for e in logs if e.is_dagster_event],
-                step_key=step_output_handle.step_key,
-                output_name=step_output_handle.output_name,
-            ):
+            if [
+                r
+                for r in step_output_record
+                if r.dagster_event.step_key == step_output_handle.step_key
+                and r.dagster_event.step_output_data.output_name == step_output_handle.output_name
+            ]:
                 return source_run_id
             else:
                 # else, keep looking backwards

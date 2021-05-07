@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from dagster.core.definitions.events import AssetKey
+from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import (
     RunStepKeyStatsSnapshot,
@@ -26,13 +27,19 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     """
 
     @abstractmethod
-    def get_logs_for_run(self, run_id: str, cursor: Optional[int] = -1) -> Iterable[EventRecord]:
+    def get_logs_for_run(
+        self,
+        run_id: str,
+        cursor: Optional[int] = -1,
+        of_type: Optional[DagsterEventType] = None,
+    ) -> Iterable[EventRecord]:
         """Get all of the logs corresponding to a run.
 
         Args:
             run_id (str): The id of the run for which to fetch logs.
             cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
                 i.e., if cursor is -1, all logs will be returned. (default: -1)
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
         """
 
     def get_stats_for_run(self, run_id: str) -> PipelineRunStatsSnapshot:

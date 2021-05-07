@@ -552,6 +552,27 @@ class TestEventLogStorage:
 
         assert storage.get_logs_for_run(result.run_id) == []
 
+    def test_get_logs_for_run_of_type(self, storage):
+        @solid
+        def return_one(_):
+            return 1
+
+        def _solids():
+            return_one()
+
+        events, result = _synthesize_events(_solids)
+
+        for event in events:
+            storage.store_event(event)
+
+        assert _event_types(
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.PIPELINE_SUCCESS)
+        ) == [DagsterEventType.PIPELINE_SUCCESS]
+
+        assert _event_types(
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
+        ) == [DagsterEventType.STEP_SUCCESS]
+
     @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
     def test_basic_get_logs_for_run_cursor(self, storage):
         @solid
