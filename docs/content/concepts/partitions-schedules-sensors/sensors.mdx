@@ -9,12 +9,12 @@ Sensors allow you to instigate runs based on any external state change.
 
 ## Relevant APIs
 
-| Name                                    | Description                                                                                                                                                                                                     |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="sensor" decorator />  | The decorator used to define a sensor. The decorated function is called the `evaluation_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                     |
-| <PyObject object="RunRequest" />        | The sensor evaluation function can yield one or more run requests. Each run request creates a pipeline run.                                                                                                     |
-| <PyObject object="SkipReason" />        | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                    |
-| <PyObject object="SensorDefinition"  /> | Base class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  /> |
+| Name                                    | Description                                                                                                                                                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="sensor" decorator />  | The decorator used to define a sensor. The decorated function is called the `evaluation_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                |
+| <PyObject object="RunRequest" />        | The sensor evaluation function can yield one or more run requests. Each run request creates a pipeline run.                                                                                                |
+| <PyObject object="SkipReason" />        | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                               |
+| <PyObject object="SensorDefinition"  /> | Class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  /> |
 
 ## Overview
 
