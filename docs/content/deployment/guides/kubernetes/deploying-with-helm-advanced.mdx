@@ -193,7 +193,7 @@ We assume that you've followed the initial steps in the [previous walkthrough](/
 
 We need to configure persistent object storage so that data can be serialized and passed between steps. To run the Dagster User Code example, create a S3 bucket named "dagster-test".
 
-To enable Dagster to connect to S3, provide `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables via the `env`, `envConfigMaps`, or `envSecrets` fields under `userDeployments` in `values.yaml` or (not recommended) by setting these variables directly in the User Code Deployment image.
+To enable Dagster to connect to S3, provide `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables via the `env`, `envConfigMaps`, or `envSecrets` fields under `dagster-user-deployments` in `values.yaml` or (not recommended) by setting these variables directly in the User Code Deployment image.
 
 ### Install the Dagster Helm Chart
 

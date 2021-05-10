@@ -161,12 +161,12 @@ The Dagster chart repository contains the versioned charts for all Dagster relea
 
 ### Configure your User Deployment
 
-Update the `userDeployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
+Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
 
 The following snippet works for Dagster's example User Code image.
 
 ```yaml
-userDeployments:
+dagster-user-deployments:
   enabled: true
   deployments:
     - name: "k8s-example-user-code-1"
