@@ -48,6 +48,14 @@ fragment metadataEntryFragment on EventMetadataEntry {
   ... on EventUrlMetadataEntry {
     url
   }
+  ... on EventPipelineRunMetadataEntry  {
+    runId
+  }
+  ... on EventAssetMetadataEntry  {
+    assetKey {
+      path
+    }
+  }
 }
 
 fragment stepEventFragment on StepEvent {

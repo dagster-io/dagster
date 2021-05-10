@@ -636,6 +636,8 @@ def materialization_pipeline():
                 EventMetadataEntry.int(1, "int"),
                 EventMetadataEntry.float(float("nan"), "float NaN"),
                 EventMetadataEntry.int(LONG_INT, "long int"),
+                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
             ],
         )
         yield Output(None)

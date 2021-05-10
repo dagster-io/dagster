@@ -197,6 +197,38 @@ class IntMetadataEntryData(namedtuple("_IntMetadataEntryData", "value")):
         return super(IntMetadataEntryData, cls).__new__(cls, check.opt_int_param(value, "value"))
 
 
+@whitelist_for_serdes
+class DagsterPipelineRunMetadataEntryData(
+    namedtuple("_DagsterPipelineRunMetadataEntryData", "run_id")
+):
+    """Representation of a dagster pipeline run.
+
+    Args:
+        run_id (str): The pipeline run id
+    """
+
+    def __new__(cls, run_id):
+        return super(DagsterPipelineRunMetadataEntryData, cls).__new__(
+            cls, check.str_param(run_id, "run_id")
+        )
+
+
+@whitelist_for_serdes
+class DagsterAssetMetadataEntryData(namedtuple("_DagsterAssetMetadataEntryData", "asset_key")):
+    """Representation of a dagster asset.
+
+    Args:
+        asset_key (str): The dagster asset key
+    """
+
+    def __new__(cls, asset_key):
+        from dagster.core.definitions.events import AssetKey
+
+        return super(DagsterAssetMetadataEntryData, cls).__new__(
+            cls, check.inst_param(asset_key, "asset_key", AssetKey)
+        )
+
+
 ## for typing
 
 EventMetadataEntryData = Union[
@@ -208,6 +240,8 @@ EventMetadataEntryData = Union[
     FloatMetadataEntryData,
     IntMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    DagsterAssetMetadataEntryData,
+    DagsterPipelineRunMetadataEntryData,
 ]
 
 ## for runtime checks
@@ -221,6 +255,8 @@ EntryDataUnion = (
     FloatMetadataEntryData,
     IntMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    DagsterAssetMetadataEntryData,
+    DagsterPipelineRunMetadataEntryData,
 )
 
 
@@ -422,6 +458,18 @@ class EventMetadata:
         """
 
         return IntMetadataEntryData(value)
+
+    @staticmethod
+    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataEntryData":
+        check.str_param(run_id, "run_id")
+        return DagsterPipelineRunMetadataEntryData(run_id)
+
+    @staticmethod
+    def asset(asset_key) -> "DagsterAssetMetadataEntryData":
+        from dagster.core.definitions.events import AssetKey
+
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        return DagsterAssetMetadataEntryData(asset_key)
 
 
 @whitelist_for_serdes
@@ -642,6 +690,18 @@ class EventMetadataEntry(namedtuple("_EventMetadataEntry", "label description en
         """
 
         return EventMetadataEntry(label, description, IntMetadataEntryData(value))
+
+    @staticmethod
+    def pipeline_run(run_id, label, description=None):
+        check.str_param(run_id, "run_id")
+        return EventMetadataEntry(label, description, DagsterPipelineRunMetadataEntryData(run_id))
+
+    @staticmethod
+    def asset(asset_key, label, description=None):
+        from dagster.core.definitions.events import AssetKey
+
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        return EventMetadataEntry(label, description, DagsterAssetMetadataEntryData(asset_key))
 
 
 class PartitionMetadataEntry(namedtuple("_PartitionMetadataEntry", "partition entry")):

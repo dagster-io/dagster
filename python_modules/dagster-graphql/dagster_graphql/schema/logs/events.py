@@ -226,6 +226,22 @@ class GrapheneEventIntMetadataEntry(graphene.ObjectType):
         name = "EventIntMetadataEntry"
 
 
+class GrapheneEventPipelineRunMetadataEntry(graphene.ObjectType):
+    runId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneEventMetadataEntry,)
+        name = "EventPipelineRunMetadataEntry"
+
+
+class GrapheneEventAssetMetadataEntry(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        interfaces = (GrapheneEventMetadataEntry,)
+        name = "EventAssetMetadataEntry"
+
+
 class GrapheneObjectStoreOperationType(graphene.Enum):
     SET_OBJECT = "SET_OBJECT"
     GET_OBJECT = "GET_OBJECT"

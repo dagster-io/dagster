@@ -131,6 +131,18 @@ export const MetadataEntry: React.FC<{
       return <>{entry.floatValue}</>;
     case 'EventIntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
+    case 'EventPipelineRunMetadataEntry':
+      return (
+        <MetadataEntryLink to={`/instance/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>
+      );
+    case 'EventAssetMetadataEntry':
+      return (
+        <MetadataEntryLink
+          to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
+        >
+          {entry.assetKey.path.join(' > ')}
+        </MetadataEntryLink>
+      );
     default:
       return assertUnreachable(entry);
   }
@@ -166,6 +178,14 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on EventIntMetadataEntry {
       intValue
       intRepr
+    }
+    ... on EventPipelineRunMetadataEntry {
+      runId
+    }
+    ... on EventAssetMetadataEntry {
+      assetKey {
+        path
+      }
     }
   }
 `;

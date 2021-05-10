@@ -1534,6 +1534,18 @@ enum LocationStateChangeEventType {
   LOCATION_ERROR
 }
 
+type EventPipelineRunMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  runId: String!
+}
+
+type EventAssetMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  assetKey: AssetKey!
+}
+
 type EventFloatMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String

@@ -65,6 +65,15 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         assert text_entry["__typename"] == "EventIntMetadataEntry"
         assert int(text_entry["intRepr"]) == LONG_INT
 
+        text_entry = mat["metadataEntries"][10]
+        assert text_entry["__typename"] == "EventPipelineRunMetadataEntry"
+        assert text_entry["runId"] == "fake_run_id"
+
+        text_entry = mat["metadataEntries"][11]
+        assert text_entry["__typename"] == "EventAssetMetadataEntry"
+        assert text_entry["assetKey"]
+        assert text_entry["assetKey"]["path"]
+
         non_engine_event_logs = [
             message for message in logs if message["__typename"] != "EngineEvent"
         ]
