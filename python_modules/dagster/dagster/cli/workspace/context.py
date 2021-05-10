@@ -211,6 +211,10 @@ class WorkspaceProcessContext:
         return self._instance
 
     @property
+    def workspace(self) -> Workspace:
+        return self._workspace
+
+    @property
     def repository_locations(self) -> List[RepositoryLocation]:
         return self._workspace.repository_locations
 
