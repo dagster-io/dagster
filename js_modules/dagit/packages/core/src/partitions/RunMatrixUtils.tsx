@@ -92,6 +92,7 @@ export const GridColumn = styled.div<{
     font-size: 12px;
     padding: 2px;
     box-sizing: border-box;
+    line-height: initial;
   }
 
   .square {
