@@ -26,12 +26,13 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   const {repoAddress, sensor} = props;
   const {canStartSensor, canStopSensor} = usePermissions();
 
+  const {jobOriginId, name, sensorState} = sensor;
+  const {status} = sensorState;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
   };
 
-  const {jobOriginId} = sensor;
   const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
     START_SENSOR_MUTATION,
     {onCompleted: displaySensorMutationErrors},

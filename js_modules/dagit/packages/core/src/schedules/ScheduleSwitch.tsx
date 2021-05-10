@@ -24,7 +24,7 @@ interface Props {
 
 export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {repoAddress, schedule} = props;
-  const {scheduleState} = schedule;
+  const {name, scheduleState} = schedule;
   const {status, id} = scheduleState;
 
   const {canStartSchedule, canStopRunningSchedule} = usePermissions();
