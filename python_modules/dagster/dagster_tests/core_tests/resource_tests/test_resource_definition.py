@@ -1145,3 +1145,33 @@ def test_config_with_no_schema():
         my_solid()
 
     execute_pipeline(my_pipeline, run_config={"resources": {"resource": {"config": 5}}})
+
+
+def test_configured_resource_unused():
+    # Ensure that if we do not use a resource on a mode definition, then we do not apply the config
+    # schema.
+    entered = []
+
+    @resource
+    def basic_resource(_):
+        pass
+
+    @configured(basic_resource)
+    def configured_resource(_):
+        entered.append("True")
+
+    @solid(required_resource_keys={"bar"})
+    def basic_solid(_):
+        pass
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(resource_defs={"foo": configured_resource, "bar": basic_resource})
+        ]
+    )
+    def basic_pipeline():
+        basic_solid()
+
+    execute_pipeline(basic_pipeline)
+
+    assert not entered
