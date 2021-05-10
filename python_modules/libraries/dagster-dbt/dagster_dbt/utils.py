@@ -14,27 +14,35 @@ def generate_materializations(
     asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     for node_result in dbt_output.result.results:
-        if node_result.node.get("resource_type", None) in ["model", "snapshot"]:
+        # unique_id in run results is structured as <resource_type>.<package>.<resource_name>
+        unique_id = node_result.unique_id
+        resource_type = unique_id.split(".")[0] if unique_id else None
+        if resource_type in {"model", "snapshot"}:
             success = not node_result.fail and not node_result.skip and not node_result.error
             if success:
                 entries = [
-                    EventMetadataEntry.json(data=node_result.node, label="Node"),
                     EventMetadataEntry.text(text=str(node_result.status), label="Status"),
                     EventMetadataEntry.float(
                         value=node_result.execution_time,
                         label="Execution Time (seconds)",
                     ),
-                    EventMetadataEntry.text(
-                        text=node_result.node["config"]["materialized"],
-                        label="Materialization Strategy",
-                    ),
-                    EventMetadataEntry.text(text=node_result.node["database"], label="Database"),
-                    EventMetadataEntry.text(text=node_result.node["schema"], label="Schema"),
-                    EventMetadataEntry.text(text=node_result.node["alias"], label="Alias"),
-                    EventMetadataEntry.text(
-                        text=node_result.node["description"], label="Description"
-                    ),
                 ]
+                # For users of dbt 0.18.x, preserve metadata.
+                if node_result.node:
+                    entries += [
+                        EventMetadataEntry.text(
+                            text=node_result.node["config"]["materialized"],
+                            label="Materialization Strategy",
+                        ),
+                        EventMetadataEntry.text(
+                            text=node_result.node["database"], label="Database"
+                        ),
+                        EventMetadataEntry.text(text=node_result.node["schema"], label="Schema"),
+                        EventMetadataEntry.text(text=node_result.node["alias"], label="Alias"),
+                        EventMetadataEntry.text(
+                            text=node_result.node["description"], label="Description"
+                        ),
+                    ]
                 for step_timing in node_result.step_timings:
                     if step_timing.name == "execute":
                         execution_entries = [
@@ -71,7 +79,6 @@ def generate_materializations(
                         ]
                         entries.extend(execution_entries)
 
-                unique_id = node_result.node["unique_id"]
                 yield AssetMaterialization(
                     description="dbt node: {unique_id}".format(unique_id=unique_id),
                     metadata_entries=entries,

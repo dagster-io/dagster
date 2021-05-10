@@ -38,6 +38,25 @@ class TestDbtCliSolids:
         result = execute_solid(test_solid)
         assert result.success
 
+        # Test asset materializations
+        asset_materializations = [
+            event
+            for event in result.step_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        solid_materializations = [
+            materialization
+            for materialization in asset_materializations
+            if materialization.asset_key.path[0] == "dbt_run_cli_output"
+        ]
+        assert len(solid_materializations) == 1
+        table_materializations = [
+            materialization
+            for materialization in asset_materializations
+            if materialization.asset_key.path[0] == "model"
+        ]
+        assert len(table_materializations) == 4
+
     def test_dbt_cli_run_with_extra_config(
         self, dbt_seed, test_project_dir, dbt_config_dir
     ):  # pylint: disable=unused-argument

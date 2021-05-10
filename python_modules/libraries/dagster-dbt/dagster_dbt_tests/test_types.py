@@ -6,7 +6,7 @@ DBT_RESULT_DICT = {
     "logs": [],
     "results": [
         {
-            "node": {},
+            "unique_id": "model.fake_model",
             "error": None,
             "status": "CREATE VIEW",
             "execution_time": 1.1,
@@ -25,7 +25,7 @@ DBT_RESULT_DICT = {
             ],
         },
         {
-            "node": {},
+            "unique_id": "model.fake_model_2",
             "error": "This is a test error message on a dbt node.",
             "status": "ERROR",
             "execution_time": 1.1,

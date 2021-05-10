@@ -53,7 +53,7 @@ class TestDBTRunAndWaitSolid:
 
         dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(run_all_fast_poll)
 
-        executed_model_from_result = set(res.node["unique_id"] for res in dbt_output.result.results)
+        executed_model_from_result = set(res.unique_id for res in dbt_output.result.results)
         assert executed_model_from_result == TestDBTRunAndWaitSolid.ALL_MODELS_KEY_SET
 
         materialization_asset_keys = set(
@@ -75,7 +75,7 @@ class TestDBTRunAndWaitSolid:
             run_single_fast_poll
         )
 
-        executed_model_from_result = set(res.node["unique_id"] for res in dbt_output.result.results)
+        executed_model_from_result = set(res.unique_id for res in dbt_output.result.results)
         assert executed_model_from_result == TestDBTRunAndWaitSolid.SINGLE_MODEL_KEY_SET
 
         materialization_asset_keys = set(
