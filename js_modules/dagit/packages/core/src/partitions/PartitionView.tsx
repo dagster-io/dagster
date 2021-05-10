@@ -1,8 +1,10 @@
 import {Button, Dialog, Colors} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
 import {Box} from '../ui/Box';
@@ -48,6 +50,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     pageSize,
     setPageSize,
   } = useChunkedPartitionsQuery(partitionSet.name, runTags, repoAddress);
+  const {canLaunchPartitionBackfill} = usePermissions();
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
@@ -59,6 +62,29 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
       });
     });
   });
+
+  const launchButton = () => {
+    if (!canLaunchPartitionBackfill) {
+      return (
+        <Tooltip content={DISABLED_MESSAGE}>
+          <Button style={{flexShrink: 0}} icon={IconNames.ADD} disabled>
+            Launch backfill
+          </Button>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Button
+        style={{flexShrink: 0}}
+        onClick={() => setShowBackfillSetup(!showBackfillSetup)}
+        icon={IconNames.ADD}
+        active={showBackfillSetup}
+      >
+        Launch backfill
+      </Button>
+    );
+  };
 
   return (
     <div>
@@ -92,14 +118,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         />
         <div style={{width: 10, height: 10}} />
         <Box flex={{justifyContent: 'space-between', alignItems: 'center'}} style={{flex: 1}}>
-          <Button
-            style={{flexShrink: 0}}
-            onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-            icon={IconNames.ADD}
-            active={showBackfillSetup}
-          >
-            Launch&nbsp;backfill
-          </Button>
+          {launchButton()}
           {loading && (
             <Box
               margin={{horizontal: 8}}

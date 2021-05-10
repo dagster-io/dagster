@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {usePermissions} from '../app/Permissions';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
@@ -26,6 +27,7 @@ interface Props {
 
 export const RepoSelector: React.FC<Props> = (props) => {
   const {onToggle, options, selected} = props;
+  const {canReloadRepositoryLocation} = usePermissions();
 
   return (
     <Group direction="column" spacing={16}>
@@ -63,7 +65,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
             <Box margin={{left: 16, top: 1}} style={{lineHeight: 1}}>
               <BrowseLink to={workspacePathFromAddress(repoAddress)}>Browse</BrowseLink>
             </Box>
-            <ReloadButton repoAddress={repoAddress} />
+            {canReloadRepositoryLocation ? <ReloadButton repoAddress={repoAddress} /> : null}
           </Box>
         );
       })}

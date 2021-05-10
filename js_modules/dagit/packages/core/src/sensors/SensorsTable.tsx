@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 import {Colors, Icon, Tooltip} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -7,23 +6,15 @@ import {Link} from 'react-router-dom';
 import {TickTag} from '../jobs/JobTick';
 import {JobRunStatus} from '../jobs/JobUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {JobStatus, JobType} from '../types/globalTypes';
+import {JobType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
 import {Table} from '../ui/Table';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {humanizeSensorInterval} from './SensorDetails';
-import {
-  displaySensorMutationErrors,
-  START_SENSOR_MUTATION,
-  STOP_SENSOR_MUTATION,
-} from './SensorMutations';
+import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
-import {StartSensor} from './types/StartSensor';
-import {StopSensor} from './types/StopSensor';
 
 export const SensorsTable: React.FC<{
   repoAddress: RepoAddress;
@@ -79,42 +70,13 @@ const SensorRow: React.FC<{
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
   const {name, mode, pipelineName, sensorState} = sensor;
-  const {status, ticks} = sensorState;
+  const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
-
-  const sensorSelector = {
-    ...repoAddressToSelector(repoAddress),
-    sensorName: name,
-  };
-
-  const {jobOriginId} = sensor;
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
-    START_SENSOR_MUTATION,
-    {onCompleted: displaySensorMutationErrors},
-  );
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
-
-  const onChangeSwitch = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSensor({variables: {jobOriginId}});
-    } else {
-      startSensor({variables: {sensorSelector}});
-    }
-  };
 
   return (
     <tr key={name}>
       <td>
-        <SwitchWithoutLabel
-          disabled={toggleOnInFlight || toggleOffInFlight}
-          large
-          innerLabelChecked="on"
-          innerLabel="off"
-          checked={status === JobStatus.RUNNING}
-          onChange={onChangeSwitch}
-        />
+        <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
       </td>
       <td>
         <Group direction="column" spacing={4}>

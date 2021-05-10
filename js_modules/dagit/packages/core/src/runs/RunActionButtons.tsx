@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
@@ -108,6 +109,7 @@ function stepSelectionFromRunTags(
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const {metadata, graph, onLaunch, run} = props;
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
+  const {canLaunchPipelineReexecution} = usePermissions();
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);
@@ -215,6 +217,13 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
     : null;
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
+  const tooltip = () => {
+    if (pipelineError?.tooltip) {
+      return pipelineError?.tooltip;
+    }
+    return canLaunchPipelineReexecution ? undefined : DISABLED_MESSAGE;
+  };
+
   return (
     <Group direction="row" spacing={8}>
       <Box flex={{direction: 'row'}}>
@@ -224,9 +233,9 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           primary={primary}
           options={options}
           title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
-          tooltip={pipelineError?.tooltip}
+          tooltip={tooltip()}
           icon={pipelineError?.icon}
-          disabled={pipelineError?.disabled}
+          disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
       <CancelRunButton run={run} isFinalStatus={isFinalStatus} />

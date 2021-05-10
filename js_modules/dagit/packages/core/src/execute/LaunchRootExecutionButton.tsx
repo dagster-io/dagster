@@ -2,6 +2,7 @@ import {useMutation} from '@apollo/client';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
 import {
   LaunchPipelineExecution,
@@ -19,6 +20,7 @@ interface LaunchRootExecutionButtonProps {
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
   props,
 ) => {
+  const {canLaunchPipelineExecution} = usePermissions();
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
@@ -46,7 +48,8 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
           icon: 'send-to',
           onClick: onLaunch,
           title: 'Launch Execution',
-          disabled: props.disabled,
+          disabled: props.disabled || !canLaunchPipelineExecution,
+          tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
         }}
       />
     </div>

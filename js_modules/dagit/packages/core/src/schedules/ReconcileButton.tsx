@@ -1,7 +1,9 @@
 import {gql, useMutation} from '@apollo/client';
 import {Button, Intent} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {JobType} from '../types/globalTypes';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -11,6 +13,7 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {ReconcileSchedulerState} from './types/ReconcileSchedulerState';
 
 export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+  const {canReconcileSchedulerState} = usePermissions();
   const repositorySelector = repoAddressToSelector(repoAddress);
   const refetchQueries = [
     {
@@ -29,6 +32,16 @@ export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddre
 
   if (reconcileInFlight) {
     return <Spinner purpose="body-text" />;
+  }
+
+  if (!canReconcileSchedulerState) {
+    return (
+      <Tooltip content={DISABLED_MESSAGE}>
+        <Button small={true} disabled>
+          Reconcile
+        </Button>
+      </Tooltip>
+    );
   }
 
   return (

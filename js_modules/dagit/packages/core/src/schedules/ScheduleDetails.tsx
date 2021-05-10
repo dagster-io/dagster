@@ -1,5 +1,4 @@
-import {useMutation} from '@apollo/client';
-import {Colors, Switch, Tooltip} from '@blueprintjs/core';
+import {Colors, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -16,21 +15,14 @@ import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {Code, Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {
-  displayScheduleMutationErrors,
-  START_SCHEDULE_MUTATION,
-  STOP_SCHEDULE_MUTATION,
-} from './ScheduleMutations';
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleFragment';
-import {StartSchedule} from './types/StartSchedule';
-import {StopSchedule} from './types/StopSchedule';
 
 const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 
@@ -45,24 +37,6 @@ export const ScheduleDetails: React.FC<{
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
 
   const [copyText, setCopyText] = React.useState('Click to copy');
-
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: name,
-  };
 
   const timeRemaining = useCountdown({
     duration: countdownDuration,
@@ -86,18 +60,6 @@ export const ScheduleDetails: React.FC<{
   const {status, id, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
-  const onChangeSwitch = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSchedule({
-        variables: {scheduleOriginId: id},
-      });
-    } else {
-      startSchedule({
-        variables: {scheduleSelector},
-      });
-    }
-  };
-
   const copyId = () => {
     navigator.clipboard.writeText(id);
     setCopyText('Copied!');
@@ -113,17 +75,8 @@ export const ScheduleDetails: React.FC<{
         title={
           <Group alignItems="center" direction="row" spacing={2}>
             <Heading>{name}</Heading>
-            <Box margin={{left: 12}}>
-              <Switch
-                checked={running}
-                inline
-                large
-                disabled={toggleOffInFlight || toggleOnInFlight}
-                innerLabelChecked="on"
-                innerLabel="off"
-                onChange={onChangeSwitch}
-                style={{margin: '4px 0 0 0'}}
-              />
+            <Box margin={{horizontal: 12}}>
+              <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
             </Box>
             {futureTicks.results.length && running ? (
               <Group direction="row" spacing={4}>

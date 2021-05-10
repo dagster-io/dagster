@@ -1,0 +1,81 @@
+import {useMutation} from '@apollo/client';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import * as React from 'react';
+
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {JobStatus} from '../types/globalTypes';
+import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
+
+import {
+  displaySensorMutationErrors,
+  START_SENSOR_MUTATION,
+  STOP_SENSOR_MUTATION,
+} from './SensorMutations';
+import {SensorFragment} from './types/SensorFragment';
+import {StartSensor} from './types/StartSensor';
+import {StopSensor} from './types/StopSensor';
+
+interface Props {
+  repoAddress: RepoAddress;
+  sensor: SensorFragment;
+}
+
+export const SensorSwitch: React.FC<Props> = (props) => {
+  const {repoAddress, sensor} = props;
+  const {canStartSensor, canStopSensor} = usePermissions();
+
+  const sensorSelector = {
+    ...repoAddressToSelector(repoAddress),
+    sensorName: name,
+  };
+
+  const {jobOriginId} = sensor;
+  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
+    START_SENSOR_MUTATION,
+    {onCompleted: displaySensorMutationErrors},
+  );
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
+    onCompleted: displaySensorMutationErrors,
+  });
+
+  const onChangeSwitch = () => {
+    if (status === JobStatus.RUNNING) {
+      stopSensor({variables: {jobOriginId}});
+    } else {
+      startSensor({variables: {sensorSelector}});
+    }
+  };
+
+  const running = status === JobStatus.RUNNING;
+
+  if (canStartSensor && canStopSensor) {
+    return (
+      <SwitchWithoutLabel
+        disabled={toggleOnInFlight || toggleOffInFlight}
+        large
+        innerLabelChecked="on"
+        innerLabel="off"
+        checked={running}
+        onChange={onChangeSwitch}
+      />
+    );
+  }
+
+  const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
+  const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
+
+  return (
+    <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
+      <SwitchWithoutLabel
+        disabled={disabled}
+        large
+        innerLabelChecked="on"
+        innerLabel="off"
+        checked={running}
+        onChange={onChangeSwitch}
+      />
+    </Tooltip>
+  );
+};

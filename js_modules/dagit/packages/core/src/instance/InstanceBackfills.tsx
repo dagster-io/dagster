@@ -5,6 +5,7 @@ import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -145,14 +146,17 @@ const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
 const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: () => void}) => {
   const [terminationBackfill, setTerminationBackfill] = React.useState<Backfill>();
   const [cancelRunBackfill, setCancelRunBackfill] = React.useState<Backfill>();
+  const {canCancelPartitionBackfill} = usePermissions();
 
   const candidateId = terminationBackfill?.backfillId;
+
   React.useEffect(() => {
-    if (candidateId) {
+    if (canCancelPartitionBackfill && candidateId) {
       const [backfill] = backfills.filter((backfill) => backfill.backfillId === candidateId);
       setTerminationBackfill(backfill);
     }
-  }, [backfills, candidateId]);
+  }, [backfills, candidateId, canCancelPartitionBackfill]);
+
   const cancelableRuns = cancelRunBackfill?.runs.filter(
     (run) => !doneStatuses.has(run?.status) && run.canTerminate,
   );
@@ -207,6 +211,7 @@ const BackfillRow = ({
   onTerminateBackfill: (backfill: Backfill) => void;
 }) => {
   const history = useHistory();
+  const {canCancelPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
   const runsUrl = `/instance/runs?${qs.stringify({
     q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
@@ -301,21 +306,25 @@ const BackfillRow = ({
         <Popover
           content={
             <Menu>
-              {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
-                <MenuItem
-                  text="Cancel backfill submission"
-                  icon="stop"
-                  intent="danger"
-                  onClick={() => onTerminateBackfill(backfill)}
-                />
-              ) : null}
-              {canCancel ? (
-                <MenuItem
-                  text="Terminate unfinished runs"
-                  icon="stop"
-                  intent="danger"
-                  onClick={() => onTerminateBackfill(backfill)}
-                />
+              {canCancelPartitionBackfill ? (
+                <>
+                  {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
+                    <MenuItem
+                      text="Cancel backfill submission"
+                      icon="stop"
+                      intent="danger"
+                      onClick={() => onTerminateBackfill(backfill)}
+                    />
+                  ) : null}
+                  {canCancel ? (
+                    <MenuItem
+                      text="Terminate unfinished runs"
+                      icon="stop"
+                      intent="danger"
+                      onClick={() => onTerminateBackfill(backfill)}
+                    />
+                  ) : null}
+                </>
               ) : null}
               {partitionSetBackfillUrl ? (
                 <MenuItem

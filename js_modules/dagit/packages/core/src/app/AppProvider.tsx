@@ -23,6 +23,7 @@ import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
+import {Permissions} from './Permissions';
 import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
 import {WebsocketStatusProvider} from './WebsocketStatus';
 import {TimezoneProvider} from './time/TimezoneContext';
@@ -72,13 +73,20 @@ interface Props {
   config: {
     graphqlURI: string;
     basePath?: string;
+    permissions: Permissions;
     subscriptionParams?: {[key: string]: string};
     headerAuthToken?: string;
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
-  const {headerAuthToken = '', basePath = '', subscriptionParams = {}, graphqlURI} = props.config;
+  const {
+    headerAuthToken = '',
+    basePath = '',
+    permissions,
+    subscriptionParams = {},
+    graphqlURI,
+  } = props.config;
 
   const httpGraphqlURI = graphqlURI.replace('wss://', 'https://').replace('ws://', 'http://');
 
@@ -149,10 +157,11 @@ export const AppProvider: React.FC<Props> = (props) => {
   const appContextValue = React.useMemo(
     () => ({
       basePath,
+      permissions,
       rootServerURI,
       websocketURI,
     }),
-    [basePath, rootServerURI, websocketURI],
+    [basePath, permissions, rootServerURI, websocketURI],
   );
 
   return (

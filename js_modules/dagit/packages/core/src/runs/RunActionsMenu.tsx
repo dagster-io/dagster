@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissions} from '../app/Permissions';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -30,6 +31,7 @@ export const RunActionsMenu: React.FC<{
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
   const {basePath, rootServerURI} = React.useContext(AppContext);
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
@@ -123,7 +125,7 @@ export const RunActionsMenu: React.FC<{
                   }}
                 />
               </Tooltip>
-              {isFinished ? null : (
+              {isFinished || !canTerminatePipelineExecution ? null : (
                 <MenuItem
                   icon="stop"
                   text="Terminate"
@@ -138,7 +140,9 @@ export const RunActionsMenu: React.FC<{
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
-            <MenuItem icon="trash" text="Delete" onClick={() => setVisibleDialog('delete')} />
+            {canDeletePipelineRun ? (
+              <MenuItem icon="trash" text="Delete" onClick={() => setVisibleDialog('delete')} />
+            ) : null}
           </Menu>
         }
         position={'bottom'}
@@ -150,29 +154,38 @@ export const RunActionsMenu: React.FC<{
       >
         <Button minimal={true} icon="more" style={{position: 'relative', top: '-6px'}} />
       </Popover>
-      <TerminationDialog
-        isOpen={visibleDialog === 'terminate'}
-        onClose={closeDialogs}
-        onComplete={onComplete}
-        selectedRuns={{[run.id]: run.canTerminate}}
-      />
-      <DeletionDialog
-        isOpen={visibleDialog === 'delete'}
-        onClose={closeDialogs}
-        onComplete={onComplete}
-        onTerminateInstead={() => setVisibleDialog('terminate')}
-        selectedRuns={{[run.id]: run.canTerminate}}
-      />
+      {canTerminatePipelineExecution ? (
+        <TerminationDialog
+          isOpen={visibleDialog === 'terminate'}
+          onClose={closeDialogs}
+          onComplete={onComplete}
+          selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
+      {canDeletePipelineRun ? (
+        <DeletionDialog
+          isOpen={visibleDialog === 'delete'}
+          onClose={closeDialogs}
+          onComplete={onComplete}
+          onTerminateInstead={() => setVisibleDialog('terminate')}
+          selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
     </>
   );
 });
 
-export const RunBulkActionsMenu: React.FunctionComponent<{
+export const RunBulkActionsMenu: React.FC<{
   selected: RunTableRunFragment[];
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+
+  if (!canTerminatePipelineExecution && !canDeletePipelineRun) {
+    return null;
+  }
 
   const unfinishedRuns = selected.filter((r) => !doneStatuses.has(r?.status));
   const unfinishedIDs = unfinishedRuns.map((r) => r.id);
@@ -198,24 +211,28 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
       <Popover
         content={
           <Menu>
-            <MenuItem
-              icon="stop"
-              text={`Terminate ${unfinishedIDs.length} ${
-                unfinishedIDs.length === 1 ? 'run' : 'runs'
-              }`}
-              disabled={unfinishedIDs.length === 0}
-              onClick={() => {
-                setVisibleDialog('terminate');
-              }}
-            />
-            <MenuItem
-              icon="trash"
-              text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
-              disabled={selectedIDs.length === 0}
-              onClick={() => {
-                setVisibleDialog('delete');
-              }}
-            />
+            {canTerminatePipelineExecution ? (
+              <MenuItem
+                icon="stop"
+                text={`Terminate ${unfinishedIDs.length} ${
+                  unfinishedIDs.length === 1 ? 'run' : 'runs'
+                }`}
+                disabled={unfinishedIDs.length === 0}
+                onClick={() => {
+                  setVisibleDialog('terminate');
+                }}
+              />
+            ) : null}
+            {canDeletePipelineRun ? (
+              <MenuItem
+                icon="trash"
+                text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
+                disabled={selectedIDs.length === 0}
+                onClick={() => {
+                  setVisibleDialog('delete');
+                }}
+              />
+            ) : null}
           </Menu>
         }
         position={'bottom'}

@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {featureEnabled, FeatureFlag} from '../app/Util';
 import {Box} from '../ui/Box';
@@ -16,6 +17,7 @@ import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
 export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {location} = repoAddress;
   const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
+  const {canReloadRepositoryLocation} = usePermissions();
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
@@ -25,21 +27,25 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
       >
         {repoAddressAsString(repoAddress)}
       </RepositoryName>
-      <ShortcutHandler
-        onShortcut={onClick}
-        shortcutLabel={`⌥R`}
-        shortcutFilter={(e) => e.keyCode === 82 && e.altKey && featureEnabled(FeatureFlag.LeftNav)}
-      >
-        <ReloadTooltip content={reloading ? 'Reloading…' : `Reload location ${location}`}>
-          {reloading ? (
-            <Spinner purpose="body-text" />
-          ) : (
-            <StyledButton onClick={onClick}>
-              <Icon icon="refresh" iconSize={11} color={Colors.GRAY2} />
-            </StyledButton>
-          )}
-        </ReloadTooltip>
-      </ShortcutHandler>
+      {canReloadRepositoryLocation ? (
+        <ShortcutHandler
+          onShortcut={onClick}
+          shortcutLabel={`⌥R`}
+          shortcutFilter={(e) =>
+            e.keyCode === 82 && e.altKey && featureEnabled(FeatureFlag.LeftNav)
+          }
+        >
+          <ReloadTooltip content={reloading ? 'Reloading…' : `Reload location ${location}`}>
+            {reloading ? (
+              <Spinner purpose="body-text" />
+            ) : (
+              <StyledButton onClick={onClick}>
+                <Icon icon="refresh" iconSize={11} color={Colors.GRAY2} />
+              </StyledButton>
+            )}
+          </ReloadTooltip>
+        </ShortcutHandler>
+      ) : null}
     </Box>
   );
 };

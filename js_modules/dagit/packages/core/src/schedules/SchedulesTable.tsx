@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 import {
   Button,
   Colors,
@@ -21,24 +20,17 @@ import {JobRunStatus} from '../jobs/JobUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {JobStatus, JobType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
 import {Table} from '../ui/Table';
 import {Code} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReconcileButton} from './ReconcileButton';
-import {
-  START_SCHEDULE_MUTATION,
-  STOP_SCHEDULE_MUTATION,
-  displayScheduleMutationErrors,
-} from './ScheduleMutations';
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleFragment';
-import {StartSchedule} from './types/StartSchedule';
-import {StopSchedule} from './types/StopSchedule';
 
 export const SchedulesTable: React.FC<{
   schedules: ScheduleFragment[];
@@ -172,19 +164,6 @@ const ScheduleRow: React.FC<{
 }> = (props) => {
   const {repoAddress, schedule} = props;
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-
   const {
     name,
     cronSchedule,
@@ -194,39 +173,14 @@ const ScheduleRow: React.FC<{
     mode,
     scheduleState,
   } = schedule;
-  const {id, status, ticks, runningCount: runningScheduleCount} = scheduleState;
-
-  const scheduleSelector = {
-    repositoryLocationName: repoAddress.location,
-    repositoryName: repoAddress.name,
-    scheduleName: name,
-  };
-
-  const onStatusChange = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSchedule({
-        variables: {scheduleOriginId: id},
-      });
-    } else {
-      startSchedule({
-        variables: {scheduleSelector},
-      });
-    }
-  };
+  const {status, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
     <tr key={name}>
       <td>
-        <SwitchWithoutLabel
-          checked={status === JobStatus.RUNNING}
-          large={true}
-          disabled={toggleOffInFlight || toggleOnInFlight}
-          innerLabelChecked="on"
-          innerLabel="off"
-          onChange={onStatusChange}
-        />
+        <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
         {errorDisplay(status, runningScheduleCount, repoAddress)}
       </td>
       <td>

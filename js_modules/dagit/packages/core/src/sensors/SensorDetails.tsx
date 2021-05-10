@@ -1,5 +1,3 @@
-import {useMutation} from '@apollo/client';
-import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -15,18 +13,11 @@ import {MetadataTable} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {Heading} from '../ui/Text';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {
-  displaySensorMutationErrors,
-  START_SENSOR_MUTATION,
-  STOP_SENSOR_MUTATION,
-} from './SensorMutations';
+import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
-import {StartSensor} from './types/StartSensor';
-import {StopSensor} from './types/StopSensor';
 
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {
@@ -62,21 +53,9 @@ export const SensorDetails: React.FC<{
   const {
     name,
     pipelineName,
-    jobOriginId,
     sensorState: {status, ticks},
   } = sensor;
 
-  const sensorSelector = {
-    ...repoAddressToSelector(repoAddress),
-    sensorName: name,
-  };
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
-    START_SENSOR_MUTATION,
-    {onCompleted: displaySensorMutationErrors},
-  );
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
   const timeRemaining = useCountdown({
     duration: countdownDuration,
     status: countdownStatus,
@@ -84,14 +63,6 @@ export const SensorDetails: React.FC<{
 
   const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
   const seconds = Math.floor(timeRemaining / 1000);
-
-  const onChangeSwitch = () => {
-    if (status === JobStatus.RUNNING) {
-      stopSensor({variables: {jobOriginId}});
-    } else {
-      startSensor({variables: {sensorSelector}});
-    }
-  };
 
   const latestTick = ticks.length ? ticks[0] : null;
 
@@ -101,17 +72,8 @@ export const SensorDetails: React.FC<{
         title={
           <Group alignItems="center" direction="row" spacing={2}>
             <Heading>{name}</Heading>
-            <Box margin={{left: 12}}>
-              <Switch
-                checked={status === JobStatus.RUNNING}
-                inline
-                large
-                disabled={toggleOffInFlight || toggleOnInFlight}
-                innerLabelChecked="on"
-                innerLabel="off"
-                onChange={onChangeSwitch}
-                style={{margin: '4px 0 0 0'}}
-              />
+            <Box margin={{horizontal: 12}}>
+              <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
             </Box>
             {sensor.nextTick && daemonHealth && status === JobStatus.RUNNING ? (
               <Group direction="row" spacing={4}>

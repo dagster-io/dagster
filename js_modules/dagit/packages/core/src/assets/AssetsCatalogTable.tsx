@@ -17,6 +17,7 @@ import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -356,6 +357,7 @@ const AssetsTable = ({
 }) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
+  const {canWipeAssets} = usePermissions();
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {checkedPaths} = state;
 
@@ -420,20 +422,22 @@ const AssetsTable = ({
       <Table>
         <thead>
           <tr>
-            <th style={{width: 50}}>
-              <div style={{display: 'flex', alignItems: 'center'}}>
-                <Checkbox
-                  style={{marginBottom: 0, marginTop: 1}}
-                  indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
-                  checked={checkedPaths.size === sorted.length}
-                  onChange={onChangeAll}
-                />
-                <AssetActions
-                  selected={Array.from(selectedAssets)}
-                  clearSelection={() => onToggleAll(false)}
-                />
-              </div>
-            </th>
+            {canWipeAssets ? (
+              <th style={{width: 50}}>
+                <div style={{display: 'flex', alignItems: 'center'}}>
+                  <Checkbox
+                    style={{marginBottom: 0, marginTop: 1}}
+                    indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
+                    checked={checkedPaths.size === sorted.length}
+                    onChange={onChangeAll}
+                  />
+                  <AssetActions
+                    selected={Array.from(selectedAssets)}
+                    clearSelection={() => onToggleAll(false)}
+                  />
+                </div>
+              </th>
+            ) : null}
             <th>Asset Key</th>
             {hasTags ? (
               <th>
@@ -449,7 +453,7 @@ const AssetsTable = ({
                 </Group>
               </th>
             ) : null}
-            <th>Actions</th>
+            {canWipeAssets ? <th>Actions</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -467,6 +471,7 @@ const AssetsTable = ({
                 onSelectToggle={onToggle}
                 onTagClick={onTagClick}
                 onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
+                canWipe={canWipeAssets}
               />
             );
           })}
@@ -483,7 +488,7 @@ const AssetsTable = ({
   );
 };
 
-const AssetEntryRow: React.FunctionComponent<{
+const AssetEntryRow: React.FC<{
   currentPath?: string[];
   path: string[];
   isSelected: boolean;
@@ -493,6 +498,7 @@ const AssetEntryRow: React.FunctionComponent<{
   assets: Asset[];
   onTagClick: (tag: AssetTag) => void;
   onWipe: (assets: Asset[]) => void;
+  canWipe: boolean;
 }> = React.memo(
   ({
     currentPath,
@@ -504,15 +510,18 @@ const AssetEntryRow: React.FunctionComponent<{
     isFlattened,
     onSelectToggle,
     onWipe,
+    canWipe,
   }) => {
     const fullPath = [...(currentPath || []), ...path];
     const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
     const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
     return (
       <tr>
-        <td style={{paddingRight: '4px'}}>
-          <Checkbox checked={isSelected} onChange={(e) => onSelectToggle(e, path)} />
-        </td>
+        {canWipe ? (
+          <td style={{paddingRight: '4px'}}>
+            <Checkbox checked={isSelected} onChange={(e) => onSelectToggle(e, path)} />
+          </td>
+        ) : null}
         <td>
           <Link to={linkUrl}>
             <Box flex={{alignItems: 'center'}}>
@@ -540,27 +549,29 @@ const AssetEntryRow: React.FunctionComponent<{
             ) : null}
           </td>
         ) : null}
-        <td>
-          {isAssetEntry ? (
-            <Popover
-              content={
-                <Menu>
-                  <MenuItem
-                    text="Wipe ..."
-                    icon="trash"
-                    target="_blank"
-                    onClick={() => onWipe(assets)}
-                  />
-                </Menu>
-              }
-              position="bottom"
-            >
-              <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
-            </Popover>
-          ) : (
-            <Button small minimal disabled icon="chevron-down" style={{marginLeft: '4px'}} />
-          )}
-        </td>
+        {canWipe ? (
+          <td>
+            {isAssetEntry ? (
+              <Popover
+                content={
+                  <Menu>
+                    <MenuItem
+                      text="Wipe ..."
+                      icon="trash"
+                      target="_blank"
+                      onClick={() => onWipe(assets)}
+                    />
+                  </Menu>
+                }
+                position="bottom"
+              >
+                <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+              </Popover>
+            ) : (
+              <Button small minimal disabled icon="chevron-down" style={{marginLeft: '4px'}} />
+            )}
+          </td>
+        ) : null}
       </tr>
     );
   },
@@ -571,6 +582,12 @@ const AssetActions: React.FC<{
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
+  const {canWipeAssets} = usePermissions();
+
+  if (!canWipeAssets) {
+    return null;
+  }
+
   const disabled = selected.length === 0;
   const prompt = disabled
     ? 'Select assets to wipe'

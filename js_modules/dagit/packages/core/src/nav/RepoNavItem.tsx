@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -99,34 +100,37 @@ const SingleRepoSummary: React.FC<{fullWidth: boolean; repoAddress: RepoAddress}
   fullWidth,
   repoAddress,
 }) => {
+  const {canReloadRepositoryLocation} = usePermissions();
   const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
   return (
     <Group direction="row" spacing={8} alignItems="center">
       <SingleRepoNameLink to={workspacePathFromAddress(repoAddress)} $fullWidth={fullWidth}>
         {repoAddress.name}
       </SingleRepoNameLink>
-      <ShortcutHandler
-        onShortcut={onClick}
-        shortcutLabel={`⌥R`}
-        shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
-      >
-        <Tooltip
-          inheritDarkTheme={false}
-          content={
-            <Reloading>{reloading ? 'Reloading…' : `Reload location ${location}`}</Reloading>
-          }
+      {canReloadRepositoryLocation ? (
+        <ShortcutHandler
+          onShortcut={onClick}
+          shortcutLabel={`⌥R`}
+          shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
         >
-          {reloading ? (
-            <span style={{position: 'relative', top: '1px'}}>
-              <Spinner purpose="body-text" />
-            </span>
-          ) : (
-            <StyledButton onClick={onClick}>
-              <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
-            </StyledButton>
-          )}
-        </Tooltip>
-      </ShortcutHandler>
+          <Tooltip
+            inheritDarkTheme={false}
+            content={
+              <Reloading>{reloading ? 'Reloading…' : `Reload location ${location}`}</Reloading>
+            }
+          >
+            {reloading ? (
+              <span style={{position: 'relative', top: '1px'}}>
+                <Spinner purpose="body-text" />
+              </span>
+            ) : (
+              <StyledButton onClick={onClick}>
+                <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
+              </StyledButton>
+            )}
+          </Tooltip>
+        </ShortcutHandler>
+      ) : null}
     </Group>
   );
 };

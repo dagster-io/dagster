@@ -1,6 +1,8 @@
 import {Button, Classes, Colors, Dialog, NonIdealState, Tag} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useRepositoryLocationReload} from '../nav/ReloadRepositoryLocationButton';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -71,6 +73,16 @@ const ReloadButton: React.FC<{
 }> = (props) => {
   const {location, onReload} = props;
   const {reloading, onClick} = useRepositoryLocationReload(location, () => onReload(location));
+  const {canReloadRepositoryLocation} = usePermissions();
+
+  if (!canReloadRepositoryLocation) {
+    return (
+      <Tooltip content={DISABLED_MESSAGE}>
+        <ButtonLink color={Colors.GRAY3}>Reload</ButtonLink>
+      </Tooltip>
+    );
+  }
+
   return (
     <ButtonLink onClick={onClick}>
       <Group direction="row" spacing={4} alignItems="center">

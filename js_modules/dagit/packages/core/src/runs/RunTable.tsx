@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -94,6 +95,9 @@ export const RunTable = (props: RunTableProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {checkedRuns} = state;
 
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const canTerminateOrDelete = canTerminatePipelineExecution || canDeletePipelineRun;
+
   const onToggle = (runId: string) => (values: {checked: boolean; shiftKey: boolean}) => {
     const {checked, shiftKey} = values;
     if (shiftKey && state.lastCheckedID) {
@@ -134,18 +138,20 @@ export const RunTable = (props: RunTableProps) => {
       <thead>
         <tr>
           <th colSpan={2}>
-            <div style={{display: 'flex', alignItems: 'center'}}>
-              <Checkbox
-                style={{marginBottom: 0, marginTop: 1}}
-                indeterminate={checkedRuns.size > 0 && checkedRuns.size !== runs.length}
-                checked={checkedRuns.size === runs.length}
-                onChange={onChangeAll}
-              />
-              <RunBulkActionsMenu
-                selected={selectedFragments}
-                clearSelection={() => toggleAll(false)}
-              />
-            </div>
+            {canTerminateOrDelete ? (
+              <div style={{display: 'flex', alignItems: 'center'}}>
+                <Checkbox
+                  style={{marginBottom: 0, marginTop: 1}}
+                  indeterminate={checkedRuns.size > 0 && checkedRuns.size !== runs.length}
+                  checked={checkedRuns.size === runs.length}
+                  onChange={onChangeAll}
+                />
+                <RunBulkActionsMenu
+                  selected={selectedFragments}
+                  clearSelection={() => toggleAll(false)}
+                />
+              </div>
+            ) : null}
           </th>
           <th>Run ID</th>
           <th>Pipeline</th>
@@ -158,6 +164,7 @@ export const RunTable = (props: RunTableProps) => {
       <tbody>
         {runs.map((run) => (
           <RunRow
+            canTerminateOrDelete={canTerminateOrDelete}
             run={run}
             key={run.runId}
             onSetFilter={onSetFilter}
@@ -199,12 +206,21 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
 
 const RunRow: React.FC<{
   run: RunTableRunFragment;
+  canTerminateOrDelete: boolean;
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
   isHighlighted?: boolean;
-}> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns, isHighlighted}) => {
+}> = ({
+  run,
+  canTerminateOrDelete,
+  onSetFilter,
+  checked,
+  onToggleChecked,
+  additionalColumns,
+  isHighlighted,
+}) => {
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -217,7 +233,9 @@ const RunRow: React.FC<{
   return (
     <Row key={run.runId} highlighted={!!isHighlighted}>
       <td style={{paddingRight: '4px'}}>
-        {onToggleChecked && <Checkbox checked={checked} onChange={onChange} />}
+        {canTerminateOrDelete && onToggleChecked ? (
+          <Checkbox checked={checked} onChange={onChange} />
+        ) : null}
       </td>
       <td>
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
