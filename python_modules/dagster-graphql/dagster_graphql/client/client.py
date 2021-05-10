@@ -111,6 +111,8 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("ConflictingExecutionParamsError", invalid_step_key): a preset and a run_config & mode are present
                 that conflict with one another
             DagsterGraphQLClientError("PresetNotFoundError", message): if the provided preset name is not found
+            DagsterGraphQLClientError("PipelineRunConflict", message): a `DagsterRunConflict` occured during execution.
+                This indicates that a conflicting pipeline run already exists in run storage.
             DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the pipeline
             DagsterGraphQLClientError("PipelineNotFoundError", message): the requested pipeline does not exist
@@ -182,7 +184,7 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # or a PipelineNotFoundError, or a PythonError
+            # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     def get_run_status(self, run_id: str) -> PipelineRunStatus:
@@ -234,8 +236,16 @@ class DagsterGraphQLClient:
         query_result_type: str = query_result["__typename"]
         if query_result_type == "RepositoryLocation":
             return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
-        else:
+        elif query_result_type == "RepositoryLocationLoadFailure":
             return ReloadRepositoryLocationInfo(
                 status=ReloadRepositoryLocationStatus.FAILURE,
+                failure_type=query_result_type,
                 message=query_result["error"]["message"],
+            )
+        else:
+            # query_result_type is either ReloadNotSupported or RepositoryLocationNotFound
+            return ReloadRepositoryLocationInfo(
+                status=ReloadRepositoryLocationStatus.FAILURE,
+                failure_type=query_result_type,
+                message=query_result["message"],
             )

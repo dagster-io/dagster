@@ -256,6 +256,31 @@ def test_failure_with_python_error(mock_client: MockClient):
 
 
 @python_client_test_suite
+def test_failure_with_pipeline_run_conflict(mock_client: MockClient):
+    error_type, message = "PipelineRunConflict", "some conflict"
+    response = {
+        "launchPipelineExecution": {
+            "__typename": error_type,
+            "message": message,
+        }
+    }
+    mock_client.mock_gql_client.execute.return_value = response
+
+    with pytest.raises(DagsterGraphQLClientError) as exc_info:
+        mock_client.python_client.submit_pipeline_execution(
+            "bar",
+            repository_location_name="baz",
+            repository_name="quux",
+            run_config={},
+            mode="default",
+        )
+    exc_args = exc_info.value.args
+
+    assert exc_args[0] == error_type
+    assert exc_args[1] == message
+
+
+@python_client_test_suite
 def test_failure_with_query_error(mock_client: MockClient):
     mock_client.mock_gql_client.side_effect = Exception("foo")
 

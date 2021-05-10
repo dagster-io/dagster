@@ -21,6 +21,9 @@ mutation($executionParams: ExecutionParams!) {
     ... on PresetNotFoundError {
       message
     }
+    ... on PipelineRunConflict {
+      message
+    }
     ... on PipelineConfigValidationInvalid {
       errors {
         __typename
@@ -71,6 +74,12 @@ mutation ($repositoryLocationName: String!) {
             name
         }
         isReloadSupported
+      }
+      ... on ReloadNotSupported {
+        message
+      }
+      ... on RepositoryLocationNotFound {
+        message
       }
       ... on RepositoryLocationLoadFailure {
           name

@@ -26,11 +26,14 @@ class ReloadRepositoryLocationInfo(NamedTuple):
 
     Args:
         status (ReloadRepositoryLocationStatus): The status of the reload repository location mutation
+        failure_type: (Optional[str], optional): the failure type if `status == ReloadRepositoryLocationStatus.FAILURE`.
+          Can be one of `ReloadNotSupported`, `RepositoryLocationNotFound`, or `RepositoryLocationLoadFailure`. Defaults to None.
         message (Optional[str], optional): the failure message/reason if
           `status == ReloadRepositoryLocationStatus.FAILURE`. Defaults to None.
     """
 
     status: ReloadRepositoryLocationStatus
+    failure_type: Optional[str] = None
     message: Optional[str] = None
 
 

@@ -104,5 +104,8 @@ reload_info: ReloadRepositoryLocationInfo = client.reload_repository_location(RE
 if reload_info.status == ReloadRepositoryLocationStatus.SUCCESS:
     do_something_on_success()
 else:
-    raise Exception(f"Repository location reload failed with message: {reload_info.message}")
+    raise Exception(
+        "Repository location reload failed because of a "
+        f"{reload_info.failure_type} error: {reload_info.message}"
+    )
 # end_reload_repo_location_marker
