@@ -75,13 +75,13 @@ interface Props {
     basePath?: string;
     permissions: Permissions;
     subscriptionParams?: {[key: string]: string};
-    headerAuthToken?: string;
+    sessionToken?: string;
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {
-    headerAuthToken = '',
+    sessionToken = '',
     basePath = '',
     permissions,
     subscriptionParams = {},
@@ -123,11 +123,11 @@ export const AppProvider: React.FC<Props> = (props) => {
 
     // add an auth header to the HTTP requests made by the app
     // note that the websocket-based subscriptions will not carry this header
-    if (headerAuthToken) {
+    if (sessionToken) {
       const authMiddleware = new ApolloLink((operation, forward) => {
         operation.setContext({
           headers: {
-            authorization: headerAuthToken,
+            'Dagster-Session-Token': sessionToken,
           },
         });
 
@@ -152,7 +152,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: AppCache,
       link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [headerAuthToken, httpURI, websocketClient]);
+  }, [sessionToken, httpURI, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
