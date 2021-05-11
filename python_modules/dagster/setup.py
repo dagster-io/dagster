@@ -58,7 +58,7 @@ if __name__ == "__main__":
         install_requires=[
             "future",
             # cli
-            "click>=5.0",
+            "click>=5.0,<8.0",
             "coloredlogs>=6.1, <=14.0",
             "Jinja2",
             "PyYAML>=5.1",

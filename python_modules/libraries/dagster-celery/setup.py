@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "dagster",
             "dagster_graphql",
             "celery>=4.3.0",
-            "click>=5.0",
+            "click>=5.0,<8.0",
         ],
         extras_require={
             "flower": ["flower"],

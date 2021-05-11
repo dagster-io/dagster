@@ -42,7 +42,7 @@ if __name__ == "__main__":
         install_requires=[
             "PyYAML",
             # cli
-            "click>=7.0",
+            "click>=7.0,<8.0",
             "dagster=={ver}".format(ver=ver),
             "dagster-graphql=={ver}".format(ver=ver),
             # server

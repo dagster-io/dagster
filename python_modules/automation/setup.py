@@ -18,7 +18,6 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
-        "click>=6.7",
         "dagster",
         "dagster-graphql",
         "packaging==18.0",
