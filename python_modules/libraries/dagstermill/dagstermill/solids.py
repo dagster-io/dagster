@@ -24,6 +24,7 @@ from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
+from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p, safe_tempfile_path
 from dagster.utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
@@ -98,8 +99,8 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     check.dict_param(inputs, "inputs", key_type=str)
 
     run_id = step_context.run_id
-
-    marshal_dir = "/tmp/dagstermill/{run_id}/marshal".format(run_id=run_id)
+    temp_dir = get_system_temp_directory()
+    marshal_dir = os.path.normpath(os.path.join(temp_dir, "dagstermill", str(run_id), "marshal"))
     mkdir_p(marshal_dir)
 
     if not isinstance(step_context.pipeline, ReconstructablePipeline):
