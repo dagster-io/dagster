@@ -1,16 +1,30 @@
 """System-provided config objects and constructors."""
 import warnings
-from collections import namedtuple
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
 from dagster import check
+from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.core.definitions.executor import ExecutorDefinition
+from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
+from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.definitions.run_config_schema import create_environment_type
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 from dagster.utils.merger import deep_merge_dicts
 
 
-class SolidConfig(namedtuple("_SolidConfig", "config inputs outputs")):
+class SolidConfig(
+    NamedTuple(
+        "_SolidConfig",
+        [
+            ("config", Any),
+            ("inputs", Dict[str, Any]),
+            ("outputs", "OutputsConfig"),
+        ],
+    )
+):
     def __new__(cls, config, inputs, outputs):
         return super(SolidConfig, cls).__new__(
             cls,
@@ -30,19 +44,16 @@ class SolidConfig(namedtuple("_SolidConfig", "config inputs outputs")):
         )
 
 
-class OutputsConfig(namedtuple("_OutputsConfig", "config")):
+class OutputsConfig(NamedTuple):
     """
     Outputs are configured as a dict if any of the outputs have an output manager with an
     output_config_schema, and a list otherwise.
     """
 
-    def __new__(cls, config):
-        return super(OutputsConfig, cls).__new__(
-            cls, config=check.opt_inst_param(config, "config", (dict, list))
-        )
+    config: Union[Dict, List]
 
     @property
-    def output_names(self):
+    def output_names(self) -> AbstractSet[str]:
         if isinstance(self.config, list):
             return {key for entry in self.config for key in entry.keys()}
         elif isinstance(self.config, dict):
@@ -51,22 +62,21 @@ class OutputsConfig(namedtuple("_OutputsConfig", "config")):
             return {}
 
     @property
-    def type_materializer_specs(self):
+    def type_materializer_specs(self) -> list:
         if isinstance(self.config, list):
             return self.config
         else:
             return []
 
-    def get_output_manager_config(self, output_name):
+    def get_output_manager_config(self, output_name) -> Any:
         if isinstance(self.config, dict):
             return self.config.get(output_name)
         else:
             return None
 
 
-class ResourceConfig(namedtuple("_ResourceConfig", "config")):
-    def __new__(cls, config):
-        return super(ResourceConfig, cls).__new__(cls, config)
+class ResourceConfig(NamedTuple):
+    config: Any
 
     @staticmethod
     def from_dict(config):
@@ -76,9 +86,17 @@ class ResourceConfig(namedtuple("_ResourceConfig", "config")):
 
 
 class EnvironmentConfig(
-    namedtuple(
+    NamedTuple(
         "_EnvironmentConfig",
-        "solids execution intermediate_storage resources loggers original_config_dict mode",
+        [
+            ("solids", Dict[str, SolidConfig]),
+            ("execution", "ExecutionConfig"),
+            ("intermediate_storage", "IntermediateStorageConfig"),
+            ("resources", Dict[str, ResourceConfig]),
+            ("loggers", Dict[str, dict]),
+            ("original_config_dict", Any),
+            ("mode", str),
+        ],
     )
 ):
     def __new__(
@@ -114,15 +132,17 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def build(pipeline_def, run_config=None, mode=None):
+    def build(
+        pipeline_def: PipelineDefinition,
+        run_config: Optional[Dict[str, Any]] = None,
+        mode: Optional[str] = None,
+    ) -> "EnvironmentConfig":
         """This method validates a given run config against the pipeline config schema. If
         successful, we instantiate an EnvironmentConfig object.
 
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
         from dagster.config.validate import process_config
-        from dagster.core.definitions.executor import ExecutorDefinition
-        from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
         from .composite_descent import composite_descent
 
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -179,7 +199,9 @@ class EnvironmentConfig(
             mode=mode,
         )
 
-    def intermediate_storage_def_for_mode(self, mode_definition):
+    def intermediate_storage_def_for_mode(
+        self, mode_definition: ModeDefinition
+    ) -> IntermediateStorageDefinition:
         for intermediate_storage_def in mode_definition.intermediate_storage_defs:
             if intermediate_storage_def.name == self.intermediate_storage.intermediate_storage_name:
                 return intermediate_storage_def
@@ -191,7 +213,7 @@ class EnvironmentConfig(
         )
 
 
-def run_config_storage_field_backcompat(run_config):
+def run_config_storage_field_backcompat(run_config: Dict[str, Any]) -> Dict[str, Any]:
     """This method will be removed after "storage" is removed in run config.
 
     For backwards compatibility, we treat "storage" as as alias of "intermediate_storage", i.e.
@@ -211,7 +233,10 @@ def run_config_storage_field_backcompat(run_config):
     return deep_merge_dicts(run_config, intermediate_storage_dict)
 
 
-def config_map_resources(resource_defs, resource_configs):
+def config_map_resources(
+    resource_defs: Dict[str, ResourceDefinition],
+    resource_configs: Dict[str, Any],
+) -> Dict[str, ResourceConfig]:
     """This function executes the config mappings for resources with respect to ConfigurableDefinition.
     It iterates over resource_defs and looks up the corresponding config because resources need to
     be mapped regardless of whether they receive config from run_config."""
@@ -234,7 +259,11 @@ def config_map_resources(resource_defs, resource_configs):
     return config_mapped_resource_configs
 
 
-def config_map_loggers(pipeline_def, config_value, mode):
+def config_map_loggers(
+    pipeline_def: PipelineDefinition,
+    config_value: Dict[str, Any],
+    mode: str,
+) -> Dict[str, Any]:
     """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
     It uses the `loggers` key on the run_config to determine which loggers will be initialized (and
     thus which ones need config mapping) and then iterates over each, looking up the corresponding
@@ -277,7 +306,13 @@ def config_map_loggers(pipeline_def, config_value, mode):
     return config_mapped_logger_configs
 
 
-def config_map_objects(config_value, defs, keyed_by, def_type, name_of_def_type):
+def config_map_objects(
+    config_value: Any,
+    defs: List[Union[IntermediateStorageDefinition, ExecutorDefinition]],
+    keyed_by: str,
+    def_type: Type,
+    name_of_def_type: str,
+) -> Optional[Dict[str, Any]]:
     """This function executes the config mappings for executors and {system, intermediate} storage
     definitions with respect to ConfigurableDefinition. It calls the ensure_single_item macro on the
     incoming config and then applies config mapping to the result and the first executor_def with
@@ -302,6 +337,7 @@ def config_map_objects(config_value, defs, keyed_by, def_type, name_of_def_type)
             '{def_type} "{obj_name}" given in run config'
         ).format(def_type=def_type, obj_name=obj_name),
     )
+    obj_def = cast(ConfigurableDefinition, obj_def)
 
     obj_config_evr = obj_def.apply_config_mapping(obj_config)
     if not obj_config_evr.success:
@@ -315,7 +351,13 @@ def config_map_objects(config_value, defs, keyed_by, def_type, name_of_def_type)
 
 
 class ExecutionConfig(
-    namedtuple("_ExecutionConfig", "execution_engine_name execution_engine_config")
+    NamedTuple(
+        "_ExecutionConfig",
+        [
+            ("execution_engine_name", Optional[str]),
+            ("execution_engine_config", Dict[str, Any]),
+        ],
+    )
 ):
     def __new__(cls, execution_engine_name, execution_engine_config):
         return super(ExecutionConfig, cls).__new__(
@@ -339,7 +381,13 @@ class ExecutionConfig(
 
 
 class IntermediateStorageConfig(
-    namedtuple("_FilesConfig", "intermediate_storage_name intermediate_storage_config")
+    NamedTuple(
+        "_FilesConfig",
+        [
+            ("intermediate_storage_name", str),
+            ("intermediate_storage_config", Dict[str, Any]),
+        ],
+    )
 ):
     def __new__(cls, intermediate_storage_name, intermediate_storage_config):
         return super(IntermediateStorageConfig, cls).__new__(

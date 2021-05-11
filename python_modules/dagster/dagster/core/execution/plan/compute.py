@@ -34,7 +34,7 @@ def create_step_outputs(
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = environment_config.solids.get(current_handle.to_string())
+        solid_config = environment_config.solids[current_handle.to_string()]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(solid_config.outputs.output_names)
 

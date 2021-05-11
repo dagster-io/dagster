@@ -423,7 +423,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def for_input_manager(
         self,
         name: str,
-        config: dict,
+        config: Any,
         metadata: Any,
         dagster_type: DagsterType,
         source_handle: Optional[StepOutputHandle] = None,

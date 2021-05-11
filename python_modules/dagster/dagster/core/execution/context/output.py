@@ -139,7 +139,7 @@ def get_output_context(
 
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
-    solid_config = environment_config.solids.get(step.solid_handle.to_string())
+    solid_config = environment_config.solids[step.solid_handle.to_string()]
     outputs_config = solid_config.outputs
 
     if outputs_config:
