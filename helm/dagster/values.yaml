@@ -666,7 +666,11 @@ ingress:
 
   dagit:
     # Ingress hostname for Dagit e.g. dagit.mycompany.com
-    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit
+    # This variable allows customizing the route pattern in the ingress. Some
+    # ingress controllers may only support "/", whereas some may need "/*".
+    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
+    path: "/*"
+    # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
