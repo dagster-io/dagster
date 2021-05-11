@@ -101,6 +101,9 @@ class DagsterEventType(Enum):
     HOOK_ERRORED = "HOOK_ERRORED"
     HOOK_SKIPPED = "HOOK_SKIPPED"
 
+    ALERT_START = "ALERT_START"
+    ALERT_SUCCESS = "ALERT_SUCCESS"
+
 
 STEP_EVENTS = {
     DagsterEventType.STEP_INPUT,
@@ -141,6 +144,11 @@ HOOK_EVENTS = {
     DagsterEventType.HOOK_COMPLETED,
     DagsterEventType.HOOK_ERRORED,
     DagsterEventType.HOOK_SKIPPED,
+}
+
+ALERT_EVENTS = {
+    DagsterEventType.ALERT_START,
+    DagsterEventType.ALERT_SUCCESS,
 }
 
 
@@ -392,6 +400,10 @@ class DagsterEvent(
     @property
     def is_hook_event(self) -> bool:
         return self.event_type in HOOK_EVENTS
+
+    @property
+    def is_alert_event(self) -> bool:
+        return self.event_type in ALERT_EVENTS
 
     @property
     def step_kind(self) -> "StepKind":

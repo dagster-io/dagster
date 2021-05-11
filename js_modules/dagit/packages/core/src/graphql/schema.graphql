@@ -486,6 +486,8 @@ enum DagsterEventType {
   HOOK_COMPLETED
   HOOK_ERRORED
   HOOK_SKIPPED
+  ALERT_START
+  ALERT_SUCCESS
 }
 
 interface StepEvent {
@@ -1162,7 +1164,7 @@ type PipelineRunLogsSubscriptionSuccess {
   messages: [PipelineRunEvent!]!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -1501,6 +1503,26 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   solidHandleID: String
   eventType: DagsterEventType
   error: PythonError!
+}
+
+type AlertStartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type AlertSuccessEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
 }
 
 type PipelineRunLogsSubscriptionFailure {

@@ -377,6 +377,18 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
     error = graphene.NonNull(GraphenePythonError)
 
 
+class GrapheneAlertStartEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "AlertStartEvent"
+
+
+class GrapheneAlertSuccessEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        name = "AlertSuccessEvent"
+
+
 class GrapheneStepMaterializationEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
@@ -483,6 +495,8 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneHookCompletedEvent,
             GrapheneHookSkippedEvent,
             GrapheneHookErroredEvent,
+            GrapheneAlertStartEvent,
+            GrapheneAlertSuccessEvent,
         )
         name = "PipelineRunEvent"
 
