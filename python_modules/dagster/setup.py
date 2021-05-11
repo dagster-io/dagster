@@ -60,7 +60,8 @@ if __name__ == "__main__":
             # cli
             "click>=5.0,<8.0",
             "coloredlogs>=6.1, <=14.0",
-            "Jinja2",
+            # https://github.com/dagster-io/dagster/issues/4167
+            "Jinja2<3.0",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             "alembic>=1.2.1",

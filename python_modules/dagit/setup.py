@@ -49,13 +49,16 @@ if __name__ == "__main__":
             "flask-cors>=3.0.6",
             "Flask-GraphQL>=2.0.0",
             "Flask-Sockets>=0.2.1",
-            "flask>=0.12.4",
+            # https://github.com/dagster-io/dagster/issues/4167
+            "flask>=0.12.4,<2.0.0",
             "gevent-websocket>=0.10.1",
             "gevent",
             "graphql-ws>=0.3.0",
             "requests",
             # watchdog
             "watchdog>=0.8.3",
+            # https://github.com/dagster-io/dagster/issues/4167
+            "Werkzeug<2.0.0",
             # notebooks support
             "nbconvert>=5.4.0,<6.0.0",
         ],
