@@ -92,6 +92,3 @@ class StepDelegatingExecutor(Executor):
                     )
 
                 time.sleep(self._sleep_seconds)
-
-            for step_handle in execution_plan.step_dict:
-                active_execution.verify_complete(pipeline_context, step_handle.to_key())
