@@ -324,7 +324,6 @@ class GrapheneISolidDefinition(graphene.Interface):
     metadata = non_null_list(GrapheneMetadataItemDefinition)
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
-    required_resources = non_null_list(GrapheneResourceRequirement)
 
     class Meta:
         name = "ISolidDefinition"
@@ -367,14 +366,10 @@ class ISolidDefinitionMixin:
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
 
-    def resolve_required_resources(self, _graphene_info):
-        return [
-            GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
-        ]
-
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     config_field = graphene.Field(GrapheneConfigTypeField)
+    required_resources = non_null_list(GrapheneResourceRequirement)
 
     class Meta:
         interfaces = (GrapheneISolidDefinition,)
@@ -395,6 +390,11 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
             if self._solid_def_snap.config_field_snap
             else None
         )
+
+    def resolve_required_resources(self, _graphene_info):
+        return [
+            GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
+        ]
 
 
 class GrapheneSolid(graphene.ObjectType):

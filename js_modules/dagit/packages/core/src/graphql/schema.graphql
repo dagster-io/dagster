@@ -95,7 +95,6 @@ interface ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
 }
 
 type MetadataItemDefinition {
@@ -116,8 +115,8 @@ type SolidDefinition implements ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
   configField: ConfigTypeField
+  requiredResources: [ResourceRequirement!]!
 }
 
 type OutputDefinition {
@@ -150,16 +149,16 @@ interface ConfigType {
   isSelector: Boolean!
 }
 
-type ResourceRequirement {
-  resourceKey: String!
-}
-
 type ConfigTypeField {
   name: String!
   description: String
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+}
+
+type ResourceRequirement {
+  resourceKey: String!
 }
 
 type Input {
@@ -1867,7 +1866,6 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
   solids: [Solid!]!
   inputMappings: [InputMapping!]!
   outputMappings: [OutputMapping!]!

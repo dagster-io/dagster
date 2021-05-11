@@ -67,9 +67,10 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
     );
   }
 
-  const hasRequiredResources = !!(
-    definition.requiredResources && definition.requiredResources.length
-  );
+  let requiredResources = null;
+  if (definition.__typename === 'SolidDefinition') {
+    requiredResources = definition.requiredResources;
+  }
 
   return (
     <div>
@@ -96,9 +97,9 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
           />
         </SidebarSection>
       )}
-      {hasRequiredResources && (
+      {requiredResources && (
         <SidebarSection title={'Required Resources'}>
-          {[...definition.requiredResources].sort().map((requirement) => (
+          {[...requiredResources].sort().map((requirement) => (
             <ResourceContainer key={requirement.resourceKey}>
               <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
               <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
@@ -155,9 +156,6 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
       key
       value
     }
-    requiredResources {
-      resourceKey
-    }
     outputDefinitions {
       name
       description
@@ -174,6 +172,9 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
       }
     }
     ... on SolidDefinition {
+      requiredResources {
+        resourceKey
+      }
       configField {
         configType {
           ...ConfigTypeSchemaFragment

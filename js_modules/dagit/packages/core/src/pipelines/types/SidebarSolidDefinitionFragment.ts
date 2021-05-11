@@ -434,11 +434,6 @@ export interface SidebarSolidDefinitionFragment_CompositeSolidDefinition_metadat
   value: string;
 }
 
-export interface SidebarSolidDefinitionFragment_CompositeSolidDefinition_requiredResources {
-  __typename: "ResourceRequirement";
-  resourceKey: string;
-}
-
 export interface SidebarSolidDefinitionFragment_CompositeSolidDefinition_inputMappings_definition {
   __typename: "InputDefinition";
   name: string;
@@ -500,7 +495,6 @@ export interface SidebarSolidDefinitionFragment_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: SidebarSolidDefinitionFragment_CompositeSolidDefinition_metadata[];
-  requiredResources: SidebarSolidDefinitionFragment_CompositeSolidDefinition_requiredResources[];
   inputMappings: SidebarSolidDefinitionFragment_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarSolidDefinitionFragment_CompositeSolidDefinition_outputMappings[];
 }
