@@ -341,15 +341,21 @@ class TestEventLogStorage:
         assert [int(evt.message) for evt in watched] == [2, 3, 4]
 
     def test_event_log_storage_pagination(self, storage):
-        storage.store_event(create_test_event_log_record(str(0)))
-        storage.store_event(create_test_event_log_record(str(1)))
-        storage.store_event(create_test_event_log_record(str(2)))
+        # interleave two runs events to ensure pagination is not affected by other runs
+        storage.store_event(create_test_event_log_record("A"))
+        storage.store_event(create_test_event_log_record(str(0), run_id="other_run"))
+        storage.store_event(create_test_event_log_record("B"))
+        storage.store_event(create_test_event_log_record(str(1), run_id="other_run"))
+        storage.store_event(create_test_event_log_record("C"))
+        storage.store_event(create_test_event_log_record(str(2), run_id="other_run"))
+        storage.store_event(create_test_event_log_record("D"))
 
-        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 3
-        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, -1)) == 3
-        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 0)) == 2
-        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 1)) == 1
-        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 2)) == 0
+        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 4
+        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, -1)) == 4
+        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 0)) == 3
+        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 1)) == 2
+        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 2)) == 1
+        assert len(storage.get_logs_for_run(DEFAULT_RUN_ID, 3)) == 0
 
     def test_event_log_delete(self, storage):
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
@@ -573,7 +579,6 @@ class TestEventLogStorage:
             storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
         ) == [DagsterEventType.STEP_SUCCESS]
 
-    @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
     def test_basic_get_logs_for_run_cursor(self, storage):
         @solid
         def return_one(_):
@@ -587,11 +592,7 @@ class TestEventLogStorage:
         for event in events:
             storage.store_event(event)
 
-        assert _event_types(storage.get_logs_for_run(result.run_id, cursor=0)) == _event_types(
-            events
-        )
-
-        assert _event_types(storage.get_logs_for_run(result.run_id, cursor=1)) == _event_types(
+        assert _event_types(storage.get_logs_for_run(result.run_id, cursor=-1)) == _event_types(
             events
         )
 
@@ -631,7 +632,6 @@ class TestEventLogStorage:
         stats_two = storage.get_stats_for_run(result_two.run_id)
         assert stats_two.steps_succeeded == 1
 
-    @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/3621")
     def test_basic_get_logs_for_run_multiple_runs_cursors(self, storage):
         @solid
         def return_one(_):
@@ -648,14 +648,14 @@ class TestEventLogStorage:
         for event in events_two:
             storage.store_event(event)
 
-        out_events_one = storage.get_logs_for_run(result_one.run_id, cursor=1)
+        out_events_one = storage.get_logs_for_run(result_one.run_id, cursor=-1)
         assert len(out_events_one) == len(events_one)
 
         assert set(_event_types(out_events_one)) == set(_event_types(events_one))
 
         assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
-        out_events_two = storage.get_logs_for_run(result_two.run_id, cursor=2)
+        out_events_two = storage.get_logs_for_run(result_two.run_id, cursor=-1)
         assert len(out_events_two) == len(events_two)
         assert set(_event_types(out_events_two)) == set(_event_types(events_one))
 
@@ -684,7 +684,7 @@ class TestEventLogStorage:
 
         start = time.time()
         while len(event_list) < len(events) and time.time() - start < TEST_TIMEOUT:
-            pass
+            time.sleep(0.01)
 
         assert len(event_list) == len(events)
         assert all([isinstance(event, EventRecord) for event in event_list])
@@ -705,7 +705,7 @@ class TestEventLogStorage:
 
         # only watch one of the runs
         event_list = []
-        storage.event_watcher.watch_run(run_id_two, 0, event_list.append)
+        storage.event_watcher.watch_run(run_id_two, -1, event_list.append)
 
         events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
@@ -717,7 +717,7 @@ class TestEventLogStorage:
 
         start = time.time()
         while len(event_list) < len(events_two) and time.time() - start < TEST_TIMEOUT:
-            pass
+            time.sleep(0.01)
 
         assert len(event_list) == len(events_two)
         assert all([isinstance(event, EventRecord) for event in event_list])

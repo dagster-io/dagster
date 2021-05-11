@@ -149,19 +149,18 @@ class SqlEventLogStorage(EventLogStorage):
         )
         check.opt_inst_param(dagster_event_type, "dagster_event_type", DagsterEventType)
 
-        # cursor starts at 0 & auto-increment column starts at 1 so adjust
-        cursor = cursor + 1
-
         query = (
             db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.id > cursor)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
         if dagster_event_type:
             query = query.where(
                 SqlEventLogStorageTable.c.dagster_event_type == dagster_event_type.value
             )
+
+        # adjust 0 based index cursor to SQL offset
+        query = query.offset(cursor + 1)
 
         with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
