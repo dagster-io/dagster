@@ -21,7 +21,7 @@ spec:
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
           {{- end }}
-          - path: "/*"
+          - path: {{ .Values.ingress.dagit.path | default "/*" }}
             backend:
               serviceName: {{ include "dagster.dagit.fullname" . }}
               servicePort: {{ .Values.dagit.service.port | default 80 }}
