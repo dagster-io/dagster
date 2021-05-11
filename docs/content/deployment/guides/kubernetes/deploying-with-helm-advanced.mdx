@@ -197,9 +197,9 @@ To enable Dagster to connect to S3, provide `AWS_ACCESS_KEY_ID` and `AWS_SECRET_
 
 ### Install the Dagster Helm Chart
 
-Install the Helm chart and create a release. Below, we've named our release `dagster-release`. We use `helm upgrade --install` to create the release if it does not exist; otherwise, the existing `dagster-release` will be modified:
+Install the Helm chart and create a release. Below, we've named our release `dagster`. We use `helm upgrade --install` to create the release if it does not exist; otherwise, the existing `dagster` release will be modified:
 
-    helm upgrade --install dagster-release dagster/dagster -f /path/to/values.yaml \
+    helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml \
       --set runLauncher.type=CeleryK8sRunLauncher \
       --set dagsterDaemon.queuedRunCoordinator.enabled=true \
       --set rabbitmq.enabled=true

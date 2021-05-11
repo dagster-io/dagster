@@ -184,9 +184,9 @@ The `dagsterApiGrpcArgs` field expects a list of arguments for `dagster api grpc
 
 ### Install the Dagster Helm chart
 
-Install the Helm chart and create a release. Below, we've named our release `dagster-release`. We use `helm upgrade --install` to create the release if it does not exist; otherwise, the existing `dagster-release` will be modified:
+Install the Helm chart and create a release. Below, we've named our release `dagster`. We use `helm upgrade --install` to create the release if it does not exist; otherwise, the existing `dagster` release will be modified:
 
-    helm upgrade --install dagster-release dagster/dagster -f /path/to/values.yaml
+    helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml
 
 Helm will launch several pods including PostgreSQL. You can check the status of the installation with `kubectl`. If everything worked correctly, you should see output like the following:
 
