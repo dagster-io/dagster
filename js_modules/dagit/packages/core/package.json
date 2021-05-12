@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "Dagit Core Components",
-  "main": "./src/main.tsx",
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.3.16",
