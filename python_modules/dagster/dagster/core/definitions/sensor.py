@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from contextlib import ExitStack
 from typing import Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
@@ -8,7 +9,11 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
-from dagster.utils.backcompat import experimental_arg_warning, experimental_fn_warning
+from dagster.utils.backcompat import (
+    ExperimentalWarning,
+    experimental_arg_warning,
+    experimental_fn_warning,
+)
 
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -104,13 +109,13 @@ class SensorDefinition:
 
     Args:
         name (str): The name of the sensor to create.
-        pipeline_name (str): The name of the pipeline to execute when the sensor fires.
         evaluation_fn (Callable[[SensorExecutionContext]]): The core evaluation function for the
             sensor, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.SensorExecutionContext`.
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
+        pipeline_name (Optional[str]): The name of the pipeline to execute when the sensor fires.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing runs triggered by this sensor.
@@ -124,11 +129,11 @@ class SensorDefinition:
     def __init__(
         self,
         name: str,
-        pipeline_name: Optional[str],
         evaluation_fn: Callable[
             ["SensorExecutionContext"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
+        pipeline_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
@@ -138,9 +143,15 @@ class SensorDefinition:
 
         self._name = check_valid_name(name)
 
-        if job is not None:
+        if pipeline_name is None and job is None:
+            warnings.warn(
+                f'Neither pipeline_name or job is provided. Sensor "{name}" will not target a pipeline.',
+                ExperimentalWarning,
+            )
+            self._target: Optional[Union[DirectTarget, RepoRelativeTarget]] = None
+        elif job is not None:
             experimental_arg_warning("target", "SensorDefinition.__init__")
-            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
+            self._target = DirectTarget(job)
         else:
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -166,8 +177,8 @@ class SensorDefinition:
         return self._name
 
     @property
-    def pipeline_name(self) -> str:
-        return self._target.pipeline_name
+    def pipeline_name(self) -> Optional[str]:
+        return self._target.pipeline_name if self._target else None
 
     @property
     def job_type(self) -> JobType:
@@ -175,11 +186,11 @@ class SensorDefinition:
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:
-        return self._target.solid_selection
+        return self._target.solid_selection if self._target else None
 
     @property
     def mode(self) -> Optional[str]:
-        return self._target.mode
+        return self._target.mode if self._target else None
 
     @property
     def description(self) -> Optional[str]:

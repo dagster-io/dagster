@@ -186,9 +186,9 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   id: string;
   jobOriginId: string;
   name: string;
-  pipelineName: string;
+  pipelineName: string | null;
   solidSelection: (string | null)[] | null;
-  mode: string;
+  mode: string | null;
   description: string | null;
   minIntervalSeconds: number;
   nextTick: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;

@@ -38,7 +38,7 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   __typename: "Sensor";
   id: string;
   name: string;
-  mode: string;
+  mode: string | null;
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines {

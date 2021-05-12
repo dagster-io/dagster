@@ -5,6 +5,7 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     PipelineDefinition,
+    SensorDefinition,
     SolidDefinition,
     daily_schedule,
     lambda_solid,
@@ -274,3 +275,13 @@ def test_bare_graph_with_resources():
         @repository
         def _test():
             return [bare]
+
+
+def test_sensor_no_pipeline_name():
+    foo_system_sensor = SensorDefinition(name="foo", evaluation_fn=lambda x: x)
+
+    @repository
+    def foo_repo():
+        return [foo_system_sensor]
+
+    assert foo_repo.has_sensor_def("foo")

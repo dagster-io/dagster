@@ -119,16 +119,18 @@ export const SensorDetails: React.FC<{
               'Sensor has never run'
             ),
           },
-          {
-            key: 'Pipeline',
-            value: (
-              <PipelineReference
-                pipelineName={pipelineName}
-                pipelineHrefContext={repoAddress}
-                mode={sensor.mode}
-              />
-            ),
-          },
+          pipelineName && sensor.mode !== null
+            ? {
+                key: 'Pipeline',
+                value: (
+                  <PipelineReference
+                    pipelineName={pipelineName}
+                    pipelineHrefContext={repoAddress}
+                    mode={sensor.mode}
+                  />
+                ),
+              }
+            : null,
           {
             key: 'Frequency',
             value: humanizeSensorInterval(sensor.minIntervalSeconds),

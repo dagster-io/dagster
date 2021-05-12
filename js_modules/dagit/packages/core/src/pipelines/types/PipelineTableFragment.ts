@@ -34,7 +34,7 @@ export interface PipelineTableFragment_sensors {
   __typename: "Sensor";
   id: string;
   name: string;
-  mode: string;
+  mode: string | null;
 }
 
 export interface PipelineTableFragment {
