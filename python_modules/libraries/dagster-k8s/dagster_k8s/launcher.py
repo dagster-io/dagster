@@ -252,9 +252,22 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
         )
 
+        self._instance.report_engine_event(
+            "Creating Kubernetes run worker job",
+            run,
+            EngineEventData(
+                [
+                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
+                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                ]
+            ),
+            cls=self.__class__,
+        )
+
         self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         self._instance.report_engine_event(
-            "Kubernetes run worker job launched",
+            "Kubernetes run worker job created",
             run,
             EngineEventData(
                 [
