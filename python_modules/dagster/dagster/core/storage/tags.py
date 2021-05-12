@@ -39,6 +39,8 @@ PRIORITY_TAG = "{prefix}priority".format(prefix=SYSTEM_TAG_PREFIX)
 
 DOCKER_IMAGE_TAG = "{prefix}image".format(prefix=SYSTEM_TAG_PREFIX)
 
+USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG]
+
 
 class TagType(Enum):
     # Custom tag provided by a user
@@ -65,7 +67,8 @@ def check_tags(obj, name):
     check.opt_dict_param(obj, name, key_type=str, value_type=str)
 
     for tag in obj.keys():
-        check.invariant(
-            not tag.startswith(SYSTEM_TAG_PREFIX),
-            desc="User attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
-        )
+        if not tag in USER_EDITABLE_SYSTEM_TAGS:
+            check.invariant(
+                not tag.startswith(SYSTEM_TAG_PREFIX),
+                desc="User attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
+            )
