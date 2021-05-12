@@ -1,11 +1,8 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 
-import {TestAppContextProvider} from '../app/TestAppContextProvider';
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {TestProvider} from '../testing/TestProvider';
 
 import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from './LeftNavRepositorySection';
 
@@ -52,15 +49,12 @@ describe('Repository options', () => {
     };
 
     render(
-      <TestAppContextProvider>
-        <ApolloTestProvider mocks={mocks}>
-          <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
-            <WorkspaceProvider>
-              <LeftNavRepositorySection />
-            </WorkspaceProvider>
-          </MemoryRouter>
-        </ApolloTestProvider>
-      </TestAppContextProvider>,
+      <TestProvider
+        apolloProps={{mocks}}
+        routerProps={{initialEntries: ['/workspace/foo@bar/etc']}}
+      >
+        <LeftNavRepositorySection />
+      </TestProvider>,
     );
 
     await waitFor(() => {
@@ -110,15 +104,9 @@ describe('Repository options', () => {
 
     it('initializes with first repo option, if no localStorage', async () => {
       render(
-        <TestAppContextProvider>
-          <ApolloTestProvider mocks={mocks}>
-            <MemoryRouter initialEntries={['/instance/runs']}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MemoryRouter>
-          </ApolloTestProvider>
-        </TestAppContextProvider>,
+        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+          <LeftNavRepositorySection />
+        </TestProvider>,
       );
 
       await waitFor(() => {
@@ -130,15 +118,9 @@ describe('Repository options', () => {
     it('initializes with correct repo option, if `LAST_REPO_KEY` localStorage', async () => {
       window.localStorage.setItem(LAST_REPO_KEY, 'lorem:ipsum');
       render(
-        <TestAppContextProvider>
-          <ApolloTestProvider mocks={mocks}>
-            <MemoryRouter initialEntries={['/instance/runs']}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MemoryRouter>
-          </ApolloTestProvider>
-        </TestAppContextProvider>,
+        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+          <LeftNavRepositorySection />
+        </TestProvider>,
       );
 
       await waitFor(() => {
@@ -150,15 +132,9 @@ describe('Repository options', () => {
     it('initializes with correct repo option, if `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["foo:bar"]');
       render(
-        <TestAppContextProvider>
-          <ApolloTestProvider mocks={mocks}>
-            <MemoryRouter initialEntries={['/instance/runs']}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MemoryRouter>
-          </ApolloTestProvider>
-        </TestAppContextProvider>,
+        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+          <LeftNavRepositorySection />
+        </TestProvider>,
       );
 
       // Initialize to `foo@bar`, which has four pipelines. Plus one for repo.
@@ -170,15 +146,9 @@ describe('Repository options', () => {
     it('initializes with first repo option, if no matching `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["hello:world"]');
       render(
-        <TestAppContextProvider>
-          <ApolloTestProvider mocks={mocks}>
-            <MemoryRouter initialEntries={['/instance/runs']}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MemoryRouter>
-          </ApolloTestProvider>
-        </TestAppContextProvider>,
+        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+          <LeftNavRepositorySection />
+        </TestProvider>,
       );
 
       // Initialize to `lorem@ipsum`, which has two pipelines. Plus one for repo.
@@ -190,15 +160,9 @@ describe('Repository options', () => {
     it('initializes with multiple repo option, if multiple `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["lorem:ipsum", "foo:bar"]');
       render(
-        <TestAppContextProvider>
-          <ApolloTestProvider mocks={mocks}>
-            <MemoryRouter initialEntries={['/instance/runs']}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MemoryRouter>
-          </ApolloTestProvider>
-        </TestAppContextProvider>,
+        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+          <LeftNavRepositorySection />
+        </TestProvider>,
       );
 
       // Six total pipelines, and no link for single repo name.

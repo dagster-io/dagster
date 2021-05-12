@@ -1,10 +1,9 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
-import {useRepositoryOptions, WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {TestProvider} from '../testing/TestProvider';
+import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {RepositoryPicker} from './RepositoryPicker';
 
@@ -41,13 +40,9 @@ describe('RepositoryPicker', () => {
   const Wrapper: React.FC<{mocks: any}> = (props) => {
     const {mocks} = props;
     return (
-      <MemoryRouter>
-        <ApolloTestProvider mocks={mocks}>
-          <WorkspaceProvider>
-            <Test />
-          </WorkspaceProvider>
-        </ApolloTestProvider>
-      </MemoryRouter>
+      <TestProvider apolloProps={{mocks}}>
+        <Test />
+      </TestProvider>
     );
   };
 

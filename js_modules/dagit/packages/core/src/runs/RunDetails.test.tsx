@@ -3,7 +3,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TimezoneProvider} from '../app/time/TimezoneContext';
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {TestProvider} from '../testing/TestProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 
 import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
@@ -74,11 +74,11 @@ describe('RunDetails', () => {
 
   const renderAll = (config: MockConfig) => {
     return render(
-      <ApolloTestProvider mocks={buildMocks(config)}>
+      <TestProvider apolloProps={{mocks: buildMocks(config)}}>
         <TimezoneProvider>
           <Test />
         </TimezoneProvider>
-      </ApolloTestProvider>,
+      </TestProvider>,
     );
   };
 

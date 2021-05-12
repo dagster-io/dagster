@@ -2,10 +2,8 @@ import {MockList} from '@graphql-tools/mock';
 import {waitFor} from '@testing-library/dom';
 import {render, screen} from '@testing-library/react';
 import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {TestProvider} from '../testing/TestProvider';
 
 import {InstanceWarningIcon} from './InstanceWarningIcon';
 
@@ -27,13 +25,9 @@ describe('InstanceWarningIcon', () => {
 
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
-      <MemoryRouter>
-        <ApolloTestProvider mocks={mocks}>
-          <WorkspaceProvider>
-            <InstanceWarningIcon />
-          </WorkspaceProvider>
-        </ApolloTestProvider>
-      </MemoryRouter>
+      <TestProvider apolloProps={{mocks}}>
+        <InstanceWarningIcon />
+      </TestProvider>
     );
   };
 

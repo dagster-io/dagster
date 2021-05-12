@@ -4,7 +4,15 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {concat, split, ApolloLink, ApolloClient, ApolloProvider, HttpLink} from '@apollo/client';
+import {
+  concat,
+  split,
+  ApolloLink,
+  ApolloClient,
+  ApolloProvider,
+  HttpLink,
+  InMemoryCache,
+} from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {Colors} from '@blueprintjs/core';
@@ -70,6 +78,8 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 interface Props {
+  // todo dish: Make this non-optional.
+  appCache?: InMemoryCache;
   config: {
     graphqlURI: string;
     basePath?: string;
@@ -80,13 +90,14 @@ interface Props {
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
+  const {appCache = AppCache, config} = props;
   const {
     sessionToken = '',
     basePath = '',
     permissions,
     subscriptionParams = {},
     graphqlURI,
-  } = props.config;
+  } = config;
 
   const httpGraphqlURI = graphqlURI.replace('wss://', 'https://').replace('ws://', 'http://');
 
@@ -149,10 +160,10 @@ export const AppProvider: React.FC<Props> = (props) => {
     );
 
     return new ApolloClient({
-      cache: AppCache,
+      cache: appCache,
       link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [sessionToken, httpURI, websocketClient]);
+  }, [appCache, httpURI, sessionToken, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({

@@ -1,11 +1,8 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 
-import {TestAppContextProvider} from '../app/TestAppContextProvider';
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {TestProvider} from '../testing/TestProvider';
 
 import {LeftNav} from './LeftNav';
 
@@ -36,15 +33,9 @@ describe('LeftNav', () => {
 
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
-      <TestAppContextProvider>
-        <MemoryRouter>
-          <ApolloTestProvider mocks={mocks}>
-            <WorkspaceProvider>
-              <LeftNav />
-            </WorkspaceProvider>
-          </ApolloTestProvider>
-        </MemoryRouter>
-      </TestAppContextProvider>
+      <TestProvider apolloProps={{mocks}}>
+        <LeftNav />
+      </TestProvider>
     );
   };
 

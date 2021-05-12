@@ -1,13 +1,10 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
-import {MemoryRouter} from 'react-router-dom';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {TestProvider} from '../testing/TestProvider';
 
 import {App} from './App';
-import {TestAppContextProvider} from './TestAppContextProvider';
 import {breakOnUnderscores} from './Util';
 
 // Import lazy routes up front so that they don't slow down the tests.
@@ -88,15 +85,9 @@ describe('App', () => {
 
   it('renders left nav without error', async () => {
     render(
-      <TestAppContextProvider>
-        <MemoryRouter>
-          <ApolloTestProvider mocks={defaultMocks}>
-            <WorkspaceProvider>
-              <App />
-            </WorkspaceProvider>
-          </ApolloTestProvider>
-        </MemoryRouter>
-      </TestAppContextProvider>,
+      <TestProvider apolloProps={{mocks: defaultMocks}}>
+        <App />
+      </TestProvider>,
     );
 
     await waitFor(() => {
@@ -113,15 +104,12 @@ describe('App', () => {
   describe('Routes', () => {
     it('renders solids explorer', async () => {
       render(
-        <TestAppContextProvider>
-          <MemoryRouter initialEntries={['/workspace/my_repository@my_location/solids/foo_solid']}>
-            <ApolloTestProvider mocks={defaultMocks}>
-              <WorkspaceProvider>
-                <App />
-              </WorkspaceProvider>
-            </ApolloTestProvider>
-          </MemoryRouter>
-        </TestAppContextProvider>,
+        <TestProvider
+          routerProps={{initialEntries: ['/workspace/my_repository@my_location/solids/foo_solid']}}
+          apolloProps={{mocks: defaultMocks}}
+        >
+          <App />
+        </TestProvider>,
       );
 
       await waitFor(() => {
@@ -150,19 +138,16 @@ describe('App', () => {
       };
 
       render(
-        <TestAppContextProvider>
-          <MemoryRouter
-            initialEntries={[
+        <TestProvider
+          routerProps={{
+            initialEntries: [
               '/workspace/my_repository@my_location/pipelines/foo_pipeline/overview',
-            ]}
-          >
-            <ApolloTestProvider mocks={mocks}>
-              <WorkspaceProvider>
-                <App />
-              </WorkspaceProvider>
-            </ApolloTestProvider>
-          </MemoryRouter>
-        </TestAppContextProvider>,
+            ],
+          }}
+          apolloProps={{mocks}}
+        >
+          <App />
+        </TestProvider>,
       );
 
       await waitFor(() => {

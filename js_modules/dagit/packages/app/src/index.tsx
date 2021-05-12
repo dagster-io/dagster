@@ -2,6 +2,7 @@
 import './publicPath';
 
 import {App} from '@dagit/core/app/App';
+import {AppCache} from '@dagit/core/app/AppCache';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
 import {PERMISSIONS_ALLOW_ALL} from '@dagit/core/app/Permissions';
@@ -19,7 +20,7 @@ const config = {
 };
 
 ReactDOM.render(
-  <AppProvider config={config}>
+  <AppProvider appCache={AppCache} config={config}>
     <AppTopNav searchPlaceholder="Search…" />
     <App />
   </AppProvider>,

@@ -3,7 +3,7 @@ import faker from 'faker';
 import moment from 'moment';
 import * as React from 'react';
 
-import {ApolloTestProvider} from '../testing/ApolloTestProvider';
+import {StorybookProvider} from '../testing/StorybookProvider';
 import {StepEventStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
@@ -221,7 +221,7 @@ export const BasicTestCases = () => {
   });
 
   return (
-    <ApolloTestProvider mocks={PipelineMocks}>
+    <StorybookProvider apolloProps={{mocks: PipelineMocks}}>
       <PartitionRunMatrix
         pipelineName="TestPipeline"
         repoAddress={{name: 'Test', location: 'TestLocation'}}
@@ -234,7 +234,7 @@ export const BasicTestCases = () => {
           runs: simulateTagFilteringInQuery(p.runs, runTags),
         }))}
       />
-    </ApolloTestProvider>
+    </StorybookProvider>
   );
 };
 
@@ -267,7 +267,7 @@ export const LargeDataset = () => {
   }, []);
 
   return (
-    <ApolloTestProvider mocks={PipelineMocks}>
+    <StorybookProvider apolloProps={{mocks: PipelineMocks}}>
       <PartitionRunMatrix
         pipelineName="TestPipeline"
         repoAddress={{name: 'Test', location: 'TestLocation'}}
@@ -280,6 +280,6 @@ export const LargeDataset = () => {
           runs: simulateTagFilteringInQuery(p.runs, runTags),
         }))}
       />
-    </ApolloTestProvider>
+    </StorybookProvider>
   );
 };
