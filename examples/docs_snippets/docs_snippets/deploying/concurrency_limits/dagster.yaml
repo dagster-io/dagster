@@ -1,0 +1,11 @@
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 25
+    tag_concurrency_limits:
+      - key: "database"
+        value: "redshift"
+        limit: 4
+      - key: "dagster/backfill"
+        limit: 10
