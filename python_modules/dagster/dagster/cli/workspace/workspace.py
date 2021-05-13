@@ -43,6 +43,13 @@ class WorkspaceSnapshot(
     """
 
     def __new__(cls, location_origin_dict, location_error_dict, repository_locations_dict):
+
+        for location_name in location_origin_dict:
+            check.invariant(
+                location_name in location_error_dict or location_name in repository_locations_dict,
+                f"{location_name} is listed as an origin but has neither a location nor an error",
+            )
+
         return super(WorkspaceSnapshot, cls).__new__(
             cls,
             location_origin_dict,
@@ -104,35 +111,36 @@ class Workspace(IWorkspace):
         self._location_dict = {}
         self._location_error_dict = {}
 
-        self._load_workspace()
+        with self._lock:
+            self._load_workspace()
 
     def _load_workspace(self):
+        assert self._lock.locked()
         repository_location_origins = (
             self._workspace_load_target.create_origins() if self._workspace_load_target else []
         )
 
-        self._location_origin_dict = OrderedDict()
         check.list_param(
             repository_location_origins,
             "repository_location_origins",
             of_type=RepositoryLocationOrigin,
         )
 
-        with self._lock:
-            self._location_dict = {}
-            self._location_error_dict = {}
-            for origin in repository_location_origins:
-                check.invariant(
-                    self._location_origin_dict.get(origin.location_name) is None,
-                    'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
-                        name=origin.location_name,
-                    ),
-                )
+        self._location_origin_dict = OrderedDict()
+        self._location_dict = {}
+        self._location_error_dict = {}
+        for origin in repository_location_origins:
+            check.invariant(
+                self._location_origin_dict.get(origin.location_name) is None,
+                'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
+                    name=origin.location_name,
+                ),
+            )
 
-                self._location_origin_dict[origin.location_name] = origin
-                if origin.supports_server_watch:
-                    self._start_watch_thread(origin)
-                self._load_location(origin.location_name)
+            self._location_origin_dict[origin.location_name] = origin
+            if origin.supports_server_watch:
+                self._start_watch_thread(origin)
+            self._load_location(origin.location_name)
 
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
@@ -248,10 +256,13 @@ class Workspace(IWorkspace):
             self._load_location(location_name)
 
     def reload_workspace(self):
-        self._cleanup_locations()
-        self._load_workspace()
+        # Can be called from a background thread
+        with self._lock:
+            self._cleanup_locations()
+            self._load_workspace()
 
     def _cleanup_locations(self):
+        assert self._lock.locked()
         for _, event in self._watch_thread_shutdown_events.items():
             event.set()
         for _, watch_thread in self._watch_threads.items():
@@ -260,12 +271,11 @@ class Workspace(IWorkspace):
         self._watch_thread_shutdown_events = {}
         self._watch_threads = {}
 
-        with self._lock:
-            for location in self.repository_locations:
-                location.cleanup()
+        for location in self.repository_locations:
+            location.cleanup()
 
-            self._location_dict = {}
-            self._location_error_dict = {}
+        self._location_dict = {}
+        self._location_error_dict = {}
 
     def get_location(self, origin):
         with self._lock:
